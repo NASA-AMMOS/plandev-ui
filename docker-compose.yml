@@ -1,0 +1,5 @@
+version: '3.3'
+services:
+  merlin_ui:
+    image: '${DOCKER_URL}/merlin-ui:${MERLIN_UI_DOCKER_TAG}'
+    ports: ['8080:80']
