@@ -11,11 +11,14 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
         color: white;
         display: inline-flex;
         height: 25px;
-        overflow: hidden;
         justify-content: flex-start;
+        overflow: hidden;
         padding: 0.25rem;
+        position: sticky;
+        top: 0px;
         white-space: nowrap;
         width: 100%;
+        z-index: 1;
       }
     `,
   ],
