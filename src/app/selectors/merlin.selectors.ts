@@ -1,13 +1,15 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { compare, getUnixEpochTime } from '../functions';
-import { MerlinState } from '../reducers';
+import { MerlinState } from '../reducers/merlin.reducer';
 import {
+  Band,
   CActivityInstance,
   CActivityInstanceMap,
   CActivityType,
   CActivityTypeMap,
   CAdaptation,
   CPlan,
+  SubBandActivity,
   TimeRange,
 } from '../types';
 
@@ -16,6 +18,57 @@ const getMerlinState = createFeatureSelector<MerlinState>('merlin');
 export const getActivityInstancesMap = createSelector(
   getMerlinState,
   (state: MerlinState): CActivityInstanceMap => state.activityInstances,
+);
+
+export const getActivityInstances = createSelector(
+  getActivityInstancesMap,
+  (activityInstanceMap: CActivityInstanceMap | null) =>
+    activityInstanceMap
+      ? Object.values(activityInstanceMap).sort((a, b) =>
+          compare(
+            getUnixEpochTime(a.startTimestamp),
+            getUnixEpochTime(b.startTimestamp),
+            true,
+          ),
+        )
+      : [],
+);
+
+export const getActivityInstancesBand = createSelector(
+  getActivityInstances,
+  (activityInstances: CActivityInstance[]): Band => ({
+    height: 200,
+    id: 'band0',
+    order: 0,
+    subBands: [
+      {
+        id: 'band0subBand0',
+        layout: 'waterfall',
+        points: activityInstances.map(point => ({
+          borderWidth: 1,
+          color: '#d651ff',
+          duration: 0,
+          id: point.id,
+          labelAlign: 'start',
+          labelBaseline: 'alphabetic',
+          labelFillColor: '#000000',
+          labelFont: 'Georgia',
+          labelFontSize: 12,
+          labelHidden: false,
+          labelText: point.type,
+          opacity: 1.0,
+          type: 'activity',
+          x: getUnixEpochTime(point.startTimestamp),
+        })),
+        type: 'activity',
+      } as SubBandActivity,
+    ],
+    yAxis: {
+      labelFillColor: '#000000',
+      labelFontSize: 14,
+      labelText: 'Activity Instances',
+    },
+  }),
 );
 
 export const getActivityInstancesForSelectedPlan = createSelector(
@@ -34,7 +87,11 @@ export const getActivityInstancesForSelectedPlan = createSelector(
       );
 
       const sortedActivityInstances = activityInstances.sort((a, b) =>
-        compare(a.startTimestamp, b.startTimestamp, true),
+        compare(
+          getUnixEpochTime(a.startTimestamp),
+          getUnixEpochTime(b.startTimestamp),
+          true,
+        ),
       );
 
       return sortedActivityInstances;

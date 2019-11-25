@@ -1,0 +1,42 @@
+:host {
+  background: white;
+  border: 1px solid lightgrey;
+  display: block;
+  height: var(--height, 200px);
+  position: relative;
+  width: 100%;
+  z-index: 0;
+}
+
+::ng-deep g.axis--x .tick > line {
+  stroke: lightgrey;
+}
+
+::ng-deep g.axis--x .domain {
+  display: none;
+}
+
+::ng-deep g.axis--x .tick > text {
+  display: none;
+}
+
+.axis-container,
+.interaction-container,
+.sub-bands-container {
+  cursor: pointer;
+  height: inherit;
+  position: absolute;
+  width: inherit;
+}
+
+.axis-container {
+  z-index: -1;
+}
+
+.interaction-container {
+  z-index: 2;
+}
+
+.sub-bands-container {
+  z-index: 1;
+}

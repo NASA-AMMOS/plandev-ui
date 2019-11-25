@@ -81,6 +81,7 @@
             "main": "src/test.ts",
             "codeCoverageExclude": [
               "src/app/functions/band.ts",
+              "src/app/functions/tooltip.ts",
               "src/app/services/api-mock.service.ts"
             ],
             "polyfills": "src/polyfills.ts",

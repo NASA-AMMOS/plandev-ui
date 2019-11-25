@@ -93,7 +93,7 @@
           <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
           <ng-container *ngIf="activityInstances !== null">
             <mat-card *ngIf="!activityInstances.length">
-              This plan has no activity instances.
+              This plan has no activity instances
             </mat-card>
 
             <app-activity-instances-table
@@ -125,13 +125,14 @@
             ></app-update-activity-instance-form>
           </mat-card>
           <ng-template #elseBlock>
-            <mat-card>No Activity Instance Selected.</mat-card>
+            <mat-card>No Activity Instance Selected</mat-card>
           </ng-template>
         </div>
       </as-split-area>
     </as-split>
   </as-split-area>
   <as-split-area
+    class="bottom-panel"
     [order]="panels.bottom.order"
     [size]="panels.bottom.size"
     [visible]="panels.bottom.visible"
@@ -140,7 +141,7 @@
       Timeline
     </app-panel-header>
     <div class="p-1">
-      <app-timeline></app-timeline>
+      <app-timeline [height]="bottomPanelHeight"></app-timeline>
     </div>
   </as-split-area>
 </as-split>

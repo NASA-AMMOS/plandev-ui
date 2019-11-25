@@ -1,7 +1,10 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   OnDestroy,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -31,10 +34,11 @@ import {
   styleUrls: ['./plan.component.css'],
   templateUrl: './plan.component.html',
 })
-export class PlanComponent implements OnDestroy {
+export class PlanComponent implements AfterViewInit, OnDestroy {
   activityInstances: CActivityInstance[] | null = null;
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
+  bottomPanelHeight = 200;
   panels = {
     activityInstances: {
       order: 2,
@@ -73,6 +77,7 @@ export class PlanComponent implements OnDestroy {
   private subs = new SubSink();
 
   constructor(
+    private elRef: ElementRef,
     private ref: ChangeDetectorRef,
     private route: ActivatedRoute,
     private store: Store<AppState>,
@@ -107,6 +112,10 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  ngAfterViewInit() {
+    this.setBottomPanelHeight();
+  }
+
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
@@ -127,6 +136,7 @@ export class PlanComponent implements OnDestroy {
 
   onResize(): void {
     this.store.dispatch(MerlinActions.resize());
+    this.setBottomPanelHeight();
   }
 
   onSelectActivityInstance(activityInstance: CActivityInstance | null): void {
@@ -149,6 +159,18 @@ export class PlanComponent implements OnDestroy {
         planId,
       }),
     );
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize() {
+    this.setBottomPanelHeight();
+  }
+
+  setBottomPanelHeight() {
+    const bottomPanel = this.elRef.nativeElement.querySelector('.bottom-panel');
+    if (bottomPanel) {
+      this.bottomPanelHeight = bottomPanel.clientHeight;
+    }
   }
 
   togglePanelVisible(panel: string): void {

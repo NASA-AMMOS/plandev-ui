@@ -12,7 +12,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as d3 from 'd3';
-import { getDoyTimestamp } from '../../functions';
+import { getDoyTimestamp, hideTooltip, showTooltip } from '../../functions';
 import { TimeRange } from '../../types';
 
 @Component({
@@ -73,7 +73,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     });
 
     d3.select(this.brush.nativeElement).on('mouseleave', () => {
-      this.hideTooltip();
+      hideTooltip();
     });
   }
 
@@ -144,13 +144,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
       .rangeRound([0, this.drawWidth]);
   }
 
-  hideTooltip() {
-    d3.select('app-tooltip')
-      .style('opacity', 0)
-      .style('z-index', -1)
-      .html('');
-  }
-
   resize(): void {
     this.redraw();
   }
@@ -169,28 +162,11 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   showTooltip(event: MouseEvent | null): void {
     if (event) {
-      const { clientX, clientY } = event;
       const { x } = this.getMousePosition(this.brush.nativeElement, event);
-
       const xScale = this.getXScale();
       const unixEpochTime = xScale.invert(x).getTime();
       const doyTimestamp = getDoyTimestamp(unixEpochTime);
-
-      const appTooltip = d3.select('app-tooltip');
-      appTooltip.html(`${doyTimestamp}`); // Set html first so we can calculate the true width.
-
-      const node = appTooltip.node() as HTMLElement;
-      const { width } = node.getBoundingClientRect();
-      let xPosition = clientX;
-      if (this.drawWidth - xPosition < 0) {
-        xPosition = clientX - width;
-      }
-
-      appTooltip
-        .style('opacity', 0.9)
-        .style('left', `${xPosition}px`)
-        .style('top', `${clientY}px`)
-        .style('z-index', 5);
+      showTooltip(event, doyTimestamp, this.drawWidth); // Not recursive!
     }
   }
 

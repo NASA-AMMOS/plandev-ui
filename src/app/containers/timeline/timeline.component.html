@@ -3,3 +3,12 @@
   [viewTimeRange]="viewTimeRange"
   (updateViewTimeRange)="onUpdateViewTimeRange($event)"
 ></app-time-axis>
+<app-band
+  [height]="bandHeight"
+  [id]="band.id"
+  [maxTimeRange]="maxTimeRange"
+  [subBands]="band.subBands"
+  [viewTimeRange]="viewTimeRange"
+  [yAxis]="band.yAxis"
+  (selectPoint)="onSelectPoint($event)"
+></app-band>

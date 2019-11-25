@@ -1,0 +1,47 @@
+<div
+  #interactionContainer
+  class="interaction-container"
+  [ngStyle]="{
+    height: drawHeight + 'px',
+    transform: 'translate(' + marginLeft + 'px ,' + marginTop + 'px)',
+    width: drawWidth + 'px'
+  }"
+>
+  <svg
+    [ngStyle]="{
+      height: drawHeight + 'px',
+      width: drawWidth + 'px'
+    }"
+  >
+    <g #annotationGroup class="annotation-group"></g>
+  </svg>
+</div>
+
+<div
+  class="sub-bands-container"
+  [ngStyle]="{
+    height: drawHeight + 'px',
+    transform: 'translate(' + marginLeft + 'px ,' + marginTop + 'px)',
+    width: drawWidth + 'px'
+  }"
+>
+  <ng-container *ngFor="let subBand of subBands; trackBy: trackBySubBands">
+    <app-activity-band
+      *ngIf="subBand.type === 'activity'"
+      [drawHeight]="drawHeight"
+      [drawWidth]="drawWidth"
+      [id]="subBand.id"
+      [layout]="subBand.layout"
+      [maxTimeRange]="maxTimeRange"
+      [points]="subBand.points"
+      [viewTimeRange]="viewTimeRange"
+    ></app-activity-band>
+  </ng-container>
+</div>
+
+<svg class="axis-container">
+  <g
+    #axisContainerGroup
+    [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'"
+  ></g>
+</svg>
