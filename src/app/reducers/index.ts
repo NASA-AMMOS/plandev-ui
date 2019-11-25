@@ -1,1 +1,2 @@
-export * from './merlin.reducer';
+import * as MerlinReducer from './merlin.reducer';
+export { MerlinReducer };
