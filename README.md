@@ -8,7 +8,7 @@ First make sure you have [Node.js LTS](https://nodejs.org/) installed, then do:
 
 ```
 npm i yarn -g
-cd aerie/merlin-ui
+cd merlin-ui
 yarn
 ```
 
