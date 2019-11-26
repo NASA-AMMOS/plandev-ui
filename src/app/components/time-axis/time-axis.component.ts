@@ -77,11 +77,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     });
   }
 
-  @HostListener('window:resize', ['$event'])
-  onResize(): void {
-    this.resize();
-  }
-
   drawXAxis(): void {
     const x = this.getXScale();
 
@@ -142,6 +137,11 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
       .scaleTime()
       .domain(this.getDomain())
       .rangeRound([0, this.drawWidth]);
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(): void {
+    this.resize();
   }
 
   resize(): void {
