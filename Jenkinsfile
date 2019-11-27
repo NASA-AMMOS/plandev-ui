@@ -1,4 +1,4 @@
-def getTag() {
+def getSeqTag() {
 	def branchName = env.BRANCH_NAME.replaceAll('/', '_').replace('release_', '')
 	def shortDate = new Date().format('yyyyMMdd')
 	def shortCommit = env.GIT_COMMIT.take(7)
@@ -6,7 +6,7 @@ def getTag() {
 }
 
 def getDockerTag() {
-  def tag = getTag().replaceAll('\\+', '-')
+  def tag = getSeqTag().replaceAll('\\+', '-')
   return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/merlin-ui:${tag}"
 }
 
@@ -23,12 +23,11 @@ pipeline {
 				expression { BRANCH_NAME ==~ /^release.*/ }
 			}
 			steps {
-				sh "tar -czf merlin-ui-src-${getTag()}.tar.gz --exclude='.git' `ls -A`"
+				sh "tar -czf merlin-ui-src-${getSeqTag()}.tar.gz --exclude='.git' `ls -A`"
 			}
 		}
 		stage ('build') {
 			steps {
-				echo "${getTag()}"
 				withCredentials([
           usernamePassword(
             credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86',
@@ -50,10 +49,6 @@ pipeline {
             fi
             [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
             nvm install v10.13.0
-
-            # Print ENV
-            echo -e "\nCurrent environment variables:\n"
-            env | sort
 
             # Install dependencies, test, and build
             npx yarn
@@ -77,7 +72,7 @@ pipeline {
 					def statusCode = sh returnStatus: true, script:
 					"""
           cd dist
-          tar -czf merlin-ui-${getTag()}.tar.gz `ls -A`
+          tar -czf merlin-ui-${getSeqTag()}.tar.gz `ls -A`
 					"""
 					if (statusCode > 0) {
 						error "build archive failed"
