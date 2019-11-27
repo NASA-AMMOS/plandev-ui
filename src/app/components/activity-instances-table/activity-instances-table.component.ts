@@ -42,13 +42,8 @@ export class ActivityInstancesTableComponent extends ContextMenu
     }
   }
 
-  onSelectActivityInstance(activityInstance: CActivityInstance | null): void {
+  onSelectActivityInstance(activityInstance: CActivityInstance): void {
     this.selection.toggle(activityInstance);
-    const isSelected = this.selection.isSelected(activityInstance);
-    if (isSelected) {
-      this.selectActivityInstance.emit(activityInstance);
-    } else {
-      this.selectActivityInstance.emit(null);
-    }
+    this.selectActivityInstance.emit(activityInstance);
   }
 }

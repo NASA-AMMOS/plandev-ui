@@ -111,10 +111,19 @@ export const reducer = createReducer(
   })),
   on(
     MerlinActions.setSelectedActivityInstanceId,
-    (state, { selectedActivityInstanceId }) => ({
-      ...state,
-      selectedActivityInstanceId,
-    }),
+    (state, { selectedActivityInstanceId }) => {
+      if (state.selectedActivityInstanceId === selectedActivityInstanceId) {
+        return {
+          ...state,
+          selectedActivityInstanceId: null,
+        };
+      } else {
+        return {
+          ...state,
+          selectedActivityInstanceId,
+        };
+      }
+    },
   ),
   on(
     MerlinActions.setSelectedPlanAndActivityTypes,

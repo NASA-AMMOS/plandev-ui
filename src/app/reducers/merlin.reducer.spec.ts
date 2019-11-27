@@ -200,6 +200,26 @@ describe('merlin reducer', () => {
         selectedActivityInstanceId,
       });
     });
+
+    it('it should set setSelectedActivityInstanceId to null if the id is already selected', () => {
+      const selectedActivityInstanceId = '42';
+      let state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.setSelectedActivityInstanceId({
+          selectedActivityInstanceId,
+        }),
+      );
+      state = reducer(
+        state,
+        MerlinActions.setSelectedActivityInstanceId({
+          selectedActivityInstanceId,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        selectedActivityInstanceId: null,
+      });
+    });
   });
 
   describe('setSelectedPlanAndActivityTypes', () => {

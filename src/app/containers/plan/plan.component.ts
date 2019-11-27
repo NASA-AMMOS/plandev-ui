@@ -139,12 +139,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.setBottomPanelHeight();
   }
 
-  onSelectActivityInstance(activityInstance: CActivityInstance | null): void {
+  onSelectActivityInstance(activityInstance: CActivityInstance): void {
     this.store.dispatch(
       MerlinActions.setSelectedActivityInstanceId({
-        selectedActivityInstanceId: activityInstance
-          ? activityInstance.id
-          : null,
+        selectedActivityInstanceId: activityInstance.id,
       }),
     );
   }
