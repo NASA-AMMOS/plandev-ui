@@ -2,6 +2,10 @@
 
 This is the UI application and reusable UI components for [Aerie](https://github.jpl.nasa.gov/MPS/aerie).
 
+## Contributing
+
+Please see our [contributing documentation](./CONTRIBUTING.md) for information on how to contribute to this project.
+
 ## Install
 
 First make sure you have [Node.js LTS](https://nodejs.org/) installed, then do:
