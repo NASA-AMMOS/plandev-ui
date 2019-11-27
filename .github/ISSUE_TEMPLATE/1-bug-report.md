@@ -35,7 +35,6 @@ Issues that don't have enough info and can't be reproduced will be closed.
 <pre><code>
 <!-- If the issue is accompanied by an exception or an error, please share it below: -->
 <!-- ✍️-->
-
 </code></pre>
 
 ## 🌍 Your Environment
@@ -46,9 +45,9 @@ Issues that don't have enough info and can't be reproduced will be closed.
 <!-- 
 See the about dialog in the aerie-ui for a build version. 
 For example: aerie-ui 1.0.0 - develop_b0_rb5ebc91_20191127
+Please share it below:
 -->
 <!-- ✍️-->
-
 </code></pre>
 
 **Anything else relevant?**
