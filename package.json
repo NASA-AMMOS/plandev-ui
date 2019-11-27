@@ -8,14 +8,15 @@
     "lint": "ng lint",
     "ng": "ng",
     "ngcc": "ngcc --properties es2015 browser module main --first-only --create-ivy-entry-points",
-    "postinstall": "yarn ngcc && npx webdriver-manager update",
+    "postinstall": "yarn ngcc",
     "prebuild": "yarn run version",
     "prestart": "yarn run version",
     "protractor": "protractor e2e/protractor.conf.js",
     "start": "ng serve",
     "test": "ng test --code-coverage --watch=false --browsers FirefoxHeadless",
     "test:watch": "ng test --browsers FirefoxHeadless",
-    "version": "node git.version.js"
+    "version": "node git.version.js",
+    "webdriver-manager:update": "npx webdriver-manager update"
   },
   "dependencies": {
     "@angular/animations": "~9.0.0-rc.3",
