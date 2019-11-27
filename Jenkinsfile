@@ -38,6 +38,9 @@ pipeline {
           script {
             def statusCode = sh returnStatus: true, script:
             """
+            # Don't echo commands by default
+						set +x
+
             # Setup ENV
             export PATH=/usr/local/bin:/usr/bin
             export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib
