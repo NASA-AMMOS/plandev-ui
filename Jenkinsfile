@@ -96,7 +96,7 @@ pipeline {
 						'''{
 							"files": [
 								{
-									"pattern": "merlin-ui-*.tar.gz",
+									"pattern": "dist/merlin-ui-*.tar.gz",
 									"target": "general-develop/gov/nasa/jpl/ammos/mpsa/merlin-ui/",
 									"recursive": false
 								}
