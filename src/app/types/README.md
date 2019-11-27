@@ -1,6 +1,6 @@
 # types
 
-This directory contains all the TypeScript types used in `merlin-ui`.
+This directory contains all the TypeScript types used in `aerie-ui`.
 
 ## Prefixes
 

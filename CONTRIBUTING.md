@@ -1,6 +1,6 @@
-# Contributing to merlin-ui
+# Contributing to aerie-ui
 
-We would love for you to contribute to merlin-ui and help make it even better than it is
+We would love for you to contribute to aerie-ui and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
 - [Question or Problem?](#question)
@@ -44,7 +44,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 1. Search [GitHub][github-pulls] for an open or closed PR that relates to your submission. You don't want to duplicate effort.
 1. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add. Discussing the design up front helps to ensure that we're ready to accept your work.
-1. Clone the [MPS/merlin-ui repo][github].
+1. Clone the [MPS/aerie-ui repo][github].
 1. Make your changes in a new git branch:
    ```shell
    git checkout develop
@@ -53,7 +53,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```
 1. Create your patch, **including appropriate test cases**.
 1. Follow our [Coding Rules](#rules).
-1. Run the full merlin-ui test suite and ensure that all tests pass.
+1. Run the full aerie-ui test suite and ensure that all tests pass.
    ```shell
    yarn test
    ```
@@ -68,12 +68,12 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    git push origin my-fix-branch
    ```
 
-1. In GitHub, send a pull request to `merlin-ui:develop`.
+1. In GitHub, send a pull request to `aerie-ui:develop`.
 
 - If we suggest changes then:
 
   - Make the required updates.
-  - Re-run the merlin-ui test suites to ensure tests are still passing.
+  - Re-run the aerie-ui test suites to ensure tests are still passing.
   - [Rebase your branch][rebase] and force push to your branch to GitHub (this will update your Pull Request):
 
     ```shell
@@ -120,7 +120,7 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 
 ## <a name="commit"></a> Commit Message Guidelines
 
-We have very precise rules over how our git commit messages can be formatted. This leads to **more readable messages** that are easy to follow when looking through the **project history**. But also, we use the git commit messages to **generate the merlin-ui change log**.
+We have very precise rules over how our git commit messages can be formatted. This leads to **more readable messages** that are easy to follow when looking through the **project history**. But also, we use the git commit messages to **generate the aerie-ui change log**.
 
 ### Commit Message Format
 
@@ -153,7 +153,7 @@ fix: need to depend on latest rxjs and zone.js
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
 
-([more samples](https://github.jpl.nasa.gov/MPS/merlin-ui/commits/develop))
+([more samples](https://github.jpl.nasa.gov/MPS/aerie-ui/commits/develop))
 
 ### Revert
 
@@ -200,9 +200,9 @@ The footer should contain any information about **Breaking Changes** and is also
 This document was created using the [Angular contributing document][angular-contributing].
 
 [angular-contributing]: https://github.com/angular/angular/blob/master/CONTRIBUTING.md
-[github]: https://github.jpl.nasa.gov/MPS/merlin-ui
-[github-pulls]: https://github.jpl.nasa.gov/MPS/merlin-ui/pulls
-[new-issue]: https://github.jpl.nasa.gov/MPS/merlin-ui/issues/new/choose
+[github]: https://github.jpl.nasa.gov/MPS/aerie-ui
+[github-pulls]: https://github.jpl.nasa.gov/MPS/aerie-ui/pulls
+[new-issue]: https://github.jpl.nasa.gov/MPS/aerie-ui/issues/new/choose
 [prettier]: https://prettier.io/
 [rebase]: https://dev.to/maxwell_dev/the-git-rebase-introduction-i-wish-id-had
 [slack]: https://jpl.slack.com/app_redirect?channel=CR1M97V1N

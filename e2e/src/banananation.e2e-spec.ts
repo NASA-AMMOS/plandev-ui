@@ -8,7 +8,7 @@ import { adaptation } from './mocks';
  * @note Only run these tests against Firefox for now,
  * there is a possible Chromium bug that will break some of the tests: https://github.com/angular/components/issues/10140
  */
-describe('merlin-ui - banananation e2e tests', () => {
+describe('aerie-ui - banananation e2e tests', () => {
   let page: AppPage;
 
   beforeEach(() => {

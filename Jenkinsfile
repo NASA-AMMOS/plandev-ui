@@ -7,7 +7,7 @@ def getSeqTag() {
 
 def getDockerTag() {
   def tag = getSeqTag().replaceAll('\\+', '-')
-  return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/merlin-ui:${tag}"
+  return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/aerie-ui:${tag}"
 }
 
 pipeline {
@@ -23,7 +23,7 @@ pipeline {
 				expression { BRANCH_NAME ==~ /^release.*/ }
 			}
 			steps {
-				sh "tar -czf merlin-ui-src-${getSeqTag()}.tar.gz --exclude='.git' `ls -A`"
+				sh "tar -czf aerie-ui-src-${getSeqTag()}.tar.gz --exclude='.git' `ls -A`"
 			}
 		}
 		stage ('build') {
@@ -75,7 +75,7 @@ pipeline {
 					def statusCode = sh returnStatus: true, script:
 					"""
           cd dist
-          tar -czf merlin-ui-${getSeqTag()}.tar.gz `ls -A`
+          tar -czf aerie-ui-${getSeqTag()}.tar.gz `ls -A`
 					"""
 					if (statusCode > 0) {
 						error "build archive failed"
@@ -96,8 +96,8 @@ pipeline {
 						'''{
 							"files": [
 								{
-									"pattern": "dist/merlin-ui-*.tar.gz",
-									"target": "general-develop/gov/nasa/jpl/ammos/mpsa/merlin-ui/",
+									"pattern": "dist/aerie-ui-*.tar.gz",
+									"target": "general-develop/gov/nasa/jpl/ammos/mpsa/aerie-ui/",
 									"recursive": false
 								}
 							]

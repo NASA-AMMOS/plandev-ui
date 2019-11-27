@@ -1,6 +1,6 @@
-# merlin-ui
+# aerie-ui
 
-This is the UI for the Aerie - Merlin component.
+This is the UI application and reusable UI components for [Aerie](https://github.jpl.nasa.gov/MPS/aerie).
 
 ## Install
 
@@ -8,7 +8,7 @@ First make sure you have [Node.js LTS](https://nodejs.org/) installed, then do:
 
 ```
 npm i yarn -g
-cd merlin-ui
+cd aerie-ui
 yarn
 ```
 

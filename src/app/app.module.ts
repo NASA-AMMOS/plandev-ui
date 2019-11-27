@@ -44,7 +44,7 @@ import { MaterialModule } from './material';
       serializer: RouterSerializer,
     }),
     StoreDevtoolsModule.instrument({
-      name: 'merlin-ui',
+      name: 'aerie-ui',
     }),
     EffectsModule.forRoot([MerlinEffects, NavEffects, ToastEffects]),
     MaterialModule,
