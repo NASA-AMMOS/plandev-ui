@@ -54,7 +54,7 @@ pipeline {
             nvm install v10.13.0
 
             # Install dependencies, test, and build
-            npx yarn
+            npx yarn --silent
             npx yarn test
             npx yarn build --prod
 
