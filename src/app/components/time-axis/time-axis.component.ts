@@ -55,8 +55,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   public drawHeight: number = this.height;
   public drawWidth: number;
 
-  constructor(private ref: ElementRef) {
-    this.ref.nativeElement.style.setProperty('--height', `${this.height}px`);
+  constructor(private elRef: ElementRef) {
+    this.elRef.nativeElement.style.setProperty('--height', `${this.height}px`);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -157,7 +157,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   setDrawBounds(): void {
     this.drawHeight = this.height - this.marginTop - this.marginBottom;
     this.drawWidth =
-      this.ref.nativeElement.clientWidth - this.marginLeft - this.marginRight;
+      this.elRef.nativeElement.clientWidth - this.marginLeft - this.marginRight;
   }
 
   showTooltip(event: MouseEvent | null): void {

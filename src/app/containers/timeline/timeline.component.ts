@@ -35,19 +35,22 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   private subs = new SubSink();
 
-  constructor(private ref: ChangeDetectorRef, private store: Store<AppState>) {
+  constructor(
+    private cdRef: ChangeDetectorRef,
+    private store: Store<AppState>,
+  ) {
     this.subs.add(
       this.store.pipe(select(getActivityInstancesBand)).subscribe(band => {
         this.band = band;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
         this.viewTimeRange = viewTimeRange;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
     );
   }

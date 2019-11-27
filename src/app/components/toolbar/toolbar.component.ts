@@ -17,11 +17,14 @@ export class ToolbarComponent implements OnChanges {
   @Input()
   height: number;
 
-  constructor(private ref: ElementRef) {}
+  constructor(private elRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.height) {
-      this.ref.nativeElement.style.setProperty('--height', `${this.height}px`);
+      this.elRef.nativeElement.style.setProperty(
+        '--height',
+        `${this.height}px`,
+      );
     }
   }
 }

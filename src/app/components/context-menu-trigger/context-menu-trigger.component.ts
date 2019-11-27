@@ -26,13 +26,13 @@ export class ContextMenuTriggerComponent implements OnChanges {
   @Input()
   position: { x: number; y: number } = { x: 0, y: 0 };
 
-  constructor(private ref: ElementRef) {}
+  constructor(private elRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.position) {
       const { x, y } = this.position;
-      this.ref.nativeElement.style.setProperty('--left', `${x}px`);
-      this.ref.nativeElement.style.setProperty('--top', `${y}px`);
+      this.elRef.nativeElement.style.setProperty('--left', `${x}px`);
+      this.elRef.nativeElement.style.setProperty('--top', `${y}px`);
     }
   }
 }

@@ -8,7 +8,7 @@ import { Point, StringTMap } from '../../types';
  */
 @Injectable()
 export class SubBandService {
-  constructor(private ref: ChangeDetectorRef) {}
+  constructor(private cdRef: ChangeDetectorRef) {}
 
   canvases: StringTMap<HTMLCanvasElement> = {};
   colorToPoint: StringTMap<StringTMap<Point>> = {};
@@ -63,7 +63,7 @@ export class SubBandService {
     canvas.setAttribute('width', `${width}`);
     hiddenCanvas.setAttribute('height', `${height}`);
     hiddenCanvas.setAttribute('width', `${width}`);
-    this.ref.markForCheck();
+    this.cdRef.markForCheck();
   }
 
   updateColorToPoint(subTimelineId: string, color: string, point: Point): void {

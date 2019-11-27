@@ -34,8 +34,8 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
   private subs = new SubSink();
 
   constructor(
+    private cdRef: ChangeDetectorRef,
     private fb: FormBuilder,
-    private ref: ChangeDetectorRef,
     private router: Router,
     private store: Store<AppState>,
   ) {
@@ -54,11 +54,11 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     this.subs.add(
       this.store.pipe(select(getAdaptations)).subscribe(adaptations => {
         this.adaptations = adaptations;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getPlans)).subscribe(plans => {
         this.plans = plans;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
     );
   }

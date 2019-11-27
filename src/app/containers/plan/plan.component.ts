@@ -77,8 +77,8 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   private subs = new SubSink();
 
   constructor(
+    private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
-    private ref: ChangeDetectorRef,
     private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
@@ -87,27 +87,27 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         .pipe(select(getActivityInstancesForSelectedPlan))
         .subscribe(activityInstances => {
           this.activityInstances = activityInstances;
-          this.ref.markForCheck();
+          this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getActivityTypes)).subscribe(activityTypes => {
         this.activityTypes = activityTypes;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
       this.store
         .pipe(select(getActivityTypesMap))
         .subscribe(activityTypesMap => {
           this.activityTypesMap = activityTypesMap;
-          this.ref.markForCheck();
+          this.cdRef.markForCheck();
         }),
       this.store
         .pipe(select(getSelectedActivityInstance))
         .subscribe(selectedActivityInstance => {
           this.selectedActivityInstance = selectedActivityInstance;
-          this.ref.markForCheck();
+          this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getSelectedPlan)).subscribe(plan => {
         this.plan = plan;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
     );
   }

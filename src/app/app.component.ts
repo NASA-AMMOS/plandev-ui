@@ -21,11 +21,14 @@ export class AppComponent implements OnDestroy {
 
   private subs = new SubSink();
 
-  constructor(private ref: ChangeDetectorRef, private store: Store<AppState>) {
+  constructor(
+    private cdRef: ChangeDetectorRef,
+    private store: Store<AppState>,
+  ) {
     this.subs.add(
       this.store.pipe(select(getLoading)).subscribe(loading => {
         this.loading = loading;
-        this.ref.markForCheck();
+        this.cdRef.markForCheck();
       }),
     );
   }

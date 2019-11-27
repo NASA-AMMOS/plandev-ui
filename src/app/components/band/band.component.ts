@@ -75,8 +75,8 @@ export class BandComponent implements AfterViewInit, OnChanges {
   public drawWidth: number;
 
   constructor(
+    private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
-    private ref: ChangeDetectorRef,
     private subBandService: SubBandService,
   ) {}
 
@@ -227,7 +227,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     this.setDrawBounds();
     this.drawXAxis();
     this.drawYAxis();
-    this.ref.detectChanges();
+    this.cdRef.detectChanges();
   }
 
   setDrawBounds(): void {
