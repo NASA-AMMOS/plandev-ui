@@ -16,6 +16,7 @@ export interface Point {
   color: string;
   id: string;
   opacity: number;
+  selected: boolean;
   type: string;
   x: number;
 }

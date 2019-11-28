@@ -34,9 +34,18 @@ export const getActivityInstances = createSelector(
       : [],
 );
 
+export const getSelectedActivityInstanceId = createSelector(
+  getMerlinState,
+  (state: MerlinState): string | null => state.selectedActivityInstanceId,
+);
+
 export const getActivityInstancesBand = createSelector(
   getActivityInstances,
-  (activityInstances: CActivityInstance[]): Band => ({
+  getSelectedActivityInstanceId,
+  (
+    activityInstances: CActivityInstance[],
+    selectedActivityInstanceId: string | null,
+  ): Band => ({
     height: 200,
     id: 'band0',
     order: 0,
@@ -57,6 +66,7 @@ export const getActivityInstancesBand = createSelector(
           labelHidden: false,
           labelText: point.type,
           opacity: 1.0,
+          selected: selectedActivityInstanceId === point.id,
           type: 'activity',
           x: getUnixEpochTime(point.startTimestamp),
         })),
@@ -125,11 +135,6 @@ export const getLoading = createSelector(
 export const getPlans = createSelector(getMerlinState, (state: MerlinState):
   | CPlan[]
   | null => (state.plans ? Object.values(state.plans) : null));
-
-export const getSelectedActivityInstanceId = createSelector(
-  getMerlinState,
-  (state: MerlinState): string | null => state.selectedActivityInstanceId,
-);
 
 export const getSelectedActivityInstance = createSelector(
   getActivityInstancesMap,

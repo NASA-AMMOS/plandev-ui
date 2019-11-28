@@ -135,7 +135,11 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         ctx.fillStyle = color;
         ctx.fill(rect);
       } else {
-        ctx.fillStyle = point.color;
+        if (point.selected) {
+          ctx.fillStyle = '#f5ec42';
+        } else {
+          ctx.fillStyle = point.color;
+        }
 
         // Border.
         ctx.globalAlpha = point.opacity;
