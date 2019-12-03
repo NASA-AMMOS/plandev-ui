@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "ng build",
-    "changelog": "generate-changelog",
+    "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui",
     "e2e": "ng e2e",
     "lint": "ng lint",
     "ng": "ng",
