@@ -117,6 +117,10 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 
 - All features or bug fixes **must be tested** by one or more specs (unit-tests).
 - We use [Prettier][prettier] and [TSLint](./tslint.json) to keep code formatted.
+  ```shell
+  yarn format
+  yarn lint
+  ```
 
 ## <a name="commit"></a> Commit Message Guidelines
 
