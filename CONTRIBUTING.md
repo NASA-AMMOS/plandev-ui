@@ -1,4 +1,4 @@
-# Contributing to aerie-ui
+# Contributing
 
 We would love for you to contribute to aerie-ui and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
@@ -53,7 +53,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```
 1. Create your patch, **including appropriate test cases**.
 1. Follow our [Coding Rules](#rules).
-1. Run the full aerie-ui test suite and ensure that all tests pass.
+1. Run the full aerie-ui test suite, as described in the [developer documentation][dev-doc], and ensure that all tests pass.
    ```shell
    yarn test
    ```
@@ -200,6 +200,7 @@ The footer should contain any information about **Breaking Changes** and is also
 This document was created using the [Angular contributing document][angular-contributing].
 
 [angular-contributing]: https://github.com/angular/angular/blob/master/CONTRIBUTING.md
+[dev-doc]: ./docs/DEVELOPER.md
 [github]: https://github.jpl.nasa.gov/MPS/aerie-ui
 [github-pulls]: https://github.jpl.nasa.gov/MPS/aerie-ui/pulls
 [new-issue]: https://github.jpl.nasa.gov/MPS/aerie-ui/issues/new/choose
