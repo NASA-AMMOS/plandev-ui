@@ -10,12 +10,17 @@
     "type": "git",
     "url": "https://github.jpl.nasa.gov/MPS/aerie-ui.git"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "node ./scripts/pre.commit.js"
+    }
+  },
   "scripts": {
     "build": "ng build",
     "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui",
     "e2e": "ng e2e",
-    "format": "prettier --write \"src/**/*.{js,ts,css,html}\"",
-    "lint": "ng lint",
+    "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
+    "lint": "ng lint --fix",
     "ng": "ng",
     "ngcc": "ngcc --properties es2015 browser module main --first-only --create-ivy-entry-points -l error",
     "postinstall": "yarn ngcc",
@@ -66,6 +71,7 @@
     "@types/node": "^12.11.1",
     "codelyzer": "^5.1.2",
     "generate-changelog": "^1.8.0",
+    "husky": "^3.1.0",
     "jasmine-core": "~3.5.0",
     "jasmine-spec-reporter": "~4.2.1",
     "karma": "~4.3.0",
