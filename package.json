@@ -2,6 +2,14 @@
   "name": "aerie-ui",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=10.9.0 <13.0.0",
+    "yarn": ">=1.17.3 <1.20.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.jpl.nasa.gov/MPS/aerie-ui.git"
+  },
   "scripts": {
     "build": "ng build",
     "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui",
