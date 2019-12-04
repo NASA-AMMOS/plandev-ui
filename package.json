@@ -25,7 +25,7 @@
     "start": "ng serve",
     "test": "ng test --code-coverage --watch=false --browsers FirefoxHeadless",
     "test:watch": "ng test --browsers FirefoxHeadless",
-    "version": "node git.version.js",
+    "version": "node ./scripts/git.version.js",
     "webdriver-manager:update": "npx webdriver-manager update"
   },
   "dependencies": {
