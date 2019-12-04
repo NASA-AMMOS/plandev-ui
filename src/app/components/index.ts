@@ -9,5 +9,6 @@ export * from './panel-header';
 export * from './placeholder';
 export * from './plans-table';
 export * from './time-axis';
+export * from './time-axis-controls';
 export * from './toolbar';
 export * from './update-activity-instance-form';

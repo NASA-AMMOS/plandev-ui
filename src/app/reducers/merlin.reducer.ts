@@ -93,6 +93,19 @@ export const reducer = createReducer(
     ...state,
     plans: omit(state.plans, action.id),
   })),
+  on(MerlinActions.restoreViewTimeRange, state => {
+    if (state.selectedPlan) {
+      return {
+        ...state,
+        viewTimeRange: {
+          end: getUnixEpochTime(state.selectedPlan.endTimestamp),
+          start: getUnixEpochTime(state.selectedPlan.startTimestamp),
+        },
+      };
+    } else {
+      return state;
+    }
+  }),
   on(MerlinActions.setActivityInstances, (state, { activityInstances }) => ({
     ...state,
     activityInstances,
@@ -154,7 +167,49 @@ export const reducer = createReducer(
     ...state,
     viewTimeRange,
   })),
+  on(MerlinActions.zoomInViewTimeRange, state => ({
+    ...state,
+    viewTimeRange: changeZoom(state.viewTimeRange, 10),
+  })),
+  on(MerlinActions.zoomOutViewTimeRange, state => {
+    if (state.selectedPlan) {
+      let { start, end } = changeZoom(state.viewTimeRange, -10);
+      const selectedPlanStart = getUnixEpochTime(
+        state.selectedPlan.startTimestamp,
+      );
+      const selectedPlanEnd = getUnixEpochTime(state.selectedPlan.endTimestamp);
+
+      if (start < selectedPlanStart) {
+        start = selectedPlanStart;
+      }
+
+      if (end > selectedPlanEnd) {
+        end = selectedPlanEnd;
+      }
+
+      return {
+        ...state,
+        viewTimeRange: {
+          end,
+          start,
+        },
+      };
+    } else {
+      return state;
+    }
+  }),
 );
+
+function changeZoom(viewTimeRange: TimeRange, delta: number): TimeRange {
+  const { end, start } = viewTimeRange;
+  const range = end - start;
+  const zoomAmount = range / delta;
+
+  return {
+    end: end - zoomAmount,
+    start: start + zoomAmount,
+  };
+}
 
 function toActivityInstanceParameterMap(
   parameters: StringTMap<any>,

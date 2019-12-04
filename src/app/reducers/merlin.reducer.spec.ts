@@ -1,4 +1,5 @@
 import { MerlinActions } from '../actions';
+import { getUnixEpochTime } from '../functions';
 import {
   activityInstanceId,
   adaptationId,
@@ -122,6 +123,39 @@ describe('merlin reducer', () => {
       expect(state).toEqual({
         ...initialState,
         plans: {},
+      });
+    });
+  });
+
+  describe('restoreViewTimeRange', () => {
+    it('viewTimeRange should not change when there is no selectedPlan', () => {
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.restoreViewTimeRange(),
+      );
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+
+    it('viewTimeRange should update with the selectedPlan time range', () => {
+      let state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.setSelectedPlanAndActivityTypes({
+          activityTypes: cActivityTypeMap,
+          selectedPlan: cPlan,
+        }),
+      );
+      state = reducer(state, MerlinActions.zoomInViewTimeRange());
+      state = reducer(state, MerlinActions.restoreViewTimeRange());
+      expect(state).toEqual({
+        ...initialState,
+        activityTypes: cActivityTypeMap,
+        selectedPlan: cPlan,
+        viewTimeRange: {
+          end: getUnixEpochTime(cPlan.endTimestamp),
+          start: getUnixEpochTime(cPlan.startTimestamp),
+        },
       });
     });
   });
@@ -275,6 +309,49 @@ describe('merlin reducer', () => {
       expect(state).toEqual({
         ...initialState,
         viewTimeRange,
+      });
+    });
+  });
+
+  describe('zoomInViewTimeRange', () => {
+    it('should properly zoom in the viewTimeRange', () => {
+      let state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.updateViewTimeRange({
+          viewTimeRange: { start: 10, end: 110 },
+        }),
+      );
+      state = reducer(state, MerlinActions.zoomInViewTimeRange());
+      expect(state).toEqual({
+        ...initialState,
+        viewTimeRange: {
+          end: 100,
+          start: 20,
+        },
+      });
+    });
+  });
+
+  describe('zoomOutViewTimeRange', () => {
+    it('should properly zoom out the viewTimeRange', () => {
+      let state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.setSelectedPlanAndActivityTypes({
+          activityTypes: cActivityTypeMap,
+          selectedPlan: cPlan,
+        }),
+      );
+      state = reducer(state, MerlinActions.zoomInViewTimeRange());
+      state = reducer(state, MerlinActions.zoomInViewTimeRange());
+      state = reducer(state, MerlinActions.zoomOutViewTimeRange());
+      expect(state).toEqual({
+        ...initialState,
+        activityTypes: cActivityTypeMap,
+        selectedPlan: cPlan,
+        viewTimeRange: {
+          end: 1577750408840,
+          start: 1577750401160,
+        },
       });
     });
   });

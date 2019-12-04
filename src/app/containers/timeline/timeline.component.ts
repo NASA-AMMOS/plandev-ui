@@ -65,6 +65,10 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  onRestore(): void {
+    this.store.dispatch(MerlinActions.restoreViewTimeRange());
+  }
+
   onSelectPoint(selectedActivityInstanceId: string): void {
     this.store.dispatch(
       MerlinActions.setSelectedActivityInstanceId({
@@ -77,10 +81,18 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     this.store.dispatch(MerlinActions.updateViewTimeRange({ viewTimeRange }));
   }
 
+  onZoomIn(): void {
+    this.store.dispatch(MerlinActions.zoomInViewTimeRange());
+  }
+
+  onZoomOut(): void {
+    this.store.dispatch(MerlinActions.zoomOutViewTimeRange());
+  }
+
   /**
-   * @todo find a better solution than using 140 to account for the padding before the band
+   * @todo find a better solution than using 180 to account for the padding before the band
    */
   setBandHeight(): void {
-    this.bandHeight = this.height - 140;
+    this.bandHeight = this.height - 180;
   }
 }

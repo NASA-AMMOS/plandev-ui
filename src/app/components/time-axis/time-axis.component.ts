@@ -65,6 +65,10 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     if (changes.maxTimeRange && !changes.maxTimeRange.isFirstChange()) {
       this.redraw();
     }
+
+    if (changes.viewTimeRange && !changes.viewTimeRange.isFirstChange()) {
+      this.redraw();
+    }
   }
 
   ngAfterViewInit(): void {

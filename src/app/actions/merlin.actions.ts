@@ -79,6 +79,10 @@ export const openAboutDialog = createAction('[merlin] openAboutDialog');
 
 export const resize = createAction('[merlin] resize');
 
+export const restoreViewTimeRange = createAction(
+  '[merlin] restoreViewTimeRange',
+);
+
 export const setActivityInstances = createAction(
   '[merlin] setActivityInstances',
   props<{ planId: string; activityInstances: CActivityInstanceMap }>(),
@@ -129,4 +133,10 @@ export const updateActivityInstanceSuccess = createAction(
 export const updateViewTimeRange = createAction(
   '[merlin] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),
+);
+
+export const zoomInViewTimeRange = createAction('[merlin] zoomInViewTimeRange');
+
+export const zoomOutViewTimeRange = createAction(
+  '[merlin] zoomOutViewTimeRange',
 );
