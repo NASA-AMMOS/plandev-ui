@@ -2,7 +2,7 @@
   background: white;
   border: 1px solid lightgrey;
   display: block;
-  height: var(--height, 50px);
+  height: var(--height, 60px);
   position: relative;
   width: 100%;
 }

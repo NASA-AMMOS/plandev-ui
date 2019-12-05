@@ -114,7 +114,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   drawXAxis(): void {
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
     const xAxis = d3
-      .axisBottom(xScale.nice())
+      .axisBottom(xScale)
       .ticks(5)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
       .tickSizeInner(-this.drawHeight);

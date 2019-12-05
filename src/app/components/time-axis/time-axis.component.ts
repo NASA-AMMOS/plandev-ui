@@ -85,7 +85,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     const x = this.getXScale();
 
     const xAxis = d3
-      .axisBottom(x.nice())
+      .axisBottom(x)
       .ticks(5)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
       .tickSizeInner(-this.drawHeight)
@@ -98,8 +98,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   drawXBrush(): void {
-    const x = this.getXScale();
-
     const xBrush = d3
       .brushX()
       .extent([
@@ -117,15 +115,14 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
       });
 
     const brush = d3.select(this.brush.nativeElement).call(xBrush);
-    const range = [
-      new Date(this.viewTimeRange.start),
-      new Date(this.viewTimeRange.end),
-    ];
-    brush.call(xBrush.move, range.map(x));
+    brush.call(xBrush.move, null);
   }
 
   getDomain(): Date[] {
-    return [new Date(this.maxTimeRange.start), new Date(this.maxTimeRange.end)];
+    return [
+      new Date(this.viewTimeRange.start),
+      new Date(this.viewTimeRange.end),
+    ];
   }
 
   getMousePosition(svg: SVGGElement, event: MouseEvent) {
