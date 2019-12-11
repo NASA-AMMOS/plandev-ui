@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "ng build",
-    "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui",
+    "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui -t 88433ae...904d97a",
     "e2e": "ng e2e",
     "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
     "lint": "ng lint --fix",

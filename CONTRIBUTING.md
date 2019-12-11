@@ -129,17 +129,17 @@ We have very precise rules over how our git commit messages can be formatted. Th
 ### Commit Message Format
 
 Each commit message consists of a **header**, a **body** and a **footer**. The header has a special
-format that includes a **type**, a **scope** and a **subject**:
+format that includes a **type** and a **subject**:
 
 ```
-<type>(<scope>): <subject>
+<type>: <subject>
 <BLANK LINE>
 <body>
 <BLANK LINE>
 <footer>
 ```
 
-The **header** is mandatory and the **scope** of the header is optional.
+The **header** is mandatory.
 
 Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
 
@@ -176,10 +176,6 @@ Must be one of the following:
 - **refactor**: A code change that neither fixes a bug nor adds a feature
 - **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
 - **test**: Adding missing tests or correcting existing tests
-
-### Scope
-
-The scope should be the name of the code area affected (as perceived by the person reading the changelog generated from commit messages). Remember this is an optional field. If you don't have a good idea for what the scope should be you can just leave it out.
 
 ### Subject
 
