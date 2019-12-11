@@ -15,14 +15,12 @@ export interface Band {
 export interface Point {
   color: string;
   id: string;
-  opacity: number;
   selected: boolean;
   type: string;
   x: number;
 }
 
 export interface PointActivity extends Point {
-  borderWidth: number;
   duration: number;
   labelAlign: CanvasTextAlign;
   labelBaseline: CanvasTextBaseline;
@@ -41,4 +39,10 @@ export interface SubBand {
 export interface SubBandActivity extends SubBand {
   layout: string;
   points: PointActivity[];
+}
+
+export interface UpdatePoint {
+  id: string;
+  type: string;
+  value: any;
 }

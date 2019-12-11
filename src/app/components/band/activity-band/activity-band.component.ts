@@ -141,15 +141,8 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
           ctx.fillStyle = point.color;
         }
 
-        // Border.
-        ctx.globalAlpha = point.opacity;
-        ctx.lineWidth = point.borderWidth;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 1.0)';
-        ctx.stroke(rect);
-
         // Rect.
         ctx.fill(rect);
-        ctx.globalAlpha = 1.0;
 
         // Label Text.
         if (!point.labelHidden) {
@@ -188,14 +181,14 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
     let y = 0;
     const rows = {};
-    const rowGap = 2;
+    const rowGap = 0.5;
 
     for (let i = 0, l = points.length; i < l; ++i) {
       const point = points[i];
       const x = Math.floor(xScale(point.x));
       const end = Math.floor(xScale(point.x + point.duration));
 
-      let row = 1; // Initial padding.
+      let row = 0.5; // Initial padding.
       let rowFound = false;
       while (!rowFound) {
         if (rows[row] !== undefined && rows[row] >= x) {

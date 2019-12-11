@@ -12,7 +12,6 @@ import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { MerlinActions } from '../../actions';
 import { AppState } from '../../app-store';
-import { UpdateActivityInstance } from '../../components';
 import {
   getActivityInstancesForSelectedPlan,
   getActivityTypes,
@@ -26,6 +25,7 @@ import {
   CActivityTypeMap,
   CPlan,
   SActivityInstance,
+  UpdateActivityInstance,
 } from '../../types';
 
 @Component({

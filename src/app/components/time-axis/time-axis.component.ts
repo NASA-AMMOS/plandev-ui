@@ -12,7 +12,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as d3 from 'd3';
-import { getDoyTimestamp, hideTooltip, showTooltip } from '../../functions';
+import {
+  getDoyTimestamp,
+  getSvgMousePosition,
+  hideTooltip,
+  showTooltip,
+} from '../../functions';
 import { TimeRange } from '../../types';
 
 @Component({
@@ -125,14 +130,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     ];
   }
 
-  getMousePosition(svg: SVGGElement, event: MouseEvent) {
-    const CTM: DOMMatrix = svg.getScreenCTM();
-    return {
-      x: (event.clientX - CTM.e) / CTM.a,
-      y: (event.clientY - CTM.f) / CTM.d,
-    };
-  }
-
   getXScale(): d3.ScaleTime<number, number> {
     return d3
       .scaleTime()
@@ -163,7 +160,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   showTooltip(event: MouseEvent | null): void {
     if (event) {
-      const { x } = this.getMousePosition(this.brush.nativeElement, event);
+      const { x } = getSvgMousePosition(this.brush.nativeElement, event);
       const xScale = this.getXScale();
       const unixEpochTime = xScale.invert(x).getTime();
       const doyTimestamp = getDoyTimestamp(unixEpochTime);

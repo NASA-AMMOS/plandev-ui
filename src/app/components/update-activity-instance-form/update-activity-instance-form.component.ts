@@ -12,12 +12,8 @@ import {
   CActivityInstance,
   CActivityTypeMap,
   SActivityInstance,
+  UpdateActivityInstance,
 } from '../../types';
-
-export interface UpdateActivityInstance {
-  activityInstance: Partial<SActivityInstance>;
-  activityInstanceId: string;
-}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,

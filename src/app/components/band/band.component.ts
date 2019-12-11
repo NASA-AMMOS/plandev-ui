@@ -16,12 +16,13 @@ import * as d3 from 'd3';
 import {
   getDoyTimestamp,
   getPointFromCanvasSelection,
+  getSvgMousePosition,
   getTooltipTextForPoints,
   getXScale,
   hideTooltip,
   showTooltip,
 } from '../../functions';
-import { Axis, Point, SubBand, TimeRange } from '../../types';
+import { Axis, Point, SubBand, TimeRange, UpdatePoint } from '../../types';
 import { SubBandService } from './sub-band.service';
 
 @Component({
@@ -63,13 +64,19 @@ export class BandComponent implements AfterViewInit, OnChanges {
   yAxis: Axis;
 
   @Output()
+  savePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+
+  @Output()
   selectPoint: EventEmitter<string> = new EventEmitter<string>();
+
+  @Output()
+  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
 
   @ViewChild('axisContainerGroup', { static: true })
   axisContainerGroup: ElementRef;
 
-  @ViewChild('interactionContainer', { static: true })
-  interactionContainer: ElementRef;
+  @ViewChild('interactionContainerSvg', { static: true })
+  interactionContainerSvg: ElementRef;
 
   public drawHeight: number;
   public drawWidth: number;
@@ -118,7 +125,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
       .ticks(5)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
       .tickSizeInner(-this.drawHeight);
-
     const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--x').remove();
     const axisG = axisContainerGroup
@@ -142,6 +148,21 @@ export class BandComponent implements AfterViewInit, OnChanges {
       .attr('font-size', `${this.yAxis.labelFontSize}px`)
       .style('text-anchor', 'middle')
       .text(this.yAxis.labelText);
+  }
+
+  getTimeFromSvgMousePosition(
+    event: MouseEvent,
+    offsetX: number = 0,
+  ): { doyTimestamp: string; unixEpochTime: number } {
+    const clickPosition = getSvgMousePosition(
+      this.interactionContainerSvg.nativeElement,
+      event,
+    );
+    const x = clickPosition.x - offsetX;
+    const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+    const unixEpochTime = xScale.invert(x).getTime();
+    const doyTimestamp = getDoyTimestamp(unixEpochTime);
+    return { doyTimestamp, unixEpochTime };
   }
 
   getPointsFromMouseEvent(event: MouseEvent): Point[] {
@@ -168,48 +189,96 @@ export class BandComponent implements AfterViewInit, OnChanges {
   }
 
   initEvents(): void {
-    d3.select(this.interactionContainer.nativeElement).on('mousedown', () => {
-      const event = d3.event as MouseEvent;
-      const points = this.getPointsFromMouseEvent(event);
+    let offsetX = 0;
 
-      if (points.length) {
-        const [{ id }] = points;
-        this.selectPoint.emit(id);
-      }
-    });
-
-    d3.select(this.interactionContainer.nativeElement).call(
+    d3.select(this.interactionContainerSvg.nativeElement).call(
       d3
         .drag()
-        .subject((): {} => {
-          const event = d3.event.sourceEvent as MouseEvent;
-          const points = this.getPointsFromMouseEvent(event);
+        .subject(() => {
+          const { event } = d3;
+          const { sourceEvent } = event;
+          const points = this.getPointsFromMouseEvent(sourceEvent);
 
           if (points.length) {
-            return points[0];
+            const [point] = points;
+            this.selectPoint.emit(point.id);
+            return point;
           }
 
           return {};
         })
-        .on('start', () => {})
-        .on('drag', () => {})
-        .on('end', () => {})
-        .on('start.render drag.render end.render', () => {}),
+        .on('start', () => {
+          const { event } = d3;
+          const { sourceEvent, subject: point } = event;
+          const { x } = getSvgMousePosition(
+            this.interactionContainerSvg.nativeElement,
+            sourceEvent,
+          );
+          const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+          offsetX = x - xScale(point.x);
+        })
+        .on('drag', () => {
+          const { event } = d3;
+          const { sourceEvent, subject: point } = event;
+          const { id, type } = point;
+          const {
+            doyTimestamp,
+            unixEpochTime,
+          } = this.getTimeFromSvgMousePosition(sourceEvent, offsetX);
+          hideTooltip();
+
+          if (
+            id &&
+            type &&
+            type === 'activity' &&
+            unixEpochTime >= this.maxTimeRange.start &&
+            unixEpochTime <= this.maxTimeRange.end
+          ) {
+            const newPoint = { ...point, x: unixEpochTime };
+            const tooltipText = getTooltipTextForPoints([newPoint]);
+            showTooltip(sourceEvent, tooltipText, this.drawWidth);
+
+            this.updatePoint.emit({
+              id,
+              type,
+              value: { startTimestamp: doyTimestamp },
+            });
+          }
+        })
+        .on('end', () => {
+          const { event } = d3;
+          const { sourceEvent, subject: point } = event;
+          const { id, type } = point;
+          const {
+            doyTimestamp,
+            unixEpochTime,
+          } = this.getTimeFromSvgMousePosition(sourceEvent, offsetX);
+
+          if (id && type && type === 'activity' && point.x !== unixEpochTime) {
+            this.savePoint.emit({
+              id,
+              type,
+              value: { startTimestamp: doyTimestamp },
+            });
+          }
+        }),
     );
 
-    d3.select(this.interactionContainer.nativeElement).on('mousemove', () => {
-      const event = d3.event as MouseEvent;
-      const points = this.getPointsFromMouseEvent(event);
+    d3.select(this.interactionContainerSvg.nativeElement).on(
+      'mousemove',
+      () => {
+        const event = d3.event as MouseEvent;
+        const points = this.getPointsFromMouseEvent(event);
+        if (points.length) {
+          const tooltipText = getTooltipTextForPoints(points);
+          showTooltip(event, tooltipText, this.drawWidth);
+        } else {
+          hideTooltip();
+        }
+      },
+    );
 
-      if (points.length) {
-        const tooltipText = getTooltipTextForPoints(points);
-        showTooltip(event, tooltipText, this.drawWidth);
-      } else {
-        hideTooltip();
-      }
-    });
-
-    d3.select(this.interactionContainer.nativeElement).on('mouseout', () => {
+    d3.select(this.interactionContainerSvg.nativeElement).on('mouseout', () => {
       hideTooltip();
     });
   }

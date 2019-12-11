@@ -7,6 +7,7 @@ import {
   OnDestroy,
   SimpleChanges,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { MerlinActions } from '../../actions';
@@ -16,7 +17,7 @@ import {
   getMaxTimeRange,
   getViewTimeRange,
 } from '../../selectors';
-import { Band, TimeRange } from '../../types';
+import { Band, TimeRange, UpdatePoint } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +38,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
     this.subs.add(
@@ -69,12 +71,37 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     this.store.dispatch(MerlinActions.restoreViewTimeRange());
   }
 
+  onSavePoint(update: UpdatePoint): void {
+    if (update.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      this.store.dispatch(
+        MerlinActions.updateActivityInstance({
+          activityInstance: update.value,
+          activityInstanceId: update.id,
+          planId,
+        }),
+      );
+    }
+  }
+
   onSelectPoint(selectedActivityInstanceId: string): void {
     this.store.dispatch(
       MerlinActions.setSelectedActivityInstanceId({
+        keepSelected: true,
         selectedActivityInstanceId,
       }),
     );
+  }
+
+  onUpdatePoint(update: UpdatePoint): void {
+    if (update.type === 'activity') {
+      this.store.dispatch(
+        MerlinActions.updateActivityInstanceProps({
+          activityInstanceId: update.id,
+          props: update.value,
+        }),
+      );
+    }
   }
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {

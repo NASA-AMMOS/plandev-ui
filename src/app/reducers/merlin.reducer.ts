@@ -124,8 +124,11 @@ export const reducer = createReducer(
   })),
   on(
     MerlinActions.setSelectedActivityInstanceId,
-    (state, { selectedActivityInstanceId }) => {
-      if (state.selectedActivityInstanceId === selectedActivityInstanceId) {
+    (state, { keepSelected, selectedActivityInstanceId }) => {
+      if (
+        !keepSelected &&
+        state.selectedActivityInstanceId === selectedActivityInstanceId
+      ) {
         return {
           ...state,
           selectedActivityInstanceId: null,
@@ -150,6 +153,16 @@ export const reducer = createReducer(
       },
     }),
   ),
+  on(MerlinActions.updateActivityInstanceProps, (state, action) => ({
+    ...state,
+    activityInstances: {
+      ...state.activityInstances,
+      [action.activityInstanceId]: {
+        ...state.activityInstances[action.activityInstanceId],
+        ...action.props,
+      },
+    },
+  })),
   on(MerlinActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
@@ -212,7 +225,7 @@ function changeZoom(viewTimeRange: TimeRange, delta: number): TimeRange {
 }
 
 function toActivityInstanceParameterMap(
-  parameters: StringTMap<any>,
+  parameters: StringTMap<any> = {},
 ): CActivityInstanceParameterMap {
   return Object.keys(parameters).reduce(
     (

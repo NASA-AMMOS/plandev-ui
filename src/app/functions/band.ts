@@ -44,6 +44,15 @@ export function getPointFromCanvasSelection(
   return null;
 }
 
+export function getSvgMousePosition(svg: SVGGElement, event: MouseEvent) {
+  const CTM: DOMMatrix = svg.getScreenCTM();
+  const { clientX, clientY } = event;
+  return {
+    x: (clientX - CTM.e) / CTM.a,
+    y: (clientY - CTM.f) / CTM.d,
+  };
+}
+
 export function getXScale(
   timeRange: TimeRange = { end: 0, start: 0 },
   drawWidth: number,

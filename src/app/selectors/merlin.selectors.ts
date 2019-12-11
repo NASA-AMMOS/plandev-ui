@@ -54,7 +54,6 @@ export const getActivityInstancesBand = createSelector(
         id: 'band0subBand0',
         layout: 'waterfall',
         points: activityInstances.map(point => ({
-          borderWidth: 1,
           color: '#d651ff',
           duration: 0,
           id: point.id,
@@ -65,7 +64,6 @@ export const getActivityInstancesBand = createSelector(
           labelFontSize: 12,
           labelHidden: false,
           labelText: point.type,
-          opacity: 1.0,
           selected: selectedActivityInstanceId === point.id,
           type: 'activity',
           x: getUnixEpochTime(point.startTimestamp),

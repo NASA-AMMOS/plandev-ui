@@ -1,5 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 import {
+  CActivityInstance,
   CActivityInstanceMap,
   CActivityTypeMap,
   CAdaptationMap,
@@ -105,7 +106,10 @@ export const setPlans = createAction(
 
 export const setSelectedActivityInstanceId = createAction(
   '[merlin] setSelectedActivityInstanceId',
-  props<{ selectedActivityInstanceId: string | null }>(),
+  props<{
+    selectedActivityInstanceId: string | null;
+    keepSelected?: boolean;
+  }>(),
 );
 
 export const setSelectedPlanAndActivityTypes = createAction(
@@ -120,6 +124,11 @@ export const updateActivityInstance = createAction(
     activityInstanceId: string;
     activityInstance: Partial<SActivityInstance>;
   }>(),
+);
+
+export const updateActivityInstanceProps = createAction(
+  '[merlin] updateActivityInstanceProps',
+  props<{ activityInstanceId: string; props: Partial<CActivityInstance> }>(),
 );
 
 export const updateActivityInstanceSuccess = createAction(

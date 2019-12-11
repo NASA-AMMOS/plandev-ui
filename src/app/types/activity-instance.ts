@@ -15,3 +15,8 @@ export interface SActivityInstance {
   type: string;
 }
 export type SActivityInstanceMap = StringTMap<SActivityInstance>;
+
+export interface UpdateActivityInstance {
+  activityInstance: Partial<SActivityInstance>;
+  activityInstanceId: string;
+}

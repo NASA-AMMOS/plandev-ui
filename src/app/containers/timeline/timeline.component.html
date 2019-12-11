@@ -15,5 +15,7 @@
   [subBands]="band.subBands"
   [viewTimeRange]="viewTimeRange"
   [yAxis]="band.yAxis"
+  (savePoint)="onSavePoint($event)"
   (selectPoint)="onSelectPoint($event)"
+  (updatePoint)="onUpdatePoint($event)"
 ></app-band>
