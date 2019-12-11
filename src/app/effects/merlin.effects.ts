@@ -285,10 +285,10 @@ export class MerlinEffects {
       return this.actions.pipe(
         ofType(MerlinActions.openAboutDialog),
         switchMap(() => {
-          const { packageJsonName, packageJsonVersion, tag } = version;
+          const { name, tag } = version;
           this.dialog.open(AboutDialogComponent, {
             data: {
-              version: `${packageJsonName} ${packageJsonVersion} - ${tag}`,
+              version: `${name} - ${tag}`,
             },
             width: `500px`,
           });
