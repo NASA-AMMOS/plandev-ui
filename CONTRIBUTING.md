@@ -148,7 +148,7 @@ The footer should contain a [closing reference to an issue](https://help.github.
 Samples:
 
 ```
-docs(changelog): update changelog to beta.5
+docs: update changelog to beta.5
 ```
 
 ```
