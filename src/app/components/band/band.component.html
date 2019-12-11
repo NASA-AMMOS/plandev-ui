@@ -45,3 +45,20 @@
     [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'"
   ></g>
 </svg>
+
+<app-context-menu-trigger
+  #activityBandContextMenuTrigger="matMenuTrigger"
+  [matMenuTriggerFor]="activityBandContextMenu"
+  [position]="contextMenuPosition"
+></app-context-menu-trigger>
+<mat-menu #activityBandContextMenu="matMenu">
+  <ng-template matMenuContent let-item="item">
+    <button
+      mat-menu-item
+      (click)="deletePoint.emit({ id: item.id, type: 'activity' })"
+    >
+      <mat-icon>delete_forever</mat-icon>
+      <span>Delete</span>
+    </button>
+  </ng-template>
+</mat-menu>

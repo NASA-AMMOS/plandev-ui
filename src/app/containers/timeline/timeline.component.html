@@ -15,6 +15,7 @@
   [subBands]="band.subBands"
   [viewTimeRange]="viewTimeRange"
   [yAxis]="band.yAxis"
+  (deletePoint)="onDeletePoint($event)"
   (savePoint)="onSavePoint($event)"
   (selectPoint)="onSelectPoint($event)"
   (updatePoint)="onUpdatePoint($event)"

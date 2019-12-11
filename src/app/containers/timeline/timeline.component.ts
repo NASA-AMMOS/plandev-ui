@@ -17,7 +17,7 @@ import {
   getMaxTimeRange,
   getViewTimeRange,
 } from '../../selectors';
-import { Band, TimeRange, UpdatePoint } from '../../types';
+import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,13 +71,25 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     this.store.dispatch(MerlinActions.restoreViewTimeRange());
   }
 
-  onSavePoint(update: UpdatePoint): void {
-    if (update.type === 'activity') {
+  onDeletePoint(event: DeletePoint): void {
+    if (event.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      this.store.dispatch(
+        MerlinActions.deleteActivityInstance({
+          activityInstanceId: event.id,
+          planId,
+        }),
+      );
+    }
+  }
+
+  onSavePoint(event: UpdatePoint): void {
+    if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
       this.store.dispatch(
         MerlinActions.updateActivityInstance({
-          activityInstance: update.value,
-          activityInstanceId: update.id,
+          activityInstance: event.value,
+          activityInstanceId: event.id,
           planId,
         }),
       );
@@ -93,12 +105,12 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     );
   }
 
-  onUpdatePoint(update: UpdatePoint): void {
-    if (update.type === 'activity') {
+  onUpdatePoint(event: UpdatePoint): void {
+    if (event.type === 'activity') {
       this.store.dispatch(
         MerlinActions.updateActivityInstanceProps({
-          activityInstanceId: update.id,
-          props: update.value,
+          activityInstanceId: event.id,
+          props: event.value,
         }),
       );
     }

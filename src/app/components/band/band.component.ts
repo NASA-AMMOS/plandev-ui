@@ -12,7 +12,9 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { MatMenuTrigger } from '@angular/material';
 import * as d3 from 'd3';
+import { ContextMenu } from '../../classes';
 import {
   getDoyTimestamp,
   getPointFromCanvasSelection,
@@ -22,7 +24,14 @@ import {
   hideTooltip,
   showTooltip,
 } from '../../functions';
-import { Axis, Point, SubBand, TimeRange, UpdatePoint } from '../../types';
+import {
+  Axis,
+  DeletePoint,
+  Point,
+  SubBand,
+  TimeRange,
+  UpdatePoint,
+} from '../../types';
 import { SubBandService } from './sub-band.service';
 
 @Component({
@@ -32,7 +41,8 @@ import { SubBandService } from './sub-band.service';
   styleUrls: [`./band.component.css`],
   templateUrl: './band.component.html',
 })
-export class BandComponent implements AfterViewInit, OnChanges {
+export class BandComponent extends ContextMenu
+  implements AfterViewInit, OnChanges {
   @Input()
   height: number;
 
@@ -64,6 +74,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
   yAxis: Axis;
 
   @Output()
+  deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
+
+  @Output()
   savePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
 
   @Output()
@@ -71,6 +84,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+
+  @ViewChild('activityBandContextMenuTrigger', { static: true })
+  activityBandContextMenuTrigger: MatMenuTrigger;
 
   @ViewChild('axisContainerGroup', { static: true })
   axisContainerGroup: ElementRef;
@@ -85,7 +101,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
     private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
     private subBandService: SubBandService,
-  ) {}
+  ) {
+    super();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     let shouldRedraw = false;
@@ -190,6 +208,27 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   initEvents(): void {
     let offsetX = 0;
+
+    d3.select(this.interactionContainerSvg.nativeElement).on(
+      'contextmenu',
+      () => {
+        const { event } = d3;
+        const points = this.getPointsFromMouseEvent(event);
+        hideTooltip();
+
+        if (points.length) {
+          const [point] = points;
+
+          if (point.type === 'activity') {
+            this.onContextMenu(
+              event,
+              this.activityBandContextMenuTrigger,
+              point,
+            );
+          }
+        }
+      },
+    );
 
     d3.select(this.interactionContainerSvg.nativeElement).call(
       d3

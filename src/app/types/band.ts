@@ -12,6 +12,11 @@ export interface Band {
   yAxis: Axis;
 }
 
+export interface DeletePoint {
+  id: string;
+  type: string;
+}
+
 export interface Point {
   color: string;
   id: string;
