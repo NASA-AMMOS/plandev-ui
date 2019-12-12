@@ -170,9 +170,9 @@ export const reducer = createReducer(
       [action.activityInstanceId]: {
         ...state.activityInstances[action.activityInstanceId],
         ...action.activityInstance,
-        parameters: toActivityInstanceParameterMap(
-          action.activityInstance.parameters,
-        ),
+        parameters: action.activityInstance.parameters
+          ? toActivityInstanceParameterMap(action.activityInstance.parameters)
+          : state.activityInstances[action.activityInstanceId].parameters,
       },
     },
   })),
