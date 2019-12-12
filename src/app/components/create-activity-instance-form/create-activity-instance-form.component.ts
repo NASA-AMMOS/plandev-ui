@@ -54,7 +54,7 @@ export class CreateActivityInstanceFormComponent implements OnDestroy {
               this.fb.group({
                 name: parameter.name,
                 type: parameter.type,
-                value: '',
+                value: parameter.default,
               }),
             );
           });

@@ -39,25 +39,27 @@ export class ApiService {
         map((sActivityInstanceMap: SActivityInstanceMap) => {
           return Object.keys(sActivityInstanceMap).reduce(
             (cActivityInstanceMap: CActivityInstanceMap, id: string) => {
+              const { parameters } = sActivityInstanceMap[id];
+
               cActivityInstanceMap[id] = {
                 ...sActivityInstanceMap[id],
                 id,
-                parameters: Object.keys(
-                  sActivityInstanceMap[id].parameters,
-                ).reduce(
+                parameters: Object.keys(parameters).reduce(
                   (
                     cActivityInstanceParameterMap: CActivityInstanceParameterMap,
                     name: string,
                   ) => {
                     cActivityInstanceParameterMap[name] = {
                       name,
-                      value: sActivityInstanceMap[id].parameters[name],
+                      value: parameters[name],
                     };
+
                     return cActivityInstanceParameterMap;
                   },
                   {},
                 ),
               };
+
               return cActivityInstanceMap;
             },
             {},
@@ -88,31 +90,36 @@ export class ApiService {
                   cActivityTypeMap: CActivityTypeMap,
                   activityTypeName: string,
                 ) => {
+                  const { defaults, parameters } = sActivityTypeMap[
+                    activityTypeName
+                  ];
+
                   cActivityTypeMap[activityTypeName] = {
-                    ...sActivityTypeMap[activityTypeName],
                     name: activityTypeName,
-                    parameters: Object.keys(
-                      sActivityTypeMap[activityTypeName].parameters,
-                    ).reduce(
+                    parameters: Object.keys(parameters).reduce(
                       (
                         cActivityTypeParameters: CActivityTypeParameter[],
                         parameterName: string,
                       ) => {
+                        const { type } = parameters[parameterName];
+
                         cActivityTypeParameters.push({
-                          ...sActivityTypeMap[activityTypeName].parameters[
-                            parameterName
-                          ],
+                          default: defaults[parameterName],
                           name: parameterName,
+                          type,
                         });
+
                         return cActivityTypeParameters;
                       },
                       [],
                     ),
                   };
+
                   return cActivityTypeMap;
                 },
                 {},
               );
+
               return { activityTypes, plan };
             }),
           );

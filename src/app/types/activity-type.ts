@@ -11,6 +11,7 @@ export interface CActivityType {
 export type CActivityTypeMap = StringTMap<CActivityType>;
 
 export interface SActivityType {
+  defaults: StringTMap<any>;
   parameters: StringTMap<SActivityTypeParameter>;
 }
 export type SActivityTypeMap = StringTMap<SActivityType>;
