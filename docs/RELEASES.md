@@ -1,6 +1,6 @@
 # Releases
 
-This document describes important release dates and epics for aerie-ui.  
+This document describes important release versions, dates and epics for aerie-ui.  
 For more information on specific requirements, see the [Aerie requirements document][Aerie-requirements-document].
 
 ## A29.1
