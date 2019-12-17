@@ -1,6 +1,7 @@
 # Releases
 
-This document describes important release dates and epics for aerie-ui.
+This document describes important release dates and epics for aerie-ui.  
+For more information on specific requirements, see the [Aerie requirements document][Aerie-requirements-document].
 
 ## A29.1
 
@@ -27,6 +28,7 @@ This document describes important release dates and epics for aerie-ui.
   - [AERIE-260][AERIE-260]
 
 [A29.1-release-planning]: https://docs.google.com/presentation/d/13CW85elnvcJseyQqSB8fdYQcCAUwY10M1MpMTiWGvpU/edit#slide=id.g78d9607261_2_88
+[Aerie-requirements-document]: https://docs.google.com/spreadsheets/d/1wa2v_kyYmY2v5XSo0_bWpXmHcMmKLoTchVr8Tb-bGz0/edit?ts=5df95b6d#gid=0
 [AERIE-259]: https://jira.jpl.nasa.gov/browse/AERIE-259
 [AERIE-260]: https://jira.jpl.nasa.gov/browse/AERIE-260
 [AERIE-499]: https://jira.jpl.nasa.gov/browse/AERIE-499
