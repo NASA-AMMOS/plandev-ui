@@ -13,6 +13,8 @@ This document describes important release dates and epics for aerie-ui.
 - Epics:
   - [AERIE-499][AERIE-499]
   - [AERIE-507][AERIE-507]
+  - [AERIE-513][AERIE-513]
+    - Will implement a login page for aerie-ui and connect it to CAM.
 
 ## A29.0
 
@@ -29,3 +31,4 @@ This document describes important release dates and epics for aerie-ui.
 [AERIE-260]: https://jira.jpl.nasa.gov/browse/AERIE-260
 [AERIE-499]: https://jira.jpl.nasa.gov/browse/AERIE-499
 [AERIE-507]: https://jira.jpl.nasa.gov/browse/AERIE-507
+[AERIE-513]: https://jira.jpl.nasa.gov/browse/AERIE-513
