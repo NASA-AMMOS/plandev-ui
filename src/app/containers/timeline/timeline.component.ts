@@ -2,10 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  Input,
-  OnChanges,
   OnDestroy,
-  SimpleChanges,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
@@ -25,12 +22,8 @@ import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
   styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements OnChanges, OnDestroy {
-  @Input()
-  height: number;
-
+export class TimelineComponent implements OnDestroy {
   band: Band;
-  bandHeight: number;
   maxTimeRange: TimeRange;
   viewTimeRange: TimeRange;
 
@@ -55,12 +48,6 @@ export class TimelineComponent implements OnChanges, OnDestroy {
         this.cdRef.markForCheck();
       }),
     );
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes.height) {
-      this.setBandHeight();
-    }
   }
 
   ngOnDestroy(): void {
@@ -126,12 +113,5 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   onZoomOut(): void {
     this.store.dispatch(MerlinActions.zoomOutViewTimeRange());
-  }
-
-  /**
-   * @todo find a better solution than using 180 to account for the padding before the band
-   */
-  setBandHeight(): void {
-    this.bandHeight = this.height - 180;
   }
 }
