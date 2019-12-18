@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
   OnDestroy,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -50,7 +49,7 @@ export class PlanComponent implements OnDestroy {
     },
     bottom: {
       order: 1,
-      size: 40,
+      size: 60,
       visible: true,
     },
     createActivityInstance: {
@@ -65,7 +64,7 @@ export class PlanComponent implements OnDestroy {
     },
     top: {
       order: 0,
-      size: 60,
+      size: 40,
       visible: true,
     },
   };
@@ -76,7 +75,6 @@ export class PlanComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
-    private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
