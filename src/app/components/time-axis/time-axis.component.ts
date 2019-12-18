@@ -52,10 +52,10 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
   @ViewChild('axisX', { static: true })
-  axisX: ElementRef;
+  axisX: ElementRef<SVGGElement>;
 
   @ViewChild('brush', { static: true })
-  brush: ElementRef;
+  brush: ElementRef<SVGGElement>;
 
   public drawHeight: number = this.height;
   public drawWidth: number;

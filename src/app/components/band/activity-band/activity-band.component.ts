@@ -45,7 +45,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
   viewTimeRange: TimeRange;
 
   @ViewChild('canvas', { static: true })
-  canvas: ElementRef;
+  canvas: ElementRef<HTMLCanvasElement>;
 
   constructor(private subBandService: SubBandService) {}
 
