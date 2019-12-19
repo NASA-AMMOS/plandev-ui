@@ -1,7 +1,9 @@
 export interface Axis {
   labelFillColor: string;
   labelFontSize: number;
+  labelOffset: string;
   labelText: string;
+  scaleDomain: number[];
 }
 
 export interface Band {
@@ -36,6 +38,11 @@ export interface PointActivity extends Point {
   labelText: string;
 }
 
+export interface PointLine extends Point {
+  radius: number;
+  y: number;
+}
+
 export interface SubBand {
   id: string;
   type: string;
@@ -44,6 +51,10 @@ export interface SubBand {
 export interface SubBandActivity extends SubBand {
   layout: string;
   points: PointActivity[];
+}
+
+export interface SubBandLine extends SubBand {
+  points: PointLine[];
 }
 
 export interface UpdatePoint {

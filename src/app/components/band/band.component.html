@@ -36,6 +36,16 @@
       [points]="subBand.points"
       [viewTimeRange]="viewTimeRange"
     ></app-activity-band>
+    <app-line-band
+      *ngIf="subBand.type === 'line'"
+      [drawHeight]="drawHeight"
+      [drawWidth]="drawWidth"
+      [id]="subBand.id"
+      [maxTimeRange]="maxTimeRange"
+      [points]="subBand.points"
+      [viewTimeRange]="viewTimeRange"
+      [yAxis]="yAxis"
+    ></app-line-band>
   </ng-container>
 </div>
 

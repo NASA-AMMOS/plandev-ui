@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Point, PointActivity } from '../types';
+import { Point, PointActivity, PointLine } from '../types';
 import { getDoyTimestamp } from './time';
 
 export function getTooltipTextForPoints(points: Point[]): string {
@@ -10,6 +10,12 @@ export function getTooltipTextForPoints(points: Point[]): string {
       tooltipText = `
         ${tooltipText}
         ${getTooltipTextPointActivity(point as PointActivity)}
+      `;
+    }
+    if (point.type === 'line') {
+      tooltipText = `
+        ${tooltipText}
+        ${getTooltipTextPointLine(point as PointLine)}
       `;
     }
   });
@@ -26,6 +32,19 @@ export function getTooltipTextPointActivity(point: PointActivity): string {
       <strong>Activity Type:</strong> ${labelText}
       <br>
       <strong>Start:</strong> ${getDoyTimestamp(x)}
+    </div>
+  `;
+}
+
+export function getTooltipTextPointLine(point: PointLine): string {
+  const { id, x, y } = point;
+  return `
+    <div>
+      <strong>Id:</strong> ${id}
+      <br>
+      <strong>Time:</strong> ${getDoyTimestamp(x)}
+      <br>
+      <strong>Value:</strong> ${y}
     </div>
   `;
 }

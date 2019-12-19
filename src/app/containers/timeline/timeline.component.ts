@@ -2,7 +2,11 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  Input,
+  OnChanges,
   OnDestroy,
+  SimpleChanges,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
@@ -12,6 +16,7 @@ import { AppState } from '../../app-store';
 import {
   getActivityInstancesBand,
   getMaxTimeRange,
+  getStateBands,
   getViewTimeRange,
 } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
@@ -22,25 +27,36 @@ import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
   styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements OnDestroy {
-  band: Band;
+export class TimelineComponent implements OnChanges, OnDestroy {
+  @Input()
+  height: number;
+
+  activityInstancesBand: Band;
   maxTimeRange: TimeRange;
+  stateBands: Band[];
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
     this.subs.add(
-      this.store.pipe(select(getActivityInstancesBand)).subscribe(band => {
-        this.band = band;
-        this.cdRef.markForCheck();
-      }),
+      this.store
+        .pipe(select(getActivityInstancesBand))
+        .subscribe(activityInstancesBand => {
+          this.activityInstancesBand = activityInstancesBand;
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getStateBands)).subscribe(stateBands => {
+        this.stateBands = stateBands;
         this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
@@ -48,6 +64,12 @@ export class TimelineComponent implements OnDestroy {
         this.cdRef.markForCheck();
       }),
     );
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.height) {
+      this.setBandContainerHeight();
+    }
   }
 
   ngOnDestroy(): void {
@@ -113,5 +135,17 @@ export class TimelineComponent implements OnDestroy {
 
   onZoomOut(): void {
     this.store.dispatch(MerlinActions.zoomOutViewTimeRange());
+  }
+
+  /**
+   * @todo Find a better solution than using 180 to account for the padding before the band container
+   */
+  setBandContainerHeight() {
+    const bandContainer = this.elRef.nativeElement.querySelector(
+      '.band-container',
+    );
+    if (bandContainer) {
+      bandContainer.style.setProperty('--max-height', `${this.height - 180}px`);
+    }
   }
 }

@@ -3,20 +3,33 @@
   (zoomIn)="onZoomIn()"
   (zoomOut)="onZoomOut()"
 ></app-time-axis-controls>
-<app-time-axis
-  [maxTimeRange]="maxTimeRange"
-  [viewTimeRange]="viewTimeRange"
-  (updateViewTimeRange)="onUpdateViewTimeRange($event)"
-></app-time-axis>
-<app-band
-  [height]="band.height"
-  [id]="band.id"
-  [maxTimeRange]="maxTimeRange"
-  [subBands]="band.subBands"
-  [viewTimeRange]="viewTimeRange"
-  [yAxis]="band.yAxis"
-  (deletePoint)="onDeletePoint($event)"
-  (savePoint)="onSavePoint($event)"
-  (selectPoint)="onSelectPoint($event)"
-  (updatePoint)="onUpdatePoint($event)"
-></app-band>
+<div class="time-axis-container">
+  <app-time-axis
+    [maxTimeRange]="maxTimeRange"
+    [viewTimeRange]="viewTimeRange"
+    (updateViewTimeRange)="onUpdateViewTimeRange($event)"
+  ></app-time-axis>
+</div>
+<div class="band-container">
+  <app-band
+    [height]="activityInstancesBand.height"
+    [id]="activityInstancesBand.id"
+    [maxTimeRange]="maxTimeRange"
+    [subBands]="activityInstancesBand.subBands"
+    [viewTimeRange]="viewTimeRange"
+    [yAxis]="activityInstancesBand.yAxis"
+    (deletePoint)="onDeletePoint($event)"
+    (savePoint)="onSavePoint($event)"
+    (selectPoint)="onSelectPoint($event)"
+    (updatePoint)="onUpdatePoint($event)"
+  ></app-band>
+  <app-band
+    *ngFor="let stateBand of stateBands"
+    [height]="stateBand.height"
+    [id]="stateBand.id"
+    [maxTimeRange]="maxTimeRange"
+    [subBands]="stateBand.subBands"
+    [viewTimeRange]="viewTimeRange"
+    [yAxis]="stateBand.yAxis"
+  ></app-band>
+</div>

@@ -31,7 +31,8 @@ export function getPointFromCanvasSelection(
 
     if (hiddenCanvasContext && hiddenCanvasColorToPoint) {
       const { data } = hiddenCanvasContext.getImageData(offsetX, offsetY, 1, 1);
-      const colorKey = `rgb(${data[0]},${data[1]},${data[2]})`;
+      const [r, g, b] = data;
+      const colorKey = `rgb(${r},${g},${b})`;
       return hiddenCanvasColorToPoint[colorKey] || null;
     }
   } else {
@@ -61,6 +62,16 @@ export function getXScale(
     .scaleTime()
     .domain([new Date(timeRange.start), new Date(timeRange.end)])
     .range([0, drawWidth]);
+}
+
+export function getYScale(
+  domain: number[],
+  drawHeight: number,
+): d3.ScaleLinear<number, number> {
+  return d3
+    .scaleLinear()
+    .domain(domain)
+    .range([drawHeight, 0]);
 }
 
 /**

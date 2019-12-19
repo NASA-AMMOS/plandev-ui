@@ -1,7 +1,10 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   OnDestroy,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -31,11 +34,10 @@ import {
   styleUrls: ['./plan.component.css'],
   templateUrl: './plan.component.html',
 })
-export class PlanComponent implements OnDestroy {
+export class PlanComponent implements AfterViewInit, OnDestroy {
   activityInstances: CActivityInstance[] | null = null;
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
-  bottomPanelHeight = 200;
   panels = {
     activityInstances: {
       order: 2,
@@ -48,6 +50,7 @@ export class PlanComponent implements OnDestroy {
       visible: true,
     },
     bottom: {
+      height: 200,
       order: 1,
       size: 60,
       visible: true,
@@ -75,6 +78,7 @@ export class PlanComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
@@ -108,6 +112,10 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  ngAfterViewInit() {
+    this.setPanelBottomHeight();
+  }
+
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
@@ -128,6 +136,7 @@ export class PlanComponent implements OnDestroy {
 
   onResize(): void {
     this.store.dispatch(MerlinActions.resize());
+    this.setPanelBottomHeight();
   }
 
   onSelectActivityInstance(activityInstance: CActivityInstance): void {
@@ -148,6 +157,18 @@ export class PlanComponent implements OnDestroy {
         planId,
       }),
     );
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize() {
+    this.setPanelBottomHeight();
+  }
+
+  setPanelBottomHeight() {
+    const panelBottom = this.elRef.nativeElement.querySelector('.panel-bottom');
+    if (panelBottom) {
+      this.panels.bottom.height = panelBottom.clientHeight;
+    }
   }
 
   togglePanelVisible(panel: string): void {

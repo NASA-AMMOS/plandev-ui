@@ -4,6 +4,7 @@ import { MaterialModule } from '../../material';
 import { ContextMenuTriggerModule } from '../context-menu-trigger';
 import { ActivityBandModule } from './activity-band';
 import { BandComponent } from './band.component';
+import { LineBandModule } from './line-band';
 
 @NgModule({
   declarations: [BandComponent],
@@ -12,6 +13,7 @@ import { BandComponent } from './band.component';
     ActivityBandModule,
     CommonModule,
     ContextMenuTriggerModule,
+    LineBandModule,
     MaterialModule,
   ],
 })

@@ -1,5 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { compare, getUnixEpochTime } from '../functions';
+import { getLineBand } from '../mocks';
 import { MerlinState } from '../reducers/merlin.reducer';
 import {
   Band,
@@ -74,7 +75,9 @@ export const getActivityInstancesBand = createSelector(
     yAxis: {
       labelFillColor: '#000000',
       labelFontSize: 14,
+      labelOffset: '-1.5em',
       labelText: 'Activity Instances',
+      scaleDomain: [],
     },
   }),
 );
@@ -167,6 +170,16 @@ export const getMaxTimeRange = createSelector(
       };
     }
     return { start: 0, end: 0 };
+  },
+);
+
+export const getStateBands = createSelector(
+  getSelectedPlan,
+  (selectedPlan: CPlan | null): Band[] => {
+    if (selectedPlan) {
+      return [getLineBand(selectedPlan)];
+    }
+    return [];
   },
 );
 

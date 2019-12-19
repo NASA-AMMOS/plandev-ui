@@ -28,6 +28,11 @@ describe('time', () => {
   });
 
   describe('getUnixEpochTime', () => {
+    it('a time not formatted in DOY should return 0', () => {
+      const unixEpochTime = getUnixEpochTime('2019');
+      expect(unixEpochTime).toEqual(0);
+    });
+
     it('should properly calculate the first day of the year', () => {
       const time = new Date('1/1/2019').getTime();
       const unixEpochTime = getUnixEpochTime('2019-001T08:00:00.000');

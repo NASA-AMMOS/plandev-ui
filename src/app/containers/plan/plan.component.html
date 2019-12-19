@@ -132,6 +132,7 @@
     </as-split>
   </as-split-area>
   <as-split-area
+    class="panel-bottom"
     [order]="panels.bottom.order"
     [size]="panels.bottom.size"
     [visible]="panels.bottom.visible"
@@ -140,7 +141,7 @@
       Timeline
     </app-panel-header>
     <div class="p-1">
-      <app-timeline></app-timeline>
+      <app-timeline [height]="panels.bottom.height"></app-timeline>
     </div>
   </as-split-area>
 </as-split>

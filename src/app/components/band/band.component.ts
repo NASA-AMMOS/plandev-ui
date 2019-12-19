@@ -21,6 +21,7 @@ import {
   getSvgMousePosition,
   getTooltipTextForPoints,
   getXScale,
+  getYScale,
   hideTooltip,
   showTooltip,
 } from '../../functions';
@@ -153,15 +154,17 @@ export class BandComponent extends ContextMenu
   }
 
   drawYAxis(): void {
+    const yScale = getYScale(this.yAxis.scaleDomain, this.drawHeight);
+    const yAxis = d3.axisLeft(yScale).ticks(5);
     const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--y').remove();
     const axisG = axisContainerGroup.append('g').attr('class', `axis--y`);
-    axisG.selectAll('text').remove();
+    axisG.call(yAxis);
     axisG
       .append('text')
       .attr('transform', 'rotate(-90)')
       .attr('x', 0 - this.drawHeight / 2)
-      .attr('dy', '-2em')
+      .attr('dy', this.yAxis.labelOffset)
       .attr('fill', this.yAxis.labelFillColor)
       .attr('font-size', `${this.yAxis.labelFontSize}px`)
       .style('text-anchor', 'middle')
