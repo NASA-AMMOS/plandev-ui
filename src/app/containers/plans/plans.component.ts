@@ -39,9 +39,13 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     private router: Router,
     private store: Store<AppState>,
   ) {
-    const { state } = this.router.getCurrentNavigation().extras;
-    if (state && state.adaptationId) {
-      this.selectedAdaptationId = state.adaptationId;
+    const currentNavigation = this.router.getCurrentNavigation();
+    if (currentNavigation) {
+      const { extras } = currentNavigation;
+      const { state } = extras;
+      if (extras && state && state.adaptationId) {
+        this.selectedAdaptationId = state.adaptationId;
+      }
     }
 
     this.createPlanForm = this.fb.group({

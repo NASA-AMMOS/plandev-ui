@@ -6,9 +6,9 @@ import {
 } from '@angular/core';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { MerlinActions } from './actions';
+import { AuthActions, MerlinActions } from './actions';
 import { AppState } from './app-store';
-import { getLoading } from './selectors';
+import { getLoading, getPath } from './selectors';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,6 +17,7 @@ import { getLoading } from './selectors';
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnDestroy {
+  isLoginPage = true;
   loading = false;
 
   private subs = new SubSink();
@@ -30,6 +31,10 @@ export class AppComponent implements OnDestroy {
         this.loading = loading;
         this.cdRef.markForCheck();
       }),
+      this.store.pipe(select(getPath)).subscribe(path => {
+        this.isLoginPage = path === 'login';
+        this.cdRef.markForCheck();
+      }),
     );
   }
 
@@ -39,5 +44,9 @@ export class AppComponent implements OnDestroy {
 
   onAbout(): void {
     this.store.dispatch(MerlinActions.openAboutDialog());
+  }
+
+  onLogout(): void {
+    this.store.dispatch(AuthActions.logout());
   }
 }

@@ -1,2 +1,3 @@
+import * as AuthReducer from './auth.reducer';
 import * as MerlinReducer from './merlin.reducer';
-export { MerlinReducer };
+export { AuthReducer, MerlinReducer };

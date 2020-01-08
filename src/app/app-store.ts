@@ -7,9 +7,10 @@ import {
   MetaReducer,
 } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
-import { MerlinReducer } from './reducers';
+import { AuthReducer, MerlinReducer } from './reducers';
 
 export interface AppState {
+  auth: AuthReducer.AuthState;
   merlin: MerlinReducer.MerlinState;
   router: fromRouter.RouterReducerState;
 }
@@ -18,6 +19,7 @@ export const ROOT_REDUCERS = new InjectionToken<
   ActionReducerMap<AppState, Action>
 >('Root reducers token', {
   factory: () => ({
+    auth: AuthReducer.reducer,
     merlin: MerlinReducer.reducer,
     router: fromRouter.routerReducer,
   }),

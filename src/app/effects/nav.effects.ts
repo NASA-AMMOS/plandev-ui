@@ -1,14 +1,39 @@
 import { Injectable } from '@angular/core';
-import { Actions, createEffect } from '@ngrx/effects';
+import {
+  Actions,
+  createEffect,
+  ofType,
+  ROOT_EFFECTS_INIT,
+} from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { MerlinActions, ToastActions } from '../actions';
+import { AuthActions, MerlinActions, ToastActions } from '../actions';
+import { AERIE_USER } from '../constants';
 import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
+import { User } from '../types';
 
 @Injectable()
 export class NavEffects {
   constructor(private actions: Actions, private apiService: ApiService) {}
+
+  /**
+   * Application-level store initialization can go in here.
+   * @see https://ngrx.io/guide/effects/lifecycle#root_effects_init
+   */
+  init = createEffect(() =>
+    this.actions.pipe(
+      ofType(ROOT_EFFECTS_INIT),
+      switchMap(() => {
+        const item: string | null = localStorage.getItem(AERIE_USER);
+        if (item !== null) {
+          const user: User = JSON.parse(item);
+          return [AuthActions.loginSuccess({ user })];
+        }
+        return [];
+      }),
+    ),
+  );
 
   navAdaptations = createEffect(() =>
     this.actions.pipe(

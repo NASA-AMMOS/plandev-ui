@@ -7,3 +7,4 @@ export * from './band';
 export * from './plan';
 export * from './string-t-map';
 export * from './time-range';
+export * from './user';

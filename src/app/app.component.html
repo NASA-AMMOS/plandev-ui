@@ -3,6 +3,7 @@
     <div class="nav-list">
       <mat-nav-list>
         <a
+          *ngIf="!isLoginPage"
           mat-list-item
           matTooltip="Plans"
           matTooltipPosition="right"
@@ -13,6 +14,7 @@
           <span matLine>Plans</span>
         </a>
         <a
+          *ngIf="!isLoginPage"
           mat-list-item
           matTooltip="Adaptations"
           matTooltipPosition="right"
@@ -21,6 +23,16 @@
         >
           <mat-icon mat-list-icon>developer_board</mat-icon>
           <span matLine>Adaptations</span>
+        </a>
+        <a
+          *ngIf="!isLoginPage"
+          mat-list-item
+          matTooltip="Logout"
+          matTooltipPosition="right"
+          (click)="onLogout()"
+        >
+          <mat-icon mat-list-icon>exit_to_app</mat-icon>
+          <span matLine>Logout</span>
         </a>
         <a
           mat-list-item
@@ -44,4 +56,5 @@
     <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>
+
 <app-tooltip></app-tooltip>

@@ -1,0 +1,46 @@
+<mat-card>
+  <div *ngIf="loginErrorMsg" class="alert alert-danger error">
+    {{ loginErrorMsg }}
+  </div>
+
+  <form class="login-container" [formGroup]="loginForm" (ngSubmit)="login()">
+    <mat-form-field>
+      <input
+        autocomplete="off"
+        formControlName="username"
+        matInput
+        placeholder="Username"
+      />
+      <mat-error *ngIf="loginForm.controls.username.invalid">
+        You must enter a username
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input
+        autocomplete="off"
+        formControlName="password"
+        matInput
+        placeholder="Password"
+        [type]="hide ? 'password' : 'text'"
+      />
+      <button type="button" mat-icon-button matSuffix (click)="hide = !hide">
+        <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="loginForm.controls.password.invalid">
+        You must enter a password
+      </mat-error>
+    </mat-form-field>
+
+    <div class="login-button">
+      <button
+        type="submit"
+        mat-raised-button
+        color="primary"
+        [disabled]="!loginForm.valid"
+      >
+        Login
+      </button>
+    </div>
+  </form>
+</mat-card>

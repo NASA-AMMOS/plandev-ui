@@ -13,7 +13,12 @@ import { metaReducers, ROOT_REDUCERS } from './app-store';
 import { AppComponent } from './app.component';
 import { TooltipModule } from './components/tooltip';
 import { ContainersModule } from './containers';
-import { MerlinEffects, NavEffects, ToastEffects } from './effects';
+import {
+  AuthEffects,
+  MerlinEffects,
+  NavEffects,
+  ToastEffects,
+} from './effects';
 import { MaterialModule } from './material';
 
 @NgModule({
@@ -46,7 +51,12 @@ import { MaterialModule } from './material';
     StoreDevtoolsModule.instrument({
       name: 'aerie-ui',
     }),
-    EffectsModule.forRoot([MerlinEffects, NavEffects, ToastEffects]),
+    EffectsModule.forRoot([
+      AuthEffects,
+      MerlinEffects,
+      NavEffects,
+      ToastEffects,
+    ]),
     MaterialModule,
     ContainersModule,
     TooltipModule,

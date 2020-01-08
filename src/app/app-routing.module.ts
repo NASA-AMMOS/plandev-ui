@@ -8,15 +8,45 @@ import {
 import { RouterStateSerializer } from '@ngrx/router-store';
 import {
   AdaptationsComponent,
+  LoginComponent,
   PlanComponent,
   PlansComponent,
 } from './containers';
+import {
+  AuthGuard,
+  redirectLoggedInTo,
+  redirectUnauthorizedTo,
+} from './guards';
+
+const redirectLoggedInToPlans = () => redirectLoggedInTo(['plans']);
+const redirectUnauthorizedToLogin = () => redirectUnauthorizedTo(['login']);
 
 const routes: Routes = [
-  { path: 'adaptations', component: AdaptationsComponent },
-  { path: 'plans/:id', component: PlanComponent },
-  { path: 'plans', component: PlansComponent },
-  { path: '**', redirectTo: 'plans' },
+  {
+    canActivate: [AuthGuard],
+    component: AdaptationsComponent,
+    data: { authGuardPipe: redirectUnauthorizedToLogin },
+    path: 'adaptations',
+  },
+  {
+    canActivate: [AuthGuard],
+    component: LoginComponent,
+    data: { authGuardPipe: redirectLoggedInToPlans },
+    path: 'login',
+  },
+  {
+    canActivate: [AuthGuard],
+    component: PlanComponent,
+    data: { authGuardPipe: redirectUnauthorizedToLogin },
+    path: 'plans/:id',
+  },
+  {
+    canActivate: [AuthGuard],
+    component: PlansComponent,
+    data: { authGuardPipe: redirectUnauthorizedToLogin },
+    path: 'plans',
+  },
+  { path: '**', redirectTo: 'login' },
 ];
 
 @NgModule({

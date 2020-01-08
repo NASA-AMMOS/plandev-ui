@@ -145,4 +145,16 @@ describe('api service', () => {
     );
     req.flush(sPlan);
   });
+
+  it('login', () => {
+    apiService.login('testuser', '123456').subscribe(res => {
+      expect(res).toEqual('Login success');
+    });
+  });
+
+  it('logout', () => {
+    apiService.logout().subscribe(res => {
+      expect(res).toEqual('Logout success');
+    });
+  });
 });
