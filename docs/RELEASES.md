@@ -1,6 +1,6 @@
 # Releases
 
-This document describes important release versions, dates and epics for aerie-ui.  
+This document describes important release versions, dates, and epics for aerie-ui.  
 For more information on specific requirements, see the [Aerie requirements document][Aerie-requirements-document].
 
 ## A29.1
@@ -15,7 +15,6 @@ For more information on specific requirements, see the [Aerie requirements docum
   - [AERIE-499][AERIE-499]
   - [AERIE-507][AERIE-507]
   - [AERIE-513][AERIE-513]
-    - Will implement a login page for aerie-ui and connect it to CAM.
 
 ## A29.0
 
