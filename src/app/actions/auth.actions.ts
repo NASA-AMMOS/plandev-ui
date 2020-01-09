@@ -13,7 +13,7 @@ export const loginError = createAction(
 
 export const loginSuccess = createAction(
   '[auth] loginSuccess',
-  props<{ user: User }>(),
+  props<{ redirectTo: string; user: User }>(),
 );
 
 export const logout = createAction('[auth] logout');

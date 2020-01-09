@@ -26,7 +26,7 @@ export class AuthEffects {
             switchMap(() => {
               const user: User = { name: username };
               localStorage.setItem(AERIE_USER, JSON.stringify(user));
-              return [AuthActions.loginSuccess({ user })];
+              return [AuthActions.loginSuccess({ redirectTo: '/plans', user })];
             }),
             catchError((errorMsg: string) => {
               console.log(errorMsg);
@@ -43,7 +43,7 @@ export class AuthEffects {
     () =>
       this.actions.pipe(
         ofType(AuthActions.loginSuccess),
-        tap(() => this.router.navigate(['/plans'])),
+        tap(({ redirectTo }) => this.router.navigate([redirectTo])),
       ),
     { dispatch: false },
   );

@@ -28,7 +28,9 @@ export class NavEffects {
         const item: string | null = localStorage.getItem(AERIE_USER);
         if (item !== null) {
           const user: User = JSON.parse(item);
-          return [AuthActions.loginSuccess({ user })];
+          const { hash } = window.location;
+          const redirectTo = hash.substring(1); // Remove '#' from hash URL.
+          return [AuthActions.loginSuccess({ redirectTo, user })];
         }
         return [];
       }),

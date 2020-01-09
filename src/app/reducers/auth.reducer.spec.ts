@@ -29,7 +29,7 @@ describe('auth reducer', () => {
     const user: User = { name: 'testuser ' };
     const state: AuthState = reducer(
       { ...initialState },
-      AuthActions.loginSuccess({ user }),
+      AuthActions.loginSuccess({ redirectTo: '/', user }),
     );
     expect(state).toEqual({
       ...initialState,
