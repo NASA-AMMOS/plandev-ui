@@ -72,3 +72,8 @@ $accent: mat-palette($mat-rust);
 $theme: mat-light-theme($primary, $accent);
 
 @include angular-material-theme($theme);
+
+:root {
+  --color-primary: #{mat-color($primary)};
+  --color-accent: #{mat-color($accent)};
+}
