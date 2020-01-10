@@ -9,6 +9,7 @@ import { RouterStateSerializer } from '@ngrx/router-store';
 import {
   AdaptationsComponent,
   LoginComponent,
+  NotFoundComponent,
   PlanComponent,
   PlansComponent,
 } from './containers';
@@ -46,7 +47,13 @@ const routes: Routes = [
     data: { authGuardPipe: redirectUnauthorizedToLogin },
     path: 'plans',
   },
-  { path: '**', redirectTo: 'login' },
+  {
+    canActivate: [AuthGuard],
+    component: NotFoundComponent,
+    data: { authGuardPipe: redirectUnauthorizedToLogin },
+    path: '404',
+  },
+  { path: '**', redirectTo: '404' },
 ];
 
 @NgModule({
