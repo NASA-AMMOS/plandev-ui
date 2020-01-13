@@ -15,6 +15,10 @@ import { MerlinActions } from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesBand,
+  getMarginBottom,
+  getMarginLeft,
+  getMarginRight,
+  getMarginTop,
   getMaxTimeRange,
   getStateBands,
   getViewTimeRange,
@@ -32,6 +36,10 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   height: number;
 
   activityInstancesBand: Band;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
+  marginTop: number;
   maxTimeRange: TimeRange;
   stateBands: Band[];
   viewTimeRange: TimeRange;
@@ -51,6 +59,22 @@ export class TimelineComponent implements OnChanges, OnDestroy {
           this.activityInstancesBand = activityInstancesBand;
           this.cdRef.markForCheck();
         }),
+      this.store.pipe(select(getMarginBottom)).subscribe(marginBottom => {
+        this.marginBottom = marginBottom;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getMarginLeft)).subscribe(marginLeft => {
+        this.marginLeft = marginLeft;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getMarginRight)).subscribe(marginRight => {
+        this.marginRight = marginRight;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getMarginTop)).subscribe(marginTop => {
+        this.marginTop = marginTop;
+        this.cdRef.markForCheck();
+      }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();

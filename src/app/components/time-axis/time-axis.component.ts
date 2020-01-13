@@ -31,9 +31,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   height = 60;
 
   @Input()
-  marginBottom = 30;
-
-  @Input()
   marginLeft = 70;
 
   @Input()
@@ -59,6 +56,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   public drawHeight: number = this.height;
   public drawWidth: number;
+  public marginBottom = 30;
 
   constructor(private elRef: ElementRef) {
     this.elRef.nativeElement.style.setProperty('--height', `${this.height}px`);

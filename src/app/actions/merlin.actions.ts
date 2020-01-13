@@ -139,6 +139,26 @@ export const updateActivityInstanceSuccess = createAction(
   }>(),
 );
 
+export const updateMarginBottom = createAction(
+  '[merlin] updateMarginBottom',
+  props<{ marginBottom: number }>(),
+);
+
+export const updateMarginLeft = createAction(
+  '[merlin] updateMarginLeft',
+  props<{ marginLeft: number }>(),
+);
+
+export const updateMarginRight = createAction(
+  '[merlin] updateMarginRight',
+  props<{ marginRight: number }>(),
+);
+
+export const updateMarginTop = createAction(
+  '[merlin] updateMarginTop',
+  props<{ marginTop: number }>(),
+);
+
 export const updateViewTimeRange = createAction(
   '[merlin] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),

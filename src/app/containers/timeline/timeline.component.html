@@ -5,6 +5,9 @@
 ></app-time-axis-controls>
 <div class="time-axis-container">
   <app-time-axis
+    [marginLeft]="marginLeft"
+    [marginRight]="marginRight"
+    [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
     [viewTimeRange]="viewTimeRange"
     (updateViewTimeRange)="onUpdateViewTimeRange($event)"
@@ -14,6 +17,10 @@
   <app-band
     [height]="activityInstancesBand.height"
     [id]="activityInstancesBand.id"
+    [marginBottom]="marginBottom"
+    [marginLeft]="marginLeft"
+    [marginRight]="marginRight"
+    [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
     [subBands]="activityInstancesBand.subBands"
     [viewTimeRange]="viewTimeRange"
@@ -27,6 +34,10 @@
     *ngFor="let stateBand of stateBands"
     [height]="stateBand.height"
     [id]="stateBand.id"
+    [marginBottom]="marginBottom"
+    [marginLeft]="marginLeft"
+    [marginRight]="marginRight"
+    [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
     [subBands]="stateBand.subBands"
     [viewTimeRange]="viewTimeRange"
