@@ -1,5 +1,7 @@
 <app-time-axis-controls
   (restore)="onRestore()"
+  (simulationClear)="onSimulationClear()"
+  (simulationRun)="onSimulationRun()"
   (zoomIn)="onZoomIn()"
   (zoomOut)="onZoomOut()"
 ></app-time-axis-controls>
@@ -43,4 +45,7 @@
     [viewTimeRange]="viewTimeRange"
     [yAxis]="stateBand.yAxis"
   ></app-band>
+  <mat-card *ngIf="stateBands === null">
+    No states found. Try running a simulation.
+  </mat-card>
 </div>

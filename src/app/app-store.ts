@@ -7,12 +7,13 @@ import {
   MetaReducer,
 } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
-import { AuthReducer, MerlinReducer } from './reducers';
+import { AuthReducer, MerlinReducer, SimulationReducer } from './reducers';
 
 export interface AppState {
   auth: AuthReducer.AuthState;
   merlin: MerlinReducer.MerlinState;
   router: fromRouter.RouterReducerState;
+  simulation: SimulationReducer.SimulationState;
 }
 
 export const ROOT_REDUCERS = new InjectionToken<
@@ -22,6 +23,7 @@ export const ROOT_REDUCERS = new InjectionToken<
     auth: AuthReducer.reducer,
     merlin: MerlinReducer.reducer,
     router: fromRouter.routerReducer,
+    simulation: SimulationReducer.reducer,
   }),
 });
 

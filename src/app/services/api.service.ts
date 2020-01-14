@@ -245,6 +245,16 @@ export class ApiService {
     });
   }
 
+  simulationRun(): Observable<string> {
+    return new Observable((o: Observer<string>) => {
+      // TODO.
+      setTimeout(() => {
+        o.next('Simulation success');
+        o.complete();
+      }, 1000);
+    });
+  }
+
   updateActivityInstance(
     planId: string,
     activityInstanceId: string,

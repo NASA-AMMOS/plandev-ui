@@ -1,9 +1,28 @@
-<button mat-icon-button matTooltip="Zoom In Time" (click)="zoomIn.emit()">
-  <mat-icon>zoom_in</mat-icon>
-</button>
-<button mat-icon-button matTooltip="Zoom Out Time" (click)="zoomOut.emit()">
-  <mat-icon>zoom_out</mat-icon>
-</button>
-<button mat-icon-button matTooltip="Restore Time" (click)="restore.emit()">
-  <mat-icon>restore</mat-icon>
-</button>
+<mat-card>
+  <button mat-icon-button matTooltip="Zoom In Time" (click)="zoomIn.emit()">
+    <mat-icon>zoom_in</mat-icon>
+  </button>
+  <button mat-icon-button matTooltip="Zoom Out Time" (click)="zoomOut.emit()">
+    <mat-icon>zoom_out</mat-icon>
+  </button>
+  <button mat-icon-button matTooltip="Restore Time" (click)="restore.emit()">
+    <mat-icon>restore</mat-icon>
+  </button>
+</mat-card>
+
+<mat-card>
+  <button
+    mat-icon-button
+    matTooltip="Run Simulation"
+    (click)="simulationRun.emit()"
+  >
+    <mat-icon>timeline</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    matTooltip="Clear Simulation"
+    (click)="simulationClear.emit()"
+  >
+    <mat-icon>clear</mat-icon>
+  </button>
+</mat-card>

@@ -2,13 +2,14 @@ import random from 'lodash-es/random';
 import range from 'lodash-es/range';
 import uniqueId from 'lodash-es/uniqueId';
 import { getUnixEpochTime } from '../functions';
-import { Band, CPlan, PointLine, SubBandLine } from '../types';
+import { Band, CPlan, PointLine, StringTMap, SubBandLine } from '../types';
 
 export function getLineBand(
   plan: CPlan,
   scaleDomain = [0, 4],
   pointCount: number = 100,
-): Band {
+): StringTMap<Band> {
+  const id = uniqueId('band');
   const start = getUnixEpochTime(plan.startTimestamp) + 1000;
   const end = getUnixEpochTime(plan.endTimestamp);
   const xStep = (end - start) / pointCount;
@@ -38,16 +39,18 @@ export function getLineBand(
   ];
 
   return {
-    height: 200,
-    id: uniqueId('band'),
-    order: 0,
-    subBands,
-    yAxis: {
-      labelFillColor: '#000000',
-      labelFontSize: 14,
-      labelOffset: '-2.5em',
-      labelText: 'Data Volume (kB)',
-      scaleDomain,
+    [id]: {
+      height: 200,
+      id,
+      order: 0,
+      subBands,
+      yAxis: {
+        labelFillColor: '#000000',
+        labelFontSize: 14,
+        labelOffset: '-2.5em',
+        labelText: 'Data Volume (kB)',
+        scaleDomain,
+      },
     },
   };
 }

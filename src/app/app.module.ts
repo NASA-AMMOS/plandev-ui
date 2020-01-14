@@ -17,6 +17,7 @@ import {
   AuthEffects,
   MerlinEffects,
   NavEffects,
+  SimulationEffects,
   ToastEffects,
 } from './effects';
 import { MaterialModule } from './material';
@@ -55,6 +56,7 @@ import { MaterialModule } from './material';
       AuthEffects,
       MerlinEffects,
       NavEffects,
+      SimulationEffects,
       ToastEffects,
     ]),
     MaterialModule,

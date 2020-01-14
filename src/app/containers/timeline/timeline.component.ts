@@ -11,7 +11,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { MerlinActions } from '../../actions';
+import { MerlinActions, SimulationActions } from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesBand,
@@ -136,6 +136,14 @@ export class TimelineComponent implements OnChanges, OnDestroy {
         selectedActivityInstanceId,
       }),
     );
+  }
+
+  onSimulationClear(): void {
+    this.store.dispatch(SimulationActions.clear());
+  }
+
+  onSimulationRun(): void {
+    this.store.dispatch(SimulationActions.run());
   }
 
   onUpdatePoint(event: UpdatePoint): void {
