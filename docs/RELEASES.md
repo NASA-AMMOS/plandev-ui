@@ -5,9 +5,9 @@ For more information on specific requirements, see the [Aerie requirements docum
 
 ## A29.1
 
-- Draft Release Plan delivered to MGSS: `11-Dec-2019`
 - Content prioritization review held with stakeholders: `19-Nov-2019`
   - Presentation: [MPSA A29.1 Release Planning][A29.1-release-planning]
+- Draft Release Plan delivered to MGSS: `11-Dec-2019`
 - Code Freeze: `31-Mar-2020`
 - Test Readiness Review (TRR): `16-Apr-2020`
 - Delivery and Deployment Review (DDR): `21-May-2020`
