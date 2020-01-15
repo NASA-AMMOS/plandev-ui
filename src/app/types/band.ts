@@ -43,6 +43,14 @@ export interface PointLine extends Point {
   y: number;
 }
 
+export interface PointXRange extends Point {
+  duration: number;
+  labelFillColor: string;
+  labelFont: string;
+  labelFontSize: number;
+  labelText: string;
+}
+
 export interface SubBand {
   id: string;
   type: string;
@@ -55,6 +63,10 @@ export interface SubBandActivity extends SubBand {
 
 export interface SubBandLine extends SubBand {
   points: PointLine[];
+}
+
+export interface SubBandXRange extends SubBand {
+  points: PointXRange[];
 }
 
 export interface UpdatePoint {

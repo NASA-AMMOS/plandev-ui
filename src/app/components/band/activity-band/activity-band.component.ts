@@ -112,6 +112,10 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  /**
+   * @note Only set the fill style and fill the rect for the hidden canvas.
+   * Don't do anything else or it will mess up point selection.
+   */
   redrawCanvases(
     canvases: HTMLCanvasElement[],
     end: number,
@@ -128,8 +132,6 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
     forEachCanvas(canvases, (canvas, ctx) => {
       if (canvas.classList.contains('hidden')) {
-        // Only set the fill style and fill the rect for the hidden canvas.
-        // Don't do anything else or it will mess up point selection.
         const color = hiddenCanvasColor.next().value;
         this.subBandService.updateColorToPoint(this.id, color, point);
         ctx.fillStyle = color;

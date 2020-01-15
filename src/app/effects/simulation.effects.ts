@@ -5,7 +5,7 @@ import { concat, of } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { MerlinActions, SimulationActions } from '../actions';
 import { AppState } from '../app-store';
-import { getLineBand } from '../mocks';
+import { getLineBand, getXRangeBand } from '../mocks';
 import { ApiService } from '../services';
 
 @Injectable()
@@ -28,7 +28,10 @@ export class SimulationEffects {
             switchMap(() => {
               return [
                 SimulationActions.runSuccess({
-                  stateBands: getLineBand(state.merlin.selectedPlan),
+                  stateBands: {
+                    ...getLineBand(state.merlin.selectedPlan),
+                    ...getXRangeBand(state.merlin.selectedPlan),
+                  },
                 }),
               ];
             }),

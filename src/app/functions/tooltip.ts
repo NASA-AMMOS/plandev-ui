@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Point, PointActivity, PointLine } from '../types';
+import { Point, PointActivity, PointLine, PointXRange } from '../types';
 import { getDoyTimestamp } from './time';
 
 export function getTooltipTextForPoints(points: Point[]): string {
@@ -16,6 +16,12 @@ export function getTooltipTextForPoints(points: Point[]): string {
       tooltipText = `
         ${tooltipText}
         ${getTooltipTextPointLine(point as PointLine)}
+      `;
+    }
+    if (point.type === 'x-range') {
+      tooltipText = `
+        ${tooltipText}
+        ${getTooltipTextPointXRange(point as PointXRange)}
       `;
     }
   });
@@ -45,6 +51,19 @@ export function getTooltipTextPointLine(point: PointLine): string {
       <strong>Time:</strong> ${getDoyTimestamp(x)}
       <br>
       <strong>Value:</strong> ${y}
+    </div>
+  `;
+}
+
+export function getTooltipTextPointXRange(point: PointXRange): string {
+  const { duration, id, x } = point;
+  return `
+    <div>
+      <strong>Id:</strong> ${id}
+      <br>
+      <strong>Start:</strong> ${getDoyTimestamp(x)}
+      <br>
+      <strong>Duration:</strong> ${duration}
     </div>
   `;
 }

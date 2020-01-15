@@ -5,6 +5,7 @@ import { ContextMenuTriggerModule } from '../context-menu-trigger';
 import { ActivityBandModule } from './activity-band';
 import { BandComponent } from './band.component';
 import { LineBandModule } from './line-band';
+import { XRangeBandModule } from './x-range-band';
 
 @NgModule({
   declarations: [BandComponent],
@@ -15,6 +16,7 @@ import { LineBandModule } from './line-band';
     ContextMenuTriggerModule,
     LineBandModule,
     MaterialModule,
+    XRangeBandModule,
   ],
 })
 export class BandModule {}

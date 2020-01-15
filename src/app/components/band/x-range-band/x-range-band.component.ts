@@ -9,22 +9,20 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import * as d3 from 'd3';
 import {
   forEachCanvas,
   getXScale,
-  getYScale,
   rgbColorGenerator,
 } from '../../../functions';
-import { Axis, PointLine, TimeRange } from '../../../types';
+import { PointXRange, TimeRange } from '../../../types';
 import { SubBandService } from '../sub-band.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-line-band',
-  templateUrl: './line-band.component.html',
+  selector: 'app-x-range-band',
+  templateUrl: `./x-range-band.component.html`,
 })
-export class LineBandComponent implements AfterViewInit, OnChanges {
+export class XRangeBandComponent implements AfterViewInit, OnChanges {
   @Input()
   drawHeight: number;
 
@@ -35,16 +33,13 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   id: string;
 
   @Input()
-  maxTimeRange: TimeRange;
+  maxTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Input()
-  points: PointLine[];
+  points: PointXRange[];
 
   @Input()
-  viewTimeRange: TimeRange;
-
-  @Input()
-  yAxis: Axis;
+  viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;
@@ -68,10 +63,6 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     }
 
     if (changes.viewTimeRange && !changes.viewTimeRange.isFirstChange()) {
-      shouldRedraw = true;
-    }
-
-    if (changes.yAxes && !changes.yAxes.isFirstChange()) {
       shouldRedraw = true;
     }
 
@@ -119,30 +110,15 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     });
 
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-    const yScale = getYScale(this.yAxis.scaleDomain, this.drawHeight);
 
-    // Line.
-    const line = d3
-      .line<PointLine>()
-      .x(d => Math.floor(xScale(d.x)))
-      .y(d => Math.floor(yScale(d.y)))
-      .curve(d3.curveLinear);
-    forEachCanvas(canvases, (_, ctx) => {
-      ctx.beginPath();
-      line.context(ctx)(this.points);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = '#2aba3b';
-      ctx.stroke();
-    });
-
-    // Points.
     for (let i = 0, l = this.points.length; i < l; ++i) {
       const point = this.points[i];
-
       const x = Math.floor(xScale(point.x));
-      const y = Math.floor(yScale(point.y));
-      const circle = new Path2D();
-      circle.arc(x, y, point.radius, 0, 2 * Math.PI);
+      const end = Math.floor(xScale(point.x + point.duration));
+      const range = end - x;
+      const width = Math.max(1.0, range);
+      const rect = new Path2D();
+      rect.rect(x, 0, width, this.drawHeight);
 
       forEachCanvas(canvases, (canvas, ctx) => {
         if (canvas.classList.contains('hidden')) {
@@ -152,7 +128,24 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
         } else {
           ctx.fillStyle = point.color;
         }
-        ctx.fill(circle);
+
+        // Rect.
+        ctx.fill(rect);
+
+        // Label Text.
+        ctx.fillStyle = point.labelFillColor;
+        ctx.font = `${point.labelFontSize}px ${point.labelFont}`;
+        const textMetrics = ctx.measureText(point.labelText);
+        const textWidth = textMetrics.width;
+        const textHeight =
+          textMetrics.actualBoundingBoxAscent +
+          textMetrics.actualBoundingBoxDescent;
+        ctx.fillText(
+          point.labelText,
+          x + width / 2 - textWidth / 2,
+          this.drawHeight / 2 + textHeight / 2,
+          textWidth,
+        );
       });
     }
   }

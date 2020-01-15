@@ -2,7 +2,15 @@ import random from 'lodash-es/random';
 import range from 'lodash-es/range';
 import uniqueId from 'lodash-es/uniqueId';
 import { getUnixEpochTime } from '../functions';
-import { Band, CPlan, PointLine, StringTMap, SubBandLine } from '../types';
+import {
+  Band,
+  CPlan,
+  PointLine,
+  PointXRange,
+  StringTMap,
+  SubBandLine,
+  SubBandXRange,
+} from '../types';
 
 export function getLineBand(
   plan: CPlan,
@@ -50,6 +58,56 @@ export function getLineBand(
         labelOffset: '-2.5em',
         labelText: 'Data Volume (kB)',
         scaleDomain,
+      },
+    },
+  };
+}
+
+export function getXRangeBand(
+  plan: CPlan,
+  pointCount: number = 4,
+): StringTMap<Band> {
+  const id = uniqueId('band');
+  const start = getUnixEpochTime(plan.startTimestamp) + 1000;
+  const end = getUnixEpochTime(plan.endTimestamp);
+  const xStep = (end - start) / pointCount;
+
+  const points: PointXRange[] = range(pointCount).map(i => {
+    const x = start + xStep * i;
+    return {
+      color: '#f49542',
+      duration: 8000,
+      id: uniqueId('pointXRange'),
+      labelFillColor: '#000000',
+      labelFont: 'Georgia',
+      labelFontSize: 12,
+      labelText: 'FIXED',
+      selected: false,
+      type: 'x-range',
+      x,
+    };
+  });
+
+  const subBands: SubBandXRange[] = [
+    {
+      id: uniqueId('subBandXRange'),
+      points,
+      type: 'x-range',
+    },
+  ];
+
+  return {
+    [id]: {
+      height: 150,
+      id,
+      order: 0,
+      subBands,
+      yAxis: {
+        labelFillColor: '#000000',
+        labelFontSize: 14,
+        labelOffset: '-2.5em',
+        labelText: 'Tracking Mode',
+        scaleDomain: [],
       },
     },
   };
