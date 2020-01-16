@@ -15,6 +15,7 @@ For more information on specific requirements, see the [Aerie requirements docum
   - [AERIE-499][AERIE-499]
   - [AERIE-507][AERIE-507]
   - [AERIE-513][AERIE-513]
+  - [AERIE-584][AERIE-584]
 
 ## A29.0
 
@@ -33,3 +34,4 @@ For more information on specific requirements, see the [Aerie requirements docum
 [AERIE-499]: https://jira.jpl.nasa.gov/browse/AERIE-499
 [AERIE-507]: https://jira.jpl.nasa.gov/browse/AERIE-507
 [AERIE-513]: https://jira.jpl.nasa.gov/browse/AERIE-513
+[AERIE-584]: https://jira.jpl.nasa.gov/browse/AERIE-584
