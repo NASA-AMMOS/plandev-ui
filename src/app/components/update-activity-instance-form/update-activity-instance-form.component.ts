@@ -28,6 +28,9 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
   @Input()
   activityTypesMap: CActivityTypeMap | null = null;
 
+  @Input()
+  updateActivityInstanceError: string | null = null;
+
   @Output()
   delete: EventEmitter<string> = new EventEmitter<string>();
 

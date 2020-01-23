@@ -38,12 +38,16 @@ export class MerlinEffects {
                   }),
                 ];
               }),
-              catchError((error: Error) => {
+              catchError(error => {
                 console.error(error);
+                const [{ message: errorMsg }] = error.error;
                 return [
                   ToastActions.showToast({
                     message: 'Create activity instance failed',
                     toastType: 'error',
+                  }),
+                  MerlinActions.createActivityInstanceFailure({
+                    errorMsg,
                   }),
                 ];
               }),
@@ -337,13 +341,15 @@ export class MerlinEffects {
                   }),
                 ];
               }),
-              catchError((error: Error) => {
+              catchError(error => {
                 console.error(error);
+                const [{ message: errorMsg }] = error.error;
                 return [
                   ToastActions.showToast({
                     message: 'Update activity instance failed',
                     toastType: 'error',
                   }),
+                  MerlinActions.updateActivityInstanceFailure({ errorMsg }),
                 ];
               }),
             ),

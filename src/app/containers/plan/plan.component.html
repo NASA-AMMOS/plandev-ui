@@ -75,6 +75,7 @@
             <app-create-activity-instance-form
               [activityTypes]="activityTypes"
               [activityTypesMap]="activityTypesMap"
+              [createActivityInstanceError]="createActivityInstanceError"
               (create)="onCreateActivityInstance($event)"
             ></app-create-activity-instance-form>
           </mat-card>
@@ -120,6 +121,7 @@
             <app-update-activity-instance-form
               [activityInstance]="selectedActivityInstance"
               [activityTypesMap]="activityTypesMap"
+              [updateActivityInstanceError]="updateActivityInstanceError"
               (delete)="onDeleteActivityInstance($event)"
               (update)="onUpdateActivityInstance($event)"
             ></app-update-activity-instance-form>

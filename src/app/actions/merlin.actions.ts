@@ -17,6 +17,11 @@ export const createActivityInstance = createAction(
   props<{ planId: string; activityInstance: SActivityInstance }>(),
 );
 
+export const createActivityInstanceFailure = createAction(
+  '[merlin] createActivityInstanceFailure',
+  props<{ errorMsg: string }>(),
+);
+
 export const createActivityInstanceSuccess = createAction(
   '[merlin] createActivityInstanceSuccess',
   props<{
@@ -124,6 +129,11 @@ export const updateActivityInstance = createAction(
     activityInstanceId: string;
     activityInstance: Partial<SActivityInstance>;
   }>(),
+);
+
+export const updateActivityInstanceFailure = createAction(
+  '[merlin] updateActivityInstanceFailure',
+  props<{ errorMsg: string }>(),
 );
 
 export const updateActivityInstanceProps = createAction(

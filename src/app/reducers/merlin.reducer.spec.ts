@@ -18,6 +18,37 @@ import { SCreateAdaption, SPlan } from '../types';
 import { initialState, MerlinState, reducer } from './merlin.reducer';
 
 describe('merlin reducer', () => {
+  describe('createActivityInstance', () => {
+    it('it should set createActivityInstanceError', () => {
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.createActivityInstance({
+          planId: '42',
+          activityInstance: sActivityInstance,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+  });
+
+  describe('createActivityInstanceFailure', () => {
+    it('it should set createActivityInstanceError', () => {
+      const errorMsg = 'Create activity instance failed!';
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.createActivityInstanceFailure({
+          errorMsg,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        createActivityInstanceError: errorMsg,
+      });
+    });
+  });
+
   describe('createAdaptationSuccess', () => {
     it('should set adaptations', () => {
       const adaptation: SCreateAdaption = {
@@ -270,6 +301,38 @@ describe('merlin reducer', () => {
         activityTypes: cActivityTypeMap,
         selectedPlan: cPlan,
         viewTimeRange: { start: 1577750400000, end: 1577750410000 },
+      });
+    });
+  });
+
+  describe('updateActivityInstance', () => {
+    it('it should set updateActivityInstanceError', () => {
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.updateActivityInstance({
+          planId: '42',
+          activityInstanceId: '42',
+          activityInstance: sActivityInstance,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+  });
+
+  describe('updateActivityInstanceFailure', () => {
+    it('it should set updateActivityInstanceError', () => {
+      const errorMsg = 'Update activity instance failed!';
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.updateActivityInstanceFailure({
+          errorMsg,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        updateActivityInstanceError: errorMsg,
       });
     });
   });

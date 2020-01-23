@@ -1,4 +1,8 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="alert alert-danger" *ngIf="updateActivityInstanceError">
+    {{ updateActivityInstanceError }}
+  </div>
+
   <mat-form-field class="w-100" appearance="outline">
     <mat-label>Id</mat-label>
     <input

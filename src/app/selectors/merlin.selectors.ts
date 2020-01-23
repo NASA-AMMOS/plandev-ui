@@ -127,6 +127,11 @@ export const getAdaptations = createSelector(
     state.adaptations ? Object.values(state.adaptations) : null,
 );
 
+export const getCreateActivityInstanceError = createSelector(
+  getMerlinState,
+  (state: MerlinState): string | null => state.createActivityInstanceError,
+);
+
 export const getLoading = createSelector(
   getMerlinState,
   (state: MerlinState): boolean => state.loading,
@@ -190,6 +195,11 @@ export const getMaxTimeRange = createSelector(
     }
     return { start: 0, end: 0 };
   },
+);
+
+export const getUpdateActivityInstanceError = createSelector(
+  getMerlinState,
+  (state: MerlinState): string | null => state.updateActivityInstanceError,
 );
 
 export const getViewTimeRange = createSelector(

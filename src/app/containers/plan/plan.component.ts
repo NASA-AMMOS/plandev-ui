@@ -16,8 +16,10 @@ import {
   getActivityInstancesForSelectedPlan,
   getActivityTypes,
   getActivityTypesMap,
+  getCreateActivityInstanceError,
   getSelectedActivityInstance,
   getSelectedPlan,
+  getUpdateActivityInstanceError,
 } from '../../selectors';
 import {
   CActivityInstance,
@@ -38,6 +40,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   activityInstances: CActivityInstance[] | null = null;
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
+  createActivityInstanceError: string | null = null;
   panels = {
     activityInstances: {
       order: 2,
@@ -73,6 +76,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   };
   plan: CPlan | null = null;
   selectedActivityInstance: CActivityInstance | null = null;
+  updateActivityInstanceError: string | null = null;
 
   private subs = new SubSink();
 
@@ -100,6 +104,12 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
           this.cdRef.markForCheck();
         }),
       this.store
+        .pipe(select(getCreateActivityInstanceError))
+        .subscribe(createActivityInstanceError => {
+          this.createActivityInstanceError = createActivityInstanceError;
+          this.cdRef.markForCheck();
+        }),
+      this.store
         .pipe(select(getSelectedActivityInstance))
         .subscribe(selectedActivityInstance => {
           this.selectedActivityInstance = selectedActivityInstance;
@@ -109,6 +119,12 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.plan = plan;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getUpdateActivityInstanceError))
+        .subscribe(updateActivityInstanceError => {
+          this.updateActivityInstanceError = updateActivityInstanceError;
+          this.cdRef.markForCheck();
+        }),
     );
   }
 

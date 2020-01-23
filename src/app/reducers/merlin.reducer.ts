@@ -17,6 +17,7 @@ export interface MerlinState {
   activityInstances: CActivityInstanceMap | null;
   activityTypes: CActivityTypeMap | null;
   adaptations: CAdaptationMap | null;
+  createActivityInstanceError: string | null;
   loading: boolean;
   marginBottom: number;
   marginLeft: number;
@@ -25,6 +26,7 @@ export interface MerlinState {
   plans: CPlanMap | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
+  updateActivityInstanceError: string | null;
   viewTimeRange: TimeRange;
 }
 
@@ -32,6 +34,7 @@ export const initialState: MerlinState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
+  createActivityInstanceError: null,
   loading: false,
   marginBottom: 10,
   marginLeft: 70,
@@ -40,11 +43,20 @@ export const initialState: MerlinState = {
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
+  updateActivityInstanceError: null,
   viewTimeRange: { start: 0, end: 0 },
 };
 
 export const reducer = createReducer(
   initialState,
+  on(MerlinActions.createActivityInstance, state => ({
+    ...state,
+    createActivityInstanceError: null,
+  })),
+  on(MerlinActions.createActivityInstanceFailure, (state, action) => ({
+    ...state,
+    createActivityInstanceError: action.errorMsg,
+  })),
   on(MerlinActions.createActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
@@ -161,6 +173,14 @@ export const reducer = createReducer(
       },
     }),
   ),
+  on(MerlinActions.updateActivityInstance, state => ({
+    ...state,
+    updateActivityInstanceError: null,
+  })),
+  on(MerlinActions.updateActivityInstanceFailure, (state, action) => ({
+    ...state,
+    updateActivityInstanceError: action.errorMsg,
+  })),
   on(MerlinActions.updateActivityInstanceProps, (state, action) => ({
     ...state,
     activityInstances: {

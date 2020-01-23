@@ -1,4 +1,8 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="alert alert-danger" *ngIf="createActivityInstanceError">
+    {{ createActivityInstanceError }}
+  </div>
+
   <mat-form-field class="w-100" appearance="outline">
     <mat-label>Activity Type</mat-label>
     <mat-select formControlName="type" [required]="true">
