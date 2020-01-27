@@ -1,4 +1,4 @@
-import { ROUTER_NAVIGATED, RouterNavigatedAction } from '@ngrx/router-store';
+import { RouterNavigatedAction, ROUTER_NAVIGATED } from '@ngrx/router-store';
 import { Action } from '@ngrx/store';
 import { MonoTypeOperatorFunction, OperatorFunction } from 'rxjs';
 import { filter, map } from 'rxjs/operators';

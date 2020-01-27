@@ -23,8 +23,8 @@ describe('merlin reducer', () => {
       const state: MerlinState = reducer(
         { ...initialState },
         MerlinActions.createActivityInstance({
-          planId: '42',
           activityInstance: sActivityInstance,
+          planId: '42',
         }),
       );
       expect(state).toEqual({
@@ -310,9 +310,9 @@ describe('merlin reducer', () => {
       const state: MerlinState = reducer(
         { ...initialState },
         MerlinActions.updateActivityInstance({
-          planId: '42',
-          activityInstanceId: '42',
           activityInstance: sActivityInstance,
+          activityInstanceId: '42',
+          planId: '42',
         }),
       );
       expect(state).toEqual({
