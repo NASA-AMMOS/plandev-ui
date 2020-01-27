@@ -51,10 +51,11 @@ pipeline {
               curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
             fi
             [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
-            nvm install v10.13.0
+            nvm install v12.14.1
 
-            # Install dependencies, test, and build
+            # Install dependencies, cloc, test, and build
             npx yarn --silent
+            npx yarn cloc
             npx yarn test
             npx yarn build --prod
 

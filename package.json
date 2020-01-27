@@ -18,6 +18,7 @@
   "scripts": {
     "build": "ng build",
     "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui -t 88433ae...904d97a",
+    "cloc": "cloc src",
     "e2e": "ng e2e",
     "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
     "lint": "ng lint --fix",
@@ -67,6 +68,7 @@
     "@types/jasminewd2": "~2.0.8",
     "@types/lodash-es": "^4.17.3",
     "@types/node": "^12.11.1",
+    "cloc": "^2.5.1",
     "codelyzer": "^5.2.1",
     "generate-changelog": "^1.8.0",
     "husky": "^4.2.1",
