@@ -8,6 +8,7 @@ export const environment = {
   adaptationServiceBaseUrl: `${windowBaseUrl}:27182`,
   planServiceBaseUrl: `${windowBaseUrl}:27183`,
   production: false,
+  vsCodeServerUrl: `http://100.64.92.85:8081/`,
 };
 
 /*

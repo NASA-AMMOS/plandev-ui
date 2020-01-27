@@ -5,6 +5,7 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { select, Store } from '@ngrx/store';
+import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
 import { AuthActions, MerlinActions } from './actions';
 import { AppState } from './app-store';
@@ -19,6 +20,7 @@ import { getLoading, getPath } from './selectors';
 export class AppComponent implements OnDestroy {
   isLoginPage = true;
   loading = false;
+  vsCodeServerUrl = environment.vsCodeServerUrl;
 
   private subs = new SubSink();
 

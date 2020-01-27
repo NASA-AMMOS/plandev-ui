@@ -26,6 +26,17 @@
         </a>
         <a
           *ngIf="!isLoginPage"
+          [href]="vsCodeServerUrl"
+          mat-list-item
+          matTooltip="Editor"
+          matTooltipPosition="right"
+          target="_blank"
+        >
+          <mat-icon mat-list-icon>code</mat-icon>
+          <span matLine>Editor</span>
+        </a>
+        <a
+          *ngIf="!isLoginPage"
           mat-list-item
           matTooltip="Logout"
           matTooltipPosition="right"
