@@ -64,13 +64,21 @@ export function getXScale(
     .range([0, drawWidth]);
 }
 
+/**
+ * @note We add a step to the min and max of the domain so points
+ * at the min or max are not clipped against the canvas top and bottom borders.
+ */
 export function getYScale(
   domain: number[],
   drawHeight: number,
 ): d3.ScaleLinear<number, number> {
+  const scale = d3.scaleLinear().domain(domain);
+  const [t0, t1] = scale.ticks();
+  const step = Math.abs(t1 - t0);
+  const [min, max] = domain;
   return d3
     .scaleLinear()
-    .domain(domain)
+    .domain([min - step, max + step])
     .range([drawHeight, 0]);
 }
 

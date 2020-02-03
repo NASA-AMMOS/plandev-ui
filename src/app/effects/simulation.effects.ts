@@ -1,39 +1,23 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
 import { concat, of } from 'rxjs';
-import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { MerlinActions, SimulationActions } from '../actions';
-import { AppState } from '../app-store';
-import { getLineBand, getXRangeBand } from '../mocks';
 import { ApiService } from '../services';
 
 @Injectable()
 export class SimulationEffects {
-  constructor(
-    private actions: Actions,
-    private apiService: ApiService,
-    private store: Store<AppState>,
-  ) {}
+  constructor(private actions: Actions, private apiService: ApiService) {}
 
   run = createEffect(() =>
     this.actions.pipe(
       ofType(SimulationActions.run),
-      withLatestFrom(this.store),
-      map(([_, state]) => state),
-      switchMap(state =>
+      switchMap(() =>
         concat(
           of(MerlinActions.setLoading({ loading: true })),
           this.apiService.simulationRun().pipe(
-            switchMap(() => {
-              return [
-                SimulationActions.runSuccess({
-                  stateBands: {
-                    ...getLineBand(state.merlin.selectedPlan),
-                    ...getXRangeBand(state.merlin.selectedPlan),
-                  },
-                }),
-              ];
+            switchMap(stateBands => {
+              return [SimulationActions.runSuccess({ stateBands })];
             }),
             catchError((errorMsg: string) => {
               console.log(errorMsg);

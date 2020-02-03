@@ -4,7 +4,9 @@ import omit from 'lodash-es/omit';
 import { Observable, Observer } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { getSimulationRunBands } from '../mocks';
 import {
+  Band,
   CActivityInstanceMap,
   CActivityInstanceParameterMap,
   CActivityTypeMap,
@@ -20,6 +22,7 @@ import {
   SCreateAdaption,
   SPlan,
   SPlanMap,
+  StringTMap,
 } from '../types';
 
 const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
@@ -245,11 +248,13 @@ export class ApiService {
     });
   }
 
-  simulationRun(): Observable<string> {
-    return new Observable((o: Observer<string>) => {
-      // TODO.
+  simulationRun(): Observable<StringTMap<Band>> {
+    // TODO.
+    const stateBands = getSimulationRunBands();
+
+    return new Observable((o: Observer<StringTMap<Band>>) => {
       setTimeout(() => {
-        o.next('Simulation success');
+        o.next(stateBands);
         o.complete();
       }, 1000);
     });

@@ -8,15 +8,18 @@ import {
   cAdaptationMap,
   cPlan,
   cPlanMap,
+  getSimulationRunBands,
   planId,
 } from '../mocks';
 import {
+  Band,
   CActivityInstanceMap,
   CActivityTypeMap,
   CAdaptationMap,
   CPlan,
   CPlanMap,
   Id,
+  StringTMap,
 } from '../types';
 
 @Injectable()
@@ -102,6 +105,15 @@ export class ApiMockService {
   getPlan(): Observable<CPlan> {
     return new Observable((o: Observer<CPlan>) => {
       o.next(cPlan);
+      o.complete();
+    });
+  }
+
+  simulationRun(): Observable<StringTMap<Band>> {
+    const stateBands = getSimulationRunBands();
+
+    return new Observable((o: Observer<StringTMap<Band>>) => {
+      o.next(stateBands);
       o.complete();
     });
   }
