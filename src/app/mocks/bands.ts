@@ -1,8 +1,7 @@
-import * as d3 from 'd3';
 import random from 'lodash-es/random';
 import range from 'lodash-es/range';
 import uniqueId from 'lodash-es/uniqueId';
-import { getUnixEpochTime } from '../functions';
+import { getUnixEpochTime, simulationResultsToBands } from '../functions';
 import {
   Band,
   CPlan,
@@ -82,47 +81,7 @@ export function getSimulationRunBands(): StringTMap<Band> {
       '2020-001T00:00:55',
     ],
   };
-  const { resources, times } = simulationResults;
-
-  const stateBands = Object.keys(resources).reduce((bands, resource) => {
-    const values = resources[resource];
-    const points: PointLine[] = values.map((y, index) => ({
-      color: '#ffa459',
-      id: `pointLine-${index}`,
-      radius: 3,
-      selected: false,
-      type: 'line',
-      x: getUnixEpochTime(times[index]),
-      y,
-    }));
-    const subBands: SubBandLine[] = [
-      {
-        id: `subBandLine-${resource}`,
-        points,
-        type: 'line',
-      },
-    ];
-    const id = `band-${resource}`;
-    const band: Band = {
-      height: 150,
-      id,
-      order: 0,
-      subBands,
-      yAxis: {
-        labelFillColor: '#000000',
-        labelFontSize: 14,
-        labelOffset: '-2.5em',
-        labelText: resource,
-        scaleDomain: d3.extent(values),
-      },
-    };
-
-    bands[id] = band;
-
-    return bands;
-  }, {});
-
-  return stateBands;
+  return simulationResultsToBands(simulationResults);
 }
 
 export function getXRangeBand(

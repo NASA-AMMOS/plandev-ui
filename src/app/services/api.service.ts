@@ -4,7 +4,7 @@ import omit from 'lodash-es/omit';
 import { Observable, Observer } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { getSimulationRunBands } from '../mocks';
+import { simulationResultsToBands } from '../functions';
 import {
   Band,
   CActivityInstanceMap,
@@ -20,6 +20,7 @@ import {
   SActivityTypeMap,
   SAdaptationMap,
   SCreateAdaption,
+  SimulationResults,
   SPlan,
   SPlanMap,
   StringTMap,
@@ -250,14 +251,11 @@ export class ApiService {
 
   simulationRun(): Observable<StringTMap<Band>> {
     // TODO.
-    const stateBands = getSimulationRunBands();
-
-    return new Observable((o: Observer<StringTMap<Band>>) => {
-      setTimeout(() => {
-        o.next(stateBands);
-        o.complete();
-      }, 1000);
-    });
+    return this.http
+      .get<SimulationResults>(`./assets/simulation-results.json`)
+      .pipe(
+        map(simulationResults => simulationResultsToBands(simulationResults)),
+      );
   }
 
   updateActivityInstance(
