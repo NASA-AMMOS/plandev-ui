@@ -8,7 +8,6 @@ This document describes how to set up your development environment to build and 
 * [Start Development Server](#start-development-server)
 * [Building](#building)
 * [Running Unit Tests](#running-unit-tests)
-* [Running End-to-End Tests](#running-end-to-end-tests)
 
 ## Prerequisite Software
 
@@ -58,7 +57,3 @@ Run `yarn build` to build the project. The build artifacts will be stored in the
 ## Running Unit Tests
 
 Run `yarn test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running End-to-End Tests
-
-Run `yarn e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).

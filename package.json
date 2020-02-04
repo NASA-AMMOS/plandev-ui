@@ -19,18 +19,15 @@
     "build": "ng build",
     "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui -t 88433ae...904d97a",
     "cloc": "cloc src",
-    "e2e": "ng e2e",
     "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
     "lint": "ng lint --fix",
     "ng": "ng",
     "prebuild": "yarn run version",
     "prestart": "yarn run version",
-    "protractor": "protractor e2e/protractor.conf.js",
     "start": "ng serve",
     "test": "ng test --code-coverage --watch=false --browsers FirefoxHeadless",
     "test:watch": "ng test --browsers FirefoxHeadless",
-    "version": "node ./scripts/git-version.js",
-    "webdriver-manager:update": "npx webdriver-manager update"
+    "version": "node ./scripts/git-version.js"
   },
   "dependencies": {
     "@angular/animations": "~9.0.0-rc.14",
@@ -82,7 +79,6 @@
     "karma-jasmine-html-reporter": "^1.5.1",
     "karma-junit-reporter": "^2.0.1",
     "prettier": "^1.19.1",
-    "protractor": "~5.4.2",
     "ts-node": "^8.6.2",
     "tslint": "~6.0.0",
     "typescript": "~3.6.4"
