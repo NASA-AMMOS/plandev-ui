@@ -16,15 +16,20 @@ export function simulationResultsToBands(
   return Object.keys(resources).reduce((bands, resource) => {
     const values = resources[resource];
     const id = `band-${resource}`;
-    const points: PointLine[] = values.map((y, index) => ({
-      color: '#ffa459',
-      id: `${id}-pointLine-${index}`,
-      radius: 3,
-      selected: false,
-      type: 'line',
-      x: getUnixEpochTime(times[index]),
-      y,
-    }));
+    const points: PointLine[] = values.reduce((acc, y, index) => {
+      if (y !== null) {
+        acc.push({
+          color: '#ffa459',
+          id: `${id}-pointLine-${index}`,
+          radius: 3,
+          selected: false,
+          type: 'line',
+          x: getUnixEpochTime(times[index]),
+          y,
+        });
+      }
+      return acc;
+    }, []);
     const subBands: SubBandLine[] = [
       {
         id: `${id}-subBandLine-${resource}`,
