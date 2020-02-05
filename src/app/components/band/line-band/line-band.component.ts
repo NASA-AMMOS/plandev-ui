@@ -126,7 +126,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       .line<PointLine>()
       .x(d => Math.floor(xScale(d.x)))
       .y(d => Math.floor(yScale(d.y)))
-      .curve(d3.curveLinear);
+      .curve(d3.curveStep);
     forEachCanvas(canvases, (_, ctx) => {
       ctx.beginPath();
       line.context(ctx)(this.points);
