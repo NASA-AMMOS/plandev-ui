@@ -14,7 +14,7 @@ export function simulationResultsToBands(
   const { resources, times } = simulationResults;
 
   return Object.keys(resources).reduce((bands, resource) => {
-    const values = resources[resource];
+    const values: (number | null | boolean)[] = resources[resource];
     const id = `band-${resource}`;
     const points: PointLine[] = values.reduce((acc, y, index) => {
       if (y !== null) {
@@ -25,7 +25,7 @@ export function simulationResultsToBands(
           selected: false,
           type: 'line',
           x: getUnixEpochTime(times[index]),
-          y,
+          y: y === true ? 1 : y === false ? 0 : y,
         });
       }
       return acc;
@@ -38,16 +38,16 @@ export function simulationResultsToBands(
       },
     ];
     const band: Band = {
-      height: 150,
+      height: 260,
       id,
       order: 0,
       subBands,
       yAxis: {
         labelFillColor: '#000000',
-        labelFontSize: 14,
-        labelOffset: '-2.5em',
+        labelFontSize: 12,
+        labelOffset: '-3.8em',
         labelText: resource,
-        scaleDomain: d3.extent(values),
+        scaleDomain: d3.extent(values as number[]),
       },
     };
 
