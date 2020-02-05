@@ -15,7 +15,7 @@ import {
 })
 export class ToolbarComponent implements OnChanges {
   @Input()
-  height: number;
+  height = 0;
 
   constructor(private elRef: ElementRef) {}
 

@@ -460,6 +460,16 @@ describe('merlin reducer', () => {
   });
 
   describe('zoomOutViewTimeRange', () => {
+    it('should return the default state if there is no selected plan', () => {
+      const state: MerlinState = reducer(
+        { ...initialState },
+        MerlinActions.zoomOutViewTimeRange(),
+      );
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+
     it('should properly zoom out the viewTimeRange', () => {
       let state: MerlinState = reducer(
         { ...initialState },

@@ -1,4 +1,9 @@
-import { CActivityTypeMap } from '../types';
+import { CActivityType, CActivityTypeMap } from '../types';
+
+export const cActivityType: CActivityType = {
+  name: 'peelBanana',
+  parameters: [{ default: 'fromStem', name: 'peelDirection', type: 'string' }],
+};
 
 export const cActivityTypeMap: CActivityTypeMap = {
   peelBanana: {

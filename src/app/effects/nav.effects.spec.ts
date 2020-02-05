@@ -65,6 +65,16 @@ describe('nav effects', () => {
     });
   });
 
+  describe('init', () => {
+    it('should not return any actions when there is no AERIE_USER', () => {
+      testScheduler.run(({ hot, expectObservable }) => {
+        const action = { type: '@ngrx/effects/init' };
+        actions = hot('-a', { a: action });
+        expectObservable(effects.init).toBe('-');
+      });
+    });
+  });
+
   describe('navAdaptations', () => {
     it('should dispatch the appropriate actions when navigating to /adaptations', () => {
       testScheduler.run(({ hot, expectObservable }) => {
