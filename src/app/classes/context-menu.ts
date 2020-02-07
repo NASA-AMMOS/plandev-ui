@@ -1,4 +1,4 @@
-import { MatMenuTrigger } from '@angular/material';
+import { MatMenuTrigger } from '@angular/material/menu';
 
 export class ContextMenu {
   contextMenuPosition = { x: 0, y: 0 };

@@ -12,7 +12,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { MatMenuTrigger } from '@angular/material';
+import { MatMenuTrigger } from '@angular/material/menu';
 import * as d3 from 'd3';
 import { ContextMenu } from '../../classes';
 import {

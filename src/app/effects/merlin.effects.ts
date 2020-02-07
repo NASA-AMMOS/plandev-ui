@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
