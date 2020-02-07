@@ -83,8 +83,6 @@ export const deletePlanSuccess = createAction(
 
 export const openAboutDialog = createAction('[merlin] openAboutDialog');
 
-export const resize = createAction('[merlin] resize');
-
 export const restoreViewTimeRange = createAction(
   '[merlin] restoreViewTimeRange',
 );

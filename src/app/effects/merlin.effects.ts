@@ -304,18 +304,6 @@ export class MerlinEffects {
     { dispatch: false },
   );
 
-  resize = createEffect(
-    () =>
-      this.actions.pipe(
-        ofType(MerlinActions.resize),
-        switchMap(() => {
-          setTimeout(() => dispatchEvent(new Event('resize')));
-          return [];
-        }),
-      ),
-    { dispatch: false },
-  );
-
   updateActivityInstance = createEffect(() => {
     return this.actions.pipe(
       ofType(MerlinActions.updateActivityInstance),
