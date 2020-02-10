@@ -164,26 +164,6 @@ export const getSelectedPlan = createSelector(
   (state: MerlinState): CPlan | null => state.selectedPlan,
 );
 
-export const getMarginBottom = createSelector(
-  getMerlinState,
-  (state: MerlinState): number => state.marginBottom,
-);
-
-export const getMarginLeft = createSelector(
-  getMerlinState,
-  (state: MerlinState): number => state.marginLeft,
-);
-
-export const getMarginRight = createSelector(
-  getMerlinState,
-  (state: MerlinState): number => state.marginRight,
-);
-
-export const getMarginTop = createSelector(
-  getMerlinState,
-  (state: MerlinState): number => state.marginTop,
-);
-
 export const getMaxTimeRange = createSelector(
   getSelectedPlan,
   (plan: CPlan | null): TimeRange => {

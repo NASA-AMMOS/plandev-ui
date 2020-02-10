@@ -19,10 +19,6 @@ export interface MerlinState {
   adaptations: CAdaptationMap | null;
   createActivityInstanceError: string | null;
   loading: boolean;
-  marginBottom: number;
-  marginLeft: number;
-  marginRight: number;
-  marginTop: number;
   plans: CPlanMap | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
@@ -36,10 +32,6 @@ export const initialState: MerlinState = {
   adaptations: null,
   createActivityInstanceError: null,
   loading: false,
-  marginBottom: 10,
-  marginLeft: 70,
-  marginRight: 70,
-  marginTop: 10,
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
@@ -203,22 +195,6 @@ export const reducer = createReducer(
           : state.activityInstances[action.activityInstanceId].parameters,
       },
     },
-  })),
-  on(MerlinActions.updateMarginBottom, (state, { marginBottom }) => ({
-    ...state,
-    marginBottom,
-  })),
-  on(MerlinActions.updateMarginLeft, (state, { marginLeft }) => ({
-    ...state,
-    marginLeft,
-  })),
-  on(MerlinActions.updateMarginRight, (state, { marginRight }) => ({
-    ...state,
-    marginRight,
-  })),
-  on(MerlinActions.updateMarginTop, (state, { marginTop }) => ({
-    ...state,
-    marginTop,
   })),
   on(MerlinActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
     ...state,
