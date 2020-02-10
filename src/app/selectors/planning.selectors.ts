@@ -1,6 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { compare, getUnixEpochTime } from '../functions';
-import { MerlinState } from '../reducers/merlin.reducer';
+import { PlanningState } from '../reducers/planning.reducer';
 import {
   Band,
   CActivityInstance,
@@ -13,11 +13,11 @@ import {
   TimeRange,
 } from '../types';
 
-const getMerlinState = createFeatureSelector<MerlinState>('merlin');
+const getPlanningState = createFeatureSelector<PlanningState>('planning');
 
 export const getActivityInstancesMap = createSelector(
-  getMerlinState,
-  (state: MerlinState): CActivityInstanceMap => state.activityInstances,
+  getPlanningState,
+  (state: PlanningState): CActivityInstanceMap => state.activityInstances,
 );
 
 export const getActivityInstances = createSelector(
@@ -35,8 +35,8 @@ export const getActivityInstances = createSelector(
 );
 
 export const getSelectedActivityInstanceId = createSelector(
-  getMerlinState,
-  (state: MerlinState): string | null => state.selectedActivityInstanceId,
+  getPlanningState,
+  (state: PlanningState): string | null => state.selectedActivityInstanceId,
 );
 
 export const getActivityInstancesBand = createSelector(
@@ -82,8 +82,8 @@ export const getActivityInstancesBand = createSelector(
 );
 
 export const getActivityInstancesForSelectedPlan = createSelector(
-  getMerlinState,
-  (state: MerlinState): CActivityInstance[] | null => {
+  getPlanningState,
+  (state: PlanningState): CActivityInstance[] | null => {
     if (state.selectedPlan && state.activityInstances) {
       const activityInstances = state.selectedPlan.activityInstanceIds.reduce(
         (instances, id) => {
@@ -111,35 +111,37 @@ export const getActivityInstancesForSelectedPlan = createSelector(
 );
 
 export const getActivityTypes = createSelector(
-  getMerlinState,
-  (state: MerlinState): CActivityType[] | null =>
+  getPlanningState,
+  (state: PlanningState): CActivityType[] | null =>
     state.activityTypes ? Object.values(state.activityTypes) : null,
 );
 
 export const getActivityTypesMap = createSelector(
-  getMerlinState,
-  (state: MerlinState): CActivityTypeMap | null => state.activityTypes,
+  getPlanningState,
+  (state: PlanningState): CActivityTypeMap | null => state.activityTypes,
 );
 
 export const getAdaptations = createSelector(
-  getMerlinState,
-  (state: MerlinState): CAdaptation[] | null =>
+  getPlanningState,
+  (state: PlanningState): CAdaptation[] | null =>
     state.adaptations ? Object.values(state.adaptations) : null,
 );
 
 export const getCreateActivityInstanceError = createSelector(
-  getMerlinState,
-  (state: MerlinState): string | null => state.createActivityInstanceError,
+  getPlanningState,
+  (state: PlanningState): string | null => state.createActivityInstanceError,
 );
 
 export const getLoading = createSelector(
-  getMerlinState,
-  (state: MerlinState): boolean => state.loading,
+  getPlanningState,
+  (state: PlanningState): boolean => state.loading,
 );
 
-export const getPlans = createSelector(getMerlinState, (state: MerlinState):
-  | CPlan[]
-  | null => (state.plans ? Object.values(state.plans) : null));
+export const getPlans = createSelector(
+  getPlanningState,
+  (state: PlanningState): CPlan[] | null =>
+    state.plans ? Object.values(state.plans) : null,
+);
 
 export const getSelectedActivityInstance = createSelector(
   getActivityInstancesMap,
@@ -160,8 +162,8 @@ export const getSelectedActivityInstance = createSelector(
 );
 
 export const getSelectedPlan = createSelector(
-  getMerlinState,
-  (state: MerlinState): CPlan | null => state.selectedPlan,
+  getPlanningState,
+  (state: PlanningState): CPlan | null => state.selectedPlan,
 );
 
 export const getMaxTimeRange = createSelector(
@@ -178,11 +180,11 @@ export const getMaxTimeRange = createSelector(
 );
 
 export const getUpdateActivityInstanceError = createSelector(
-  getMerlinState,
-  (state: MerlinState): string | null => state.updateActivityInstanceError,
+  getPlanningState,
+  (state: PlanningState): string | null => state.updateActivityInstanceError,
 );
 
 export const getViewTimeRange = createSelector(
-  getMerlinState,
-  (state: MerlinState): TimeRange => state.viewTimeRange,
+  getPlanningState,
+  (state: PlanningState): TimeRange => state.viewTimeRange,
 );

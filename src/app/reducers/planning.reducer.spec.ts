@@ -1,4 +1,4 @@
-import { MerlinActions } from '../actions';
+import { PlanningActions } from '../actions';
 import { getUnixEpochTime } from '../functions';
 import {
   activityInstanceId,
@@ -15,14 +15,14 @@ import {
   sPlan,
 } from '../mocks';
 import { SCreateAdaption, SPlan } from '../types';
-import { initialState, MerlinState, reducer } from './merlin.reducer';
+import { initialState, PlanningState, reducer } from './planning.reducer';
 
-describe('merlin reducer', () => {
+describe('planning reducer', () => {
   describe('createActivityInstance', () => {
     it('it should set createActivityInstanceError', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.createActivityInstance({
+        PlanningActions.createActivityInstance({
           activityInstance: sActivityInstance,
           planId: '42',
         }),
@@ -36,9 +36,9 @@ describe('merlin reducer', () => {
   describe('createActivityInstanceFailure', () => {
     it('it should set createActivityInstanceError', () => {
       const errorMsg = 'Create activity instance failed!';
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.createActivityInstanceFailure({
+        PlanningActions.createActivityInstanceFailure({
           errorMsg,
         }),
       );
@@ -55,9 +55,12 @@ describe('merlin reducer', () => {
         ...sAdaptation,
         file: new File([], ''),
       };
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.createAdaptationSuccess({ id: adaptationId, adaptation }),
+        PlanningActions.createAdaptationSuccess({
+          adaptation,
+          id: adaptationId,
+        }),
       );
       expect(state).toEqual({
         ...initialState,
@@ -75,9 +78,9 @@ describe('merlin reducer', () => {
       const plan: SPlan = {
         ...sPlan,
       };
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.createPlanSuccess({ id: planId, plan }),
+        PlanningActions.createPlanSuccess({ id: planId, plan }),
       );
       expect(state).toEqual({
         ...initialState,
@@ -93,16 +96,16 @@ describe('merlin reducer', () => {
 
   describe('deleteActivityInstanceSuccess', () => {
     it('it should delete an activity instance', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setActivityInstances({
+        PlanningActions.setActivityInstances({
           activityInstances: cActivityInstanceMap,
           planId,
         }),
       );
       state = reducer(
         state,
-        MerlinActions.setSelectedActivityInstanceId({
+        PlanningActions.setSelectedActivityInstanceId({
           selectedActivityInstanceId: activityInstanceId,
         }),
       );
@@ -113,7 +116,7 @@ describe('merlin reducer', () => {
       });
       state = reducer(
         state,
-        MerlinActions.deleteActivityInstanceSuccess({ activityInstanceId }),
+        PlanningActions.deleteActivityInstanceSuccess({ activityInstanceId }),
       );
       expect(state).toEqual({
         ...initialState,
@@ -125,15 +128,15 @@ describe('merlin reducer', () => {
 
   describe('deleteAdaptationSuccess', () => {
     it('it should delete an adaptation', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setAdaptations({
+        PlanningActions.setAdaptations({
           adaptations: cAdaptationMap,
         }),
       );
       state = reducer(
         state,
-        MerlinActions.deleteAdaptationSuccess({ id: adaptationId }),
+        PlanningActions.deleteAdaptationSuccess({ id: adaptationId }),
       );
       expect(state).toEqual({
         ...initialState,
@@ -144,13 +147,13 @@ describe('merlin reducer', () => {
 
   describe('deletePlanSuccess', () => {
     it('it should delete a plan', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setPlans({
+        PlanningActions.setPlans({
           plans: cPlanMap,
         }),
       );
-      state = reducer(state, MerlinActions.deletePlanSuccess({ id: planId }));
+      state = reducer(state, PlanningActions.deletePlanSuccess({ id: planId }));
       expect(state).toEqual({
         ...initialState,
         plans: {},
@@ -160,9 +163,9 @@ describe('merlin reducer', () => {
 
   describe('restoreViewTimeRange', () => {
     it('viewTimeRange should not change when there is no selectedPlan', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.restoreViewTimeRange(),
+        PlanningActions.restoreViewTimeRange(),
       );
       expect(state).toEqual({
         ...initialState,
@@ -170,15 +173,15 @@ describe('merlin reducer', () => {
     });
 
     it('viewTimeRange should update with the selectedPlan time range', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setSelectedPlanAndActivityTypes({
+        PlanningActions.setSelectedPlanAndActivityTypes({
           activityTypes: cActivityTypeMap,
           selectedPlan: cPlan,
         }),
       );
-      state = reducer(state, MerlinActions.zoomInViewTimeRange());
-      state = reducer(state, MerlinActions.restoreViewTimeRange());
+      state = reducer(state, PlanningActions.zoomInViewTimeRange());
+      state = reducer(state, PlanningActions.restoreViewTimeRange());
       expect(state).toEqual({
         ...initialState,
         activityTypes: cActivityTypeMap,
@@ -193,9 +196,9 @@ describe('merlin reducer', () => {
 
   describe('setActivityInstances', () => {
     it('it should set activityInstances', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setActivityInstances({
+        PlanningActions.setActivityInstances({
           activityInstances: cActivityInstanceMap,
           planId,
         }),
@@ -209,9 +212,9 @@ describe('merlin reducer', () => {
 
   describe('setAdaptations', () => {
     it('it should set adaptations', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setAdaptations({
+        PlanningActions.setAdaptations({
           adaptations: cAdaptationMap,
         }),
       );
@@ -225,9 +228,9 @@ describe('merlin reducer', () => {
   describe('setLoading', () => {
     it('it should set loading', () => {
       const loading = true;
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setLoading({ loading }),
+        PlanningActions.setLoading({ loading }),
       );
       expect(state).toEqual({
         ...initialState,
@@ -238,9 +241,9 @@ describe('merlin reducer', () => {
 
   describe('setPlans', () => {
     it('it should set plans', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setPlans({
+        PlanningActions.setPlans({
           plans: cPlanMap,
         }),
       );
@@ -254,9 +257,9 @@ describe('merlin reducer', () => {
   describe('setSelectedActivityInstanceId', () => {
     it('it should set setSelectedActivityInstanceId', () => {
       const selectedActivityInstanceId = '42';
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setSelectedActivityInstanceId({
+        PlanningActions.setSelectedActivityInstanceId({
           selectedActivityInstanceId,
         }),
       );
@@ -268,15 +271,15 @@ describe('merlin reducer', () => {
 
     it('it should set setSelectedActivityInstanceId to null if the id is already selected', () => {
       const selectedActivityInstanceId = '42';
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setSelectedActivityInstanceId({
+        PlanningActions.setSelectedActivityInstanceId({
           selectedActivityInstanceId,
         }),
       );
       state = reducer(
         state,
-        MerlinActions.setSelectedActivityInstanceId({
+        PlanningActions.setSelectedActivityInstanceId({
           selectedActivityInstanceId,
         }),
       );
@@ -289,9 +292,9 @@ describe('merlin reducer', () => {
 
   describe('setSelectedPlanAndActivityTypes', () => {
     it('it should set plans and activity types', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setSelectedPlanAndActivityTypes({
+        PlanningActions.setSelectedPlanAndActivityTypes({
           activityTypes: cActivityTypeMap,
           selectedPlan: cPlan,
         }),
@@ -307,9 +310,9 @@ describe('merlin reducer', () => {
 
   describe('updateActivityInstance', () => {
     it('it should set updateActivityInstanceError', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.updateActivityInstance({
+        PlanningActions.updateActivityInstance({
           activityInstance: sActivityInstance,
           activityInstanceId: '42',
           planId: '42',
@@ -324,9 +327,9 @@ describe('merlin reducer', () => {
   describe('updateActivityInstanceFailure', () => {
     it('it should set updateActivityInstanceError', () => {
       const errorMsg = 'Update activity instance failed!';
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.updateActivityInstanceFailure({
+        PlanningActions.updateActivityInstanceFailure({
           errorMsg,
         }),
       );
@@ -339,16 +342,16 @@ describe('merlin reducer', () => {
 
   describe('updateActivityInstanceSuccess', () => {
     it('it should update activity instances', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setActivityInstances({
+        PlanningActions.setActivityInstances({
           activityInstances: cActivityInstanceMap,
           planId,
         }),
       );
       state = reducer(
         state,
-        MerlinActions.updateActivityInstanceSuccess({
+        PlanningActions.updateActivityInstanceSuccess({
           activityInstance: sActivityInstance,
           activityInstanceId,
         }),
@@ -363,9 +366,9 @@ describe('merlin reducer', () => {
   describe('updateViewTimeRange', () => {
     it('it should update the view time range', () => {
       const viewTimeRange = { start: 217, end: 314 };
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.updateViewTimeRange({
+        PlanningActions.updateViewTimeRange({
           viewTimeRange,
         }),
       );
@@ -378,13 +381,13 @@ describe('merlin reducer', () => {
 
   describe('zoomInViewTimeRange', () => {
     it('should properly zoom in the viewTimeRange', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.updateViewTimeRange({
+        PlanningActions.updateViewTimeRange({
           viewTimeRange: { start: 10, end: 110 },
         }),
       );
-      state = reducer(state, MerlinActions.zoomInViewTimeRange());
+      state = reducer(state, PlanningActions.zoomInViewTimeRange());
       expect(state).toEqual({
         ...initialState,
         viewTimeRange: {
@@ -397,9 +400,9 @@ describe('merlin reducer', () => {
 
   describe('zoomOutViewTimeRange', () => {
     it('should return the default state if there is no selected plan', () => {
-      const state: MerlinState = reducer(
+      const state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.zoomOutViewTimeRange(),
+        PlanningActions.zoomOutViewTimeRange(),
       );
       expect(state).toEqual({
         ...initialState,
@@ -407,16 +410,16 @@ describe('merlin reducer', () => {
     });
 
     it('should properly zoom out the viewTimeRange', () => {
-      let state: MerlinState = reducer(
+      let state: PlanningState = reducer(
         { ...initialState },
-        MerlinActions.setSelectedPlanAndActivityTypes({
+        PlanningActions.setSelectedPlanAndActivityTypes({
           activityTypes: cActivityTypeMap,
           selectedPlan: cPlan,
         }),
       );
-      state = reducer(state, MerlinActions.zoomInViewTimeRange());
-      state = reducer(state, MerlinActions.zoomInViewTimeRange());
-      state = reducer(state, MerlinActions.zoomOutViewTimeRange());
+      state = reducer(state, PlanningActions.zoomInViewTimeRange());
+      state = reducer(state, PlanningActions.zoomInViewTimeRange());
+      state = reducer(state, PlanningActions.zoomOutViewTimeRange());
       expect(state).toEqual({
         ...initialState,
         activityTypes: cActivityTypeMap,

@@ -13,17 +13,17 @@ import {
 } from '../types';
 
 export const createActivityInstance = createAction(
-  '[merlin] createActivityInstance',
+  '[planning] createActivityInstance',
   props<{ planId: string; activityInstance: SActivityInstance }>(),
 );
 
 export const createActivityInstanceFailure = createAction(
-  '[merlin] createActivityInstanceFailure',
+  '[planning] createActivityInstanceFailure',
   props<{ errorMsg: string }>(),
 );
 
 export const createActivityInstanceSuccess = createAction(
-  '[merlin] createActivityInstanceSuccess',
+  '[planning] createActivityInstanceSuccess',
   props<{
     planId: string;
     activityInstanceId: string;
@@ -32,83 +32,83 @@ export const createActivityInstanceSuccess = createAction(
 );
 
 export const createAdaptation = createAction(
-  '[merlin] createAdaptation',
+  '[planning] createAdaptation',
   props<{ adaptation: SCreateAdaption }>(),
 );
 
 export const createAdaptationSuccess = createAction(
-  '[merlin] createAdaptationSuccess',
+  '[planning] createAdaptationSuccess',
   props<{ id: string; adaptation: SCreateAdaption }>(),
 );
 
 export const createPlan = createAction(
-  '[merlin] createPlan',
+  '[planning] createPlan',
   props<{ plan: SPlan }>(),
 );
 
 export const createPlanSuccess = createAction(
-  '[merlin] createPlanSuccess',
+  '[planning] createPlanSuccess',
   props<{ id: string; plan: SPlan }>(),
 );
 
 export const deleteActivityInstance = createAction(
-  '[merlin] deleteActivityInstance',
+  '[planning] deleteActivityInstance',
   props<{ planId: string; activityInstanceId: string }>(),
 );
 
 export const deleteActivityInstanceSuccess = createAction(
-  '[merlin] deleteActivityInstanceSuccess',
+  '[planning] deleteActivityInstanceSuccess',
   props<{ activityInstanceId: string }>(),
 );
 
 export const deleteAdaptation = createAction(
-  '[merlin] deleteAdaptation',
+  '[planning] deleteAdaptation',
   props<{ id: string }>(),
 );
 
 export const deleteAdaptationSuccess = createAction(
-  '[merlin] deleteAdaptationSuccess',
+  '[planning] deleteAdaptationSuccess',
   props<{ id: string }>(),
 );
 
 export const deletePlan = createAction(
-  '[merlin] deletePlan',
+  '[planning] deletePlan',
   props<{ id: string }>(),
 );
 
 export const deletePlanSuccess = createAction(
-  '[merlin] deletePlanSuccess',
+  '[planning] deletePlanSuccess',
   props<{ id: string }>(),
 );
 
-export const openAboutDialog = createAction('[merlin] openAboutDialog');
+export const openAboutDialog = createAction('[planning] openAboutDialog');
 
 export const restoreViewTimeRange = createAction(
-  '[merlin] restoreViewTimeRange',
+  '[planning] restoreViewTimeRange',
 );
 
 export const setActivityInstances = createAction(
-  '[merlin] setActivityInstances',
+  '[planning] setActivityInstances',
   props<{ planId: string; activityInstances: CActivityInstanceMap }>(),
 );
 
 export const setAdaptations = createAction(
-  '[merlin] setAdaptations',
+  '[planning] setAdaptations',
   props<{ adaptations: CAdaptationMap }>(),
 );
 
 export const setLoading = createAction(
-  '[merlin] setLoading',
+  '[planning] setLoading',
   props<{ loading: boolean }>(),
 );
 
 export const setPlans = createAction(
-  '[merlin] setPlans',
+  '[planning] setPlans',
   props<{ plans: CPlanMap }>(),
 );
 
 export const setSelectedActivityInstanceId = createAction(
-  '[merlin] setSelectedActivityInstanceId',
+  '[planning] setSelectedActivityInstanceId',
   props<{
     selectedActivityInstanceId: string | null;
     keepSelected?: boolean;
@@ -116,12 +116,12 @@ export const setSelectedActivityInstanceId = createAction(
 );
 
 export const setSelectedPlanAndActivityTypes = createAction(
-  '[merlin] setSelectedPlanAndActivityTypes',
+  '[planning] setSelectedPlanAndActivityTypes',
   props<{ selectedPlan: CPlan; activityTypes: CActivityTypeMap }>(),
 );
 
 export const updateActivityInstance = createAction(
-  '[merlin] updateActivityInstance',
+  '[planning] updateActivityInstance',
   props<{
     planId: string;
     activityInstanceId: string;
@@ -130,17 +130,17 @@ export const updateActivityInstance = createAction(
 );
 
 export const updateActivityInstanceFailure = createAction(
-  '[merlin] updateActivityInstanceFailure',
+  '[planning] updateActivityInstanceFailure',
   props<{ errorMsg: string }>(),
 );
 
 export const updateActivityInstanceProps = createAction(
-  '[merlin] updateActivityInstanceProps',
+  '[planning] updateActivityInstanceProps',
   props<{ activityInstanceId: string; props: Partial<CActivityInstance> }>(),
 );
 
 export const updateActivityInstanceSuccess = createAction(
-  '[merlin] updateActivityInstanceSuccess',
+  '[planning] updateActivityInstanceSuccess',
   props<{
     activityInstanceId: string;
     activityInstance: Partial<SActivityInstance>;
@@ -148,12 +148,14 @@ export const updateActivityInstanceSuccess = createAction(
 );
 
 export const updateViewTimeRange = createAction(
-  '[merlin] updateViewTimeRange',
+  '[planning] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),
 );
 
-export const zoomInViewTimeRange = createAction('[merlin] zoomInViewTimeRange');
+export const zoomInViewTimeRange = createAction(
+  '[planning] zoomInViewTimeRange',
+);
 
 export const zoomOutViewTimeRange = createAction(
-  '[merlin] zoomOutViewTimeRange',
+  '[planning] zoomOutViewTimeRange',
 );

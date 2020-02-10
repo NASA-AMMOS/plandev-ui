@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import omit from 'lodash-es/omit';
-import { MerlinActions } from '../actions';
+import { PlanningActions } from '../actions';
 import { getUnixEpochTime } from '../functions';
 import {
   CActivityInstanceMap,
@@ -13,7 +13,7 @@ import {
   TimeRange,
 } from '../types';
 
-export interface MerlinState {
+export interface PlanningState {
   activityInstances: CActivityInstanceMap | null;
   activityTypes: CActivityTypeMap | null;
   adaptations: CAdaptationMap | null;
@@ -26,7 +26,7 @@ export interface MerlinState {
   viewTimeRange: TimeRange;
 }
 
-export const initialState: MerlinState = {
+export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
@@ -41,15 +41,15 @@ export const initialState: MerlinState = {
 
 export const reducer = createReducer(
   initialState,
-  on(MerlinActions.createActivityInstance, state => ({
+  on(PlanningActions.createActivityInstance, state => ({
     ...state,
     createActivityInstanceError: null,
   })),
-  on(MerlinActions.createActivityInstanceFailure, (state, action) => ({
+  on(PlanningActions.createActivityInstanceFailure, (state, action) => ({
     ...state,
     createActivityInstanceError: action.errorMsg,
   })),
-  on(MerlinActions.createActivityInstanceSuccess, (state, action) => ({
+  on(PlanningActions.createActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
       ...state.activityInstances,
@@ -68,7 +68,7 @@ export const reducer = createReducer(
       ),
     },
   })),
-  on(MerlinActions.createAdaptationSuccess, (state, action) => ({
+  on(PlanningActions.createAdaptationSuccess, (state, action) => ({
     ...state,
     adaptations: {
       ...state.adaptations,
@@ -78,7 +78,7 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(MerlinActions.createPlanSuccess, (state, action) => ({
+  on(PlanningActions.createPlanSuccess, (state, action) => ({
     ...state,
     plans: {
       ...state.plans,
@@ -89,7 +89,7 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(MerlinActions.deleteActivityInstanceSuccess, (state, action) => ({
+  on(PlanningActions.deleteActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: omit(state.activityInstances, action.activityInstanceId),
     selectedActivityInstanceId:
@@ -97,15 +97,15 @@ export const reducer = createReducer(
         ? null
         : state.selectedActivityInstanceId,
   })),
-  on(MerlinActions.deleteAdaptationSuccess, (state, action) => ({
+  on(PlanningActions.deleteAdaptationSuccess, (state, action) => ({
     ...state,
     adaptations: omit(state.adaptations, action.id),
   })),
-  on(MerlinActions.deletePlanSuccess, (state, action) => ({
+  on(PlanningActions.deletePlanSuccess, (state, action) => ({
     ...state,
     plans: omit(state.plans, action.id),
   })),
-  on(MerlinActions.restoreViewTimeRange, state => {
+  on(PlanningActions.restoreViewTimeRange, state => {
     if (state.selectedPlan) {
       return {
         ...state,
@@ -118,24 +118,24 @@ export const reducer = createReducer(
       return state;
     }
   }),
-  on(MerlinActions.setActivityInstances, (state, { activityInstances }) => ({
+  on(PlanningActions.setActivityInstances, (state, { activityInstances }) => ({
     ...state,
     activityInstances,
   })),
-  on(MerlinActions.setAdaptations, (state, { adaptations }) => ({
+  on(PlanningActions.setAdaptations, (state, { adaptations }) => ({
     ...state,
     adaptations,
   })),
-  on(MerlinActions.setLoading, (state, { loading }) => ({
+  on(PlanningActions.setLoading, (state, { loading }) => ({
     ...state,
     loading,
   })),
-  on(MerlinActions.setPlans, (state, { plans }) => ({
+  on(PlanningActions.setPlans, (state, { plans }) => ({
     ...state,
     plans,
   })),
   on(
-    MerlinActions.setSelectedActivityInstanceId,
+    PlanningActions.setSelectedActivityInstanceId,
     (state, { keepSelected, selectedActivityInstanceId }) => {
       if (
         !keepSelected &&
@@ -154,7 +154,7 @@ export const reducer = createReducer(
     },
   ),
   on(
-    MerlinActions.setSelectedPlanAndActivityTypes,
+    PlanningActions.setSelectedPlanAndActivityTypes,
     (state, { activityTypes, selectedPlan }) => ({
       ...state,
       activityTypes,
@@ -165,15 +165,15 @@ export const reducer = createReducer(
       },
     }),
   ),
-  on(MerlinActions.updateActivityInstance, state => ({
+  on(PlanningActions.updateActivityInstance, state => ({
     ...state,
     updateActivityInstanceError: null,
   })),
-  on(MerlinActions.updateActivityInstanceFailure, (state, action) => ({
+  on(PlanningActions.updateActivityInstanceFailure, (state, action) => ({
     ...state,
     updateActivityInstanceError: action.errorMsg,
   })),
-  on(MerlinActions.updateActivityInstanceProps, (state, action) => ({
+  on(PlanningActions.updateActivityInstanceProps, (state, action) => ({
     ...state,
     activityInstances: {
       ...state.activityInstances,
@@ -183,7 +183,7 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(MerlinActions.updateActivityInstanceSuccess, (state, action) => ({
+  on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
       ...state.activityInstances,
@@ -196,15 +196,15 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(MerlinActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
+  on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
     ...state,
     viewTimeRange,
   })),
-  on(MerlinActions.zoomInViewTimeRange, state => ({
+  on(PlanningActions.zoomInViewTimeRange, state => ({
     ...state,
     viewTimeRange: changeZoom(state.viewTimeRange, 10),
   })),
-  on(MerlinActions.zoomOutViewTimeRange, state => {
+  on(PlanningActions.zoomOutViewTimeRange, state => {
     if (state.selectedPlan) {
       let { start, end } = changeZoom(state.viewTimeRange, -10);
       const selectedPlanStart = getUnixEpochTime(

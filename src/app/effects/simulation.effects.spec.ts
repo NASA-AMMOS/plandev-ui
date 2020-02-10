@@ -5,7 +5,7 @@ import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
-import { MerlinActions, SimulationActions } from '../actions';
+import { PlanningActions, SimulationActions } from '../actions';
 import { getSimulationRunBands } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
 import { SimulationEffects } from './simulation.effects';
@@ -43,9 +43,9 @@ describe('simulation effects', () => {
         const action = SimulationActions.run();
         actions = hot('-a', { a: action });
         expectObservable(effects.run).toBe('-(bcd)', {
-          b: MerlinActions.setLoading({ loading: true }),
+          b: PlanningActions.setLoading({ loading: true }),
           c: SimulationActions.runSuccess({ stateBands }),
-          d: MerlinActions.setLoading({ loading: false }),
+          d: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -59,9 +59,9 @@ describe('simulation effects', () => {
           cold('#|', null, errorMsg),
         );
         expectObservable(effects.run).toBe('-(bcd)', {
-          b: MerlinActions.setLoading({ loading: true }),
+          b: PlanningActions.setLoading({ loading: true }),
           c: SimulationActions.runFailure({ errorMsg }),
-          d: MerlinActions.setLoading({ loading: false }),
+          d: PlanningActions.setLoading({ loading: false }),
         });
       });
     });

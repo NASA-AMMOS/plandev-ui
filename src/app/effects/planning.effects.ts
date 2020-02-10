@@ -4,12 +4,12 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { version } from '../../environments/version';
-import { MerlinActions, ToastActions } from '../actions';
+import { PlanningActions, ToastActions } from '../actions';
 import { AboutDialogComponent, ConfirmDialogComponent } from '../components';
 import { ApiService } from '../services';
 
 @Injectable()
-export class MerlinEffects {
+export class PlanningEffects {
   constructor(
     private actions: Actions,
     private apiService: ApiService,
@@ -18,10 +18,10 @@ export class MerlinEffects {
 
   createActivityInstance = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.createActivityInstance),
+      ofType(PlanningActions.createActivityInstance),
       switchMap(({ planId, activityInstance }) =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService
             .createActivityInstances(planId, [activityInstance])
             .pipe(
@@ -31,7 +31,7 @@ export class MerlinEffects {
                     message: 'Activity instance created',
                     toastType: 'success',
                   }),
-                  MerlinActions.createActivityInstanceSuccess({
+                  PlanningActions.createActivityInstanceSuccess({
                     activityInstance,
                     activityInstanceId: id,
                     planId,
@@ -46,13 +46,13 @@ export class MerlinEffects {
                     message: 'Create activity instance failed',
                     toastType: 'error',
                   }),
-                  MerlinActions.createActivityInstanceFailure({
+                  PlanningActions.createActivityInstanceFailure({
                     errorMsg,
                   }),
                 ];
               }),
             ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -60,10 +60,10 @@ export class MerlinEffects {
 
   createAdaptation = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.createAdaptation),
+      ofType(PlanningActions.createAdaptation),
       switchMap(({ adaptation }) =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService.createAdaptation(adaptation).pipe(
             switchMap(({ id }) => {
               return [
@@ -71,7 +71,7 @@ export class MerlinEffects {
                   message: 'Adaptation created',
                   toastType: 'success',
                 }),
-                MerlinActions.createAdaptationSuccess({ id, adaptation }),
+                PlanningActions.createAdaptationSuccess({ id, adaptation }),
               ];
             }),
             catchError((error: Error) => {
@@ -84,7 +84,7 @@ export class MerlinEffects {
               ];
             }),
           ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -92,10 +92,10 @@ export class MerlinEffects {
 
   createPlan = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.createPlan),
+      ofType(PlanningActions.createPlan),
       switchMap(({ plan }) =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService.createPlan(plan).pipe(
             switchMap(({ id }) => {
               return [
@@ -103,7 +103,7 @@ export class MerlinEffects {
                   message: 'Plan created',
                   toastType: 'success',
                 }),
-                MerlinActions.createPlanSuccess({ id, plan }),
+                PlanningActions.createPlanSuccess({ id, plan }),
               ];
             }),
             catchError((error: Error) => {
@@ -116,7 +116,7 @@ export class MerlinEffects {
               ];
             }),
           ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -124,7 +124,7 @@ export class MerlinEffects {
 
   deleteActivityInstance = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.deleteActivityInstance),
+      ofType(PlanningActions.deleteActivityInstance),
       switchMap(({ planId, activityInstanceId }) => {
         const deleteActivityInstanceDialog = this.dialog.open(
           ConfirmDialogComponent,
@@ -151,7 +151,7 @@ export class MerlinEffects {
       switchMap(({ planId, activityInstanceId, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(MerlinActions.setLoading({ loading: true })),
+            of(PlanningActions.setLoading({ loading: true })),
             this.apiService
               .deleteActivityInstance(planId, activityInstanceId)
               .pipe(
@@ -161,7 +161,7 @@ export class MerlinEffects {
                       message: 'Activity instance deleted',
                       toastType: 'success',
                     }),
-                    MerlinActions.deleteActivityInstanceSuccess({
+                    PlanningActions.deleteActivityInstanceSuccess({
                       activityInstanceId,
                     }),
                   ];
@@ -176,7 +176,7 @@ export class MerlinEffects {
                   ];
                 }),
               ),
-            of(MerlinActions.setLoading({ loading: false })),
+            of(PlanningActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -186,7 +186,7 @@ export class MerlinEffects {
 
   deleteAdaptation = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.deleteAdaptation),
+      ofType(PlanningActions.deleteAdaptation),
       switchMap(({ id }) => {
         const deleteAdaptationDialog = this.dialog.open(
           ConfirmDialogComponent,
@@ -208,7 +208,7 @@ export class MerlinEffects {
       switchMap(({ id, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(MerlinActions.setLoading({ loading: true })),
+            of(PlanningActions.setLoading({ loading: true })),
             this.apiService.deleteAdaptation(id).pipe(
               switchMap(() => {
                 return [
@@ -216,7 +216,7 @@ export class MerlinEffects {
                     message: 'Adaptation deleted',
                     toastType: 'success',
                   }),
-                  MerlinActions.deleteAdaptationSuccess({ id }),
+                  PlanningActions.deleteAdaptationSuccess({ id }),
                 ];
               }),
               catchError((error: Error) => {
@@ -229,7 +229,7 @@ export class MerlinEffects {
                 ];
               }),
             ),
-            of(MerlinActions.setLoading({ loading: false })),
+            of(PlanningActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -239,7 +239,7 @@ export class MerlinEffects {
 
   deletePlan = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.deletePlan),
+      ofType(PlanningActions.deletePlan),
       switchMap(({ id }) => {
         const deletePlanDialog = this.dialog.open(ConfirmDialogComponent, {
           data: {
@@ -255,7 +255,7 @@ export class MerlinEffects {
       switchMap(({ id, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(MerlinActions.setLoading({ loading: true })),
+            of(PlanningActions.setLoading({ loading: true })),
             this.apiService.deletePlan(id).pipe(
               switchMap(() => {
                 return [
@@ -263,7 +263,7 @@ export class MerlinEffects {
                     message: 'Plan deleted',
                     toastType: 'success',
                   }),
-                  MerlinActions.deletePlanSuccess({ id }),
+                  PlanningActions.deletePlanSuccess({ id }),
                 ];
               }),
               catchError((error: Error) => {
@@ -276,7 +276,7 @@ export class MerlinEffects {
                 ];
               }),
             ),
-            of(MerlinActions.setLoading({ loading: false })),
+            of(PlanningActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -287,7 +287,7 @@ export class MerlinEffects {
   openAboutDialog = createEffect(
     () => {
       return this.actions.pipe(
-        ofType(MerlinActions.openAboutDialog),
+        ofType(PlanningActions.openAboutDialog),
         switchMap(() => {
           const { name, tag } = version;
           this.dialog.open(AboutDialogComponent, {
@@ -306,10 +306,10 @@ export class MerlinEffects {
 
   updateActivityInstance = createEffect(() => {
     return this.actions.pipe(
-      ofType(MerlinActions.updateActivityInstance),
+      ofType(PlanningActions.updateActivityInstance),
       switchMap(({ planId, activityInstanceId, activityInstance }) =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService
             .updateActivityInstance(
               planId,
@@ -323,7 +323,7 @@ export class MerlinEffects {
                     message: 'Activity instance updated',
                     toastType: 'success',
                   }),
-                  MerlinActions.updateActivityInstanceSuccess({
+                  PlanningActions.updateActivityInstanceSuccess({
                     activityInstance,
                     activityInstanceId,
                   }),
@@ -337,11 +337,11 @@ export class MerlinEffects {
                     message: 'Update activity instance failed',
                     toastType: 'error',
                   }),
-                  MerlinActions.updateActivityInstanceFailure({ errorMsg }),
+                  PlanningActions.updateActivityInstanceFailure({ errorMsg }),
                 ];
               }),
             ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     );

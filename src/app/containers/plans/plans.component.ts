@@ -11,7 +11,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { MerlinActions } from '../../actions';
+import { PlanningActions } from '../../actions';
 import { AppState } from '../../app-store';
 import { getAdaptations, getPlans } from '../../selectors';
 import { CAdaptation, CPlan, SPlan } from '../../types';
@@ -78,7 +78,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
   }
 
   onDeletePlan(id: string) {
-    this.store.dispatch(MerlinActions.deletePlan({ id }));
+    this.store.dispatch(PlanningActions.deletePlan({ id }));
   }
 
   onOpenPlan(id: string) {
@@ -88,7 +88,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
   onSubmit() {
     if (this.createPlanForm.valid) {
       const plan: SPlan = { ...this.createPlanForm.value };
-      this.store.dispatch(MerlinActions.createPlan({ plan }));
+      this.store.dispatch(PlanningActions.createPlan({ plan }));
     }
   }
 }

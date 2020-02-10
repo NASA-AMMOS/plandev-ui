@@ -11,7 +11,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { MerlinActions, SimulationActions } from '../../actions';
+import { PlanningActions, SimulationActions } from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesBand,
@@ -101,14 +101,14 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   }
 
   onRestore(): void {
-    this.store.dispatch(MerlinActions.restoreViewTimeRange());
+    this.store.dispatch(PlanningActions.restoreViewTimeRange());
   }
 
   onDeletePoint(event: DeletePoint): void {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
       this.store.dispatch(
-        MerlinActions.deleteActivityInstance({
+        PlanningActions.deleteActivityInstance({
           activityInstanceId: event.id,
           planId,
         }),
@@ -120,7 +120,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
       this.store.dispatch(
-        MerlinActions.updateActivityInstance({
+        PlanningActions.updateActivityInstance({
           activityInstance: event.value,
           activityInstanceId: event.id,
           planId,
@@ -131,7 +131,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   onSelectPoint(selectedActivityInstanceId: string): void {
     this.store.dispatch(
-      MerlinActions.setSelectedActivityInstanceId({
+      PlanningActions.setSelectedActivityInstanceId({
         keepSelected: true,
         selectedActivityInstanceId,
       }),
@@ -149,7 +149,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   onUpdatePoint(event: UpdatePoint): void {
     if (event.type === 'activity') {
       this.store.dispatch(
-        MerlinActions.updateActivityInstanceProps({
+        PlanningActions.updateActivityInstanceProps({
           activityInstanceId: event.id,
           props: event.value,
         }),
@@ -158,15 +158,15 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   }
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
-    this.store.dispatch(MerlinActions.updateViewTimeRange({ viewTimeRange }));
+    this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
   }
 
   onZoomIn(): void {
-    this.store.dispatch(MerlinActions.zoomInViewTimeRange());
+    this.store.dispatch(PlanningActions.zoomInViewTimeRange());
   }
 
   onZoomOut(): void {
-    this.store.dispatch(MerlinActions.zoomOutViewTimeRange());
+    this.store.dispatch(PlanningActions.zoomOutViewTimeRange());
   }
 
   /**

@@ -10,7 +10,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { EventActions, MerlinActions } from '../../actions';
+import { EventActions, PlanningActions } from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesForSelectedPlan,
@@ -139,14 +139,14 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   onCreateActivityInstance(activityInstance: SActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
-      MerlinActions.createActivityInstance({ planId, activityInstance }),
+      PlanningActions.createActivityInstance({ planId, activityInstance }),
     );
   }
 
   onDeleteActivityInstance(activityInstanceId: string): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
-      MerlinActions.deleteActivityInstance({ planId, activityInstanceId }),
+      PlanningActions.deleteActivityInstance({ planId, activityInstanceId }),
     );
   }
 
@@ -157,7 +157,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   onSelectActivityInstance(activityInstance: CActivityInstance): void {
     this.store.dispatch(
-      MerlinActions.setSelectedActivityInstanceId({
+      PlanningActions.setSelectedActivityInstanceId({
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
@@ -167,7 +167,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     const { id: planId } = this.route.snapshot.params;
     const { activityInstanceId, activityInstance } = update;
     this.store.dispatch(
-      MerlinActions.updateActivityInstance({
+      PlanningActions.updateActivityInstance({
         activityInstance,
         activityInstanceId,
         planId,

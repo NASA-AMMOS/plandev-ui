@@ -15,8 +15,8 @@ import { TooltipModule } from './components/tooltip';
 import { ContainersModule } from './containers';
 import {
   AuthEffects,
-  MerlinEffects,
   NavEffects,
+  PlanningEffects,
   SimulationEffects,
   ToastEffects,
 } from './effects';
@@ -54,8 +54,8 @@ import { MaterialModule } from './material';
     }),
     EffectsModule.forRoot([
       AuthEffects,
-      MerlinEffects,
       NavEffects,
+      PlanningEffects,
       SimulationEffects,
       ToastEffects,
     ]),

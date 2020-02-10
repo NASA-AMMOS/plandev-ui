@@ -8,7 +8,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { MerlinActions } from '../../actions';
+import { PlanningActions } from '../../actions';
 import { AppState } from '../../app-store';
 import { getAdaptations } from '../../selectors';
 import { CAdaptation, SCreateAdaption } from '../../types';
@@ -56,7 +56,7 @@ export class AdaptationsComponent implements OnDestroy {
   }
 
   onDeleteAdaptation(id: string) {
-    this.store.dispatch(MerlinActions.deleteAdaptation({ id }));
+    this.store.dispatch(PlanningActions.deleteAdaptation({ id }));
   }
 
   onFileChange(event: Event): void {
@@ -74,7 +74,7 @@ export class AdaptationsComponent implements OnDestroy {
       const adaptation: SCreateAdaption = {
         ...this.createAdaptationForm.value,
       };
-      this.store.dispatch(MerlinActions.createAdaptation({ adaptation }));
+      this.store.dispatch(PlanningActions.createAdaptation({ adaptation }));
     }
   }
 }

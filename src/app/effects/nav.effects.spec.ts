@@ -6,7 +6,7 @@ import { RouterNavigatedAction } from '@ngrx/router-store';
 import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
-import { MerlinActions, ToastActions } from '../actions';
+import { PlanningActions, ToastActions } from '../actions';
 import { RouterState } from '../app-routing.module';
 import {
   cActivityInstanceMap,
@@ -81,9 +81,9 @@ describe('nav effects', () => {
         const action = getRouterNavigatedAction('adaptations');
         actions = hot('-a', { a: action });
         expectObservable(effects.navAdaptations).toBe('-(bcd)', {
-          b: MerlinActions.setLoading({ loading: true }),
-          c: MerlinActions.setAdaptations({ adaptations: cAdaptationMap }),
-          d: MerlinActions.setLoading({ loading: false }),
+          b: PlanningActions.setLoading({ loading: true }),
+          c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
+          d: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -96,12 +96,12 @@ describe('nav effects', () => {
           cold('#|', null, ''),
         );
         expectObservable(effects.navAdaptations).toBe('-(bcd)', {
-          b: MerlinActions.setLoading({ loading: true }),
+          b: PlanningActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch adaptations failed',
             toastType: 'error',
           }),
-          d: MerlinActions.setLoading({ loading: false }),
+          d: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -113,10 +113,10 @@ describe('nav effects', () => {
         const action = getRouterNavigatedAction('plans');
         actions = hot('-a', { a: action });
         expectObservable(effects.navPlans).toBe('-(bcde)', {
-          b: MerlinActions.setLoading({ loading: true }),
-          c: MerlinActions.setAdaptations({ adaptations: cAdaptationMap }),
-          d: MerlinActions.setPlans({ plans: cPlanMap }),
-          e: MerlinActions.setLoading({ loading: false }),
+          b: PlanningActions.setLoading({ loading: true }),
+          c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
+          d: PlanningActions.setPlans({ plans: cPlanMap }),
+          e: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -130,7 +130,7 @@ describe('nav effects', () => {
         );
         spyOn(apiService, 'getPlans').and.returnValue(cold('#|', null, ''));
         expectObservable(effects.navPlans).toBe('-(bcde)', {
-          b: MerlinActions.setLoading({ loading: true }),
+          b: PlanningActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch adaptations failed',
             toastType: 'error',
@@ -139,7 +139,7 @@ describe('nav effects', () => {
             message: 'Fetch plans failed',
             toastType: 'error',
           }),
-          e: MerlinActions.setLoading({ loading: false }),
+          e: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -155,16 +155,16 @@ describe('nav effects', () => {
         );
         actions = hot('-a', { a: action });
         expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
-          b: MerlinActions.setLoading({ loading: true }),
-          c: MerlinActions.setSelectedPlanAndActivityTypes({
+          b: PlanningActions.setLoading({ loading: true }),
+          c: PlanningActions.setSelectedPlanAndActivityTypes({
             activityTypes: cActivityTypeMap,
             selectedPlan: cPlan,
           }),
-          d: MerlinActions.setActivityInstances({
+          d: PlanningActions.setActivityInstances({
             activityInstances: cActivityInstanceMap,
             planId,
           }),
-          e: MerlinActions.setLoading({ loading: false }),
+          e: PlanningActions.setLoading({ loading: false }),
         });
       });
     });
@@ -187,7 +187,7 @@ describe('nav effects', () => {
           cold('#|', null, ''),
         );
         expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
-          b: MerlinActions.setLoading({ loading: true }),
+          b: PlanningActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch plan and activity types failed',
             toastType: 'error',
@@ -196,7 +196,7 @@ describe('nav effects', () => {
             message: 'Fetch activity instances failed',
             toastType: 'error',
           }),
-          e: MerlinActions.setLoading({ loading: false }),
+          e: PlanningActions.setLoading({ loading: false }),
         });
       });
     });

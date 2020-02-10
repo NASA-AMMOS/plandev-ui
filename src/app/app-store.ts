@@ -9,14 +9,14 @@ import {
 import { environment } from 'src/environments/environment';
 import {
   AuthReducer,
-  MerlinReducer,
+  PlanningReducer,
   SimulationReducer,
   TimelineReducer,
 } from './reducers';
 
 export interface AppState {
   auth: AuthReducer.AuthState;
-  merlin: MerlinReducer.MerlinState;
+  planning: PlanningReducer.PlanningState;
   router: fromRouter.RouterReducerState;
   simulation: SimulationReducer.SimulationState;
   timeline: TimelineReducer.TimelineState;
@@ -27,7 +27,7 @@ export const ROOT_REDUCERS = new InjectionToken<
 >('Root reducers token', {
   factory: () => ({
     auth: AuthReducer.reducer,
-    merlin: MerlinReducer.reducer,
+    planning: PlanningReducer.reducer,
     router: fromRouter.routerReducer,
     simulation: SimulationReducer.reducer,
     timeline: TimelineReducer.reducer,

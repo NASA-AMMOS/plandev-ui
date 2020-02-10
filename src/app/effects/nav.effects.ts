@@ -7,7 +7,7 @@ import {
 } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { AuthActions, MerlinActions, ToastActions } from '../actions';
+import { AuthActions, PlanningActions, ToastActions } from '../actions';
 import { AERIE_USER } from '../constants';
 import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
@@ -42,9 +42,9 @@ export class NavEffects {
       ofRoute('adaptations'),
       switchMap(_ =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
-            map(adaptations => MerlinActions.setAdaptations({ adaptations })),
+            map(adaptations => PlanningActions.setAdaptations({ adaptations })),
             catchError((error: Error) => {
               console.error(error);
               return [
@@ -55,7 +55,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     ),
@@ -66,9 +66,9 @@ export class NavEffects {
       ofRoute('plans'),
       switchMap(_ =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
-            map(adaptations => MerlinActions.setAdaptations({ adaptations })),
+            map(adaptations => PlanningActions.setAdaptations({ adaptations })),
             catchError((error: Error) => {
               console.error(error);
               return [
@@ -80,7 +80,7 @@ export class NavEffects {
             }),
           ),
           this.apiService.getPlans().pipe(
-            map(plans => MerlinActions.setPlans({ plans })),
+            map(plans => PlanningActions.setPlans({ plans })),
             catchError((error: Error) => {
               console.error(error);
               return [
@@ -91,7 +91,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     ),
@@ -103,10 +103,10 @@ export class NavEffects {
       mapToParam<string>('id'),
       switchMap(planId =>
         concat(
-          of(MerlinActions.setLoading({ loading: true })),
+          of(PlanningActions.setLoading({ loading: true })),
           this.apiService.getPlanAndActivityTypes(planId).pipe(
             map(({ activityTypes, plan }) =>
-              MerlinActions.setSelectedPlanAndActivityTypes({
+              PlanningActions.setSelectedPlanAndActivityTypes({
                 activityTypes,
                 selectedPlan: plan,
               }),
@@ -123,7 +123,10 @@ export class NavEffects {
           ),
           this.apiService.getActivityInstances(planId).pipe(
             map(activityInstances =>
-              MerlinActions.setActivityInstances({ planId, activityInstances }),
+              PlanningActions.setActivityInstances({
+                activityInstances,
+                planId,
+              }),
             ),
             catchError((error: Error) => {
               console.error(error);
@@ -135,7 +138,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(MerlinActions.setLoading({ loading: false })),
+          of(PlanningActions.setLoading({ loading: false })),
         ),
       ),
     ),
