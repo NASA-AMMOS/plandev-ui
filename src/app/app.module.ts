@@ -20,6 +20,7 @@ import {
   SimulationEffects,
   ToastEffects,
 } from './effects';
+import { TimelineEffects } from './effects/timeline.effects';
 import { MaterialModule } from './material';
 
 @NgModule({
@@ -57,6 +58,7 @@ import { MaterialModule } from './material';
       NavEffects,
       PlanningEffects,
       SimulationEffects,
+      TimelineEffects,
       ToastEffects,
     ]),
     MaterialModule,

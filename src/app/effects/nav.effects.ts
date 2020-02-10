@@ -7,9 +7,14 @@ import {
 } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { AuthActions, PlanningActions, ToastActions } from '../actions';
+import {
+  AuthActions,
+  PlanningActions,
+  TimelineActions,
+  ToastActions,
+} from '../actions';
 import { AERIE_USER } from '../constants';
-import { mapToParam, ofRoute } from '../functions';
+import { getUnixEpochTime, mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
 import { User } from '../types';
 
@@ -105,12 +110,18 @@ export class NavEffects {
         concat(
           of(PlanningActions.setLoading({ loading: true })),
           this.apiService.getPlanAndActivityTypes(planId).pipe(
-            map(({ activityTypes, plan }) =>
+            switchMap(({ activityTypes, plan }) => [
               PlanningActions.setSelectedPlanAndActivityTypes({
                 activityTypes,
                 selectedPlan: plan,
               }),
-            ),
+              TimelineActions.updateViewTimeRange({
+                viewTimeRange: {
+                  end: getUnixEpochTime(plan.endTimestamp),
+                  start: getUnixEpochTime(plan.startTimestamp),
+                },
+              }),
+            ]),
             catchError((error: Error) => {
               console.error(error);
               return [

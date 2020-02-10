@@ -1,5 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { TimelineState } from '../reducers/timeline.reducer';
+import { TimeRange } from '../types';
 
 const getTimelineState = createFeatureSelector<TimelineState>('timeline');
 
@@ -21,4 +22,9 @@ export const getMarginRight = createSelector(
 export const getMarginTop = createSelector(
   getTimelineState,
   (state: TimelineState): number => state.marginTop,
+);
+
+export const getViewTimeRange = createSelector(
+  getTimelineState,
+  (state: TimelineState): TimeRange => state.viewTimeRange,
 );

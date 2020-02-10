@@ -6,8 +6,9 @@ import { RouterNavigatedAction } from '@ngrx/router-store';
 import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
-import { PlanningActions, ToastActions } from '../actions';
+import { PlanningActions, TimelineActions, ToastActions } from '../actions';
 import { RouterState } from '../app-routing.module';
+import { getUnixEpochTime } from '../functions';
 import {
   cActivityInstanceMap,
   cActivityTypeMap,
@@ -154,17 +155,23 @@ describe('nav effects', () => {
           { id: planId },
         );
         actions = hot('-a', { a: action });
-        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcdef)', {
           b: PlanningActions.setLoading({ loading: true }),
           c: PlanningActions.setSelectedPlanAndActivityTypes({
             activityTypes: cActivityTypeMap,
             selectedPlan: cPlan,
           }),
-          d: PlanningActions.setActivityInstances({
+          d: TimelineActions.updateViewTimeRange({
+            viewTimeRange: {
+              end: getUnixEpochTime(cPlan.endTimestamp),
+              start: getUnixEpochTime(cPlan.startTimestamp),
+            },
+          }),
+          e: PlanningActions.setActivityInstances({
             activityInstances: cActivityInstanceMap,
             planId,
           }),
-          e: PlanningActions.setLoading({ loading: false }),
+          f: PlanningActions.setLoading({ loading: false }),
         });
       });
     });

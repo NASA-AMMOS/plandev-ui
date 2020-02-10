@@ -1,5 +1,4 @@
 import { PlanningActions } from '../actions';
-import { getUnixEpochTime } from '../functions';
 import {
   activityInstanceId,
   adaptationId,
@@ -161,39 +160,6 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('restoreViewTimeRange', () => {
-    it('viewTimeRange should not change when there is no selectedPlan', () => {
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.restoreViewTimeRange(),
-      );
-      expect(state).toEqual({
-        ...initialState,
-      });
-    });
-
-    it('viewTimeRange should update with the selectedPlan time range', () => {
-      let state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setSelectedPlanAndActivityTypes({
-          activityTypes: cActivityTypeMap,
-          selectedPlan: cPlan,
-        }),
-      );
-      state = reducer(state, PlanningActions.zoomInViewTimeRange());
-      state = reducer(state, PlanningActions.restoreViewTimeRange());
-      expect(state).toEqual({
-        ...initialState,
-        activityTypes: cActivityTypeMap,
-        selectedPlan: cPlan,
-        viewTimeRange: {
-          end: getUnixEpochTime(cPlan.endTimestamp),
-          start: getUnixEpochTime(cPlan.startTimestamp),
-        },
-      });
-    });
-  });
-
   describe('setActivityInstances', () => {
     it('it should set activityInstances', () => {
       const state: PlanningState = reducer(
@@ -303,7 +269,6 @@ describe('planning reducer', () => {
         ...initialState,
         activityTypes: cActivityTypeMap,
         selectedPlan: cPlan,
-        viewTimeRange: { start: 1577750400000, end: 1577750410000 },
       });
     });
   });
@@ -359,75 +324,6 @@ describe('planning reducer', () => {
       expect(state).toEqual({
         ...initialState,
         activityInstances: cActivityInstanceMap,
-      });
-    });
-  });
-
-  describe('updateViewTimeRange', () => {
-    it('it should update the view time range', () => {
-      const viewTimeRange = { start: 217, end: 314 };
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.updateViewTimeRange({
-          viewTimeRange,
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        viewTimeRange,
-      });
-    });
-  });
-
-  describe('zoomInViewTimeRange', () => {
-    it('should properly zoom in the viewTimeRange', () => {
-      let state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.updateViewTimeRange({
-          viewTimeRange: { start: 10, end: 110 },
-        }),
-      );
-      state = reducer(state, PlanningActions.zoomInViewTimeRange());
-      expect(state).toEqual({
-        ...initialState,
-        viewTimeRange: {
-          end: 100,
-          start: 20,
-        },
-      });
-    });
-  });
-
-  describe('zoomOutViewTimeRange', () => {
-    it('should return the default state if there is no selected plan', () => {
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.zoomOutViewTimeRange(),
-      );
-      expect(state).toEqual({
-        ...initialState,
-      });
-    });
-
-    it('should properly zoom out the viewTimeRange', () => {
-      let state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setSelectedPlanAndActivityTypes({
-          activityTypes: cActivityTypeMap,
-          selectedPlan: cPlan,
-        }),
-      );
-      state = reducer(state, PlanningActions.zoomInViewTimeRange());
-      state = reducer(state, PlanningActions.zoomInViewTimeRange());
-      state = reducer(state, PlanningActions.zoomOutViewTimeRange());
-      expect(state).toEqual({
-        ...initialState,
-        activityTypes: cActivityTypeMap,
-        selectedPlan: cPlan,
-        viewTimeRange: {
-          end: 1577750408840,
-          start: 1577750401160,
-        },
       });
     });
   });

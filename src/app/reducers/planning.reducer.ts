@@ -1,7 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
-import { getUnixEpochTime } from '../functions';
 import {
   CActivityInstanceMap,
   CActivityInstanceParameterMap,
@@ -10,7 +9,6 @@ import {
   CPlan,
   CPlanMap,
   StringTMap,
-  TimeRange,
 } from '../types';
 
 export interface PlanningState {
@@ -23,7 +21,6 @@ export interface PlanningState {
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
   updateActivityInstanceError: string | null;
-  viewTimeRange: TimeRange;
 }
 
 export const initialState: PlanningState = {
@@ -36,7 +33,6 @@ export const initialState: PlanningState = {
   selectedActivityInstanceId: null,
   selectedPlan: null,
   updateActivityInstanceError: null,
-  viewTimeRange: { start: 0, end: 0 },
 };
 
 export const reducer = createReducer(
@@ -105,19 +101,6 @@ export const reducer = createReducer(
     ...state,
     plans: omit(state.plans, action.id),
   })),
-  on(PlanningActions.restoreViewTimeRange, state => {
-    if (state.selectedPlan) {
-      return {
-        ...state,
-        viewTimeRange: {
-          end: getUnixEpochTime(state.selectedPlan.endTimestamp),
-          start: getUnixEpochTime(state.selectedPlan.startTimestamp),
-        },
-      };
-    } else {
-      return state;
-    }
-  }),
   on(PlanningActions.setActivityInstances, (state, { activityInstances }) => ({
     ...state,
     activityInstances,
@@ -159,10 +142,6 @@ export const reducer = createReducer(
       ...state,
       activityTypes,
       selectedPlan,
-      viewTimeRange: {
-        end: getUnixEpochTime(selectedPlan.endTimestamp),
-        start: getUnixEpochTime(selectedPlan.startTimestamp),
-      },
     }),
   ),
   on(PlanningActions.updateActivityInstance, state => ({
@@ -196,53 +175,7 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
-    ...state,
-    viewTimeRange,
-  })),
-  on(PlanningActions.zoomInViewTimeRange, state => ({
-    ...state,
-    viewTimeRange: changeZoom(state.viewTimeRange, 10),
-  })),
-  on(PlanningActions.zoomOutViewTimeRange, state => {
-    if (state.selectedPlan) {
-      let { start, end } = changeZoom(state.viewTimeRange, -10);
-      const selectedPlanStart = getUnixEpochTime(
-        state.selectedPlan.startTimestamp,
-      );
-      const selectedPlanEnd = getUnixEpochTime(state.selectedPlan.endTimestamp);
-
-      if (start < selectedPlanStart) {
-        start = selectedPlanStart;
-      }
-
-      if (end > selectedPlanEnd) {
-        end = selectedPlanEnd;
-      }
-
-      return {
-        ...state,
-        viewTimeRange: {
-          end,
-          start,
-        },
-      };
-    } else {
-      return state;
-    }
-  }),
 );
-
-function changeZoom(viewTimeRange: TimeRange, delta: number): TimeRange {
-  const { end, start } = viewTimeRange;
-  const range = end - start;
-  const zoomAmount = range / delta;
-
-  return {
-    end: end - zoomAmount,
-    start: start + zoomAmount,
-  };
-}
 
 function toActivityInstanceParameterMap(
   parameters: StringTMap<any> = {},

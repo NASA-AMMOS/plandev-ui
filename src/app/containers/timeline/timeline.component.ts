@@ -11,7 +11,11 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { PlanningActions, SimulationActions } from '../../actions';
+import {
+  PlanningActions,
+  SimulationActions,
+  TimelineActions,
+} from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesBand,
@@ -101,7 +105,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   }
 
   onRestore(): void {
-    this.store.dispatch(PlanningActions.restoreViewTimeRange());
+    this.store.dispatch(TimelineActions.restoreViewTimeRange());
   }
 
   onDeletePoint(event: DeletePoint): void {
@@ -158,15 +162,15 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   }
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
-    this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
+    this.store.dispatch(TimelineActions.updateViewTimeRange({ viewTimeRange }));
   }
 
   onZoomIn(): void {
-    this.store.dispatch(PlanningActions.zoomInViewTimeRange());
+    this.store.dispatch(TimelineActions.zoomInViewTimeRange());
   }
 
   onZoomOut(): void {
-    this.store.dispatch(PlanningActions.zoomOutViewTimeRange());
+    this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
   }
 
   /**
