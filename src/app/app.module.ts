@@ -19,9 +19,9 @@ import {
   NavEffects,
   PlanningEffects,
   SimulationEffects,
+  TimelineEffects,
   ToastEffects,
 } from './effects';
-import { TimelineEffects } from './effects/timeline.effects';
 import { MaterialModule } from './material';
 
 @NgModule({
