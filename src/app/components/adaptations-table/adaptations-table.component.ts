@@ -5,7 +5,7 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { ContextMenu } from '../../classes';
+import { contextMenu } from 'src/app/functions';
 import { CAdaptation } from '../../types';
 
 @Component({
@@ -14,7 +14,7 @@ import { CAdaptation } from '../../types';
   styleUrls: ['./adaptations-table.component.css'],
   templateUrl: './adaptations-table.component.html',
 })
-export class AdaptationsTableComponent extends ContextMenu {
+export class AdaptationsTableComponent {
   @Input()
   adaptations: CAdaptation[] = [];
 
@@ -25,4 +25,5 @@ export class AdaptationsTableComponent extends ContextMenu {
   deleteAdaptation: EventEmitter<string> = new EventEmitter<string>();
 
   displayedColumns: string[] = ['id', 'name', 'version', 'mission', 'owner'];
+  onContextMenu = contextMenu;
 }

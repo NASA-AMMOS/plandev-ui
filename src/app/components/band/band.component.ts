@@ -12,9 +12,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { MatMenuTrigger } from '@angular/material/menu';
 import * as d3 from 'd3';
-import { ContextMenu } from '../../classes';
 import {
   getDoyTimestamp,
   getPointFromCanvasSelection,
@@ -42,8 +40,7 @@ import { SubBandService } from './sub-band.service';
   styleUrls: [`./band.component.css`],
   templateUrl: './band.component.html',
 })
-export class BandComponent extends ContextMenu
-  implements AfterViewInit, OnChanges {
+export class BandComponent implements AfterViewInit, OnChanges {
   @Input()
   height: number;
 
@@ -86,9 +83,6 @@ export class BandComponent extends ContextMenu
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
 
-  @ViewChild('activityBandContextMenuTrigger', { static: true })
-  activityBandContextMenuTrigger: MatMenuTrigger;
-
   @ViewChild('axisContainerGroup', { static: true })
   axisContainerGroup: ElementRef;
 
@@ -102,9 +96,7 @@ export class BandComponent extends ContextMenu
     private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
     private subBandService: SubBandService,
-  ) {
-    super();
-  }
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     let shouldRedraw = false;
@@ -220,15 +212,7 @@ export class BandComponent extends ContextMenu
         hideTooltip();
 
         if (points.length) {
-          const [point] = points;
-
-          if (point.type === 'activity') {
-            this.onContextMenu(
-              event,
-              this.activityBandContextMenuTrigger,
-              point,
-            );
-          }
+          // TODO.
         }
       },
     );

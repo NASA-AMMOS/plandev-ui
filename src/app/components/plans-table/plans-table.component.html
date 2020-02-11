@@ -41,20 +41,17 @@
   ></tr>
 </table>
 
-<app-context-menu-trigger
-  #contextMenuTrigger="matMenuTrigger"
-  [matMenuTriggerFor]="contextMenu"
-  [position]="contextMenuPosition"
-></app-context-menu-trigger>
-<mat-menu #contextMenu="matMenu">
-  <ng-template matMenuContent let-item="item">
-    <button mat-menu-item (click)="openPlan.emit(item.id)">
-      <mat-icon>open_in_browser</mat-icon>
-      <span>Open</span>
-    </button>
-    <button mat-menu-item (click)="deletePlan.emit(item.id)">
-      <mat-icon>delete_forever</mat-icon>
-      <span>Delete</span>
-    </button>
-  </ng-template>
-</mat-menu>
+<div #contextMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="contextMenu">
+  <mat-menu #contextMenu="matMenu">
+    <ng-template matMenuContent let-data="data">
+      <button mat-menu-item (click)="openPlan.emit(data.id)">
+        <mat-icon>open_in_browser</mat-icon>
+        <span>Open</span>
+      </button>
+      <button mat-menu-item (click)="deletePlan.emit(data.id)">
+        <mat-icon>delete_forever</mat-icon>
+        <span>Delete</span>
+      </button>
+    </ng-template>
+  </mat-menu>
+</div>

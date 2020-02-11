@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { ContextMenu } from '../../classes';
+import { contextMenu } from 'src/app/functions';
 import { CActivityInstance } from '../../types';
 
 @Component({
@@ -17,8 +17,7 @@ import { CActivityInstance } from '../../types';
   styleUrls: ['./activity-instances-table.component.css'],
   templateUrl: './activity-instances-table.component.html',
 })
-export class ActivityInstancesTableComponent extends ContextMenu
-  implements OnChanges {
+export class ActivityInstancesTableComponent implements OnChanges {
   @Input()
   activityInstances: CActivityInstance[] = [];
 
@@ -34,6 +33,7 @@ export class ActivityInstancesTableComponent extends ContextMenu
   >();
 
   displayedColumns: string[] = ['select', 'type', 'startTimestamp'];
+  onContextMenu = contextMenu;
   selection = new SelectionModel<CActivityInstance>(false, []);
 
   ngOnChanges(changes: SimpleChanges): void {

@@ -47,28 +47,25 @@
   ></tr>
 </table>
 
-<app-context-menu-trigger
-  #contextMenuTrigger="matMenuTrigger"
-  [matMenuTriggerFor]="contextMenu"
-  [position]="contextMenuPosition"
-></app-context-menu-trigger>
-<mat-menu #contextMenu="matMenu">
-  <ng-template matMenuContent let-item="item">
-    <button
-      mat-menu-item
-      [id]="'adaptation-menu-create-plan-' + item.name"
-      (click)="createPlan.emit(item.id)"
-    >
-      <mat-icon>date_range</mat-icon>
-      <span>Create Plan</span>
-    </button>
-    <button
-      mat-menu-item
-      [id]="'adaptation-menu-delete-' + item.name"
-      (click)="deleteAdaptation.emit(item.id)"
-    >
-      <mat-icon>delete_forever</mat-icon>
-      <span>Delete</span>
-    </button>
-  </ng-template>
-</mat-menu>
+<div #contextMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="contextMenu">
+  <mat-menu #contextMenu="matMenu">
+    <ng-template matMenuContent let-data="data">
+      <button
+        mat-menu-item
+        [id]="'adaptation-menu-create-plan-' + data.name"
+        (click)="createPlan.emit(data.id)"
+      >
+        <mat-icon>date_range</mat-icon>
+        <span>Create Plan</span>
+      </button>
+      <button
+        mat-menu-item
+        [id]="'adaptation-menu-delete-' + data.name"
+        (click)="deleteAdaptation.emit(data.id)"
+      >
+        <mat-icon>delete_forever</mat-icon>
+        <span>Delete</span>
+      </button>
+    </ng-template>
+  </mat-menu>
+</div>

@@ -5,7 +5,7 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { ContextMenu } from '../../classes';
+import { contextMenu } from 'src/app/functions';
 import { CPlan } from '../../types';
 
 @Component({
@@ -14,7 +14,7 @@ import { CPlan } from '../../types';
   styleUrls: ['./plans-table.component.css'],
   templateUrl: './plans-table.component.html',
 })
-export class PlansTableComponent extends ContextMenu {
+export class PlansTableComponent {
   @Input()
   plans: CPlan[] = [];
 
@@ -30,4 +30,5 @@ export class PlansTableComponent extends ContextMenu {
     'startTimestamp',
     'endTimestamp',
   ];
+  onContextMenu = contextMenu;
 }
