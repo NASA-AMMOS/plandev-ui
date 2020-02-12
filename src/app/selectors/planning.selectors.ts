@@ -137,11 +137,6 @@ export const getCreateActivityInstanceError = createSelector(
   (state: PlanningState): string | null => state.createActivityInstanceError,
 );
 
-export const getLoading = createSelector(
-  getPlanningState,
-  (state: PlanningState): boolean => state.loading,
-);
-
 export const getPlans = createSelector(
   getPlanningState,
   (state: PlanningState): CPlan[] | null =>

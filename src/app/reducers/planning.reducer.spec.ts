@@ -191,20 +191,6 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('setLoading', () => {
-    it('should set loading', () => {
-      const loading = true;
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setLoading({ loading }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        loading,
-      });
-    });
-  });
-
   describe('setPlans', () => {
     it('should set plans', () => {
       const state: PlanningState = reducer(

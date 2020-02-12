@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
-import { AppState } from '../../app-store';
+import { State } from '../../app-store';
 import { getAdaptations, getPlans } from '../../selectors';
 import { CAdaptation, CPlan, SPlan } from '../../types';
 
@@ -37,7 +37,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private fb: FormBuilder,
     private router: Router,
-    private store: Store<AppState>,
+    private store: Store<State>,
   ) {
     const currentNavigation = this.router.getCurrentNavigation();
     if (currentNavigation) {

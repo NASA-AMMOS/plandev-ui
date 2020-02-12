@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { PlanningActions, SimulationActions } from '../actions';
+import { AppActions, SimulationActions } from '../actions';
 import { ApiService } from '../services';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class SimulationEffects {
       ofType(SimulationActions.run),
       switchMap(() =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.simulationRun().pipe(
             switchMap(stateBands => {
               return [SimulationActions.runSuccess({ stateBands })];
@@ -24,7 +24,7 @@ export class SimulationEffects {
               return [SimulationActions.runFailure({ errorMsg })];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     ),

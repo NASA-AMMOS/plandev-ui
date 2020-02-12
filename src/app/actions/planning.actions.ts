@@ -90,11 +90,6 @@ export const setAdaptations = createAction(
   props<{ adaptations: CAdaptationMap }>(),
 );
 
-export const setLoading = createAction(
-  '[planning] setLoading',
-  props<{ loading: boolean }>(),
-);
-
 export const setPlans = createAction(
   '[planning] setPlans',
   props<{ plans: CPlanMap }>(),

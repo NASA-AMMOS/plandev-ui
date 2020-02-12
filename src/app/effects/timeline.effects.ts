@@ -3,13 +3,13 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { TimelineActions } from '../actions';
-import { AppState } from '../app-store';
+import { State } from '../app-store';
 import { changeZoom, getUnixEpochTime } from '../functions';
 import { TimeRange } from '../types';
 
 @Injectable()
 export class TimelineEffects {
-  constructor(private actions: Actions, private store: Store<AppState>) {}
+  constructor(private actions: Actions, private store: Store<State>) {}
 
   restoreViewTimeRange = createEffect(() =>
     this.actions.pipe(

@@ -16,7 +16,6 @@ export interface PlanningState {
   activityTypes: CActivityTypeMap | null;
   adaptations: CAdaptationMap | null;
   createActivityInstanceError: string | null;
-  loading: boolean;
   plans: CPlanMap | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
@@ -28,7 +27,6 @@ export const initialState: PlanningState = {
   activityTypes: null,
   adaptations: null,
   createActivityInstanceError: null,
-  loading: false,
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
@@ -108,10 +106,6 @@ export const reducer = createReducer(
   on(PlanningActions.setAdaptations, (state, { adaptations }) => ({
     ...state,
     adaptations,
-  })),
-  on(PlanningActions.setLoading, (state, { loading }) => ({
-    ...state,
-    loading,
   })),
   on(PlanningActions.setPlans, (state, { plans }) => ({
     ...state,

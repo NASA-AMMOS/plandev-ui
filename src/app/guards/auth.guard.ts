@@ -8,7 +8,7 @@ import {
 import { select, Store } from '@ngrx/store';
 import { Observable, pipe, UnaryFunction } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { AppState } from '../app-store';
+import { State } from '../app-store';
 import { getUser } from '../selectors';
 import { User } from '../types';
 
@@ -29,7 +29,7 @@ export type AuthPipe = UnaryFunction<
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(private router: Router, private store: Store<AppState>) {}
+  constructor(private router: Router, private store: Store<State>) {}
 
   canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
     const authPipeFactory: AuthPipeGenerator =

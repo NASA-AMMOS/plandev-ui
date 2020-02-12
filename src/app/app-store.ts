@@ -8,13 +8,15 @@ import {
 } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
 import {
+  AppReducer,
   AuthReducer,
   PlanningReducer,
   SimulationReducer,
   TimelineReducer,
 } from './reducers';
 
-export interface AppState {
+export interface State {
+  app: AppReducer.AppState;
   auth: AuthReducer.AuthState;
   planning: PlanningReducer.PlanningState;
   router: fromRouter.RouterReducerState;
@@ -23,9 +25,10 @@ export interface AppState {
 }
 
 export const ROOT_REDUCERS = new InjectionToken<
-  ActionReducerMap<AppState, Action>
+  ActionReducerMap<State, Action>
 >('Root reducers token', {
   factory: () => ({
+    app: AppReducer.reducer,
     auth: AuthReducer.reducer,
     planning: PlanningReducer.reducer,
     router: fromRouter.routerReducer,
@@ -34,10 +37,8 @@ export const ROOT_REDUCERS = new InjectionToken<
   }),
 });
 
-export function logger(
-  reducer: ActionReducer<AppState>,
-): ActionReducer<AppState> {
-  return (state: AppState | undefined, action: Action) => {
+export function logger(reducer: ActionReducer<State>): ActionReducer<State> {
+  return (state: State | undefined, action: Action) => {
     const result = reducer(state, action);
     console.groupCollapsed(action.type);
     console.log('prev state', state);
@@ -49,6 +50,6 @@ export function logger(
   };
 }
 
-export const metaReducers: MetaReducer<AppState>[] = !environment.production
+export const metaReducers: MetaReducer<State>[] = !environment.production
   ? [logger]
   : [];

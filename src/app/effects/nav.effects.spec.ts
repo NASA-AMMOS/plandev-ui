@@ -7,6 +7,7 @@ import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import {
+  AppActions,
   AuthActions,
   PlanningActions,
   TimelineActions,
@@ -101,9 +102,9 @@ describe('nav effects', () => {
         const action = getRouterNavigatedAction('adaptations');
         actions = hot('-a', { a: action });
         expectObservable(effects.navAdaptations).toBe('-(bcd)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
-          d: PlanningActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -116,12 +117,12 @@ describe('nav effects', () => {
           cold('#|', null, ''),
         );
         expectObservable(effects.navAdaptations).toBe('-(bcd)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch adaptations failed',
             toastType: 'error',
           }),
-          d: PlanningActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -133,10 +134,10 @@ describe('nav effects', () => {
         const action = getRouterNavigatedAction('plans');
         actions = hot('-a', { a: action });
         expectObservable(effects.navPlans).toBe('-(bcde)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
           d: PlanningActions.setPlans({ plans: cPlanMap }),
-          e: PlanningActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -150,7 +151,7 @@ describe('nav effects', () => {
         );
         spyOn(apiService, 'getPlans').and.returnValue(cold('#|', null, ''));
         expectObservable(effects.navPlans).toBe('-(bcde)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch adaptations failed',
             toastType: 'error',
@@ -159,7 +160,7 @@ describe('nav effects', () => {
             message: 'Fetch plans failed',
             toastType: 'error',
           }),
-          e: PlanningActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -175,7 +176,7 @@ describe('nav effects', () => {
         );
         actions = hot('-a', { a: action });
         expectObservable(effects.navPlansWithId).toBe('-(bcdef)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: PlanningActions.setSelectedPlanAndActivityTypes({
             activityTypes: cActivityTypeMap,
             selectedPlan: cPlan,
@@ -190,7 +191,7 @@ describe('nav effects', () => {
             activityInstances: cActivityInstanceMap,
             planId,
           }),
-          f: PlanningActions.setLoading({ loading: false }),
+          f: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -213,7 +214,7 @@ describe('nav effects', () => {
           cold('#|', null, ''),
         );
         expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
-          b: PlanningActions.setLoading({ loading: true }),
+          b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
             message: 'Fetch plan and activity types failed',
             toastType: 'error',
@@ -222,7 +223,7 @@ describe('nav effects', () => {
             message: 'Fetch activity instances failed',
             toastType: 'error',
           }),
-          e: PlanningActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });

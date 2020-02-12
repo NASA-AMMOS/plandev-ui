@@ -8,6 +8,7 @@ import {
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
+  AppActions,
   AuthActions,
   PlanningActions,
   TimelineActions,
@@ -47,7 +48,7 @@ export class NavEffects {
       ofRoute('adaptations'),
       switchMap(_ =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
             map(adaptations => PlanningActions.setAdaptations({ adaptations })),
             catchError((error: Error) => {
@@ -60,7 +61,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     ),
@@ -71,7 +72,7 @@ export class NavEffects {
       ofRoute('plans'),
       switchMap(_ =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
             map(adaptations => PlanningActions.setAdaptations({ adaptations })),
             catchError((error: Error) => {
@@ -96,7 +97,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     ),
@@ -108,7 +109,7 @@ export class NavEffects {
       mapToParam<string>('id'),
       switchMap(planId =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.getPlanAndActivityTypes(planId).pipe(
             switchMap(({ activityTypes, plan }) => [
               PlanningActions.setSelectedPlanAndActivityTypes({
@@ -149,7 +150,7 @@ export class NavEffects {
               ];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     ),

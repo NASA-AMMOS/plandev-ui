@@ -3,7 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { PlanningActions, ToastActions } from '../actions';
+import { AppActions, PlanningActions, ToastActions } from '../actions';
 import { ConfirmDialogComponent } from '../components';
 import { ApiService } from '../services';
 
@@ -20,7 +20,7 @@ export class PlanningEffects {
       ofType(PlanningActions.createActivityInstance),
       switchMap(({ planId, activityInstance }) =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService
             .createActivityInstances(planId, [activityInstance])
             .pipe(
@@ -51,7 +51,7 @@ export class PlanningEffects {
                 ];
               }),
             ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -62,7 +62,7 @@ export class PlanningEffects {
       ofType(PlanningActions.createAdaptation),
       switchMap(({ adaptation }) =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.createAdaptation(adaptation).pipe(
             switchMap(({ id }) => {
               return [
@@ -83,7 +83,7 @@ export class PlanningEffects {
               ];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -94,7 +94,7 @@ export class PlanningEffects {
       ofType(PlanningActions.createPlan),
       switchMap(({ plan }) =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService.createPlan(plan).pipe(
             switchMap(({ id }) => {
               return [
@@ -115,7 +115,7 @@ export class PlanningEffects {
               ];
             }),
           ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     );
@@ -150,7 +150,7 @@ export class PlanningEffects {
       switchMap(({ planId, activityInstanceId, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(PlanningActions.setLoading({ loading: true })),
+            of(AppActions.setLoading({ loading: true })),
             this.apiService
               .deleteActivityInstance(planId, activityInstanceId)
               .pipe(
@@ -175,7 +175,7 @@ export class PlanningEffects {
                   ];
                 }),
               ),
-            of(PlanningActions.setLoading({ loading: false })),
+            of(AppActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -207,7 +207,7 @@ export class PlanningEffects {
       switchMap(({ id, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(PlanningActions.setLoading({ loading: true })),
+            of(AppActions.setLoading({ loading: true })),
             this.apiService.deleteAdaptation(id).pipe(
               switchMap(() => {
                 return [
@@ -228,7 +228,7 @@ export class PlanningEffects {
                 ];
               }),
             ),
-            of(PlanningActions.setLoading({ loading: false })),
+            of(AppActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -254,7 +254,7 @@ export class PlanningEffects {
       switchMap(({ id, result }) => {
         if (result && result.confirm) {
           return concat(
-            of(PlanningActions.setLoading({ loading: true })),
+            of(AppActions.setLoading({ loading: true })),
             this.apiService.deletePlan(id).pipe(
               switchMap(() => {
                 return [
@@ -275,7 +275,7 @@ export class PlanningEffects {
                 ];
               }),
             ),
-            of(PlanningActions.setLoading({ loading: false })),
+            of(AppActions.setLoading({ loading: false })),
           );
         }
         return [];
@@ -288,7 +288,7 @@ export class PlanningEffects {
       ofType(PlanningActions.updateActivityInstance),
       switchMap(({ planId, activityInstanceId, activityInstance }) =>
         concat(
-          of(PlanningActions.setLoading({ loading: true })),
+          of(AppActions.setLoading({ loading: true })),
           this.apiService
             .updateActivityInstance(
               planId,
@@ -320,7 +320,7 @@ export class PlanningEffects {
                 ];
               }),
             ),
-          of(PlanningActions.setLoading({ loading: false })),
+          of(AppActions.setLoading({ loading: false })),
         ),
       ),
     );

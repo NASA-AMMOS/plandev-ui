@@ -8,7 +8,7 @@ import { select, Store } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
 import { AppActions, AuthActions } from './actions';
-import { AppState } from './app-store';
+import { State } from './app-store';
 import { getLoading, getPath } from './selectors';
 
 @Component({
@@ -24,10 +24,7 @@ export class AppComponent implements OnDestroy {
 
   private subs = new SubSink();
 
-  constructor(
-    private cdRef: ChangeDetectorRef,
-    private store: Store<AppState>,
-  ) {
+  constructor(private cdRef: ChangeDetectorRef, private store: Store<State>) {
     this.subs.add(
       this.store.pipe(select(getLoading)).subscribe(loading => {
         this.loading = loading;

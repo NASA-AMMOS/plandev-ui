@@ -16,7 +16,7 @@ import {
   SimulationActions,
   TimelineActions,
 } from '../../actions';
-import { AppState } from '../../app-store';
+import { State } from '../../app-store';
 import {
   getActivityInstancesBand,
   getMarginBottom,
@@ -54,7 +54,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
     private route: ActivatedRoute,
-    private store: Store<AppState>,
+    private store: Store<State>,
   ) {
     this.subs.add(
       this.store

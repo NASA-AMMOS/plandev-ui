@@ -11,7 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { AppActions, PlanningActions } from '../../actions';
-import { AppState } from '../../app-store';
+import { State } from '../../app-store';
 import {
   getActivityInstancesForSelectedPlan,
   getActivityTypes,
@@ -84,7 +84,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
     private route: ActivatedRoute,
-    private store: Store<AppState>,
+    private store: Store<State>,
   ) {
     this.subs.add(
       this.store
