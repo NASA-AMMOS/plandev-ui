@@ -55,7 +55,7 @@ pipeline {
 
             # Install dependencies, cloc, test, and build
             npx yarn --silent
-            npx yarn version
+            npx yarn run version
             npx yarn cloc
             npx yarn test
             npx yarn build --prod
