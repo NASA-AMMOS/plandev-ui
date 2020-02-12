@@ -184,4 +184,8 @@ export class TimelineComponent implements OnChanges, OnDestroy {
       bandContainer.style.setProperty('--max-height', `${this.height - 180}px`);
     }
   }
+
+  trackByStateBands(_: number, stateBand: Band): string {
+    return stateBand.id;
+  }
 }

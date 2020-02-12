@@ -33,7 +33,7 @@
     (updatePoint)="onUpdatePoint($event)"
   ></app-band>
   <app-band
-    *ngFor="let stateBand of stateBands"
+    *ngFor="let stateBand of stateBands; trackBy: trackByStateBands"
     [height]="stateBand.height"
     [id]="stateBand.id"
     [marginBottom]="marginBottom"
