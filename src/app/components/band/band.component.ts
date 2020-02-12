@@ -71,9 +71,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
   @Input()
   yAxes: Axis[];
 
-  @Input()
-  yAxisId: string;
-
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
 
