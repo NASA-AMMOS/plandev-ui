@@ -6,7 +6,12 @@ import { RouterNavigatedAction } from '@ngrx/router-store';
 import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
-import { PlanningActions, TimelineActions, ToastActions } from '../actions';
+import {
+  AuthActions,
+  PlanningActions,
+  TimelineActions,
+  ToastActions,
+} from '../actions';
 import { RouterState } from '../app-routing.module';
 import { getUnixEpochTime } from '../functions';
 import {
@@ -72,6 +77,20 @@ describe('nav effects', () => {
         const action = { type: '@ngrx/effects/init' };
         actions = hot('-a', { a: action });
         expectObservable(effects.init).toBe('-');
+      });
+    });
+
+    it('should return a login success action if there is an AERIE_USER', () => {
+      const user = { name: 'testuser' };
+      spyOn(localStorage.__proto__, 'getItem').and.returnValue(
+        JSON.stringify(user),
+      );
+      testScheduler.run(({ hot, expectObservable }) => {
+        const action = { type: '@ngrx/effects/init' };
+        actions = hot('-a', { a: action });
+        expectObservable(effects.init).toBe('-b', {
+          b: AuthActions.loginSuccess({ redirectTo: '', user }),
+        });
       });
     });
   });

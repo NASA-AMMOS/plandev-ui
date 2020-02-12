@@ -24,6 +24,7 @@
     "ng": "ng",
     "prebuild": "yarn run version",
     "prestart": "yarn run version",
+    "pretest": "yarn run version",
     "start": "ng serve",
     "test": "ng test --code-coverage --watch=false --browsers FirefoxHeadless",
     "test:watch": "ng test --code-coverage --watch=true --browsers Firefox",
