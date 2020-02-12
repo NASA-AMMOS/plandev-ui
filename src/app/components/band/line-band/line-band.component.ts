@@ -22,9 +22,13 @@ import { SubBandService } from '../sub-band.service';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-line-band',
+  styleUrls: ['./line-band.component.css'],
   templateUrl: './line-band.component.html',
 })
 export class LineBandComponent implements AfterViewInit, OnChanges {
+  @Input()
+  color: string;
+
   @Input()
   drawHeight: number;
 
@@ -33,6 +37,9 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
 
   @Input()
   id: string;
+
+  @Input()
+  interpolationType: string;
 
   @Input()
   maxTimeRange: TimeRange;
@@ -44,7 +51,10 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   viewTimeRange: TimeRange;
 
   @Input()
-  yAxis: Axis;
+  yAxes: Axis[];
+
+  @Input()
+  yAxisId: string;
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;
@@ -119,19 +129,21 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     });
 
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-    const yScale = getYScale(this.yAxis.scaleDomain, this.drawHeight);
+    const [yAxis] = this.yAxes.filter(axis => this.yAxisId === axis.id);
+    const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
 
     // Line.
+    const curve = d3[this.interpolationType] || d3.curveLinear;
     const line = d3
       .line<PointLine>()
       .x(d => Math.floor(xScale(d.x)))
       .y(d => Math.floor(yScale(d.y)))
-      .curve(d3.curveStep);
+      .curve(curve);
     forEachCanvas(canvases, (_, ctx) => {
       ctx.beginPath();
       line.context(ctx)(this.points);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = '#2aba3b';
+      ctx.strokeStyle = this.color;
       ctx.stroke();
     });
 

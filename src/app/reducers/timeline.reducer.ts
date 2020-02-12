@@ -13,7 +13,7 @@ export interface TimelineState {
 
 export const initialState: TimelineState = {
   marginBottom: 10,
-  marginLeft: 70,
+  marginLeft: 280,
   marginRight: 70,
   marginTop: 10,
   viewTimeRange: { start: 0, end: 0 },

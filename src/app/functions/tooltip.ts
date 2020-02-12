@@ -5,7 +5,7 @@ import { getDoyTimestamp } from './time';
 export function getTooltipTextForPoints(points: Point[]): string {
   let tooltipText = '';
 
-  points.forEach((point: Point) => {
+  points.forEach((point: Point, i: number) => {
     if (point.type === 'activity') {
       tooltipText = `
         ${tooltipText}
@@ -23,6 +23,9 @@ export function getTooltipTextForPoints(points: Point[]): string {
         ${tooltipText}
         ${getTooltipTextPointXRange(point as PointXRange)}
       `;
+    }
+    if (i !== points.length - 1) {
+      tooltipText += `<hr>`;
     }
   });
 

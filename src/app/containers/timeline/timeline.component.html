@@ -26,7 +26,7 @@
     [maxTimeRange]="maxTimeRange"
     [subBands]="activityInstancesBand.subBands"
     [viewTimeRange]="viewTimeRange"
-    [yAxis]="activityInstancesBand.yAxis"
+    [yAxes]="activityInstancesBand.yAxes"
     (deletePoint)="onDeletePoint($event)"
     (savePoint)="onSavePoint($event)"
     (selectPoint)="onSelectPoint($event)"
@@ -43,7 +43,7 @@
     [maxTimeRange]="maxTimeRange"
     [subBands]="stateBand.subBands"
     [viewTimeRange]="viewTimeRange"
-    [yAxis]="stateBand.yAxis"
+    [yAxes]="stateBand.yAxes"
   ></app-band>
   <mat-card *ngIf="stateBands === null">
     No states found. Try running a simulation.

@@ -20,6 +20,7 @@ import { SubBandService } from '../sub-band.service';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-x-range-band',
+  styleUrls: ['./x-range-band.component.css'],
   templateUrl: `./x-range-band.component.html`,
 })
 export class XRangeBandComponent implements AfterViewInit, OnChanges {

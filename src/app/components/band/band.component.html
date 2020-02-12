@@ -38,13 +38,16 @@
     ></app-activity-band>
     <app-line-band
       *ngIf="subBand.type === 'line'"
+      [color]="subBand.color"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
       [id]="subBand.id"
+      [interpolationType]="subBand.interpolationType"
       [maxTimeRange]="maxTimeRange"
       [points]="subBand.points"
       [viewTimeRange]="viewTimeRange"
-      [yAxis]="yAxis"
+      [yAxes]="yAxes"
+      [yAxisId]="subBand.yAxisId"
     ></app-line-band>
     <app-x-range-band
       *ngIf="subBand.type === 'x-range'"

@@ -1,9 +1,12 @@
 export interface Axis {
+  id: string;
+  color: string;
   labelFillColor: string;
   labelFontSize: number;
   labelOffset: string;
   labelText: string;
   scaleDomain: number[];
+  tickCount: number;
 }
 
 export interface Band {
@@ -11,7 +14,7 @@ export interface Band {
   id: string;
   order: number;
   subBands: SubBand[];
-  yAxis: Axis;
+  yAxes: Axis[];
 }
 
 export interface DeletePoint {
@@ -62,7 +65,10 @@ export interface SubBandActivity extends SubBand {
 }
 
 export interface SubBandLine extends SubBand {
+  color: string;
+  interpolationType: string;
   points: PointLine[];
+  yAxisId: string;
 }
 
 export interface SubBandXRange extends SubBand {

@@ -20,6 +20,7 @@ import { SubBandService } from '../sub-band.service';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-activity-band',
+  styleUrls: ['./activity-band.component.css'],
   templateUrl: './activity-band.component.html',
 })
 export class ActivityBandComponent implements AfterViewInit, OnChanges {

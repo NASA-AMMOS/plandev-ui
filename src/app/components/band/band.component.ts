@@ -69,7 +69,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
   viewTimeRange: TimeRange;
 
   @Input()
-  yAxis: Axis;
+  yAxes: Axis[];
+
+  @Input()
+  yAxisId: string;
 
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
@@ -146,21 +149,43 @@ export class BandComponent implements AfterViewInit, OnChanges {
   }
 
   drawYAxis(): void {
-    const yScale = getYScale(this.yAxis.scaleDomain, this.drawHeight);
-    const yAxis = d3.axisLeft(yScale).ticks(5);
+    let totalWidth = 0;
     const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--y').remove();
-    const axisG = axisContainerGroup.append('g').attr('class', `axis--y`);
-    axisG.call(yAxis);
-    axisG
-      .append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('x', 0 - this.drawHeight / 2)
-      .attr('dy', this.yAxis.labelOffset)
-      .attr('fill', this.yAxis.labelFillColor)
-      .attr('font-size', `${this.yAxis.labelFontSize}px`)
-      .style('text-anchor', 'middle')
-      .text(this.yAxis.labelText);
+
+    for (let i = 0; i < this.yAxes.length; ++i) {
+      const axisG = axisContainerGroup.append('g').attr('class', `axis--y`);
+      axisG.selectAll('*').remove();
+
+      const yAxis = this.yAxes[i];
+      const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
+      const axis = d3.axisLeft(yScale).ticks(yAxis.tickCount);
+
+      const axisMargin = 20;
+      const startPosition = -(totalWidth + axisMargin * i);
+      axisG.attr('transform', `translate(${startPosition}, 0)`);
+      axisG.style('color', yAxis.color);
+      axisG.call(axis);
+
+      const axisGElement: SVGGElement = axisG.node();
+      const axisWidth = axisGElement.getBoundingClientRect().width;
+      const axisLabelMargin = 20;
+      const y = -(axisWidth + axisLabelMargin);
+
+      axisG
+        .append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('y', y)
+        .attr('x', 0 - this.drawHeight / 2)
+        .attr('dy', '1em')
+        .attr('fill', yAxis.labelFillColor)
+        .attr('font-size', `${yAxis.labelFontSize}px`)
+        .style('text-anchor', 'middle')
+        .text(yAxis.labelText);
+
+      // Calculate new width after text has been added.
+      totalWidth += axisGElement.getBoundingClientRect().width;
+    }
   }
 
   getTimeFromSvgMousePosition(

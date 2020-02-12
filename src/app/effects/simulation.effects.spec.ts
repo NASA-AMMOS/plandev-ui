@@ -3,11 +3,12 @@ import { TestBed } from '@angular/core/testing';
 import { Actions } from '@ngrx/effects';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import { PlanningActions, SimulationActions } from '../actions';
 import { getSimulationRunBands } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
+import { Band, StringTMap } from '../types';
 import { SimulationEffects } from './simulation.effects';
 
 describe('simulation effects', () => {
@@ -40,6 +41,14 @@ describe('simulation effects', () => {
     it('should dispatch the appropriate actions when successfully running a simulation', () => {
       testScheduler.run(({ hot, expectObservable }) => {
         const stateBands = getSimulationRunBands();
+        // Return stateBands since it depends on uniqueId and we need
+        // the uniqueId to be correct in the runSuccess action.
+        spyOn(apiService, 'simulationRun').and.returnValue(
+          new Observable((o: Observer<StringTMap<Band>>) => {
+            o.next(stateBands);
+            o.complete();
+          }),
+        );
         const action = SimulationActions.run();
         actions = hot('-a', { a: action });
         expectObservable(effects.run).toBe('-(bcd)', {
