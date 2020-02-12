@@ -25,10 +25,10 @@ import {
 })
 export class PlaceholderComponent implements OnChanges {
   @Input()
-  color: string;
+  color = '#000000';
 
   @Input()
-  height: number;
+  height = 0;
 
   constructor(private elRef: ElementRef) {}
 

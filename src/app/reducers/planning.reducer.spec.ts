@@ -18,7 +18,7 @@ import { initialState, PlanningState, reducer } from './planning.reducer';
 
 describe('planning reducer', () => {
   describe('createActivityInstance', () => {
-    it('it should set createActivityInstanceError', () => {
+    it('should set createActivityInstanceError', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.createActivityInstance({
@@ -33,7 +33,7 @@ describe('planning reducer', () => {
   });
 
   describe('createActivityInstanceFailure', () => {
-    it('it should set createActivityInstanceError', () => {
+    it('should set createActivityInstanceError', () => {
       const errorMsg = 'Create activity instance failed!';
       const state: PlanningState = reducer(
         { ...initialState },
@@ -94,7 +94,7 @@ describe('planning reducer', () => {
   });
 
   describe('deleteActivityInstanceSuccess', () => {
-    it('it should delete an activity instance', () => {
+    it('should delete an activity instance', () => {
       let state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setActivityInstances({
@@ -126,7 +126,7 @@ describe('planning reducer', () => {
   });
 
   describe('deleteAdaptationSuccess', () => {
-    it('it should delete an adaptation', () => {
+    it('should delete an adaptation', () => {
       let state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setAdaptations({
@@ -145,7 +145,7 @@ describe('planning reducer', () => {
   });
 
   describe('deletePlanSuccess', () => {
-    it('it should delete a plan', () => {
+    it('should delete a plan', () => {
       let state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setPlans({
@@ -161,7 +161,7 @@ describe('planning reducer', () => {
   });
 
   describe('setActivityInstances', () => {
-    it('it should set activityInstances', () => {
+    it('should set activityInstances', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setActivityInstances({
@@ -177,7 +177,7 @@ describe('planning reducer', () => {
   });
 
   describe('setAdaptations', () => {
-    it('it should set adaptations', () => {
+    it('should set adaptations', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setAdaptations({
@@ -192,7 +192,7 @@ describe('planning reducer', () => {
   });
 
   describe('setLoading', () => {
-    it('it should set loading', () => {
+    it('should set loading', () => {
       const loading = true;
       const state: PlanningState = reducer(
         { ...initialState },
@@ -206,7 +206,7 @@ describe('planning reducer', () => {
   });
 
   describe('setPlans', () => {
-    it('it should set plans', () => {
+    it('should set plans', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setPlans({
@@ -221,7 +221,7 @@ describe('planning reducer', () => {
   });
 
   describe('setSelectedActivityInstanceId', () => {
-    it('it should set setSelectedActivityInstanceId', () => {
+    it('should set setSelectedActivityInstanceId', () => {
       const selectedActivityInstanceId = '42';
       const state: PlanningState = reducer(
         { ...initialState },
@@ -235,7 +235,7 @@ describe('planning reducer', () => {
       });
     });
 
-    it('it should set setSelectedActivityInstanceId to null if the id is already selected', () => {
+    it('should set setSelectedActivityInstanceId to null if the id is already selected', () => {
       const selectedActivityInstanceId = '42';
       let state: PlanningState = reducer(
         { ...initialState },
@@ -257,7 +257,7 @@ describe('planning reducer', () => {
   });
 
   describe('setSelectedPlanAndActivityTypes', () => {
-    it('it should set plans and activity types', () => {
+    it('should set plans and activity types', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setSelectedPlanAndActivityTypes({
@@ -274,7 +274,7 @@ describe('planning reducer', () => {
   });
 
   describe('updateActivityInstance', () => {
-    it('it should set updateActivityInstanceError', () => {
+    it('should set updateActivityInstanceError', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.updateActivityInstance({
@@ -290,7 +290,7 @@ describe('planning reducer', () => {
   });
 
   describe('updateActivityInstanceFailure', () => {
-    it('it should set updateActivityInstanceError', () => {
+    it('should set updateActivityInstanceError', () => {
       const errorMsg = 'Update activity instance failed!';
       const state: PlanningState = reducer(
         { ...initialState },
@@ -306,7 +306,7 @@ describe('planning reducer', () => {
   });
 
   describe('updateActivityInstanceSuccess', () => {
-    it('it should update activity instances', () => {
+    it('should update activity instances', () => {
       let state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.setActivityInstances({

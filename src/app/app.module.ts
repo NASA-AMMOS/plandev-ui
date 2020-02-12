@@ -14,8 +14,8 @@ import { AppComponent } from './app.component';
 import { TooltipModule } from './components/tooltip';
 import { ContainersModule } from './containers';
 import {
+  AppEffects,
   AuthEffects,
-  EventEffects,
   NavEffects,
   PlanningEffects,
   SimulationEffects,
@@ -55,8 +55,8 @@ import { MaterialModule } from './material';
       name: 'aerie-ui',
     }),
     EffectsModule.forRoot([
+      AppEffects,
       AuthEffects,
-      EventEffects,
       NavEffects,
       PlanningEffects,
       SimulationEffects,

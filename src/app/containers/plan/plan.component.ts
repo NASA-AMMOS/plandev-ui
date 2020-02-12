@@ -10,7 +10,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import { EventActions, PlanningActions } from '../../actions';
+import { AppActions, PlanningActions } from '../../actions';
 import { AppState } from '../../app-store';
 import {
   getActivityInstancesForSelectedPlan,
@@ -151,7 +151,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   onResize(): void {
-    this.store.dispatch(EventActions.resize());
+    this.store.dispatch(AppActions.resize());
     this.setPanelBottomHeight();
   }
 

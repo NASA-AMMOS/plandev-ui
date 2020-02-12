@@ -80,8 +80,6 @@ export const deletePlanSuccess = createAction(
   props<{ id: string }>(),
 );
 
-export const openAboutDialog = createAction('[planning] openAboutDialog');
-
 export const setActivityInstances = createAction(
   '[planning] setActivityInstances',
   props<{ planId: string; activityInstances: CActivityInstanceMap }>(),

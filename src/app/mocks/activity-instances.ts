@@ -5,6 +5,7 @@ export const activityInstanceId = '5dc99ef353c09f6736c7072d';
 export const sActivityInstanceMap: SActivityInstanceMap = {
   [activityInstanceId]: {
     parameters: {
+      peelAmount: 2.1,
       peelDirection: 'down',
     },
     startTimestamp: '2020-000T00:00:00',
@@ -17,6 +18,10 @@ export const cActivityInstanceMap: CActivityInstanceMap = {
   [activityInstanceId]: {
     id: activityInstanceId,
     parameters: {
+      peelAmount: {
+        name: 'peelAmount',
+        value: 2.1,
+      },
       peelDirection: {
         name: 'peelDirection',
         value: 'down',

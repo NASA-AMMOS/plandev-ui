@@ -3,9 +3,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { version } from '../../environments/version';
 import { PlanningActions, ToastActions } from '../actions';
-import { AboutDialogComponent, ConfirmDialogComponent } from '../components';
+import { ConfirmDialogComponent } from '../components';
 import { ApiService } from '../services';
 
 @Injectable()
@@ -283,26 +282,6 @@ export class PlanningEffects {
       }),
     );
   });
-
-  openAboutDialog = createEffect(
-    () => {
-      return this.actions.pipe(
-        ofType(PlanningActions.openAboutDialog),
-        switchMap(() => {
-          const { name, tag } = version;
-          this.dialog.open(AboutDialogComponent, {
-            data: {
-              version: `${name} - ${tag}`,
-            },
-            width: `500px`,
-          });
-
-          return [];
-        }),
-      );
-    },
-    { dispatch: false },
-  );
 
   updateActivityInstance = createEffect(() => {
     return this.actions.pipe(

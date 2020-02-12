@@ -7,7 +7,7 @@ import {
 import { select, Store } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
-import { AuthActions, PlanningActions } from './actions';
+import { AppActions, AuthActions } from './actions';
 import { AppState } from './app-store';
 import { getLoading, getPath } from './selectors';
 
@@ -45,7 +45,7 @@ export class AppComponent implements OnDestroy {
   }
 
   onAbout(): void {
-    this.store.dispatch(PlanningActions.openAboutDialog());
+    this.store.dispatch(AppActions.openAboutDialog());
   }
 
   onLogout(): void {
