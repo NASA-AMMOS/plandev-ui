@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     `
       :host {
         align-items: center;
-        background-color: var(--color-accent);
+        background-color: var(--color-primary-300);
         color: white;
         display: inline-flex;
         height: 25px;
