@@ -41,34 +41,27 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
   createActivityInstanceError: string | null = null;
-  panels = {
-    activityInstances: {
-      order: 2,
-      size: 50,
-      visible: true,
-    },
+  drawer = {
     activityTypes: {
-      order: 0,
-      size: 20,
       visible: true,
     },
+    createActivityInstance: {
+      visible: false,
+    },
+    selectedActivityInstance: {
+      visible: false,
+    },
+  };
+  drawerVisible = true;
+  panels = {
     bottom: {
       height: 200,
       order: 1,
       size: 60,
       visible: true,
     },
-    createActivityInstance: {
-      order: 1,
-      size: 20,
-      visible: true,
-    },
-    selectedActivityInstance: {
-      order: 3,
-      size: 20,
-      visible: true,
-    },
     top: {
+      height: 200,
       order: 0,
       size: 40,
       visible: true,
@@ -129,7 +122,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.setPanelBottomHeight();
+    this.setPanelHeights();
   }
 
   ngOnDestroy(): void {
@@ -150,9 +143,13 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
+  onOpenedChange(): void {
+    this.store.dispatch(AppActions.resize());
+  }
+
   onResize(): void {
     this.store.dispatch(AppActions.resize());
-    this.setPanelBottomHeight();
+    this.setPanelHeights();
   }
 
   onSelectActivityInstance(activityInstance: CActivityInstance): void {
@@ -161,6 +158,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
+    this.toggleDrawer('selectedActivityInstance');
   }
 
   onUpdateActivityInstance(update: UpdateActivityInstance): void {
@@ -177,14 +175,31 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('window:resize', ['$event'])
   onWindowResize() {
-    this.setPanelBottomHeight();
+    this.setPanelHeights();
   }
 
-  setPanelBottomHeight() {
+  setPanelHeights() {
+    const panelTop = this.elRef.nativeElement.querySelector('.panel-top');
     const panelBottom = this.elRef.nativeElement.querySelector('.panel-bottom');
+
+    if (panelTop) {
+      this.panels.top.height = panelTop.clientHeight;
+    }
+
     if (panelBottom) {
       this.panels.bottom.height = panelBottom.clientHeight;
     }
+  }
+
+  toggleDrawer(type: string): void {
+    const drawerContent = Object.keys(this.drawer);
+    drawerContent.forEach(content => {
+      if (content !== type) {
+        this.drawer[content].visible = false;
+      } else {
+        this.drawer[content].visible = true;
+      }
+    });
   }
 
   togglePanelVisible(panel: string): void {
