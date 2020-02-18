@@ -45,7 +45,7 @@
     "@ngrx/router-store": "^9.0.0-beta.0",
     "@ngrx/store": "^9.0.0-beta.0",
     "@ngrx/store-devtools": "^9.0.0-beta.0",
-    "angular-split": "^3.0.2",
+    "angular-split": "^3.0.3",
     "d3": "^5.15.0",
     "hammerjs": "^2.0.8",
     "lodash-es": "^4.17.15",
