@@ -1,6 +1,7 @@
 import { ElementRef, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ngOnChanges } from 'src/app/functions';
+import { MaterialModule } from 'src/app/material';
 import { ToolbarComponent } from './toolbar.component';
 
 @Injectable()
@@ -20,6 +21,7 @@ describe('ToolbarComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [ToolbarComponent],
+      imports: [MaterialModule],
       providers: [{ provide: ElementRef, useClass: MockElementRef }],
     }).compileComponents();
     fixture = TestBed.createComponent(ToolbarComponent);

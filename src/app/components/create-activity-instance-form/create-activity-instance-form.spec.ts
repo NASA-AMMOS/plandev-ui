@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
+import { MaterialModule } from 'src/app/material';
 import { cActivityTypeMap } from 'src/app/mocks';
 import { CreateActivityInstanceFormComponent } from './create-activity-instance-form.component';
 
@@ -10,6 +11,7 @@ describe('CreateActivityInstanceFormComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [CreateActivityInstanceFormComponent],
+      imports: [MaterialModule],
       providers: [FormBuilder],
     }).compileComponents();
     fixture = TestBed.createComponent(CreateActivityInstanceFormComponent);

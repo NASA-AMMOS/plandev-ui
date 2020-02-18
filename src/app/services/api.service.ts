@@ -228,24 +228,20 @@ export class ApiService {
   login(username: string, password: string): Observable<string> {
     return new Observable((o: Observer<string>) => {
       // TODO.
-      setTimeout(() => {
-        if (username === 'testuser' && password === '123456') {
-          o.next('Login success');
-          o.complete();
-        } else {
-          o.error('Login failed. Invalid username or password.');
-        }
-      }, 1000);
+      if (username === 'testuser' && password === '123456') {
+        o.next('Login success');
+        o.complete();
+      } else {
+        o.error('Login failed. Invalid username or password.');
+      }
     });
   }
 
   logout(): Observable<string> {
     return new Observable((o: Observer<string>) => {
       // TODO.
-      setTimeout(() => {
-        o.next('Logout success');
-        o.complete();
-      }, 1000);
+      o.next('Logout success');
+      o.complete();
     });
   }
 
