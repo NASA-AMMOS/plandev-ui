@@ -60,6 +60,10 @@ pipeline {
             npx yarn test
             npx yarn build --prod
 
+            # Print size of dist folder
+            du -sh dist
+            du -sh dist/*
+
             # Build Docker image
             docker build -t "${getDockerTag()}" --rm .
             """
