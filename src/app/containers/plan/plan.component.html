@@ -48,69 +48,15 @@
   </div>
 </app-toolbar>
 
-<mat-drawer-container>
-  <mat-drawer
-    [opened]="drawerVisible"
-    mode="side"
-    position="end"
-    (openedChange)="onOpenedChange()"
-  >
-    <div [style.display]="drawer.activityTypes.visible ? 'block' : 'none'">
-      <app-panel-header>
-        Activity Types
-      </app-panel-header>
-      <div class="p-1">
-        <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-        <app-activity-type-list
-          *ngIf="activityTypes !== null"
-          [activityTypes]="activityTypes"
-        ></app-activity-type-list>
-      </div>
-    </div>
-
-    <div
-      [style.display]="drawer.createActivityInstance.visible ? 'block' : 'none'"
-    >
-      <app-panel-header>
-        Create Activity Instance
-      </app-panel-header>
-      <div class="p-1">
-        <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-        <app-create-activity-instance-form
-          *ngIf="activityTypes !== null"
-          [activityTypes]="activityTypes"
-          [activityTypesMap]="activityTypesMap"
-          [createActivityInstanceError]="createActivityInstanceError"
-          (create)="onCreateActivityInstance($event)"
-        ></app-create-activity-instance-form>
-      </div>
-    </div>
-
-    <div
-      [style.display]="
-        drawer.selectedActivityInstance.visible ? 'block' : 'none'
-      "
-    >
-      <app-panel-header>
-        Selected Activity Instance
-      </app-panel-header>
-      <div class="p-1">
-        <app-update-activity-instance-form
-          *ngIf="selectedActivityInstance; else elseBlock"
-          [activityInstance]="selectedActivityInstance"
-          [activityTypesMap]="activityTypesMap"
-          [updateActivityInstanceError]="updateActivityInstanceError"
-          (delete)="onDeleteActivityInstance($event)"
-          (update)="onUpdateActivityInstance($event)"
-        ></app-update-activity-instance-form>
-        <ng-template #elseBlock>
-          <mat-card>No Activity Instance Selected</mat-card>
-        </ng-template>
-      </div>
-    </div>
-  </mat-drawer>
-
-  <mat-drawer-content>
+<as-split
+  direction="horizontal"
+  restrictMove="true"
+  [gutterSize]="4"
+  [useTransition]="true"
+  (dragEnd)="onResize()"
+  (transitionEnd)="onResize()"
+>
+  <as-split-area size="70">
     <as-split direction="vertical" [gutterSize]="4" (dragEnd)="onResize()">
       <as-split-area
         class="panel-top"
@@ -165,5 +111,60 @@
         </div>
       </as-split-area>
     </as-split>
-  </mat-drawer-content>
-</mat-drawer-container>
+  </as-split-area>
+  <as-split-area size="30" [visible]="drawerVisible">
+    <div [style.display]="drawer.activityTypes.visible ? 'block' : 'none'">
+      <app-panel-header>
+        Activity Types
+      </app-panel-header>
+      <div class="p-1">
+        <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
+        <app-activity-type-list
+          *ngIf="activityTypes !== null"
+          [activityTypes]="activityTypes"
+        ></app-activity-type-list>
+      </div>
+    </div>
+
+    <div
+      [style.display]="drawer.createActivityInstance.visible ? 'block' : 'none'"
+    >
+      <app-panel-header>
+        Create Activity Instance
+      </app-panel-header>
+      <div class="p-1">
+        <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
+        <app-create-activity-instance-form
+          *ngIf="activityTypes !== null"
+          [activityTypes]="activityTypes"
+          [activityTypesMap]="activityTypesMap"
+          [createActivityInstanceError]="createActivityInstanceError"
+          (create)="onCreateActivityInstance($event)"
+        ></app-create-activity-instance-form>
+      </div>
+    </div>
+
+    <div
+      [style.display]="
+        drawer.selectedActivityInstance.visible ? 'block' : 'none'
+      "
+    >
+      <app-panel-header>
+        Selected Activity Instance
+      </app-panel-header>
+      <div class="p-1">
+        <app-update-activity-instance-form
+          *ngIf="selectedActivityInstance; else elseBlock"
+          [activityInstance]="selectedActivityInstance"
+          [activityTypesMap]="activityTypesMap"
+          [updateActivityInstanceError]="updateActivityInstanceError"
+          (delete)="onDeleteActivityInstance($event)"
+          (update)="onUpdateActivityInstance($event)"
+        ></app-update-activity-instance-form>
+        <ng-template #elseBlock>
+          <mat-card>No Activity Instance Selected</mat-card>
+        </ng-template>
+      </div>
+    </div>
+  </as-split-area>
+</as-split>

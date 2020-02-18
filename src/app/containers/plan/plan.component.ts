@@ -112,6 +112,9 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         .pipe(select(getSelectedActivityInstance))
         .subscribe(selectedActivityInstance => {
           this.selectedActivityInstance = selectedActivityInstance;
+          if (this.selectedActivityInstance !== null) {
+            this.showDrawerType('selectedActivityInstance');
+          }
           this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getSelectedPlan)).subscribe(plan => {
@@ -149,10 +152,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  onOpenedChange(): void {
-    this.store.dispatch(AppActions.resize());
-  }
-
   onResize(): void {
     this.store.dispatch(AppActions.resize());
     this.setPanelHeights();
@@ -164,7 +163,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
-    this.showDrawerType('selectedActivityInstance');
   }
 
   onUpdateActivityInstance(update: UpdateActivityInstance): void {
