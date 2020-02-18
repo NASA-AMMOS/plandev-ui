@@ -15,7 +15,7 @@ import {
   TimelineReducer,
 } from './reducers';
 
-export interface State {
+export interface RootState {
   app: AppReducer.AppState;
   auth: AuthReducer.AuthState;
   planning: PlanningReducer.PlanningState;
@@ -25,7 +25,7 @@ export interface State {
 }
 
 export const ROOT_REDUCERS = new InjectionToken<
-  ActionReducerMap<State, Action>
+  ActionReducerMap<RootState, Action>
 >('Root reducers token', {
   factory: () => ({
     app: AppReducer.reducer,
@@ -37,8 +37,10 @@ export const ROOT_REDUCERS = new InjectionToken<
   }),
 });
 
-export function logger(reducer: ActionReducer<State>): ActionReducer<State> {
-  return (state: State | undefined, action: Action) => {
+export function logger(
+  reducer: ActionReducer<RootState>,
+): ActionReducer<RootState> {
+  return (state: RootState | undefined, action: Action) => {
     const result = reducer(state, action);
     console.groupCollapsed(action.type);
     console.log('prev state', state);
@@ -50,6 +52,6 @@ export function logger(reducer: ActionReducer<State>): ActionReducer<State> {
   };
 }
 
-export const metaReducers: MetaReducer<State>[] = !environment.production
+export const metaReducers: MetaReducer<RootState>[] = !environment.production
   ? [logger]
   : [];

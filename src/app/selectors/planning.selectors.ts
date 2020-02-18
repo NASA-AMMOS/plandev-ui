@@ -13,7 +13,9 @@ import {
   TimeRange,
 } from '../types';
 
-const getPlanningState = createFeatureSelector<PlanningState>('planning');
+export const getPlanningState = createFeatureSelector<PlanningState>(
+  'planning',
+);
 
 export const getActivityInstancesMap = createSelector(
   getPlanningState,

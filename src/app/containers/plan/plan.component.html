@@ -119,7 +119,33 @@
         [visible]="panels.top.visible"
       >
         <app-panel-header>
-          Activity Instances
+          Schedule
+        </app-panel-header>
+        <div class="p-1">
+          <app-timeline [height]="panels.top.height"></app-timeline>
+        </div>
+      </as-split-area>
+
+      <as-split-area
+        class="panel-middle"
+        [order]="panels.middle.order"
+        [size]="panels.middle.size"
+        [visible]="panels.middle.visible"
+      >
+        <app-panel-header>
+          Simulation
+        </app-panel-header>
+        <div class="p-1"></div>
+      </as-split-area>
+
+      <as-split-area
+        class="panel-bottom"
+        [order]="panels.bottom.order"
+        [size]="panels.bottom.size"
+        [visible]="panels.bottom.visible"
+      >
+        <app-panel-header>
+          Activity Instances Table
         </app-panel-header>
         <div class="p-1">
           <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
@@ -136,20 +162,6 @@
               (selectActivityInstance)="onSelectActivityInstance($event)"
             ></app-activity-instances-table>
           </ng-container>
-        </div>
-      </as-split-area>
-
-      <as-split-area
-        class="panel-bottom"
-        [order]="panels.bottom.order"
-        [size]="panels.bottom.size"
-        [visible]="panels.bottom.visible"
-      >
-        <app-panel-header>
-          Timeline
-        </app-panel-header>
-        <div class="p-1">
-          <app-timeline [height]="panels.bottom.height"></app-timeline>
         </div>
       </as-split-area>
     </as-split>

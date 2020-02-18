@@ -8,7 +8,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { AuthActions } from '../../actions';
-import { State } from '../../app-store';
+import { RootState } from '../../app-store';
 import { getLoginErrorMsg } from '../../selectors';
 
 @Component({
@@ -27,7 +27,7 @@ export class LoginComponent implements OnDestroy {
   constructor(
     private cdRef: ChangeDetectorRef,
     private fb: FormBuilder,
-    private store: Store<State>,
+    private store: Store<RootState>,
   ) {
     this.loginForm = this.fb.group({
       password: ['123456', Validators.required],

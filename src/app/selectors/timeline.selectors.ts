@@ -2,7 +2,9 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { TimelineState } from '../reducers/timeline.reducer';
 import { TimeRange } from '../types';
 
-const getTimelineState = createFeatureSelector<TimelineState>('timeline');
+export const getTimelineState = createFeatureSelector<TimelineState>(
+  'timeline',
+);
 
 export const getMarginBottom = createSelector(
   getTimelineState,

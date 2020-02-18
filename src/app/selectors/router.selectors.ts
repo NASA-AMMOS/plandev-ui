@@ -1,9 +1,9 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { RouterState } from '../app-routing.module';
-import { State } from '../app-store';
+import { RootState } from '../app-store';
 
 export const getRouterState = createFeatureSelector<
-  State,
+  RootState,
   { state: RouterState }
 >('router');
 

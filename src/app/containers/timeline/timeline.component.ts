@@ -16,7 +16,7 @@ import {
   SimulationActions,
   TimelineActions,
 } from '../../actions';
-import { State } from '../../app-store';
+import { RootState } from '../../app-store';
 import {
   getActivityInstancesBand,
   getMarginBottom,
@@ -54,7 +54,7 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private elRef: ElementRef,
     private route: ActivatedRoute,
-    private store: Store<State>,
+    private store: Store<RootState>,
   ) {
     this.subs.add(
       this.store
@@ -173,15 +173,15 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
   }
 
-  /**
-   * @todo Find a better solution than using 180 to account for the padding before the band container
-   */
   setBandContainerHeight() {
     const bandContainer = this.elRef.nativeElement.querySelector(
       '.band-container',
     );
     if (bandContainer) {
-      bandContainer.style.setProperty('--max-height', `${this.height - 180}px`);
+      bandContainer.style.setProperty(
+        '--max-height',
+        `${this.height - bandContainer.offsetTop}px`,
+      );
     }
   }
 

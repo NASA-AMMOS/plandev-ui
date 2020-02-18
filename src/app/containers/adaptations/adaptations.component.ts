@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
-import { State } from '../../app-store';
+import { RootState } from '../../app-store';
 import { getAdaptations } from '../../selectors';
 import { CAdaptation, SCreateAdaption } from '../../types';
 
@@ -29,7 +29,7 @@ export class AdaptationsComponent implements OnDestroy {
     private cdRef: ChangeDetectorRef,
     private fb: FormBuilder,
     private router: Router,
-    private store: Store<State>,
+    private store: Store<RootState>,
   ) {
     this.createAdaptationForm = this.fb.group({
       file: [null, Validators.required],
