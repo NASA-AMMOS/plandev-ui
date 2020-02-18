@@ -158,7 +158,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
-    this.toggleDrawer('selectedActivityInstance');
+    this.showDrawerType('selectedActivityInstance');
   }
 
   onUpdateActivityInstance(update: UpdateActivityInstance): void {
@@ -191,7 +191,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  toggleDrawer(type: string): void {
+  showDrawerType(type: string): void {
     const drawerContent = Object.keys(this.drawer);
     drawerContent.forEach(content => {
       if (content !== type) {
@@ -200,6 +200,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.drawer[content].visible = true;
       }
     });
+    this.drawerVisible = true;
   }
 
   togglePanelVisible(panel: string): void {
