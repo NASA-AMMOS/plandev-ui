@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
+  NgModule,
   Output,
 } from '@angular/core';
+import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,3 +23,10 @@ export class TimeControlsComponent {
   @Output()
   zoomOut: EventEmitter<void> = new EventEmitter<void>();
 }
+
+@NgModule({
+  declarations: [TimeControlsComponent],
+  exports: [TimeControlsComponent],
+  imports: [MaterialModule],
+})
+export class TimeControlsModule {}

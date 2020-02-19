@@ -6,6 +6,7 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  NgModule,
   OnChanges,
   Output,
   SimpleChanges,
@@ -183,3 +184,9 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     });
   }
 }
+
+@NgModule({
+  declarations: [TimeAxisComponent],
+  exports: [TimeAxisComponent],
+})
+export class TimeAxisModule {}

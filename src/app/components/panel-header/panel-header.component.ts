@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, NgModule } from '@angular/core';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,3 +26,10 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   template: '<ng-content></ng-content>',
 })
 export class PanelHeaderComponent {}
+
+@NgModule({
+  declarations: [PanelHeaderComponent],
+  exports: [PanelHeaderComponent],
+  imports: [CommonModule],
+})
+export class PanelHeaderModule {}

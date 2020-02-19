@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, NgModule } from '@angular/core';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -7,3 +7,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   template: '',
 })
 export class TooltipComponent {}
+
+@NgModule({
+  declarations: [TooltipComponent],
+  exports: [TooltipComponent],
+})
+export class TooltipModule {}

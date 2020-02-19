@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   Input,
+  NgModule,
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
@@ -45,3 +46,9 @@ export class PlaceholderComponent implements OnChanges {
     }
   }
 }
+
+@NgModule({
+  declarations: [PlaceholderComponent],
+  exports: [PlaceholderComponent],
+})
+export class PlaceholderModule {}

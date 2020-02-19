@@ -1,22 +1,36 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  NgModule,
   OnDestroy,
 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { select, Store } from '@ngrx/store';
+import { AngularSplitModule } from 'angular-split';
 import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
+import {
+  AdaptationsTableModule,
+  PanelHeaderModule,
+  PlaceholderModule,
+  ToolbarModule,
+} from '../../components';
+import { MaterialModule } from '../../material';
 import { getAdaptations } from '../../selectors';
 import { CAdaptation, SCreateAdaption } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-adaptations',
-  styleUrls: ['./adaptations.component.css'],
   templateUrl: './adaptations.component.html',
 })
 export class AdaptationsComponent implements OnDestroy {
@@ -78,3 +92,19 @@ export class AdaptationsComponent implements OnDestroy {
     }
   }
 }
+
+@NgModule({
+  declarations: [AdaptationsComponent],
+  exports: [AdaptationsComponent],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    ReactiveFormsModule,
+    AngularSplitModule.forChild(),
+    AdaptationsTableModule,
+    PanelHeaderModule,
+    PlaceholderModule,
+    ToolbarModule,
+  ],
+})
+export class AdaptationsModule {}

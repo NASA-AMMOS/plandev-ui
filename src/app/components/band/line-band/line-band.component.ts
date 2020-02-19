@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -5,6 +6,7 @@ import {
   ElementRef,
   HostListener,
   Input,
+  NgModule,
   OnChanges,
   SimpleChanges,
   ViewChild,
@@ -169,3 +171,10 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     }
   }
 }
+
+@NgModule({
+  declarations: [LineBandComponent],
+  exports: [LineBandComponent],
+  imports: [CommonModule],
+})
+export class LineBandModule {}

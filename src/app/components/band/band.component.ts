@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -7,6 +8,7 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  NgModule,
   OnChanges,
   Output,
   SimpleChanges,
@@ -23,6 +25,7 @@ import {
   hideTooltip,
   showTooltip,
 } from '../../functions';
+import { MaterialModule } from '../../material';
 import {
   Axis,
   DeletePoint,
@@ -31,7 +34,10 @@ import {
   TimeRange,
   UpdatePoint,
 } from '../../types';
+import { ActivityBandModule } from './activity-band/activity-band.component';
+import { LineBandModule } from './line-band/line-band.component';
 import { SubBandService } from './sub-band.service';
+import { XRangeBandModule } from './x-range-band/x-range-band.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -361,3 +367,16 @@ export class BandComponent implements AfterViewInit, OnChanges {
     return subBand.id;
   }
 }
+
+@NgModule({
+  declarations: [BandComponent],
+  exports: [BandComponent],
+  imports: [
+    ActivityBandModule,
+    CommonModule,
+    LineBandModule,
+    MaterialModule,
+    XRangeBandModule,
+  ],
+})
+export class BandModule {}

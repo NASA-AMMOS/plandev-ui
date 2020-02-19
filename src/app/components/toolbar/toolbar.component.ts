@@ -3,9 +3,11 @@ import {
   Component,
   ElementRef,
   Input,
+  NgModule,
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
+import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,3 +30,10 @@ export class ToolbarComponent implements OnChanges {
     }
   }
 }
+
+@NgModule({
+  declarations: [ToolbarComponent],
+  exports: [ToolbarComponent],
+  imports: [MaterialModule],
+})
+export class ToolbarModule {}

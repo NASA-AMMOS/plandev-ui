@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
+  NgModule,
   Output,
 } from '@angular/core';
+import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,3 +20,10 @@ export class SimulationControlsComponent {
   @Output()
   run: EventEmitter<void> = new EventEmitter<void>();
 }
+
+@NgModule({
+  declarations: [SimulationControlsComponent],
+  exports: [SimulationControlsComponent],
+  imports: [MaterialModule],
+})
+export class SimulationControlsModule {}

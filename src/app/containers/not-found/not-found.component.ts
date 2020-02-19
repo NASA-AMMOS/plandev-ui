@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  NgModule,
+  OnInit,
+} from '@angular/core';
+import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,3 +32,10 @@ export class NotFoundComponent implements OnInit {
     this.comicUrl = `${this.xkcdUrl}/${comic}.png`;
   }
 }
+
+@NgModule({
+  declarations: [NotFoundComponent],
+  exports: [NotFoundComponent],
+  imports: [MaterialModule],
+})
+export class NotFoundModule {}

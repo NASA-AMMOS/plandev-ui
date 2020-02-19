@@ -1,13 +1,22 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
+  NgModule,
   OnChanges,
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { MaterialModule } from '../../material';
 import {
   CActivityInstance,
   CActivityTypeMap,
@@ -118,3 +127,10 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
     }
   }
 }
+
+@NgModule({
+  declarations: [UpdateActivityInstanceFormComponent],
+  exports: [UpdateActivityInstanceFormComponent],
+  imports: [CommonModule, MaterialModule, ReactiveFormsModule],
+})
+export class UpdateActivityInstanceFormModule {}

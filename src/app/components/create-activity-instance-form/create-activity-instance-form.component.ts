@@ -1,13 +1,22 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
+  NgModule,
   OnDestroy,
   Output,
 } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { SubSink } from 'subsink';
+import { MaterialModule } from '../../material';
 import {
   CActivityType,
   CActivityTypeMap,
@@ -17,7 +26,6 @@ import {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-create-activity-instance-form',
-  styles: [''],
   templateUrl: './create-activity-instance-form.component.html',
 })
 export class CreateActivityInstanceFormComponent implements OnDestroy {
@@ -97,3 +105,10 @@ export class CreateActivityInstanceFormComponent implements OnDestroy {
     }
   }
 }
+
+@NgModule({
+  declarations: [CreateActivityInstanceFormComponent],
+  exports: [CreateActivityInstanceFormComponent],
+  imports: [CommonModule, MaterialModule, ReactiveFormsModule],
+})
+export class CreateActivityInstanceFormModule {}

@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
-import { AdaptationsModule } from './adaptations';
-import { LoginModule } from './login';
-import { NotFoundModule } from './not-found';
-import { PlanModule } from './plan';
-import { PlansModule } from './plans';
+import { AdaptationsModule } from './adaptations/adaptations.component';
+import { LoginModule } from './login/login.component';
+import { NotFoundModule } from './not-found/not-found.component';
+import { PlanModule } from './plan/plan.component';
+import { PlansModule } from './plans/plans.component';
 
 const MODULES = [
   AdaptationsModule,

@@ -1,18 +1,20 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
+  NgModule,
   OnChanges,
   Output,
   SimpleChanges,
 } from '@angular/core';
+import { MaterialModule } from '../../material';
 import { CActivityType } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-activity-type-list',
-  styles: [''],
   templateUrl: './activity-type-list.component.html',
 })
 export class ActivityTypeListComponent implements OnChanges {
@@ -44,3 +46,10 @@ export class ActivityTypeListComponent implements OnChanges {
     this.selectActivityType.emit(activityType);
   }
 }
+
+@NgModule({
+  declarations: [ActivityTypeListComponent],
+  exports: [ActivityTypeListComponent],
+  imports: [CommonModule, MaterialModule],
+})
+export class ActivityTypeListModule {}

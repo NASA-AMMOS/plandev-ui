@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -5,6 +6,7 @@ import {
   ElementRef,
   HostListener,
   Input,
+  NgModule,
   OnChanges,
   SimpleChanges,
   ViewChild,
@@ -151,3 +153,10 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
     }
   }
 }
+
+@NgModule({
+  declarations: [XRangeBandComponent],
+  exports: [XRangeBandComponent],
+  imports: [CommonModule],
+})
+export class XRangeBandModule {}

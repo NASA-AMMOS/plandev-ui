@@ -3,9 +3,11 @@ import {
   Component,
   EventEmitter,
   Input,
+  NgModule,
   Output,
 } from '@angular/core';
 import { contextMenu } from 'src/app/functions';
+import { MaterialModule } from '../../material';
 import { CAdaptation } from '../../types';
 
 @Component({
@@ -27,3 +29,10 @@ export class AdaptationsTableComponent {
   displayedColumns: string[] = ['id', 'name', 'version', 'mission', 'owner'];
   onContextMenu = contextMenu;
 }
+
+@NgModule({
+  declarations: [AdaptationsTableComponent],
+  exports: [AdaptationsTableComponent],
+  imports: [MaterialModule],
+})
+export class AdaptationsTableModule {}

@@ -4,11 +4,13 @@ import {
   Component,
   EventEmitter,
   Input,
+  NgModule,
   OnChanges,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import { contextMenu } from 'src/app/functions';
+import { MaterialModule } from '../../material';
 import { CActivityInstance } from '../../types';
 
 @Component({
@@ -47,3 +49,10 @@ export class ActivityInstancesTableComponent implements OnChanges {
     this.selectActivityInstance.emit(activityInstance);
   }
 }
+
+@NgModule({
+  declarations: [ActivityInstancesTableComponent],
+  exports: [ActivityInstancesTableComponent],
+  imports: [MaterialModule],
+})
+export class ActivityInstancesTableModule {}

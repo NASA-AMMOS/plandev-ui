@@ -1,9 +1,11 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
   Input,
+  NgModule,
   OnChanges,
   OnDestroy,
   SimpleChanges,
@@ -17,6 +19,13 @@ import {
   TimelineActions,
 } from '../../actions';
 import { RootState } from '../../app-store';
+import {
+  SimulationControlsModule,
+  TimeAxisModule,
+  TimeControlsModule,
+} from '../../components';
+import { BandModule } from '../../components/band/band.component';
+import { MaterialModule } from '../../material';
 import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 
@@ -189,3 +198,17 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     return band.id;
   }
 }
+
+@NgModule({
+  declarations: [TimelineComponent],
+  exports: [TimelineComponent],
+  imports: [
+    BandModule,
+    CommonModule,
+    MaterialModule,
+    SimulationControlsModule,
+    TimeAxisModule,
+    TimeControlsModule,
+  ],
+})
+export class TimelineModule {}

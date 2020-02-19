@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -5,13 +6,25 @@ import {
   Component,
   ElementRef,
   HostListener,
+  NgModule,
   OnDestroy,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
+import { AngularSplitModule } from 'angular-split';
 import { SubSink } from 'subsink';
 import { AppActions, PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
+import {
+  ActivityInstancesTableModule,
+  ActivityTypeListModule,
+  CreateActivityInstanceFormModule,
+  PanelHeaderModule,
+  PlaceholderModule,
+  ToolbarModule,
+  UpdateActivityInstanceFormModule,
+} from '../../components';
+import { MaterialModule } from '../../material';
 import {
   getActivityInstancesForSelectedPlan,
   getActivityTypes,
@@ -32,6 +45,7 @@ import {
   SActivityInstance,
   UpdateActivityInstance,
 } from '../../types';
+import { TimelineModule } from '../timeline/timeline.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -229,3 +243,22 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.panels[panel].visible = !this.panels[panel].visible;
   }
 }
+
+@NgModule({
+  declarations: [PlanComponent],
+  exports: [PlanComponent],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    AngularSplitModule.forChild(),
+    ActivityInstancesTableModule,
+    ActivityTypeListModule,
+    CreateActivityInstanceFormModule,
+    PanelHeaderModule,
+    PlaceholderModule,
+    TimelineModule,
+    ToolbarModule,
+    UpdateActivityInstanceFormModule,
+  ],
+})
+export class PlanModule {}

@@ -1,25 +1,39 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
+  NgModule,
   OnDestroy,
   ViewChild,
 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { select, Store } from '@ngrx/store';
+import { AngularSplitModule } from 'angular-split';
 import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
+import {
+  PanelHeaderModule,
+  PlaceholderModule,
+  PlansTableModule,
+  ToolbarModule,
+} from '../../components';
+import { MaterialModule } from '../../material';
 import { getAdaptations, getPlans } from '../../selectors';
 import { CAdaptation, CPlan, SPlan } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-plans',
-  styleUrls: ['./plans.component.css'],
   templateUrl: './plans.component.html',
 })
 export class PlansComponent implements AfterViewInit, OnDestroy {
@@ -92,3 +106,20 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     }
   }
 }
+
+@NgModule({
+  declarations: [PlansComponent],
+  exports: [PlansComponent],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    ReactiveFormsModule,
+    RouterModule,
+    AngularSplitModule.forChild(),
+    PanelHeaderModule,
+    PlaceholderModule,
+    PlansTableModule,
+    ToolbarModule,
+  ],
+})
+export class PlansModule {}

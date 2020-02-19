@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Inject,
+  NgModule,
+} from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,3 +45,11 @@ export class AboutDialogComponent {
     public data: { version: string },
   ) {}
 }
+
+@NgModule({
+  declarations: [AboutDialogComponent],
+  entryComponents: [AboutDialogComponent],
+  exports: [AboutDialogComponent],
+  imports: [CommonModule, MaterialModule],
+})
+export class AboutDialogModule {}

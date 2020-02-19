@@ -1,14 +1,36 @@
+import { HttpClientModule } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  NgModule,
   OnDestroy,
 } from '@angular/core';
-import { select, Store } from '@ngrx/store';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreRouterConnectingModule } from '@ngrx/router-store';
+import { select, Store, StoreModule } from '@ngrx/store';
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+import { AngularSplitModule } from 'angular-split';
+import { ToastrModule } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
 import { AppActions, AuthActions } from './actions';
-import { RootState } from './app-store';
+import { AppRoutingModule, RouterSerializer } from './app-routing.module';
+import { metaReducers, RootState, ROOT_REDUCERS } from './app-store';
+import { TooltipModule } from './components';
+import { ContainersModule } from './containers';
+import {
+  AppEffects,
+  AuthEffects,
+  NavEffects,
+  PlanningEffects,
+  SimulationEffects,
+  TimelineEffects,
+  ToastEffects,
+} from './effects';
+import { MaterialModule } from './material';
 import { getLoading, getPath } from './selectors';
 
 @Component({
@@ -52,3 +74,49 @@ export class AppComponent implements OnDestroy {
     this.store.dispatch(AuthActions.logout());
   }
 }
+
+@NgModule({
+  bootstrap: [AppComponent],
+  declarations: [AppComponent],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    AngularSplitModule.forRoot(),
+    ToastrModule.forRoot({
+      countDuplicates: true,
+      maxOpened: 4,
+      preventDuplicates: true,
+      resetTimeoutOnDuplicate: true,
+    }),
+    StoreModule.forRoot(ROOT_REDUCERS, {
+      metaReducers,
+      runtimeChecks: {
+        strictActionImmutability: true,
+        strictActionSerializability: false,
+        strictStateImmutability: true,
+        strictStateSerializability: true,
+      },
+    }),
+    StoreRouterConnectingModule.forRoot({
+      serializer: RouterSerializer,
+    }),
+    StoreDevtoolsModule.instrument({
+      name: 'aerie-ui',
+    }),
+    EffectsModule.forRoot([
+      AppEffects,
+      AuthEffects,
+      NavEffects,
+      PlanningEffects,
+      SimulationEffects,
+      TimelineEffects,
+      ToastEffects,
+    ]),
+    MaterialModule,
+    ContainersModule,
+    TooltipModule,
+  ],
+})
+export class AppModule {}

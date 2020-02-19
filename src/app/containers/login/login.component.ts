@@ -1,14 +1,22 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  NgModule,
   OnDestroy,
 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { AuthActions } from '../../actions';
 import { RootState } from '../../app-store';
+import { MaterialModule } from '../../material';
 import { getLoginErrorMsg } from '../../selectors';
 
 @Component({
@@ -53,3 +61,10 @@ export class LoginComponent implements OnDestroy {
     }
   }
 }
+
+@NgModule({
+  declarations: [LoginComponent],
+  exports: [LoginComponent],
+  imports: [CommonModule, MaterialModule, ReactiveFormsModule],
+})
+export class LoginModule {}
