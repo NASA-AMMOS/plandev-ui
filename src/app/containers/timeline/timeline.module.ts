@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { TimeAxisControlsModule, TimeAxisModule } from '../../components';
+import {
+  SimulationControlsModule,
+  TimeAxisModule,
+  TimeControlsModule,
+} from '../../components';
 import { BandModule } from '../../components/band';
 import { MaterialModule } from '../../material';
 import { TimelineComponent } from './timeline.component';
@@ -12,8 +16,9 @@ import { TimelineComponent } from './timeline.component';
     BandModule,
     CommonModule,
     MaterialModule,
+    SimulationControlsModule,
     TimeAxisModule,
-    TimeAxisControlsModule,
+    TimeControlsModule,
   ],
 })
 export class TimelineModule {}

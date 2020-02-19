@@ -17,11 +17,14 @@ import {
   getActivityTypes,
   getActivityTypesMap,
   getCreateActivityInstanceError,
+  getScheduleBands,
   getSelectedActivityInstance,
   getSelectedPlan,
+  getStateBands,
   getUpdateActivityInstanceError,
 } from '../../selectors';
 import {
+  Band,
   CActivityInstance,
   CActivityType,
   CActivityTypeMap,
@@ -63,18 +66,20 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     middle: {
       height: 200,
       order: 1,
-      size: 30,
+      size: 40,
       visible: true,
     },
     top: {
       height: 200,
       order: 0,
-      size: 40,
+      size: 30,
       visible: true,
     },
   };
   plan: CPlan | null = null;
+  scheduleBands: Band[];
   selectedActivityInstance: CActivityInstance | null = null;
+  stateBands: Band[];
   updateActivityInstanceError: string | null = null;
 
   private subs = new SubSink();
@@ -108,6 +113,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
           this.createActivityInstanceError = createActivityInstanceError;
           this.cdRef.markForCheck();
         }),
+      this.store.pipe(select(getScheduleBands)).subscribe(scheduleBands => {
+        this.scheduleBands = scheduleBands;
+        this.cdRef.markForCheck();
+      }),
       this.store
         .pipe(select(getSelectedActivityInstance))
         .subscribe(selectedActivityInstance => {
@@ -119,6 +128,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         }),
       this.store.pipe(select(getSelectedPlan)).subscribe(plan => {
         this.plan = plan;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getStateBands)).subscribe(stateBands => {
+        this.stateBands = stateBands;
         this.cdRef.markForCheck();
       }),
       this.store
@@ -184,10 +197,15 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   setPanelHeights() {
     const panelTop = this.elRef.nativeElement.querySelector('.panel-top');
+    const panelMiddle = this.elRef.nativeElement.querySelector('.panel-middle');
     const panelBottom = this.elRef.nativeElement.querySelector('.panel-bottom');
 
     if (panelTop) {
       this.panels.top.height = panelTop.clientHeight;
+    }
+
+    if (panelMiddle) {
+      this.panels.middle.height = panelMiddle.clientHeight;
     }
 
     if (panelBottom) {

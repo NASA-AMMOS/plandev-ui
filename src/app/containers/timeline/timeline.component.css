@@ -9,6 +9,15 @@ mat-card {
   overflow-y: scroll;
 }
 
+.controls-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.controls-container > * {
+  margin-right: 5px;
+}
+
 .time-axis-container {
   height: 65px;
   overflow-x: hidden;

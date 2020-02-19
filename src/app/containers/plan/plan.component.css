@@ -7,6 +7,7 @@ mat-drawer {
   overflow: hidden;
 }
 
+.panel-middle,
 .panel-top {
   overflow: hidden !important;
 }

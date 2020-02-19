@@ -1,10 +1,16 @@
-<app-time-axis-controls
-  (restore)="onRestore()"
-  (simulationClear)="onSimulationClear()"
-  (simulationRun)="onSimulationRun()"
-  (zoomIn)="onZoomIn()"
-  (zoomOut)="onZoomOut()"
-></app-time-axis-controls>
+<div class="controls-container">
+  <app-time-controls
+    *ngIf="showTimeControls"
+    (restore)="onRestore()"
+    (zoomIn)="onZoomIn()"
+    (zoomOut)="onZoomOut()"
+  ></app-time-controls>
+  <app-simulation-controls
+    *ngIf="showSimulationControls"
+    (clear)="onSimulationClear()"
+    (run)="onSimulationRun()"
+  ></app-simulation-controls>
+</div>
 <div class="time-axis-container">
   <app-time-axis
     [marginLeft]="marginLeft"
@@ -17,35 +23,21 @@
 </div>
 <div class="band-container">
   <app-band
-    [height]="activityInstancesBand.height"
-    [id]="activityInstancesBand.id"
+    *ngFor="let band of bands; trackBy: trackByBands"
+    [height]="band.height"
+    [id]="band.id"
     [marginBottom]="marginBottom"
     [marginLeft]="marginLeft"
     [marginRight]="marginRight"
     [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
-    [subBands]="activityInstancesBand.subBands"
+    [subBands]="band.subBands"
     [viewTimeRange]="viewTimeRange"
-    [yAxes]="activityInstancesBand.yAxes"
+    [yAxes]="band.yAxes"
     (deletePoint)="onDeletePoint($event)"
     (savePoint)="onSavePoint($event)"
     (selectPoint)="onSelectPoint($event)"
     (updatePoint)="onUpdatePoint($event)"
   ></app-band>
-  <app-band
-    *ngFor="let stateBand of stateBands; trackBy: trackByStateBands"
-    [height]="stateBand.height"
-    [id]="stateBand.id"
-    [marginBottom]="marginBottom"
-    [marginLeft]="marginLeft"
-    [marginRight]="marginRight"
-    [marginTop]="marginTop"
-    [maxTimeRange]="maxTimeRange"
-    [subBands]="stateBand.subBands"
-    [viewTimeRange]="viewTimeRange"
-    [yAxes]="stateBand.yAxes"
-  ></app-band>
-  <mat-card *ngIf="stateBands === null">
-    No states found. Try running a simulation.
-  </mat-card>
+  <mat-card *ngIf="!bands">No bands found</mat-card>
 </div>

@@ -68,7 +68,11 @@
           Schedule
         </app-panel-header>
         <div class="p-1">
-          <app-timeline [height]="panels.top.height"></app-timeline>
+          <app-timeline
+            [bands]="scheduleBands"
+            [height]="panels.top.height"
+            [marginLeft]="70"
+          ></app-timeline>
         </div>
       </as-split-area>
 
@@ -81,7 +85,14 @@
         <app-panel-header>
           Simulation
         </app-panel-header>
-        <div class="p-1"></div>
+        <div class="p-1">
+          <app-timeline
+            [bands]="stateBands"
+            [height]="panels.middle.height"
+            [showSimulationControls]="true"
+            [showTimeControls]="false"
+          ></app-timeline>
+        </div>
       </as-split-area>
 
       <as-split-area

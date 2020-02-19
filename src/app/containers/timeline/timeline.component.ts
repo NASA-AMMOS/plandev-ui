@@ -17,16 +17,7 @@ import {
   TimelineActions,
 } from '../../actions';
 import { RootState } from '../../app-store';
-import {
-  getActivityInstancesBand,
-  getMarginBottom,
-  getMarginLeft,
-  getMarginRight,
-  getMarginTop,
-  getMaxTimeRange,
-  getStateBands,
-  getViewTimeRange,
-} from '../../selectors';
+import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 
 @Component({
@@ -37,15 +28,33 @@ import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 })
 export class TimelineComponent implements OnChanges, OnDestroy {
   @Input()
+  bands: Band[];
+
+  @Input()
   height: number;
 
-  activityInstancesBand: Band;
-  marginBottom: number;
-  marginLeft: number;
-  marginRight: number;
-  marginTop: number;
+  @Input()
+  marginBottom = 10;
+
+  @Input()
+  marginLeft = 280;
+
+  @Input()
+  marginRight = 70;
+
+  @Input()
+  marginTop = 10;
+
+  @Input()
   maxTimeRange: TimeRange;
-  stateBands: Band[];
+
+  @Input()
+  showSimulationControls = false;
+
+  @Input()
+  showTimeControls = true;
+
+  @Input()
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -57,34 +66,8 @@ export class TimelineComponent implements OnChanges, OnDestroy {
     private store: Store<RootState>,
   ) {
     this.subs.add(
-      this.store
-        .pipe(select(getActivityInstancesBand))
-        .subscribe(activityInstancesBand => {
-          this.activityInstancesBand = activityInstancesBand;
-          this.cdRef.markForCheck();
-        }),
-      this.store.pipe(select(getMarginBottom)).subscribe(marginBottom => {
-        this.marginBottom = marginBottom;
-        this.cdRef.markForCheck();
-      }),
-      this.store.pipe(select(getMarginLeft)).subscribe(marginLeft => {
-        this.marginLeft = marginLeft;
-        this.cdRef.markForCheck();
-      }),
-      this.store.pipe(select(getMarginRight)).subscribe(marginRight => {
-        this.marginRight = marginRight;
-        this.cdRef.markForCheck();
-      }),
-      this.store.pipe(select(getMarginTop)).subscribe(marginTop => {
-        this.marginTop = marginTop;
-        this.cdRef.markForCheck();
-      }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
-        this.cdRef.markForCheck();
-      }),
-      this.store.pipe(select(getStateBands)).subscribe(stateBands => {
-        this.stateBands = stateBands;
         this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
@@ -174,18 +157,35 @@ export class TimelineComponent implements OnChanges, OnDestroy {
   }
 
   setBandContainerHeight() {
+    const controlsContainer = this.elRef.nativeElement.querySelector(
+      '.controls-container',
+    );
+    const timeAxisContainer = this.elRef.nativeElement.querySelector(
+      '.time-axis-container',
+    );
     const bandContainer = this.elRef.nativeElement.querySelector(
       '.band-container',
     );
+
+    let offsetTop = 55; // TODO: Find a better solution than a static offset.
+
+    if (controlsContainer) {
+      offsetTop += controlsContainer.clientHeight;
+    }
+
+    if (timeAxisContainer) {
+      offsetTop += controlsContainer.clientHeight;
+    }
+
     if (bandContainer) {
       bandContainer.style.setProperty(
         '--max-height',
-        `${this.height - bandContainer.offsetTop}px`,
+        `${this.height - offsetTop}px`,
       );
     }
   }
 
-  trackByStateBands(_: number, stateBand: Band): string {
-    return stateBand.id;
+  trackByBands(_: number, band: Band): string {
+    return band.id;
   }
 }

@@ -41,51 +41,53 @@ export const getSelectedActivityInstanceId = createSelector(
   (state: PlanningState): string | null => state.selectedActivityInstanceId,
 );
 
-export const getActivityInstancesBand = createSelector(
+export const getScheduleBands = createSelector(
   getActivityInstances,
   getSelectedActivityInstanceId,
   (
     activityInstances: CActivityInstance[],
     selectedActivityInstanceId: string | null,
-  ): Band => ({
-    height: 200,
-    id: 'band0',
-    order: 0,
-    subBands: [
-      {
-        id: 'band0subBand0',
-        layout: 'waterfall',
-        points: activityInstances.map(point => ({
-          color: '#d651ff',
-          duration: 0,
-          id: point.id,
-          labelAlign: 'start',
-          labelBaseline: 'alphabetic',
-          labelFillColor: '#000000',
-          labelFont: 'Georgia',
-          labelFontSize: 12,
-          labelHidden: false,
-          labelText: point.type,
-          selected: selectedActivityInstanceId === point.id,
+  ): Band[] => [
+    {
+      height: 200,
+      id: 'band0',
+      order: 0,
+      subBands: [
+        {
+          id: 'band0subBand0',
+          layout: 'waterfall',
+          points: activityInstances.map(point => ({
+            color: '#d651ff',
+            duration: 0,
+            id: point.id,
+            labelAlign: 'start',
+            labelBaseline: 'alphabetic',
+            labelFillColor: '#000000',
+            labelFont: 'Georgia',
+            labelFontSize: 12,
+            labelHidden: false,
+            labelText: point.type,
+            selected: selectedActivityInstanceId === point.id,
+            type: 'activity',
+            x: getUnixEpochTime(point.startTimestamp),
+          })),
           type: 'activity',
-          x: getUnixEpochTime(point.startTimestamp),
-        })),
-        type: 'activity',
-      } as SubBandActivity,
-    ],
-    yAxes: [
-      {
-        color: '#000000',
-        id: 'axis0',
-        labelFillColor: '#000000',
-        labelFontSize: 14,
-        labelOffset: '-1.5em',
-        labelText: 'Activity Instances',
-        scaleDomain: [],
-        tickCount: 5,
-      },
-    ],
-  }),
+        } as SubBandActivity,
+      ],
+      yAxes: [
+        {
+          color: '#000000',
+          id: 'axis0',
+          labelFillColor: '#000000',
+          labelFontSize: 14,
+          labelOffset: '-1.5em',
+          labelText: 'Activity Instances',
+          scaleDomain: [],
+          tickCount: 5,
+        },
+      ],
+    },
+  ],
 );
 
 export const getActivityInstancesForSelectedPlan = createSelector(
