@@ -3,12 +3,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
   Input,
   NgModule,
-  OnChanges,
   OnDestroy,
-  SimpleChanges,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
@@ -35,12 +32,9 @@ import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
   styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements OnChanges, OnDestroy {
+export class TimelineComponent implements OnDestroy {
   @Input()
   bands: Band[];
-
-  @Input()
-  height: number;
 
   @Input()
   marginBottom = 10;
@@ -70,7 +64,6 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
-    private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<RootState>,
   ) {
@@ -84,12 +77,6 @@ export class TimelineComponent implements OnChanges, OnDestroy {
         this.cdRef.markForCheck();
       }),
     );
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes.height) {
-      this.setBandContainerHeight();
-    }
   }
 
   ngOnDestroy(): void {
@@ -163,35 +150,6 @@ export class TimelineComponent implements OnChanges, OnDestroy {
 
   onZoomOut(): void {
     this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
-  }
-
-  setBandContainerHeight() {
-    const controlsContainer = this.elRef.nativeElement.querySelector(
-      '.controls-container',
-    );
-    const timeAxisContainer = this.elRef.nativeElement.querySelector(
-      '.time-axis-container',
-    );
-    const bandContainer = this.elRef.nativeElement.querySelector(
-      '.band-container',
-    );
-
-    let offsetTop = 55; // TODO: Find a better solution than a static offset.
-
-    if (controlsContainer) {
-      offsetTop += controlsContainer.clientHeight;
-    }
-
-    if (timeAxisContainer) {
-      offsetTop += controlsContainer.clientHeight;
-    }
-
-    if (bandContainer) {
-      bandContainer.style.setProperty(
-        '--max-height',
-        `${this.height - offsetTop}px`,
-      );
-    }
   }
 
   trackByBands(_: number, band: Band): string {

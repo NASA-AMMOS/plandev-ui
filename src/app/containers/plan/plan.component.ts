@@ -1,11 +1,9 @@
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
-  HostListener,
   NgModule,
   OnDestroy,
 } from '@angular/core';
@@ -53,7 +51,7 @@ import { TimelineModule } from '../timeline/timeline.component';
   styleUrls: ['./plan.component.css'],
   templateUrl: './plan.component.html',
 })
-export class PlanComponent implements AfterViewInit, OnDestroy {
+export class PlanComponent implements OnDestroy {
   activityInstances: CActivityInstance[] | null = null;
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
@@ -70,26 +68,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     },
   };
   drawerVisible = true;
-  panels = {
-    bottom: {
-      height: 200,
-      order: 1,
-      size: 30,
-      visible: true,
-    },
-    middle: {
-      height: 200,
-      order: 1,
-      size: 40,
-      visible: true,
-    },
-    top: {
-      height: 200,
-      order: 0,
-      size: 30,
-      visible: true,
-    },
-  };
   plan: CPlan | null = null;
   scheduleBands: Band[];
   selectedActivityInstance: CActivityInstance | null = null;
@@ -157,10 +135,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  ngAfterViewInit() {
-    this.setPanelHeights();
-  }
-
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
@@ -181,7 +155,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   onResize(): void {
     this.store.dispatch(AppActions.resize());
-    this.setPanelHeights();
   }
 
   onSelectActivityInstance(activityInstance: CActivityInstance): void {
@@ -204,29 +177,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  @HostListener('window:resize', ['$event'])
-  onWindowResize() {
-    this.setPanelHeights();
-  }
-
-  setPanelHeights() {
-    const panelTop = this.elRef.nativeElement.querySelector('.panel-top');
-    const panelMiddle = this.elRef.nativeElement.querySelector('.panel-middle');
-    const panelBottom = this.elRef.nativeElement.querySelector('.panel-bottom');
-
-    if (panelTop) {
-      this.panels.top.height = panelTop.clientHeight;
-    }
-
-    if (panelMiddle) {
-      this.panels.middle.height = panelMiddle.clientHeight;
-    }
-
-    if (panelBottom) {
-      this.panels.bottom.height = panelBottom.clientHeight;
-    }
-  }
-
   showDrawerType(type: string): void {
     const drawerContent = Object.keys(this.drawer);
     drawerContent.forEach(content => {
@@ -237,10 +187,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
       }
     });
     this.drawerVisible = true;
-  }
-
-  togglePanelVisible(panel: string): void {
-    this.panels[panel].visible = !this.panels[panel].visible;
   }
 }
 

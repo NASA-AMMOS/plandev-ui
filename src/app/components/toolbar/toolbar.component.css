@@ -1,5 +1,5 @@
 mat-toolbar {
-  height: var(--height, 36px);
+  height: var(--toolbar-height, 36px);
 }
 
 .mat-toolbar-right {

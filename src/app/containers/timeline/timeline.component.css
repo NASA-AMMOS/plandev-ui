@@ -1,12 +1,6 @@
 mat-card {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-
-.band-container {
-  max-height: var(--max-height, 600px);
-  overflow-x: hidden;
-  overflow-y: scroll;
+  margin-bottom: 3px;
+  margin-top: 3px;
 }
 
 .controls-container {
@@ -15,11 +9,6 @@ mat-card {
 }
 
 .controls-container > * {
-  margin-right: 5px;
-}
-
-.time-axis-container {
-  height: 65px;
-  overflow-x: hidden;
-  overflow-y: scroll;
+  margin-bottom: 3px;
+  margin-right: 3px;
 }

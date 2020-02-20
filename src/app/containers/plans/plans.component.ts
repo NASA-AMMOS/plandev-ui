@@ -34,6 +34,7 @@ import { CAdaptation, CPlan, SPlan } from '../../types';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-plans',
+  styleUrls: ['./plans.component.css'],
   templateUrl: './plans.component.html',
 })
 export class PlansComponent implements AfterViewInit, OnDestroy {

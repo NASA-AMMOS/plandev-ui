@@ -38,10 +38,10 @@
 
     <button
       *ngIf="drawerVisible"
+      class="close-drawer"
       mat-icon-button
       matTooltip="Close Drawer"
       (click)="drawerVisible = false"
-      [style.transform]="'rotate(180deg)'"
     >
       <mat-icon>menu_open</mat-icon>
     </button>
@@ -58,71 +58,63 @@
 >
   <as-split-area size="70">
     <as-split direction="vertical" [gutterSize]="4" (dragEnd)="onResize()">
-      <as-split-area
-        class="panel-top"
-        [order]="panels.top.order"
-        [size]="panels.top.size"
-        [visible]="panels.top.visible"
-      >
-        <app-panel-header>
-          Schedule
-        </app-panel-header>
-        <div class="p-1">
-          <app-timeline
-            [bands]="scheduleBands"
-            [height]="panels.top.height"
-            [marginLeft]="70"
-          ></app-timeline>
+      <as-split-area>
+        <div>
+          <app-panel-header>
+            Schedule
+          </app-panel-header>
+          <div class="p-1">
+            <app-timeline
+              [bands]="scheduleBands"
+              [marginLeft]="70"
+            ></app-timeline>
+          </div>
         </div>
       </as-split-area>
 
-      <as-split-area
-        class="panel-middle"
-        [order]="panels.middle.order"
-        [size]="panels.middle.size"
-        [visible]="panels.middle.visible"
-      >
-        <app-panel-header>
-          Simulation
-        </app-panel-header>
-        <div class="p-1">
-          <app-timeline
-            [bands]="stateBands"
-            [height]="panels.middle.height"
-            [showSimulationControls]="true"
-            [showTimeControls]="false"
-          ></app-timeline>
+      <as-split-area>
+        <div>
+          <app-panel-header>
+            Simulation
+          </app-panel-header>
+          <div class="p-1">
+            <app-timeline
+              [bands]="stateBands"
+              [showSimulationControls]="true"
+              [showTimeControls]="false"
+            ></app-timeline>
+          </div>
         </div>
       </as-split-area>
 
-      <as-split-area
-        class="panel-bottom"
-        [order]="panels.bottom.order"
-        [size]="panels.bottom.size"
-        [visible]="panels.bottom.visible"
-      >
-        <app-panel-header>
-          Activity Instances Table
-        </app-panel-header>
-        <div class="p-1">
-          <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-          <ng-container *ngIf="activityInstances !== null">
-            <mat-card *ngIf="!activityInstances.length">
-              This plan has no activity instances
-            </mat-card>
+      <as-split-area>
+        <div>
+          <app-panel-header>
+            Activity Instances Table
+          </app-panel-header>
+          <div class="p-1">
+            <app-placeholder
+              *ngIf="activityInstances === null"
+            ></app-placeholder>
+            <ng-container *ngIf="activityInstances !== null">
+              <mat-card *ngIf="!activityInstances.length">
+                This plan has no activity instances
+              </mat-card>
 
-            <app-activity-instances-table
-              *ngIf="activityInstances.length"
-              [activityInstances]="activityInstances"
-              [selectedActivityInstance]="selectedActivityInstance"
-              (deleteActivityInstance)="onDeleteActivityInstance($event)"
-              (selectActivityInstance)="onSelectActivityInstance($event)"
-            ></app-activity-instances-table>
-          </ng-container>
+              <app-activity-instances-table
+                *ngIf="activityInstances.length"
+                [activityInstances]="activityInstances"
+                [selectedActivityInstance]="selectedActivityInstance"
+                (deleteActivityInstance)="onDeleteActivityInstance($event)"
+                (selectActivityInstance)="onSelectActivityInstance($event)"
+              ></app-activity-instances-table>
+            </ng-container>
+          </div>
         </div>
       </as-split-area>
     </as-split>
   </as-split-area>
+
   <as-split-area size="30" [visible]="drawerVisible">
     <div [style.display]="drawer.activityTypes.visible ? 'block' : 'none'">
       <app-panel-header>

@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Input,
-  NgModule,
-  OnChanges,
-  SimpleChanges,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, NgModule } from '@angular/core';
 import { MaterialModule } from '../../material';
 
 @Component({
@@ -15,21 +7,7 @@ import { MaterialModule } from '../../material';
   styleUrls: ['./toolbar.component.css'],
   templateUrl: './toolbar.component.html',
 })
-export class ToolbarComponent implements OnChanges {
-  @Input()
-  height = 0;
-
-  constructor(private elRef: ElementRef) {}
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes.height) {
-      this.elRef.nativeElement.style.setProperty(
-        '--height',
-        `${this.height}px`,
-      );
-    }
-  }
-}
+export class ToolbarComponent {}
 
 @NgModule({
   declarations: [ToolbarComponent],

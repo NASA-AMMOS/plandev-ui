@@ -31,6 +31,7 @@ import { CAdaptation, SCreateAdaption } from '../../types';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-adaptations',
+  styleUrls: ['./adaptations.component.css'],
   templateUrl: './adaptations.component.html',
 })
 export class AdaptationsComponent implements OnDestroy {

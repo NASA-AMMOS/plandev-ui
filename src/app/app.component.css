@@ -9,13 +9,9 @@ mat-progress-bar {
 mat-sidenav-container,
 mat-sidenav-content {
   height: 100%;
-  overflow: hidden;
 }
 
-mat-sidenav {
-  width: 66px;
-}
-
+mat-sidenav,
 mat-nav-list {
   width: 66px;
 }
