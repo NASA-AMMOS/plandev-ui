@@ -1,6 +1,6 @@
 :host {
   display: block;
-  height: calc(100% - var(--toolbar-height));
+  height: calc(100% - var(--toolbar-height, 36px));
 }
 
 .close-drawer {
