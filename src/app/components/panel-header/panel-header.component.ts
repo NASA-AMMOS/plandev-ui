@@ -4,26 +4,8 @@ import { ChangeDetectionStrategy, Component, NgModule } from '@angular/core';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-panel-header',
-  styles: [
-    `
-      :host {
-        align-items: center;
-        background-color: var(--color-primary-300);
-        color: white;
-        display: inline-flex;
-        height: 25px;
-        justify-content: flex-start;
-        overflow: hidden;
-        padding: 0.25rem;
-        position: sticky;
-        top: 0px;
-        white-space: nowrap;
-        width: 100%;
-        z-index: 1;
-      }
-    `,
-  ],
-  template: '<ng-content></ng-content>',
+  styleUrls: ['./panel-header.component.css'],
+  templateUrl: './panel-header.component.html',
 })
 export class PanelHeaderComponent {}
 

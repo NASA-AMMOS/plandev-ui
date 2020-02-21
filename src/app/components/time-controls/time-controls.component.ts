@@ -10,7 +10,6 @@ import { MaterialModule } from '../../material';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-time-controls',
-  styleUrls: ['./time-controls.component.css'],
   templateUrl: `./time-controls.component.html`,
 })
 export class TimeControlsComponent {

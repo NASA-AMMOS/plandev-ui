@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
   NgModule,
   OnDestroy,
 } from '@angular/core';
@@ -11,7 +10,12 @@ import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { AngularSplitModule } from 'angular-split';
 import { SubSink } from 'subsink';
-import { AppActions, PlanningActions } from '../../actions';
+import {
+  AppActions,
+  PlanningActions,
+  SimulationActions,
+  TimelineActions,
+} from '../../actions';
 import { RootState } from '../../app-store';
 import {
   ActivityInstancesTableModule,
@@ -19,6 +23,8 @@ import {
   CreateActivityInstanceFormModule,
   PanelHeaderModule,
   PlaceholderModule,
+  SimulationControlsModule,
+  TimeControlsModule,
   ToolbarModule,
   UpdateActivityInstanceFormModule,
 } from '../../components';
@@ -78,7 +84,6 @@ export class PlanComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
-    private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<RootState>,
   ) {
@@ -157,12 +162,24 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(AppActions.resize());
   }
 
+  onRestore(): void {
+    this.store.dispatch(TimelineActions.restoreViewTimeRange());
+  }
+
   onSelectActivityInstance(activityInstance: CActivityInstance): void {
     this.store.dispatch(
       PlanningActions.setSelectedActivityInstanceId({
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
+  }
+
+  onSimulationClear(): void {
+    this.store.dispatch(SimulationActions.clear());
+  }
+
+  onSimulationRun(): void {
+    this.store.dispatch(SimulationActions.run());
   }
 
   onUpdateActivityInstance(update: UpdateActivityInstance): void {
@@ -175,6 +192,14 @@ export class PlanComponent implements OnDestroy {
         planId,
       }),
     );
+  }
+
+  onZoomIn(): void {
+    this.store.dispatch(TimelineActions.zoomInViewTimeRange());
+  }
+
+  onZoomOut(): void {
+    this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
   }
 
   showDrawerType(type: string): void {
@@ -202,6 +227,8 @@ export class PlanComponent implements OnDestroy {
     CreateActivityInstanceFormModule,
     PanelHeaderModule,
     PlaceholderModule,
+    SimulationControlsModule,
+    TimeControlsModule,
     TimelineModule,
     ToolbarModule,
     UpdateActivityInstanceFormModule,

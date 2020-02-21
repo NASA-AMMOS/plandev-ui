@@ -14,7 +14,7 @@ import { getUnixEpochTime } from './time';
 
 export function simulationResultsToBands(
   simulationResults: SimulationResults,
-  overlay: boolean = true,
+  overlay: boolean = false,
 ): StringTMap<Band> {
   const { resources, times } = simulationResults;
 

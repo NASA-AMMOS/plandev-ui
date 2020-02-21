@@ -1,16 +1,3 @@
-<div class="controls-container">
-  <app-time-controls
-    *ngIf="showTimeControls"
-    (restore)="onRestore()"
-    (zoomIn)="onZoomIn()"
-    (zoomOut)="onZoomOut()"
-  ></app-time-controls>
-  <app-simulation-controls
-    *ngIf="showSimulationControls"
-    (clear)="onSimulationClear()"
-    (run)="onSimulationRun()"
-  ></app-simulation-controls>
-</div>
 <div class="time-axis-container">
   <app-time-axis
     [marginLeft]="marginLeft"
@@ -39,5 +26,4 @@
     (selectPoint)="onSelectPoint($event)"
     (updatePoint)="onUpdatePoint($event)"
   ></app-band>
-  <mat-card *ngIf="!bands">No bands found</mat-card>
 </div>

@@ -10,26 +10,16 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
-import {
-  PlanningActions,
-  SimulationActions,
-  TimelineActions,
-} from '../../actions';
+import { PlanningActions, TimelineActions } from '../../actions';
 import { RootState } from '../../app-store';
-import {
-  SimulationControlsModule,
-  TimeAxisModule,
-  TimeControlsModule,
-} from '../../components';
+import { TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
-import { MaterialModule } from '../../material';
 import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-timeline',
-  styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
 export class TimelineComponent implements OnDestroy {
@@ -40,7 +30,7 @@ export class TimelineComponent implements OnDestroy {
   marginBottom = 10;
 
   @Input()
-  marginLeft = 280;
+  marginLeft = 70;
 
   @Input()
   marginRight = 70;
@@ -50,12 +40,6 @@ export class TimelineComponent implements OnDestroy {
 
   @Input()
   maxTimeRange: TimeRange;
-
-  @Input()
-  showSimulationControls = false;
-
-  @Input()
-  showTimeControls = true;
 
   @Input()
   viewTimeRange: TimeRange;
@@ -81,10 +65,6 @@ export class TimelineComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  onRestore(): void {
-    this.store.dispatch(TimelineActions.restoreViewTimeRange());
   }
 
   onDeletePoint(event: DeletePoint): void {
@@ -121,14 +101,6 @@ export class TimelineComponent implements OnDestroy {
     );
   }
 
-  onSimulationClear(): void {
-    this.store.dispatch(SimulationActions.clear());
-  }
-
-  onSimulationRun(): void {
-    this.store.dispatch(SimulationActions.run());
-  }
-
   onUpdatePoint(event: UpdatePoint): void {
     if (event.type === 'activity') {
       this.store.dispatch(
@@ -144,14 +116,6 @@ export class TimelineComponent implements OnDestroy {
     this.store.dispatch(TimelineActions.updateViewTimeRange({ viewTimeRange }));
   }
 
-  onZoomIn(): void {
-    this.store.dispatch(TimelineActions.zoomInViewTimeRange());
-  }
-
-  onZoomOut(): void {
-    this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
-  }
-
   trackByBands(_: number, band: Band): string {
     return band.id;
   }
@@ -160,13 +124,6 @@ export class TimelineComponent implements OnDestroy {
 @NgModule({
   declarations: [TimelineComponent],
   exports: [TimelineComponent],
-  imports: [
-    BandModule,
-    CommonModule,
-    MaterialModule,
-    SimulationControlsModule,
-    TimeAxisModule,
-    TimeControlsModule,
-  ],
+  imports: [BandModule, CommonModule, TimeAxisModule],
 })
 export class TimelineModule {}
