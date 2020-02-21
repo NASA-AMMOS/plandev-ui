@@ -14,22 +14,25 @@ import { MaterialModule } from '../../material';
 })
 export class NotFoundComponent implements OnInit {
   comics = [
-    '7_eleven',
-    'curiosity',
-    'nasa_press_conference',
-    'opportunity',
-    'opportunity_rover',
-    'orbital_mechanics',
-    'spirit',
-    'surface_area',
-    'the_martian',
+    { id: '695', name: 'spirit' },
+    { id: '1091', name: 'curiosity' },
+    { id: '1356', name: 'orbital_mechanics' },
+    { id: '1389', name: 'surface_area' },
+    { id: '1504', name: 'opportunity' },
+    { id: '1536', name: 'the_martian' },
+    { id: '1583', name: 'nasa_press_conference' },
+    { id: '1825', name: '7_eleven' },
+    { id: '2111', name: 'opportunity_rover' },
   ];
-  comicUrl = '';
-  xkcdUrl = 'https://imgs.xkcd.com/comics';
+  comicImg = '';
+  xkcdUrl = '';
 
   ngOnInit() {
-    const comic = this.comics[Math.floor(Math.random() * this.comics.length)];
-    this.comicUrl = `${this.xkcdUrl}/${comic}.png`;
+    const { id, name } = this.comics[
+      Math.floor(Math.random() * this.comics.length)
+    ];
+    this.comicImg = `assets/comics/${name}.png`;
+    this.xkcdUrl = `https://xkcd.com/${id}/`;
   }
 }
 
