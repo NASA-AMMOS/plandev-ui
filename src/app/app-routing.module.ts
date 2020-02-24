@@ -53,6 +53,7 @@ const routes: Routes = [
     data: { authGuardPipe: redirectUnauthorizedToLogin },
     path: '404',
   },
+  { path: '', pathMatch: 'full', redirectTo: 'plans' },
   { path: '**', redirectTo: '404' },
 ];
 
