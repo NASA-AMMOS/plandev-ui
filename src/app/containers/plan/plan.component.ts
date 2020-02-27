@@ -1,14 +1,19 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   NgModule,
+  NgZone,
   OnDestroy,
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
-import { AngularSplitModule } from 'angular-split';
+import { AngularSplitModule, SplitComponent } from 'angular-split';
+import { IOutputData } from 'angular-split/lib/interface';
+import debounce from 'lodash-es/debounce';
 import { SubSink } from 'subsink';
 import {
   AppActions,
@@ -21,6 +26,7 @@ import {
   ActivityInstancesTableModule,
   ActivityTypeListModule,
   CreateActivityInstanceFormModule,
+  PanelCollapsedModule,
   PanelHeaderModule,
   PlaceholderModule,
   SimulationControlsModule,
@@ -57,7 +63,10 @@ import { TimelineModule } from '../timeline/timeline.component';
   styleUrls: ['./plan.component.css'],
   templateUrl: './plan.component.html',
 })
-export class PlanComponent implements OnDestroy {
+export class PlanComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('verticalSplitAreas', { static: true })
+  verticalSplitAreas: SplitComponent;
+
   activityInstances: CActivityInstance[] | null = null;
   activityTypes: CActivityType[] | null = null;
   activityTypesMap: CActivityTypeMap | null = null;
@@ -74,6 +83,26 @@ export class PlanComponent implements OnDestroy {
     },
   };
   drawerVisible = true;
+  panels = [
+    {
+      minSize: 1.7,
+      size: 33.3,
+      template: 'schedule',
+      virtualSize: 33.3,
+    },
+    {
+      minSize: 1.7,
+      size: 33.3,
+      template: 'simulation',
+      virtualSize: 33.3,
+    },
+    {
+      minSize: 1.7,
+      size: 33.3,
+      template: 'table',
+      virtualSize: 33.3,
+    },
+  ];
   plan: CPlan | null = null;
   scheduleBands: Band[];
   selectedActivityInstance: CActivityInstance | null = null;
@@ -84,6 +113,7 @@ export class PlanComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private ngZone: NgZone,
     private route: ActivatedRoute,
     private store: Store<RootState>,
   ) {
@@ -137,6 +167,21 @@ export class PlanComponent implements OnDestroy {
           this.updateActivityInstanceError = updateActivityInstanceError;
           this.cdRef.markForCheck();
         }),
+    );
+  }
+
+  ngAfterViewInit(): void {
+    const debouncedOnResize = debounce(this.onResize.bind(this), 5);
+    this.subs.add(
+      this.verticalSplitAreas.dragProgress$.subscribe(({ sizes }) => {
+        this.ngZone.run(() => {
+          sizes.forEach((size: number, i: number) => {
+            this.panels[i].virtualSize = size;
+          });
+          this.cdRef.markForCheck();
+          debouncedOnResize();
+        });
+      }),
     );
   }
 
@@ -213,6 +258,86 @@ export class PlanComponent implements OnDestroy {
     });
     this.drawerVisible = true;
   }
+
+  /**
+   * This function collapses panels if they are below a certain percentage threshold.
+   * After collapsing we ensure all panel percentages add to 100% or angular-split
+   * does not work properly.
+   * @note this function will need to be updated when more than 3 panels are added to the page.
+   * @see https://github.com/bertrandg/angular-split/blob/master/projects/angular-split/src/lib/component/split.component.ts#L348
+   */
+  tryToCollapsePanels(outputData: IOutputData): void {
+    const { gutterNum } = outputData;
+    const collapseThreshold = 13;
+    const collapseSize = 1.7;
+
+    const sizes = outputData.sizes as number[];
+    const newSizes = [...sizes] as number[];
+
+    for (let i = 0; i < this.panels.length; ++i) {
+      if (sizes[i] !== collapseSize && sizes[i] < collapseThreshold) {
+        if (gutterNum === 1) {
+          if (i === 0) {
+            newSizes[i] = collapseSize;
+            newSizes[i + 1] = sizes[i + 1] + (sizes[i] - collapseSize);
+
+            if (newSizes[i + 1] < collapseThreshold) {
+              newSizes[i + 1] = collapseSize;
+              newSizes[i + 2] = sizes[i + 2] + (sizes[i] - collapseSize);
+            }
+          }
+
+          if (i === 1) {
+            newSizes[i - 1] = sizes[i - 1] + (sizes[i] - collapseSize);
+            newSizes[i] = collapseSize;
+          }
+
+          if (i === 2) {
+            newSizes[i - 2] = sizes[i - 2] + (sizes[i] - collapseSize);
+            newSizes[i] = collapseSize;
+          }
+        }
+
+        if (gutterNum === 2) {
+          if (i === 0) {
+            newSizes[i] = collapseSize;
+            newSizes[i + 2] = sizes[i + 2] + (sizes[i] - collapseSize);
+          }
+
+          if (i === 1) {
+            newSizes[i] = collapseSize;
+            newSizes[i + 1] = sizes[i + 1] + (sizes[i] - collapseSize);
+          }
+
+          if (i === 2) {
+            newSizes[i - 1] = sizes[i - 1] + (sizes[i] - collapseSize);
+            newSizes[i] = collapseSize;
+
+            if (newSizes[i - 1] < collapseThreshold) {
+              newSizes[i - 2] = sizes[i - 2] + (sizes[i] - collapseSize);
+              newSizes[i - 1] = collapseSize;
+            }
+          }
+        }
+      }
+    }
+
+    const totalNewSizes = newSizes.reduce((sum, size) => (sum += size));
+    if (totalNewSizes > 99.9 && totalNewSizes < 100.1) {
+      this.panels.forEach((panel, i) => {
+        panel.size = newSizes[i];
+        panel.virtualSize = newSizes[i];
+      });
+      this.verticalSplitAreas.setVisibleAreaSizes(newSizes);
+    } else {
+      console.error('the total of new sizes is not between 99.9 and 100.1');
+      console.error(`totalNewSizes: ${totalNewSizes}`);
+      console.error('sizes: ', sizes);
+      console.error('newSizes: ', newSizes);
+    }
+
+    this.onResize();
+  }
 }
 
 @NgModule({
@@ -225,6 +350,7 @@ export class PlanComponent implements OnDestroy {
     ActivityInstancesTableModule,
     ActivityTypeListModule,
     CreateActivityInstanceFormModule,
+    PanelCollapsedModule,
     PanelHeaderModule,
     PlaceholderModule,
     SimulationControlsModule,

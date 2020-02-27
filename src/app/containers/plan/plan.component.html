@@ -50,68 +50,26 @@
   (transitionEnd)="onResize()"
 >
   <as-split-area size="70">
-    <as-split direction="vertical" [gutterSize]="5" (dragEnd)="onResize()">
-      <as-split-area>
-        <app-panel-header>
-          Schedule
-          <div class="right">
-            <app-time-controls
-              (restore)="onRestore()"
-              (zoomIn)="onZoomIn()"
-              (zoomOut)="onZoomOut()"
-            ></app-time-controls>
-            <button class="link-icon" mat-icon-button>
-              <mat-icon>link</mat-icon>
-            </button>
-          </div>
-        </app-panel-header>
-        <div class="p-1">
-          <app-timeline [bands]="scheduleBands"></app-timeline>
-        </div>
-      </as-split-area>
-
-      <as-split-area>
-        <app-panel-header>
-          Simulation
-          <div class="right">
-            <app-simulation-controls
-              (run)="onSimulationRun()"
-            ></app-simulation-controls>
-            <app-time-controls
-              (restore)="onRestore()"
-              (zoomIn)="onZoomIn()"
-              (zoomOut)="onZoomOut()"
-            ></app-time-controls>
-            <button class="link-icon" mat-icon-button>
-              <mat-icon>link</mat-icon>
-            </button>
-          </div>
-        </app-panel-header>
-        <div class="p-1">
-          <app-timeline [bands]="stateBands"></app-timeline>
-        </div>
-      </as-split-area>
-
-      <as-split-area>
-        <app-panel-header>
-          Table
-        </app-panel-header>
-        <div class="p-1">
-          <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-          <ng-container *ngIf="activityInstances !== null">
-            <mat-card *ngIf="!activityInstances.length">
-              This plan has no activity instances
-            </mat-card>
-
-            <app-activity-instances-table
-              *ngIf="activityInstances.length"
-              [activityInstances]="activityInstances"
-              [selectedActivityInstance]="selectedActivityInstance"
-              (deleteActivityInstance)="onDeleteActivityInstance($event)"
-              (selectActivityInstance)="onSelectActivityInstance($event)"
-            ></app-activity-instances-table>
-          </ng-container>
-        </div>
+    <as-split
+      #verticalSplitAreas
+      direction="vertical"
+      [gutterSize]="5"
+      [useTransition]="true"
+      (dragEnd)="tryToCollapsePanels($event)"
+    >
+      <as-split-area
+        *ngFor="let panel of panels"
+        [minSize]="panel.minSize"
+        [size]="panel.size"
+      >
+        <ng-container
+          *ngTemplateOutlet="
+            { schedule: schedule, simulation: simulation, table: table }[
+              panel.template
+            ];
+            context: { $implicit: panel }
+          "
+        ></ng-container>
       </as-split-area>
     </as-split>
   </as-split-area>
@@ -177,3 +135,84 @@
     </div>
   </as-split-area>
 </as-split>
+
+<ng-template #schedule let-panel>
+  <div *ngIf="panel.virtualSize > 1.7">
+    <app-panel-header>
+      Schedule
+      <div class="right">
+        <app-time-controls
+          (restore)="onRestore()"
+          (zoomIn)="onZoomIn()"
+          (zoomOut)="onZoomOut()"
+        ></app-time-controls>
+        <button class="link-icon" mat-icon-button>
+          <mat-icon>link</mat-icon>
+        </button>
+      </div>
+    </app-panel-header>
+    <div class="p-1">
+      <app-timeline [bands]="scheduleBands"></app-timeline>
+    </div>
+  </div>
+
+  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
+    Schedule
+  </app-panel-collapsed>
+</ng-template>
+
+<ng-template #simulation let-panel>
+  <div *ngIf="panel.virtualSize > 1.7">
+    <app-panel-header>
+      Simulation
+      <div class="right">
+        <app-simulation-controls
+          (run)="onSimulationRun()"
+        ></app-simulation-controls>
+        <app-time-controls
+          (restore)="onRestore()"
+          (zoomIn)="onZoomIn()"
+          (zoomOut)="onZoomOut()"
+        ></app-time-controls>
+        <button class="link-icon" mat-icon-button>
+          <mat-icon>link</mat-icon>
+        </button>
+      </div>
+    </app-panel-header>
+    <div class="p-1">
+      <app-timeline [bands]="stateBands"></app-timeline>
+    </div>
+  </div>
+
+  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
+    Simulation
+  </app-panel-collapsed>
+</ng-template>
+
+<ng-template #table let-panel>
+  <div *ngIf="panel.virtualSize > 1.7">
+    <app-panel-header>
+      Table
+    </app-panel-header>
+    <div class="p-1">
+      <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
+      <ng-container *ngIf="activityInstances !== null">
+        <mat-card *ngIf="!activityInstances.length">
+          This plan has no activity instances
+        </mat-card>
+
+        <app-activity-instances-table
+          *ngIf="activityInstances.length"
+          [activityInstances]="activityInstances"
+          [selectedActivityInstance]="selectedActivityInstance"
+          (deleteActivityInstance)="onDeleteActivityInstance($event)"
+          (selectActivityInstance)="onSelectActivityInstance($event)"
+        ></app-activity-instances-table>
+      </ng-container>
+    </div>
+  </div>
+
+  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
+    Table
+  </app-panel-collapsed>
+</ng-template>
