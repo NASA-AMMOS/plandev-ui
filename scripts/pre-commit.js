@@ -6,6 +6,7 @@ function main() {
     console.log(stdout);
   } catch ({ stdout }) {
     console.error(stdout.toString());
+    process.exit(1);
   }
 
   try {
@@ -13,6 +14,7 @@ function main() {
     console.log(stdout);
   } catch ({ stdout }) {
     console.error(stdout.toString());
+    process.exit(1);
   }
 }
 
