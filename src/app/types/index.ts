@@ -4,6 +4,7 @@ export * from './activity-type';
 export * from './activity-type-parameter';
 export * from './adaptation';
 export * from './band';
+export * from './panel';
 export * from './plan';
 export * from './simulation-results';
 export * from './string-t-map';

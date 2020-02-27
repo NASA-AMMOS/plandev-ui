@@ -58,15 +58,17 @@
       (dragEnd)="tryToCollapsePanels($event)"
     >
       <as-split-area
-        *ngFor="let panel of panels"
+        *ngFor="let panel of panels; trackBy: trackByPanels"
         [minSize]="panel.minSize"
         [size]="panel.size"
       >
         <ng-container
           *ngTemplateOutlet="
-            { schedule: schedule, simulation: simulation, table: table }[
-              panel.template
-            ];
+            {
+              schedule: schedule,
+              simulation: simulation,
+              table: table
+            }[panel.template];
             context: { $implicit: panel }
           "
         ></ng-container>

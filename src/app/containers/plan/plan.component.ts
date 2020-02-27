@@ -52,6 +52,7 @@ import {
   CActivityType,
   CActivityTypeMap,
   CPlan,
+  Panel,
   SActivityInstance,
   UpdateActivityInstance,
 } from '../../types';
@@ -83,20 +84,23 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     },
   };
   drawerVisible = true;
-  panels = [
+  panels: Panel[] = [
     {
+      id: '0',
       minSize: 1.7,
       size: 33.3,
       template: 'schedule',
       virtualSize: 33.3,
     },
     {
+      id: '1',
       minSize: 1.7,
       size: 33.3,
       template: 'simulation',
       virtualSize: 33.3,
     },
     {
+      id: '2',
       minSize: 1.7,
       size: 33.3,
       template: 'table',
@@ -259,6 +263,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.drawerVisible = true;
   }
 
+  trackByPanels(_: number, panel: Panel): string {
+    return panel.id;
+  }
+
   /**
    * This function collapses panels if they are below a certain percentage threshold.
    * After collapsing we ensure all panel percentages add to 100% or angular-split
@@ -276,47 +284,50 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
     for (let i = 0; i < this.panels.length; ++i) {
       if (sizes[i] !== collapseSize && sizes[i] < collapseThreshold) {
+        const first = 0;
+        const last = this.panels.length - 1;
+
         if (gutterNum === 1) {
-          if (i === 0) {
-            newSizes[i] = collapseSize;
-            newSizes[i + 1] = sizes[i + 1] + (sizes[i] - collapseSize);
+          if (i === first) {
+            let next = first + 1;
+            newSizes[first] = collapseSize;
+            newSizes[next] = sizes[next] + (sizes[first] - collapseSize);
 
-            if (newSizes[i + 1] < collapseThreshold) {
-              newSizes[i + 1] = collapseSize;
-              newSizes[i + 2] = sizes[i + 2] + (sizes[i] - collapseSize);
+            for (; next < newSizes.length; ++next) {
+              if (
+                newSizes[next] < collapseThreshold &&
+                newSizes[next + 1] !== undefined
+              ) {
+                newSizes[next] = collapseSize;
+                newSizes[next + 1] =
+                  sizes[next + 1] + (sizes[first] - collapseSize);
+              }
             }
-          }
-
-          if (i === 1) {
-            newSizes[i - 1] = sizes[i - 1] + (sizes[i] - collapseSize);
+          } else {
             newSizes[i] = collapseSize;
-          }
-
-          if (i === 2) {
-            newSizes[i - 2] = sizes[i - 2] + (sizes[i] - collapseSize);
-            newSizes[i] = collapseSize;
+            newSizes[first] = sizes[first] + (sizes[i] - collapseSize);
           }
         }
 
         if (gutterNum === 2) {
-          if (i === 0) {
-            newSizes[i] = collapseSize;
-            newSizes[i + 2] = sizes[i + 2] + (sizes[i] - collapseSize);
-          }
+          if (i === last) {
+            let prev = last - 1;
+            newSizes[last] = collapseSize;
+            newSizes[prev] = sizes[prev] + (sizes[last] - collapseSize);
 
-          if (i === 1) {
-            newSizes[i] = collapseSize;
-            newSizes[i + 1] = sizes[i + 1] + (sizes[i] - collapseSize);
-          }
-
-          if (i === 2) {
-            newSizes[i - 1] = sizes[i - 1] + (sizes[i] - collapseSize);
-            newSizes[i] = collapseSize;
-
-            if (newSizes[i - 1] < collapseThreshold) {
-              newSizes[i - 2] = sizes[i - 2] + (sizes[i] - collapseSize);
-              newSizes[i - 1] = collapseSize;
+            for (; prev >= 0; --prev) {
+              if (
+                newSizes[prev] < collapseThreshold &&
+                newSizes[prev - 1] !== undefined
+              ) {
+                newSizes[prev] = collapseSize;
+                newSizes[prev - 1] =
+                  sizes[prev - 1] + (sizes[last] - collapseSize);
+              }
             }
+          } else {
+            newSizes[i] = collapseSize;
+            newSizes[last] = sizes[last] + (sizes[i] - collapseSize);
           }
         }
       }
