@@ -1,4 +1,12 @@
 <div class="time-axis-container">
+  <app-time-axis-global
+    [marginLeft]="marginLeft"
+    [marginRight]="marginRight"
+    [marginTop]="marginTop"
+    [maxTimeRange]="maxTimeRange"
+    [viewTimeRange]="viewTimeRange"
+    (updateViewTimeRange)="onUpdateViewTimeRange($event)"
+  ></app-time-axis-global>
   <app-time-axis
     [marginLeft]="marginLeft"
     [marginRight]="marginRight"

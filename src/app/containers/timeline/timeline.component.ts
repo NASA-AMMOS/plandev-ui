@@ -12,7 +12,7 @@ import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { PlanningActions, TimelineActions } from '../../actions';
 import { RootState } from '../../app-store';
-import { TimeAxisModule } from '../../components';
+import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
 import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
@@ -124,6 +124,6 @@ export class TimelineComponent implements OnDestroy {
 @NgModule({
   declarations: [TimelineComponent],
   exports: [TimelineComponent],
-  imports: [BandModule, CommonModule, TimeAxisModule],
+  imports: [BandModule, CommonModule, TimeAxisModule, TimeAxisGlobalModule],
 })
 export class TimelineModule {}

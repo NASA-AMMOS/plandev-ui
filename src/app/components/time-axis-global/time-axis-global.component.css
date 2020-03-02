@@ -1,7 +1,7 @@
 :host {
   background: white;
   display: block;
-  height: var(--height, 60px);
+  height: var(--height, 20px);
   width: 100%;
 }
 

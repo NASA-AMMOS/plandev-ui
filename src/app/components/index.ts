@@ -9,6 +9,7 @@ export * from './panel-header/panel-header.component';
 export * from './placeholder/placeholder.component';
 export * from './plans-table/plans-table.component';
 export * from './simulation-controls/simulation-controls.component';
+export * from './time-axis-global/time-axis-global.component';
 export * from './time-axis/time-axis.component';
 export * from './time-controls/time-controls.component';
 export * from './toolbar/toolbar.component';
