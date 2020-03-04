@@ -1,13 +1,5 @@
-def getSeqTag() {
-	def branchName = env.BRANCH_NAME.replaceAll('/', '_').replace('release_', '')
-	def shortDate = new Date().format('yyyyMMdd')
-	def shortCommit = env.GIT_COMMIT.take(7)
-	return "${branchName}+b${BUILD_NUMBER}.r${shortCommit}.${shortDate}"
-}
-
 def getDockerTag() {
-  def tag = getSeqTag().replaceAll('\\+', '-')
-  return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/aerie-ui:${tag}"
+  return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/aerie-ui:${BRANCH_NAME}"
 }
 
 pipeline {
@@ -20,18 +12,18 @@ pipeline {
 		label 'coronado'
 	}
 	environment {
-		AWS_ACCESS_KEY_ID     = credentials('aerie-aws-access-key')
-    AWS_DEFAULT_REGION    = 'us-gov-west-1'
+		AWS_ACCESS_KEY_ID = credentials('aerie-aws-access-key')
+    AWS_DEFAULT_REGION = 'us-gov-west-1'
 		AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
 	}
 	stages {
 		stage ('src archive') {
 			when {
-				expression { BRANCH_NAME ==~ /^release.*/ }
+				expression { BRANCH_NAME ==~ /release/ }
 			}
 			steps {
-				sh "tar -czf aerie-ui-src-${getSeqTag()}.tar.gz --exclude='.git' `ls -A`"
+				sh "tar -czf aerie-ui-src-release.tar.gz --exclude='.git' `ls -A`"
 			}
 		}
 		stage ('build') {
@@ -61,14 +53,13 @@ pipeline {
             [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
             nvm install v12.14.1
 
-            # Install dependencies, cloc, test, and build
+            # Install dependencies, test, and build
             npx yarn --silent
-            npx yarn run version
-            npx yarn cloc
             npx yarn test
             npx yarn build --prod
 
-            # Print size of dist folder
+            # Cloc, then print size of dist folder
+            npx yarn cloc
             du -sh dist
             du -sh dist/*
 
@@ -84,12 +75,15 @@ pipeline {
 			}
 		}
 		stage ('build archive') {
+      when {
+				expression { BRANCH_NAME ==~ /(develop|staging|release)/ }
+			}
 			steps {
 				script {
 					def statusCode = sh returnStatus: true, script:
 					"""
           cd dist
-          tar -czf aerie-ui-${getSeqTag()}.tar.gz `ls -A`
+          tar -czf aerie-ui-${BRANCH_NAME}.tar.gz `ls -A`
 					"""
 					if (statusCode > 0) {
 						error "build archive failed"
@@ -100,7 +94,7 @@ pipeline {
 		}
 		stage ('publish') {
 			when {
-				expression { BRANCH_NAME ==~ /(develop|release.*|PR-.*)/ }
+				expression { BRANCH_NAME ==~ /(develop|staging|release)/ }
 			}
 			steps {
 				script {
@@ -146,7 +140,7 @@ pipeline {
 		}
 		stage('Deploy') {
 			when {
-				expression { GIT_BRANCH ==~ /(develop|staging|release.*)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release)/ }
 			}
 			steps {
 				withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'mpsa-aws-test-account']]) {
