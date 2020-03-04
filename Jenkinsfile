@@ -15,7 +15,15 @@ pipeline {
 		disableConcurrentBuilds()
 	}
 	agent {
-		label 'coronado || Pismo || San-clemente || Sugarloaf'
+    // Currently aws cli version 2 is only installed on coronado server
+    // TODO: Add more servers as needed when they are correctly provisioned
+		label 'coronado'
+	}
+	environment {
+		AWS_ACCESS_KEY_ID     = credentials('aerie-aws-access-key')
+    AWS_DEFAULT_REGION    = 'us-gov-west-1'
+		AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
+    AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
 	}
 	stages {
 		stage ('src archive') {
@@ -136,10 +144,41 @@ pipeline {
 				}
 			}
 		}
+		stage('Deploy') {
+			when {
+				expression { GIT_BRANCH ==~ /(develop|staging|release.*)/ }
+			}
+			steps {
+				withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'mpsa-aws-test-account']]) {
+					script{
+						echo 'Logging out docker'
+						sh 'docker logout || true'
+
+						echo 'Logging into ECR using aws cli version 2'
+						sh ('aws ecr get-login-password | docker login --username AWS --password-stdin https://$AWS_ECR')
+
+						docker.withRegistry(AWS_ECR) {
+							echo "Tagging docker images to point to AWS ECR"
+							sh '''
+							docker tag $(docker images | awk '\$1 ~ /aerie-ui/ { print \$3; exit }') ${AWS_ECR}/aerie/ui:${GIT_BRANCH}
+							'''
+							echo 'Pushing images to ECR'
+							sh "docker push ${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
+						}
+					}
+				}
+			}
+	   }
 	}
 	post {
 		always {
 			sh "docker rmi ${getDockerTag()}"
+
+			echo 'Cleaning up images'
+			sh "docker image prune -f"
+
+			echo 'Logging out docker'
+			sh 'docker logout || true'
 		}
 		unstable {
 			emailext subject: "Jenkins UNSTABLE: ${env.JOB_BASE_NAME} #${env.BUILD_NUMBER}",
