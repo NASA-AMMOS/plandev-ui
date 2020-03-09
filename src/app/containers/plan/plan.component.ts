@@ -13,7 +13,6 @@ import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
 import { IOutputData } from 'angular-split/lib/interface';
-import debounce from 'lodash-es/debounce';
 import { SubSink } from 'subsink';
 import {
   AppActions,
@@ -175,7 +174,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    const debouncedOnResize = debounce(this.onResize.bind(this), 5);
     this.subs.add(
       this.verticalSplitAreas.dragProgress$.subscribe(({ sizes }) => {
         this.ngZone.run(() => {
@@ -183,7 +181,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
             this.panels[i].virtualSize = size;
           });
           this.cdRef.markForCheck();
-          debouncedOnResize();
         });
       }),
     );

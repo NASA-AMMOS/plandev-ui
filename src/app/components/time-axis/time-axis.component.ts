@@ -64,13 +64,18 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    let shouldRedraw = false;
     this.setDrawBounds();
 
     if (changes.maxTimeRange && !changes.maxTimeRange.isFirstChange()) {
-      this.redraw();
+      shouldRedraw = true;
     }
 
     if (changes.viewTimeRange && !changes.viewTimeRange.isFirstChange()) {
+      shouldRedraw = true;
+    }
+
+    if (shouldRedraw) {
       this.redraw();
     }
   }
@@ -83,6 +88,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     d3.select(this.brush.nativeElement).on('mouseleave', () => {
       hideTooltip();
     });
+
+    this.redraw();
   }
 
   drawXAxis(): void {

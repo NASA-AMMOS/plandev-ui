@@ -1,37 +1,43 @@
-<div class="time-axis-container">
-  <app-time-axis-global
-    [marginLeft]="marginLeft"
-    [marginRight]="marginRight"
-    [marginTop]="marginTop"
-    [maxTimeRange]="maxTimeRange"
-    [viewTimeRange]="viewTimeRange"
-    (updateViewTimeRange)="onUpdateViewTimeRange($event)"
-  ></app-time-axis-global>
-  <app-time-axis
-    [marginLeft]="marginLeft"
-    [marginRight]="marginRight"
-    [marginTop]="marginTop"
-    [maxTimeRange]="maxTimeRange"
-    [viewTimeRange]="viewTimeRange"
-    (updateViewTimeRange)="onUpdateViewTimeRange($event)"
-  ></app-time-axis>
+<div *ngIf="bands !== null">
+  <div class="time-axis-container">
+    <app-time-axis-global
+      [marginLeft]="marginLeft"
+      [marginRight]="marginRight"
+      [marginTop]="marginTop"
+      [maxTimeRange]="maxTimeRange"
+      [viewTimeRange]="viewTimeRange"
+      (updateViewTimeRange)="onUpdateViewTimeRange($event)"
+    ></app-time-axis-global>
+    <app-time-axis
+      [marginLeft]="marginLeft"
+      [marginRight]="marginRight"
+      [marginTop]="marginTop"
+      [maxTimeRange]="maxTimeRange"
+      [viewTimeRange]="viewTimeRange"
+      (updateViewTimeRange)="onUpdateViewTimeRange($event)"
+    ></app-time-axis>
+  </div>
+  <div class="band-container">
+    <app-band
+      *ngFor="let band of bands; trackBy: trackByBands"
+      [height]="band.height"
+      [id]="band.id"
+      [marginBottom]="marginBottom"
+      [marginLeft]="marginLeft"
+      [marginRight]="marginRight"
+      [marginTop]="marginTop"
+      [maxTimeRange]="maxTimeRange"
+      [subBands]="band.subBands"
+      [viewTimeRange]="viewTimeRange"
+      [yAxes]="band.yAxes"
+      (deletePoint)="onDeletePoint($event)"
+      (savePoint)="onSavePoint($event)"
+      (selectPoint)="onSelectPoint($event)"
+      (updatePoint)="onUpdatePoint($event)"
+    ></app-band>
+  </div>
 </div>
-<div class="band-container">
-  <app-band
-    *ngFor="let band of bands; trackBy: trackByBands"
-    [height]="band.height"
-    [id]="band.id"
-    [marginBottom]="marginBottom"
-    [marginLeft]="marginLeft"
-    [marginRight]="marginRight"
-    [marginTop]="marginTop"
-    [maxTimeRange]="maxTimeRange"
-    [subBands]="band.subBands"
-    [viewTimeRange]="viewTimeRange"
-    [yAxes]="band.yAxes"
-    (deletePoint)="onDeletePoint($event)"
-    (savePoint)="onSavePoint($event)"
-    (selectPoint)="onSelectPoint($event)"
-    (updatePoint)="onUpdatePoint($event)"
-  ></app-band>
-</div>
+
+<mat-card *ngIf="bands === null">
+  No simulation results available. Try simulating the plan to get results.
+</mat-card>
