@@ -3,10 +3,28 @@
   height: calc(100% - var(--toolbar-height, 36px));
 }
 
+as-split-area > * {
+  height: 100%;
+}
+
 .close-drawer {
   transform: rotate(180deg) translate(0px, -2.5px);
 }
 
 .link-icon {
   transform: rotate(-45deg);
+}
+
+.no-results {
+  align-items: center;
+  background-color: #eeeeee;
+  color: rgba(0, 0, 0, 0.38);
+  display: flex;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: normal;
+  height: calc(100% - var(--panel-header-height, 40px));
+  justify-content: center;
+  letter-spacing: 0.5px;
+  line-height: 24px;
 }

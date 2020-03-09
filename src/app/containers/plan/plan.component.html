@@ -153,9 +153,7 @@
         </button>
       </div>
     </app-panel-header>
-    <div class="p-1">
-      <app-timeline [bands]="scheduleBands"></app-timeline>
-    </div>
+    <app-timeline [bands]="scheduleBands"></app-timeline>
   </div>
 
   <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
@@ -181,8 +179,12 @@
         </button>
       </div>
     </app-panel-header>
-    <div class="p-1">
-      <app-timeline [bands]="stateBands"></app-timeline>
+    <app-timeline
+      *ngIf="stateBands !== null"
+      [bands]="stateBands"
+    ></app-timeline>
+    <div class="no-results" *ngIf="stateBands === null">
+      Run simulation to view results
     </div>
   </div>
 
@@ -196,22 +198,20 @@
     <app-panel-header>
       Table
     </app-panel-header>
-    <div class="p-1">
-      <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-      <ng-container *ngIf="activityInstances !== null">
-        <mat-card *ngIf="!activityInstances.length">
-          This plan has no activity instances
-        </mat-card>
+    <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
+    <ng-container *ngIf="activityInstances !== null">
+      <mat-card *ngIf="!activityInstances.length">
+        This plan has no activity instances
+      </mat-card>
 
-        <app-activity-instances-table
-          *ngIf="activityInstances.length"
-          [activityInstances]="activityInstances"
-          [selectedActivityInstance]="selectedActivityInstance"
-          (deleteActivityInstance)="onDeleteActivityInstance($event)"
-          (selectActivityInstance)="onSelectActivityInstance($event)"
-        ></app-activity-instances-table>
-      </ng-container>
-    </div>
+      <app-activity-instances-table
+        *ngIf="activityInstances.length"
+        [activityInstances]="activityInstances"
+        [selectedActivityInstance]="selectedActivityInstance"
+        (deleteActivityInstance)="onDeleteActivityInstance($event)"
+        (selectActivityInstance)="onSelectActivityInstance($event)"
+      ></app-activity-instances-table>
+    </ng-container>
   </div>
 
   <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">

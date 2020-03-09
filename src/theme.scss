@@ -67,5 +67,6 @@ $theme: mat-light-theme($primary, $accent);
 
 :root {
   --color-primary-300: #{mat-color($primary, 300)};
+  --panel-header-height: 40px;
   --toolbar-height: 36px;
 }

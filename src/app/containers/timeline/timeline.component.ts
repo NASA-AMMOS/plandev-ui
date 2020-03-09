@@ -14,7 +14,6 @@ import { PlanningActions, TimelineActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
-import { MaterialModule } from '../../material';
 import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
 
@@ -125,12 +124,6 @@ export class TimelineComponent implements OnDestroy {
 @NgModule({
   declarations: [TimelineComponent],
   exports: [TimelineComponent],
-  imports: [
-    BandModule,
-    CommonModule,
-    MaterialModule,
-    TimeAxisModule,
-    TimeAxisGlobalModule,
-  ],
+  imports: [BandModule, CommonModule, TimeAxisModule, TimeAxisGlobalModule],
 })
 export class TimelineModule {}
