@@ -74,18 +74,7 @@ export const getScheduleBands = createSelector(
           type: 'activity',
         } as SubBandActivity,
       ],
-      yAxes: [
-        {
-          color: '#000000',
-          id: 'axis0',
-          labelFillColor: '#000000',
-          labelFontSize: 14,
-          labelOffset: '-1.5em',
-          labelText: 'Activity Instances',
-          scaleDomain: [],
-          tickCount: 5,
-        },
-      ],
+      yAxes: [],
     },
   ],
 );
