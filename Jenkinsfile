@@ -160,10 +160,15 @@ pipeline {
 							sh "docker push ${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
 
               sleep 5
-							echo "restarting the task in ECS cluster"
-							sh '''
-							aws ecs stop-task --cluster "aerie-${GIT_BRANCH}-cluster" --task $(aws ecs list-tasks --cluster "aerie-${GIT_BRANCH}-cluster" --output text --query taskArns[0])
-							'''
+              echo "Restarting the task in ECS cluster"
+              try {
+                sh '''
+                aws ecs stop-task --cluster "aerie-${GIT_BRANCH}-cluster" --task $(aws ecs list-tasks --cluster "aerie-${GIT_BRANCH}-cluster" --output text --query taskArns[0])
+                '''
+              } catch (Exception e) {
+                echo "Restarting the task failed"
+                echo e.getMessage()
+              }
 						}
 					}
 				}
