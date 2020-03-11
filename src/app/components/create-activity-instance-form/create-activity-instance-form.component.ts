@@ -5,8 +5,10 @@ import {
   EventEmitter,
   Input,
   NgModule,
+  OnChanges,
   OnDestroy,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import {
   FormArray,
@@ -28,7 +30,8 @@ import {
   selector: 'app-create-activity-instance-form',
   templateUrl: './create-activity-instance-form.component.html',
 })
-export class CreateActivityInstanceFormComponent implements OnDestroy {
+export class CreateActivityInstanceFormComponent
+  implements OnChanges, OnDestroy {
   @Input()
   activityTypes: CActivityType[] = [];
 
@@ -78,6 +81,12 @@ export class CreateActivityInstanceFormComponent implements OnDestroy {
         }
       }),
     );
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.selectedActivityType && this.selectedActivityType !== null) {
+      this.form.controls.type.setValue(this.selectedActivityType.name);
+    }
   }
 
   ngOnDestroy() {
