@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { Point, StringTMap, TimeRange } from '../types';
+import { getDoyTimestamp } from './time';
 
 export function forEachCanvas(
   canvases: HTMLCanvasElement[],
@@ -17,6 +18,17 @@ export function forEachCanvas(
       }
     }
   }
+}
+
+export function getDoyTimestampFromSvgMousePosition(
+  el: SVGGElement,
+  event: MouseEvent | DragEvent,
+  scale: d3.ScaleTime<number, number>,
+): string {
+  const { x } = getSvgMousePosition(el, event);
+  const unixEpochTime = scale.invert(x).getTime();
+  const doyTimestamp = getDoyTimestamp(unixEpochTime);
+  return doyTimestamp;
 }
 
 export function getPointFromCanvasSelection(
@@ -50,13 +62,14 @@ export function getRandomHexColor(): string {
   return `#${color}`;
 }
 
-export function getSvgMousePosition(svg: SVGGElement, event: MouseEvent) {
-  const CTM: DOMMatrix = svg.getScreenCTM();
-  const { clientX, clientY } = event;
-  return {
-    x: (clientX - CTM.e) / CTM.a,
-    y: (clientY - CTM.f) / CTM.d,
-  };
+export function getSvgMousePosition(
+  svg: SVGElement | SVGGElement,
+  event: MouseEvent | DragEvent,
+) {
+  const rect = svg.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  return { x, y };
 }
 
 export function getXScale(

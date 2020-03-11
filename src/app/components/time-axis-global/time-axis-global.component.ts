@@ -14,8 +14,7 @@ import {
 } from '@angular/core';
 import * as d3 from 'd3';
 import {
-  getDoyTimestamp,
-  getSvgMousePosition,
+  getDoyTimestampFromSvgMousePosition,
   hideTooltip,
   showTooltip,
 } from '../../functions';
@@ -192,10 +191,12 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
 
   showTooltip(event: MouseEvent | null): void {
     if (event) {
-      const { x } = getSvgMousePosition(this.brush.nativeElement, event);
       const xScale = this.getXScale();
-      const unixEpochTime = xScale.invert(x).getTime();
-      const doyTimestamp = getDoyTimestamp(unixEpochTime);
+      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+        this.brush.nativeElement,
+        event,
+        xScale,
+      );
       showTooltip(event, doyTimestamp, this.drawWidth); // Not recursive!
     }
   }

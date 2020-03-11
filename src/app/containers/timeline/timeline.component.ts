@@ -15,7 +15,15 @@ import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
 import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
-import { Band, DeletePoint, TimeRange, UpdatePoint } from '../../types';
+import {
+  Band,
+  CreatePoint,
+  DeletePoint,
+  SActivityInstance,
+  SelectPoint,
+  TimeRange,
+  UpdatePoint,
+} from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +75,21 @@ export class TimelineComponent implements OnDestroy {
     this.subs.unsubscribe();
   }
 
+  onCreatePoint(event: CreatePoint): void {
+    if (event.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      const activityType = event.activityType;
+      const activityInstance: SActivityInstance = {
+        parameters: {}, // TODO. Add parameters here?
+        startTimestamp: event.startTimestamp,
+        type: activityType.name,
+      };
+      this.store.dispatch(
+        PlanningActions.createActivityInstance({ planId, activityInstance }),
+      );
+    }
+  }
+
   onDeletePoint(event: DeletePoint): void {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
@@ -92,13 +115,15 @@ export class TimelineComponent implements OnDestroy {
     }
   }
 
-  onSelectPoint(selectedActivityInstanceId: string): void {
-    this.store.dispatch(
-      PlanningActions.setSelectedActivityInstanceId({
-        keepSelected: true,
-        selectedActivityInstanceId,
-      }),
-    );
+  onSelectPoint(event: SelectPoint): void {
+    if (event.type === 'activity') {
+      this.store.dispatch(
+        PlanningActions.setSelectedActivityInstanceId({
+          keepSelected: true,
+          selectedActivityInstanceId: event.id,
+        }),
+      );
+    }
   }
 
   onUpdatePoint(event: UpdatePoint): void {

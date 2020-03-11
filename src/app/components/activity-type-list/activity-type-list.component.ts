@@ -27,6 +27,7 @@ export class ActivityTypeListComponent implements OnChanges {
     CActivityType
   >();
 
+  draggable = false;
   filteredActivityTypes: CActivityType[] = [];
   searchText = '';
 
@@ -52,18 +53,22 @@ export class ActivityTypeListComponent implements OnChanges {
     event.stopPropagation();
   }
 
+  onDragEnd(): void {
+    this.draggable = false;
+  }
+
+  onDragStart(event: DragEvent, activityType: CActivityType): void {
+    event.dataTransfer.setData('activityType', JSON.stringify(activityType));
+  }
+
   onMouseDown(event: MouseEvent): void {
-    event.preventDefault();
     event.stopPropagation();
-    const target = event.target as HTMLElement;
-    target.style.cursor = 'grabbing';
+    this.draggable = true;
   }
 
   onMouseUp(event: MouseEvent): void {
-    event.preventDefault();
     event.stopPropagation();
-    const target = event.target as HTMLElement;
-    target.style.cursor = 'grab';
+    this.draggable = false;
   }
 }
 

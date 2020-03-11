@@ -1,6 +1,6 @@
 .drag-indicator {
   color: rgba(0, 0, 0, 0.3);
-  cursor: grab;
+  cursor: default;
 }
 
 .list-item {

@@ -74,6 +74,7 @@ export const getScheduleBands = createSelector(
           type: 'activity',
         } as SubBandActivity,
       ],
+      type: 'schedule',
       yAxes: [],
     },
   ],

@@ -1,5 +1,9 @@
 <div
   class="interaction-container"
+  (dragenter)="onDragEnter($event)"
+  (dragleave)="onDragLeave()"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)"
   [ngStyle]="{
     height: drawHeight + 'px',
     transform: 'translate(' + marginLeft + 'px ,' + marginTop + 'px)',

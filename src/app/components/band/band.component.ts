@@ -17,6 +17,7 @@ import {
 import * as d3 from 'd3';
 import {
   getDoyTimestamp,
+  getDoyTimestampFromSvgMousePosition,
   getPointFromCanvasSelection,
   getSvgMousePosition,
   getTooltipTextForPoints,
@@ -28,8 +29,10 @@ import {
 import { MaterialModule } from '../../material';
 import {
   Axis,
+  CreatePoint,
   DeletePoint,
   Point,
+  SelectPoint,
   SubBand,
   TimeRange,
   UpdatePoint,
@@ -72,10 +75,16 @@ export class BandComponent implements AfterViewInit, OnChanges {
   subBands: SubBand[];
 
   @Input()
+  type: string;
+
+  @Input()
   viewTimeRange: TimeRange;
 
   @Input()
   yAxes: Axis[];
+
+  @Output()
+  createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
 
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
@@ -84,7 +93,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   savePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
 
   @Output()
-  selectPoint: EventEmitter<string> = new EventEmitter<string>();
+  selectPoint: EventEmitter<SelectPoint> = new EventEmitter<SelectPoint>();
 
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
@@ -255,7 +264,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
           if (points.length) {
             const [point] = points;
-            this.selectPoint.emit(point.id);
+            this.selectPoint.emit({ id: point.id, type: point.type });
             return point;
           }
 
@@ -335,6 +344,80 @@ export class BandComponent implements AfterViewInit, OnChanges {
     d3.select(this.interactionContainerSvg.nativeElement).on('mouseout', () => {
       hideTooltip();
     });
+  }
+
+  onDragEnter(event: DragEvent): void {
+    event.preventDefault();
+
+    if (this.type === 'schedule') {
+      const container = this.interactionContainerSvg.nativeElement;
+      const { offsetX } = event;
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+        container,
+        event,
+        xScale,
+      );
+      showTooltip(event, doyTimestamp, this.drawWidth);
+      d3.select(this.interactionContainerSvg.nativeElement)
+        .append('rect')
+        .attr('x', offsetX)
+        .attr('y', 0)
+        .attr('width', 1)
+        .attr('height', this.drawHeight)
+        .style('pointer-events', 'none');
+    }
+  }
+
+  onDragLeave(): void {
+    if (this.type === 'schedule') {
+      const container = this.interactionContainerSvg.nativeElement;
+      hideTooltip();
+      d3.select(container)
+        .select('rect')
+        .remove();
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+
+    if (this.type === 'schedule') {
+      const container = this.interactionContainerSvg.nativeElement;
+      const { offsetX } = event;
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+        container,
+        event,
+        xScale,
+      );
+      showTooltip(event, doyTimestamp, this.drawWidth);
+      d3.select(container)
+        .select('rect')
+        .attr('x', offsetX);
+    }
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+
+    if (this.type === 'schedule') {
+      const container = this.interactionContainerSvg.nativeElement;
+      hideTooltip();
+      d3.select(container)
+        .select('rect')
+        .remove();
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const startTimestamp = getDoyTimestampFromSvgMousePosition(
+        container,
+        event,
+        xScale,
+      );
+      const activityType = JSON.parse(
+        event.dataTransfer.getData('activityType'),
+      );
+      this.createPoint.emit({ activityType, startTimestamp, type: 'activity' });
+    }
   }
 
   @HostListener('window:resize', ['$event'])

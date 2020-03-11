@@ -1,3 +1,5 @@
+import { CActivityType } from './activity-type';
+
 export interface Axis {
   id: string;
   color: string;
@@ -14,7 +16,14 @@ export interface Band {
   id: string;
   order: number;
   subBands: SubBand[];
+  type: string;
   yAxes: Axis[];
+}
+
+export interface CreatePoint {
+  activityType: CActivityType;
+  startTimestamp: string;
+  type: string;
 }
 
 export interface DeletePoint {
@@ -52,6 +61,11 @@ export interface PointXRange extends Point {
   labelFont: string;
   labelFontSize: number;
   labelText: string;
+}
+
+export interface SelectPoint {
+  id: string;
+  type: string;
 }
 
 export interface SubBand {

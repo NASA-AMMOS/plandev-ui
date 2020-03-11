@@ -79,7 +79,7 @@ export function hideTooltip() {
 }
 
 export function showTooltip(
-  event: MouseEvent,
+  event: MouseEvent | DragEvent,
   text: string,
   drawWidth: number,
 ): void {

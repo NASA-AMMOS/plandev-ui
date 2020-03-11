@@ -20,7 +20,10 @@
   <mat-list-item
     class="list-item"
     *ngFor="let activityType of filteredActivityTypes"
+    [draggable]="draggable"
     (click)="onActivityTypeSelect(activityType)"
+    (dragend)="onDragEnd()"
+    (dragstart)="onDragStart($event, activityType)"
   >
     <h4 mat-line>{{ activityType.name }}</h4>
     <mat-hint mat-line></mat-hint>

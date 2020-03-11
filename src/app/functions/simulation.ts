@@ -52,6 +52,7 @@ export function simulationResultsToBands(
       id,
       order: 0,
       subBands,
+      type: 'simulation',
       yAxes: [
         {
           color,
@@ -83,6 +84,7 @@ export function simulationResultsToBands(
           subBands.push(...band.subBands);
           return subBands;
         }, []),
+        type: 'simulation',
         yAxes: bands.reduce((yAxes: Axis[], band: Band) => {
           yAxes.push(...band.yAxes);
           return yAxes;
