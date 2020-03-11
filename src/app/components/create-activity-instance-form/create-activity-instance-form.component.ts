@@ -38,6 +38,12 @@ export class CreateActivityInstanceFormComponent implements OnDestroy {
   @Input()
   createActivityInstanceError: string | null = null;
 
+  @Input()
+  selectedActivityType: CActivityType | null = null;
+
+  @Output()
+  back: EventEmitter<void> = new EventEmitter<void>();
+
   @Output()
   create: EventEmitter<SActivityInstance> = new EventEmitter<
     SActivityInstance

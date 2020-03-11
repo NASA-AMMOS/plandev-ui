@@ -6,7 +6,8 @@ import {
   NgModule,
   OnDestroy,
 } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import { MatIconRegistry } from '@angular/material/icon';
+import { BrowserModule, DomSanitizer } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreRouterConnectingModule } from '@ngrx/router-store';
@@ -48,8 +49,11 @@ export class AppComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private domSanitizer: DomSanitizer,
+    private matIconRegistry: MatIconRegistry,
     private store: Store<RootState>,
   ) {
+    this.addSvgIcons();
     this.subs.add(
       this.store.pipe(select(getLoading)).subscribe(loading => {
         this.loading = loading;
@@ -59,6 +63,15 @@ export class AppComponent implements OnDestroy {
         this.isLoginPage = path === 'login';
         this.cdRef.markForCheck();
       }),
+    );
+  }
+
+  addSvgIcons() {
+    this.matIconRegistry.addSvgIcon(
+      'activity_dictionary',
+      this.domSanitizer.bypassSecurityTrustResourceUrl(
+        'assets/icons/activity_dictionary.svg',
+      ),
     );
   }
 

@@ -5,6 +5,7 @@ export * from './adaptations-table/adaptations-table.component';
 export * from './confirm-dialog/confirm-dialog.component';
 export * from './create-activity-instance-form/create-activity-instance-form.component';
 export * from './panel-collapsed/panel-collapsed.component';
+export * from './panel-empty/panel-empty.component';
 export * from './panel-header/panel-header.component';
 export * from './placeholder/placeholder.component';
 export * from './plans-table/plans-table.component';

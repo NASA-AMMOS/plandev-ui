@@ -26,6 +26,7 @@ import {
   ActivityTypeListModule,
   CreateActivityInstanceFormModule,
   PanelCollapsedModule,
+  PanelEmptyModule,
   PanelHeaderModule,
   PlaceholderModule,
   SimulationControlsModule,
@@ -72,7 +73,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   activityTypesMap: CActivityTypeMap | null = null;
   createActivityInstanceError: string | null = null;
   drawer = {
-    activityTypes: {
+    activityDictionary: {
       visible: true,
     },
     createActivityInstance: {
@@ -109,6 +110,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   plan: CPlan | null = null;
   scheduleBands: Band[];
   selectedActivityInstance: CActivityInstance | null = null;
+  selectedActivityType: CActivityType | null = null;
   stateBands: Band[];
   updateActivityInstanceError: string | null = null;
 
@@ -190,6 +192,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  onBack(): void {
+    this.showDrawerType('activityDictionary');
+  }
+
   onCreateActivityInstance(activityInstance: SActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
@@ -218,6 +224,11 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         selectedActivityInstanceId: activityInstance.id,
       }),
     );
+  }
+
+  onSelectActivityType(activityType: CActivityType): void {
+    this.selectedActivityType = { ...activityType };
+    this.showDrawerType('createActivityInstance');
   }
 
   onSimulationClear(): void {
@@ -359,6 +370,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     ActivityTypeListModule,
     CreateActivityInstanceFormModule,
     PanelCollapsedModule,
+    PanelEmptyModule,
     PanelHeaderModule,
     PlaceholderModule,
     SimulationControlsModule,

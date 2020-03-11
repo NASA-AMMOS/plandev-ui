@@ -5,7 +5,11 @@
 
   <mat-form-field class="w-100" appearance="outline">
     <mat-label>Activity Type</mat-label>
-    <mat-select formControlName="type" [required]="true">
+    <mat-select
+      formControlName="type"
+      [required]="true"
+      [value]="selectedActivityType?.name"
+    >
       <mat-option *ngFor="let type of activityTypes" [value]="type.name">
         {{ type.name }}
       </mat-option>
@@ -61,6 +65,10 @@
       </mat-expansion-panel>
     </mat-accordion>
   </div>
+
+  <button type="button" class="mr-2" mat-raised-button (click)="back.emit()">
+    Back
+  </button>
 
   <button
     class="mr-2"

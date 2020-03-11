@@ -5,37 +5,10 @@
   <div class="right">
     <button
       mat-icon-button
-      matTooltip="Create Activity Instance"
-      (click)="showDrawerType('createActivityInstance')"
+      matTooltip="Activity Dictionary"
+      (click)="showDrawerType('activityDictionary')"
     >
-      <mat-icon>add</mat-icon>
-    </button>
-
-    <button
-      mat-icon-button
-      matTooltip="Activity Types"
-      (click)="showDrawerType('activityTypes')"
-    >
-      <mat-icon>menu_book</mat-icon>
-    </button>
-
-    <button
-      *ngIf="!drawerVisible"
-      mat-icon-button
-      matTooltip="Open Drawer"
-      (click)="drawerVisible = true"
-    >
-      <mat-icon>menu_open</mat-icon>
-    </button>
-
-    <button
-      *ngIf="drawerVisible"
-      class="close-drawer"
-      mat-icon-button
-      matTooltip="Close Drawer"
-      (click)="drawerVisible = false"
-    >
-      <mat-icon>menu_open</mat-icon>
+      <mat-icon svgIcon="activity_dictionary"></mat-icon>
     </button>
   </div>
 </app-toolbar>
@@ -82,15 +55,16 @@
     size="350"
     [visible]="drawerVisible"
   >
-    <div [style.display]="drawer.activityTypes.visible ? 'block' : 'none'">
+    <div [style.display]="drawer.activityDictionary.visible ? 'block' : 'none'">
       <app-panel-header>
-        Activity Types
+        Activity Dictionary
       </app-panel-header>
       <div class="p-1">
         <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
         <app-activity-type-list
           *ngIf="activityTypes !== null"
           [activityTypes]="activityTypes"
+          (selectActivityType)="onSelectActivityType($event)"
         ></app-activity-type-list>
       </div>
     </div>
@@ -108,6 +82,8 @@
           [activityTypes]="activityTypes"
           [activityTypesMap]="activityTypesMap"
           [createActivityInstanceError]="createActivityInstanceError"
+          [selectedActivityType]="selectedActivityType"
+          (back)="onBack()"
           (create)="onCreateActivityInstance($event)"
         ></app-create-activity-instance-form>
       </div>
@@ -179,13 +155,13 @@
         </button>
       </div>
     </app-panel-header>
+    <app-panel-empty *ngIf="stateBands === null">
+      Run simulation to view results
+    </app-panel-empty>
     <app-timeline
       *ngIf="stateBands !== null"
       [bands]="stateBands"
     ></app-timeline>
-    <div class="no-results" *ngIf="stateBands === null">
-      Run simulation to view results
-    </div>
   </div>
 
   <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">

@@ -1,6 +1,6 @@
 <form>
   <mat-form-field class="w-100" appearance="outline">
-    <mat-label>Filter Activity Types</mat-label>
+    <mat-label>Search</mat-label>
     <input
       (input)="filterActivityTypes($event.target.value)"
       type="text"
@@ -8,6 +8,7 @@
       autocomplete="off"
     />
     <mat-icon matSuffix>search</mat-icon>
+    <mat-hint>Find Activity Type</mat-hint>
   </mat-form-field>
 </form>
 
@@ -15,22 +16,22 @@
   No Activities Types Found
 </mat-card>
 
-<mat-accordion [multi]="true">
-  <mat-expansion-panel
-    class="mb-1"
+<mat-nav-list>
+  <mat-list-item
+    class="list-item"
     *ngFor="let activityType of filteredActivityTypes"
     (click)="onActivityTypeSelect(activityType)"
   >
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        {{ activityType.name }}
-      </mat-panel-title>
-    </mat-expansion-panel-header>
-
-    <mat-chip-list mat-line>
-      <mat-chip *ngFor="let parameter of activityType.parameters">
-        {{ parameter.name }}: {{ parameter.type }}
-      </mat-chip>
-    </mat-chip-list>
-  </mat-expansion-panel>
-</mat-accordion>
+    <h4 mat-line>{{ activityType.name }}</h4>
+    <mat-hint mat-line></mat-hint>
+    <mat-icon
+      class="drag-indicator"
+      (click)="onClick($event)"
+      (mousedown)="onMouseDown($event)"
+      (mouseup)="onMouseUp($event)"
+    >
+      drag_indicator
+    </mat-icon>
+    <mat-divider></mat-divider>
+  </mat-list-item>
+</mat-nav-list>
