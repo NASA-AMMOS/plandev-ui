@@ -7,10 +7,6 @@ as-split-area > div {
   height: 100%;
 }
 
-.close-drawer {
-  transform: rotate(180deg) translate(0px, -2.5px);
-}
-
 .link-icon {
   transform: rotate(-45deg);
 }

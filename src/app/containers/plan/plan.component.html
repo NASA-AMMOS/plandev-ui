@@ -129,7 +129,11 @@
         </button>
       </div>
     </app-panel-header>
-    <app-timeline [bands]="scheduleBands"></app-timeline>
+    <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
+    <app-timeline
+      *ngIf="activityInstances !== null"
+      [bands]="scheduleBands"
+    ></app-timeline>
   </div>
 
   <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
