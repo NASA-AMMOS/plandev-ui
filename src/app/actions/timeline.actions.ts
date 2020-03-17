@@ -9,11 +9,3 @@ export const updateViewTimeRange = createAction(
   '[timeline] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),
 );
-
-export const zoomInViewTimeRange = createAction(
-  '[timeline] zoomInViewTimeRange',
-);
-
-export const zoomOutViewTimeRange = createAction(
-  '[timeline] zoomOutViewTimeRange',
-);

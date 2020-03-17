@@ -1,6 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
 import { TimelineActions } from '../actions';
-import { changeZoom } from '../functions';
 import { TimeRange } from '../types';
 
 export interface TimelineState {
@@ -16,9 +15,5 @@ export const reducer = createReducer(
   on(TimelineActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
     ...state,
     viewTimeRange,
-  })),
-  on(TimelineActions.zoomInViewTimeRange, state => ({
-    ...state,
-    viewTimeRange: changeZoom(state.viewTimeRange, 10),
   })),
 );

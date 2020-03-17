@@ -251,14 +251,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  onZoomIn(): void {
-    this.store.dispatch(TimelineActions.zoomInViewTimeRange());
-  }
-
-  onZoomOut(): void {
-    this.store.dispatch(TimelineActions.zoomOutViewTimeRange());
-  }
-
   showDrawerType(type: string): void {
     const drawerContent = Object.keys(this.drawer);
     drawerContent.forEach(content => {

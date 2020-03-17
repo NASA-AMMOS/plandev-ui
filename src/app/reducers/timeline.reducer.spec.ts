@@ -17,23 +17,4 @@ describe('timeline reducer', () => {
       });
     });
   });
-
-  describe('zoomInViewTimeRange', () => {
-    it('should properly zoom in the viewTimeRange', () => {
-      let state: TimelineState = reducer(
-        { ...initialState },
-        TimelineActions.updateViewTimeRange({
-          viewTimeRange: { start: 10, end: 110 },
-        }),
-      );
-      state = reducer(state, TimelineActions.zoomInViewTimeRange());
-      expect(state).toEqual({
-        ...initialState,
-        viewTimeRange: {
-          end: 100,
-          start: 20,
-        },
-      });
-    });
-  });
 });

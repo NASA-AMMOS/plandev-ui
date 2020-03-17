@@ -15,12 +15,6 @@ import { MaterialModule } from '../../material';
 export class TimeControlsComponent {
   @Output()
   restore: EventEmitter<void> = new EventEmitter<void>();
-
-  @Output()
-  zoomIn: EventEmitter<void> = new EventEmitter<void>();
-
-  @Output()
-  zoomOut: EventEmitter<void> = new EventEmitter<void>();
 }
 
 @NgModule({

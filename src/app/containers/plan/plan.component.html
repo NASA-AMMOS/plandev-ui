@@ -119,11 +119,7 @@
     <app-panel-header>
       Schedule
       <div class="right">
-        <app-time-controls
-          (restore)="onRestore()"
-          (zoomIn)="onZoomIn()"
-          (zoomOut)="onZoomOut()"
-        ></app-time-controls>
+        <app-time-controls (restore)="onRestore()"></app-time-controls>
         <button class="link-icon" mat-icon-button>
           <mat-icon>link</mat-icon>
         </button>
@@ -149,11 +145,7 @@
         <app-simulation-controls
           (run)="onSimulationRun()"
         ></app-simulation-controls>
-        <app-time-controls
-          (restore)="onRestore()"
-          (zoomIn)="onZoomIn()"
-          (zoomOut)="onZoomOut()"
-        ></app-time-controls>
+        <app-time-controls (restore)="onRestore()"></app-time-controls>
         <button class="link-icon" mat-icon-button>
           <mat-icon>link</mat-icon>
         </button>
