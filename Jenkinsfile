@@ -18,14 +18,6 @@ pipeline {
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
 	}
 	stages {
-		stage ('src archive') {
-			when {
-				expression { BRANCH_NAME ==~ /release/ }
-			}
-			steps {
-				sh "tar -czf aerie-ui-src-release.tar.gz --exclude='.git' `ls -A`"
-			}
-		}
 		stage ('build') {
 			steps {
 				withCredentials([
@@ -138,7 +130,7 @@ pipeline {
 				}
 			}
 		}
-		stage('Deploy') {
+		stage('deploy') {
 			when {
 				expression { GIT_BRANCH ==~ /(develop|staging|release)/ }
 			}
@@ -154,7 +146,7 @@ pipeline {
 						docker.withRegistry(AWS_ECR) {
 							echo "Tagging docker images to point to AWS ECR"
 							sh '''
-							docker tag $(docker images | awk '\$1 ~ /aerie-ui/ { print \$3; exit }') ${AWS_ECR}/aerie/ui:${GIT_BRANCH}
+							docker tag ${getDockerTag()} ${AWS_ECR}/aerie/ui:${GIT_BRANCH}
 							'''
 							echo 'Pushing images to ECR'
 							sh "docker push ${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
