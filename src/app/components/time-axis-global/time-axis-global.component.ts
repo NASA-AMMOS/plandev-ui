@@ -89,7 +89,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
-  drawXBrush(): void {
+  drawBrush(): void {
     const xBrush = d3
       .brushX()
       .extent([
@@ -106,7 +106,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
       })
       .on('end', () => {
         this.setBrushStyles(d3.event.selection);
-        this.xBrushEnd();
+        this.brushEnd();
         hideTooltip();
       });
 
@@ -148,7 +148,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
 
   redraw(): void {
     this.setDrawBounds();
-    this.drawXBrush();
+    this.drawBrush();
   }
 
   setBrushStyles(selection: number[] | null): void {
@@ -201,7 +201,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  xBrushEnd(): void {
+  brushEnd(): void {
     if (!d3.event.sourceEvent) {
       return;
     }

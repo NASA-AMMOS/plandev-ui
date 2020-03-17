@@ -1,4 +1,4 @@
-import { ElementRef, Injectable } from '@angular/core';
+import { ElementRef, Injectable, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ngOnChanges } from 'src/app/functions';
 import { TimeAxisGlobalComponent } from './time-axis-global.component';
@@ -32,14 +32,26 @@ describe('TimeAxisGlobalComponent', () => {
     expect(setDrawBoundsSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('calling ngOnChanges with a maxTimeRange and a viewTimeRange should trigger a redraw', () => {
+    comp.maxTimeRange = { start: 0, end: 1000 };
+    comp.viewTimeRange = { start: 20, end: 30 };
+    const change = {
+      maxTimeRange: new SimpleChange(null, comp.maxTimeRange, false),
+      viewTimeRange: new SimpleChange(null, comp.viewTimeRange, false),
+    };
+    const redrawSpy = spyOn(comp, 'redraw');
+    comp.ngOnChanges(change);
+    expect(redrawSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('calling ngAfterViewInit should set the appropriate component events', () => {
     comp.ngAfterViewInit();
     // TODO.
     expect(true).toBe(true);
   });
 
-  it('calling drawXBrush should draw the x-brush', () => {
-    comp.drawXBrush();
+  it('calling drawBrush should draw the brush', () => {
+    comp.drawBrush();
     // TODO.
     expect(true).toBe(true);
   });
@@ -56,12 +68,12 @@ describe('TimeAxisGlobalComponent', () => {
     expect(redrawSpy).toHaveBeenCalled();
   });
 
-  it('calling redraw should trigger a setDrawBounds() and drawXBrush()', () => {
+  it('calling redraw should trigger a setDrawBounds() and drawBrush()', () => {
     const setDrawBoundsSpy = spyOn(comp, 'setDrawBounds');
-    const drawXBrushSpy = spyOn(comp, 'drawXBrush');
+    const drawBrushSpy = spyOn(comp, 'drawBrush');
     comp.redraw();
     expect(setDrawBoundsSpy).toHaveBeenCalled();
-    expect(drawXBrushSpy).toHaveBeenCalled();
+    expect(drawBrushSpy).toHaveBeenCalled();
   });
 
   it('draw height should be calculated correctly according to margins', () => {
@@ -80,9 +92,9 @@ describe('TimeAxisGlobalComponent', () => {
     expect(true).toBe(true);
   });
 
-  it('calling xBrushEnd should emit a new view time range', () => {
+  it('calling brushEnd should emit a new view time range', () => {
     try {
-      comp.xBrushEnd();
+      comp.brushEnd();
       // TODO.
     } catch (e) {}
     expect(true).toBe(true);

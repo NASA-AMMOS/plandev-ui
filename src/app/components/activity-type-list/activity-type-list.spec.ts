@@ -1,6 +1,6 @@
-import { ngOnChanges } from 'src/app/functions';
-import { cActivityType } from 'src/app/mocks';
-import { CActivityType } from 'src/app/types';
+import { ngOnChanges } from '../../functions';
+import { cActivityType } from '../../mocks';
+import { CActivityType } from '../../types';
 import { ActivityTypeListComponent } from './activity-type-list.component';
 
 describe('ActivityTypeListComponent', () => {
@@ -42,5 +42,43 @@ describe('ActivityTypeListComponent', () => {
       expect(activityType).toEqual(selectedActivityType),
     );
     comp.onActivityTypeSelect(selectedActivityType);
+  });
+
+  it('calling onClick should preventDefault and stopPropagation on the event', () => {
+    const event = new MouseEvent('click');
+    const preventDefaultSpy = spyOn(event, 'preventDefault');
+    const stopPropagationSpy = spyOn(event, 'stopPropagation');
+    comp.onClick(event);
+    expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+    expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('calling onDragEnd should set draggable to false', () => {
+    comp.draggable = true;
+    comp.onDragEnd();
+    expect(comp.draggable).toEqual(false);
+  });
+
+  it('calling onDragStart should properly set the drag data activityType', () => {
+    const event = {
+      dataTransfer: {
+        setData(type: string, data: string) {},
+      },
+    };
+    const setDataSpy = spyOn(event.dataTransfer, 'setData');
+    comp.onDragStart(event, cActivityType);
+    expect(setDataSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('calling onMouseDown sets draggable to true', () => {
+    expect(comp.draggable).toEqual(false);
+    comp.onMouseDown(new MouseEvent('mousedown'));
+    expect(comp.draggable).toEqual(true);
+  });
+
+  it('calling onMouseUp sets draggable to false', () => {
+    comp.draggable = true;
+    comp.onMouseUp(new MouseEvent('mouseup'));
+    expect(comp.draggable).toEqual(false);
   });
 });

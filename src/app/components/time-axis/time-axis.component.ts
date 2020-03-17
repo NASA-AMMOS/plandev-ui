@@ -178,7 +178,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
         this.showTooltip(d3.event.sourceEvent);
       })
       .on('end', () => {
-        this.xBrushEnd();
+        this.brushEnd();
       });
 
     const brush = d3.select(this.brush.nativeElement).call(xBrush);
@@ -233,7 +233,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  xBrushEnd(): void {
+  brushEnd(): void {
     if (!d3.event.sourceEvent) {
       return;
     }
