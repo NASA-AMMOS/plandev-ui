@@ -1,21 +1,19 @@
-def getDockerTag() {
-  return "cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/aerie-ui:${BRANCH_NAME}"
-}
-
 pipeline {
 	options {
 		disableConcurrentBuilds()
 	}
 	agent {
-    // Currently aws cli version 2 is only installed on coronado server
-    // TODO: Add more servers as needed when they are correctly provisioned
 		label 'coronado'
 	}
 	environment {
+    ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:16001"
 		AWS_ACCESS_KEY_ID = credentials('aerie-aws-access-key')
+    AWS_CLUSTER = "aerie-${GIT_BRANCH}-cluster"
     AWS_DEFAULT_REGION = 'us-gov-west-1'
 		AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
+    DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/ammos/mpsa/aerie-ui:${GIT_BRANCH}"
+    DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
 	}
 	stages {
 		stage ('build') {
@@ -56,7 +54,7 @@ pipeline {
             du -sh dist/*
 
             # Build Docker image
-            docker build -t "${getDockerTag()}" --rm .
+            docker build -t "${DOCKER_TAG_ARTIFACTORY}" --rm .
             """
             if (statusCode > 0) {
               error "build failed"
@@ -68,14 +66,14 @@ pipeline {
 		}
 		stage ('build archive') {
       when {
-				expression { BRANCH_NAME ==~ /(develop|staging|release)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release)/ }
 			}
 			steps {
 				script {
 					def statusCode = sh returnStatus: true, script:
 					"""
           cd dist
-          tar -czf aerie-ui-${BRANCH_NAME}.tar.gz `ls -A`
+          tar -czf aerie-ui-${GIT_BRANCH}.tar.gz `ls -A`
 					"""
 					if (statusCode > 0) {
 						error "build archive failed"
@@ -86,7 +84,7 @@ pipeline {
 		}
 		stage ('publish') {
 			when {
-				expression { BRANCH_NAME ==~ /(develop|staging|release)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release)/ }
 			}
 			steps {
 				script {
@@ -119,9 +117,9 @@ pipeline {
 					script {
 						def statusCode = sh returnStatus: true, script:
 						"""
-            echo "${DOCKER_LOGIN_PASSWORD}" | docker login -u "${DOCKER_LOGIN_USERNAME}" cae-artifactory.jpl.nasa.gov:16001 --password-stdin
-            docker push "${getDockerTag()}"
-            docker logout cae-artifactory.jpl.nasa.gov:16001
+            echo "${DOCKER_LOGIN_PASSWORD}" | docker login -u "${DOCKER_LOGIN_USERNAME}" ${ARTIFACTORY_URL} --password-stdin
+            docker push "${DOCKER_TAG_ARTIFACTORY}"
+            docker logout ${ARTIFACTORY_URL}
 						"""
 						if (statusCode > 0) {
 							error "publish failed"
@@ -144,18 +142,18 @@ pipeline {
 						sh ('aws ecr get-login-password | docker login --username AWS --password-stdin https://$AWS_ECR')
 
 						docker.withRegistry(AWS_ECR) {
-							echo "Tagging docker images to point to AWS ECR"
+							echo "Tagging docker image to point to AWS ECR"
 							sh '''
-							docker tag ${getDockerTag()} ${AWS_ECR}/aerie/ui:${GIT_BRANCH}
+							docker tag ${DOCKER_TAG_ARTIFACTORY} ${DOCKER_TAG_AWS}
 							'''
-							echo 'Pushing images to ECR'
-							sh "docker push ${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
+							echo 'Pushing image to ECR'
+							sh "docker push ${DOCKER_TAG_AWS}"
 
               sleep 5
               echo "Restarting the task in ECS cluster"
               try {
                 sh '''
-                aws ecs stop-task --cluster "aerie-${GIT_BRANCH}-cluster" --task $(aws ecs list-tasks --cluster "aerie-${GIT_BRANCH}-cluster" --output text --query taskArns[0])
+                aws ecs stop-task --cluster "${AWS_CLUSTER}" --task $(aws ecs list-tasks --cluster "${AWS_CLUSTER}" --output text --query taskArns[0])
                 '''
               } catch (Exception e) {
                 echo "Restarting the task failed"
@@ -169,7 +167,8 @@ pipeline {
 	}
 	post {
 		always {
-			sh "docker rmi ${getDockerTag()}"
+			sh "docker rmi ${DOCKER_TAG_ARTIFACTORY}"
+      sh "docker rmi ${DOCKER_TAG_AWS}"
 
 			echo 'Cleaning up images'
 			sh "docker image prune -f"
