@@ -69,6 +69,7 @@ export class CreateActivityInstanceFormComponent
         if (this.activityTypesMap) {
           const { parameters } = this.activityTypesMap[type];
           this.formParameters.clear();
+          this.createActivityInstanceError = null;
           parameters.forEach(parameter => {
             this.formParameters.push(
               this.fb.group({
@@ -85,6 +86,7 @@ export class CreateActivityInstanceFormComponent
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.selectedActivityType && this.selectedActivityType !== null) {
+      this.createActivityInstanceError = null;
       this.form.controls.type.setValue(this.selectedActivityType.name);
     }
   }
