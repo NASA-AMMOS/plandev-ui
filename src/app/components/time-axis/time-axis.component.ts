@@ -29,7 +29,7 @@ import { TimeRange } from '../../types';
 })
 export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @Input()
-  height = 60;
+  height = 50;
 
   @Input()
   marginLeft = 70;
@@ -49,15 +49,19 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @Output()
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
-  @ViewChild('axisX', { static: true })
-  axisX: ElementRef<SVGGElement>;
-
   @ViewChild('brush', { static: true })
   brush: ElementRef<SVGGElement>;
 
+  @ViewChild('timeAxis', { static: true })
+  timeAxis: ElementRef<SVGGElement>;
+
+  @ViewChild('yearDayAxis', { static: true })
+  yearDayAxis: ElementRef<SVGGElement>;
+
   public drawHeight: number = this.height;
   public drawWidth: number;
-  public marginBottom = 30;
+  public marginBottom = 10;
+  public tickSize = 0;
 
   constructor(private elRef: ElementRef) {
     this.elRef.nativeElement.style.setProperty('--height', `${this.height}px`);
@@ -92,23 +96,75 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
-  drawXAxis(): void {
-    const x = this.getXScale();
-
-    const xAxis = d3
-      .axisBottom(x)
-      .ticks(5)
-      .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
-      .tickSizeInner(-this.drawHeight)
-      .tickPadding(10);
-
-    d3.select(this.axisX.nativeElement)
-      .call(xAxis)
-      .selectAll('text')
-      .style('font-size', '12px');
+  drawAxisLabel(
+    axisGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+    className: string,
+    labelText: string,
+  ): void {
+    axisGroup.selectAll(`.${className}`).remove();
+    const axisLabel = axisGroup.append('g').attr('class', className);
+    axisLabel.selectAll('*').remove();
+    axisLabel
+      .append('text')
+      .attr('y', 0)
+      .attr('x', -60)
+      .attr('dy', '1em')
+      .attr('fill', 'rgba(0, 0, 0, 0.38)')
+      .attr('font-size', `10px`)
+      .attr('font-style', 'italic')
+      .style('text-transform', 'uppercase')
+      .text(labelText);
   }
 
-  drawXBrush(): void {
+  drawTimeAxis(): void {
+    const x = this.getXScale();
+    const axisGroup = d3.select(this.timeAxis.nativeElement);
+    const axis = d3
+      .axisBottom(x)
+      .tickFormat((date: Date) =>
+        getDoyTimestamp(date.getTime(), false)
+          .split('T')
+          .pop(),
+      )
+      .tickSize(this.tickSize);
+    axisGroup.call(axis);
+    axisGroup.selectAll('.domain').remove();
+    axisGroup
+      .selectAll('text')
+      .style('pointer-events', 'none')
+      .style('user-select', 'none');
+    this.drawAxisLabel(axisGroup, 'time-axis', 'Time');
+  }
+
+  drawYearDayAxis(): void {
+    const x = this.getXScale();
+    const ticks: Date[] = Object.values(
+      // Build a map of unique ticks for each year/day-of-year.
+      // Any duplicate ticks after the first year/day-of-year will be ignored.
+      x.ticks().reduce((dates, date) => {
+        const yearDay = getDoyTimestamp(date.getTime()).split('T')[0];
+        if (dates[yearDay] === undefined) {
+          dates[yearDay] = date;
+        }
+        return dates;
+      }, {}),
+    );
+    const axisGroup = d3.select(this.yearDayAxis.nativeElement);
+    const axis = d3
+      .axisBottom(x)
+      .tickValues(ticks)
+      .tickFormat((date: Date) => getDoyTimestamp(date.getTime()).split('T')[0])
+      .tickSize(this.tickSize);
+    axisGroup.call(axis);
+    axisGroup.selectAll('.domain').remove();
+    axisGroup
+      .selectAll('text')
+      .style('pointer-events', 'none')
+      .style('user-select', 'none');
+    this.drawAxisLabel(axisGroup, 'year-day-axis', 'Year-Day');
+  }
+
+  drawBrush(): void {
     const xBrush = d3
       .brushX()
       .extent([
@@ -140,7 +196,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     return d3
       .scaleTime()
       .domain(this.getDomain())
-      .rangeRound([0, this.drawWidth]);
+      .range([0, this.drawWidth]);
   }
 
   @HostListener('window:resize', ['$event'])
@@ -154,8 +210,9 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   redraw(): void {
     this.setDrawBounds();
-    this.drawXAxis();
-    this.drawXBrush();
+    this.drawTimeAxis();
+    this.drawYearDayAxis();
+    this.drawBrush();
   }
 
   setDrawBounds(): void {

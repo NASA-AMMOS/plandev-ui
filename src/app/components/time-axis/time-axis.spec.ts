@@ -38,14 +38,20 @@ describe('TimeAxisComponent', () => {
     expect(true).toBe(true);
   });
 
-  it('calling drawXAxis should draw the x-axis', () => {
-    comp.drawXAxis();
+  it('calling drawBrush should draw the brush', () => {
+    comp.drawBrush();
     // TODO.
     expect(true).toBe(true);
   });
 
-  it('calling drawXBrush should draw the x-brush', () => {
-    comp.drawXBrush();
+  it('calling drawTimeAxis should draw the time-axis', () => {
+    comp.drawTimeAxis();
+    // TODO.
+    expect(true).toBe(true);
+  });
+
+  it('calling drawYearDayAxis should draw the year-day-axis', () => {
+    comp.drawYearDayAxis();
     // TODO.
     expect(true).toBe(true);
   });
@@ -64,12 +70,14 @@ describe('TimeAxisComponent', () => {
 
   it('calling redraw should trigger a setDrawBounds(), drawXAxis(), and drawXBrush()', () => {
     const setDrawBoundsSpy = spyOn(comp, 'setDrawBounds');
-    const drawXAxisSpy = spyOn(comp, 'drawXAxis');
-    const drawXBrushSpy = spyOn(comp, 'drawXBrush');
+    const drawTimeAxisSpy = spyOn(comp, 'drawTimeAxis');
+    const drawYearDayAxisSpy = spyOn(comp, 'drawYearDayAxis');
+    const drawBrushSpy = spyOn(comp, 'drawBrush');
     comp.redraw();
     expect(setDrawBoundsSpy).toHaveBeenCalled();
-    expect(drawXAxisSpy).toHaveBeenCalled();
-    expect(drawXBrushSpy).toHaveBeenCalled();
+    expect(drawTimeAxisSpy).toHaveBeenCalled();
+    expect(drawYearDayAxisSpy).toHaveBeenCalled();
+    expect(drawBrushSpy).toHaveBeenCalled();
   });
 
   it('draw height should be calculated correctly according to margins', () => {

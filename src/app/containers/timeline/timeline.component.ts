@@ -38,10 +38,10 @@ export class TimelineComponent implements OnDestroy {
   marginBottom = 10;
 
   @Input()
-  marginLeft = 70;
+  marginLeft = 100;
 
   @Input()
-  marginRight = 70;
+  marginRight = 40;
 
   @Input()
   marginTop = 10;

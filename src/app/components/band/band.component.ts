@@ -148,7 +148,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(5)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
       .tickSizeInner(-this.drawHeight);
     const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
