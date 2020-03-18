@@ -1,6 +1,6 @@
 {
   "name": "aerie-ui",
-  "version": "1.0.0",
+  "version": "29.1.0",
   "private": true,
   "engines": {
     "node": ">=10.9.0 <13.0.0",
@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "ng build",
-    "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui -t 88433ae...904d97a",
+    "changelog": "generate-changelog -u https://github.jpl.nasa.gov/MPS/aerie-ui -t 88433ae...d735a6d",
     "cloc": "cloc src",
     "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
     "lint": "ng lint --fix",
