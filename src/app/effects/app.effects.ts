@@ -15,14 +15,10 @@ export class AppEffects {
       this.actions.pipe(
         ofType(AppActions.openAboutDialog),
         switchMap(() => {
-          const { name, tag } = version;
           this.dialog.open(AboutDialogComponent, {
-            data: {
-              version: `${name} - ${tag}`,
-            },
+            data: version,
             width: `500px`,
           });
-
           return [];
         }),
       ),

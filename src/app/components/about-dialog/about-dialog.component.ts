@@ -6,44 +6,39 @@ import {
   NgModule,
 } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Version } from '../../../environments/version';
 import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-about-dialog',
-  styles: [''],
-  template: `
-    <h1 mat-dialog-title>About</h1>
-
-    <div mat-dialog-content>
-      <div *ngFor="let line of copyright">
-        {{ line }}
-      </div>
-      <p>
-        {{ data.version }}
-      </p>
-    </div>
-
-    <div mat-dialog-actions>
-      <button mat-button color="accent" matDialogClose>
-        Close
-      </button>
-    </div>
-  `,
+  templateUrl: './about-dialog.component.html',
 })
 export class AboutDialogComponent {
-  copyright = [
-    `Copyright ${new Date().getFullYear()}, by the California Institute of Technology.`,
-    `ALL RIGHTS RESERVED.`,
-    `United States Government sponsorship acknowledged.`,
-    `Any commercial use must be negotiated with the Office of Technology Transfer at the California Institute of Technology.`,
-  ];
+  branch: string;
+  commit: string;
+  commitUrl: string;
+  copyright: string[];
+  date: string;
+  name: string;
 
   constructor(
     public dialogRef: MatDialogRef<AboutDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data: { version: string },
-  ) {}
+    public data: Version,
+  ) {
+    this.branch = data.branch;
+    this.commit = data.commit;
+    this.commitUrl = `https://github.jpl.nasa.gov/MPS/aerie-ui/commit/${data.commit}`;
+    this.copyright = [
+      `Copyright ${new Date().getFullYear()}, by the California Institute of Technology.`,
+      `ALL RIGHTS RESERVED.`,
+      `United States Government sponsorship acknowledged.`,
+      `Any commercial use must be negotiated with the Office of Technology Transfer at the California Institute of Technology.`,
+    ];
+    this.date = data.date;
+    this.name = data.name;
+  }
 }
 
 @NgModule({
