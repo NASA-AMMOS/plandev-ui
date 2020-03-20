@@ -41,6 +41,7 @@ import { getLoading, getPath } from './selectors';
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnDestroy {
+  aerieApolloServerUrl = environment.aerieApolloServerUrl;
   isLoginPage = true;
   loading = false;
   vsCodeServerUrl = environment.vsCodeServerUrl;
@@ -71,6 +72,12 @@ export class AppComponent implements OnDestroy {
       'activity_dictionary',
       this.domSanitizer.bypassSecurityTrustResourceUrl(
         'assets/icons/activity_dictionary.svg',
+      ),
+    );
+    this.matIconRegistry.addSvgIcon(
+      'graphql',
+      this.domSanitizer.bypassSecurityTrustResourceUrl(
+        'assets/icons/graphql.svg',
       ),
     );
   }
