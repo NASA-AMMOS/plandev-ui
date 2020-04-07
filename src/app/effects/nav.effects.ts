@@ -11,11 +11,10 @@ import {
   AppActions,
   AuthActions,
   PlanningActions,
-  TimelineActions,
   ToastActions,
 } from '../actions';
 import { AERIE_USER } from '../constants';
-import { getUnixEpochTime, mapToParam, ofRoute } from '../functions';
+import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
 import { User } from '../types';
 
@@ -115,12 +114,6 @@ export class NavEffects {
               PlanningActions.setSelectedPlanAndActivityTypes({
                 activityTypes,
                 selectedPlan: plan,
-              }),
-              TimelineActions.updateViewTimeRange({
-                viewTimeRange: {
-                  end: getUnixEpochTime(plan.endTimestamp),
-                  start: getUnixEpochTime(plan.startTimestamp),
-                },
               }),
             ]),
             catchError((error: Error) => {

@@ -28,7 +28,6 @@ import {
   NavEffects,
   PlanningEffects,
   SimulationEffects,
-  TimelineEffects,
   ToastEffects,
 } from './effects';
 import { MaterialModule } from './material';
@@ -131,7 +130,6 @@ export class AppComponent implements OnDestroy {
       NavEffects,
       PlanningEffects,
       SimulationEffects,
-      TimelineEffects,
       ToastEffects,
     ]),
     MaterialModule,

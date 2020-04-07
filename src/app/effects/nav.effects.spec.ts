@@ -10,11 +10,9 @@ import {
   AppActions,
   AuthActions,
   PlanningActions,
-  TimelineActions,
   ToastActions,
 } from '../actions';
 import { RouterState } from '../app-routing.module';
-import { getUnixEpochTime } from '../functions';
 import {
   cActivityInstanceMap,
   cActivityTypeMap,
@@ -175,23 +173,17 @@ describe('nav effects', () => {
           { id: planId },
         );
         actions = hot('-a', { a: action });
-        expectObservable(effects.navPlansWithId).toBe('-(bcdef)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
           b: AppActions.setLoading({ loading: true }),
           c: PlanningActions.setSelectedPlanAndActivityTypes({
             activityTypes: cActivityTypeMap,
             selectedPlan: cPlan,
           }),
-          d: TimelineActions.updateViewTimeRange({
-            viewTimeRange: {
-              end: getUnixEpochTime(cPlan.endTimestamp),
-              start: getUnixEpochTime(cPlan.startTimestamp),
-            },
-          }),
-          e: PlanningActions.setActivityInstances({
+          d: PlanningActions.setActivityInstances({
             activityInstances: cActivityInstanceMap,
             planId,
           }),
-          f: AppActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });

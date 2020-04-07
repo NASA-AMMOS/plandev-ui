@@ -129,6 +129,8 @@
     <app-timeline
       *ngIf="activityInstances !== null"
       [bands]="scheduleBands"
+      [maxTimeRange]="maxTimeRange"
+      [viewTimeRange]="viewTimeRange"
     ></app-timeline>
   </div>
 
@@ -157,6 +159,8 @@
     <app-timeline
       *ngIf="stateBands !== null"
       [bands]="stateBands"
+      [maxTimeRange]="maxTimeRange"
+      [viewTimeRange]="viewTimeRange"
     ></app-timeline>
   </div>
 

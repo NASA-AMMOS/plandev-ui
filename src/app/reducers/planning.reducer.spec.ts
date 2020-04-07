@@ -255,6 +255,10 @@ describe('planning reducer', () => {
         ...initialState,
         activityTypes: cActivityTypeMap,
         selectedPlan: cPlan,
+        viewTimeRange: {
+          end: 1577750410000,
+          start: 1577750400000,
+        },
       });
     });
   });

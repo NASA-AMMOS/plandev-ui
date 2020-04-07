@@ -14,12 +14,7 @@ import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
 import { IOutputData } from 'angular-split/lib/interface';
 import { SubSink } from 'subsink';
-import {
-  AppActions,
-  PlanningActions,
-  SimulationActions,
-  TimelineActions,
-} from '../../actions';
+import { AppActions, PlanningActions, SimulationActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
   ActivityInstancesTableModule,
@@ -40,11 +35,13 @@ import {
   getActivityTypes,
   getActivityTypesMap,
   getCreateActivityInstanceError,
+  getMaxTimeRange,
   getScheduleBands,
   getSelectedActivityInstance,
   getSelectedPlan,
   getStateBands,
   getUpdateActivityInstanceError,
+  getViewTimeRange,
 } from '../../selectors';
 import {
   Band,
@@ -54,6 +51,7 @@ import {
   CPlan,
   Panel,
   SActivityInstance,
+  TimeRange,
   UpdateActivityInstance,
 } from '../../types';
 import { TimelineModule } from '../timeline/timeline.component';
@@ -84,6 +82,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     },
   };
   drawerVisible = true;
+  maxTimeRange: TimeRange;
   panels: Panel[] = [
     {
       id: '0',
@@ -113,6 +112,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   selectedActivityType: CActivityType | null = null;
   stateBands: Band[];
   updateActivityInstanceError: string | null = null;
+  viewTimeRange: TimeRange;
 
   private subs = new SubSink();
 
@@ -145,6 +145,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
           this.createActivityInstanceError = createActivityInstanceError;
           this.cdRef.markForCheck();
         }),
+      this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
+        this.maxTimeRange = maxTimeRange;
+        this.cdRef.markForCheck();
+      }),
       this.store.pipe(select(getScheduleBands)).subscribe(scheduleBands => {
         this.scheduleBands = scheduleBands;
         this.cdRef.markForCheck();
@@ -172,6 +176,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
           this.updateActivityInstanceError = updateActivityInstanceError;
           this.cdRef.markForCheck();
         }),
+      this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
+        this.viewTimeRange = viewTimeRange;
+        this.cdRef.markForCheck();
+      }),
     );
   }
 
@@ -215,7 +223,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   onRestore(): void {
-    this.store.dispatch(TimelineActions.restoreViewTimeRange());
+    this.store.dispatch(PlanningActions.restoreViewTimeRange());
   }
 
   onSelectActivityInstance(activityInstance: CActivityInstance): void {

@@ -1,20 +1,16 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   Input,
   NgModule,
-  OnDestroy,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { select, Store } from '@ngrx/store';
-import { SubSink } from 'subsink';
-import { PlanningActions, TimelineActions } from '../../actions';
+import { Store } from '@ngrx/store';
+import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
-import { getMaxTimeRange, getViewTimeRange } from '../../selectors';
 import {
   Band,
   CreatePoint,
@@ -30,7 +26,7 @@ import {
   selector: 'app-timeline',
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements OnDestroy {
+export class TimelineComponent {
   @Input()
   bands: Band[] | null;
 
@@ -47,33 +43,12 @@ export class TimelineComponent implements OnDestroy {
   marginTop = 10;
 
   @Input()
-  maxTimeRange: TimeRange;
+  maxTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Input()
-  viewTimeRange: TimeRange;
+  viewTimeRange: TimeRange = { end: 0, start: 0 };
 
-  private subs = new SubSink();
-
-  constructor(
-    private cdRef: ChangeDetectorRef,
-    private route: ActivatedRoute,
-    private store: Store<RootState>,
-  ) {
-    this.subs.add(
-      this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
-        this.maxTimeRange = maxTimeRange;
-        this.cdRef.markForCheck();
-      }),
-      this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
-        this.viewTimeRange = viewTimeRange;
-        this.cdRef.markForCheck();
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
-  }
+  constructor(private route: ActivatedRoute, private store: Store<RootState>) {}
 
   onCreatePoint(event: CreatePoint): void {
     if (event.type === 'activity') {
@@ -138,7 +113,7 @@ export class TimelineComponent implements OnDestroy {
   }
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
-    this.store.dispatch(TimelineActions.updateViewTimeRange({ viewTimeRange }));
+    this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
   }
 
   trackByBands(_: number, band: Band): string {

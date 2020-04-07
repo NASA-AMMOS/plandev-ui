@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
+import { getUnixEpochTime } from '../functions';
 import {
   CActivityInstanceMap,
   CActivityInstanceParameterMap,
@@ -9,6 +10,7 @@ import {
   CPlan,
   CPlanMap,
   StringTMap,
+  TimeRange,
 } from '../types';
 
 export interface PlanningState {
@@ -20,6 +22,7 @@ export interface PlanningState {
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
   updateActivityInstanceError: string | null;
+  viewTimeRange: TimeRange;
 }
 
 export const initialState: PlanningState = {
@@ -31,6 +34,7 @@ export const initialState: PlanningState = {
   selectedActivityInstanceId: null,
   selectedPlan: null,
   updateActivityInstanceError: null,
+  viewTimeRange: { start: 0, end: 0 },
 };
 
 export const reducer = createReducer(
@@ -99,6 +103,13 @@ export const reducer = createReducer(
     ...state,
     plans: omit(state.plans, action.id),
   })),
+  on(PlanningActions.restoreViewTimeRange, state => ({
+    ...state,
+    viewTimeRange: {
+      end: getUnixEpochTime(state.selectedPlan.endTimestamp),
+      start: getUnixEpochTime(state.selectedPlan.startTimestamp),
+    },
+  })),
   on(PlanningActions.setActivityInstances, (state, { activityInstances }) => ({
     ...state,
     activityInstances,
@@ -113,22 +124,11 @@ export const reducer = createReducer(
   })),
   on(
     PlanningActions.setSelectedActivityInstanceId,
-    (state, { keepSelected, selectedActivityInstanceId }) => {
-      if (
-        !keepSelected &&
-        state.selectedActivityInstanceId === selectedActivityInstanceId
-      ) {
-        return {
-          ...state,
-          selectedActivityInstanceId: null,
-        };
-      } else {
-        return {
-          ...state,
-          selectedActivityInstanceId,
-        };
-      }
-    },
+    (state, { keepSelected, selectedActivityInstanceId: id }) => ({
+      ...state,
+      selectedActivityInstanceId:
+        !keepSelected && state.selectedActivityInstanceId === id ? null : id,
+    }),
   ),
   on(
     PlanningActions.setSelectedPlanAndActivityTypes,
@@ -136,6 +136,10 @@ export const reducer = createReducer(
       ...state,
       activityTypes,
       selectedPlan,
+      viewTimeRange: {
+        end: getUnixEpochTime(selectedPlan.endTimestamp),
+        start: getUnixEpochTime(selectedPlan.startTimestamp),
+      },
     }),
   ),
   on(PlanningActions.updateActivityInstance, state => ({
@@ -168,6 +172,10 @@ export const reducer = createReducer(
           : state.activityInstances[action.activityInstanceId].parameters,
       },
     },
+  })),
+  on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
+    ...state,
+    viewTimeRange,
   })),
 );
 

@@ -177,3 +177,8 @@ export const getUpdateActivityInstanceError = createSelector(
   getPlanningState,
   (state: PlanningState): string | null => state.updateActivityInstanceError,
 );
+
+export const getViewTimeRange = createSelector(
+  getPlanningState,
+  (state: PlanningState): TimeRange => state.viewTimeRange,
+);

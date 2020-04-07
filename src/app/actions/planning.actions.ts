@@ -9,6 +9,7 @@ import {
   SActivityInstance,
   SCreateAdaption,
   SPlan,
+  TimeRange,
 } from '../types';
 
 export const createActivityInstance = createAction(
@@ -80,6 +81,10 @@ export const deletePlanSuccess = createAction(
   props<{ id: string }>(),
 );
 
+export const restoreViewTimeRange = createAction(
+  '[timeline] restoreViewTimeRange',
+);
+
 export const setActivityInstances = createAction(
   '[planning] setActivityInstances',
   props<{ planId: string; activityInstances: CActivityInstanceMap }>(),
@@ -133,4 +138,9 @@ export const updateActivityInstanceSuccess = createAction(
     activityInstanceId: string;
     activityInstance: Partial<SActivityInstance>;
   }>(),
+);
+
+export const updateViewTimeRange = createAction(
+  '[planning] updateViewTimeRange',
+  props<{ viewTimeRange: TimeRange }>(),
 );

@@ -12,7 +12,6 @@ import {
   AuthReducer,
   PlanningReducer,
   SimulationReducer,
-  TimelineReducer,
 } from './reducers';
 
 export interface RootState {
@@ -21,7 +20,6 @@ export interface RootState {
   planning: PlanningReducer.PlanningState;
   router: fromRouter.RouterReducerState;
   simulation: SimulationReducer.SimulationState;
-  timeline: TimelineReducer.TimelineState;
 }
 
 export const ROOT_REDUCERS = new InjectionToken<
@@ -33,7 +31,6 @@ export const ROOT_REDUCERS = new InjectionToken<
     planning: PlanningReducer.reducer,
     router: fromRouter.routerReducer,
     simulation: SimulationReducer.reducer,
-    timeline: TimelineReducer.reducer,
   }),
 });
 
