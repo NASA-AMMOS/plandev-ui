@@ -21,25 +21,11 @@ export function getDoyTimestamp(
 ): string {
   const date = new Date(unixEpochTime);
   const year = date.getUTCFullYear();
-  const doy = getDoy(date)
-    .toString()
-    .padStart(3, '0');
-  const hours = date
-    .getUTCHours()
-    .toString()
-    .padStart(2, '0');
-  const mins = date
-    .getUTCMinutes()
-    .toString()
-    .padStart(2, '0');
-  const secs = date
-    .getUTCSeconds()
-    .toString()
-    .padStart(2, '0');
-  const msecs = date
-    .getUTCMilliseconds()
-    .toString()
-    .padStart(3, '0');
+  const doy = getDoy(date).toString().padStart(3, '0');
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const mins = date.getUTCMinutes().toString().padStart(2, '0');
+  const secs = date.getUTCSeconds().toString().padStart(2, '0');
+  const msecs = date.getUTCMilliseconds().toString().padStart(3, '0');
 
   let doyTimestamp = `${year}-${doy}T${hours}:${mins}:${secs}`;
 

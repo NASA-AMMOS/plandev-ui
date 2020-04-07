@@ -72,10 +72,7 @@ export function getTooltipTextPointXRange(point: PointXRange): string {
 }
 
 export function hideTooltip() {
-  d3.select('app-tooltip')
-    .style('opacity', 0)
-    .style('z-index', -1)
-    .html('');
+  d3.select('app-tooltip').style('opacity', 0).style('z-index', -1).html('');
 }
 
 export function showTooltip(

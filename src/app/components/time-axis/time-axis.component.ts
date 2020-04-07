@@ -122,9 +122,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     const axis = d3
       .axisBottom(x)
       .tickFormat((date: Date) =>
-        getDoyTimestamp(date.getTime(), false)
-          .split('T')
-          .pop(),
+        getDoyTimestamp(date.getTime(), false).split('T').pop(),
       )
       .tickSize(this.tickSize);
     axisGroup.call(axis);
@@ -193,10 +191,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   getXScale(): d3.ScaleTime<number, number> {
-    return d3
-      .scaleTime()
-      .domain(this.getDomain())
-      .range([0, this.drawWidth]);
+    return d3.scaleTime().domain(this.getDomain()).range([0, this.drawWidth]);
   }
 
   @HostListener('window:resize', ['$event'])
