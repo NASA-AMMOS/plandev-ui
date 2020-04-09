@@ -167,8 +167,8 @@ pipeline {
 	}
 	post {
 		always {
-			sh "docker rmi ${DOCKER_TAG_ARTIFACTORY}"
-      sh "docker rmi ${DOCKER_TAG_AWS}"
+			sh "docker rmi ${DOCKER_TAG_ARTIFACTORY} || true"
+      sh "docker rmi ${DOCKER_TAG_AWS} || true"
 
 			echo 'Cleaning up images'
 			sh "docker image prune -f"
