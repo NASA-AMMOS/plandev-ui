@@ -3,22 +3,25 @@ import { Observable, Observer } from 'rxjs';
 import {
   activityInstanceId,
   adaptationId,
+  adaptations,
   cActivityInstanceMap,
   cActivityTypeMap,
-  cAdaptationMap,
   cPlan,
-  cPlanMap,
   getSimulationRunBands,
   planId,
+  plans,
 } from '../mocks';
 import {
+  Adaptation,
   Band,
   CActivityInstanceMap,
   CActivityTypeMap,
-  CAdaptationMap,
   CPlan,
-  CPlanMap,
-  Id,
+  CreateAdaptationResponse,
+  CreatePlanResponse,
+  DeleteAdaptationResponse,
+  DeletePlanResponse,
+  Plan,
   StringTMap,
 } from '../types';
 
@@ -46,9 +49,9 @@ export class ApiMockService {
     );
   }
 
-  getAdaptations(): Observable<CAdaptationMap> {
-    return new Observable((o: Observer<CAdaptationMap>) => {
-      o.next(cAdaptationMap);
+  getAdaptations(): Observable<Adaptation[]> {
+    return new Observable((o: Observer<Adaptation[]>) => {
+      o.next(adaptations);
       o.complete();
     });
   }
@@ -60,16 +63,24 @@ export class ApiMockService {
     });
   }
 
-  createAdaptation(): Observable<Id> {
-    return new Observable((o: Observer<Id>) => {
-      o.next({ id: adaptationId });
+  createAdaptation(): Observable<CreateAdaptationResponse> {
+    return new Observable((o: Observer<CreateAdaptationResponse>) => {
+      o.next({
+        id: adaptationId,
+        message: 'Adaptation created successfully',
+        success: true,
+      });
       o.complete();
     });
   }
 
-  createPlan(): Observable<Id> {
-    return new Observable((o: Observer<Id>) => {
-      o.next({ id: planId });
+  createPlan(): Observable<CreatePlanResponse> {
+    return new Observable((o: Observer<CreatePlanResponse>) => {
+      o.next({
+        id: planId,
+        message: 'Plan created successfully',
+        success: true,
+      });
       o.complete();
     });
   }
@@ -81,25 +92,35 @@ export class ApiMockService {
     });
   }
 
-  deleteAdaptation(): Observable<{}> {
-    return new Observable((o: Observer<{}>) => {
-      o.next({});
+  deleteAdaptation(): Observable<DeleteAdaptationResponse> {
+    return new Observable((o: Observer<DeleteAdaptationResponse>) => {
+      o.next({ message: 'Adaptation deleted successfully', success: true });
       o.complete();
     });
   }
 
-  deletePlan(): Observable<{}> {
-    return new Observable((o: Observer<{}>) => {
-      o.next({});
+  deletePlan(): Observable<DeletePlanResponse> {
+    return new Observable((o: Observer<DeletePlanResponse>) => {
+      o.next({ message: 'Plan deleted successfully', success: true });
       o.complete();
     });
   }
 
-  getPlans(): Observable<CPlanMap> {
-    return new Observable((o: Observer<CPlanMap>) => {
-      o.next(cPlanMap);
-      o.complete();
-    });
+  getPlansAndAdaptations(): Observable<{
+    adaptations: Adaptation[];
+    plans: Plan[];
+  }> {
+    return new Observable(
+      (
+        o: Observer<{
+          adaptations: Adaptation[];
+          plans: Plan[];
+        }>,
+      ) => {
+        o.next({ adaptations, plans });
+        o.complete();
+      },
+    );
   }
 
   getPlan(): Observable<CPlan> {
@@ -111,7 +132,6 @@ export class ApiMockService {
 
   simulationRun(): Observable<StringTMap<Band>> {
     const stateBands = getSimulationRunBands();
-
     return new Observable((o: Observer<StringTMap<Band>>) => {
       o.next(stateBands);
       o.complete();

@@ -29,7 +29,7 @@ import {
 } from '../../components';
 import { MaterialModule } from '../../material';
 import { getAdaptations, getPlans } from '../../selectors';
-import { CAdaptation, CPlan, SPlan } from '../../types';
+import { Adaptation, Plan, SPlan } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,9 +41,9 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
   @ViewChild('inputCreatePlanName')
   inputCreatePlanName: ElementRef;
 
-  adaptations: CAdaptation[] | null = null;
+  adaptations: Adaptation[] | null = null;
   createPlanForm: FormGroup;
-  plans: CPlan[] | null = null;
+  plans: Plan[] | null = null;
   selectedAdaptationId = '';
 
   private subs = new SubSink();

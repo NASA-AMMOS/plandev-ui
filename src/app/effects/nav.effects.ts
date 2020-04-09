@@ -49,7 +49,9 @@ export class NavEffects {
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
-            map(adaptations => PlanningActions.setAdaptations({ adaptations })),
+            map(adaptations =>
+              PlanningActions.getAdaptationsSuccess({ adaptations }),
+            ),
             catchError((error: Error) => {
               console.error(error);
               return [
@@ -72,25 +74,16 @@ export class NavEffects {
       switchMap(_ =>
         concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService.getAdaptations().pipe(
-            map(adaptations => PlanningActions.setAdaptations({ adaptations })),
+          this.apiService.getPlansAndAdaptations().pipe(
+            switchMap(({ adaptations, plans }) => [
+              PlanningActions.getPlansSuccess({ plans }),
+              PlanningActions.getAdaptationsSuccess({ adaptations }),
+            ]),
             catchError((error: Error) => {
               console.error(error);
               return [
                 ToastActions.showToast({
-                  message: 'Fetch adaptations failed',
-                  toastType: 'error',
-                }),
-              ];
-            }),
-          ),
-          this.apiService.getPlans().pipe(
-            map(plans => PlanningActions.setPlans({ plans })),
-            catchError((error: Error) => {
-              console.error(error);
-              return [
-                ToastActions.showToast({
-                  message: 'Fetch plans failed',
+                  message: 'Fetch plans and adaptations failed',
                   toastType: 'error',
                 }),
               ];

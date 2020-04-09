@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { contextMenu } from 'src/app/functions';
 import { MaterialModule } from '../../material';
-import { CAdaptation } from '../../types';
+import { Adaptation } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,7 +18,7 @@ import { CAdaptation } from '../../types';
 })
 export class AdaptationsTableComponent {
   @Input()
-  adaptations: CAdaptation[] = [];
+  adaptations: Adaptation[] = [];
 
   @Output()
   createPlan: EventEmitter<string> = new EventEmitter<string>();

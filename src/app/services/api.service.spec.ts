@@ -3,41 +3,43 @@ import {
   HttpTestingController,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { TestScheduler } from 'rxjs/testing';
+import {
+  ApolloTestingController,
+  ApolloTestingModule,
+} from 'apollo-angular/testing';
+import omit from 'lodash-es/omit';
 import { environment } from '../../environments/environment';
 import {
   activityInstanceId,
+  adaptation,
   adaptationId,
+  adaptations,
   cActivityInstanceMap,
-  cAdaptationMap,
   cPlan,
-  cPlanMap,
+  plan,
   planId,
+  plans,
   sActivityInstance,
   sActivityInstanceMap,
-  sAdaptation,
-  sAdaptationMap,
   sPlan,
-  sPlanMap,
 } from '../mocks';
 import { ApiService } from './api.service';
+import * as gql from './gql';
 
-const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
+const { planServiceBaseUrl } = environment;
 
 describe('api service', () => {
   let apiService: ApiService;
+  let apolloTestingController: ApolloTestingController;
   let httpTestingController: HttpTestingController;
-  let testScheduler: TestScheduler;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      imports: [ApolloTestingModule, HttpClientTestingModule],
     });
     apiService = TestBed.inject(ApiService);
+    apolloTestingController = TestBed.inject(ApolloTestingController);
     httpTestingController = TestBed.inject(HttpTestingController);
-    testScheduler = new TestScheduler((actual, expected) => {
-      expect(actual).toEqual(expected);
-    });
   });
 
   afterEach(() => {
@@ -55,13 +57,12 @@ describe('api service', () => {
   });
 
   it('getAdaptations', () => {
-    apiService.getAdaptations().subscribe(adaptations => {
-      expect(adaptations).toEqual(cAdaptationMap);
+    apiService.getAdaptations().subscribe(response => {
+      expect(response).toEqual(adaptations);
     });
-    const req = httpTestingController.expectOne(
-      `${adaptationServiceBaseUrl}/adaptations`,
-    );
-    req.flush(sAdaptationMap);
+    apolloTestingController
+      .expectOne(gql.GET_ADAPTATIONS)
+      .flush({ data: { adaptations } });
   });
 
   it('createActivityInstances', () => {
@@ -77,23 +78,33 @@ describe('api service', () => {
   });
 
   it('createAdaptation', () => {
-    apiService
-      .createAdaptation({ ...sAdaptation, file: new File([], '') })
-      .subscribe(res => {
-        expect(res).toEqual({ id: adaptationId });
-      });
-    const req = httpTestingController.expectOne(
-      `${adaptationServiceBaseUrl}/adaptations`,
-    );
-    req.flush({ id: adaptationId });
+    const createAdaptation = {
+      id: adaptationId,
+      message: 'Adaptation created successfully',
+      success: true,
+    };
+    const newAdaptation = omit({ ...adaptation, file: new File([], '') }, 'id');
+    apiService.createAdaptation(newAdaptation).subscribe(response => {
+      expect(response).toEqual(createAdaptation);
+    });
+    apolloTestingController
+      .expectOne(gql.CREATE_ADAPTATION)
+      .flush({ data: { createAdaptation } });
   });
 
   it('createPlan', () => {
-    apiService.createPlan(sPlan).subscribe(res => {
-      expect(res).toEqual({ id: planId });
+    const createPlan = {
+      id: planId,
+      message: 'Plan created successfully',
+      success: true,
+    };
+    const newPlan = omit(plan, 'id');
+    apiService.createPlan(newPlan).subscribe(response => {
+      expect(response).toEqual(createPlan);
     });
-    const req = httpTestingController.expectOne(`${planServiceBaseUrl}/plans`);
-    req.flush({ id: planId });
+    apolloTestingController
+      .expectOne(gql.CREATE_PLAN)
+      .flush({ data: { createPlan } });
   });
 
   it('deleteActivityInstance', () => {
@@ -109,36 +120,43 @@ describe('api service', () => {
   });
 
   it('deleteAdaptation', () => {
-    apiService.deleteAdaptation(adaptationId).subscribe(res => {
-      expect(res).toEqual({});
+    const deleteAdaptation = {
+      message: 'Adaptation successfully deleted',
+      success: true,
+    };
+    apiService.deleteAdaptation(adaptationId).subscribe(response => {
+      expect(response).toEqual(deleteAdaptation);
     });
-    const req = httpTestingController.expectOne(
-      `${adaptationServiceBaseUrl}/adaptations/${adaptationId}`,
-    );
-    req.flush({});
+    apolloTestingController
+      .expectOne(gql.DELETE_ADAPTATION)
+      .flush({ data: { deleteAdaptation } });
   });
 
   it('deletePlan', () => {
-    apiService.deletePlan(planId).subscribe(res => {
-      expect(res).toEqual({});
+    const deletePlan = {
+      message: 'Adaptation successfully deleted',
+      success: true,
+    };
+    apiService.deletePlan(planId).subscribe(response => {
+      expect(response).toEqual(deletePlan);
     });
-    const req = httpTestingController.expectOne(
-      `${planServiceBaseUrl}/plans/${planId}`,
-    );
-    req.flush({});
+    apolloTestingController
+      .expectOne(gql.DELETE_PLAN)
+      .flush({ data: { deletePlan } });
   });
 
-  it('getPlans', () => {
-    apiService.getPlans().subscribe(plans => {
-      expect(plans).toEqual(cPlanMap);
+  it('getPlansAndAdaptations', () => {
+    apiService.getPlansAndAdaptations().subscribe(response => {
+      expect(response).toEqual({ adaptations, plans });
     });
-    const req = httpTestingController.expectOne(`${planServiceBaseUrl}/plans`);
-    req.flush(sPlanMap);
+    apolloTestingController
+      .expectOne(gql.GET_PLANS_AND_ADAPTATIONS)
+      .flush({ data: { adaptations, plans } });
   });
 
   it('getPlan', () => {
-    apiService.getPlan(planId).subscribe(plan => {
-      expect(plan).toEqual(cPlan);
+    apiService.getPlan(planId).subscribe(response => {
+      expect(response).toEqual(cPlan);
     });
     const req = httpTestingController.expectOne(
       `${planServiceBaseUrl}/plans/${planId}`,

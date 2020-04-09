@@ -70,7 +70,15 @@ export class PlanningEffects {
                   message: 'Adaptation created',
                   toastType: 'success',
                 }),
-                PlanningActions.createAdaptationSuccess({ id, adaptation }),
+                PlanningActions.createAdaptationSuccess({
+                  adaptation: {
+                    id,
+                    mission: adaptation.mission,
+                    name: adaptation.name,
+                    owner: adaptation.owner,
+                    version: adaptation.version,
+                  },
+                }),
               ];
             }),
             catchError((error: Error) => {
@@ -102,7 +110,15 @@ export class PlanningEffects {
                   message: 'Plan created',
                   toastType: 'success',
                 }),
-                PlanningActions.createPlanSuccess({ id, plan }),
+                PlanningActions.createPlanSuccess({
+                  plan: {
+                    adaptationId: plan.adaptationId,
+                    endTimestamp: plan.endTimestamp,
+                    id,
+                    name: plan.name,
+                    startTimestamp: plan.startTimestamp,
+                  },
+                }),
               ];
             }),
             catchError((error: Error) => {

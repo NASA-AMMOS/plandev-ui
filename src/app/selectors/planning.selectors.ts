@@ -2,13 +2,14 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { compare, getUnixEpochTime } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
+  Adaptation,
   Band,
   CActivityInstance,
   CActivityInstanceMap,
   CActivityType,
   CActivityTypeMap,
-  CAdaptation,
   CPlan,
+  Plan,
   SubBandActivity,
   TimeRange,
 } from '../types';
@@ -122,7 +123,7 @@ export const getActivityTypesMap = createSelector(
 
 export const getAdaptations = createSelector(
   getPlanningState,
-  (state: PlanningState): CAdaptation[] | null =>
+  (state: PlanningState): Adaptation[] | null =>
     state.adaptations ? Object.values(state.adaptations) : null,
 );
 
@@ -133,7 +134,7 @@ export const getCreateActivityInstanceError = createSelector(
 
 export const getPlans = createSelector(
   getPlanningState,
-  (state: PlanningState): CPlan[] | null =>
+  (state: PlanningState): Plan[] | null =>
     state.plans ? Object.values(state.plans) : null,
 );
 

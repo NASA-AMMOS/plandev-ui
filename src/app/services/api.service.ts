@@ -1,30 +1,34 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Apollo } from 'apollo-angular';
 import omit from 'lodash-es/omit';
 import { Observable, Observer } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { simulationResultsToBands } from '../functions';
 import {
+  Adaptation,
   Band,
   CActivityInstanceMap,
   CActivityInstanceParameterMap,
   CActivityTypeMap,
   CActivityTypeParameter,
-  CAdaptationMap,
   CPlan,
-  CPlanMap,
-  Id,
+  CreateAdaptation,
+  CreateAdaptationResponse,
+  CreatePlan,
+  CreatePlanResponse,
+  DeleteAdaptationResponse,
+  DeletePlanResponse,
+  Plan,
   SActivityInstance,
   SActivityInstanceMap,
   SActivityTypeMap,
-  SAdaptationMap,
-  SCreateAdaption,
   SimulationResults,
   SPlan,
-  SPlanMap,
   StringTMap,
 } from '../types';
+import * as gql from './gql';
 
 const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
 
@@ -32,7 +36,7 @@ const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
   providedIn: 'root',
 })
 export class ApiService {
-  constructor(private http: HttpClient) {}
+  constructor(private apollo: Apollo, private http: HttpClient) {}
 
   getActivityInstances(planId: string): Observable<CActivityInstanceMap> {
     return this.http
@@ -131,23 +135,13 @@ export class ApiService {
     );
   }
 
-  getAdaptations(): Observable<CAdaptationMap> {
-    return this.http
-      .get<SAdaptationMap>(`${adaptationServiceBaseUrl}/adaptations`)
-      .pipe(
-        map((sAdaptationMap: SAdaptationMap) => {
-          return Object.keys(sAdaptationMap).reduce(
-            (cAdaptationMap: CAdaptationMap, id: string) => {
-              cAdaptationMap[id] = {
-                ...sAdaptationMap[id],
-                id,
-              };
-              return cAdaptationMap;
-            },
-            {},
-          );
-        }),
-      );
+  getAdaptations(): Observable<Adaptation[]> {
+    return this.apollo
+      .query<{ adaptations: Adaptation[] }>({
+        fetchPolicy: 'no-cache',
+        query: gql.GET_ADAPTATIONS,
+      })
+      .pipe(map(({ data: { adaptations } }) => adaptations));
   }
 
   createActivityInstances(
@@ -160,22 +154,40 @@ export class ApiService {
     );
   }
 
-  createAdaptation(adaptation: SCreateAdaption): Observable<Id> {
-    const formData = new FormData();
-    formData.append('file', adaptation.file, adaptation.file.name);
-    formData.append('mission', adaptation.mission);
-    formData.append('name', adaptation.name);
-    formData.append('owner', adaptation.owner);
-    formData.append('version', adaptation.version);
-
-    return this.http.post<Id>(
-      `${adaptationServiceBaseUrl}/adaptations`,
-      formData,
-    );
+  createAdaptation(
+    adaptation: CreateAdaptation,
+  ): Observable<CreateAdaptationResponse> {
+    return this.apollo
+      .mutate<{ createAdaptation: CreateAdaptationResponse }>({
+        context: {
+          useMultipart: true,
+        },
+        fetchPolicy: 'no-cache',
+        mutation: gql.CREATE_ADAPTATION,
+        variables: {
+          file: adaptation.file,
+          mission: adaptation.mission,
+          name: adaptation.name,
+          owner: adaptation.owner,
+          version: adaptation.version,
+        },
+      })
+      .pipe(map(({ data: { createAdaptation } }) => createAdaptation));
   }
 
-  createPlan(plan: SPlan): Observable<Id> {
-    return this.http.post<Id>(`${planServiceBaseUrl}/plans`, plan);
+  createPlan(plan: CreatePlan): Observable<CreatePlanResponse> {
+    return this.apollo
+      .mutate<{ createPlan: CreatePlanResponse }>({
+        fetchPolicy: 'no-cache',
+        mutation: gql.CREATE_PLAN,
+        variables: {
+          adaptationId: plan.adaptationId,
+          endTimestamp: plan.endTimestamp,
+          name: plan.name,
+          startTimestamp: plan.startTimestamp,
+        },
+      })
+      .pipe(map(({ data: { createPlan } }) => createPlan));
   }
 
   deleteActivityInstance(
@@ -187,30 +199,36 @@ export class ApiService {
     );
   }
 
-  deleteAdaptation(id: string): Observable<{}> {
-    return this.http.delete(`${adaptationServiceBaseUrl}/adaptations/${id}`);
+  deleteAdaptation(id: string): Observable<DeleteAdaptationResponse> {
+    return this.apollo
+      .mutate<{ deleteAdaptation: DeleteAdaptationResponse }>({
+        fetchPolicy: 'no-cache',
+        mutation: gql.DELETE_ADAPTATION,
+        variables: { id },
+      })
+      .pipe(map(({ data: { deleteAdaptation } }) => deleteAdaptation));
   }
 
-  deletePlan(id: string): Observable<{}> {
-    return this.http.delete(`${planServiceBaseUrl}/plans/${id}`);
+  deletePlan(id: string): Observable<DeletePlanResponse> {
+    return this.apollo
+      .mutate<{ deletePlan: DeletePlanResponse }>({
+        fetchPolicy: 'no-cache',
+        mutation: gql.DELETE_PLAN,
+        variables: { id },
+      })
+      .pipe(map(({ data: { deletePlan } }) => deletePlan));
   }
 
-  getPlans(): Observable<CPlanMap> {
-    return this.http.get<SPlanMap>(`${planServiceBaseUrl}/plans`).pipe(
-      map((sPlanMap: SPlanMap) => {
-        return Object.keys(sPlanMap).reduce(
-          (cPlanMap: CPlanMap, id: string) => {
-            cPlanMap[id] = {
-              ...omit(sPlanMap[id], 'activityInstances'),
-              activityInstanceIds: Object.keys(sPlanMap[id].activityInstances),
-              id,
-            };
-            return cPlanMap;
-          },
-          {},
-        );
-      }),
-    );
+  getPlansAndAdaptations(): Observable<{
+    adaptations: Adaptation[];
+    plans: Plan[];
+  }> {
+    return this.apollo
+      .query<{ adaptations: Adaptation[]; plans: Plan[] }>({
+        fetchPolicy: 'no-cache',
+        query: gql.GET_PLANS_AND_ADAPTATIONS,
+      })
+      .pipe(map(({ data }) => data));
   }
 
   getPlan(planId: string): Observable<CPlan> {
@@ -227,7 +245,6 @@ export class ApiService {
 
   login(username: string, password: string): Observable<string> {
     return new Observable((o: Observer<string>) => {
-      // TODO.
       if (username === 'testuser' && password === '123456') {
         o.next('Login success');
         o.complete();
@@ -239,14 +256,12 @@ export class ApiService {
 
   logout(): Observable<string> {
     return new Observable((o: Observer<string>) => {
-      // TODO.
       o.next('Logout success');
       o.complete();
     });
   }
 
   simulationRun(): Observable<StringTMap<Band>> {
-    // TODO.
     return this.http
       .get<SimulationResults>(`./assets/simulation-results.json`)
       .pipe(

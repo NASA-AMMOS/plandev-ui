@@ -14,6 +14,9 @@ import { StoreRouterConnectingModule } from '@ngrx/router-store';
 import { select, Store, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { AngularSplitModule } from 'angular-split';
+import { ApolloModule, APOLLO_OPTIONS } from 'apollo-angular';
+import { HttpLink, HttpLinkModule } from 'apollo-angular-link-http';
+import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ToastrModule } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
@@ -103,6 +106,8 @@ export class AppComponent implements OnDestroy {
     BrowserAnimationsModule,
     HttpClientModule,
     AngularSplitModule.forRoot(),
+    ApolloModule,
+    HttpLinkModule,
     ToastrModule.forRoot({
       countDuplicates: true,
       maxOpened: 4,
@@ -135,6 +140,18 @@ export class AppComponent implements OnDestroy {
     MaterialModule,
     ContainersModule,
     TooltipModule,
+  ],
+  providers: [
+    {
+      deps: [HttpLink],
+      provide: APOLLO_OPTIONS,
+      useFactory: (httpLink: HttpLink) => ({
+        cache: new InMemoryCache(),
+        link: httpLink.create({
+          uri: environment.aerieApolloServerUrl,
+        }),
+      }),
+    },
   ],
 })
 export class AppModule {}

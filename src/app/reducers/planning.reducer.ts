@@ -1,14 +1,15 @@
 import { createReducer, on } from '@ngrx/store';
+import keyBy from 'lodash-es/keyBy';
 import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
 import { getUnixEpochTime } from '../functions';
 import {
+  Adaptation,
   CActivityInstanceMap,
   CActivityInstanceParameterMap,
   CActivityTypeMap,
-  CAdaptationMap,
   CPlan,
-  CPlanMap,
+  Plan,
   StringTMap,
   TimeRange,
 } from '../types';
@@ -16,9 +17,9 @@ import {
 export interface PlanningState {
   activityInstances: CActivityInstanceMap | null;
   activityTypes: CActivityTypeMap | null;
-  adaptations: CAdaptationMap | null;
+  adaptations: StringTMap<Adaptation> | null;
   createActivityInstanceError: string | null;
-  plans: CPlanMap | null;
+  plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: CPlan | null;
   updateActivityInstanceError: string | null;
@@ -70,9 +71,8 @@ export const reducer = createReducer(
     ...state,
     adaptations: {
       ...state.adaptations,
-      [action.id]: {
-        ...omit(action.adaptation, 'file'),
-        id: action.id,
+      [action.adaptation.id]: {
+        ...action.adaptation,
       },
     },
   })),
@@ -80,10 +80,8 @@ export const reducer = createReducer(
     ...state,
     plans: {
       ...state.plans,
-      [action.id]: {
-        ...omit(action.plan, 'activityInstances'),
-        activityInstanceIds: [],
-        id: action.id,
+      [action.plan.id]: {
+        ...action.plan,
       },
     },
   })),
@@ -95,13 +93,21 @@ export const reducer = createReducer(
         ? null
         : state.selectedActivityInstanceId,
   })),
-  on(PlanningActions.deleteAdaptationSuccess, (state, action) => ({
+  on(PlanningActions.deleteAdaptationSuccess, (state, { id }) => ({
     ...state,
-    adaptations: omit(state.adaptations, action.id),
+    adaptations: omit(state.adaptations, id),
   })),
-  on(PlanningActions.deletePlanSuccess, (state, action) => ({
+  on(PlanningActions.deletePlanSuccess, (state, { id }) => ({
     ...state,
-    plans: omit(state.plans, action.id),
+    plans: omit(state.plans, id),
+  })),
+  on(PlanningActions.getAdaptationsSuccess, (state, { adaptations }) => ({
+    ...state,
+    adaptations: keyBy(adaptations, 'id'),
+  })),
+  on(PlanningActions.getPlansSuccess, (state, { plans }) => ({
+    ...state,
+    plans: keyBy(plans, 'id'),
   })),
   on(PlanningActions.restoreViewTimeRange, state => ({
     ...state,
@@ -113,14 +119,6 @@ export const reducer = createReducer(
   on(PlanningActions.setActivityInstances, (state, { activityInstances }) => ({
     ...state,
     activityInstances,
-  })),
-  on(PlanningActions.setAdaptations, (state, { adaptations }) => ({
-    ...state,
-    adaptations,
-  })),
-  on(PlanningActions.setPlans, (state, { plans }) => ({
-    ...state,
-    plans,
   })),
   on(
     PlanningActions.setSelectedActivityInstanceId,

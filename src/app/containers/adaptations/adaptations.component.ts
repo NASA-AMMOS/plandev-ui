@@ -26,7 +26,7 @@ import {
 } from '../../components';
 import { MaterialModule } from '../../material';
 import { getAdaptations } from '../../selectors';
-import { CAdaptation, SCreateAdaption } from '../../types';
+import { Adaptation, CreateAdaptation } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +35,7 @@ import { CAdaptation, SCreateAdaption } from '../../types';
   templateUrl: './adaptations.component.html',
 })
 export class AdaptationsComponent implements OnDestroy {
-  adaptations: CAdaptation[] | null = null;
+  adaptations: Adaptation[] | null = null;
   createAdaptationForm: FormGroup;
 
   private subs = new SubSink();
@@ -86,7 +86,7 @@ export class AdaptationsComponent implements OnDestroy {
 
   onSubmit() {
     if (this.createAdaptationForm.valid) {
-      const adaptation: SCreateAdaption = {
+      const adaptation: CreateAdaptation = {
         ...this.createAdaptationForm.value,
       };
       this.store.dispatch(PlanningActions.createAdaptation({ adaptation }));

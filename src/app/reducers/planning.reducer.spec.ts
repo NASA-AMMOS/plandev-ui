@@ -1,19 +1,18 @@
+import keyBy from 'lodash-es/keyBy';
 import { PlanningActions } from '../actions';
 import {
   activityInstanceId,
+  adaptation,
   adaptationId,
+  adaptations,
   cActivityInstanceMap,
   cActivityTypeMap,
-  cAdaptation,
-  cAdaptationMap,
   cPlan,
-  cPlanMap,
+  plan,
   planId,
+  plans,
   sActivityInstance,
-  sAdaptation,
-  sPlan,
 } from '../mocks';
-import { SCreateAdaption, SPlan } from '../types';
 import { initialState, PlanningState, reducer } from './planning.reducer';
 
 describe('planning reducer', () => {
@@ -50,22 +49,17 @@ describe('planning reducer', () => {
 
   describe('createAdaptationSuccess', () => {
     it('should set adaptations', () => {
-      const adaptation: SCreateAdaption = {
-        ...sAdaptation,
-        file: new File([], ''),
-      };
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.createAdaptationSuccess({
           adaptation,
-          id: adaptationId,
         }),
       );
       expect(state).toEqual({
         ...initialState,
         adaptations: {
           [adaptationId]: {
-            ...cAdaptation,
+            ...adaptation,
           },
         },
       });
@@ -74,19 +68,15 @@ describe('planning reducer', () => {
 
   describe('createPlanSuccess', () => {
     it('should set plan', () => {
-      const plan: SPlan = {
-        ...sPlan,
-      };
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.createPlanSuccess({ id: planId, plan }),
+        PlanningActions.createPlanSuccess({ plan }),
       );
       expect(state).toEqual({
         ...initialState,
         plans: {
           [planId]: {
-            ...cPlan,
-            activityInstanceIds: [],
+            ...plan,
           },
         },
       });
@@ -129,8 +119,8 @@ describe('planning reducer', () => {
     it('should delete an adaptation', () => {
       let state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.setAdaptations({
-          adaptations: cAdaptationMap,
+        PlanningActions.getAdaptationsSuccess({
+          adaptations,
         }),
       );
       state = reducer(
@@ -148,8 +138,8 @@ describe('planning reducer', () => {
     it('should delete a plan', () => {
       let state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.setPlans({
-          plans: cPlanMap,
+        PlanningActions.getPlansSuccess({
+          plans,
         }),
       );
       state = reducer(state, PlanningActions.deletePlanSuccess({ id: planId }));
@@ -176,32 +166,32 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('setAdaptations', () => {
+  describe('getAdaptationsSuccess', () => {
     it('should set adaptations', () => {
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.setAdaptations({
-          adaptations: cAdaptationMap,
+        PlanningActions.getAdaptationsSuccess({
+          adaptations,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        adaptations: cAdaptationMap,
+        adaptations: keyBy(adaptations, 'id'),
       });
     });
   });
 
-  describe('setPlans', () => {
+  describe('getPlansSuccess', () => {
     it('should set plans', () => {
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.setPlans({
-          plans: cPlanMap,
+        PlanningActions.getPlansSuccess({
+          plans,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        plans: cPlanMap,
+        plans: keyBy(plans, 'id'),
       });
     });
   });

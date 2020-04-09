@@ -14,12 +14,12 @@ import {
 } from '../actions';
 import { RouterState } from '../app-routing.module';
 import {
+  adaptations,
   cActivityInstanceMap,
   cActivityTypeMap,
-  cAdaptationMap,
   cPlan,
-  cPlanMap,
   planId,
+  plans,
 } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
 import { NavEffects } from './nav.effects';
@@ -101,7 +101,9 @@ describe('nav effects', () => {
         actions = hot('-a', { a: action });
         expectObservable(effects.navAdaptations).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
-          c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
+          c: PlanningActions.getAdaptationsSuccess({
+            adaptations,
+          }),
           d: AppActions.setLoading({ loading: false }),
         });
       });
@@ -133,32 +135,27 @@ describe('nav effects', () => {
         actions = hot('-a', { a: action });
         expectObservable(effects.navPlans).toBe('-(bcde)', {
           b: AppActions.setLoading({ loading: true }),
-          c: PlanningActions.setAdaptations({ adaptations: cAdaptationMap }),
-          d: PlanningActions.setPlans({ plans: cPlanMap }),
+          c: PlanningActions.getPlansSuccess({ plans }),
+          d: PlanningActions.getAdaptationsSuccess({ adaptations }),
           e: AppActions.setLoading({ loading: false }),
         });
       });
     });
 
-    it('should dispatch the appropriate actions when navigating to /plans and getAdaptations and getPlans fails', () => {
+    it('should dispatch the appropriate actions when navigating to /plans and getPlansAndAdaptations fails', () => {
       testScheduler.run(({ cold, hot, expectObservable }) => {
         const action = getRouterNavigatedAction('plans');
         actions = hot('-a', { a: action });
-        spyOn(apiService, 'getAdaptations').and.returnValue(
+        spyOn(apiService, 'getPlansAndAdaptations').and.returnValue(
           cold('#|', null, ''),
         );
-        spyOn(apiService, 'getPlans').and.returnValue(cold('#|', null, ''));
-        expectObservable(effects.navPlans).toBe('-(bcde)', {
+        expectObservable(effects.navPlans).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
-            message: 'Fetch adaptations failed',
+            message: 'Fetch plans and adaptations failed',
             toastType: 'error',
           }),
-          d: ToastActions.showToast({
-            message: 'Fetch plans failed',
-            toastType: 'error',
-          }),
-          e: AppActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });

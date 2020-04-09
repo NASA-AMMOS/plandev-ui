@@ -6,7 +6,7 @@ const windowBaseUrl = `http://localhost`;
 
 export const environment = {
   adaptationServiceBaseUrl: `${windowBaseUrl}:27182`,
-  aerieApolloServerUrl: 'https://aerie-develop.jpl.nasa.gov:27184/',
+  aerieApolloServerUrl: `${windowBaseUrl}:27184`,
   planServiceBaseUrl: `${windowBaseUrl}:27183`,
   production: false,
   vsCodeServerUrl: `http://100.64.92.85:8081/`,

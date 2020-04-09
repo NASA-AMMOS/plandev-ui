@@ -1,14 +1,14 @@
 import { createAction, props } from '@ngrx/store';
 import {
+  Adaptation,
   CActivityInstance,
   CActivityInstanceMap,
   CActivityTypeMap,
-  CAdaptationMap,
   CPlan,
-  CPlanMap,
+  CreateAdaptation,
+  CreatePlan,
+  Plan,
   SActivityInstance,
-  SCreateAdaption,
-  SPlan,
   TimeRange,
 } from '../types';
 
@@ -33,22 +33,22 @@ export const createActivityInstanceSuccess = createAction(
 
 export const createAdaptation = createAction(
   '[planning] createAdaptation',
-  props<{ adaptation: SCreateAdaption }>(),
+  props<{ adaptation: CreateAdaptation }>(),
 );
 
 export const createAdaptationSuccess = createAction(
   '[planning] createAdaptationSuccess',
-  props<{ id: string; adaptation: SCreateAdaption }>(),
+  props<{ adaptation: Adaptation }>(),
 );
 
 export const createPlan = createAction(
   '[planning] createPlan',
-  props<{ plan: SPlan }>(),
+  props<{ plan: CreatePlan }>(),
 );
 
 export const createPlanSuccess = createAction(
   '[planning] createPlanSuccess',
-  props<{ id: string; plan: SPlan }>(),
+  props<{ plan: Plan }>(),
 );
 
 export const deleteActivityInstance = createAction(
@@ -81,6 +81,16 @@ export const deletePlanSuccess = createAction(
   props<{ id: string }>(),
 );
 
+export const getAdaptationsSuccess = createAction(
+  '[planning] getAdaptationsSuccess',
+  props<{ adaptations: Adaptation[] }>(),
+);
+
+export const getPlansSuccess = createAction(
+  '[planning] getPlansSuccess',
+  props<{ plans: Plan[] }>(),
+);
+
 export const restoreViewTimeRange = createAction(
   '[timeline] restoreViewTimeRange',
 );
@@ -88,16 +98,6 @@ export const restoreViewTimeRange = createAction(
 export const setActivityInstances = createAction(
   '[planning] setActivityInstances',
   props<{ planId: string; activityInstances: CActivityInstanceMap }>(),
-);
-
-export const setAdaptations = createAction(
-  '[planning] setAdaptations',
-  props<{ adaptations: CAdaptationMap }>(),
-);
-
-export const setPlans = createAction(
-  '[planning] setPlans',
-  props<{ plans: CPlanMap }>(),
 );
 
 export const setSelectedActivityInstanceId = createAction(
