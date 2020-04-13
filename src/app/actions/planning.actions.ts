@@ -1,20 +1,19 @@
 import { createAction, props } from '@ngrx/store';
 import {
+  ActivityInstance,
   Adaptation,
-  CActivityInstance,
-  CActivityInstanceMap,
-  CActivityTypeMap,
-  CPlan,
+  CreateActivityInstance,
   CreateAdaptation,
   CreatePlan,
   Plan,
-  SActivityInstance,
+  PlanDetail,
   TimeRange,
+  UpdateActivityInstance,
 } from '../types';
 
 export const createActivityInstance = createAction(
   '[planning] createActivityInstance',
-  props<{ planId: string; activityInstance: SActivityInstance }>(),
+  props<{ activityInstance: CreateActivityInstance; planId: string }>(),
 );
 
 export const createActivityInstanceFailure = createAction(
@@ -24,11 +23,7 @@ export const createActivityInstanceFailure = createAction(
 
 export const createActivityInstanceSuccess = createAction(
   '[planning] createActivityInstanceSuccess',
-  props<{
-    planId: string;
-    activityInstanceId: string;
-    activityInstance: SActivityInstance;
-  }>(),
+  props<{ activityInstance: ActivityInstance }>(),
 );
 
 export const createAdaptation = createAction(
@@ -86,6 +81,11 @@ export const getAdaptationsSuccess = createAction(
   props<{ adaptations: Adaptation[] }>(),
 );
 
+export const getPlanDetailSuccess = createAction(
+  '[planning] getPlanDetailSuccess',
+  props<{ plan: PlanDetail }>(),
+);
+
 export const getPlansSuccess = createAction(
   '[planning] getPlansSuccess',
   props<{ plans: Plan[] }>(),
@@ -95,30 +95,19 @@ export const restoreViewTimeRange = createAction(
   '[timeline] restoreViewTimeRange',
 );
 
-export const setActivityInstances = createAction(
-  '[planning] setActivityInstances',
-  props<{ planId: string; activityInstances: CActivityInstanceMap }>(),
-);
-
 export const setSelectedActivityInstanceId = createAction(
   '[planning] setSelectedActivityInstanceId',
   props<{
-    selectedActivityInstanceId: string | null;
     keepSelected?: boolean;
+    selectedActivityInstanceId: string | null;
   }>(),
-);
-
-export const setSelectedPlanAndActivityTypes = createAction(
-  '[planning] setSelectedPlanAndActivityTypes',
-  props<{ selectedPlan: CPlan; activityTypes: CActivityTypeMap }>(),
 );
 
 export const updateActivityInstance = createAction(
   '[planning] updateActivityInstance',
   props<{
+    activityInstance: UpdateActivityInstance;
     planId: string;
-    activityInstanceId: string;
-    activityInstance: Partial<SActivityInstance>;
   }>(),
 );
 
@@ -127,17 +116,9 @@ export const updateActivityInstanceFailure = createAction(
   props<{ errorMsg: string }>(),
 );
 
-export const updateActivityInstanceProps = createAction(
-  '[planning] updateActivityInstanceProps',
-  props<{ activityInstanceId: string; props: Partial<CActivityInstance> }>(),
-);
-
 export const updateActivityInstanceSuccess = createAction(
   '[planning] updateActivityInstanceSuccess',
-  props<{
-    activityInstanceId: string;
-    activityInstance: Partial<SActivityInstance>;
-  }>(),
+  props<{ activityInstance: UpdateActivityInstance }>(),
 );
 
 export const updateViewTimeRange = createAction(

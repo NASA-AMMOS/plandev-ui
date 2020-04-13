@@ -10,7 +10,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import { CActivityType } from '../../types';
+import { ActivityType } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,15 +20,15 @@ import { CActivityType } from '../../types';
 })
 export class ActivityTypeListComponent implements OnChanges {
   @Input()
-  activityTypes: CActivityType[] = [];
+  activityTypes: ActivityType[] = [];
 
   @Output()
-  selectActivityType: EventEmitter<CActivityType> = new EventEmitter<
-    CActivityType
+  selectActivityType: EventEmitter<ActivityType> = new EventEmitter<
+    ActivityType
   >();
 
   draggable = false;
-  filteredActivityTypes: CActivityType[] = [];
+  filteredActivityTypes: ActivityType[] = [];
   searchText = '';
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -44,7 +44,7 @@ export class ActivityTypeListComponent implements OnChanges {
     this.searchText = text;
   }
 
-  onActivityTypeSelect(activityType: CActivityType): void {
+  onActivityTypeSelect(activityType: ActivityType): void {
     this.selectActivityType.emit(activityType);
   }
 
@@ -57,7 +57,7 @@ export class ActivityTypeListComponent implements OnChanges {
     this.draggable = false;
   }
 
-  onDragStart(event: DragEvent, activityType: CActivityType): void {
+  onDragStart(event: DragEvent, activityType: ActivityType): void {
     event.dataTransfer.setData('activityType', JSON.stringify(activityType));
   }
 

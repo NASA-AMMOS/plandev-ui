@@ -4,24 +4,22 @@ import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
 import { getUnixEpochTime } from '../functions';
 import {
+  ActivityInstance,
+  ActivityType,
   Adaptation,
-  CActivityInstanceMap,
-  CActivityInstanceParameterMap,
-  CActivityTypeMap,
-  CPlan,
   Plan,
   StringTMap,
   TimeRange,
 } from '../types';
 
 export interface PlanningState {
-  activityInstances: CActivityInstanceMap | null;
-  activityTypes: CActivityTypeMap | null;
+  activityInstances: StringTMap<ActivityInstance> | null;
+  activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
   createActivityInstanceError: string | null;
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
-  selectedPlan: CPlan | null;
+  selectedPlan: Plan | null;
   updateActivityInstanceError: string | null;
   viewTimeRange: TimeRange;
 }
@@ -52,19 +50,9 @@ export const reducer = createReducer(
     ...state,
     activityInstances: {
       ...state.activityInstances,
-      [action.activityInstanceId]: {
+      [action.activityInstance.id]: {
         ...action.activityInstance,
-        id: action.activityInstanceId,
-        parameters: toActivityInstanceParameterMap(
-          action.activityInstance.parameters,
-        ),
       },
-    },
-    selectedPlan: {
-      ...state.selectedPlan,
-      activityInstanceIds: state.selectedPlan.activityInstanceIds.concat(
-        action.activityInstanceId,
-      ),
     },
   })),
   on(PlanningActions.createAdaptationSuccess, (state, action) => ({
@@ -105,6 +93,16 @@ export const reducer = createReducer(
     ...state,
     adaptations: keyBy(adaptations, 'id'),
   })),
+  on(PlanningActions.getPlanDetailSuccess, (state, { plan }) => ({
+    ...state,
+    activityInstances: keyBy(plan.activityInstances, 'id'),
+    activityTypes: keyBy(plan.adaptation.activityTypes, 'name'),
+    selectedPlan: omit(plan, ['activityInstances', 'adaptation']),
+    viewTimeRange: {
+      end: getUnixEpochTime(plan.endTimestamp),
+      start: getUnixEpochTime(plan.startTimestamp),
+    },
+  })),
   on(PlanningActions.getPlansSuccess, (state, { plans }) => ({
     ...state,
     plans: keyBy(plans, 'id'),
@@ -116,28 +114,12 @@ export const reducer = createReducer(
       start: getUnixEpochTime(state.selectedPlan.startTimestamp),
     },
   })),
-  on(PlanningActions.setActivityInstances, (state, { activityInstances }) => ({
-    ...state,
-    activityInstances,
-  })),
   on(
     PlanningActions.setSelectedActivityInstanceId,
     (state, { keepSelected, selectedActivityInstanceId: id }) => ({
       ...state,
       selectedActivityInstanceId:
         !keepSelected && state.selectedActivityInstanceId === id ? null : id,
-    }),
-  ),
-  on(
-    PlanningActions.setSelectedPlanAndActivityTypes,
-    (state, { activityTypes, selectedPlan }) => ({
-      ...state,
-      activityTypes,
-      selectedPlan,
-      viewTimeRange: {
-        end: getUnixEpochTime(selectedPlan.endTimestamp),
-        start: getUnixEpochTime(selectedPlan.startTimestamp),
-      },
     }),
   ),
   on(PlanningActions.updateActivityInstance, state => ({
@@ -148,26 +130,13 @@ export const reducer = createReducer(
     ...state,
     updateActivityInstanceError: action.errorMsg,
   })),
-  on(PlanningActions.updateActivityInstanceProps, (state, action) => ({
-    ...state,
-    activityInstances: {
-      ...state.activityInstances,
-      [action.activityInstanceId]: {
-        ...state.activityInstances[action.activityInstanceId],
-        ...action.props,
-      },
-    },
-  })),
   on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
       ...state.activityInstances,
-      [action.activityInstanceId]: {
-        ...state.activityInstances[action.activityInstanceId],
+      [action.activityInstance.id]: {
+        ...state.activityInstances[action.activityInstance.id],
         ...action.activityInstance,
-        parameters: action.activityInstance.parameters
-          ? toActivityInstanceParameterMap(action.activityInstance.parameters)
-          : state.activityInstances[action.activityInstanceId].parameters,
       },
     },
   })),
@@ -176,21 +145,3 @@ export const reducer = createReducer(
     viewTimeRange,
   })),
 );
-
-function toActivityInstanceParameterMap(
-  parameters: StringTMap<any> = {},
-): CActivityInstanceParameterMap {
-  return Object.keys(parameters).reduce(
-    (
-      cActivityInstanceParameterMap: CActivityInstanceParameterMap,
-      name: string,
-    ) => {
-      cActivityInstanceParameterMap[name] = {
-        name,
-        value: parameters[name],
-      };
-      return cActivityInstanceParameterMap;
-    },
-    {},
-  );
-}

@@ -1,19 +1,11 @@
-import { CActivityType, CActivityTypeMap } from '../types';
+import { ActivityType } from '../types';
 
-export const cActivityType: CActivityType = {
+export const activityType: ActivityType = {
   name: 'PeelBanana',
   parameters: [
-    { default: 'fromStem', name: 'peelDirection', type: 'string' },
-    { default: 2.1, name: 'peelAmount', type: 'double' },
+    { default: 'fromStem', name: 'peelDirection', schema: { type: 'string' } },
+    { default: 2.1, name: 'peelAmount', schema: { type: 'double' } },
   ],
 };
 
-export const cActivityTypeMap: CActivityTypeMap = {
-  PeelBanana: {
-    name: 'PeelBanana',
-    parameters: [
-      { default: 'fromStem', name: 'peelDirection', type: 'string' },
-      { default: 2.1, name: 'peelAmount', type: 'double' },
-    ],
-  },
-};
+export const activityTypes: ActivityType[] = [activityType];

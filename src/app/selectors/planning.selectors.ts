@@ -2,13 +2,10 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { compare, getUnixEpochTime } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
+  ActivityInstance,
+  ActivityType,
   Adaptation,
   Band,
-  CActivityInstance,
-  CActivityInstanceMap,
-  CActivityType,
-  CActivityTypeMap,
-  CPlan,
   Plan,
   SubBandActivity,
   TimeRange,
@@ -18,16 +15,11 @@ export const getPlanningState = createFeatureSelector<PlanningState>(
   'planning',
 );
 
-export const getActivityInstancesMap = createSelector(
-  getPlanningState,
-  (state: PlanningState): CActivityInstanceMap => state.activityInstances,
-);
-
 export const getActivityInstances = createSelector(
-  getActivityInstancesMap,
-  (activityInstanceMap: CActivityInstanceMap | null) =>
-    activityInstanceMap
-      ? Object.values(activityInstanceMap).sort((a, b) =>
+  getPlanningState,
+  (state: PlanningState) =>
+    state.activityInstances
+      ? Object.values(state.activityInstances).sort((a, b) =>
           compare(
             getUnixEpochTime(a.startTimestamp),
             getUnixEpochTime(b.startTimestamp),
@@ -46,7 +38,7 @@ export const getScheduleBands = createSelector(
   getActivityInstances,
   getSelectedActivityInstanceId,
   (
-    activityInstances: CActivityInstance[],
+    activityInstances: ActivityInstance[],
     selectedActivityInstanceId: string | null,
   ): Band[] => [
     {
@@ -81,44 +73,10 @@ export const getScheduleBands = createSelector(
   ],
 );
 
-export const getActivityInstancesForSelectedPlan = createSelector(
-  getPlanningState,
-  (state: PlanningState): CActivityInstance[] | null => {
-    if (state.selectedPlan && state.activityInstances) {
-      const activityInstances = state.selectedPlan.activityInstanceIds.reduce(
-        (instances, id) => {
-          const activityInstance = state.activityInstances[id];
-          if (activityInstance) {
-            instances.push(activityInstance);
-          }
-          return instances;
-        },
-        [],
-      );
-
-      const sortedActivityInstances = activityInstances.sort((a, b) =>
-        compare(
-          getUnixEpochTime(a.startTimestamp),
-          getUnixEpochTime(b.startTimestamp),
-          true,
-        ),
-      );
-
-      return sortedActivityInstances;
-    }
-    return null;
-  },
-);
-
 export const getActivityTypes = createSelector(
   getPlanningState,
-  (state: PlanningState): CActivityType[] | null =>
+  (state: PlanningState): ActivityType[] | null =>
     state.activityTypes ? Object.values(state.activityTypes) : null,
-);
-
-export const getActivityTypesMap = createSelector(
-  getPlanningState,
-  (state: PlanningState): CActivityTypeMap | null => state.activityTypes,
 );
 
 export const getAdaptations = createSelector(
@@ -139,18 +97,17 @@ export const getPlans = createSelector(
 );
 
 export const getSelectedActivityInstance = createSelector(
-  getActivityInstancesMap,
+  getActivityInstances,
   getSelectedActivityInstanceId,
   (
-    activityInstances: CActivityInstanceMap | null,
+    activityInstances: ActivityInstance[],
     selectedActivityInstanceId: string | null,
   ) => {
-    if (
-      activityInstances &&
-      selectedActivityInstanceId &&
-      activityInstances[selectedActivityInstanceId]
-    ) {
-      return activityInstances[selectedActivityInstanceId];
+    if (selectedActivityInstanceId) {
+      const activityInstance = activityInstances.find(
+        ({ id }) => id === selectedActivityInstanceId,
+      );
+      return activityInstance || null;
     }
     return null;
   },
@@ -158,12 +115,12 @@ export const getSelectedActivityInstance = createSelector(
 
 export const getSelectedPlan = createSelector(
   getPlanningState,
-  (state: PlanningState): CPlan | null => state.selectedPlan,
+  (state: PlanningState): Plan | null => state.selectedPlan,
 );
 
 export const getMaxTimeRange = createSelector(
   getSelectedPlan,
-  (plan: CPlan | null): TimeRange => {
+  (plan: Plan | null): TimeRange => {
     if (plan) {
       return {
         end: getUnixEpochTime(plan.endTimestamp),

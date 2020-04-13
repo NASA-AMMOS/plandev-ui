@@ -13,9 +13,10 @@ import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
 import {
   Band,
+  CreateActivityInstance,
   CreatePoint,
   DeletePoint,
-  SActivityInstance,
+  SavePoint,
   SelectPoint,
   TimeRange,
   UpdatePoint,
@@ -54,8 +55,8 @@ export class TimelineComponent {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
       const activityType = event.activityType;
-      const activityInstance: SActivityInstance = {
-        parameters: {}, // TODO. Add parameters here?
+      const activityInstance: CreateActivityInstance = {
+        parameters: [],
         startTimestamp: event.startTimestamp,
         type: activityType.name,
       };
@@ -77,13 +78,12 @@ export class TimelineComponent {
     }
   }
 
-  onSavePoint(event: UpdatePoint): void {
+  onSavePoint(event: SavePoint): void {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
       this.store.dispatch(
         PlanningActions.updateActivityInstance({
-          activityInstance: event.value,
-          activityInstanceId: event.id,
+          activityInstance: { ...event.value, id: event.id },
           planId,
         }),
       );
@@ -104,9 +104,8 @@ export class TimelineComponent {
   onUpdatePoint(event: UpdatePoint): void {
     if (event.type === 'activity') {
       this.store.dispatch(
-        PlanningActions.updateActivityInstanceProps({
-          activityInstanceId: event.id,
-          props: event.value,
+        PlanningActions.updateActivityInstanceSuccess({
+          activityInstance: { ...event.value, id: event.id },
         }),
       );
     }

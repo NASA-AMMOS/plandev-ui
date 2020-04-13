@@ -1,17 +1,19 @@
 import keyBy from 'lodash-es/keyBy';
+import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
+import { getUnixEpochTime } from '../functions';
 import {
+  activityInstance,
   activityInstanceId,
+  activityInstances,
+  activityTypes,
   adaptation,
   adaptationId,
   adaptations,
-  cActivityInstanceMap,
-  cActivityTypeMap,
-  cPlan,
   plan,
+  planDetail,
   planId,
   plans,
-  sActivityInstance,
 } from '../mocks';
 import { initialState, PlanningState, reducer } from './planning.reducer';
 
@@ -21,12 +23,31 @@ describe('planning reducer', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.createActivityInstance({
-          activityInstance: sActivityInstance,
+          activityInstance,
           planId: '42',
         }),
       );
       expect(state).toEqual({
         ...initialState,
+      });
+    });
+  });
+
+  describe('createActivityInstanceSuccess', () => {
+    it('should set the new activity instance', () => {
+      const state: PlanningState = reducer(
+        { ...initialState },
+        PlanningActions.createActivityInstanceSuccess({
+          activityInstance,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        activityInstances: {
+          [activityInstanceId]: {
+            ...activityInstance,
+          },
+        },
       });
     });
   });
@@ -85,24 +106,11 @@ describe('planning reducer', () => {
 
   describe('deleteActivityInstanceSuccess', () => {
     it('should delete an activity instance', () => {
-      let state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setActivityInstances({
-          activityInstances: cActivityInstanceMap,
-          planId,
-        }),
-      );
-      state = reducer(
-        state,
-        PlanningActions.setSelectedActivityInstanceId({
-          selectedActivityInstanceId: activityInstanceId,
-        }),
-      );
-      expect(state).toEqual({
+      let state: PlanningState = {
         ...initialState,
-        activityInstances: cActivityInstanceMap,
+        activityInstances: keyBy(activityInstances, 'id'),
         selectedActivityInstanceId: activityInstanceId,
-      });
+      };
       state = reducer(
         state,
         PlanningActions.deleteActivityInstanceSuccess({ activityInstanceId }),
@@ -112,6 +120,21 @@ describe('planning reducer', () => {
         activityInstances: {},
         selectedActivityInstanceId: null,
       });
+    });
+
+    it('should not delete an activity instance if the given activity instance id is wrong', () => {
+      const newInitialState: PlanningState = {
+        ...initialState,
+        activityInstances: keyBy(activityInstances, 'id'),
+        selectedActivityInstanceId: activityInstanceId,
+      };
+      const state = reducer(
+        newInitialState,
+        PlanningActions.deleteActivityInstanceSuccess({
+          activityInstanceId: '100000000',
+        }),
+      );
+      expect(state).toEqual(newInitialState);
     });
   });
 
@@ -150,22 +173,6 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('setActivityInstances', () => {
-    it('should set activityInstances', () => {
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setActivityInstances({
-          activityInstances: cActivityInstanceMap,
-          planId,
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        activityInstances: cActivityInstanceMap,
-      });
-    });
-  });
-
   describe('getAdaptationsSuccess', () => {
     it('should set adaptations', () => {
       const state: PlanningState = reducer(
@@ -192,6 +199,22 @@ describe('planning reducer', () => {
       expect(state).toEqual({
         ...initialState,
         plans: keyBy(plans, 'id'),
+      });
+    });
+  });
+
+  describe('restoreViewTimeRange', () => {
+    it('should restore the view time range', () => {
+      let state: PlanningState = {
+        ...initialState,
+        selectedPlan: plan,
+        viewTimeRange: { end: 100, start: 0 },
+      };
+      state = reducer(state, PlanningActions.restoreViewTimeRange());
+      expect(state).toEqual({
+        ...initialState,
+        selectedPlan: plan,
+        viewTimeRange: { end: 1577750410000, start: 1577750400000 },
       });
     });
   });
@@ -232,22 +255,22 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('setSelectedPlanAndActivityTypes', () => {
-    it('should set plans and activity types', () => {
+  describe('getPlanDetailSuccess', () => {
+    it('should set the plan detail', () => {
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.setSelectedPlanAndActivityTypes({
-          activityTypes: cActivityTypeMap,
-          selectedPlan: cPlan,
+        PlanningActions.getPlanDetailSuccess({
+          plan: planDetail,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        activityTypes: cActivityTypeMap,
-        selectedPlan: cPlan,
+        activityInstances: keyBy(activityInstances, 'id'),
+        activityTypes: keyBy(activityTypes, 'name'),
+        selectedPlan: omit(planDetail, ['activityInstances', 'adaptation']),
         viewTimeRange: {
-          end: 1577750410000,
-          start: 1577750400000,
+          end: getUnixEpochTime(planDetail.endTimestamp),
+          start: getUnixEpochTime(planDetail.startTimestamp),
         },
       });
     });
@@ -258,8 +281,7 @@ describe('planning reducer', () => {
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.updateActivityInstance({
-          activityInstance: sActivityInstance,
-          activityInstanceId: '42',
+          activityInstance,
           planId: '42',
         }),
       );
@@ -287,23 +309,43 @@ describe('planning reducer', () => {
 
   describe('updateActivityInstanceSuccess', () => {
     it('should update activity instances', () => {
-      let state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.setActivityInstances({
-          activityInstances: cActivityInstanceMap,
-          planId,
-        }),
-      );
+      let state: PlanningState = {
+        ...initialState,
+        activityInstances: keyBy(activityInstances, 'id'),
+      };
       state = reducer(
         state,
         PlanningActions.updateActivityInstanceSuccess({
-          activityInstance: sActivityInstance,
-          activityInstanceId,
+          activityInstance: {
+            ...activityInstance,
+            type: 'EatCake',
+          },
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        activityInstances: cActivityInstanceMap,
+        activityInstances: {
+          [activityInstanceId]: {
+            ...activityInstance,
+            type: 'EatCake',
+          },
+        },
+      });
+    });
+  });
+
+  describe('updateViewTimeRange', () => {
+    it('should update the view time range', () => {
+      const viewTimeRange = { end: 100, start: 0 };
+      const state: PlanningState = reducer(
+        { ...initialState },
+        PlanningActions.updateViewTimeRange({
+          viewTimeRange,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        viewTimeRange,
       });
     });
   });

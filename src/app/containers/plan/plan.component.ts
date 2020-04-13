@@ -31,9 +31,8 @@ import {
 } from '../../components';
 import { MaterialModule } from '../../material';
 import {
-  getActivityInstancesForSelectedPlan,
+  getActivityInstances,
   getActivityTypes,
-  getActivityTypesMap,
   getCreateActivityInstanceError,
   getMaxTimeRange,
   getScheduleBands,
@@ -44,13 +43,12 @@ import {
   getViewTimeRange,
 } from '../../selectors';
 import {
+  ActivityInstance,
+  ActivityType,
   Band,
-  CActivityInstance,
-  CActivityType,
-  CActivityTypeMap,
-  CPlan,
+  CreateActivityInstance,
   Panel,
-  SActivityInstance,
+  Plan,
   TimeRange,
   UpdateActivityInstance,
 } from '../../types';
@@ -66,9 +64,8 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   @ViewChild('verticalSplitAreas', { static: true })
   verticalSplitAreas: SplitComponent;
 
-  activityInstances: CActivityInstance[] | null = null;
-  activityTypes: CActivityType[] | null = null;
-  activityTypesMap: CActivityTypeMap | null = null;
+  activityInstances: ActivityInstance[] | null = null;
+  activityTypes: ActivityType[] | null = null;
   createActivityInstanceError: string | null = null;
   drawer = {
     activityDictionary: {
@@ -106,10 +103,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
       virtualSize: 33.3,
     },
   ];
-  plan: CPlan | null = null;
+  plan: Plan | null = null;
   scheduleBands: Band[];
-  selectedActivityInstance: CActivityInstance | null = null;
-  selectedActivityType: CActivityType | null = null;
+  selectedActivityInstance: ActivityInstance | null = null;
+  selectedActivityType: ActivityType | null = null;
   stateBands: Band[];
   updateActivityInstanceError: string | null = null;
   viewTimeRange: TimeRange;
@@ -124,7 +121,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   ) {
     this.subs.add(
       this.store
-        .pipe(select(getActivityInstancesForSelectedPlan))
+        .pipe(select(getActivityInstances))
         .subscribe(activityInstances => {
           this.activityInstances = activityInstances;
           this.cdRef.markForCheck();
@@ -133,12 +130,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.activityTypes = activityTypes;
         this.cdRef.markForCheck();
       }),
-      this.store
-        .pipe(select(getActivityTypesMap))
-        .subscribe(activityTypesMap => {
-          this.activityTypesMap = activityTypesMap;
-          this.cdRef.markForCheck();
-        }),
       this.store
         .pipe(select(getCreateActivityInstanceError))
         .subscribe(createActivityInstanceError => {
@@ -204,10 +195,10 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.showDrawerType('activityDictionary');
   }
 
-  onCreateActivityInstance(activityInstance: SActivityInstance): void {
+  onCreateActivityInstance(activityInstance: CreateActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
-      PlanningActions.createActivityInstance({ planId, activityInstance }),
+      PlanningActions.createActivityInstance({ activityInstance, planId }),
     );
   }
 
@@ -226,7 +217,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.store.dispatch(PlanningActions.restoreViewTimeRange());
   }
 
-  onSelectActivityInstance(activityInstance: CActivityInstance): void {
+  onSelectActivityInstance(activityInstance: ActivityInstance): void {
     this.store.dispatch(
       PlanningActions.setSelectedActivityInstanceId({
         selectedActivityInstanceId: activityInstance.id,
@@ -234,7 +225,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  onSelectActivityType(activityType: CActivityType): void {
+  onSelectActivityType(activityType: ActivityType): void {
     this.selectedActivityType = { ...activityType };
     this.showDrawerType('createActivityInstance');
   }
@@ -247,13 +238,11 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.store.dispatch(SimulationActions.run());
   }
 
-  onUpdateActivityInstance(update: UpdateActivityInstance): void {
+  onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
-    const { activityInstanceId, activityInstance } = update;
     this.store.dispatch(
       PlanningActions.updateActivityInstance({
         activityInstance,
-        activityInstanceId,
         planId,
       }),
     );

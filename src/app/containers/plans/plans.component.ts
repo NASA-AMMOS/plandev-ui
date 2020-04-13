@@ -29,7 +29,7 @@ import {
 } from '../../components';
 import { MaterialModule } from '../../material';
 import { getAdaptations, getPlans } from '../../selectors';
-import { Adaptation, Plan, SPlan } from '../../types';
+import { Adaptation, CreatePlan, Plan } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -102,7 +102,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
 
   onSubmit() {
     if (this.createPlanForm.valid) {
-      const plan: SPlan = { ...this.createPlanForm.value };
+      const plan: CreatePlan = { ...this.createPlanForm.value };
       this.store.dispatch(PlanningActions.createPlan({ plan }));
     }
   }

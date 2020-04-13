@@ -13,14 +13,7 @@ import {
   ToastActions,
 } from '../actions';
 import { RouterState } from '../app-routing.module';
-import {
-  adaptations,
-  cActivityInstanceMap,
-  cActivityTypeMap,
-  cPlan,
-  planId,
-  plans,
-} from '../mocks';
+import { adaptations, planDetail, planId, plans } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
 import { NavEffects } from './nav.effects';
 
@@ -170,25 +163,17 @@ describe('nav effects', () => {
           { id: planId },
         );
         actions = hot('-a', { a: action });
-        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
-          c: PlanningActions.setSelectedPlanAndActivityTypes({
-            activityTypes: cActivityTypeMap,
-            selectedPlan: cPlan,
+          c: PlanningActions.getPlanDetailSuccess({
+            plan: planDetail,
           }),
-          d: PlanningActions.setActivityInstances({
-            activityInstances: cActivityInstanceMap,
-            planId,
-          }),
-          e: AppActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });
 
-    it(`
-      should dispatch the appropriate actions when navigating to /plans/:id
-      and getPlanAndActivityTypes and getActivityInstances fails
-    `, () => {
+    it(`should dispatch the appropriate actions when navigating to /plans/:id and getPlanDetail fails`, () => {
       testScheduler.run(({ cold, hot, expectObservable }) => {
         const action = getRouterNavigatedAction(
           `plans/${planId}`,
@@ -196,23 +181,16 @@ describe('nav effects', () => {
           { id: planId },
         );
         actions = hot('-a', { a: action });
-        spyOn(apiService, 'getPlanAndActivityTypes').and.returnValue(
+        spyOn(apiService, 'getPlanDetail').and.returnValue(
           cold('#|', null, ''),
         );
-        spyOn(apiService, 'getActivityInstances').and.returnValue(
-          cold('#|', null, ''),
-        );
-        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
-            message: 'Fetch plan and activity types failed',
+            message: 'Fetch plan detail failed',
             toastType: 'error',
           }),
-          d: ToastActions.showToast({
-            message: 'Fetch activity instances failed',
-            toastType: 'error',
-          }),
-          e: AppActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });

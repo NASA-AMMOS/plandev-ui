@@ -29,7 +29,7 @@
     width: drawWidth + 'px'
   }"
 >
-  <ng-container *ngFor="let subBand of subBands; trackBy: trackBySubBands">
+  <ng-container *ngFor="let subBand of subBands">
     <app-activity-band
       *ngIf="subBand.type === 'activity'"
       [drawHeight]="drawHeight"

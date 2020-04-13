@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { contextMenu } from 'src/app/functions';
 import { MaterialModule } from '../../material';
-import { CPlan } from '../../types';
+import { Plan } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,7 +18,7 @@ import { CPlan } from '../../types';
 })
 export class PlansTableComponent {
   @Input()
-  plans: CPlan[] = [];
+  plans: Plan[] = [];
 
   @Output()
   deletePlan: EventEmitter<string> = new EventEmitter<string>();

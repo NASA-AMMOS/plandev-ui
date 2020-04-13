@@ -24,16 +24,14 @@ export class PlanningEffects {
           this.apiService
             .createActivityInstances(planId, [activityInstance])
             .pipe(
-              switchMap(([id]) => {
+              switchMap(({ ids: [id] }) => {
                 return [
                   ToastActions.showToast({
                     message: 'Activity instance created',
                     toastType: 'success',
                   }),
                   PlanningActions.createActivityInstanceSuccess({
-                    activityInstance,
-                    activityInstanceId: id,
-                    planId,
+                    activityInstance: { ...activityInstance, id },
                   }),
                 ];
               }),
@@ -302,40 +300,32 @@ export class PlanningEffects {
   updateActivityInstance = createEffect(() => {
     return this.actions.pipe(
       ofType(PlanningActions.updateActivityInstance),
-      switchMap(({ planId, activityInstanceId, activityInstance }) =>
+      switchMap(({ planId, activityInstance }) =>
         concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService
-            .updateActivityInstance(
-              planId,
-              activityInstanceId,
-              activityInstance,
-            )
-            .pipe(
-              switchMap(() => {
-                return [
-                  ToastActions.showToast({
-                    message: 'Activity instance updated',
-                    toastType: 'success',
-                  }),
-                  PlanningActions.updateActivityInstanceSuccess({
-                    activityInstance,
-                    activityInstanceId,
-                  }),
-                ];
+          this.apiService.updateActivityInstance(planId, activityInstance).pipe(
+            switchMap(() => [
+              ToastActions.showToast({
+                message: 'Activity instance updated',
+                toastType: 'success',
               }),
-              catchError(error => {
-                console.error(error);
-                const [{ message: errorMsg }] = error.error;
-                return [
-                  ToastActions.showToast({
-                    message: 'Update activity instance failed',
-                    toastType: 'error',
-                  }),
-                  PlanningActions.updateActivityInstanceFailure({ errorMsg }),
-                ];
+              PlanningActions.updateActivityInstanceSuccess({
+                activityInstance,
               }),
-            ),
+            ]),
+            catchError(error => {
+              console.error(error);
+              return [
+                ToastActions.showToast({
+                  message: 'Update activity instance failed',
+                  toastType: 'error',
+                }),
+                PlanningActions.updateActivityInstanceFailure({
+                  errorMsg: error.message,
+                }),
+              ];
+            }),
+          ),
           of(AppActions.setLoading({ loading: false })),
         ),
       ),

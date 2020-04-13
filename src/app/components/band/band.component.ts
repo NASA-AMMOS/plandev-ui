@@ -32,6 +32,7 @@ import {
   CreatePoint,
   DeletePoint,
   Point,
+  SavePoint,
   SelectPoint,
   SubBand,
   TimeRange,
@@ -90,7 +91,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
 
   @Output()
-  savePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+  savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
 
   @Output()
   selectPoint: EventEmitter<SelectPoint> = new EventEmitter<SelectPoint>();
@@ -437,10 +438,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   setHeight(height: number = 200): void {
     this.elRef.nativeElement.style.setProperty('--height', `${height}px`);
-  }
-
-  trackBySubBands(_: number, subBand: SubBand): string {
-    return subBand.id;
   }
 }
 

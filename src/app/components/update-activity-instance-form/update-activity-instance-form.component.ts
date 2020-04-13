@@ -18,9 +18,8 @@ import {
 } from '@angular/forms';
 import { MaterialModule } from '../../material';
 import {
-  CActivityInstance,
-  CActivityTypeMap,
-  SActivityInstance,
+  ActivityInstance,
+  ActivityType,
   UpdateActivityInstance,
 } from '../../types';
 
@@ -32,10 +31,10 @@ import {
 })
 export class UpdateActivityInstanceFormComponent implements OnChanges {
   @Input()
-  activityInstance: CActivityInstance;
+  activityInstance: ActivityInstance;
 
   @Input()
-  activityTypesMap: CActivityTypeMap | null = null;
+  activityTypes: ActivityType[] = [];
 
   @Input()
   updateActivityInstanceError: string | null = null;
@@ -66,16 +65,17 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
         ],
       });
 
-      if (this.activityTypesMap) {
-        const { type: activityType } = this.activityInstance;
-        const { parameters } = this.activityTypesMap[activityType];
+      const { type } = this.activityInstance;
+      const activityType = this.activityTypes.find(({ name }) => name === type);
+
+      if (activityType) {
+        const { parameters = [] } = activityType;
         this.formParameters.clear();
-        parameters.forEach(({ name, type }) => {
+        parameters.forEach(({ name }) => {
           const value = this.getParameterValue(this.activityInstance, name);
           this.formParameters.push(
             this.fb.group({
               name,
-              type,
               value,
             }),
           );
@@ -89,11 +89,11 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
   }
 
   getParameterValue(
-    activityInstance: CActivityInstance,
+    activityInstance: ActivityInstance,
     parameterName: string,
   ): string {
-    const { parameters } = activityInstance;
-    const parameter = parameters[parameterName];
+    const { parameters = [] } = activityInstance;
+    const parameter = parameters.find(({ name }) => name === parameterName);
     return parameter ? parameter.value : '';
   }
 
@@ -102,28 +102,13 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
   }
 
   onSubmit() {
-    if (this.form.valid) {
-      const parameters = this.form.value.parameters.reduce(
-        (parameterMap, parameter) => {
-          if (parameter.value !== '') {
-            if (parameter.type === 'double') {
-              parameterMap[parameter.name] = parseFloat(parameter.value);
-            } else {
-              parameterMap[parameter.name] = parameter.value;
-            }
-          }
-          return parameterMap;
-        },
-        {},
-      );
-      const activityInstance: Partial<SActivityInstance> = {
+    if (this.form && this.form.valid) {
+      const activityInstance: UpdateActivityInstance = {
         ...this.form.value,
-        parameters,
+        id: this.activityInstance.id,
+        parameters: this.form.value.parameters.filter(p => p.value !== ''),
       };
-      this.update.emit({
-        activityInstance,
-        activityInstanceId: this.activityInstance.id,
-      });
+      this.update.emit(activityInstance);
     }
   }
 }

@@ -1,6 +1,6 @@
 import { ngOnChanges } from 'src/app/functions';
-import { cActivityInstance } from 'src/app/mocks';
-import { CActivityInstance } from 'src/app/types';
+import { activityInstance } from '../../mocks';
+import { ActivityInstance } from '../../types';
 import { ActivityInstancesTableComponent } from './activity-instances-table.component';
 
 describe('ActivityInstancesTableComponent', () => {
@@ -18,20 +18,24 @@ describe('ActivityInstancesTableComponent', () => {
   });
 
   it('setting a selected activity instance via component Input', () => {
-    ngOnChanges(comp, 'selectedActivityInstance', { ...cActivityInstance });
-    expect(comp.selectedActivityInstance).toEqual(cActivityInstance);
+    ngOnChanges(comp, 'selectedActivityInstance', { ...activityInstance });
+    expect(comp.selectedActivityInstance).toEqual(activityInstance);
     const isSelected = comp.selection.isSelected(comp.selectedActivityInstance);
     expect(isSelected).toBe(true);
   });
 
   it('selecting an activity instance via callback', () => {
-    const selectedActivityInstance = { ...cActivityInstance };
-    comp.selectActivityInstance.subscribe(
-      (activityInstance: CActivityInstance) =>
-        expect(activityInstance).toEqual(selectedActivityInstance),
+    const selectedActivityInstance = { ...activityInstance };
+    comp.selectActivityInstance.subscribe((instance: ActivityInstance) =>
+      expect(instance).toEqual(selectedActivityInstance),
     );
     comp.onSelectActivityInstance(selectedActivityInstance);
     const isSelected = comp.selection.isSelected(selectedActivityInstance);
     expect(isSelected).toBe(true);
+  });
+
+  it('calling ngOnChanges for an unknown component property should not do anything', () => {
+    ngOnChanges(comp, 'foo', {});
+    expect(comp).toBeDefined();
   });
 });

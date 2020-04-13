@@ -1,4 +1,7 @@
+import { ActivityType } from './activity-type';
+
 export interface Adaptation {
+  activityTypes?: ActivityType[];
   id: string;
   mission: string;
   name: string;

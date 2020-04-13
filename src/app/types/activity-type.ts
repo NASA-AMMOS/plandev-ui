@@ -1,17 +1,10 @@
-import {
-  CActivityTypeParameter,
-  SActivityTypeParameter,
-} from './activity-type-parameter';
-import { StringTMap } from './string-t-map';
-
-export interface CActivityType {
+export interface ActivityTypeParameter {
+  default: any;
   name: string;
-  parameters: CActivityTypeParameter[];
+  schema: any;
 }
-export type CActivityTypeMap = StringTMap<CActivityType>;
 
-export interface SActivityType {
-  defaults: StringTMap<any>;
-  parameters: StringTMap<SActivityTypeParameter>;
+export interface ActivityType {
+  name: string;
+  parameters: ActivityTypeParameter[];
 }
-export type SActivityTypeMap = StringTMap<SActivityType>;

@@ -19,11 +19,7 @@ import {
 } from '@angular/forms';
 import { SubSink } from 'subsink';
 import { MaterialModule } from '../../material';
-import {
-  CActivityType,
-  CActivityTypeMap,
-  SActivityInstance,
-} from '../../types';
+import { ActivityType, CreateActivityInstance } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,23 +29,20 @@ import {
 export class CreateActivityInstanceFormComponent
   implements OnChanges, OnDestroy {
   @Input()
-  activityTypes: CActivityType[] = [];
-
-  @Input()
-  activityTypesMap: CActivityTypeMap | null = null;
+  activityTypes: ActivityType[] = [];
 
   @Input()
   createActivityInstanceError: string | null = null;
 
   @Input()
-  selectedActivityType: CActivityType | null = null;
+  selectedActivityType: ActivityType | null = null;
 
   @Output()
   back: EventEmitter<void> = new EventEmitter<void>();
 
   @Output()
-  create: EventEmitter<SActivityInstance> = new EventEmitter<
-    SActivityInstance
+  create: EventEmitter<CreateActivityInstance> = new EventEmitter<
+    CreateActivityInstance
   >();
 
   form: FormGroup;
@@ -62,19 +55,19 @@ export class CreateActivityInstanceFormComponent
       startTimestamp: ['', Validators.required],
       type: ['', Validators.required],
     });
-    const { controls } = this.form;
 
     this.subs.add(
-      controls.type.valueChanges.subscribe(type => {
-        if (this.activityTypesMap) {
-          const { parameters } = this.activityTypesMap[type];
+      this.form.controls.type.valueChanges.subscribe(type => {
+        const activityType = this.activityTypes.find(
+          ({ name }) => name === type,
+        );
+        if (activityType) {
+          const { parameters = [] } = activityType;
           this.formParameters.clear();
-          this.createActivityInstanceError = null;
           parameters.forEach(parameter => {
             this.formParameters.push(
               this.fb.group({
                 name: parameter.name,
-                type: parameter.type,
                 value: parameter.default,
               }),
             );
@@ -101,22 +94,8 @@ export class CreateActivityInstanceFormComponent
 
   onSubmit() {
     if (this.form.valid) {
-      const parameters = this.form.value.parameters.reduce(
-        (parameterMap, parameter) => {
-          if (parameter.value !== '') {
-            if (parameter.type === 'double') {
-              parameterMap[parameter.name] = parseFloat(parameter.value);
-            } else {
-              parameterMap[parameter.name] = parameter.value;
-            }
-          }
-          return parameterMap;
-        },
-        {},
-      );
-      const activityInstance: SActivityInstance = {
+      const activityInstance: CreateActivityInstance = {
         ...this.form.value,
-        parameters,
       };
       this.create.emit(activityInstance);
     }

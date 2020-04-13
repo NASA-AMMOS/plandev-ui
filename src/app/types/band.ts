@@ -1,4 +1,4 @@
-import { CActivityType } from './activity-type';
+import { ActivityType } from './activity-type';
 
 export interface Axis {
   id: string;
@@ -21,7 +21,7 @@ export interface Band {
 }
 
 export interface CreatePoint {
-  activityType: CActivityType;
+  activityType: ActivityType;
   startTimestamp: string;
   type: string;
 }
@@ -61,6 +61,12 @@ export interface PointXRange extends Point {
   labelFont: string;
   labelFontSize: number;
   labelText: string;
+}
+
+export interface SavePoint {
+  id: string;
+  type: string;
+  value: any;
 }
 
 export interface SelectPoint {

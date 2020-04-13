@@ -1,36 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
-import omit from 'lodash-es/omit';
 import { Observable, Observer } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { map } from 'rxjs/operators';
 import { simulationResultsToBands } from '../functions';
-import {
-  Adaptation,
-  Band,
-  CActivityInstanceMap,
-  CActivityInstanceParameterMap,
-  CActivityTypeMap,
-  CActivityTypeParameter,
-  CPlan,
-  CreateAdaptation,
-  CreateAdaptationResponse,
-  CreatePlan,
-  CreatePlanResponse,
-  DeleteAdaptationResponse,
-  DeletePlanResponse,
-  Plan,
-  SActivityInstance,
-  SActivityInstanceMap,
-  SActivityTypeMap,
-  SimulationResults,
-  SPlan,
-  StringTMap,
-} from '../types';
+import * as types from '../types';
 import * as gql from './gql';
-
-const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
 
 @Injectable({
   providedIn: 'root',
@@ -38,127 +13,31 @@ const { adaptationServiceBaseUrl, planServiceBaseUrl } = environment;
 export class ApiService {
   constructor(private apollo: Apollo, private http: HttpClient) {}
 
-  getActivityInstances(planId: string): Observable<CActivityInstanceMap> {
-    return this.http
-      .get<SActivityInstanceMap>(
-        `${planServiceBaseUrl}/plans/${planId}/activity_instances`,
-      )
+  createActivityInstances(
+    planId: string,
+    activityInstances: types.CreateActivityInstance[],
+  ): Observable<types.CreateActivityInstancesResponse> {
+    return this.apollo
+      .mutate<{
+        createActivityInstances: types.CreateActivityInstancesResponse;
+      }>({
+        fetchPolicy: 'no-cache',
+        mutation: gql.CREATE_ACTIVITY_INSTANCES,
+        variables: {
+          activityInstances,
+          planId,
+        },
+      })
       .pipe(
-        map((sActivityInstanceMap: SActivityInstanceMap) => {
-          return Object.keys(sActivityInstanceMap).reduce(
-            (cActivityInstanceMap: CActivityInstanceMap, id: string) => {
-              const { parameters } = sActivityInstanceMap[id];
-
-              cActivityInstanceMap[id] = {
-                ...sActivityInstanceMap[id],
-                id,
-                parameters: Object.keys(parameters).reduce(
-                  (
-                    cActivityInstanceParameterMap: CActivityInstanceParameterMap,
-                    name: string,
-                  ) => {
-                    cActivityInstanceParameterMap[name] = {
-                      name,
-                      value: parameters[name],
-                    };
-
-                    return cActivityInstanceParameterMap;
-                  },
-                  {},
-                ),
-              };
-
-              return cActivityInstanceMap;
-            },
-            {},
-          );
-        }),
+        map(({ data: { createActivityInstances } }) => createActivityInstances),
       );
   }
 
-  getPlanAndActivityTypes(
-    planId: string,
-  ): Observable<{ activityTypes: CActivityTypeMap; plan: CPlan }> {
-    return this.http.get<SPlan>(`${planServiceBaseUrl}/plans/${planId}`).pipe(
-      switchMap((sPlan: SPlan) => {
-        const plan = {
-          ...omit(sPlan, 'activityInstances'),
-          activityInstanceIds: Object.keys(sPlan.activityInstances),
-          id: planId,
-        };
-
-        return this.http
-          .get<SActivityTypeMap>(
-            `${adaptationServiceBaseUrl}/adaptations/${plan.adaptationId}/activities`,
-          )
-          .pipe(
-            map((sActivityTypeMap: SActivityTypeMap) => {
-              const activityTypes = Object.keys(sActivityTypeMap).reduce(
-                (
-                  cActivityTypeMap: CActivityTypeMap,
-                  activityTypeName: string,
-                ) => {
-                  const { defaults, parameters } = sActivityTypeMap[
-                    activityTypeName
-                  ];
-
-                  cActivityTypeMap[activityTypeName] = {
-                    name: activityTypeName,
-                    parameters: Object.keys(parameters).reduce(
-                      (
-                        cActivityTypeParameters: CActivityTypeParameter[],
-                        parameterName: string,
-                      ) => {
-                        const { type } = parameters[parameterName];
-
-                        cActivityTypeParameters.push({
-                          default: defaults[parameterName],
-                          name: parameterName,
-                          type,
-                        });
-
-                        return cActivityTypeParameters;
-                      },
-                      [],
-                    ),
-                  };
-
-                  return cActivityTypeMap;
-                },
-                {},
-              );
-
-              return { activityTypes, plan };
-            }),
-          );
-      }),
-    );
-  }
-
-  getAdaptations(): Observable<Adaptation[]> {
-    return this.apollo
-      .query<{ adaptations: Adaptation[] }>({
-        fetchPolicy: 'no-cache',
-        query: gql.GET_ADAPTATIONS,
-      })
-      .pipe(map(({ data: { adaptations } }) => adaptations));
-  }
-
-  createActivityInstances(
-    planId: string,
-    activityInstances: SActivityInstance[],
-  ): Observable<string[]> {
-    return this.http.post<string[]>(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances`,
-      activityInstances,
-    );
-  }
-
   createAdaptation(
-    adaptation: CreateAdaptation,
-  ): Observable<CreateAdaptationResponse> {
+    adaptation: types.CreateAdaptation,
+  ): Observable<types.CreateAdaptationResponse> {
     return this.apollo
-      .mutate<{ createAdaptation: CreateAdaptationResponse }>({
+      .mutate<{ createAdaptation: types.CreateAdaptationResponse }>({
         context: {
           useMultipart: true,
         },
@@ -175,9 +54,9 @@ export class ApiService {
       .pipe(map(({ data: { createAdaptation } }) => createAdaptation));
   }
 
-  createPlan(plan: CreatePlan): Observable<CreatePlanResponse> {
+  createPlan(plan: types.CreatePlan): Observable<types.CreatePlanResponse> {
     return this.apollo
-      .mutate<{ createPlan: CreatePlanResponse }>({
+      .mutate<{ createPlan: types.CreatePlanResponse }>({
         fetchPolicy: 'no-cache',
         mutation: gql.CREATE_PLAN,
         variables: {
@@ -193,15 +72,23 @@ export class ApiService {
   deleteActivityInstance(
     planId: string,
     activityInstanceId: string,
-  ): Observable<{}> {
-    return this.http.delete(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances/${activityInstanceId}`,
-    );
+  ): Observable<types.DeleteActivityInstanceResponse> {
+    return this.apollo
+      .mutate<{ deleteActivityInstance: types.DeleteActivityInstanceResponse }>(
+        {
+          fetchPolicy: 'no-cache',
+          mutation: gql.DELETE_ACTIVITY_INSTANCE,
+          variables: { activityInstanceId, planId },
+        },
+      )
+      .pipe(
+        map(({ data: { deleteActivityInstance } }) => deleteActivityInstance),
+      );
   }
 
-  deleteAdaptation(id: string): Observable<DeleteAdaptationResponse> {
+  deleteAdaptation(id: string): Observable<types.DeleteAdaptationResponse> {
     return this.apollo
-      .mutate<{ deleteAdaptation: DeleteAdaptationResponse }>({
+      .mutate<{ deleteAdaptation: types.DeleteAdaptationResponse }>({
         fetchPolicy: 'no-cache',
         mutation: gql.DELETE_ADAPTATION,
         variables: { id },
@@ -209,9 +96,9 @@ export class ApiService {
       .pipe(map(({ data: { deleteAdaptation } }) => deleteAdaptation));
   }
 
-  deletePlan(id: string): Observable<DeletePlanResponse> {
+  deletePlan(id: string): Observable<types.DeletePlanResponse> {
     return this.apollo
-      .mutate<{ deletePlan: DeletePlanResponse }>({
+      .mutate<{ deletePlan: types.DeletePlanResponse }>({
         fetchPolicy: 'no-cache',
         mutation: gql.DELETE_PLAN,
         variables: { id },
@@ -219,28 +106,35 @@ export class ApiService {
       .pipe(map(({ data: { deletePlan } }) => deletePlan));
   }
 
+  getAdaptations(): Observable<types.Adaptation[]> {
+    return this.apollo
+      .query<{ adaptations: types.Adaptation[] }>({
+        fetchPolicy: 'no-cache',
+        query: gql.GET_ADAPTATIONS,
+      })
+      .pipe(map(({ data: { adaptations } }) => adaptations));
+  }
+
+  getPlanDetail(id: string): Observable<types.PlanDetail> {
+    return this.apollo
+      .query<{ plan: types.PlanDetail }>({
+        fetchPolicy: 'no-cache',
+        query: gql.GET_PLAN_DETAIL,
+        variables: { id },
+      })
+      .pipe(map(({ data: { plan } }) => plan));
+  }
+
   getPlansAndAdaptations(): Observable<{
-    adaptations: Adaptation[];
-    plans: Plan[];
+    adaptations: types.Adaptation[];
+    plans: types.Plan[];
   }> {
     return this.apollo
-      .query<{ adaptations: Adaptation[]; plans: Plan[] }>({
+      .query<{ adaptations: types.Adaptation[]; plans: types.Plan[] }>({
         fetchPolicy: 'no-cache',
         query: gql.GET_PLANS_AND_ADAPTATIONS,
       })
       .pipe(map(({ data }) => data));
-  }
-
-  getPlan(planId: string): Observable<CPlan> {
-    return this.http.get<SPlan>(`${planServiceBaseUrl}/plans/${planId}`).pipe(
-      map((sPlan: SPlan) => {
-        return {
-          ...omit(sPlan, 'activityInstances'),
-          activityInstanceIds: Object.keys(sPlan.activityInstances),
-          id: planId,
-        };
-      }),
-    );
   }
 
   login(username: string, password: string): Observable<string> {
@@ -261,9 +155,9 @@ export class ApiService {
     });
   }
 
-  simulationRun(): Observable<StringTMap<Band>> {
+  simulationRun(): Observable<types.StringTMap<types.Band>> {
     return this.http
-      .get<SimulationResults>(`./assets/simulation-results.json`)
+      .get<types.SimulationResults>(`./assets/simulation-results.json`)
       .pipe(
         map(simulationResults => simulationResultsToBands(simulationResults)),
       );
@@ -271,12 +165,26 @@ export class ApiService {
 
   updateActivityInstance(
     planId: string,
-    activityInstanceId: string,
-    activityInstance: Partial<SActivityInstance>,
-  ): Observable<{}> {
-    return this.http.patch<{}>(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances/${activityInstanceId}`,
-      activityInstance,
-    );
+    activityInstance: types.UpdateActivityInstance,
+  ): Observable<types.UpdateActivityInstanceResponse> {
+    return this.apollo
+      .mutate<{ updateActivityInstance: types.UpdateActivityInstanceResponse }>(
+        {
+          fetchPolicy: 'no-cache',
+          mutation: gql.UPDATE_ACTIVITY_INSTANCE,
+          variables: {
+            activityInstance,
+            planId,
+          },
+        },
+      )
+      .pipe(
+        map(({ data: { updateActivityInstance } }) => {
+          if (!updateActivityInstance.success) {
+            throw new Error(updateActivityInstance.message);
+          }
+          return updateActivityInstance;
+        }),
+      );
   }
 }

@@ -2,7 +2,7 @@ import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
 import { MaterialModule } from '../../material';
-import { cActivityType, cActivityTypeMap } from '../../mocks';
+import { activityType, activityTypes } from '../../mocks';
 import { CreateActivityInstanceFormComponent } from './create-activity-instance-form.component';
 
 describe('CreateActivityInstanceFormComponent', () => {
@@ -29,7 +29,7 @@ describe('CreateActivityInstanceFormComponent', () => {
 
   it('calling ngOnChanges with a selectedActivityType should properly set the form', () => {
     const newName = 'DevourBanana';
-    comp.selectedActivityType = { ...cActivityType, name: newName };
+    comp.selectedActivityType = { ...activityType, name: newName };
     const change = {
       selectedActivityType: new SimpleChange(
         null,
@@ -42,29 +42,35 @@ describe('CreateActivityInstanceFormComponent', () => {
   });
 
   it('calling ngOnChanges with no selectedActivityType should not change the selectedActivityType', () => {
-    comp.selectedActivityType = { ...cActivityType };
-    comp.activityTypes = [cActivityType];
+    comp.selectedActivityType = { ...activityType };
+    comp.activityTypes = activityTypes;
     const change = {
       activityTypes: new SimpleChange(null, comp.activityTypes, true),
     };
     comp.ngOnChanges(change);
-    expect(comp.selectedActivityType).toEqual(cActivityType);
+    expect(comp.selectedActivityType).toEqual(activityType);
   });
 
-  it('setting valid activityTypesMap, startTimestamp, and type should give a valid form', () => {
-    comp.activityTypesMap = { ...cActivityTypeMap };
+  it('setting valid activityTypes, startTimestamp, and type should give a valid form', () => {
+    comp.activityTypes = activityTypes;
     comp.form.controls.startTimestamp.setValue('2020-001T00:00:00');
     comp.form.controls.type.setValue('PeelBanana');
     expect(comp.form.valid).toEqual(true);
   });
 
   it('submitting an activity instance should emit a create Output event', () => {
-    comp.activityTypesMap = { ...cActivityTypeMap };
+    comp.activityTypes = activityTypes;
     comp.form.controls.startTimestamp.setValue('2020-001T00:00:00');
     comp.form.controls.type.setValue('PeelBanana');
     comp.create.subscribe(activityInstance => {
       expect(activityInstance).toBeDefined();
     });
     comp.onSubmit();
+  });
+
+  it('calling onSubmit with an invalid form should not emit a create', () => {
+    const createEmit = spyOn(comp.create, 'emit');
+    comp.onSubmit();
+    expect(createEmit).not.toHaveBeenCalled();
   });
 });

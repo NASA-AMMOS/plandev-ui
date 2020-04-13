@@ -102,35 +102,13 @@ export class NavEffects {
       switchMap(planId =>
         concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService.getPlanAndActivityTypes(planId).pipe(
-            switchMap(({ activityTypes, plan }) => [
-              PlanningActions.setSelectedPlanAndActivityTypes({
-                activityTypes,
-                selectedPlan: plan,
-              }),
-            ]),
+          this.apiService.getPlanDetail(planId).pipe(
+            map(plan => PlanningActions.getPlanDetailSuccess({ plan })),
             catchError((error: Error) => {
               console.error(error);
               return [
                 ToastActions.showToast({
-                  message: 'Fetch plan and activity types failed',
-                  toastType: 'error',
-                }),
-              ];
-            }),
-          ),
-          this.apiService.getActivityInstances(planId).pipe(
-            map(activityInstances =>
-              PlanningActions.setActivityInstances({
-                activityInstances,
-                planId,
-              }),
-            ),
-            catchError((error: Error) => {
-              console.error(error);
-              return [
-                ToastActions.showToast({
-                  message: 'Fetch activity instances failed',
+                  message: 'Fetch plan detail failed',
                   toastType: 'error',
                 }),
               ];

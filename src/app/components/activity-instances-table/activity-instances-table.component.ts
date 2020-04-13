@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { contextMenu } from 'src/app/functions';
 import { MaterialModule } from '../../material';
-import { CActivityInstance } from '../../types';
+import { ActivityInstance } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,22 +21,22 @@ import { CActivityInstance } from '../../types';
 })
 export class ActivityInstancesTableComponent implements OnChanges {
   @Input()
-  activityInstances: CActivityInstance[] = [];
+  activityInstances: ActivityInstance[] = [];
 
   @Input()
-  selectedActivityInstance: CActivityInstance | null = null;
+  selectedActivityInstance: ActivityInstance | null = null;
 
   @Output()
   deleteActivityInstance: EventEmitter<string> = new EventEmitter<string>();
 
   @Output()
-  selectActivityInstance: EventEmitter<CActivityInstance> = new EventEmitter<
-    CActivityInstance
+  selectActivityInstance: EventEmitter<ActivityInstance> = new EventEmitter<
+    ActivityInstance
   >();
 
   displayedColumns: string[] = ['select', 'type', 'startTimestamp'];
   onContextMenu = contextMenu;
-  selection = new SelectionModel<CActivityInstance>(false, []);
+  selection = new SelectionModel<ActivityInstance>(false, []);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.selectedActivityInstance) {
@@ -44,7 +44,7 @@ export class ActivityInstancesTableComponent implements OnChanges {
     }
   }
 
-  onSelectActivityInstance(activityInstance: CActivityInstance): void {
+  onSelectActivityInstance(activityInstance: ActivityInstance): void {
     this.selection.toggle(activityInstance);
     this.selectActivityInstance.emit(activityInstance);
   }

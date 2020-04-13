@@ -1,37 +1,29 @@
-import {
-  HttpClientTestingModule,
-  HttpTestingController,
-} from '@angular/common/http/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import {
   ApolloTestingController,
   ApolloTestingModule,
 } from 'apollo-angular/testing';
 import omit from 'lodash-es/omit';
-import { environment } from '../../environments/environment';
 import {
+  activityInstance,
   activityInstanceId,
   adaptation,
   adaptationId,
   adaptations,
-  cActivityInstanceMap,
-  cPlan,
+  getSimulationRunBands,
   plan,
+  planDetail,
   planId,
   plans,
-  sActivityInstance,
-  sActivityInstanceMap,
-  sPlan,
 } from '../mocks';
+import { CreatePlan } from '../types';
 import { ApiService } from './api.service';
 import * as gql from './gql';
-
-const { planServiceBaseUrl } = environment;
 
 describe('api service', () => {
   let apiService: ApiService;
   let apolloTestingController: ApolloTestingController;
-  let httpTestingController: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -39,42 +31,27 @@ describe('api service', () => {
     });
     apiService = TestBed.inject(ApiService);
     apolloTestingController = TestBed.inject(ApolloTestingController);
-    httpTestingController = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpTestingController.verify();
-  });
-
-  it('getActivityInstances', () => {
-    apiService.getActivityInstances(planId).subscribe(activityInstances => {
-      expect(activityInstances).toEqual(cActivityInstanceMap);
-    });
-    const req = httpTestingController.expectOne(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances`,
-    );
-    req.flush(sActivityInstanceMap);
-  });
-
-  it('getAdaptations', () => {
-    apiService.getAdaptations().subscribe(response => {
-      expect(response).toEqual(adaptations);
-    });
-    apolloTestingController
-      .expectOne(gql.GET_ADAPTATIONS)
-      .flush({ data: { adaptations } });
+    apolloTestingController.verify();
   });
 
   it('createActivityInstances', () => {
+    const createActivityInstances = {
+      ids: [activityInstanceId],
+      message: 'Activity instances created successfully',
+      success: true,
+    };
+    const newActivityInstance = omit(activityInstance, 'id');
     apiService
-      .createActivityInstances(planId, [sActivityInstance])
-      .subscribe(ids => {
-        expect(ids).toEqual([activityInstanceId]);
+      .createActivityInstances(planId, [newActivityInstance])
+      .subscribe(response => {
+        expect(response).toEqual(createActivityInstances);
       });
-    const req = httpTestingController.expectOne(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances`,
-    );
-    req.flush([activityInstanceId]);
+    apolloTestingController
+      .expectOne(gql.CREATE_ACTIVITY_INSTANCES)
+      .flush({ data: { createActivityInstances } });
   });
 
   it('createAdaptation', () => {
@@ -98,7 +75,12 @@ describe('api service', () => {
       message: 'Plan created successfully',
       success: true,
     };
-    const newPlan = omit(plan, 'id');
+    const newPlan: CreatePlan = {
+      adaptationId: plan.adaptationId,
+      endTimestamp: plan.endTimestamp,
+      name: plan.name,
+      startTimestamp: plan.startTimestamp,
+    };
     apiService.createPlan(newPlan).subscribe(response => {
       expect(response).toEqual(createPlan);
     });
@@ -108,15 +90,18 @@ describe('api service', () => {
   });
 
   it('deleteActivityInstance', () => {
+    const deleteActivityInstance = {
+      message: 'Activity instance successfully deleted',
+      success: true,
+    };
     apiService
       .deleteActivityInstance(planId, activityInstanceId)
-      .subscribe(res => {
-        expect(res).toEqual({});
+      .subscribe(response => {
+        expect(response).toEqual(deleteActivityInstance);
       });
-    const req = httpTestingController.expectOne(
-      `${planServiceBaseUrl}/plans/${planId}/activity_instances/${activityInstanceId}`,
-    );
-    req.flush({});
+    apolloTestingController
+      .expectOne(gql.DELETE_ACTIVITY_INSTANCE)
+      .flush({ data: { deleteActivityInstance } });
   });
 
   it('deleteAdaptation', () => {
@@ -145,6 +130,24 @@ describe('api service', () => {
       .flush({ data: { deletePlan } });
   });
 
+  it('getAdaptations', () => {
+    apiService.getAdaptations().subscribe(response => {
+      expect(response).toEqual(adaptations);
+    });
+    apolloTestingController
+      .expectOne(gql.GET_ADAPTATIONS)
+      .flush({ data: { adaptations } });
+  });
+
+  it('getPlanDetail', () => {
+    apiService.getPlanDetail(planId).subscribe(response => {
+      expect(response).toEqual(planDetail);
+    });
+    apolloTestingController
+      .expectOne(gql.GET_PLAN_DETAIL)
+      .flush({ data: { plan: planDetail } });
+  });
+
   it('getPlansAndAdaptations', () => {
     apiService.getPlansAndAdaptations().subscribe(response => {
       expect(response).toEqual({ adaptations, plans });
@@ -154,25 +157,62 @@ describe('api service', () => {
       .flush({ data: { adaptations, plans } });
   });
 
-  it('getPlan', () => {
-    apiService.getPlan(planId).subscribe(response => {
-      expect(response).toEqual(cPlan);
-    });
-    const req = httpTestingController.expectOne(
-      `${planServiceBaseUrl}/plans/${planId}`,
-    );
-    req.flush(sPlan);
-  });
-
-  it('login', () => {
+  it('login success', () => {
     apiService.login('testuser', '123456').subscribe(res => {
       expect(res).toEqual('Login success');
     });
+  });
+
+  it('login failure', () => {
+    apiService.login('testuser', 'abcdef').subscribe(
+      () => {},
+      res => {
+        expect(res).toEqual('Login failed. Invalid username or password.');
+      },
+    );
   });
 
   it('logout', () => {
     apiService.logout().subscribe(res => {
       expect(res).toEqual('Logout success');
     });
+  });
+
+  it('simulationRun', () => {
+    apiService.simulationRun().subscribe(res => {
+      const simulationBands = getSimulationRunBands();
+      expect(res).toEqual(simulationBands);
+    });
+  });
+
+  it('updateActivityInstance success', () => {
+    const updateActivityInstance = {
+      message: 'Activity instance updated successfully',
+      success: true,
+    };
+    apiService
+      .updateActivityInstance(planId, activityInstance)
+      .subscribe(response => {
+        expect(response).toEqual(updateActivityInstance);
+      });
+    apolloTestingController
+      .expectOne(gql.UPDATE_ACTIVITY_INSTANCE)
+      .flush({ data: { updateActivityInstance } });
+  });
+
+  it('updateActivityInstance failure', () => {
+    const updateActivityInstance = {
+      message: 'Activity instance update failed',
+      success: false,
+    };
+    apiService.updateActivityInstance(planId, activityInstance).subscribe(
+      () => {},
+      error => {
+        expect(error.message).toEqual(updateActivityInstance.message);
+      },
+    );
+    apolloTestingController
+      .expectOne(gql.UPDATE_ACTIVITY_INSTANCE)
+      .flush({ data: { updateActivityInstance } });
   });
 });

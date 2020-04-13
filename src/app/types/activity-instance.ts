@@ -1,22 +1,37 @@
-import { CActivityInstanceParameter } from './activity-instance-parameter';
-import { StringTMap } from './string-t-map';
-
-export interface CActivityInstance {
+export interface ActivityInstance {
   id: string;
-  parameters: StringTMap<CActivityInstanceParameter>;
+  parameters: ActivityInstanceParameter[];
   startTimestamp: string;
   type: string;
 }
-export type CActivityInstanceMap = StringTMap<CActivityInstance>;
 
-export interface SActivityInstance {
-  parameters: StringTMap<any>;
+export interface ActivityInstanceParameter {
+  name: string;
+  value: any;
+}
+
+export interface CreateActivityInstance {
+  parameters: ActivityInstanceParameter[];
   startTimestamp: string;
   type: string;
 }
-export type SActivityInstanceMap = StringTMap<SActivityInstance>;
 
-export interface UpdateActivityInstance {
-  activityInstance: Partial<SActivityInstance>;
-  activityInstanceId: string;
+export interface CreateActivityInstancesResponse {
+  ids: string[];
+  message: string | null;
+  success: boolean;
+}
+
+export interface DeleteActivityInstanceResponse {
+  message: string | null;
+  success: boolean;
+}
+
+export type UpdateActivityInstance = { id: string } & Partial<
+  CreateActivityInstance
+>;
+
+export interface UpdateActivityInstanceResponse {
+  message: string | null;
+  success: boolean;
 }
