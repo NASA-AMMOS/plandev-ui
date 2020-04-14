@@ -2,22 +2,18 @@ import { ActivityType } from './activity-type';
 
 export interface Axis {
   id: string;
-  color: string;
-  labelFillColor: string;
-  labelFontSize: number;
-  labelOffset: string;
-  labelText: string;
+  color?: string;
+  label?: Label;
   scaleDomain: number[];
-  tickCount: number;
+  tickCount?: number;
 }
 
 export interface Band {
-  height: number;
+  height?: number;
   id: string;
-  order: number;
   subBands: SubBand[];
   type: string;
-  yAxes: Axis[];
+  yAxes?: Axis[];
 }
 
 export interface CreatePoint {
@@ -31,36 +27,37 @@ export interface DeletePoint {
   type: string;
 }
 
+export interface Label {
+  align?: CanvasTextAlign;
+  baseline?: CanvasTextBaseline;
+  color?: string;
+  fontFace?: string;
+  fontSize?: number;
+  hidden?: boolean;
+  text: string;
+}
+
 export interface Point {
-  color: string;
+  color?: string;
   id: string;
-  selected: boolean;
+  selected?: boolean;
   type: string;
   x: number;
 }
 
 export interface PointActivity extends Point {
   duration: number;
-  labelAlign: CanvasTextAlign;
-  labelBaseline: CanvasTextBaseline;
-  labelFillColor: string;
-  labelFont: string;
-  labelFontSize: number;
-  labelHidden: boolean;
-  labelText: string;
+  label?: Label;
 }
 
 export interface PointLine extends Point {
-  radius: number;
+  radius?: number;
   y: number;
 }
 
 export interface PointXRange extends Point {
   duration: number;
-  labelFillColor: string;
-  labelFont: string;
-  labelFontSize: number;
-  labelText: string;
+  label?: Label;
 }
 
 export interface SavePoint {
@@ -80,13 +77,13 @@ export interface SubBand {
 }
 
 export interface SubBandActivity extends SubBand {
-  layout: string;
+  layout?: string;
   points: PointActivity[];
 }
 
 export interface SubBandLine extends SubBand {
-  color: string;
-  interpolationType: string;
+  color?: string;
+  interpolationType?: string;
   points: PointLine[];
   yAxisId: string;
 }

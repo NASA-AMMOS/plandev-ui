@@ -29,7 +29,7 @@ import { SubBandService } from '../sub-band.service';
 })
 export class LineBandComponent implements AfterViewInit, OnChanges {
   @Input()
-  color: string;
+  color: string | undefined;
 
   @Input()
   drawHeight: number;
@@ -41,7 +41,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   id: string;
 
   @Input()
-  interpolationType: string;
+  interpolationType: string | undefined;
 
   @Input()
   maxTimeRange: TimeRange;
@@ -53,7 +53,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   viewTimeRange: TimeRange;
 
   @Input()
-  yAxes: Axis[];
+  yAxes: Axis[] | undefined;
 
   @Input()
   yAxisId: string;
@@ -131,11 +131,13 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     });
 
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-    const [yAxis] = this.yAxes.filter(axis => this.yAxisId === axis.id);
+    const yAxes = this.yAxes || [];
+    const [yAxis] = yAxes.filter(axis => this.yAxisId === axis.id);
     const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
 
     // Line.
-    const curve = d3[this.interpolationType] || d3.curveLinear;
+    const interpolationType = this.interpolationType || 'curveLinear';
+    const curve = d3[interpolationType] || d3.curveLinear;
     const line = d3
       .line<PointLine>()
       .x(d => Math.floor(xScale(d.x)))
@@ -145,7 +147,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       ctx.beginPath();
       line.context(ctx)(this.points);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = this.color;
+      ctx.strokeStyle = this.color || '#000000';
       ctx.stroke();
     });
 
@@ -156,7 +158,8 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       const x = Math.floor(xScale(point.x));
       const y = Math.floor(yScale(point.y));
       const circle = new Path2D();
-      circle.arc(x, y, point.radius, 0, 2 * Math.PI);
+      const radius = point.radius || 3;
+      circle.arc(x, y, radius, 0, 2 * Math.PI);
 
       forEachCanvas(canvases, (canvas, ctx) => {
         if (canvas.classList.contains('hidden')) {
@@ -164,7 +167,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = point.color;
+          ctx.fillStyle = point.color || '#d651ff';
         }
         ctx.fill(circle);
       });

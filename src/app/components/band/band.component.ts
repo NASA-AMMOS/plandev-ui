@@ -52,7 +52,7 @@ import { XRangeBandModule } from './x-range-band/x-range-band.component';
 })
 export class BandComponent implements AfterViewInit, OnChanges {
   @Input()
-  height: number;
+  height: number | undefined;
 
   @Input()
   id: string;
@@ -82,7 +82,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   viewTimeRange: TimeRange;
 
   @Input()
-  yAxes: Axis[];
+  yAxes: Axis[] | undefined;
 
   @Output()
   createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
@@ -105,6 +105,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   @ViewChild('interactionContainerSvg', { static: true })
   interactionContainerSvg: ElementRef;
 
+  public defaultHeight = 200;
   public drawHeight: number;
   public drawWidth: number;
 
@@ -165,18 +166,19 @@ export class BandComponent implements AfterViewInit, OnChanges {
     const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--y').remove();
 
-    for (let i = 0; i < this.yAxes.length; ++i) {
+    const yAxes = this.yAxes || [];
+    for (let i = 0; i < yAxes.length; ++i) {
       const axisG = axisContainerGroup.append('g').attr('class', `axis--y`);
       axisG.selectAll('*').remove();
 
-      const yAxis = this.yAxes[i];
+      const yAxis = yAxes[i];
       const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
-      const axis = d3.axisLeft(yScale).ticks(yAxis.tickCount);
+      const axis = d3.axisLeft(yScale).ticks(yAxis.tickCount || 5);
 
       const axisMargin = 20;
       const startPosition = -(totalWidth + axisMargin * i);
       axisG.attr('transform', `translate(${startPosition}, 0)`);
-      axisG.style('color', yAxis.color);
+      axisG.style('color', yAxis.color || '#000000');
       axisG.call(axis);
 
       const axisGElement: SVGGElement = axisG.node();
@@ -190,10 +192,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
         .attr('y', y)
         .attr('x', 0 - this.drawHeight / 2)
         .attr('dy', '1em')
-        .attr('fill', yAxis.labelFillColor)
-        .attr('font-size', `${yAxis.labelFontSize}px`)
+        .attr('fill', yAxis.label?.color || '#000000')
+        .attr('font-size', `${yAxis.label?.fontSize || 12}px`)
         .style('text-anchor', 'middle')
-        .text(yAxis.labelText);
+        .text(yAxis.label?.text || '');
 
       // Calculate new width after text has been added.
       totalWidth += axisGElement.getBoundingClientRect().width;
@@ -431,12 +433,13 @@ export class BandComponent implements AfterViewInit, OnChanges {
   }
 
   setDrawBounds(): void {
-    this.drawHeight = this.height - this.marginTop - this.marginBottom;
+    const height = this.height || this.defaultHeight;
+    this.drawHeight = height - this.marginTop - this.marginBottom;
     this.drawWidth =
       this.elRef.nativeElement.clientWidth - this.marginLeft - this.marginRight;
   }
 
-  setHeight(height: number = 200): void {
+  setHeight(height: number = this.defaultHeight): void {
     this.elRef.nativeElement.style.setProperty('--height', `${height}px`);
   }
 }

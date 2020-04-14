@@ -33,7 +33,8 @@ export function getTooltipTextForPoints(points: Point[]): string {
 }
 
 export function getTooltipTextPointActivity(point: PointActivity): string {
-  const { id, labelText, x } = point;
+  const { id, x } = point;
+  const labelText = point.label?.text || '';
   return `
     <div>
       <strong>Id:</strong> ${id}

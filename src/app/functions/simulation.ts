@@ -27,8 +27,6 @@ export function simulationResultsToBands(
         acc.push({
           color,
           id: `${id}-pointLine-${index}`,
-          radius: 3,
-          selected: false,
           type: 'line',
           x: getUnixEpochTime(times[index]),
           y: y === true ? 1 : y === false ? 0 : y,
@@ -41,7 +39,6 @@ export function simulationResultsToBands(
       {
         color,
         id: `${id}-subBandLine-${resource}`,
-        interpolationType: 'curveMonotoneX',
         points,
         type: 'line',
         yAxisId,
@@ -50,19 +47,17 @@ export function simulationResultsToBands(
     const band: Band = {
       height: 260,
       id,
-      order: 0,
       subBands,
       type: 'simulation',
       yAxes: [
         {
           color,
           id: yAxisId,
-          labelFillColor: color,
-          labelFontSize: 12,
-          labelOffset: '-3.8em',
-          labelText: resource,
+          label: {
+            color,
+            text: resource,
+          },
           scaleDomain: d3.extent(values as number[]),
-          tickCount: 5,
         },
       ],
     };
@@ -79,7 +74,6 @@ export function simulationResultsToBands(
       [id]: {
         height: 260,
         id,
-        order: 0,
         subBands: bands.reduce((subBands: SubBand[], band: Band) => {
           subBands.push(...band.subBands);
           return subBands;

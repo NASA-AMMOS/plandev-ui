@@ -42,24 +42,16 @@ export const getScheduleBands = createSelector(
     selectedActivityInstanceId: string | null,
   ): Band[] => [
     {
-      height: 200,
       id: 'band0',
-      order: 0,
       subBands: [
         {
           id: 'band0subBand0',
-          layout: 'waterfall',
           points: activityInstances.map(point => ({
-            color: '#d651ff',
             duration: 0,
             id: point.id,
-            labelAlign: 'start',
-            labelBaseline: 'alphabetic',
-            labelFillColor: '#000000',
-            labelFont: 'Georgia',
-            labelFontSize: 12,
-            labelHidden: false,
-            labelText: point.type,
+            label: {
+              text: point.type,
+            },
             selected: selectedActivityInstanceId === point.id,
             type: 'activity',
             x: getUnixEpochTime(point.startTimestamp),
@@ -68,7 +60,6 @@ export const getScheduleBands = createSelector(
         } as SubBandActivity,
       ],
       type: 'schedule',
-      yAxes: [],
     },
   ],
 );

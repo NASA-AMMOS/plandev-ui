@@ -36,7 +36,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
   id: string;
 
   @Input()
-  layout: string;
+  layout: string | undefined;
 
   @Input()
   maxTimeRange: TimeRange;
@@ -108,10 +108,11 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
   }
 
   redraw(): void {
-    if (this.layout === 'waterfall') {
-      this.redrawWaterfall();
-    } else if (this.layout === 'compact') {
+    const layout = this.layout || 'waterfall';
+    if (layout === 'compact') {
       this.redrawCompact();
+    } else {
+      this.redrawWaterfall();
     }
   }
 
@@ -140,24 +141,29 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         ctx.fillStyle = color;
         ctx.fill(rect);
       } else {
-        if (point.selected) {
+        const selected = point.selected || false;
+        if (selected) {
           ctx.fillStyle = '#f5ec42';
         } else {
-          ctx.fillStyle = point.color;
+          ctx.fillStyle = point.color || '#d651ff';
         }
 
         // Rect.
         ctx.fill(rect);
 
         // Label Text.
-        if (!point.labelHidden) {
-          ctx.fillStyle = point.labelFillColor;
-          ctx.font = `${point.labelFontSize}px ${point.labelFont}`;
-          ctx.textAlign = point.labelAlign;
-          ctx.textBaseline = point.labelBaseline;
-          const textMetrics = ctx.measureText(point.labelText);
+        const hideLabel = point.label?.hidden || false;
+        if (!hideLabel) {
+          ctx.fillStyle = point.label?.color || '#000000';
+          const fontSize = point.label?.fontSize || 12;
+          const fontFace = point.label?.fontFace || 'Georgia';
+          ctx.font = `${fontSize}px ${fontFace}`;
+          ctx.textAlign = point.label?.align || 'start';
+          ctx.textBaseline = point.label?.baseline || 'alphabetic';
+          const labelText = point.label?.text || '';
+          const textMetrics = ctx.measureText(labelText);
           const textWidth = textMetrics.width;
-          ctx.fillText(point.labelText, x, y, textWidth);
+          ctx.fillText(labelText, x, y, textWidth);
         }
       }
     });

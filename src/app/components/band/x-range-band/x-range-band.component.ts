@@ -129,22 +129,25 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = point.color;
+          ctx.fillStyle = point.color || '#d651ff';
         }
 
         // Rect.
         ctx.fill(rect);
 
         // Label Text.
-        ctx.fillStyle = point.labelFillColor;
-        ctx.font = `${point.labelFontSize}px ${point.labelFont}`;
-        const textMetrics = ctx.measureText(point.labelText);
+        ctx.fillStyle = point.label?.color || '#000000';
+        const fontSize = point.label?.fontSize || 12;
+        const fontFace = point.label?.fontFace || 'Georgia';
+        ctx.font = `${fontSize}px ${fontFace}`;
+        const labelText = point.label?.text || '';
+        const textMetrics = ctx.measureText(labelText);
         const textWidth = textMetrics.width;
         const textHeight =
           textMetrics.actualBoundingBoxAscent +
           textMetrics.actualBoundingBoxDescent;
         ctx.fillText(
-          point.labelText,
+          labelText,
           x + width / 2 - textWidth / 2,
           this.drawHeight / 2 + textHeight / 2,
           textWidth,
