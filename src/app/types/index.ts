@@ -4,7 +4,7 @@ export * from './adaptation';
 export * from './band';
 export * from './panel';
 export * from './plan';
-export * from './simulation-results';
+export * from './simulation-result';
 export * from './string-t-map';
 export * from './time-range';
 export * from './user';

@@ -11,11 +11,11 @@ import {
   adaptation,
   adaptationId,
   adaptations,
-  getSimulationRunBands,
   plan,
   planDetail,
   planId,
   plans,
+  simulationResults,
 } from '../mocks';
 import { CreatePlan } from '../types';
 import { ApiService } from './api.service';
@@ -178,11 +178,13 @@ describe('api service', () => {
     });
   });
 
-  it('simulationRun', () => {
-    apiService.simulationRun().subscribe(res => {
-      const simulationBands = getSimulationRunBands();
-      expect(res).toEqual(simulationBands);
+  it('simulate', () => {
+    apiService.simulate(planId).subscribe(response => {
+      expect(response).toEqual(simulationResults);
     });
+    apolloTestingController
+      .expectOne(gql.SIMULATE)
+      .flush({ data: { simulate: simulationResults } });
   });
 
   it('updateActivityInstance success', () => {

@@ -4,10 +4,10 @@ import {
   activityInstanceId,
   adaptationId,
   adaptations,
-  getSimulationRunBands,
   planDetail,
   planId,
   plans,
+  simulationResults,
 } from '../mocks';
 import * as types from '../types';
 
@@ -105,10 +105,9 @@ export class ApiMockService {
     });
   }
 
-  simulationRun(): Observable<types.StringTMap<types.Band>> {
-    const stateBands = getSimulationRunBands();
-    return new Observable((o: Observer<types.StringTMap<types.Band>>) => {
-      o.next(stateBands);
+  simulate(): Observable<types.SimulationResult[]> {
+    return new Observable((o: Observer<types.SimulationResult[]>) => {
+      o.next(simulationResults);
       o.complete();
     });
   }

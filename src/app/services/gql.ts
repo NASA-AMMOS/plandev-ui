@@ -152,6 +152,19 @@ export const DELETE_PLAN = gql(`
   }
 `);
 
+export const SIMULATE = gql(`
+  query Simulate($planId: String!) {
+    simulate(planId: $planId) {
+      name
+      start
+      values {
+        x
+        y
+      }
+    }
+  }
+`);
+
 export const UPDATE_ACTIVITY_INSTANCE = gql(`
   mutation UpdateActivityInstance(
     $activityInstance: UpdateActivityInstance!

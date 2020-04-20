@@ -235,7 +235,8 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   onSimulationRun(): void {
-    this.store.dispatch(SimulationActions.run());
+    const { id: planId } = this.route.snapshot.params;
+    this.store.dispatch(SimulationActions.run({ planId }));
   }
 
   onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {

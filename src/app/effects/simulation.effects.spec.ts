@@ -6,9 +6,9 @@ import { Action } from '@ngrx/store';
 import { Observable, Observer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import { AppActions, SimulationActions } from '../actions';
-import { getSimulationRunBands } from '../mocks';
+import { planId, simulationResults } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
-import { Band, StringTMap } from '../types';
+import { SimulationResult } from '../types';
 import { SimulationEffects } from './simulation.effects';
 
 describe('simulation effects', () => {
@@ -40,20 +40,17 @@ describe('simulation effects', () => {
   describe('run', () => {
     it('should dispatch the appropriate actions when successfully running a simulation', () => {
       testScheduler.run(({ hot, expectObservable }) => {
-        const stateBands = getSimulationRunBands();
-        // Return stateBands since it depends on uniqueId and we need
-        // the uniqueId to be correct in the runSuccess action.
-        spyOn(apiService, 'simulationRun').and.returnValue(
-          new Observable((o: Observer<StringTMap<Band>>) => {
-            o.next(stateBands);
+        spyOn(apiService, 'simulate').and.returnValue(
+          new Observable((o: Observer<SimulationResult[]>) => {
+            o.next(simulationResults);
             o.complete();
           }),
         );
-        const action = SimulationActions.run();
+        const action = SimulationActions.run({ planId });
         actions = hot('-a', { a: action });
         expectObservable(effects.run).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
-          c: SimulationActions.runSuccess({ stateBands }),
+          c: SimulationActions.runSuccess({ results: simulationResults }),
           d: AppActions.setLoading({ loading: false }),
         });
       });
@@ -61,15 +58,13 @@ describe('simulation effects', () => {
 
     it('should dispatch the appropriate actions when failing to run a simulation', () => {
       testScheduler.run(({ cold, hot, expectObservable }) => {
-        const errorMsg = 'Simulation failed';
-        const action = SimulationActions.run();
+        const error = new Error('Simulation failed');
+        const action = SimulationActions.run({ planId });
         actions = hot('-a', { a: action });
-        spyOn(apiService, 'simulationRun').and.returnValue(
-          cold('#|', null, errorMsg),
-        );
+        spyOn(apiService, 'simulate').and.returnValue(cold('#|', null, error));
         expectObservable(effects.run).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
-          c: SimulationActions.runFailure({ errorMsg }),
+          c: SimulationActions.runFailure({ errorMsg: error.message }),
           d: AppActions.setLoading({ loading: false }),
         });
       });

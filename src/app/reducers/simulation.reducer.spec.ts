@@ -15,7 +15,7 @@ describe('simulation reducer', () => {
   it('runSuccess', () => {
     const state: SimulationState = reducer(
       { ...initialState },
-      SimulationActions.runSuccess({ stateBands: {} }),
+      SimulationActions.runSuccess({ results: [] }),
     );
     expect(state).toEqual({
       ...initialState,

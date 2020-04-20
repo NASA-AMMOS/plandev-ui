@@ -57,11 +57,6 @@ export function getPointFromCanvasSelection(
   return null;
 }
 
-export function getRandomHexColor(): string {
-  const color = Math.floor(Math.random() * 16777215).toString(16);
-  return `#${color}`;
-}
-
 export function getSvgMousePosition(
   svg: SVGElement | SVGGElement,
   event: MouseEvent | DragEvent,

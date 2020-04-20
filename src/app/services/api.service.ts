@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { Observable, Observer } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { simulationResultsToBands } from '../functions';
 import * as types from '../types';
 import * as gql from './gql';
 
@@ -155,12 +154,14 @@ export class ApiService {
     });
   }
 
-  simulationRun(): Observable<types.StringTMap<types.Band>> {
-    return this.http
-      .get<types.SimulationResults>(`./assets/simulation-results.json`)
-      .pipe(
-        map(simulationResults => simulationResultsToBands(simulationResults)),
-      );
+  simulate(planId: string) {
+    return this.apollo
+      .query<{ simulate: types.SimulationResult[] }>({
+        fetchPolicy: 'no-cache',
+        query: gql.SIMULATE,
+        variables: { planId },
+      })
+      .pipe(map(({ data: { simulate } }) => simulate));
   }
 
   updateActivityInstance(

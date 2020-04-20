@@ -1,9 +1,12 @@
 import { createAction, props } from '@ngrx/store';
-import { Band, StringTMap } from '../types';
+import { SimulationResult } from '../types';
 
 export const clear = createAction('[simulation] clear');
 
-export const run = createAction('[simulation] run');
+export const run = createAction(
+  '[simulation] run',
+  props<{ planId: string }>(),
+);
 
 export const runFailure = createAction(
   '[simulation] runFailure',
@@ -12,5 +15,5 @@ export const runFailure = createAction(
 
 export const runSuccess = createAction(
   '[simulation] runSuccess',
-  props<{ stateBands: StringTMap<Band> }>(),
+  props<{ results: SimulationResult[] }>(),
 );

@@ -147,7 +147,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       ctx.beginPath();
       line.context(ctx)(this.points);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = this.color || '#000000';
+      ctx.strokeStyle = this.color || '#d651ff';
       ctx.stroke();
     });
 
@@ -158,7 +158,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       const x = Math.floor(xScale(point.x));
       const y = Math.floor(yScale(point.y));
       const circle = new Path2D();
-      const radius = point.radius || 3;
+      const radius = point.radius || 2.0;
       circle.arc(x, y, radius, 0, 2 * Math.PI);
 
       forEachCanvas(canvases, (canvas, ctx) => {

@@ -12,16 +12,18 @@ export class SimulationEffects {
   run = createEffect(() =>
     this.actions.pipe(
       ofType(SimulationActions.run),
-      switchMap(() =>
+      switchMap(({ planId }) =>
         concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService.simulationRun().pipe(
-            switchMap(stateBands => {
-              return [SimulationActions.runSuccess({ stateBands })];
+          this.apiService.simulate(planId).pipe(
+            switchMap(results => {
+              return [SimulationActions.runSuccess({ results })];
             }),
-            catchError((errorMsg: string) => {
-              console.log(errorMsg);
-              return [SimulationActions.runFailure({ errorMsg })];
+            catchError((error: Error) => {
+              console.log(error);
+              return [
+                SimulationActions.runFailure({ errorMsg: error.message }),
+              ];
             }),
           ),
           of(AppActions.setLoading({ loading: false })),
