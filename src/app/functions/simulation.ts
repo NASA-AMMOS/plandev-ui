@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 import uniqueId from 'lodash-es/uniqueId';
 import { Band, PointLine, SimulationResult, SubBandLine } from '../types';
 import { getUnixEpochTime } from './time';
@@ -9,15 +8,27 @@ export function simulationResultsToBands(
   return simulationResults.map(({ name, start, values }) => {
     const id = uniqueId('band');
     const yAxisId = uniqueId('axis');
+    const points: PointLine[] = [];
+    let minY = Number.MAX_SAFE_INTEGER;
+    let maxY = Number.MIN_SAFE_INTEGER;
 
-    const points: PointLine[] = values.map(({ x, y }, i) => ({
-      id: `${id}-pointLine-${i}`,
-      type: 'line',
-      x: getUnixEpochTime(start) + x / 1000,
-      y,
-    }));
+    for (let i = 0; i < values.length; ++i) {
+      const { x, y } = values[i];
+      points.push({
+        id: `${id}-pointLine-${i}`,
+        type: 'line',
+        x: getUnixEpochTime(start) + x / 1000,
+        y,
+      });
+      minY = y < minY ? y : minY;
+      maxY = y > maxY ? y : maxY;
+    }
 
-    const yValues = points.map(point => point.y);
+    if (minY === maxY) {
+      // If extents are equal, clip first extent to 0
+      // so axis and line gets properly drawn by D3.
+      minY = 0;
+    }
 
     const subBands: SubBandLine[] = [
       {
@@ -39,7 +50,7 @@ export function simulationResultsToBands(
           label: {
             text: name,
           },
-          scaleDomain: d3.extent(yValues),
+          scaleDomain: [minY, maxY],
         },
       ],
     };
