@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Actions } from '@ngrx/effects';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
+import { provideMockStore } from '@ngrx/store/testing';
 import { Observable, Observer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import { AppActions, SimulationActions } from '../actions';
@@ -16,6 +17,9 @@ describe('simulation effects', () => {
   let apiService: ApiService;
   let effects: SimulationEffects;
   let testScheduler: TestScheduler;
+  const initialState = {
+    planning: { viewTimeRange: { end: 1735689600000, start: 1577836800000 } },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -23,6 +27,7 @@ describe('simulation effects', () => {
       providers: [
         SimulationEffects,
         provideMockActions(() => actions),
+        provideMockStore({ initialState }),
         {
           provide: ApiService,
           useValue: new ApiMockService(),

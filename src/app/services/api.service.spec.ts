@@ -179,7 +179,7 @@ describe('api service', () => {
   });
 
   it('simulate', () => {
-    apiService.simulate(planId).subscribe(response => {
+    apiService.simulate(planId, 1000000).subscribe(response => {
       expect(response).toEqual(simulationResults);
     });
     apolloTestingController
