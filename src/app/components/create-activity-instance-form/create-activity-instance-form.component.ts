@@ -68,6 +68,7 @@ export class CreateActivityInstanceFormComponent
             this.formParameters.push(
               this.fb.group({
                 name: parameter.name,
+                type: parameter.schema.type,
                 value: parameter.default,
               }),
             );
@@ -96,6 +97,13 @@ export class CreateActivityInstanceFormComponent
     if (this.form.valid) {
       const activityInstance: CreateActivityInstance = {
         ...this.form.value,
+        parameters: this.form.value.parameters
+          .filter(p => p.value !== '')
+          .map(({ name, type, value }) =>
+            type === 'double' || type === 'int'
+              ? { name, value: parseFloat(value) }
+              : { name, value },
+          ),
       };
       this.create.emit(activityInstance);
     }

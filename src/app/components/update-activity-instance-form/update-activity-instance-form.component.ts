@@ -71,11 +71,12 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
       if (activityType) {
         const { parameters = [] } = activityType;
         this.formParameters.clear();
-        parameters.forEach(({ name }) => {
+        parameters.forEach(({ name, schema }) => {
           const value = this.getParameterValue(this.activityInstance, name);
           this.formParameters.push(
             this.fb.group({
               name,
+              type: schema.type,
               value,
             }),
           );
@@ -106,7 +107,13 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
       const activityInstance: UpdateActivityInstance = {
         ...this.form.value,
         id: this.activityInstance.id,
-        parameters: this.form.value.parameters.filter(p => p.value !== ''),
+        parameters: this.form.value.parameters
+          .filter(p => p.value !== '')
+          .map(({ name, type, value }) =>
+            type === 'double' || type === 'int'
+              ? { name, value: parseFloat(value) }
+              : { name, value },
+          ),
       };
       this.update.emit(activityInstance);
     }
