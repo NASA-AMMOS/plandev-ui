@@ -3,7 +3,7 @@ pipeline {
 		disableConcurrentBuilds()
 	}
 	agent {
-		label 'coronado'
+		label 'coronado || Pismo || San-clemente || Sugarloaf'
 	}
 	environment {
     ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:16001"
