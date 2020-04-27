@@ -33,13 +33,11 @@ import { MaterialModule } from '../../material';
 import {
   getActivityInstances,
   getActivityTypes,
-  getCreateActivityInstanceError,
   getMaxTimeRange,
   getScheduleBands,
   getSelectedActivityInstance,
   getSelectedPlan,
   getStateBands,
-  getUpdateActivityInstanceError,
   getViewTimeRange,
 } from '../../selectors';
 import {
@@ -66,7 +64,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   activityInstances: ActivityInstance[] | null = null;
   activityTypes: ActivityType[] | null = null;
-  createActivityInstanceError: string | null = null;
   drawer = {
     activityDictionary: {
       visible: true,
@@ -108,7 +105,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
   stateBands: Band[];
-  updateActivityInstanceError: string | null = null;
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -130,12 +126,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.activityTypes = activityTypes;
         this.cdRef.markForCheck();
       }),
-      this.store
-        .pipe(select(getCreateActivityInstanceError))
-        .subscribe(createActivityInstanceError => {
-          this.createActivityInstanceError = createActivityInstanceError;
-          this.cdRef.markForCheck();
-        }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();
@@ -161,12 +151,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.stateBands = stateBands;
         this.cdRef.markForCheck();
       }),
-      this.store
-        .pipe(select(getUpdateActivityInstanceError))
-        .subscribe(updateActivityInstanceError => {
-          this.updateActivityInstanceError = updateActivityInstanceError;
-          this.cdRef.markForCheck();
-        }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();

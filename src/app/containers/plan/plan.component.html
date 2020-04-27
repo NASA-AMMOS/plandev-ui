@@ -80,7 +80,6 @@
         <app-create-activity-instance-form
           *ngIf="activityTypes !== null"
           [activityTypes]="activityTypes"
-          [createActivityInstanceError]="createActivityInstanceError"
           [selectedActivityType]="selectedActivityType"
           (back)="onBack()"
           (create)="onCreateActivityInstance($event)"
@@ -101,7 +100,6 @@
           *ngIf="selectedActivityInstance; else elseBlock"
           [activityInstance]="selectedActivityInstance"
           [activityTypes]="activityTypes"
-          [updateActivityInstanceError]="updateActivityInstanceError"
           (delete)="onDeleteActivityInstance($event)"
           (update)="onUpdateActivityInstance($event)"
         ></app-update-activity-instance-form>

@@ -76,11 +76,6 @@ export const getAdaptations = createSelector(
     state.adaptations ? Object.values(state.adaptations) : null,
 );
 
-export const getCreateActivityInstanceError = createSelector(
-  getPlanningState,
-  (state: PlanningState): string | null => state.createActivityInstanceError,
-);
-
 export const getPlans = createSelector(
   getPlanningState,
   (state: PlanningState): Plan[] | null =>
@@ -120,11 +115,6 @@ export const getMaxTimeRange = createSelector(
     }
     return { start: 0, end: 0 };
   },
-);
-
-export const getUpdateActivityInstanceError = createSelector(
-  getPlanningState,
-  (state: PlanningState): string | null => state.updateActivityInstanceError,
 );
 
 export const getViewTimeRange = createSelector(

@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { Observable, Observer } from 'rxjs';
@@ -10,7 +9,7 @@ import * as gql from './gql';
   providedIn: 'root',
 })
 export class ApiService {
-  constructor(private apollo: Apollo, private http: HttpClient) {}
+  constructor(private apollo: Apollo) {}
 
   createActivityInstances(
     planId: string,
@@ -187,5 +186,19 @@ export class ApiService {
           return updateActivityInstance;
         }),
       );
+  }
+
+  validateParameters(
+    activityTypeName: string,
+    adaptationId: string,
+    parameters: types.ActivityInstanceParameter[],
+  ): Observable<types.ValidationResponse> {
+    return this.apollo
+      .query<{ validateParameters: types.ValidationResponse }>({
+        fetchPolicy: 'no-cache',
+        query: gql.VALIDATE_PARAMETERS,
+        variables: { activityTypeName, adaptationId, parameters },
+      })
+      .pipe(map(({ data: { validateParameters } }) => validateParameters));
   }
 }

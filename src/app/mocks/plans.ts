@@ -21,6 +21,7 @@ export const planDetail: PlanDetail = {
     ...adaptation,
     activityTypes,
   },
+  adaptationId: plan.adaptationId,
   endTimestamp: plan.endTimestamp,
   id: plan.id,
   name: plan.name,

@@ -18,21 +18,6 @@ import {
 import { initialState, PlanningState, reducer } from './planning.reducer';
 
 describe('planning reducer', () => {
-  describe('createActivityInstance', () => {
-    it('should set createActivityInstanceError', () => {
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.createActivityInstance({
-          activityInstance,
-          planId: '42',
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-      });
-    });
-  });
-
   describe('createActivityInstanceSuccess', () => {
     it('should set the new activity instance', () => {
       const state: PlanningState = reducer(
@@ -48,22 +33,6 @@ describe('planning reducer', () => {
             ...activityInstance,
           },
         },
-      });
-    });
-  });
-
-  describe('createActivityInstanceFailure', () => {
-    it('should set createActivityInstanceError', () => {
-      const errorMsg = 'Create activity instance failed!';
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.createActivityInstanceFailure({
-          errorMsg,
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        createActivityInstanceError: errorMsg,
       });
     });
   });
@@ -272,37 +241,6 @@ describe('planning reducer', () => {
           end: getUnixEpochTime(planDetail.endTimestamp),
           start: getUnixEpochTime(planDetail.startTimestamp),
         },
-      });
-    });
-  });
-
-  describe('updateActivityInstance', () => {
-    it('should set updateActivityInstanceError', () => {
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.updateActivityInstance({
-          activityInstance,
-          planId: '42',
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-      });
-    });
-  });
-
-  describe('updateActivityInstanceFailure', () => {
-    it('should set updateActivityInstanceError', () => {
-      const errorMsg = 'Update activity instance failed!';
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.updateActivityInstanceFailure({
-          errorMsg,
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        updateActivityInstanceError: errorMsg,
       });
     });
   });

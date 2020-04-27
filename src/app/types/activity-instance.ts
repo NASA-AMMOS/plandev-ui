@@ -5,6 +5,12 @@ export interface ActivityInstance {
   type: string;
 }
 
+export interface ActivityInstanceFormParameter {
+  name: string;
+  type: string;
+  value: any;
+}
+
 export interface ActivityInstanceParameter {
   name: string;
   value: any;
@@ -33,5 +39,10 @@ export type UpdateActivityInstance = { id: string } & Partial<
 
 export interface UpdateActivityInstanceResponse {
   message: string | null;
+  success: boolean;
+}
+
+export interface ValidationResponse {
+  errors: string[] | null;
   success: boolean;
 }

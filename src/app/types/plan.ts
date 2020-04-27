@@ -20,7 +20,7 @@ export interface DeletePlanResponse {
 }
 
 export interface Plan {
-  adaptationId?: string;
+  adaptationId: string;
   endTimestamp: string;
   id: string;
   name: string;
@@ -30,6 +30,7 @@ export interface Plan {
 export interface PlanDetail {
   activityInstances: ActivityInstance[];
   adaptation: Adaptation;
+  adaptationId: string;
   endTimestamp: string;
   id: string;
   name: string;

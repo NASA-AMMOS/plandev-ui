@@ -1,22 +1,29 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
   NgModule,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import {
+  AbstractControl,
   FormArray,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, tap } from 'rxjs/operators';
+import { SubSink } from 'subsink';
 import { MaterialModule } from '../../material';
+import { ActivityInstanceFormService } from '../../services';
 import {
   ActivityInstance,
   ActivityType,
@@ -29,15 +36,13 @@ import {
   styles: [''],
   templateUrl: './update-activity-instance-form.component.html',
 })
-export class UpdateActivityInstanceFormComponent implements OnChanges {
+export class UpdateActivityInstanceFormComponent
+  implements OnChanges, OnDestroy {
   @Input()
   activityInstance: ActivityInstance;
 
   @Input()
   activityTypes: ActivityType[] = [];
-
-  @Input()
-  updateActivityInstanceError: string | null = null;
 
   @Output()
   delete: EventEmitter<string> = new EventEmitter<string>();
@@ -48,8 +53,26 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
   >();
 
   form: FormGroup;
+  inputListener: Subject<AbstractControl> = new Subject<AbstractControl>();
 
-  constructor(private fb: FormBuilder) {}
+  private subs = new SubSink();
+
+  constructor(
+    private cdRef: ChangeDetectorRef,
+    private fb: FormBuilder,
+    public formService: ActivityInstanceFormService,
+  ) {
+    this.subs.add(
+      this.inputListener
+        .pipe(
+          // Assume form has error before validation so it does not flicker
+          // from valid/invalid during the async validation request.
+          tap(control => control.get('value').setErrors({ invalid: '' })),
+          debounceTime(250),
+        )
+        .subscribe(this.validateParameterValue.bind(this)),
+    );
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.activityInstance) {
@@ -85,6 +108,10 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
     }
   }
 
+  ngOnDestroy() {
+    this.subs.unsubscribe();
+  }
+
   get formParameters() {
     return this.form.get('parameters') as FormArray;
   }
@@ -107,16 +134,27 @@ export class UpdateActivityInstanceFormComponent implements OnChanges {
       const activityInstance: UpdateActivityInstance = {
         ...this.form.value,
         id: this.activityInstance.id,
-        parameters: this.form.value.parameters
-          .filter(p => p.value !== '')
-          .map(({ name, type, value }) =>
-            type === 'double' || type === 'int'
-              ? { name, value: parseFloat(value) }
-              : { name, value },
-          ),
+        parameters: this.formService.reduceParameters(
+          this.form.value.parameters,
+        ),
       };
       this.update.emit(activityInstance);
     }
+  }
+
+  async validateParameterValue(control: AbstractControl) {
+    const { type } = this.activityInstance;
+    const activityType = this.activityTypes.find(({ name }) => name === type);
+    const { errors, success } = await this.formService.validateParameterValue(
+      activityType,
+      control.value,
+    );
+    if (success) {
+      control.get('value').setErrors(null);
+    } else {
+      control.get('value').setErrors({ invalid: errors[0] });
+    }
+    this.cdRef.markForCheck();
   }
 }
 

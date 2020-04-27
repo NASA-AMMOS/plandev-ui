@@ -1,8 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormBuilder } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { provideMockStore } from '@ngrx/store/testing';
+import { ApolloTestingModule } from 'apollo-angular/testing';
 import { ngOnChanges } from 'src/app/functions';
 import { MaterialModule } from 'src/app/material';
 import { activityInstance, activityTypes } from '../../mocks';
+import {
+  ActivityInstanceFormMockService,
+  ActivityInstanceFormService,
+} from '../../services';
 import { UpdateActivityInstanceFormComponent } from './update-activity-instance-form.component';
 
 describe('UpdateActivityInstanceFormComponent', () => {
@@ -12,8 +18,15 @@ describe('UpdateActivityInstanceFormComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [UpdateActivityInstanceFormComponent],
-      imports: [MaterialModule],
-      providers: [FormBuilder],
+      imports: [ApolloTestingModule, MaterialModule],
+      providers: [
+        {
+          provide: ActivityInstanceFormService,
+          useValue: new ActivityInstanceFormMockService(),
+        },
+        FormBuilder,
+        provideMockStore({ initialState: {} }),
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(UpdateActivityInstanceFormComponent);
     comp = fixture.componentInstance;
@@ -61,5 +74,31 @@ describe('UpdateActivityInstanceFormComponent', () => {
   it('calling ngOnChanges for an unknown component property should not do anything', () => {
     ngOnChanges(comp, 'foo', {});
     expect(comp).toBeDefined();
+  });
+
+  it('input listener should set an error on the value control when next is called', () => {
+    comp.activityTypes = activityTypes;
+    ngOnChanges(comp, 'activityInstance', { ...activityInstance });
+    const group = new FormGroup({
+      name: new FormControl('peelDirection'),
+      type: new FormControl('string'),
+      value: new FormControl('fromTip'),
+    });
+    comp.inputListener.next(group);
+    expect(group.controls.value.errors.invalid).toEqual('');
+  });
+
+  describe('validateParameterValue', () => {
+    it('success should clear any errors on the parameter value form control', async () => {
+      comp.activityTypes = activityTypes;
+      ngOnChanges(comp, 'activityInstance', { ...activityInstance });
+      const group = new FormGroup({
+        name: new FormControl('peelDirection'),
+        type: new FormControl('string'),
+        value: new FormControl('fromTip'),
+      });
+      await comp.validateParameterValue(group);
+      expect(group.controls.value.errors).toEqual(null);
+    });
   });
 });

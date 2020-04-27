@@ -217,4 +217,20 @@ describe('api service', () => {
       .expectOne(gql.UPDATE_ACTIVITY_INSTANCE)
       .flush({ data: { updateActivityInstance } });
   });
+
+  it('validateParameters', () => {
+    const validateParameters = {
+      errors: null,
+      success: true,
+    };
+    const parameters = [{ name: 'peelDirection', value: 'fromTip' }];
+    apiService
+      .validateParameters('PeelBanana', adaptationId, parameters)
+      .subscribe(response => {
+        expect(response).toEqual(validateParameters);
+      });
+    apolloTestingController
+      .expectOne(gql.VALIDATE_PARAMETERS)
+      .flush({ data: { validateParameters } });
+  });
 });

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
@@ -11,14 +12,18 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import {
+  AbstractControl,
   FormArray,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, tap } from 'rxjs/operators';
 import { SubSink } from 'subsink';
 import { MaterialModule } from '../../material';
+import { ActivityInstanceFormService } from '../../services';
 import { ActivityType, CreateActivityInstance } from '../../types';
 
 @Component({
@@ -32,9 +37,6 @@ export class CreateActivityInstanceFormComponent
   activityTypes: ActivityType[] = [];
 
   @Input()
-  createActivityInstanceError: string | null = null;
-
-  @Input()
   selectedActivityType: ActivityType | null = null;
 
   @Output()
@@ -46,10 +48,15 @@ export class CreateActivityInstanceFormComponent
   >();
 
   form: FormGroup;
+  inputListener: Subject<AbstractControl> = new Subject<AbstractControl>();
 
   private subs = new SubSink();
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private cdRef: ChangeDetectorRef,
+    private fb: FormBuilder,
+    public formService: ActivityInstanceFormService,
+  ) {
     this.form = this.fb.group({
       parameters: this.fb.array([]),
       startTimestamp: ['', Validators.required],
@@ -75,12 +82,19 @@ export class CreateActivityInstanceFormComponent
           });
         }
       }),
+      this.inputListener
+        .pipe(
+          // Assume form has error before validation so it does not flicker
+          // from valid/invalid during the async validation request.
+          tap(control => control.get('value').setErrors({ invalid: '' })),
+          debounceTime(250),
+        )
+        .subscribe(this.validateParameterValue.bind(this)),
     );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.selectedActivityType && this.selectedActivityType !== null) {
-      this.createActivityInstanceError = null;
       this.form.controls.type.setValue(this.selectedActivityType.name);
     }
   }
@@ -97,16 +111,27 @@ export class CreateActivityInstanceFormComponent
     if (this.form.valid) {
       const activityInstance: CreateActivityInstance = {
         ...this.form.value,
-        parameters: this.form.value.parameters
-          .filter(p => p.value !== '')
-          .map(({ name, type, value }) =>
-            type === 'double' || type === 'int'
-              ? { name, value: parseFloat(value) }
-              : { name, value },
-          ),
+        parameters: this.formService.reduceParameters(
+          this.form.value.parameters,
+        ),
       };
       this.create.emit(activityInstance);
     }
+  }
+
+  async validateParameterValue(control: AbstractControl) {
+    const { value: type } = this.form.controls.type;
+    const activityType = this.activityTypes.find(({ name }) => name === type);
+    const { errors, success } = await this.formService.validateParameterValue(
+      activityType,
+      control.value,
+    );
+    if (success) {
+      control.get('value').setErrors(null);
+    } else {
+      control.get('value').setErrors({ invalid: errors[0] });
+    }
+    this.cdRef.markForCheck();
   }
 }
 

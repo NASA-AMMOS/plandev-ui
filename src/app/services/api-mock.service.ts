@@ -123,4 +123,14 @@ export class ApiMockService {
       },
     );
   }
+
+  validateParameters(): Observable<types.ValidationResponse> {
+    return new Observable((o: Observer<types.ValidationResponse>) => {
+      o.next({
+        errors: null,
+        success: true,
+      });
+      o.complete();
+    });
+  }
 }

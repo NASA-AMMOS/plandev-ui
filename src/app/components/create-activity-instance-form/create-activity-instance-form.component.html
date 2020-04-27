@@ -1,8 +1,4 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div class="alert alert-danger" *ngIf="createActivityInstanceError">
-    {{ createActivityInstanceError }}
-  </div>
-
   <mat-form-field class="w-100" appearance="outline">
     <mat-label>Activity Type</mat-label>
     <mat-select
@@ -57,9 +53,14 @@
               formControlName="value"
               matInput
               type="text"
+              [errorStateMatcher]="formService.matcher"
+              (input)="inputListener.next(parameter)"
               [value]="parameter.value.value"
             />
             <mat-hint>type: {{ parameter.value.type }}</mat-hint>
+            <mat-error>
+              {{ formService.getInvalidParameterValueError(parameter) }}
+            </mat-error>
           </mat-form-field>
         </div>
       </mat-expansion-panel>

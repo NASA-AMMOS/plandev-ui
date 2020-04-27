@@ -1,8 +1,14 @@
 import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormBuilder } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { provideMockStore } from '@ngrx/store/testing';
+import { ApolloTestingModule } from 'apollo-angular/testing';
 import { MaterialModule } from '../../material';
 import { activityType, activityTypes } from '../../mocks';
+import {
+  ActivityInstanceFormMockService,
+  ActivityInstanceFormService,
+} from '../../services';
 import { CreateActivityInstanceFormComponent } from './create-activity-instance-form.component';
 
 describe('CreateActivityInstanceFormComponent', () => {
@@ -12,8 +18,15 @@ describe('CreateActivityInstanceFormComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [CreateActivityInstanceFormComponent],
-      imports: [MaterialModule],
-      providers: [FormBuilder],
+      imports: [ApolloTestingModule, MaterialModule],
+      providers: [
+        {
+          provide: ActivityInstanceFormService,
+          useValue: new ActivityInstanceFormMockService(),
+        },
+        FormBuilder,
+        provideMockStore({ initialState: {} }),
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(CreateActivityInstanceFormComponent);
     comp = fixture.componentInstance;
@@ -72,5 +85,31 @@ describe('CreateActivityInstanceFormComponent', () => {
     const createEmit = spyOn(comp.create, 'emit');
     comp.onSubmit();
     expect(createEmit).not.toHaveBeenCalled();
+  });
+
+  it('input listener should set an error on the value control when next is called', () => {
+    comp.activityTypes = activityTypes;
+    comp.form.controls.startTimestamp.setValue('2020-001T00:00:00');
+    comp.form.controls.type.setValue('PeelBanana');
+    const group = new FormGroup({
+      name: new FormControl('peelDirection'),
+      type: new FormControl('string'),
+      value: new FormControl('fromTip'),
+    });
+    comp.inputListener.next(group);
+    expect(group.controls.value.errors.invalid).toEqual('');
+  });
+
+  describe('validateParameterValue', () => {
+    it('success should clear any errors on the parameter value form control', async () => {
+      comp.activityTypes = activityTypes;
+      const group = new FormGroup({
+        name: new FormControl('peelDirection'),
+        type: new FormControl('string'),
+        value: new FormControl('fromTip'),
+      });
+      await comp.validateParameterValue(group);
+      expect(group.controls.value.errors).toEqual(null);
+    });
   });
 });

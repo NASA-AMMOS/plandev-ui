@@ -92,6 +92,7 @@ export const GET_PLAN_DETAIL = gql(`
           }
         }
       }
+      adaptationId
       endTimestamp
       id
       name
@@ -175,6 +176,23 @@ export const UPDATE_ACTIVITY_INSTANCE = gql(`
       planId: $planId
     ) {
       message
+      success
+    }
+  }
+`);
+
+export const VALIDATE_PARAMETERS = gql(`
+  query ValidateParameters(
+    $activityTypeName: String!
+    $adaptationId: ID!
+    $parameters: [ActivityInstanceParameterInput!]!
+  ) {
+    validateParameters(
+      activityTypeName: $activityTypeName
+      adaptationId: $adaptationId
+      parameters: $parameters
+    ) {
+      errors
       success
     }
   }

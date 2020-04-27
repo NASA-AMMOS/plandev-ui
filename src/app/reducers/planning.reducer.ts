@@ -16,11 +16,9 @@ export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
-  createActivityInstanceError: string | null;
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
-  updateActivityInstanceError: string | null;
   viewTimeRange: TimeRange;
 }
 
@@ -28,24 +26,14 @@ export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
-  createActivityInstanceError: null,
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
-  updateActivityInstanceError: null,
   viewTimeRange: { start: 0, end: 0 },
 };
 
 export const reducer = createReducer(
   initialState,
-  on(PlanningActions.createActivityInstance, state => ({
-    ...state,
-    createActivityInstanceError: null,
-  })),
-  on(PlanningActions.createActivityInstanceFailure, (state, action) => ({
-    ...state,
-    createActivityInstanceError: action.errorMsg,
-  })),
   on(PlanningActions.createActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
@@ -122,14 +110,6 @@ export const reducer = createReducer(
         !keepSelected && state.selectedActivityInstanceId === id ? null : id,
     }),
   ),
-  on(PlanningActions.updateActivityInstance, state => ({
-    ...state,
-    updateActivityInstanceError: null,
-  })),
-  on(PlanningActions.updateActivityInstanceFailure, (state, action) => ({
-    ...state,
-    updateActivityInstanceError: action.errorMsg,
-  })),
   on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
