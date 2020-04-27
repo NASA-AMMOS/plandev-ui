@@ -5,3 +5,4 @@ export * from './not-found/not-found.component';
 export * from './plan/plan.component';
 export * from './plans/plans.component';
 export * from './timeline/timeline.component';
+export * from './upsert-activity-instance-form/upsert-activity-instance-form.component';

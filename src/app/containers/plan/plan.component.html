@@ -77,13 +77,14 @@
       </app-panel-header>
       <div class="p-1">
         <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-        <app-create-activity-instance-form
+        <app-upsert-activity-instance-form
           *ngIf="activityTypes !== null"
+          type="create"
           [activityTypes]="activityTypes"
           [selectedActivityType]="selectedActivityType"
-          (back)="onBack()"
+          (cancel)="onCancel()"
           (create)="onCreateActivityInstance($event)"
-        ></app-create-activity-instance-form>
+        ></app-upsert-activity-instance-form>
       </div>
     </div>
 
@@ -96,13 +97,14 @@
         Selected Activity Instance
       </app-panel-header>
       <div class="p-1">
-        <app-update-activity-instance-form
+        <app-upsert-activity-instance-form
           *ngIf="selectedActivityInstance; else elseBlock"
+          type="update"
           [activityInstance]="selectedActivityInstance"
           [activityTypes]="activityTypes"
           (delete)="onDeleteActivityInstance($event)"
           (update)="onUpdateActivityInstance($event)"
-        ></app-update-activity-instance-form>
+        ></app-upsert-activity-instance-form>
         <ng-template #elseBlock>
           <mat-card>No Activity Instance Selected</mat-card>
         </ng-template>

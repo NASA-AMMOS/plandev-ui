@@ -1,5 +1,20 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <mat-form-field class="w-100" appearance="outline">
+  <mat-form-field *ngIf="type === 'update'" class="w-100" appearance="outline">
+    <mat-label>Id</mat-label>
+    <input
+      matInput
+      [disabled]="true"
+      [readonly]="true"
+      [value]="activityInstance.id"
+    />
+    <mat-icon matSuffix>lock</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field
+    *ngIf="type === 'create'; else updateBlock"
+    class="w-100"
+    appearance="outline"
+  >
     <mat-label>Activity Type</mat-label>
     <mat-select
       formControlName="type"
@@ -14,6 +29,13 @@
       You must enter an activity type
     </mat-error>
   </mat-form-field>
+  <ng-template #updateBlock>
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Activity Type</mat-label>
+      <input formControlName="type" matInput />
+      <mat-icon matSuffix>lock</mat-icon>
+    </mat-form-field>
+  </ng-template>
 
   <mat-form-field class="w-100" appearance="outline">
     <mat-label>Start Date</mat-label>
@@ -37,9 +59,6 @@
           <mat-panel-title>
             Parameters
           </mat-panel-title>
-          <mat-panel-description>
-            Override default parameters
-          </mat-panel-description>
         </mat-expansion-panel-header>
 
         <div
@@ -53,13 +72,13 @@
               formControlName="value"
               matInput
               type="text"
-              [errorStateMatcher]="formService.matcher"
+              [errorStateMatcher]="errorStateMatcher"
               (input)="inputListener.next(parameter)"
               [value]="parameter.value.value"
             />
             <mat-hint>type: {{ parameter.value.type }}</mat-hint>
             <mat-error>
-              {{ formService.getInvalidParameterValueError(parameter) }}
+              {{ parameter.controls.value.getError('invalid') }}
             </mat-error>
           </mat-form-field>
         </div>
@@ -67,16 +86,33 @@
     </mat-accordion>
   </div>
 
-  <button type="button" class="mr-2" mat-raised-button (click)="back.emit()">
-    Back
-  </button>
-
   <button
     class="mr-2"
     mat-raised-button
     color="accent"
     [disabled]="!form.valid"
   >
-    Create
+    {{ type === 'create' ? 'Create' : 'Update' }}
+  </button>
+
+  <button
+    *ngIf="type === 'update'"
+    type="button"
+    class="mr-2"
+    mat-raised-button
+    color="warn"
+    (click)="delete.emit(activityInstance.id)"
+  >
+    Delete
+  </button>
+
+  <button
+    *ngIf="type === 'create'"
+    type="button"
+    class="mr-2"
+    mat-raised-button
+    (click)="cancel.emit()"
+  >
+    Cancel
   </button>
 </form>

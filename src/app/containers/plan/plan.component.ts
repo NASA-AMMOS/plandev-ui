@@ -19,7 +19,6 @@ import { RootState } from '../../app-store';
 import {
   ActivityInstancesTableModule,
   ActivityTypeListModule,
-  CreateActivityInstanceFormModule,
   PanelCollapsedModule,
   PanelEmptyModule,
   PanelHeaderModule,
@@ -27,7 +26,6 @@ import {
   SimulationControlsModule,
   TimeControlsModule,
   ToolbarModule,
-  UpdateActivityInstanceFormModule,
 } from '../../components';
 import { MaterialModule } from '../../material';
 import {
@@ -51,6 +49,7 @@ import {
   UpdateActivityInstance,
 } from '../../types';
 import { TimelineModule } from '../timeline/timeline.component';
+import { UpsertActivityInstanceFormModule } from '../upsert-activity-instance-form/upsert-activity-instance-form.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -175,7 +174,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  onBack(): void {
+  onCancel(): void {
     this.showDrawerType('activityDictionary');
   }
 
@@ -342,7 +341,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     AngularSplitModule.forChild(),
     ActivityInstancesTableModule,
     ActivityTypeListModule,
-    CreateActivityInstanceFormModule,
     PanelCollapsedModule,
     PanelEmptyModule,
     PanelHeaderModule,
@@ -351,7 +349,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     TimeControlsModule,
     TimelineModule,
     ToolbarModule,
-    UpdateActivityInstanceFormModule,
+    UpsertActivityInstanceFormModule,
   ],
 })
 export class PlanModule {}
