@@ -105,7 +105,9 @@ export class UpsertActivityInstanceFormComponent
         .pipe(
           // Assume form has error before validation so it does not flicker
           // from valid/invalid during the async validation request.
-          tap(control => control.get('value').setErrors({ invalid: '' })),
+          tap(control =>
+            control.get('value').setErrors({ invalid: '', loading: true }),
+          ),
           debounceTime(250),
         )
         .subscribe(this.validateParameterValue.bind(this)),
@@ -253,7 +255,7 @@ export class UpsertActivityInstanceFormComponent
     if (success) {
       control.get('value').setErrors(null);
     } else {
-      control.get('value').setErrors({ invalid: errors[0] });
+      control.get('value').setErrors({ invalid: errors[0], loading: false });
     }
     this.cdRef.markForCheck();
   }
