@@ -28,6 +28,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, first, tap } from 'rxjs/operators';
 import { SubSink } from 'subsink';
 import { RootState } from '../../app-store';
+import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
 import { ApiService } from '../../services';
 import {
@@ -116,7 +117,7 @@ export class UpsertActivityInstanceFormComponent
     if (this.type === 'create') {
       this.form = this.fb.group({
         parameters: this.fb.array([]),
-        startTimestamp: ['', Validators.required],
+        startTimestamp: ['', [Validators.required, doyTimestampValidator]],
         type: ['', Validators.required],
       });
 
@@ -149,7 +150,7 @@ export class UpsertActivityInstanceFormComponent
         parameters: this.fb.array([]),
         startTimestamp: [
           this.activityInstance.startTimestamp,
-          Validators.required,
+          [Validators.required, doyTimestampValidator],
         ],
         type: [
           { value: this.activityInstance.type, disabled: true },

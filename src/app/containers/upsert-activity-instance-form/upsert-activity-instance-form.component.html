@@ -47,8 +47,13 @@
       type="text"
       placeholder="YYYY-DDDThh:mm:ss"
     />
-    <mat-error *ngIf="form.controls.startTimestamp.invalid">
+    <mat-error *ngIf="form.controls.startTimestamp.getError('required')">
       You must enter a start date/time
+    </mat-error>
+    <mat-error
+      *ngIf="form.controls.startTimestamp.getError('doyTimestamp') as message"
+    >
+      {{ message }}
     </mat-error>
   </mat-form-field>
 

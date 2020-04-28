@@ -27,6 +27,7 @@ import {
   PlansTableModule,
   ToolbarModule,
 } from '../../components';
+import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
 import { getAdaptations, getPlans } from '../../selectors';
 import { Adaptation, CreatePlan, Plan } from '../../types';
@@ -65,9 +66,9 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
 
     this.createPlanForm = this.fb.group({
       adaptationId: [this.selectedAdaptationId, Validators.required],
-      endTimestamp: ['', Validators.required],
+      endTimestamp: ['', [Validators.required, doyTimestampValidator]],
       name: ['', Validators.required],
-      startTimestamp: ['', Validators.required],
+      startTimestamp: ['', [Validators.required, doyTimestampValidator]],
     });
 
     this.subs.add(

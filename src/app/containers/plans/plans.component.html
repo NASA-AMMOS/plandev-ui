@@ -64,10 +64,24 @@
                 autocomplete="off"
                 formControlName="startTimestamp"
                 matInput
+                placeholder="YYYY-DDDThh:mm:ss"
                 type="text"
               />
-              <mat-error *ngIf="createPlanForm.controls.startTimestamp.invalid">
+              <mat-error
+                *ngIf="
+                  createPlanForm.controls.startTimestamp.getError('required')
+                "
+              >
                 You must enter a start date/time
+              </mat-error>
+              <mat-error
+                *ngIf="
+                  createPlanForm.controls.startTimestamp.getError(
+                    'doyTimestamp'
+                  ) as message
+                "
+              >
+                {{ message }}
               </mat-error>
             </mat-form-field>
 
@@ -78,10 +92,24 @@
                 autocomplete="off"
                 formControlName="endTimestamp"
                 matInput
+                placeholder="YYYY-DDDThh:mm:ss"
                 type="text"
               />
-              <mat-error *ngIf="createPlanForm.controls.endTimestamp.invalid">
+              <mat-error
+                *ngIf="
+                  createPlanForm.controls.endTimestamp.getError('required')
+                "
+              >
                 You must enter an end date/time
+              </mat-error>
+              <mat-error
+                *ngIf="
+                  createPlanForm.controls.endTimestamp.getError(
+                    'doyTimestamp'
+                  ) as message
+                "
+              >
+                {{ message }}
               </mat-error>
             </mat-form-field>
 
