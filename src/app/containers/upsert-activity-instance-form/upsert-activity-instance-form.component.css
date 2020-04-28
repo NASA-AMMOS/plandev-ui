@@ -1,0 +1,50 @@
+mat-error {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+mat-expansion-panel {
+  border-radius: 0px;
+}
+
+mat-expansion-panel-header {
+  border-radius: 0px;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  font-family: Roboto;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: normal;
+}
+
+.expansion-panel-body {
+  padding-top: 12px;
+}
+
+.parameters {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 30% 70%;
+  justify-items: start;
+  padding-top: 12px;
+  padding-bottom: 5px;
+}
+
+.parameter-label {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 24px;
+  max-width: 100%;
+  overflow: hidden;
+  padding-right: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-error {
+  color: #f44336;
+}

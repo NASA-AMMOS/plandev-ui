@@ -1,131 +1,159 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <mat-form-field *ngIf="type === 'update'" class="w-100" appearance="outline">
-    <mat-label>Id</mat-label>
-    <input
-      matInput
-      [disabled]="true"
-      [readonly]="true"
-      [value]="activityInstance.id"
-    />
-    <mat-icon matSuffix>lock</mat-icon>
-  </mat-form-field>
+<app-panel-header>
+  {{ type === 'create' ? 'Create' : 'Selected' }} Activity Instance
+</app-panel-header>
 
-  <mat-form-field
-    *ngIf="type === 'create'; else updateBlock"
-    class="w-100"
-    appearance="outline"
-  >
-    <mat-label>Activity Type</mat-label>
-    <mat-select
-      formControlName="type"
-      [required]="true"
-      [value]="selectedActivityType?.name"
+<form class="pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="p-1 pt-4">
+    <mat-form-field
+      *ngIf="type === 'update'"
+      class="w-100"
+      appearance="outline"
     >
-      <mat-option *ngFor="let type of activityTypes" [value]="type.name">
-        {{ type.name }}
-      </mat-option>
-    </mat-select>
-    <mat-error *ngIf="form.controls.type.invalid">
-      You must enter an activity type
-    </mat-error>
-  </mat-form-field>
-  <ng-template #updateBlock>
-    <mat-form-field class="w-100" appearance="outline">
-      <mat-label>Activity Type</mat-label>
-      <input formControlName="type" matInput />
+      <mat-label>Id</mat-label>
+      <input
+        matInput
+        [disabled]="true"
+        [readonly]="true"
+        [value]="activityInstance.id"
+      />
       <mat-icon matSuffix>lock</mat-icon>
     </mat-form-field>
-  </ng-template>
 
-  <mat-form-field class="w-100" appearance="outline">
-    <mat-label>Start Date</mat-label>
-    <input
-      [required]="true"
-      autocomplete="off"
-      formControlName="startTimestamp"
-      matInput
-      type="text"
-      placeholder="YYYY-DDDThh:mm:ss"
-    />
-    <mat-error *ngIf="form.controls.startTimestamp.getError('required')">
-      You must enter a start date/time
-    </mat-error>
-    <mat-error
-      *ngIf="form.controls.startTimestamp.getError('doyTimestamp') as message"
+    <mat-form-field
+      *ngIf="type === 'create'; else updateBlock"
+      class="w-100"
+      appearance="outline"
     >
-      {{ message }}
-    </mat-error>
-  </mat-form-field>
+      <mat-label>Activity Type</mat-label>
+      <mat-select
+        formControlName="type"
+        [required]="true"
+        [value]="selectedActivityType?.name"
+      >
+        <mat-option *ngFor="let type of activityTypes" [value]="type.name">
+          {{ type.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.controls.type.invalid">
+        You must enter an activity type
+      </mat-error>
+    </mat-form-field>
+    <ng-template #updateBlock>
+      <mat-form-field class="w-100" appearance="outline">
+        <mat-label>Activity Type</mat-label>
+        <input formControlName="type" matInput />
+        <mat-icon matSuffix>lock</mat-icon>
+      </mat-form-field>
+    </ng-template>
+
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Start Date</mat-label>
+      <input
+        [required]="true"
+        autocomplete="off"
+        formControlName="startTimestamp"
+        matInput
+        type="text"
+        placeholder="YYYY-DDDThh:mm:ss"
+      />
+      <mat-error *ngIf="form.controls.startTimestamp.getError('required')">
+        You must enter a start date/time
+      </mat-error>
+      <mat-error
+        *ngIf="form.controls.startTimestamp.getError('doyTimestamp') as message"
+      >
+        {{ message }}
+      </mat-error>
+    </mat-form-field>
+  </div>
 
   <div class="pb-4" *ngIf="formParameters?.controls.length">
-    <mat-accordion>
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            Parameters
-          </mat-panel-title>
-        </mat-expansion-panel-header>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header collapsedHeight="40px" expandedHeight="40px">
+        <mat-panel-title>
+          Parameters
+        </mat-panel-title>
+      </mat-expansion-panel-header>
 
+      <div class="expansion-panel-body">
         <div
           formArrayName="parameters"
           *ngFor="let parameter of formParameters?.controls; let i = index"
         >
-          <mat-form-field [formGroupName]="i" class="w-100">
-            <mat-label>{{ parameter.value.name }}</mat-label>
-            <input
-              autocomplete="off"
-              formControlName="value"
-              matInput
-              type="text"
-              [errorStateMatcher]="errorStateMatcher"
-              (input)="inputListener.next(parameter)"
-              [value]="parameter.value.value"
-            />
-            <mat-progress-spinner
-              matSuffix
-              *ngIf="parameter.controls.value.getError('loading')"
-              color="primary"
-              diameter="20"
-              mode="indeterminate"
+          <div class="parameters">
+            <div
+              class="parameter-label"
+              [ngClass]="{
+                'text-error':
+                  parameter.controls.value.getError('invalid') ||
+                  parameter.controls.value.getError('loading')
+              }"
             >
-            </mat-progress-spinner>
-            <mat-hint>type: {{ parameter.value.type }}</mat-hint>
-            <mat-error>
-              {{ parameter.controls.value.getError('invalid') }}
-            </mat-error>
-          </mat-form-field>
+              {{ parameter.value.name | startcase }}
+            </div>
+
+            <mat-form-field [formGroupName]="i" class="w-100">
+              <mat-label>{{ parameter.value.type }}</mat-label>
+              <input
+                autocomplete="off"
+                formControlName="value"
+                matInput
+                type="text"
+                [errorStateMatcher]="errorStateMatcher"
+                (input)="inputListener.next(parameter)"
+                [value]="parameter.value.value"
+              />
+              <mat-progress-spinner
+                matSuffix
+                *ngIf="parameter.controls.value.getError('loading')"
+                color="primary"
+                diameter="20"
+                mode="indeterminate"
+              >
+              </mat-progress-spinner>
+              <mat-error
+                *ngIf="parameter.controls.value.getError('invalid') as message"
+                [matTooltip]="message"
+              >
+                {{ message }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <mat-divider></mat-divider>
         </div>
-      </mat-expansion-panel>
-    </mat-accordion>
+      </div>
+    </mat-expansion-panel>
   </div>
 
-  <button
-    class="mr-2"
-    mat-raised-button
-    color="accent"
-    [disabled]="!form.valid"
-  >
-    {{ type === 'create' ? 'Create' : 'Update' }}
-  </button>
+  <div class="pl-1">
+    <button
+      class="mr-2"
+      mat-raised-button
+      color="accent"
+      [disabled]="!form.valid"
+    >
+      {{ type === 'create' ? 'Create' : 'Update' }}
+    </button>
 
-  <button
-    *ngIf="type === 'update'"
-    type="button"
-    class="mr-2"
-    mat-raised-button
-    color="warn"
-    (click)="delete.emit(activityInstance.id)"
-  >
-    Delete
-  </button>
+    <button
+      *ngIf="type === 'update'"
+      type="button"
+      class="mr-2"
+      mat-raised-button
+      color="warn"
+      (click)="delete.emit(activityInstance.id)"
+    >
+      Delete
+    </button>
 
-  <button
-    *ngIf="type === 'create'"
-    type="button"
-    class="mr-2"
-    mat-raised-button
-    (click)="cancel.emit()"
-  >
-    Cancel
-  </button>
+    <button
+      *ngIf="type === 'create'"
+      type="button"
+      class="mr-2"
+      mat-raised-button
+      (click)="cancel.emit()"
+    >
+      Cancel
+    </button>
+  </div>
 </form>

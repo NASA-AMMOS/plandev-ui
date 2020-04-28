@@ -52,7 +52,7 @@
   <as-split-area
     maxSize="800"
     minSize="350"
-    size="350"
+    size="450"
     [visible]="drawerVisible"
   >
     <div [style.display]="drawer.activityDictionary.visible ? 'block' : 'none'">
@@ -72,20 +72,15 @@
     <div
       [style.display]="drawer.createActivityInstance.visible ? 'block' : 'none'"
     >
-      <app-panel-header>
-        Create Activity Instance
-      </app-panel-header>
-      <div class="p-1">
-        <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-        <app-upsert-activity-instance-form
-          *ngIf="activityTypes !== null"
-          type="create"
-          [activityTypes]="activityTypes"
-          [selectedActivityType]="selectedActivityType"
-          (cancel)="onCancel()"
-          (create)="onCreateActivityInstance($event)"
-        ></app-upsert-activity-instance-form>
-      </div>
+      <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
+      <app-upsert-activity-instance-form
+        *ngIf="activityTypes !== null"
+        type="create"
+        [activityTypes]="activityTypes"
+        [selectedActivityType]="selectedActivityType"
+        (cancel)="onCancel()"
+        (create)="onCreateActivityInstance($event)"
+      ></app-upsert-activity-instance-form>
     </div>
 
     <div
@@ -93,22 +88,17 @@
         drawer.selectedActivityInstance.visible ? 'block' : 'none'
       "
     >
-      <app-panel-header>
-        Selected Activity Instance
-      </app-panel-header>
-      <div class="p-1">
-        <app-upsert-activity-instance-form
-          *ngIf="selectedActivityInstance; else elseBlock"
-          type="update"
-          [activityInstance]="selectedActivityInstance"
-          [activityTypes]="activityTypes"
-          (delete)="onDeleteActivityInstance($event)"
-          (update)="onUpdateActivityInstance($event)"
-        ></app-upsert-activity-instance-form>
-        <ng-template #elseBlock>
-          <mat-card>No Activity Instance Selected</mat-card>
-        </ng-template>
-      </div>
+      <app-upsert-activity-instance-form
+        *ngIf="selectedActivityInstance; else elseBlock"
+        type="update"
+        [activityInstance]="selectedActivityInstance"
+        [activityTypes]="activityTypes"
+        (delete)="onDeleteActivityInstance($event)"
+        (update)="onUpdateActivityInstance($event)"
+      ></app-upsert-activity-instance-form>
+      <ng-template #elseBlock>
+        <mat-card>No Activity Instance Selected</mat-card>
+      </ng-template>
     </div>
   </as-split-area>
 </as-split>

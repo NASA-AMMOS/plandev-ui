@@ -28,8 +28,10 @@ import { Subject } from 'rxjs';
 import { debounceTime, first, tap } from 'rxjs/operators';
 import { SubSink } from 'subsink';
 import { RootState } from '../../app-store';
+import { PanelHeaderModule } from '../../components';
 import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
+import { PipesModule } from '../../pipes';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
@@ -57,6 +59,7 @@ class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-upsert-activity-instance-form',
+  styleUrls: ['./upsert-activity-instance-form.component.css'],
   templateUrl: './upsert-activity-instance-form.component.html',
 })
 export class UpsertActivityInstanceFormComponent
@@ -265,6 +268,12 @@ export class UpsertActivityInstanceFormComponent
 @NgModule({
   declarations: [UpsertActivityInstanceFormComponent],
   exports: [UpsertActivityInstanceFormComponent],
-  imports: [CommonModule, MaterialModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    MaterialModule,
+    PanelHeaderModule,
+    PipesModule,
+    ReactiveFormsModule,
+  ],
 })
 export class UpsertActivityInstanceFormModule {}
