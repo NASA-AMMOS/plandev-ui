@@ -27,7 +27,12 @@ export class ApiService {
         },
       })
       .pipe(
-        map(({ data: { createActivityInstances } }) => createActivityInstances),
+        map(({ data: { createActivityInstances } }) => {
+          if (!createActivityInstances.success) {
+            throw new Error(createActivityInstances.message);
+          }
+          return createActivityInstances;
+        }),
       );
   }
 
@@ -49,7 +54,14 @@ export class ApiService {
           version: adaptation.version,
         },
       })
-      .pipe(map(({ data: { createAdaptation } }) => createAdaptation));
+      .pipe(
+        map(({ data: { createAdaptation } }) => {
+          if (!createAdaptation.success) {
+            throw new Error(createAdaptation.message);
+          }
+          return createAdaptation;
+        }),
+      );
   }
 
   createPlan(plan: types.CreatePlan): Observable<types.CreatePlanResponse> {
@@ -64,7 +76,14 @@ export class ApiService {
           startTimestamp: plan.startTimestamp,
         },
       })
-      .pipe(map(({ data: { createPlan } }) => createPlan));
+      .pipe(
+        map(({ data: { createPlan } }) => {
+          if (!createPlan.success) {
+            throw new Error(createPlan.message);
+          }
+          return createPlan;
+        }),
+      );
   }
 
   deleteActivityInstance(
@@ -80,7 +99,12 @@ export class ApiService {
         },
       )
       .pipe(
-        map(({ data: { deleteActivityInstance } }) => deleteActivityInstance),
+        map(({ data: { deleteActivityInstance } }) => {
+          if (!deleteActivityInstance.success) {
+            throw new Error(deleteActivityInstance.message);
+          }
+          return deleteActivityInstance;
+        }),
       );
   }
 
@@ -91,7 +115,14 @@ export class ApiService {
         mutation: gql.DELETE_ADAPTATION,
         variables: { id },
       })
-      .pipe(map(({ data: { deleteAdaptation } }) => deleteAdaptation));
+      .pipe(
+        map(({ data: { deleteAdaptation } }) => {
+          if (!deleteAdaptation.success) {
+            throw new Error(deleteAdaptation.message);
+          }
+          return deleteAdaptation;
+        }),
+      );
   }
 
   deletePlan(id: string): Observable<types.DeletePlanResponse> {
@@ -101,7 +132,14 @@ export class ApiService {
         mutation: gql.DELETE_PLAN,
         variables: { id },
       })
-      .pipe(map(({ data: { deletePlan } }) => deletePlan));
+      .pipe(
+        map(({ data: { deletePlan } }) => {
+          if (!deletePlan.success) {
+            throw new Error(deletePlan.message);
+          }
+          return deletePlan;
+        }),
+      );
   }
 
   getAdaptations(): Observable<types.Adaptation[]> {
