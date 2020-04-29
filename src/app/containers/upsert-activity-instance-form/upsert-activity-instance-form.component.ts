@@ -71,6 +71,9 @@ export class UpsertActivityInstanceFormComponent
   activityTypes: ActivityType[] = [];
 
   @Input()
+  parametersExpanded = false;
+
+  @Input()
   selectedActivityType: ActivityType | null = null;
 
   @Input()

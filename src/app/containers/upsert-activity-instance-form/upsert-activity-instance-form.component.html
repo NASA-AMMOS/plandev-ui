@@ -68,7 +68,7 @@
   </div>
 
   <div class="pb-4" *ngIf="formParameters?.controls.length">
-    <mat-expansion-panel>
+    <mat-expansion-panel [expanded]="parametersExpanded">
       <mat-expansion-panel-header collapsedHeight="40px" expandedHeight="40px">
         <mat-panel-title>
           Parameters
@@ -119,7 +119,9 @@
               </mat-error>
             </mat-form-field>
           </div>
-          <mat-divider></mat-divider>
+          <mat-divider
+            *ngIf="i !== formParameters?.controls.length - 1"
+          ></mat-divider>
         </div>
       </div>
     </mat-expansion-panel>
