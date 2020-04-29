@@ -17,7 +17,7 @@ export const getPlanningState = createFeatureSelector<PlanningState>(
 
 export const getActivityInstances = createSelector(
   getPlanningState,
-  (state: PlanningState) =>
+  (state: PlanningState): ActivityInstance[] | null =>
     state.activityInstances
       ? Object.values(state.activityInstances).sort((a, b) =>
           compare(
@@ -26,7 +26,7 @@ export const getActivityInstances = createSelector(
             true,
           ),
         )
-      : [],
+      : null,
 );
 
 export const getSelectedActivityInstanceId = createSelector(
@@ -38,30 +38,34 @@ export const getScheduleBands = createSelector(
   getActivityInstances,
   getSelectedActivityInstanceId,
   (
-    activityInstances: ActivityInstance[],
+    activityInstances: ActivityInstance[] | null,
     selectedActivityInstanceId: string | null,
-  ): Band[] => [
-    {
-      id: 'band0',
-      subBands: [
-        {
-          id: 'band0subBand0',
-          points: activityInstances.map(point => ({
-            duration: 0,
-            id: point.id,
-            label: {
-              text: point.type,
-            },
-            selected: selectedActivityInstanceId === point.id,
+  ): Band[] => {
+    const points = (activityInstances || []).map(point => ({
+      duration: 0,
+      id: point.id,
+      label: {
+        text: point.type,
+      },
+      selected: selectedActivityInstanceId === point.id,
+      type: 'activity',
+      x: getUnixEpochTime(point.startTimestamp),
+    }));
+
+    return [
+      {
+        id: 'band0',
+        subBands: [
+          {
+            id: 'band0subBand0',
+            points,
             type: 'activity',
-            x: getUnixEpochTime(point.startTimestamp),
-          })),
-          type: 'activity',
-        } as SubBandActivity,
-      ],
-      type: 'schedule',
-    },
-  ],
+          } as SubBandActivity,
+        ],
+        type: 'schedule',
+      },
+    ];
+  },
 );
 
 export const getActivityTypes = createSelector(
@@ -86,10 +90,10 @@ export const getSelectedActivityInstance = createSelector(
   getActivityInstances,
   getSelectedActivityInstanceId,
   (
-    activityInstances: ActivityInstance[],
+    activityInstances: ActivityInstance[] | null,
     selectedActivityInstanceId: string | null,
   ) => {
-    if (selectedActivityInstanceId) {
+    if (activityInstances && selectedActivityInstanceId) {
       const activityInstance = activityInstances.find(
         ({ id }) => id === selectedActivityInstanceId,
       );
