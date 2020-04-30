@@ -42,7 +42,7 @@ import {
   UpdateActivityInstance,
 } from '../../types';
 
-class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
+export class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
   isErrorState(
     control: FormControl | null,
     form: FormGroupDirective | NgForm | null,
@@ -133,7 +133,7 @@ export class UpsertActivityInstanceFormComponent
             ({ name }) => name === type,
           );
           if (activityType) {
-            const { parameters = [] } = activityType;
+            const { parameters } = activityType;
             this.formParameters.clear();
             parameters.forEach(parameter => {
               this.formParameters.push(
@@ -167,7 +167,7 @@ export class UpsertActivityInstanceFormComponent
       const { type } = this.activityInstance;
       const activityType = this.activityTypes.find(({ name }) => name === type);
       if (activityType) {
-        const { parameters = [] } = activityType;
+        const { parameters } = activityType;
         this.formParameters.clear();
         parameters.forEach(({ name, schema }) => {
           const value = this.getParameterValue(this.activityInstance, name);
@@ -199,7 +199,7 @@ export class UpsertActivityInstanceFormComponent
     activityInstance: ActivityInstance,
     parameterName: string,
   ): string {
-    const { parameters = [] } = activityInstance;
+    const { parameters } = activityInstance;
     const parameter = parameters.find(({ name }) => name === parameterName);
     return parameter ? parameter.value : '';
   }

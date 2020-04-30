@@ -1,15 +1,20 @@
 import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, NgForm } from '@angular/forms';
 import { provideMockStore } from '@ngrx/store/testing';
 import { ApolloTestingModule } from 'apollo-angular/testing';
+import { of } from 'rxjs';
 import { ngOnChanges } from 'src/app/functions';
 import { MaterialModule } from 'src/app/material';
 import { activityInstance, activityType, activityTypes } from '../../mocks';
 import { ApiMockService, ApiService } from '../../services';
-import { UpsertActivityInstanceFormComponent } from './upsert-activity-instance-form.component';
+import {
+  ActivityInstanceFormStateMatcher,
+  UpsertActivityInstanceFormComponent,
+} from './upsert-activity-instance-form.component';
 
 describe('UpsertActivityInstanceFormComponent', () => {
+  let apiService: ApiService;
   let comp: UpsertActivityInstanceFormComponent;
   let fixture: ComponentFixture<UpsertActivityInstanceFormComponent>;
 
@@ -23,11 +28,55 @@ describe('UpsertActivityInstanceFormComponent', () => {
           useValue: new ApiMockService(),
         },
         FormBuilder,
-        provideMockStore({ initialState: {} }),
+        provideMockStore({
+          initialState: {
+            planning: {
+              selectedPlan: {
+                adaptationId: '42',
+              },
+            },
+          },
+        }),
       ],
     }).compileComponents();
+    apiService = TestBed.inject(ApiService);
     fixture = TestBed.createComponent(UpsertActivityInstanceFormComponent);
     comp = fixture.componentInstance;
+  });
+
+  describe('ActivityInstanceFormStateMatcher', () => {
+    it('isErrorState should be false for an empty form control', () => {
+      const matcher = new ActivityInstanceFormStateMatcher();
+      const control = new FormControl();
+      const res = matcher.isErrorState(control, null);
+      expect(res).toEqual(false);
+    });
+
+    it('isErrorState should be true for an invalid submitted form', () => {
+      const matcher = new ActivityInstanceFormStateMatcher();
+      const control = new FormControl();
+      control.setErrors({ invalid: true });
+      const res = matcher.isErrorState(control, { submitted: true } as NgForm);
+      expect(res).toEqual(true);
+    });
+
+    it('isErrorState should be true for an invalid dirty form', () => {
+      const matcher = new ActivityInstanceFormStateMatcher();
+      const control = new FormControl();
+      control.setErrors({ invalid: true });
+      control.markAsDirty();
+      const res = matcher.isErrorState(control, null);
+      expect(res).toEqual(true);
+    });
+
+    it('isErrorState should be true for an invalid touched form', () => {
+      const matcher = new ActivityInstanceFormStateMatcher();
+      const control = new FormControl();
+      control.setErrors({ invalid: true });
+      control.markAsTouched();
+      const res = matcher.isErrorState(control, null);
+      expect(res).toEqual(true);
+    });
   });
 
   describe('create', () => {
@@ -138,6 +187,12 @@ describe('UpsertActivityInstanceFormComponent', () => {
       expect(value).toBe(2.5);
     });
 
+    it('double - fail to parseFloat', () => {
+      const parameter = { name: 'biteSize', type: 'double', value: 'a' };
+      const { value } = comp.reduceParameter(parameter);
+      expect(value).toBe('a');
+    });
+
     it('int', () => {
       const parameter = { name: 'biteSize', type: 'int', value: '2' };
       const { value } = comp.reduceParameter(parameter);
@@ -190,6 +245,47 @@ describe('UpsertActivityInstanceFormComponent', () => {
         { name: 'canPeel', value: false },
       ];
       expect(res).toEqual(expected);
+    });
+  });
+
+  describe('validateParameterValue', () => {
+    it('succeeds', async () => {
+      comp.type = 'update';
+      ngOnChanges(comp, 'activityTypes', [...activityTypes]);
+      ngOnChanges(comp, 'activityInstance', { ...activityInstance });
+      spyOn(apiService, 'validateParameters').and.returnValue(
+        of({
+          errors: null,
+          success: true,
+        }),
+      );
+      const group = new FormGroup({
+        name: new FormControl('peelDirection'),
+        type: new FormControl('string'),
+        value: new FormControl('fromTip'),
+      });
+      await comp.validateParameterValue(group);
+      expect(group.controls.value.errors).toEqual(null);
+    });
+
+    it('fails', async () => {
+      comp.type = 'update';
+      ngOnChanges(comp, 'activityTypes', [...activityTypes]);
+      ngOnChanges(comp, 'activityInstance', { ...activityInstance });
+      const error = 'peelDirection must be fromStem or fromTip';
+      spyOn(apiService, 'validateParameters').and.returnValue(
+        of({
+          errors: [error],
+          success: false,
+        }),
+      );
+      const group = new FormGroup({
+        name: new FormControl('peelDirection'),
+        type: new FormControl('string'),
+        value: new FormControl('aroundSide'),
+      });
+      await comp.validateParameterValue(group);
+      expect(group.controls.value.errors.invalid).toEqual(error);
     });
   });
 });
