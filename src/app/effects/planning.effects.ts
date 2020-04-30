@@ -35,16 +35,15 @@ export class PlanningEffects {
                   }),
                 ];
               }),
-              catchError(error => {
-                console.error(error);
-                const [{ message: errorMsg }] = error.error;
+              catchError((error: Error) => {
+                console.error(error.message);
                 return [
                   ToastActions.showToast({
                     message: 'Create activity instance failed',
                     toastType: 'error',
                   }),
                   PlanningActions.createActivityInstanceFailure({
-                    errorMsg,
+                    errorMsg: error.message,
                   }),
                 ];
               }),
@@ -80,7 +79,7 @@ export class PlanningEffects {
               ];
             }),
             catchError((error: Error) => {
-              console.error(error);
+              console.error(error.message);
               return [
                 ToastActions.showToast({
                   message: 'Create adaptation failed',
@@ -120,7 +119,7 @@ export class PlanningEffects {
               ];
             }),
             catchError((error: Error) => {
-              console.error(error);
+              console.error(error.message);
               return [
                 ToastActions.showToast({
                   message: 'Create plan failed',
@@ -180,7 +179,7 @@ export class PlanningEffects {
                   ];
                 }),
                 catchError((error: Error) => {
-                  console.error(error);
+                  console.error(error.message);
                   return [
                     ToastActions.showToast({
                       message: 'Delete activity instance failed',
@@ -233,7 +232,7 @@ export class PlanningEffects {
                 ];
               }),
               catchError((error: Error) => {
-                console.error(error);
+                console.error(error.message);
                 return [
                   ToastActions.showToast({
                     message: 'Delete adaptation failed',
@@ -280,7 +279,7 @@ export class PlanningEffects {
                 ];
               }),
               catchError((error: Error) => {
-                console.error(error);
+                console.error(error.message);
                 return [
                   ToastActions.showToast({
                     message: 'Delete plan failed',
@@ -313,8 +312,8 @@ export class PlanningEffects {
                 activityInstance,
               }),
             ]),
-            catchError(error => {
-              console.error(error);
+            catchError((error: Error) => {
+              console.error(error.message);
               return [
                 ToastActions.showToast({
                   message: 'Update activity instance failed',

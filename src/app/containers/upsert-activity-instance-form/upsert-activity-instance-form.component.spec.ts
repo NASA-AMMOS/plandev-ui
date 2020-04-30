@@ -11,6 +11,7 @@ import { ApiMockService, ApiService } from '../../services';
 import {
   ActivityInstanceFormStateMatcher,
   UpsertActivityInstanceFormComponent,
+  UpsertActivityInstanceFormModule,
 } from './upsert-activity-instance-form.component';
 
 describe('UpsertActivityInstanceFormComponent', () => {
@@ -20,8 +21,11 @@ describe('UpsertActivityInstanceFormComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [UpsertActivityInstanceFormComponent],
-      imports: [ApolloTestingModule, MaterialModule],
+      imports: [
+        UpsertActivityInstanceFormModule,
+        ApolloTestingModule,
+        MaterialModule,
+      ],
       providers: [
         {
           provide: ApiService,

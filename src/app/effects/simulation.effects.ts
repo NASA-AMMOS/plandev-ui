@@ -20,7 +20,7 @@ export class SimulationEffects {
    * @note We are using a simple heuristic to calculate the sampling period.
    * First we use a scale to determine the spread between two consecutive time points
    * in the view time range.
-   * Then we are dividing that time by 8 (arbitrarily) to get more samples within the range,
+   * Then we are dividing that time by 8 (arbitrarily) to get 8 samples within the range,
    * and then multiplying by 1000 to convert milliseconds to microseconds.
    */
   run = createEffect(() =>
@@ -40,7 +40,7 @@ export class SimulationEffects {
               return [SimulationActions.runSuccess({ results })];
             }),
             catchError((error: Error) => {
-              console.log(error);
+              console.log(error.message);
               return [
                 SimulationActions.runFailure({ errorMsg: error.message }),
               ];
