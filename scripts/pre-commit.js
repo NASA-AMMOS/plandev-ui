@@ -5,16 +5,18 @@ function main() {
     const stdout = execSync('yarn lint').toString();
     console.log(stdout);
   } catch ({ stdout }) {
-    console.error(stdout.toString());
-    process.exit(1);
+    const error = stdout.toString();
+    console.error(error);
+    throw new Error(error);
   }
 
   try {
     const stdout = execSync('yarn format').toString();
     console.log(stdout);
   } catch ({ stdout }) {
-    console.error(stdout.toString());
-    process.exit(1);
+    const error = stdout.toString();
+    console.error(error);
+    throw new Error(error);
   }
 }
 
