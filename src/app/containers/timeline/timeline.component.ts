@@ -2,8 +2,12 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Input,
   NgModule,
+  OnChanges,
+  SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -25,11 +29,15 @@ import {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-timeline',
+  styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent {
+export class TimelineComponent implements OnChanges {
   @Input()
   bands: Band[] | null;
+
+  @Input()
+  height: number;
 
   @Input()
   marginBottom = 10;
@@ -49,7 +57,19 @@ export class TimelineComponent {
   @Input()
   viewTimeRange: TimeRange = { end: 0, start: 0 };
 
+  @ViewChild('bandContainer', { static: true })
+  bandContainer: ElementRef<HTMLDivElement>;
+
+  @ViewChild('timeAxisContainer', { static: true })
+  timeAxisContainer: ElementRef<HTMLDivElement>;
+
   constructor(private route: ActivatedRoute, private store: Store<RootState>) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.height) {
+      this.setBandContainerMaxHeight();
+    }
+  }
 
   onCreatePoint(event: CreatePoint): void {
     if (event.type === 'activity') {
@@ -113,6 +133,19 @@ export class TimelineComponent {
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
     this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
+  }
+
+  setBandContainerMaxHeight() {
+    const cssStyle = getComputedStyle(document.documentElement);
+    const toolbarHeightProperty = cssStyle.getPropertyValue('--toolbar-height');
+    const toolbarHeight = parseInt(toolbarHeightProperty, 10);
+
+    const { nativeElement: timeAxisContainer } = this.timeAxisContainer;
+    const { nativeElement: bandContainer } = this.bandContainer;
+    const offsetTop = toolbarHeight + timeAxisContainer.clientHeight;
+    const maxHeight = `${this.height - offsetTop}px`;
+
+    bandContainer.style.setProperty('--max-height', maxHeight);
   }
 
   trackByBands(_: number, band: Band): string {

@@ -1,4 +1,4 @@
-<div class="time-axis-container">
+<div #timeAxisContainer class="time-axis-container">
   <app-time-axis-global
     [marginLeft]="marginLeft"
     [marginRight]="marginRight"
@@ -16,7 +16,7 @@
     (updateViewTimeRange)="onUpdateViewTimeRange($event)"
   ></app-time-axis>
 </div>
-<div class="band-container">
+<div #bandContainer class="band-container">
   <app-band
     *ngFor="let band of bands; trackBy: trackByBands"
     [height]="band.height"

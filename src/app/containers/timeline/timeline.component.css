@@ -1,0 +1,11 @@
+.band-container {
+  max-height: var(--max-height, 600px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.time-axis-container,
+.band-container {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}

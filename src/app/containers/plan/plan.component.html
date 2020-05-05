@@ -32,7 +32,11 @@
     >
       <as-split-area
         *ngFor="let panel of panels; trackBy: trackByPanels"
+        [id]="panel.id"
         [minSize]="panel.minSize"
+        [ngClass]="{
+          'panel-overflow-hidden': panel.type === 'timeline'
+        }"
         [size]="panel.size"
       >
         <ng-container
@@ -118,6 +122,7 @@
     <app-timeline
       *ngIf="activityInstances !== null"
       [bands]="scheduleBands"
+      [height]="panel.height"
       [maxTimeRange]="maxTimeRange"
       [viewTimeRange]="viewTimeRange"
     ></app-timeline>
@@ -148,6 +153,7 @@
     <app-timeline
       *ngIf="stateBands !== null"
       [bands]="stateBands"
+      [height]="panel.height"
       [maxTimeRange]="maxTimeRange"
       [viewTimeRange]="viewTimeRange"
     ></app-timeline>

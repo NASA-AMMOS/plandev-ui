@@ -4,6 +4,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   NgModule,
   NgZone,
   OnDestroy,
@@ -78,24 +80,30 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   maxTimeRange: TimeRange;
   panels: Panel[] = [
     {
-      id: '0',
+      height: 0,
+      id: 'panel-schedule',
       minSize: 1.7,
       size: 33.3,
       template: 'schedule',
+      type: 'timeline',
       virtualSize: 33.3,
     },
     {
-      id: '1',
+      height: 0,
+      id: 'panel-simulation',
       minSize: 1.7,
       size: 33.3,
       template: 'simulation',
+      type: 'timeline',
       virtualSize: 33.3,
     },
     {
-      id: '2',
+      height: 0,
+      id: 'panel-table',
       minSize: 1.7,
       size: 33.3,
       template: 'table',
+      type: 'table',
       virtualSize: 33.3,
     },
   ];
@@ -110,6 +118,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
+    private elRef: ElementRef,
     private ngZone: NgZone,
     private route: ActivatedRoute,
     private store: Store<RootState>,
@@ -158,6 +167,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.setPanelHeights();
     this.subs.add(
       this.verticalSplitAreas.dragProgress$.subscribe(({ sizes }) => {
         this.ngZone.run(() => {
@@ -230,6 +240,20 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         planId,
       }),
     );
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize() {
+    this.setPanelHeights();
+  }
+
+  setPanelHeights() {
+    for (const panel of this.panels) {
+      const elPanel = this.elRef.nativeElement.querySelector(`#${panel.id}`);
+      if (elPanel) {
+        panel.height = elPanel.clientHeight;
+      }
+    }
   }
 
   showDrawerType(type: string): void {

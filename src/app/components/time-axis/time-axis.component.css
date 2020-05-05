@@ -1,5 +1,6 @@
 :host {
   background: white;
+  border-bottom: 1px solid lightgrey;
   display: block;
   height: var(--height, 60px);
   width: 100%;

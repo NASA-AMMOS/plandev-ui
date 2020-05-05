@@ -10,3 +10,7 @@ as-split-area > div {
 .link-icon {
   transform: rotate(-45deg);
 }
+
+.panel-overflow-hidden {
+  overflow: hidden !important;
+}
