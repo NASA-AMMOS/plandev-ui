@@ -145,11 +145,12 @@
         </button>
       </div>
     </app-panel-header>
-    <app-panel-empty *ngIf="stateBands === null">
+    <app-placeholder *ngIf="simulationRunning"></app-placeholder>
+    <app-panel-empty *ngIf="!simulationRunning && stateBands === null">
       Run simulation to view results
     </app-panel-empty>
     <app-timeline
-      *ngIf="stateBands !== null"
+      *ngIf="!simulationRunning && stateBands !== null"
       [bands]="stateBands"
       [maxTimeRange]="maxTimeRange"
       [viewTimeRange]="viewTimeRange"

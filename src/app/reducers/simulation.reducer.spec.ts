@@ -9,6 +9,19 @@ describe('simulation reducer', () => {
     );
     expect(state).toEqual({
       ...initialState,
+      running: true,
+    });
+  });
+
+  it('runFailure', () => {
+    const state: SimulationState = reducer(
+      { ...initialState },
+      SimulationActions.runFailure({ errorMsg: 'Simulation failed' }),
+    );
+    expect(state).toEqual({
+      ...initialState,
+      running: false,
+      stateBands: null,
     });
   });
 
@@ -19,6 +32,7 @@ describe('simulation reducer', () => {
     );
     expect(state).toEqual({
       ...initialState,
+      running: false,
       stateBands: {},
     });
   });

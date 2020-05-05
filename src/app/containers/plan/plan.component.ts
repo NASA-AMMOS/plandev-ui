@@ -4,7 +4,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
   NgModule,
   NgZone,
   OnDestroy,
@@ -36,6 +35,7 @@ import {
   getScheduleBands,
   getSelectedActivityInstance,
   getSelectedPlan,
+  getSimulationRunning,
   getStateBands,
   getViewTimeRange,
 } from '../../selectors';
@@ -107,6 +107,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   scheduleBands: Band[];
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
+  simulationRunning = false;
   stateBands: Band[];
   viewTimeRange: TimeRange;
 
@@ -114,7 +115,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
-    private elRef: ElementRef,
     private ngZone: NgZone,
     private route: ActivatedRoute,
     private store: Store<RootState>,
@@ -134,6 +134,12 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getSimulationRunning))
+        .subscribe(simulationRunning => {
+          this.simulationRunning = simulationRunning;
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getScheduleBands)).subscribe(scheduleBands => {
         this.scheduleBands = scheduleBands;
         this.cdRef.markForCheck();

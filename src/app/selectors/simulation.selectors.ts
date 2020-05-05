@@ -6,6 +6,11 @@ export const getSimulationState = createFeatureSelector<SimulationState>(
   'simulation',
 );
 
+export const getSimulationRunning = createSelector(
+  getSimulationState,
+  (state: SimulationState): boolean => state.running,
+);
+
 export const getStateBands = createSelector(
   getSimulationState,
   (state: SimulationState): Band[] | null =>
