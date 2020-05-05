@@ -1,8 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 import { SimulationResult } from '../types';
 
-export const clear = createAction('[simulation] clear');
-
 export const run = createAction(
   '[simulation] run',
   props<{ planId: string }>(),

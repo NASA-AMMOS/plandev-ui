@@ -5,7 +5,6 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  HostListener,
   NgModule,
   NgZone,
   OnDestroy,
@@ -80,7 +79,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   maxTimeRange: TimeRange;
   panels: Panel[] = [
     {
-      height: 0,
       id: 'panel-schedule',
       minSize: 1.7,
       size: 33.3,
@@ -89,7 +87,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
       virtualSize: 33.3,
     },
     {
-      height: 0,
       id: 'panel-simulation',
       minSize: 1.7,
       size: 33.3,
@@ -98,7 +95,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
       virtualSize: 33.3,
     },
     {
-      height: 0,
       id: 'panel-table',
       minSize: 1.7,
       size: 33.3,
@@ -167,7 +163,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.setPanelHeights();
     this.subs.add(
       this.verticalSplitAreas.dragProgress$.subscribe(({ sizes }) => {
         this.ngZone.run(() => {
@@ -223,10 +218,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
     this.showDrawerType('createActivityInstance');
   }
 
-  onSimulationClear(): void {
-    this.store.dispatch(SimulationActions.clear());
-  }
-
   onSimulationRun(): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(SimulationActions.run({ planId }));
@@ -240,20 +231,6 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         planId,
       }),
     );
-  }
-
-  @HostListener('window:resize', ['$event'])
-  onWindowResize() {
-    this.setPanelHeights();
-  }
-
-  setPanelHeights() {
-    for (const panel of this.panels) {
-      const elPanel = this.elRef.nativeElement.querySelector(`#${panel.id}`);
-      if (elPanel) {
-        panel.height = elPanel.clientHeight;
-      }
-    }
   }
 
   showDrawerType(type: string): void {

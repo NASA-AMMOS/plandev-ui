@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewChecked,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   Input,
   NgModule,
-  OnChanges,
-  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -32,12 +31,9 @@ import {
   styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements OnChanges {
+export class TimelineComponent implements AfterViewChecked {
   @Input()
   bands: Band[] | null;
-
-  @Input()
-  height: number;
 
   @Input()
   marginBottom = 10;
@@ -63,12 +59,14 @@ export class TimelineComponent implements OnChanges {
   @ViewChild('timeAxisContainer', { static: true })
   timeAxisContainer: ElementRef<HTMLDivElement>;
 
-  constructor(private route: ActivatedRoute, private store: Store<RootState>) {}
+  constructor(
+    private elRef: ElementRef,
+    private route: ActivatedRoute,
+    private store: Store<RootState>,
+  ) {}
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes.height) {
-      this.setBandContainerMaxHeight();
-    }
+  ngAfterViewChecked() {
+    this.setBandContainerMaxHeight();
   }
 
   onCreatePoint(event: CreatePoint): void {
@@ -140,10 +138,11 @@ export class TimelineComponent implements OnChanges {
     const toolbarHeightProperty = cssStyle.getPropertyValue('--toolbar-height');
     const toolbarHeight = parseInt(toolbarHeightProperty, 10);
 
+    const { clientHeight: height } = this.elRef.nativeElement.parentElement;
     const { nativeElement: timeAxisContainer } = this.timeAxisContainer;
     const { nativeElement: bandContainer } = this.bandContainer;
     const offsetTop = toolbarHeight + timeAxisContainer.clientHeight;
-    const maxHeight = `${this.height - offsetTop}px`;
+    const maxHeight = `${height - offsetTop}px`;
 
     bandContainer.style.setProperty('--max-height', maxHeight);
   }

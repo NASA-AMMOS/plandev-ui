@@ -2,10 +2,10 @@ import { SimulationActions } from '../actions';
 import { initialState, reducer, SimulationState } from './simulation.reducer';
 
 describe('simulation reducer', () => {
-  it('clear', () => {
+  it('run', () => {
     const state: SimulationState = reducer(
       { ...initialState },
-      SimulationActions.clear(),
+      SimulationActions.run({ planId: '42' }),
     );
     expect(state).toEqual({
       ...initialState,

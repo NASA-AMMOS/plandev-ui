@@ -14,7 +14,7 @@ export const initialState: SimulationState = {
 
 export const reducer = createReducer(
   initialState,
-  on(SimulationActions.clear, state => ({
+  on(SimulationActions.run, state => ({
     ...state,
     stateBands: null,
   })),
