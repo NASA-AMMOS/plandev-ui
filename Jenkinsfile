@@ -66,7 +66,7 @@ pipeline {
 		}
 		stage ('build archive') {
       when {
-				expression { GIT_BRANCH ==~ /(develop|staging|release-*)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
 			}
 			steps {
 				script {
@@ -84,7 +84,7 @@ pipeline {
 		}
 		stage ('publish') {
 			when {
-				expression { GIT_BRANCH ==~ /(develop|staging|release-*)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
 			}
 			steps {
 				script {
@@ -130,7 +130,7 @@ pipeline {
 		}
 		stage('deploy') {
 			when {
-				expression { GIT_BRANCH ==~ /(develop|staging|release-*)/ }
+				expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
 			}
 			steps {
 				withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'mpsa-aws-test-account']]) {
