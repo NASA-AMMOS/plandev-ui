@@ -1,7 +1,9 @@
-#### 29.1.0 (2020-03-18)
+#### 0.3.0 (2020-05-06)
 
 ##### Build System / Dependencies
 
+*  update libs ([f1acf3cc](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f1acf3cc93b06ff28c8cbc05ffa4e243e24c8ca4))
+*  generate changelog ([04864427](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/04864427e1453ba969f434a6035cf8dc4ac52134))
 *  docker-compose env docker tag ([e071e650](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/e071e6503024345a0fca2e8a3bdf55b885c4cb89))
 *  update libs ([53f8332e](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/53f8332ede537a97872b8dc13f85079212f5661c))
 *  update ngrx ([20838c2a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/20838c2a0b7d617b4d7c3ad588139dea8f2d866b))
@@ -31,6 +33,8 @@
 
 ##### Continuous Integration
 
+*  update Jenkinsfile agents ([dbfac0b1](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/dbfac0b11d7b30b1692e68155eb25925a406bb9a))
+*  always succeed for docker rmi ([2458c862](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2458c86278addb0f78656d4af062a9da2870d79b))
 *  cleanup Jenkinsfile ([fe6ad292](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/fe6ad292da135353f3e59e666ca53e013c8dc1d8))
 *  tag aws image with the docker tag ([3e7d9c9d](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/3e7d9c9d468dcda15eee66d9d4eac80c5ac1ee46))
 *  catch restart cluster failure ([38705410](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/3870541020f3aaa933783f70eec363822b742eb1))
@@ -64,6 +68,14 @@
 
 ##### New Features
 
+*  sticky time axis ([ec758b1b](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/ec758b1bc4064d3c7b3a59ec25c6a78f957a8c67))
+*  activity parameters form design implementation ([3b6d2b04](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/3b6d2b041512900a3d348b0e49b78ec557ffbab3))
+*  DOY timestamp validator ([2825f47d](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2825f47d4e0b92e7171ff94acc727c3fab03f6e9))
+*  async parameter validation spinner ([57d4fa8a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/57d4fa8a354934dd7ef8bca91d9bc2aa1a88f32c))
+*  activity parameter validation error display ([2abb9dd8](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2abb9dd8a5034b566a0390a198fb3ea740d8f6dc))
+*  simulation sampling period ([d15de2db](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d15de2dbc80e477af90b5afd6433aa5638ea8c05))
+*  simulation results ([6ea75ed6](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/6ea75ed682bb896eebb72cacc3e8ede32fd90df8))
+*  graphql link ([b529c511](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b529c5118c35bd5c42e852e96aa449a7d4a16dcb))
 *  time-axis ([396a2fcc](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/396a2fcc7fb83ab333eb4b3bd5558e3ae979ea21))
 *  add activity instances via drag-and-drop ([8913fa3d](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/8913fa3d80bb8913c4ddb988f47de7980dc6ee72))
 *  no simulation results message ([34a39ae6](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/34a39ae65be99f82b3f4ea511f4f69560390bd84))
@@ -89,6 +101,9 @@
 
 ##### Bug Fixes
 
+*  pre-commit hook ([8fd0aeb1](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/8fd0aeb1e243ca2319199c8db20f7fac59d948c6))
+*  parse number types for create/update activity ([7e25ea8f](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/7e25ea8fdd7b5588b97c81b3db1d258276a0a1b8))
+*  D3 scale domain not drawing axis ([013dcb8f](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/013dcb8f9f5d516cd99cc6a326d6ca844bef4a14))
 *  parameter validation error sticks ([5d0b60b7](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/5d0b60b7a12f6e4220b1c403d506dce6250f0faf))
 *  add noopener noreferrer to target="_blank" ([99b95466](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/99b95466e601cf44b89978c111cf0dd2aa7e10a2))
 *  set selected activity type form control ([f221fbb0](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f221fbb0c069b6531f0e8d7759ef89555ead72d2))
@@ -107,6 +122,17 @@
 
 ##### Refactors
 
+*  simulation running state ([4773932b](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/4773932b58c355b4adf39ba098f4e3989ad76a1d))
+*  simplify sticky time axis ([9111bdfc](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/9111bdfc559d027f041456cbedff88b6dfba4fa4))
+*  handle errors in api service ([d55af019](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d55af019084168edcea77b06b0c5563e2324bb9d))
+*  getActivityInstances selector null ([53a18c69](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/53a18c69e0180ad9022a9d1ac74114e9c96cacaa))
+*  instance parameters form ([1066813e](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/1066813eb601714ded694b23aae34a2f5057f049))
+*  upsert activity instance form ([b5c006b2](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b5c006b2dbca6812f4046de54f854be97ed3ad21))
+*  optional band params ([11750363](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/1175036303a6a1240f10c7a6bcf999b792796140))
+*  GraphQL for the plan page ([a8ea6a0c](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a8ea6a0c257ca9a4d863fe2e991aca4034c59a06))
+*  GraphQL for plans and adaptations pages ([#10](https://github.jpl.nasa.gov/MPS/aerie-ui/pull/10)) ([2217997b](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2217997b8b6dd1222d2dd6cdce4985b4ec007ccc))
+*  remove timeline actions/reducer/effects ([e65bfff8](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/e65bfff826672c3534b6996c4ff32e2f2a1119f2))
+*  update env aerie apollo url ([5322128e](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/5322128e33e15afc8ff270b965a194ab99779969))
 *  about dialog version ([d735a6d4](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d735a6d4d87b1a66397b22c158f5d4c4eaeca5b8))
 *  remove zoom in/out time controls ([e92eee92](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/e92eee92faa8d30b5b7f2730a697f01eb9a62c1a))
 *  placeholder for schedule band ([a83e9236](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a83e92362e452d1291be5401163d3641e76d1f3a))
@@ -157,6 +183,9 @@
 
 ##### Tests
 
+*  planning effects specs ([5420518c](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/5420518c95a57509493283a7020c75c2f2f34b5b))
+*  add more upsert activity instance form specs ([f069eec3](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f069eec3816d6ca651a5aa1c6f5c8da596a03946))
+*  simulation functions ([47505449](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/47505449e25c988519acfa718837c6acd1224fae))
 *  add more unit tests ([99833c12](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/99833c12a8195a7620b083162ad19b8df31d6e8f))
 *  remove spec warnings ([acd4510e](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/acd4510ee54c7f006f7f13e9a8947cf95b783f15))
 *  NavEffects init login success ([7de1425a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/7de1425a60a82fb33a43d36ef579ff7a81b37a38))
