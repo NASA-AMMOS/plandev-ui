@@ -16,25 +16,21 @@
   No Activities Types Found
 </mat-card>
 
-<mat-nav-list>
+<mat-list>
   <mat-list-item
     class="list-item"
     *ngFor="let activityType of filteredActivityTypes"
-    [draggable]="draggable"
-    (click)="onActivityTypeSelect(activityType)"
-    (dragend)="onDragEnd()"
+    [draggable]="true"
     (dragstart)="onDragStart($event, activityType)"
+    (dragend)="onDragEnd()"
   >
     <h4 mat-line>{{ activityType.name }}</h4>
     <mat-hint mat-line></mat-hint>
-    <mat-icon
-      class="drag-indicator"
-      (click)="onClick($event)"
-      (mousedown)="onMouseDown($event)"
-      (mouseup)="onMouseUp($event)"
-    >
-      drag_indicator
-    </mat-icon>
+    <button mat-icon-button (click)="onActivityTypeSelect(activityType)">
+      <mat-icon>
+        add
+      </mat-icon>
+    </button>
     <mat-divider></mat-divider>
   </mat-list-item>
-</mat-nav-list>
+</mat-list>

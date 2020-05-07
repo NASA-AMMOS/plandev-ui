@@ -27,7 +27,6 @@ export class ActivityTypeListComponent implements OnChanges {
     ActivityType
   >();
 
-  draggable = false;
   filteredActivityTypes: ActivityType[] = [];
   searchText = '';
 
@@ -48,27 +47,20 @@ export class ActivityTypeListComponent implements OnChanges {
     this.selectActivityType.emit(activityType);
   }
 
-  onClick(event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
   onDragEnd(): void {
-    this.draggable = false;
+    document.getElementById('list-item-drag-image').remove();
   }
 
   onDragStart(event: DragEvent, activityType: ActivityType): void {
+    const dragImage = document.createElement('div');
+    const text = document.createTextNode(activityType.name);
+    dragImage.appendChild(text);
+    dragImage.id = 'list-item-drag-image';
+    dragImage.style.padding = '10px';
+    dragImage.style.color = 'rgba(0, 0, 0, 0.8)';
+    document.body.appendChild(dragImage);
+    event.dataTransfer.setDragImage(dragImage, 0, 0);
     event.dataTransfer.setData('activityType', JSON.stringify(activityType));
-  }
-
-  onMouseDown(event: MouseEvent): void {
-    event.stopPropagation();
-    this.draggable = true;
-  }
-
-  onMouseUp(event: MouseEvent): void {
-    event.stopPropagation();
-    this.draggable = false;
   }
 }
 
