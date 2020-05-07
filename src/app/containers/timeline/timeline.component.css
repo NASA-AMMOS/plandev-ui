@@ -4,8 +4,7 @@
   overflow-y: scroll;
 }
 
-.time-axis-container,
-.band-container {
+.time-axis-container {
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: hidden;
 }
