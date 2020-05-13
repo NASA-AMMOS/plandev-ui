@@ -28,6 +28,7 @@ import { ContainersModule } from './containers';
 import {
   AppEffects,
   AuthEffects,
+  GuideEffects,
   NavEffects,
   PlanningEffects,
   SimulationEffects,
@@ -132,6 +133,7 @@ export class AppComponent implements OnDestroy {
     EffectsModule.forRoot([
       AppEffects,
       AuthEffects,
+      GuideEffects,
       NavEffects,
       PlanningEffects,
       SimulationEffects,

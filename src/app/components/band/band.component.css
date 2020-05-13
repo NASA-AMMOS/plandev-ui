@@ -20,6 +20,26 @@
   display: none;
 }
 
+::ng-deep .guide--horizontal-text {
+  fill: rgba(0, 0, 0, 0.38);
+  font-family: Roboto;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 1.75px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.menu {
+  position: relative;
+  left: calc(100% - 40px);
+}
+
+.menu-icon {
+  color: #c7c7c7;
+}
+
 .axis-container,
 .interaction-container,
 .sub-bands-container {

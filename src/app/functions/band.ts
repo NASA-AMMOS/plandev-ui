@@ -21,7 +21,7 @@ export function forEachCanvas(
 }
 
 export function getDoyTimestampFromSvgMousePosition(
-  el: SVGGElement,
+  el: SVGElement | SVGGElement,
   event: MouseEvent | DragEvent,
   scale: d3.ScaleTime<number, number>,
 ): string {

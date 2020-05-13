@@ -20,6 +20,7 @@
   <app-band
     *ngFor="let band of bands; trackBy: trackByBands"
     [height]="band.height"
+    [horizontalGuides]="band.horizontalGuides"
     [id]="band.id"
     [marginBottom]="marginBottom"
     [marginLeft]="marginLeft"
@@ -30,6 +31,9 @@
     [type]="band.type"
     [viewTimeRange]="viewTimeRange"
     [yAxes]="band.yAxes"
+    (deleteHorizontalGuide)="onDeleteHorizontalGuide($event)"
+    (openGuideDialog)="onOpenGuideDialog($event)"
+    (updateHorizontalGuide)="onUpdateHorizontalGuide($event)"
     (createPoint)="onCreatePoint($event)"
     (deletePoint)="onDeletePoint($event)"
     (savePoint)="onSavePoint($event)"

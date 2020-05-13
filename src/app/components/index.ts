@@ -3,6 +3,7 @@ export * from './activity-instances-table/activity-instances-table.component';
 export * from './activity-type-list/activity-type-list.component';
 export * from './adaptations-table/adaptations-table.component';
 export * from './confirm-dialog/confirm-dialog.component';
+export * from './guide-dialog/guide-dialog.component';
 export * from './panel-collapsed/panel-collapsed.component';
 export * from './panel-empty/panel-empty.component';
 export * from './panel-header/panel-header.component';

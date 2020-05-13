@@ -10,6 +10,7 @@ export interface Axis {
 
 export interface Band {
   height?: number;
+  horizontalGuides?: Guide[];
   id: string;
   subBands: SubBand[];
   type: string;
@@ -25,6 +26,24 @@ export interface CreatePoint {
 export interface DeletePoint {
   id: string;
   type: string;
+}
+
+export interface Guide {
+  bandId: string;
+  color?: string;
+  id: string;
+  label: Label;
+  position: number;
+  type: 'horizontal' | 'vertical';
+  width?: number;
+}
+
+export interface GuideDialogData {
+  bandId: string;
+  guide?: Guide;
+  maxPosition: number;
+  mode: 'create' | 'edit';
+  type: 'horizontal' | 'vertical';
 }
 
 export interface Label {

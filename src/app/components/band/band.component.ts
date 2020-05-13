@@ -31,6 +31,8 @@ import {
   Axis,
   CreatePoint,
   DeletePoint,
+  Guide,
+  GuideDialogData,
   Point,
   SavePoint,
   SelectPoint,
@@ -55,6 +57,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
   height: number | undefined;
 
   @Input()
+  horizontalGuides: Guide[] | undefined;
+
+  @Input()
   id: string;
 
   @Input()
@@ -73,6 +78,12 @@ export class BandComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange;
 
   @Input()
+  showHorizontalGuideLabels = true;
+
+  @Input()
+  showHorizontalGuides = true;
+
+  @Input()
   subBands: SubBand[];
 
   @Input()
@@ -83,6 +94,19 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   @Input()
   yAxes: Axis[] | undefined;
+
+  @Output()
+  openGuideDialog: EventEmitter<GuideDialogData> = new EventEmitter<
+    GuideDialogData
+  >();
+
+  @Output()
+  deleteHorizontalGuide: EventEmitter<string> = new EventEmitter<string>();
+
+  @Output()
+  updateHorizontalGuide: EventEmitter<Partial<Guide>> = new EventEmitter<
+    Partial<Guide>
+  >();
 
   @Output()
   createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
@@ -100,10 +124,13 @@ export class BandComponent implements AfterViewInit, OnChanges {
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
 
   @ViewChild('axisContainerGroup', { static: true })
-  axisContainerGroup: ElementRef;
+  axisContainerGroup: ElementRef<SVGGElement>;
+
+  @ViewChild('horizontalGuideGroup', { static: true })
+  horizontalGuideGroup: ElementRef<SVGGElement>;
 
   @ViewChild('interactionContainerSvg', { static: true })
-  interactionContainerSvg: ElementRef;
+  interactionContainerSvg: ElementRef<SVGElement>;
 
   public defaultHeight = 200;
   public drawHeight: number;
@@ -125,6 +152,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
       this.setHeight(this.height);
     }
 
+    if (changes.horizontalGuides) {
+      shouldRedraw = true;
+    }
+
     if (changes.viewTimeRange && !changes.viewTimeRange.isFirstChange()) {
       shouldRedraw = true;
     }
@@ -144,6 +175,88 @@ export class BandComponent implements AfterViewInit, OnChanges {
     this.setDrawBounds();
     this.initEvents();
     this.redraw();
+  }
+
+  drawHorizontalGuides(): void {
+    const { nativeElement } = this.horizontalGuideGroup;
+    const horizontalGuideGroup = d3.select(nativeElement);
+    horizontalGuideGroup.selectAll('.guide--horizontal').remove();
+
+    const yOffset = 15;
+    const horizontalGuides = this.horizontalGuides || [];
+    for (const guide of horizontalGuides) {
+      if (this.showHorizontalGuides) {
+        const lineGroup = horizontalGuideGroup
+          .append('g')
+          .attr('class', 'guide--horizontal');
+        lineGroup
+          .append('line')
+          .attr('class', 'guide--horizontal-line')
+          .attr('id', guide.id)
+          .attr('x1', 0)
+          .attr('y1', guide.position)
+          .attr('x2', this.drawWidth)
+          .attr('y2', guide.position)
+          .attr('stroke', guide.color || '#c9c9c9')
+          .attr('stroke-width', guide.width || 2.0);
+        if (guide.label && this.showHorizontalGuideLabels) {
+          lineGroup
+            .append('text')
+            .attr('class', 'guide--horizontal-text')
+            .attr('x', 5)
+            .attr('y', guide.position + yOffset)
+            .attr('contentEditable', true)
+            .text(guide.label.text || '');
+        }
+        lineGroup.call(
+          d3
+            .drag()
+            .subject(() => d3.event.sourceEvent.target)
+            .on('drag', () => {
+              const { event } = d3;
+              const { y } = event;
+              const { subject: line } = event;
+              const { nextSibling: text } = line;
+
+              if (text && y >= 0 && y <= this.drawHeight) {
+                d3.select(line).attr('y1', y).attr('y2', y);
+                d3.select(text).attr('y', y + yOffset);
+              }
+            })
+            .on('end', () => {
+              const { event } = d3;
+              const { y } = event;
+              const { subject: line } = event;
+              const partialGuide: Partial<Guide> = {
+                id: line.id,
+                position: y,
+              };
+              this.updateHorizontalGuide.emit(partialGuide);
+            }),
+        );
+      }
+    }
+  }
+
+  onCreateHorizontalGuide() {
+    const data: GuideDialogData = {
+      bandId: this.id,
+      maxPosition: this.drawHeight,
+      mode: 'create',
+      type: 'horizontal',
+    };
+    this.openGuideDialog.emit(data);
+  }
+
+  onEditHorizontalGuide(guide: Guide): void {
+    const data: GuideDialogData = {
+      bandId: this.id,
+      guide,
+      maxPosition: this.drawHeight,
+      mode: 'edit',
+      type: 'horizontal',
+    };
+    this.openGuideDialog.emit(data);
   }
 
   drawXAxis(): void {
@@ -429,6 +542,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     this.setDrawBounds();
     this.drawXAxis();
     this.drawYAxis();
+    this.drawHorizontalGuides();
     this.cdRef.detectChanges();
   }
 

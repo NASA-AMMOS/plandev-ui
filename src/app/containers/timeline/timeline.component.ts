@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { PlanningActions } from '../../actions';
+import { GuideActions, PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
@@ -19,6 +19,8 @@ import {
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
+  Guide,
+  GuideDialogData,
   SavePoint,
   SelectPoint,
   TimeRange,
@@ -67,6 +69,20 @@ export class TimelineComponent implements AfterViewChecked {
 
   ngAfterViewChecked() {
     this.setBandContainerMaxHeight();
+  }
+
+  onDeleteHorizontalGuide(id: string): void {
+    this.store.dispatch(GuideActions.removeOne({ id }));
+  }
+
+  onOpenGuideDialog(data: GuideDialogData): void {
+    this.store.dispatch(GuideActions.openGuideDialog({ data }));
+  }
+
+  onUpdateHorizontalGuide(guide: Partial<Guide>): void {
+    this.store.dispatch(
+      GuideActions.updateOne({ id: guide.id, changes: guide }),
+    );
   }
 
   onCreatePoint(event: CreatePoint): void {

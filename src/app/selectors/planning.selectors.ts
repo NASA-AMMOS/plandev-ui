@@ -6,10 +6,12 @@ import {
   ActivityType,
   Adaptation,
   Band,
+  Guide,
   Plan,
   SubBandActivity,
   TimeRange,
 } from '../types';
+import { getGuides } from './guide.selectors';
 
 export const getPlanningState = createFeatureSelector<PlanningState>(
   'planning',
@@ -37,10 +39,13 @@ export const getSelectedActivityInstanceId = createSelector(
 export const getScheduleBands = createSelector(
   getActivityInstances,
   getSelectedActivityInstanceId,
+  getGuides,
   (
     activityInstances: ActivityInstance[] | null,
     selectedActivityInstanceId: string | null,
+    guides: Guide[],
   ): Band[] => {
+    const id = 'band-0';
     const points = (activityInstances || []).map(point => ({
       duration: 0,
       id: point.id,
@@ -51,13 +56,15 @@ export const getScheduleBands = createSelector(
       type: 'activity',
       x: getUnixEpochTime(point.startTimestamp),
     }));
+    const horizontalGuides = guides.filter(guide => guide.bandId === id);
 
     return [
       {
-        id: 'band0',
+        horizontalGuides,
+        id,
         subBands: [
           {
-            id: 'band0subBand0',
+            id: 'subBand-0',
             points,
             type: 'activity',
           } as SubBandActivity,

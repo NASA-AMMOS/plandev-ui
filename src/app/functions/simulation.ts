@@ -6,7 +6,7 @@ export function simulationResultsToBands(
   simulationResults: SimulationResult[],
 ): Band[] {
   return simulationResults.map(({ name, start, values }) => {
-    const id = uniqueId('band');
+    const id = `simulation-result-${name}`;
     const yAxisId = uniqueId('axis');
     const points: PointLine[] = [];
     let minY = Number.MAX_SAFE_INTEGER;

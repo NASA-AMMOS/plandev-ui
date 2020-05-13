@@ -1,0 +1,72 @@
+<h1 *ngIf="data.mode === 'create'" mat-dialog-title>
+  Create {{ data.type | startcase }} Guide
+</h1>
+<h1 *ngIf="data.mode === 'edit'" mat-dialog-title>
+  Edit {{ data.type | startcase }} Guide
+</h1>
+
+<div mat-dialog-content>
+  <form class="p-1" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Label</mat-label>
+      <input
+        [required]="true"
+        autocomplete="off"
+        formControlName="label"
+        matInput
+        minlength="1"
+        maxlength="20"
+        type="text"
+      />
+      <mat-error *ngIf="form.controls.label.getError('required')">
+        You must enter label
+      </mat-error>
+      <mat-error
+        *ngIf="
+          form.controls.position.getError('minLength') ||
+          form.controls.position.getError('maxlength')
+        "
+      >
+        Label must be between 1 and 20 characters
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Position</mat-label>
+      <input
+        [required]="true"
+        autocomplete="off"
+        formControlName="position"
+        matInput
+        type="number"
+        min="0"
+        [max]="data.maxPosition"
+      />
+      <mat-error *ngIf="form.controls.position.getError('required')">
+        You must enter a position
+      </mat-error>
+      <mat-error
+        *ngIf="
+          form.controls.position.getError('min') ||
+          form.controls.position.getError('max')
+        "
+      >
+        Position must be between 0 and {{ data.maxPosition }}
+      </mat-error>
+    </mat-form-field>
+
+    <button
+      class="mr-2"
+      [disabled]="form.invalid"
+      mat-raised-button
+      color="primary"
+      type="submit"
+    >
+      {{ data.mode === 'edit' ? 'Update' : 'Create' }}
+    </button>
+
+    <button type="button" mat-raised-button (click)="onCancel()">
+      Cancel
+    </button>
+  </form>
+</div>
