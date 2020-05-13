@@ -199,15 +199,16 @@ export class BandComponent implements AfterViewInit, OnChanges {
           .attr('y2', guide.position)
           .attr('stroke', guide.color || '#c9c9c9')
           .attr('stroke-width', guide.width || 2.0);
-        if (guide.label && this.showHorizontalGuideLabels) {
-          lineGroup
-            .append('text')
-            .attr('class', 'guide--horizontal-text')
-            .attr('x', 5)
-            .attr('y', guide.position + yOffset)
-            .attr('contentEditable', true)
-            .text(guide.label.text || '');
-        }
+        let labelVisibility = 'visible';
+        if (!this.showHorizontalGuideLabels) labelVisibility = 'hidden';
+        lineGroup
+          .append('text')
+          .style('visibility', labelVisibility)
+          .attr('class', 'guide--horizontal-text')
+          .attr('x', 5)
+          .attr('y', guide.position + yOffset)
+          .attr('contentEditable', true)
+          .text(guide.label.text || '');
         lineGroup.call(
           d3
             .drag()
