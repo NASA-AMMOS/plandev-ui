@@ -1,3 +1,8 @@
+def getDockerCompatibleTag(tag) {
+	def fixedTag = tag.replaceAll('\\+', '-').replaceAll('/', '-')
+	return fixedTag
+}
+
 pipeline {
 	options {
 		disableConcurrentBuilds()
@@ -6,14 +11,16 @@ pipeline {
 		label 'coronado || Pismo || San-clemente || Sugarloaf'
 	}
 	environment {
+    ARTIFACT_TAG = "${GIT_BRANCH}"
     ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:16001"
 		AWS_ACCESS_KEY_ID = credentials('aerie-aws-access-key')
     AWS_CLUSTER = "aerie-${GIT_BRANCH}-cluster"
     AWS_DEFAULT_REGION = 'us-gov-west-1'
 		AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
-    DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/ammos/mpsa/aerie-ui:${GIT_BRANCH}"
-    DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${GIT_BRANCH}"
+    DOCKER_TAG = "${getDockerCompatibleTag(ARTIFACT_TAG)}"
+    DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/ammos/mpsa/aerie-ui:${DOCKER_TAG}"
+    DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${DOCKER_TAG}"
 	}
 	stages {
 		stage ('build') {
