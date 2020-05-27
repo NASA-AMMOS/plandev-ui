@@ -10,3 +10,30 @@ svg {
   height: inherit;
   width: inherit;
 }
+
+::ng-deep .guide-circle-group {
+  pointer-events: none;
+}
+
+::ng-deep .guide-label {
+  fill: #000000;
+  font-family: Roboto;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: 0.4px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+::ng-deep .guide-circle-label {
+  fill: #ffffff;
+  font-family: Roboto;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 1.75px;
+  line-height: 16px;
+  pointer-events: none;
+  text-transform: uppercase;
+}

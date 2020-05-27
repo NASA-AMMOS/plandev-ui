@@ -14,7 +14,12 @@ import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
 import { IOutputData } from 'angular-split/lib/interface';
 import { SubSink } from 'subsink';
-import { AppActions, PlanningActions, SimulationActions } from '../../actions';
+import {
+  AppActions,
+  GuideActions,
+  PlanningActions,
+  SimulationActions,
+} from '../../actions';
 import { RootState } from '../../app-store';
 import {
   ActivityInstancesTableModule,
@@ -37,6 +42,7 @@ import {
   getSelectedPlan,
   getSimulationRunning,
   getStateBands,
+  getVerticalGuides,
   getViewTimeRange,
 } from '../../selectors';
 import {
@@ -44,6 +50,7 @@ import {
   ActivityType,
   Band,
   CreateActivityInstance,
+  Guide,
   Panel,
   Plan,
   TimeRange,
@@ -109,6 +116,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
   selectedActivityType: ActivityType | null = null;
   simulationRunning = false;
   stateBands: Band[];
+  verticalGuides: Guide[];
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -161,9 +169,55 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
         this.stateBands = stateBands;
         this.cdRef.markForCheck();
       }),
+      this.store.pipe(select(getVerticalGuides)).subscribe(verticalGuides => {
+        this.verticalGuides = verticalGuides;
+        this.cdRef.markForCheck();
+      }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();
+      }),
+    );
+
+    // TODO: Remove.
+    this.store.dispatch(
+      GuideActions.addOne({
+        guide: {
+          id: 'vertical-guide-0',
+          label: { text: 'Guide 0000000000000000000000' },
+          timestamp: '2020-001T00:00:11',
+          type: 'vertical',
+        },
+      }),
+    );
+    this.store.dispatch(
+      GuideActions.addOne({
+        guide: {
+          id: 'vertical-guide-1',
+          label: { text: 'Guide 1' },
+          timestamp: '2020-001T00:00:23',
+          type: 'vertical',
+        },
+      }),
+    );
+    this.store.dispatch(
+      GuideActions.addOne({
+        guide: {
+          id: 'vertical-guide-2',
+          label: { text: 'Guide 2' },
+          timestamp: '2020-001T00:00:42',
+          type: 'vertical',
+        },
+      }),
+    );
+    this.store.dispatch(
+      GuideActions.addOne({
+        guide: {
+          id: 'vertical-guide-3',
+          label: { text: 'Guide 3' },
+          timestamp: '2020-001T00:00:52',
+          type: 'vertical',
+        },
       }),
     );
   }

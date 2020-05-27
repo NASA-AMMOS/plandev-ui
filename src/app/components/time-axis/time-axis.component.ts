@@ -13,13 +13,14 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as d3 from 'd3';
+import { SvgVerticalGuideCollection } from '../../classes';
 import {
   getDoyTimestamp,
   getDoyTimestampFromSvgMousePosition,
   hideTooltip,
   showTooltip,
 } from '../../functions';
-import { TimeRange } from '../../types';
+import { Guide, TimeRange } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,7 +30,7 @@ import { TimeRange } from '../../types';
 })
 export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @Input()
-  height = 50;
+  height = 60;
 
   @Input()
   marginLeft = 70;
@@ -44,6 +45,9 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange = { start: 0, end: 0 };
 
   @Input()
+  verticalGuides: Guide[] = [];
+
+  @Input()
   viewTimeRange: TimeRange = { start: 0, end: 0 };
 
   @Output()
@@ -51,6 +55,9 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('brush', { static: true })
   brush: ElementRef<SVGGElement>;
+
+  @ViewChild('guides', { static: true })
+  guides: ElementRef<SVGGElement>;
 
   @ViewChild('timeAxis', { static: true })
   timeAxis: ElementRef<SVGGElement>;
@@ -60,7 +67,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   public drawHeight: number = this.height;
   public drawWidth: number;
-  public marginBottom = 10;
+  public marginBottom = 20;
   public tickSize = 0;
 
   constructor(private elRef: ElementRef) {
@@ -72,6 +79,10 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     this.setDrawBounds();
 
     if (changes.maxTimeRange && !changes.maxTimeRange.isFirstChange()) {
+      shouldRedraw = true;
+    }
+
+    if (changes.verticalGuides && !changes.verticalGuides.isFirstChange()) {
       shouldRedraw = true;
     }
 
@@ -100,14 +111,16 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     axisGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
     className: string,
     labelText: string,
+    x: number = -60,
+    y: number = 0,
   ): void {
     axisGroup.selectAll(`.${className}`).remove();
     const axisLabel = axisGroup.append('g').attr('class', className);
     axisLabel.selectAll('*').remove();
     axisLabel
       .append('text')
-      .attr('y', 0)
-      .attr('x', -60)
+      .attr('y', y)
+      .attr('x', x)
       .attr('dy', '1em')
       .attr('fill', 'rgba(0, 0, 0, 0.38)')
       .attr('font-size', `10px`)
@@ -132,6 +145,60 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
       .style('pointer-events', 'none')
       .style('user-select', 'none');
     this.drawAxisLabel(axisGroup, 'time-axis', 'Time');
+  }
+
+  drawVerticalGuides() {
+    const xScale = this.getXScale();
+
+    // Draw all vertical guides.
+    const verticalGuideCollection = new SvgVerticalGuideCollection(
+      this.guides.nativeElement,
+      this.height,
+      this.drawWidth,
+      this.verticalGuides,
+      this.viewTimeRange,
+      xScale,
+    );
+    verticalGuideCollection.drawAll();
+
+    // Attach guide lines to child band containers.
+    d3.select(this.elRef.nativeElement.parentElement.nextSibling)
+      .selectAll('app-band .interaction-container .vertical-guide-group')
+      .selectAll('.guide--vertical')
+      .data(verticalGuideCollection.guides)
+      .join(
+        enter => {
+          const lineGroup = enter
+            .append('g')
+            .attr('class', 'guide--vertical')
+            .attr('id', ({ guide }) => guide.id);
+          lineGroup
+            .append('line')
+            .attr('class', 'guide--vertical-line')
+            .attr('x1', ({ guide }) => guide.position)
+            .attr('y1', 0)
+            .attr('x2', ({ guide }) => guide.position)
+            .attr('y2', 300)
+            .attr('stroke', 'gray')
+            .attr('stroke-dasharray', 2);
+          return lineGroup;
+        },
+        update => {
+          update
+            .select('.guide--vertical-line')
+            .attr('x1', ({ guide }) => guide.position)
+            .attr('x2', ({ guide }) => guide.position);
+          return update;
+        },
+      );
+
+    this.drawAxisLabel(
+      d3.select(this.guides.nativeElement),
+      'guide-axis-label',
+      'Markers',
+      -81,
+      -6,
+    );
   }
 
   drawYearDayAxis(): void {
@@ -208,6 +275,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     this.drawTimeAxis();
     this.drawYearDayAxis();
     this.drawBrush();
+    this.drawVerticalGuides();
   }
 
   setDrawBounds(): void {

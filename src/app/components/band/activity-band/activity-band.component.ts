@@ -243,7 +243,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
     const rowHeight = Math.max(5, Math.floor(this.drawHeight / points.length));
     const height = Math.min(20, rowHeight - Math.ceil(rowHeight / 3));
-    let y = 10; // Initial padding.
+    let y = 15; // Initial padding.
 
     for (let i = 0, l = points.length; i < l; ++i) {
       const point = points[i];

@@ -12,6 +12,7 @@
     [marginRight]="marginRight"
     [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
+    [verticalGuides]="verticalGuides"
     [viewTimeRange]="viewTimeRange"
     (updateViewTimeRange)="onUpdateViewTimeRange($event)"
   ></app-time-axis>
@@ -22,10 +23,8 @@
     [height]="band.height"
     [horizontalGuides]="band.horizontalGuides"
     [id]="band.id"
-    [marginBottom]="marginBottom"
     [marginLeft]="marginLeft"
     [marginRight]="marginRight"
-    [marginTop]="marginTop"
     [maxTimeRange]="maxTimeRange"
     [subBands]="band.subBands"
     [type]="band.type"

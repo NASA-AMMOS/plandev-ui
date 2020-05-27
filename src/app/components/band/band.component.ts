@@ -63,16 +63,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
   id: string;
 
   @Input()
-  marginBottom = 10;
-
-  @Input()
   marginLeft = 70;
 
   @Input()
   marginRight = 70;
-
-  @Input()
-  marginTop = 10;
 
   @Input()
   maxTimeRange: TimeRange;
@@ -132,9 +126,14 @@ export class BandComponent implements AfterViewInit, OnChanges {
   @ViewChild('interactionContainerSvg', { static: true })
   interactionContainerSvg: ElementRef<SVGElement>;
 
+  @ViewChild('verticalGuideGroup', { static: true })
+  verticalGuideGroup: ElementRef<SVGGElement>;
+
   public defaultHeight = 200;
   public drawHeight: number;
   public drawWidth: number;
+  public marginBottom = 1;
+  public marginTop = 1;
 
   constructor(
     private cdRef: ChangeDetectorRef,

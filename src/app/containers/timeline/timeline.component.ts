@@ -53,6 +53,9 @@ export class TimelineComponent implements AfterViewChecked {
   maxTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Input()
+  verticalGuides: Guide[];
+
+  @Input()
   viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   @ViewChild('bandContainer', { static: true })

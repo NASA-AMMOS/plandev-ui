@@ -1,7 +1,10 @@
 <svg>
   <g [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'">
-    <g #brush></g>
-    <g #yearDayAxis [attr.transform]="'translate(0, 0)'"></g>
-    <g #timeAxis [attr.transform]="'translate(0, 17)'"></g>
+    <g #guides class="guides-group"></g>
+    <g [attr.transform]="'translate(0, 12)'">
+      <g #brush></g>
+      <g #yearDayAxis [attr.transform]="'translate(0, 0)'"></g>
+      <g #timeAxis [attr.transform]="'translate(0, 17)'"></g>
+    </g>
   </g>
 </svg>

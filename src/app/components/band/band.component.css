@@ -28,7 +28,12 @@
   font-weight: 900;
   letter-spacing: 1.75px;
   line-height: 16px;
+  pointer-events: none;
   text-transform: uppercase;
+}
+
+::ng-deep .guide--vertical-line {
+  pointer-events: none;
 }
 
 .menu {
