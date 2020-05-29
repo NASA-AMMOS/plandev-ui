@@ -10,15 +10,6 @@ type Overlap = {
 
 type OverlapMap = { [id: string]: Overlap };
 
-/**
- * Convenience function for getting a tooltip string for a numbered guide.
- */
-function numberedGuideTooltipText(svgVerticalGuide: SvgVerticalGuide) {
-  const { numberedCount, guide } = svgVerticalGuide;
-  const { label, timestamp } = guide;
-  return `${numberedCount}. ${label.text} (${timestamp})<br>`;
-}
-
 export class SvgVerticalGuideCollection {
   public container: SVGGElement;
   public containerHeight: number;
@@ -52,7 +43,7 @@ export class SvgVerticalGuideCollection {
   }
 
   /**
-   * Add all guides to the document, update the labels, then update the tooltips.
+   * Add all guides to the document and update the labels.
    * We draw in reverse order so we can update the label with ellipsis properly.
    */
   drawAll(visible = true) {
@@ -62,7 +53,6 @@ export class SvgVerticalGuideCollection {
       curr.draw(visible);
       curr.updateLabelWithEllipsis(prev);
     }
-    this.updateNumberedGuideTooltips();
   }
 
   /**
@@ -75,7 +65,7 @@ export class SvgVerticalGuideCollection {
    * and remove the previous node from the overlap map.
    * This takes care of transitive overlaps.
    */
-  getOverlapMap(): OverlapMap {
+  getOverlaps(): Overlap[] {
     this.guides.sort((a, b) => a.guide.time - b.guide.time);
     const overlapMap: OverlapMap = {};
     for (let i = 0; i < this.guides.length; ++i) {
@@ -107,7 +97,7 @@ export class SvgVerticalGuideCollection {
       }
     }
     this.clearAll();
-    return overlapMap;
+    return Object.values(overlapMap);
   }
 
   /**
@@ -120,10 +110,12 @@ export class SvgVerticalGuideCollection {
    * update our list of guides accordingly with correct tooltip information.
    */
   setGuides(guides: Guide[]) {
-    this.guides = guides
-      .map(guide => {
-        const time = getUnixEpochTime(guide.timestamp);
-        return new SvgVerticalGuide(
+    this.guides = [];
+    for (const guide of guides) {
+      const time = getUnixEpochTime(guide.timestamp);
+
+      if (time >= this.viewTimeRange.start && time <= this.viewTimeRange.end) {
+        const svgVerticalGuide = new SvgVerticalGuide(
           this.containerHeight,
           this.containerWidth,
           {
@@ -133,17 +125,14 @@ export class SvgVerticalGuideCollection {
           },
           this.container,
         );
-      })
-      .filter(
-        ({ guide }) =>
-          guide.position >= 0 && guide.position <= this.containerWidth,
-      );
 
-    const overlapMap = this.getOverlapMap();
-    const newGuides = Object.values(overlapMap);
+        this.guides.push(svgVerticalGuide);
+      }
+    }
+
+    const overlaps = this.getOverlaps();
     this.guides = [];
-
-    for (const { svgVerticalGuide, overlappingGuideIds } of newGuides) {
+    for (const { svgVerticalGuide, overlappingGuideIds } of overlaps) {
       const overlappingGuides = Object.values(overlappingGuideIds);
       const overlappingGuidesLength = overlappingGuides.length;
 
@@ -158,50 +147,6 @@ export class SvgVerticalGuideCollection {
       }
 
       this.guides.push(svgVerticalGuide);
-    }
-  }
-
-  /**
-   * Build a tooltip string for numbered guides.
-   */
-  updateNumberedGuideTooltips() {
-    let tooltipMap = {};
-    let i = this.guides.length - 1;
-
-    while (i >= 0) {
-      let curr = this.guides[i];
-
-      if (curr.numberedCount === 1) {
-        const ids = [curr.id];
-        let tooltipText = numberedGuideTooltipText(curr);
-        curr = this.guides[--i];
-
-        // Accumulate tooltip text for numbered tooltips from 1..n.
-        while (i >= 0 && curr.numberedCount !== 0 && curr.numberedCount !== 1) {
-          ids.push(curr.id);
-          tooltipText += numberedGuideTooltipText(curr);
-          curr = this.guides[--i];
-        }
-
-        // Map the accumulated tooltip text to the given guide ids.
-        tooltipMap = {
-          ...tooltipMap,
-          ...ids.reduce((map, id) => {
-            map[id] = tooltipText;
-            return map;
-          }, {}),
-        };
-      } else {
-        --i;
-      }
-    }
-
-    // Set the tooltip text based on the tooltip map.
-    for (const guide of this.guides) {
-      const tooltip: string | undefined = tooltipMap[guide.id];
-      if (tooltip) {
-        guide.tooltipText = tooltip;
-      }
     }
   }
 }

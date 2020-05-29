@@ -20,7 +20,6 @@ export class SvgVerticalGuideOptions {
   containerHeight: number;
   containerWidth: number;
   ellipsisPadding: number;
-  hideLabelThreshold: number;
   labelPadding: number;
 }
 
@@ -50,14 +49,12 @@ export class SvgVerticalGuide {
   public circleGroup0: Selection<SVGCircleElement>;
   public circleGroup1: Selection<SVGCircleElement>;
   public circleGroup2: Selection<SVGCircleElement>;
-  public circleLabel: Selection<SVGTextElement>;
   public collapsedCount: number;
   public group: Selection<SVGGElement>;
   public guide: Guide;
   public id: string;
   public label: Selection<SVGTextElement>;
   public line: Selection<SVGLineElement>;
-  public numberedCount: number;
   public options: SvgVerticalGuideOptions;
   public parentGroup: Selection<SVGGElement>;
   public tooltipText: string;
@@ -73,7 +70,6 @@ export class SvgVerticalGuide {
     this.group = this.parentGroup.select<SVGGElement>(`#${guide.id}`);
     this.guide = guide;
     this.id = guide.id;
-    this.numberedCount = 0;
     this.options = {
       circleColor: '#283593',
       circleGroupOffset: 2.3,
@@ -82,7 +78,6 @@ export class SvgVerticalGuide {
       containerHeight,
       containerWidth,
       ellipsisPadding: 15,
-      hideLabelThreshold: 50,
       labelPadding: 3,
     };
     this.tooltipText = `${guide.label.text} (${guide.timestamp})`;
@@ -123,13 +118,6 @@ export class SvgVerticalGuide {
       .on('mouseleave', () => {
         hideTooltip();
       });
-    this.circleLabel = this.group
-      .append('text')
-      .attr('class', 'guide-circle-label')
-      .style('display', 'none')
-      .attr('x', position - labelPadding)
-      .attr('y', 3)
-      .text('');
     this.circleGroup = this.group
       .append('g')
       .attr('class', 'guide-circle-group')
@@ -174,8 +162,6 @@ export class SvgVerticalGuide {
     if (this.collapsedCount > 1) {
       this.circleGroup.style('display', 'block');
       this.label.text(this.collapsedCount);
-    } else {
-      this.circleLabel.style('display', 'block');
     }
   }
 
@@ -187,38 +173,14 @@ export class SvgVerticalGuide {
   updateLabelWithEllipsis(rightNeighbor?: SvgVerticalGuide) {
     if (rightNeighbor) {
       let bounds = calcBounds(this.label, rightNeighbor.group);
-      if (
-        bounds &&
-        bounds.percentage > 0 &&
-        bounds.percentage <= this.options.hideLabelThreshold
-      ) {
+      if (bounds && bounds.percentage > 0) {
         while (bounds && bounds.overlap + this.options.ellipsisPadding > 0) {
           this.label.text(this.label.text().slice(0, -1));
           bounds = calcBounds(this.label, rightNeighbor.group);
         }
-        if (this.collapsedCount > 1) {
-          // If this is a collapsed guide then just remove the label.
-          this.label.text('');
-        } else {
-          this.label.text(`${this.label.text()}...`);
-        }
-      } else if (
-        bounds &&
-        bounds.percentage > this.options.hideLabelThreshold
-      ) {
-        this.label.text('');
-
-        if (rightNeighbor.collapsedCount < 2 && this.collapsedCount < 2) {
-          if (rightNeighbor.numberedCount === 0) {
-            rightNeighbor.numberedCount = 1;
-            this.numberedCount = 2;
-          } else {
-            this.numberedCount = rightNeighbor.numberedCount + 1;
-          }
-          rightNeighbor.circleLabel.text(rightNeighbor.numberedCount);
-          rightNeighbor.circleLabel.style('display', 'block');
-          this.circleLabel.text(this.numberedCount);
-          this.circleLabel.style('display', 'block');
+        const text = this.label.text();
+        if (text !== '') {
+          this.label.text(`${text}...`);
         }
       }
     }
