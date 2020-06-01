@@ -150,8 +150,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   drawVerticalGuides() {
     const xScale = this.getXScale();
 
-    // Draw all vertical guides.
     const verticalGuideCollection = new SvgVerticalGuideCollection(
+      this.elRef.nativeElement.parentElement.nextSibling,
       this.guides.nativeElement,
       this.height,
       this.drawWidth,
@@ -160,37 +160,6 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
       xScale,
     );
     verticalGuideCollection.drawAll();
-
-    // Attach guide lines to child band containers.
-    d3.select(this.elRef.nativeElement.parentElement.nextSibling)
-      .selectAll('app-band .interaction-container .vertical-guide-group')
-      .selectAll('.guide--vertical')
-      .data(verticalGuideCollection.guides)
-      .join(
-        enter => {
-          const lineGroup = enter
-            .append('g')
-            .attr('class', 'guide--vertical')
-            .attr('id', ({ guide }) => guide.id);
-          lineGroup
-            .append('line')
-            .attr('class', 'guide--vertical-line')
-            .attr('x1', ({ guide }) => guide.position)
-            .attr('y1', 0)
-            .attr('x2', ({ guide }) => guide.position)
-            .attr('y2', 300)
-            .attr('stroke', 'gray')
-            .attr('stroke-dasharray', 2);
-          return lineGroup;
-        },
-        update => {
-          update
-            .select('.guide--vertical-line')
-            .attr('x1', ({ guide }) => guide.position)
-            .attr('x2', ({ guide }) => guide.position);
-          return update;
-        },
-      );
 
     this.drawAxisLabel(
       d3.select(this.guides.nativeElement),

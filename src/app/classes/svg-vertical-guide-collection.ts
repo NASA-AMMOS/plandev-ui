@@ -11,6 +11,7 @@ type Overlap = {
 type OverlapMap = { [id: string]: Overlap };
 
 export class SvgVerticalGuideCollection {
+  public bandContainer: HTMLDivElement;
   public container: SVGGElement;
   public containerHeight: number;
   public containerWidth: number;
@@ -19,6 +20,7 @@ export class SvgVerticalGuideCollection {
   public xScale: d3.ScaleTime<number, number>;
 
   constructor(
+    bandContainer: HTMLDivElement,
     container: SVGGElement,
     containerHeight: number,
     containerWidth: number,
@@ -26,6 +28,7 @@ export class SvgVerticalGuideCollection {
     viewTimeRange: TimeRange,
     xScale: d3.ScaleTime<number, number>,
   ) {
+    this.bandContainer = bandContainer;
     this.container = container;
     this.containerHeight = containerHeight;
     this.containerWidth = containerWidth;
@@ -53,6 +56,42 @@ export class SvgVerticalGuideCollection {
       curr.draw(visible);
       curr.updateLabelWithEllipsis(prev);
     }
+    this.drawGuideLines();
+  }
+
+  /**
+   * Attach guide lines to child bands.
+   */
+  drawGuideLines() {
+    d3.select(this.bandContainer)
+      .selectAll('app-band .interaction-container .vertical-guide-group')
+      .selectAll('.guide--vertical')
+      .data(this.guides)
+      .join(
+        enter => {
+          const lineGroup = enter
+            .append('g')
+            .attr('class', 'guide--vertical')
+            .attr('id', ({ guide }) => guide.id);
+          lineGroup
+            .append('line')
+            .attr('class', 'guide--vertical-line')
+            .attr('x1', ({ guide }) => guide.position)
+            .attr('y1', 0)
+            .attr('x2', ({ guide }) => guide.position)
+            .attr('y2', 300)
+            .attr('stroke', 'gray')
+            .attr('stroke-dasharray', 2);
+          return lineGroup;
+        },
+        update => {
+          update
+            .select('.guide--vertical-line')
+            .attr('x1', ({ guide }) => guide.position)
+            .attr('x2', ({ guide }) => guide.position);
+          return update;
+        },
+      );
   }
 
   /**
