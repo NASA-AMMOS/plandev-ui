@@ -1,16 +1,6 @@
 import * as d3 from 'd3';
 import { hideTooltip, showTooltip } from '../functions';
-import { Guide } from '../types';
-
-/**
- * d3.Selection wrapper that makes the type annotations less verbose.
- */
-type Selection<T extends d3.BaseType> = d3.Selection<
-  T,
-  unknown,
-  null,
-  undefined
->;
+import { Guide, Selection } from '../types';
 
 export class SvgVerticalGuideOptions {
   circleColor: string;
@@ -50,24 +40,24 @@ export class SvgVerticalGuide {
   public circleGroup1: Selection<SVGCircleElement>;
   public circleGroup2: Selection<SVGCircleElement>;
   public collapsedCount: number;
+  public container: Selection<SVGGElement>;
   public group: Selection<SVGGElement>;
   public guide: Guide;
   public id: string;
   public label: Selection<SVGTextElement>;
   public line: Selection<SVGLineElement>;
   public options: SvgVerticalGuideOptions;
-  public parentGroup: Selection<SVGGElement>;
   public tooltipText: string;
 
   constructor(
+    container: SVGGElement,
     containerHeight: number,
     containerWidth: number,
     guide: Guide,
-    parentGroup: SVGGElement,
   ) {
     this.collapsedCount = 1;
-    this.parentGroup = d3.select(parentGroup);
-    this.group = this.parentGroup.select<SVGGElement>(`#${guide.id}`);
+    this.container = d3.select(container);
+    this.group = this.container.select<SVGGElement>(`#${guide.id}`);
     this.guide = guide;
     this.id = guide.id;
     this.options = {
@@ -84,7 +74,7 @@ export class SvgVerticalGuide {
   }
 
   /**
-   * Append a new guide group to the parent group.
+   * Append guide group to the container group.
    */
   draw(visible = true) {
     const { id, label, position } = this.guide;
@@ -97,9 +87,9 @@ export class SvgVerticalGuide {
       labelPadding,
     } = this.options;
 
-    this.parentGroup.select(`#${id}`).remove();
+    this.group.remove();
 
-    this.group = this.parentGroup
+    this.group = this.container
       .append('g')
       .attr('class', 'guide-group')
       .attr('id', id)

@@ -15,11 +15,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as d3 from 'd3';
+import { SvgConstraintViolationCollection } from '../../classes';
 import {
   getDoyTimestamp,
-  getDoyTimestampFromSvgMousePosition,
   getPointFromCanvasSelection,
   getSvgMousePosition,
+  getTimeFromSvgMousePosition,
   getTooltipTextForPoints,
   getXScale,
   getYScale,
@@ -39,6 +40,7 @@ import {
   SubBand,
   TimeRange,
   UpdatePoint,
+  Violation,
 } from '../../types';
 import { ActivityBandModule } from './activity-band/activity-band.component';
 import { LineBandModule } from './line-band/line-band.component';
@@ -53,6 +55,9 @@ import { XRangeBandModule } from './x-range-band/x-range-band.component';
   templateUrl: './band.component.html',
 })
 export class BandComponent implements AfterViewInit, OnChanges {
+  @Input()
+  constraintViolations: Violation[] = [];
+
   @Input()
   height: number | undefined;
 
@@ -120,6 +125,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
   @ViewChild('axisContainerGroup', { static: true })
   axisContainerGroup: ElementRef<SVGGElement>;
 
+  @ViewChild('constraintViolationsGroup', { static: true })
+  constraintViolationsGroup: ElementRef<SVGGElement>;
+
   @ViewChild('horizontalGuideGroup', { static: true })
   horizontalGuideGroup: ElementRef<SVGGElement>;
 
@@ -134,6 +142,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   public drawWidth: number;
   public marginBottom = 1;
   public marginTop = 1;
+  public violationCollection: SvgConstraintViolationCollection;
 
   constructor(
     private cdRef: ChangeDetectorRef,
@@ -146,6 +155,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
     let shouldResize = false;
 
     this.setDrawBounds();
+
+    if (changes.constraintViolations) {
+      shouldRedraw = true;
+    }
 
     if (changes.height) {
       this.setHeight(this.height);
@@ -259,6 +272,23 @@ export class BandComponent implements AfterViewInit, OnChanges {
     this.openGuideDialog.emit(data);
   }
 
+  drawConstraintViolations(): void {
+    if (this.constraintViolations.length) {
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      this.violationCollection = new SvgConstraintViolationCollection(
+        this.constraintViolationsGroup.nativeElement,
+        this.id,
+        this.drawHeight,
+        this.drawWidth,
+        this.marginTop,
+        this.viewTimeRange,
+        this.constraintViolations,
+        xScale,
+      );
+      this.violationCollection.drawAll();
+    }
+  }
+
   drawXAxis(): void {
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
     const xAxis = d3
@@ -315,21 +345,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  getTimeFromSvgMousePosition(
-    event: MouseEvent,
-    offsetX: number = 0,
-  ): { doyTimestamp: string; unixEpochTime: number } {
-    const clickPosition = getSvgMousePosition(
-      this.interactionContainerSvg.nativeElement,
-      event,
-    );
-    const x = clickPosition.x - offsetX;
-    const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-    const unixEpochTime = xScale.invert(x).getTime();
-    const doyTimestamp = getDoyTimestamp(unixEpochTime);
-    return { doyTimestamp, unixEpochTime };
-  }
-
   getPointsFromMouseEvent(event: MouseEvent): Point[] {
     const points: Point[] = [];
     const subBands = Object.values(this.subBands);
@@ -355,19 +370,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   initEvents(): void {
     let offsetX = 0;
-
-    d3.select(this.interactionContainerSvg.nativeElement).on(
-      'contextmenu',
-      () => {
-        const { event } = d3;
-        const points = this.getPointsFromMouseEvent(event);
-        hideTooltip();
-
-        if (points.length) {
-          // TODO.
-        }
-      },
-    );
 
     d3.select(this.interactionContainerSvg.nativeElement).call(
       d3
@@ -399,10 +401,13 @@ export class BandComponent implements AfterViewInit, OnChanges {
           const { event } = d3;
           const { sourceEvent, subject: point } = event;
           const { id, type } = point;
-          const {
-            doyTimestamp,
-            unixEpochTime,
-          } = this.getTimeFromSvgMousePosition(sourceEvent, offsetX);
+          const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+          const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
+            this.interactionContainerSvg.nativeElement,
+            sourceEvent,
+            xScale,
+            offsetX,
+          );
           hideTooltip();
 
           if (
@@ -427,10 +432,13 @@ export class BandComponent implements AfterViewInit, OnChanges {
           const { event } = d3;
           const { sourceEvent, subject: point } = event;
           const { id, type } = point;
-          const {
-            doyTimestamp,
-            unixEpochTime,
-          } = this.getTimeFromSvgMousePosition(sourceEvent, offsetX);
+          const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+          const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
+            this.interactionContainerSvg.nativeElement,
+            sourceEvent,
+            xScale,
+            offsetX,
+          );
 
           if (id && type && type === 'activity' && point.x !== unixEpochTime) {
             this.savePoint.emit({
@@ -447,12 +455,20 @@ export class BandComponent implements AfterViewInit, OnChanges {
       () => {
         const event = d3.event as MouseEvent;
         const points = this.getPointsFromMouseEvent(event);
+        const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+        const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
+          this.interactionContainerSvg.nativeElement,
+          event,
+          xScale,
+        );
+        let tooltipText = `${doyTimestamp}<br>`;
         if (points.length) {
-          const tooltipText = getTooltipTextForPoints(points);
-          showTooltip(event, tooltipText, this.drawWidth);
-        } else {
-          hideTooltip();
+          tooltipText += getTooltipTextForPoints(points);
         }
+        if (this.violationCollection) {
+          tooltipText += this.violationCollection.getTooltipText(unixEpochTime);
+        }
+        showTooltip(event, tooltipText, this.drawWidth);
       },
     );
 
@@ -468,7 +484,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       const container = this.interactionContainerSvg.nativeElement;
       const { offsetX } = event;
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+      const { doyTimestamp } = getTimeFromSvgMousePosition(
         container,
         event,
         xScale,
@@ -499,7 +515,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       const container = this.interactionContainerSvg.nativeElement;
       const { offsetX } = event;
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+      const { doyTimestamp } = getTimeFromSvgMousePosition(
         container,
         event,
         xScale,
@@ -517,7 +533,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       hideTooltip();
       d3.select(container).select('rect').remove();
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-      const startTimestamp = getDoyTimestampFromSvgMousePosition(
+      const { doyTimestamp: startTimestamp } = getTimeFromSvgMousePosition(
         container,
         event,
         xScale,
@@ -543,6 +559,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     this.drawXAxis();
     this.drawYAxis();
     this.drawHorizontalGuides();
+    this.drawConstraintViolations();
     this.cdRef.detectChanges();
   }
 

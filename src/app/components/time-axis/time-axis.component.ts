@@ -13,14 +13,18 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as d3 from 'd3';
-import { SvgVerticalGuideCollection } from '../../classes';
+import uniqueId from 'lodash-es/uniqueId';
+import {
+  SvgConstraintViolationCollection,
+  SvgVerticalGuideCollection,
+} from '../../classes';
 import {
   getDoyTimestamp,
-  getDoyTimestampFromSvgMousePosition,
+  getTimeFromSvgMousePosition,
   hideTooltip,
   showTooltip,
 } from '../../functions';
-import { Guide, TimeRange } from '../../types';
+import { Guide, TimeRange, Violation } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,16 +34,16 @@ import { Guide, TimeRange } from '../../types';
 })
 export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @Input()
-  height = 60;
+  constraintViolations: Violation[] = [];
+
+  @Input()
+  id: string = uniqueId('time-axis');
 
   @Input()
   marginLeft = 70;
 
   @Input()
   marginRight = 70;
-
-  @Input()
-  marginTop = 10;
 
   @Input()
   maxTimeRange: TimeRange = { start: 0, end: 0 };
@@ -53,6 +57,9 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @Output()
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
+  @ViewChild('constraintViolationsGroup', { static: true })
+  constraintViolationsGroup: ElementRef<SVGGElement>;
+
   @ViewChild('brush', { static: true })
   brush: ElementRef<SVGGElement>;
 
@@ -65,10 +72,13 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   @ViewChild('yearDayAxis', { static: true })
   yearDayAxis: ElementRef<SVGGElement>;
 
+  public height = 50;
   public drawHeight: number = this.height;
   public drawWidth: number;
-  public marginBottom = 20;
+  public marginTop = 10;
+  public marginBottom = 0;
   public tickSize = 0;
+  public violationCollection: SvgConstraintViolationCollection;
 
   constructor(private elRef: ElementRef) {
     this.elRef.nativeElement.style.setProperty('--height', `${this.height}px`);
@@ -107,26 +117,21 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
-  drawAxisLabel(
-    axisGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
-    className: string,
-    labelText: string,
-    x: number = -60,
-    y: number = 0,
-  ): void {
-    axisGroup.selectAll(`.${className}`).remove();
-    const axisLabel = axisGroup.append('g').attr('class', className);
-    axisLabel.selectAll('*').remove();
-    axisLabel
-      .append('text')
-      .attr('y', y)
-      .attr('x', x)
-      .attr('dy', '1em')
-      .attr('fill', 'rgba(0, 0, 0, 0.38)')
-      .attr('font-size', `10px`)
-      .attr('font-style', 'italic')
-      .style('text-transform', 'uppercase')
-      .text(labelText);
+  drawConstraintViolations() {
+    if (this.constraintViolations.length) {
+      const xScale = this.getXScale();
+      this.violationCollection = new SvgConstraintViolationCollection(
+        this.constraintViolationsGroup.nativeElement,
+        this.id,
+        this.height,
+        this.drawWidth,
+        this.marginTop,
+        this.viewTimeRange,
+        this.constraintViolations,
+        xScale,
+      );
+      this.violationCollection.drawAll();
+    }
   }
 
   drawTimeAxis(): void {
@@ -142,32 +147,26 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     axisGroup.selectAll('.domain').remove();
     axisGroup
       .selectAll('text')
+      .attr('y', 0)
+      .attr('dy', 0)
       .style('pointer-events', 'none')
       .style('user-select', 'none');
-    this.drawAxisLabel(axisGroup, 'time-axis', 'Time');
   }
 
   drawVerticalGuides() {
-    const xScale = this.getXScale();
-
-    const verticalGuideCollection = new SvgVerticalGuideCollection(
-      this.elRef.nativeElement.parentElement.nextSibling,
-      this.guides.nativeElement,
-      this.height,
-      this.drawWidth,
-      this.verticalGuides,
-      this.viewTimeRange,
-      xScale,
-    );
-    verticalGuideCollection.drawAll();
-
-    this.drawAxisLabel(
-      d3.select(this.guides.nativeElement),
-      'guide-axis-label',
-      'Markers',
-      -81,
-      -6,
-    );
+    if (this.verticalGuides.length) {
+      const xScale = this.getXScale();
+      const verticalGuideCollection = new SvgVerticalGuideCollection(
+        this.elRef.nativeElement.parentElement.nextSibling,
+        this.guides.nativeElement,
+        this.height,
+        this.drawWidth,
+        this.verticalGuides,
+        this.viewTimeRange,
+        xScale,
+      );
+      verticalGuideCollection.drawAll();
+    }
   }
 
   drawYearDayAxis(): void {
@@ -193,17 +192,18 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     axisGroup.selectAll('.domain').remove();
     axisGroup
       .selectAll('text')
+      .attr('y', 0)
+      .attr('dy', 0)
       .style('pointer-events', 'none')
       .style('user-select', 'none');
-    this.drawAxisLabel(axisGroup, 'year-day-axis', 'Year-Day');
   }
 
   drawBrush(): void {
     const xBrush = d3
       .brushX()
       .extent([
-        [0, 0],
-        [this.drawWidth, this.drawHeight],
+        [0, -11],
+        [this.drawWidth, 22],
       ])
       .on('start', () => {
         this.showTooltip(d3.event.sourceEvent);
@@ -245,6 +245,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     this.drawYearDayAxis();
     this.drawBrush();
     this.drawVerticalGuides();
+    this.drawConstraintViolations();
   }
 
   setDrawBounds(): void {
@@ -256,12 +257,16 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   showTooltip(event: MouseEvent | null): void {
     if (event) {
       const xScale = this.getXScale();
-      const doyTimestamp = getDoyTimestampFromSvgMousePosition(
+      const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
         this.brush.nativeElement,
         event,
         xScale,
       );
-      showTooltip(event, doyTimestamp, this.drawWidth); // Not recursive!
+      let tooltipText = `${doyTimestamp}<br>`;
+      if (this.violationCollection) {
+        tooltipText += this.violationCollection.getTooltipText(unixEpochTime);
+      }
+      showTooltip(event, tooltipText, this.drawWidth); // Not recursive!
     }
   }
 

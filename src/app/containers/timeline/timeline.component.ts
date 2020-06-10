@@ -6,6 +6,8 @@ import {
   ElementRef,
   Input,
   NgModule,
+  OnChanges,
+  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -14,6 +16,7 @@ import { GuideActions, PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
+import { PipesModule } from '../../pipes';
 import {
   Band,
   CreateActivityInstance,
@@ -23,8 +26,10 @@ import {
   GuideDialogData,
   SavePoint,
   SelectPoint,
+  StringTMap,
   TimeRange,
   UpdatePoint,
+  Violation,
 } from '../../types';
 
 @Component({
@@ -33,9 +38,12 @@ import {
   styleUrls: ['./timeline.component.css'],
   templateUrl: './timeline.component.html',
 })
-export class TimelineComponent implements AfterViewChecked {
+export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input()
   bands: Band[] | null;
+
+  @Input()
+  constraintViolations: Violation[] = [];
 
   @Input()
   marginBottom = 10;
@@ -64,14 +72,56 @@ export class TimelineComponent implements AfterViewChecked {
   @ViewChild('timeAxisContainer', { static: true })
   timeAxisContainer: ElementRef<HTMLDivElement>;
 
+  public filteredConstraintViolations: StringTMap<Violation[]>;
+
   constructor(
     private elRef: ElementRef,
     private route: ActivatedRoute,
     private store: Store<RootState>,
   ) {}
 
-  ngAfterViewChecked() {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.bands || changes.constraintViolations) {
+      this.filterConstraintViolations(this.constraintViolations);
+    }
+  }
+
+  ngAfterViewChecked(): void {
     this.setBandContainerMaxHeight();
+  }
+
+  /**
+   * @todo This function will simplify when we have actual constraint violations.
+   */
+  filterConstraintViolations(violations: Violation[]) {
+    this.filteredConstraintViolations = {};
+
+    for (const violation of violations) {
+      const { activityInstanceIds, stateIds } = violation.associations;
+      for (const band of this.bands) {
+        const { type } = band;
+        if (type === 'schedule' && activityInstanceIds.length) {
+          for (const activityInstanceId of activityInstanceIds) {
+            if (activityInstanceId === band.id) {
+              if (!this.filteredConstraintViolations[band.id]) {
+                this.filteredConstraintViolations[band.id] = [];
+              }
+              this.filteredConstraintViolations[band.id].push(violation);
+            }
+          }
+        }
+        if (type === 'simulation' && stateIds.length) {
+          for (const stateId of stateIds) {
+            if (stateId === band.id) {
+              if (!this.filteredConstraintViolations[band.id]) {
+                this.filteredConstraintViolations[band.id] = [];
+              }
+              this.filteredConstraintViolations[band.id].push(violation);
+            }
+          }
+        }
+      }
+    }
   }
 
   onDeleteHorizontalGuide(id: string): void {
@@ -174,6 +224,12 @@ export class TimelineComponent implements AfterViewChecked {
 @NgModule({
   declarations: [TimelineComponent],
   exports: [TimelineComponent],
-  imports: [BandModule, CommonModule, TimeAxisModule, TimeAxisGlobalModule],
+  imports: [
+    BandModule,
+    CommonModule,
+    PipesModule,
+    TimeAxisModule,
+    TimeAxisGlobalModule,
+  ],
 })
 export class TimelineModule {}

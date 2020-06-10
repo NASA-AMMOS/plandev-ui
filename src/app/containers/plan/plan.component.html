@@ -121,6 +121,7 @@
     <app-timeline
       *ngIf="activityInstances !== null"
       [bands]="scheduleBands"
+      [constraintViolations]="constraintViolations"
       [maxTimeRange]="maxTimeRange"
       [verticalGuides]="verticalGuides"
       [viewTimeRange]="viewTimeRange"
@@ -153,6 +154,7 @@
     <app-timeline
       *ngIf="!simulationRunning && stateBands !== null"
       [bands]="stateBands"
+      [constraintViolations]="constraintViolations"
       [maxTimeRange]="maxTimeRange"
       [verticalGuides]="verticalGuides"
       [viewTimeRange]="viewTimeRange"

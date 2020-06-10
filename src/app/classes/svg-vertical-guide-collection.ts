@@ -155,6 +155,7 @@ export class SvgVerticalGuideCollection {
 
       if (time >= this.viewTimeRange.start && time <= this.viewTimeRange.end) {
         const svgVerticalGuide = new SvgVerticalGuide(
+          this.container,
           this.containerHeight,
           this.containerWidth,
           {
@@ -162,7 +163,6 @@ export class SvgVerticalGuideCollection {
             position: this.xScale(time),
             time,
           },
-          this.container,
         );
 
         this.guides.push(svgVerticalGuide);

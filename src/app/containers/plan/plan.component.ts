@@ -33,6 +33,7 @@ import {
   ToolbarModule,
 } from '../../components';
 import { MaterialModule } from '../../material';
+import { violations } from '../../mocks';
 import {
   getActivityInstances,
   getActivityTypes,
@@ -55,6 +56,7 @@ import {
   Plan,
   TimeRange,
   UpdateActivityInstance,
+  Violation,
 } from '../../types';
 import { TimelineModule } from '../timeline/timeline.component';
 import { UpsertActivityInstanceFormModule } from '../upsert-activity-instance-form/upsert-activity-instance-form.component';
@@ -71,6 +73,7 @@ export class PlanComponent implements AfterViewInit, OnDestroy {
 
   activityInstances: ActivityInstance[] | null = null;
   activityTypes: ActivityType[] | null = null;
+  constraintViolations: Violation[] = violations;
   drawer = {
     activityDictionary: {
       visible: true,

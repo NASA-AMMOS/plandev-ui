@@ -20,15 +20,17 @@ export function forEachCanvas(
   }
 }
 
-export function getDoyTimestampFromSvgMousePosition(
+export function getTimeFromSvgMousePosition(
   el: SVGElement | SVGGElement,
   event: MouseEvent | DragEvent,
   scale: d3.ScaleTime<number, number>,
-): string {
-  const { x } = getSvgMousePosition(el, event);
+  offsetX: number = 0,
+): { doyTimestamp: string; unixEpochTime: number } {
+  const position = getSvgMousePosition(el, event);
+  const x = position.x - offsetX;
   const unixEpochTime = scale.invert(x).getTime();
   const doyTimestamp = getDoyTimestamp(unixEpochTime);
-  return doyTimestamp;
+  return { doyTimestamp, unixEpochTime };
 }
 
 export function getPointFromCanvasSelection(

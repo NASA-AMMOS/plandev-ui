@@ -45,7 +45,7 @@ export const getScheduleBands = createSelector(
     selectedActivityInstanceId: string | null,
     guides: Guide[],
   ): Band[] => {
-    const id = 'band-0';
+    const id = 'activity-band-0';
     const points = (activityInstances || []).map(point => ({
       duration: 0,
       id: point.id,
@@ -64,7 +64,7 @@ export const getScheduleBands = createSelector(
         id,
         subBands: [
           {
-            id: 'subBand-0',
+            id: 'activity-subBand-0',
             points,
             type: 'activity',
           } as SubBandActivity,
