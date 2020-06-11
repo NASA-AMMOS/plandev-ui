@@ -492,6 +492,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       showTooltip(event, doyTimestamp, this.drawWidth);
       d3.select(this.interactionContainerSvg.nativeElement)
         .append('rect')
+        .attr('class', 'activity-drag-guide')
         .attr('x', offsetX)
         .attr('y', 0)
         .attr('width', 1)
@@ -504,7 +505,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     if (this.type === 'schedule') {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
-      d3.select(container).select('rect').remove();
+      d3.select(container).select('.activity-drag-guide').remove();
     }
   }
 
@@ -521,7 +522,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         xScale,
       );
       showTooltip(event, doyTimestamp, this.drawWidth);
-      d3.select(container).select('rect').attr('x', offsetX);
+      d3.select(container).select('.activity-drag-guide').attr('x', offsetX);
     }
   }
 
@@ -531,7 +532,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     if (this.type === 'schedule') {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
-      d3.select(container).select('rect').remove();
+      d3.select(container).select('.activity-drag-guide').remove();
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
       const { doyTimestamp: startTimestamp } = getTimeFromSvgMousePosition(
         container,
