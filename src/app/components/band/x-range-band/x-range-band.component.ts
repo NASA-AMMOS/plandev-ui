@@ -39,7 +39,7 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Input()
-  points: PointXRange[];
+  points: PointXRange[] | undefined;
 
   @Input()
   viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -113,9 +113,10 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
     });
 
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+    const points = this.points || [];
 
-    for (let i = 0, l = this.points.length; i < l; ++i) {
-      const point = this.points[i];
+    for (let i = 0, l = points.length; i < l; ++i) {
+      const point = points[i];
       const x = Math.floor(xScale(point.x));
       const end = Math.floor(xScale(point.x + point.duration));
       const range = end - x;

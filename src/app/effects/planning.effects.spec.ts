@@ -4,6 +4,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Actions } from '@ngrx/effects';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
+import { provideMockStore } from '@ngrx/store/testing';
 import { Observable, of } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import { AppActions, PlanningActions, ToastActions } from '../actions';
@@ -24,6 +25,9 @@ describe('planning effects', () => {
   let dialog: any;
   let effects: PlanningEffects;
   let testScheduler: TestScheduler;
+  const initialState = {
+    planning: { viewTimeRange: { end: 1735689600000, start: 1577836800000 } },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -31,6 +35,7 @@ describe('planning effects', () => {
       providers: [
         PlanningEffects,
         provideMockActions(() => actions),
+        provideMockStore({ initialState }),
         {
           provide: ApiService,
           useValue: new ApiMockService(),

@@ -34,7 +34,7 @@
 >
   <ng-container *ngFor="let subBand of subBands">
     <app-activity-band
-      *ngIf="subBand.type === 'activity'"
+      *ngIf="subBand.chartType === 'activity'"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
       [id]="subBand.id"
@@ -44,7 +44,7 @@
       [viewTimeRange]="viewTimeRange"
     ></app-activity-band>
     <app-line-band
-      *ngIf="subBand.type === 'line'"
+      *ngIf="subBand.chartType === 'line'"
       [color]="subBand.color"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
@@ -57,7 +57,7 @@
       [yAxisId]="subBand.yAxisId"
     ></app-line-band>
     <app-x-range-band
-      *ngIf="subBand.type === 'x-range'"
+      *ngIf="subBand.chartType === 'x-range'"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
       [id]="subBand.id"
@@ -141,9 +141,7 @@
         </button>
         <button
           mat-menu-item
-          (click)="
-            deleteHorizontalGuide.emit(guide.id); menuTrigger.closeMenu()
-          "
+          (click)="deleteHorizontalGuide.emit(guide); menuTrigger.closeMenu()"
         >
           <mat-icon>delete_forever</mat-icon>
           <span>Delete</span>

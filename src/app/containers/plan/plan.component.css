@@ -7,10 +7,19 @@ as-split-area > div {
   height: 100%;
 }
 
-.link-icon {
-  transform: rotate(-45deg);
+.panel-menu {
+  color: #c7c7c7;
 }
 
 .panel-overflow-hidden {
   overflow: hidden !important;
+}
+
+ngx-codemirror {
+  height: calc(100% - var(--toolbar-height, 36px));
+  width: calc(100% - 10px);
+}
+
+::ng-deep .CodeMirror {
+  height: calc(100% - var(--panel-header-height, 36px));
 }

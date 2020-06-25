@@ -3,7 +3,7 @@ import { Violation } from '../types';
 export const violations: Violation[] = [
   {
     associations: {
-      activityInstanceIds: ['activity-band-0'],
+      activityInstanceIds: ['subBand0'],
       stateIds: [],
     },
     constraint: {
@@ -20,7 +20,7 @@ export const violations: Violation[] = [
   },
   {
     associations: {
-      activityInstanceIds: ['activity-band-0'],
+      activityInstanceIds: ['subBand0'],
       stateIds: [],
     },
     constraint: {
@@ -34,7 +34,7 @@ export const violations: Violation[] = [
   {
     associations: {
       activityInstanceIds: [],
-      stateIds: ['simulation-result-peel'],
+      stateIds: ['subBand1'],
     },
     constraint: {
       category: '',
@@ -47,7 +47,7 @@ export const violations: Violation[] = [
   {
     associations: {
       activityInstanceIds: [],
-      stateIds: ['simulation-result-fruit'],
+      stateIds: ['subBand2'],
     },
     constraint: {
       category: '',

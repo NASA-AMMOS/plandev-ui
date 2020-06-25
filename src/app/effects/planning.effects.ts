@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
+import { scaleTime } from 'd3';
 import { concat, forkJoin, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { AppActions, PlanningActions, ToastActions } from '../actions';
-import { ConfirmDialogComponent } from '../components';
+import { RootState } from '../app-store';
+import { ConfirmDialogComponent, GuideDialogComponent } from '../components';
 import { ApiService } from '../services';
+import { Guide, GuideDialogData } from '../types';
 
 @Injectable()
 export class PlanningEffects {
@@ -13,6 +17,7 @@ export class PlanningEffects {
     private actions: Actions,
     private apiService: ApiService,
     private dialog: MatDialog,
+    private store: Store<RootState>,
   ) {}
 
   createActivityInstance = createEffect(() => {
@@ -295,6 +300,74 @@ export class PlanningEffects {
       }),
     );
   });
+
+  guideOpenDialog = createEffect(() => {
+    return this.actions.pipe(
+      ofType(PlanningActions.guideOpenDialog),
+      switchMap(({ data }) => {
+        const guideDialog = this.dialog.open(GuideDialogComponent, {
+          data,
+          width: '300px',
+        });
+        return forkJoin<GuideDialogData, Guide | null>([
+          of(data),
+          guideDialog.afterClosed(),
+        ]);
+      }),
+      map(([data, guide]) => ({ data, guide })),
+      switchMap(({ data, guide }) => {
+        if (guide && data.mode === 'create') {
+          return [PlanningActions.guideAdd({ guide })];
+        } else if (guide && data.mode === 'edit') {
+          return [
+            PlanningActions.guideUpdate({ id: guide.id, changes: guide }),
+          ];
+        } else {
+          return [];
+        }
+      }),
+    );
+  });
+
+  /**
+   * @note We are using a simple heuristic to calculate the sampling period.
+   * First we use a scale to determine the spread between two consecutive time points
+   * in the view time range.
+   * Then we are dividing that time by 8 (arbitrarily) to get 8 samples within the range,
+   * and then multiplying by 1000 to convert milliseconds to microseconds.
+   */
+  runSimulation = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.runSimulation),
+      withLatestFrom(this.store),
+      map(([action, state]) => ({ action, state })),
+      switchMap(({ action, state }) => {
+        const { start, end } = state.planning.viewTimeRange;
+        const scale = scaleTime().domain([new Date(start), new Date(end)]);
+        const [t0, t1] = scale.ticks();
+        const samplingPeriod = ((t1.getTime() - t0.getTime()) / 8) * 1000;
+        return concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.simulate(action.planId, samplingPeriod).pipe(
+            switchMap(simulationResults => {
+              return [
+                PlanningActions.runSimulationSuccess({ simulationResults }),
+              ];
+            }),
+            catchError((error: Error) => {
+              console.log(error.message);
+              return [
+                PlanningActions.runSimulationFailure({
+                  errorMsg: error.message,
+                }),
+              ];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+        );
+      }),
+    ),
+  );
 
   updateActivityInstance = createEffect(() => {
     return this.actions.pipe(

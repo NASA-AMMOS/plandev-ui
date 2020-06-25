@@ -18,7 +18,7 @@
   restrictMove="true"
   unit="pixel"
   [gutterSize]="5"
-  [useTransition]="true"
+  [useTransition]="false"
   (dragEnd)="onResize()"
   (transitionEnd)="onResize()"
 >
@@ -27,24 +27,22 @@
       #verticalSplitAreas
       direction="vertical"
       [gutterSize]="5"
-      [useTransition]="true"
-      (dragEnd)="tryToCollapsePanels($event)"
+      [useTransition]="false"
     >
       <as-split-area
-        *ngFor="let panel of panels; trackBy: trackByPanels"
-        [minSize]="panel.minSize"
+        *ngFor="let panel of panels; trackBy: trackByPanels; let order = index"
+        [minSize]="3.2"
+        [order]="order"
         [ngClass]="{
           'panel-overflow-hidden': panel.type === 'timeline'
         }"
-        [size]="panel.size"
       >
         <ng-container
           *ngTemplateOutlet="
             {
-              schedule: schedule,
-              simulation: simulation,
+              timeline: timeline,
               table: table
-            }[panel.template];
+            }[panel.type];
             context: { $implicit: panel }
           "
         ></ng-container>
@@ -86,6 +84,16 @@
       ></app-upsert-activity-instance-form>
     </div>
 
+    <div [style.display]="drawer.panelEditor.visible ? 'block' : 'none'">
+      <app-panel-header>
+        Panel Editor
+      </app-panel-header>
+      <ngx-codemirror
+        [(ngModel)]="panelsText"
+        [options]="panelsEditorOptions"
+      ></ngx-codemirror>
+    </div>
+
     <div
       [style.display]="
         drawer.selectedActivityInstance.visible ? 'block' : 'none'
@@ -106,88 +114,51 @@
   </as-split-area>
 </as-split>
 
-<ng-template #schedule let-panel>
-  <div *ngIf="panel.virtualSize > 1.7">
-    <app-panel-header>
-      Schedule
-      <div class="right">
-        <app-time-controls (restore)="onRestore()"></app-time-controls>
-        <button class="link-icon" mat-icon-button>
-          <mat-icon>link</mat-icon>
+<ng-template #timeline let-panel>
+  <app-panel-header>
+    {{ panel.title }}
+    <div class="right">
+      <button
+        class="panel-menu"
+        *ngIf="panel.menu"
+        mat-icon-button
+        [matMenuTriggerFor]="menu"
+      >
+        <mat-icon>more_horiz</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button
+          *ngFor="let item of panel.menu"
+          mat-menu-item
+          (click)="onPanelMenuAction(item.action)"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.title }}</span>
         </button>
-      </div>
-    </app-panel-header>
-    <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-    <app-timeline
-      *ngIf="activityInstances !== null"
-      [bands]="scheduleBands"
-      [constraintViolations]="constraintViolations"
-      [maxTimeRange]="maxTimeRange"
-      [verticalGuides]="verticalGuides"
-      [viewTimeRange]="viewTimeRange"
-    ></app-timeline>
-  </div>
-
-  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
-    Schedule
-  </app-panel-collapsed>
-</ng-template>
-
-<ng-template #simulation let-panel>
-  <div *ngIf="panel.virtualSize > 1.7">
-    <app-panel-header>
-      Simulation
-      <div class="right">
-        <app-simulation-controls
-          (run)="onSimulationRun()"
-        ></app-simulation-controls>
-        <app-time-controls (restore)="onRestore()"></app-time-controls>
-        <button class="link-icon" mat-icon-button>
-          <mat-icon>link</mat-icon>
-        </button>
-      </div>
-    </app-panel-header>
-    <app-placeholder *ngIf="simulationRunning"></app-placeholder>
-    <app-panel-empty *ngIf="!simulationRunning && stateBands === null">
-      Run simulation to view results
-    </app-panel-empty>
-    <app-timeline
-      *ngIf="!simulationRunning && stateBands !== null"
-      [bands]="stateBands"
-      [constraintViolations]="constraintViolations"
-      [maxTimeRange]="maxTimeRange"
-      [verticalGuides]="verticalGuides"
-      [viewTimeRange]="viewTimeRange"
-    ></app-timeline>
-  </div>
-
-  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
-    Simulation
-  </app-panel-collapsed>
+      </mat-menu>
+    </div>
+  </app-panel-header>
+  <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
+  <app-timeline
+    *ngIf="activityInstances"
+    [bands]="panel.bands"
+    [constraintViolations]="constraintViolations"
+    [maxTimeRange]="maxTimeRange"
+    [verticalGuides]="panel.verticalGuides"
+    [viewTimeRange]="viewTimeRange"
+  ></app-timeline>
 </ng-template>
 
 <ng-template #table let-panel>
-  <div *ngIf="panel.virtualSize > 1.7">
-    <app-panel-header>
-      Table
-    </app-panel-header>
-    <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-    <ng-container *ngIf="activityInstances !== null">
-      <mat-card *ngIf="!activityInstances.length">
-        This plan has no activity instances
-      </mat-card>
-
-      <app-activity-instances-table
-        *ngIf="activityInstances.length"
-        [activityInstances]="activityInstances"
-        [selectedActivityInstance]="selectedActivityInstance"
-        (deleteActivityInstance)="onDeleteActivityInstance($event)"
-        (selectActivityInstance)="onSelectActivityInstance($event)"
-      ></app-activity-instances-table>
-    </ng-container>
-  </div>
-
-  <app-panel-collapsed *ngIf="panel.virtualSize === 1.7">
-    Table
-  </app-panel-collapsed>
+  <app-panel-header>
+    {{ panel.title }}
+  </app-panel-header>
+  <app-data-table
+    *ngIf="panel.table.type === 'activity'"
+    [columns]="panel.table.columns"
+    [data]="activityInstances"
+    [selectedElement]="selectedActivityInstance"
+    (deleteElement)="onDeleteActivityInstance($event)"
+    (selectElement)="onSelectActivityInstance($event)"
+  ></app-data-table>
 </ng-template>

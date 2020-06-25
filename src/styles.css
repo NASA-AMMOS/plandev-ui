@@ -1,4 +1,5 @@
 @import 'assets/css/bootstrap.css';
+@import '~codemirror/lib/codemirror';
 
 html,
 body {

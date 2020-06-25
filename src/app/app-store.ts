@@ -7,21 +7,13 @@ import {
   MetaReducer,
 } from '@ngrx/store';
 import { environment } from 'src/environments/environment';
-import {
-  AppReducer,
-  AuthReducer,
-  GuideReducer,
-  PlanningReducer,
-  SimulationReducer,
-} from './reducers';
+import { AppReducer, AuthReducer, PlanningReducer } from './reducers';
 
 export interface RootState {
   app: AppReducer.AppState;
   auth: AuthReducer.AuthState;
-  guide: GuideReducer.GuideState;
   planning: PlanningReducer.PlanningState;
   router: fromRouter.RouterReducerState;
-  simulation: SimulationReducer.SimulationState;
 }
 
 export const ROOT_REDUCERS = new InjectionToken<
@@ -30,10 +22,8 @@ export const ROOT_REDUCERS = new InjectionToken<
   factory: () => ({
     app: AppReducer.reducer,
     auth: AuthReducer.reducer,
-    guide: GuideReducer.reducer,
     planning: PlanningReducer.reducer,
     router: fromRouter.routerReducer,
-    simulation: SimulationReducer.reducer,
   }),
 });
 
@@ -47,7 +37,6 @@ export function logger(
     console.log('action', action);
     console.log('next state', result);
     console.groupEnd();
-
     return result;
   };
 }

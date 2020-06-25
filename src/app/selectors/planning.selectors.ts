@@ -5,13 +5,13 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
-  Band,
-  Guide,
+  Panel,
   Plan,
-  SubBandActivity,
+  PointLine,
+  SimulationResult,
+  StringTMap,
   TimeRange,
 } from '../types';
-import { getGuides } from './guide.selectors';
 
 export const getPlanningState = createFeatureSelector<PlanningState>(
   'planning',
@@ -36,45 +36,6 @@ export const getSelectedActivityInstanceId = createSelector(
   (state: PlanningState): string | null => state.selectedActivityInstanceId,
 );
 
-export const getScheduleBands = createSelector(
-  getActivityInstances,
-  getSelectedActivityInstanceId,
-  getGuides,
-  (
-    activityInstances: ActivityInstance[] | null,
-    selectedActivityInstanceId: string | null,
-    guides: Guide[],
-  ): Band[] => {
-    const id = 'activity-band-0';
-    const points = (activityInstances || []).map(point => ({
-      duration: 0,
-      id: point.id,
-      label: {
-        text: point.type,
-      },
-      selected: selectedActivityInstanceId === point.id,
-      type: 'activity',
-      x: getUnixEpochTime(point.startTimestamp),
-    }));
-    const horizontalGuides = guides.filter(guide => guide.bandId === id);
-
-    return [
-      {
-        horizontalGuides,
-        id,
-        subBands: [
-          {
-            id: 'activity-subBand-0',
-            points,
-            type: 'activity',
-          } as SubBandActivity,
-        ],
-        type: 'schedule',
-      },
-    ];
-  },
-);
-
 export const getActivityTypes = createSelector(
   getPlanningState,
   (state: PlanningState): ActivityType[] | null =>
@@ -85,6 +46,118 @@ export const getAdaptations = createSelector(
   getPlanningState,
   (state: PlanningState): Adaptation[] | null =>
     state.adaptations ? Object.values(state.adaptations) : null,
+);
+
+export const getSimulationResults = createSelector(
+  getPlanningState,
+  (state: PlanningState): SimulationResult[] => state.simulationResults || [],
+);
+
+export const getPanels = createSelector(
+  getPlanningState,
+  (state: PlanningState) => state.panels,
+);
+
+export const getPanelsWithPoints = createSelector(
+  getActivityInstances,
+  getPanels,
+  getSelectedActivityInstanceId,
+  getSimulationResults,
+  (
+    activityInstances: ActivityInstance[] | null,
+    panels: Panel[],
+    selectedActivityInstanceId: string | null,
+    simulationResults: SimulationResult[],
+  ) => {
+    return panels.map(panel => {
+      if (panel.bands) {
+        return {
+          ...panel,
+          bands: panel.bands.map(band => {
+            const yAxisIdToScaleDomain: StringTMap<number[]> = {};
+            const subBands = band.subBands.map(subBand => {
+              if (subBand.type === 'activity') {
+                const activities = activityInstances || [];
+                const points = activities.reduce((newPoints, point) => {
+                  const r = new RegExp(subBand?.filter?.activity?.type);
+                  const includePoint = r.test(point.type);
+                  if (includePoint) {
+                    newPoints.push({
+                      duration: 0,
+                      id: point.id,
+                      label: {
+                        text: point.type,
+                      },
+                      selected: selectedActivityInstanceId === point.id,
+                      type: 'activity',
+                      x: getUnixEpochTime(point.startTimestamp),
+                    });
+                  }
+                  return newPoints;
+                }, []);
+                return {
+                  ...subBand,
+                  points,
+                };
+              }
+
+              if (subBand.type === 'state') {
+                const points: PointLine[] = [];
+                const yAxisId = `axis-${subBand.id}`;
+                let minY = Number.MAX_SAFE_INTEGER;
+                let maxY = Number.MIN_SAFE_INTEGER;
+                if (simulationResults && simulationResults.length) {
+                  for (const { name, start, values } of simulationResults) {
+                    const r = new RegExp(subBand?.filter?.state?.name);
+                    const includeResult = r.test(name);
+                    if (includeResult) {
+                      for (let i = 0; i < values.length; ++i) {
+                        const { x, y } = values[i];
+                        points.push({
+                          id: `${subBand.id}-state-${name}-${i}`,
+                          type: 'line',
+                          x: getUnixEpochTime(start) + x / 1000,
+                          y,
+                        });
+                        minY = y < minY ? y : minY;
+                        maxY = y > maxY ? y : maxY;
+                      }
+                    }
+                  }
+
+                  if (minY === maxY) {
+                    // If extents are equal, clip first extent to 0
+                    // so axis and line gets properly drawn by D3.
+                    minY = 0;
+                  }
+
+                  yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                }
+                return {
+                  ...subBand,
+                  points,
+                  yAxisId,
+                };
+              }
+
+              return subBand;
+            });
+
+            return {
+              ...band,
+              subBands,
+              yAxes: (band.yAxes || []).map(axis => ({
+                ...axis,
+                scaleDomain: yAxisIdToScaleDomain[axis.id] || [],
+              })),
+            };
+          }),
+        };
+      }
+
+      return panel;
+    });
+  },
 );
 
 export const getPlans = createSelector(

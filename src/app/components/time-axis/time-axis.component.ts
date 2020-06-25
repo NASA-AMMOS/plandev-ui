@@ -49,7 +49,7 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange = { start: 0, end: 0 };
 
   @Input()
-  verticalGuides: Guide[] = [];
+  verticalGuides: Guide[] | undefined = [];
 
   @Input()
   viewTimeRange: TimeRange = { start: 0, end: 0 };
@@ -154,14 +154,15 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   drawVerticalGuides() {
-    if (this.verticalGuides.length) {
+    const verticalGuides = this.verticalGuides || [];
+    if (verticalGuides.length) {
       const xScale = this.getXScale();
       const verticalGuideCollection = new SvgVerticalGuideCollection(
         this.elRef.nativeElement.parentElement.nextSibling,
         this.guides.nativeElement,
         this.height,
         this.drawWidth,
-        this.verticalGuides,
+        verticalGuides,
         this.viewTimeRange,
         xScale,
       );

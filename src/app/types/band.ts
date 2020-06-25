@@ -4,7 +4,7 @@ export interface Axis {
   id: string;
   color?: string;
   label?: Label;
-  scaleDomain: number[];
+  scaleDomain?: number[];
   tickCount?: number;
 }
 
@@ -13,7 +13,6 @@ export interface Band {
   horizontalGuides?: Guide[];
   id: string;
   subBands: SubBand[];
-  type: string;
   yAxes?: Axis[];
 }
 
@@ -62,7 +61,7 @@ export interface Point {
   color?: string;
   id: string;
   selected?: boolean;
-  type: string;
+  type: 'activity' | 'line' | 'x-range';
   x: number;
 }
 
@@ -93,24 +92,35 @@ export interface SelectPoint {
 }
 
 export interface SubBand {
+  chartType: 'activity' | 'line' | 'x-range';
+  filter?: {
+    activity?: {
+      type?: string;
+    };
+    state?: {
+      name?: string;
+    };
+  };
   id: string;
-  type: string;
+  type: 'activity' | 'state';
 }
+
+export type SubBandWithPoints = SubBandActivity | SubBandLine | SubBandXRange;
 
 export interface SubBandActivity extends SubBand {
   layout?: string;
-  points: PointActivity[];
+  points?: PointActivity[];
 }
 
 export interface SubBandLine extends SubBand {
   color?: string;
   interpolationType?: string;
-  points: PointLine[];
+  points?: PointLine[];
   yAxisId: string;
 }
 
 export interface SubBandXRange extends SubBand {
-  points: PointXRange[];
+  points?: PointXRange[];
 }
 
 export interface UpdatePoint {

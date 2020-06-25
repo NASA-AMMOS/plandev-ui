@@ -28,10 +28,8 @@ import { ContainersModule } from './containers';
 import {
   AppEffects,
   AuthEffects,
-  GuideEffects,
   NavEffects,
   PlanningEffects,
-  SimulationEffects,
   ToastEffects,
 } from './effects';
 import { MaterialModule } from './material';
@@ -133,10 +131,8 @@ export class AppComponent implements OnDestroy {
     EffectsModule.forRoot([
       AppEffects,
       AuthEffects,
-      GuideEffects,
       NavEffects,
       PlanningEffects,
-      SimulationEffects,
       ToastEffects,
     ]),
     MaterialModule,

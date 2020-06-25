@@ -42,7 +42,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange;
 
   @Input()
-  points: PointActivity[];
+  points: PointActivity[] | undefined;
 
   @Input()
   viewTimeRange: TimeRange;
@@ -180,7 +180,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
       ctx.clearRect(0, 0, this.drawWidth, this.drawHeight);
     });
 
-    const points = this.points.filter(
+    const points = (this.points || []).filter(
       point =>
         point.x + point.duration >= this.viewTimeRange.start &&
         point.x <= this.viewTimeRange.end,
@@ -234,7 +234,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
       ctx.clearRect(0, 0, this.drawWidth, this.drawHeight);
     });
 
-    const points = this.points.filter(
+    const points = (this.points || []).filter(
       point =>
         point.x + point.duration >= this.viewTimeRange.start &&
         point.x <= this.viewTimeRange.end,

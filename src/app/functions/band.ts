@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Point, StringTMap, TimeRange } from '../types';
+import { Point, StringTMap, SubBand, TimeRange } from '../types';
 import { getDoyTimestamp } from './time';
 
 export function forEachCanvas(
@@ -95,6 +95,15 @@ export function getYScale(
     .scaleLinear()
     .domain([min - step, max + step])
     .range([drawHeight, 0]);
+}
+
+export function hasSubBandOfType(subBands: SubBand[], type: string): boolean {
+  for (const subBand of subBands) {
+    if (subBand.type === type) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

@@ -64,7 +64,7 @@ export class GuideDialogComponent {
       if (this.data.mode === 'create') {
         const guide: Guide = {
           bandId,
-          id: uniqueId('guide--horizontal-'),
+          id: uniqueId('horizontalGuide'),
           label: { text },
           position,
           type: 'horizontal',

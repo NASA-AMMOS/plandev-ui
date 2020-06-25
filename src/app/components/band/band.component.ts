@@ -24,6 +24,7 @@ import {
   getTooltipTextForPoints,
   getXScale,
   getYScale,
+  hasSubBandOfType,
   hideTooltip,
   showTooltip,
 } from '../../functions';
@@ -56,7 +57,7 @@ import { XRangeBandModule } from './x-range-band/x-range-band.component';
 })
 export class BandComponent implements AfterViewInit, OnChanges {
   @Input()
-  constraintViolations: Violation[] = [];
+  constraintViolations: Violation[] | undefined = [];
 
   @Input()
   height: number | undefined;
@@ -86,9 +87,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
   subBands: SubBand[];
 
   @Input()
-  type: string;
-
-  @Input()
   viewTimeRange: TimeRange;
 
   @Input()
@@ -100,7 +98,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   >();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<string> = new EventEmitter<string>();
+  deleteHorizontalGuide: EventEmitter<Guide> = new EventEmitter<Guide>();
 
   @Output()
   updateHorizontalGuide: EventEmitter<Partial<Guide>> = new EventEmitter<
@@ -241,8 +239,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
               const { y } = event;
               const { subject: line } = event;
               const partialGuide: Partial<Guide> = {
+                bandId: guide.bandId,
                 id: line.id,
                 position: y,
+                type: guide.type,
               };
               this.updateHorizontalGuide.emit(partialGuide);
             }),
@@ -273,7 +273,8 @@ export class BandComponent implements AfterViewInit, OnChanges {
   }
 
   drawConstraintViolations(): void {
-    if (this.constraintViolations.length) {
+    const constraintViolations = this.constraintViolations || [];
+    if (constraintViolations.length) {
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
       this.violationCollection = new SvgConstraintViolationCollection(
         this.constraintViolationsGroup.nativeElement,
@@ -282,7 +283,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         this.drawWidth,
         this.marginTop,
         this.viewTimeRange,
-        this.constraintViolations,
+        constraintViolations,
         xScale,
       );
       this.violationCollection.drawAll();
@@ -315,7 +316,8 @@ export class BandComponent implements AfterViewInit, OnChanges {
       axisG.selectAll('*').remove();
 
       const yAxis = yAxes[i];
-      const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
+      const domain = yAxis?.scaleDomain || [];
+      const yScale = getYScale(domain, this.drawHeight);
       const axis = d3.axisLeft(yScale).ticks(yAxis.tickCount || 5);
 
       const axisMargin = 20;
@@ -479,8 +481,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   onDragEnter(event: DragEvent): void {
     event.preventDefault();
-
-    if (this.type === 'schedule') {
+    if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       const { offsetX } = event;
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
@@ -502,7 +503,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   }
 
   onDragLeave(): void {
-    if (this.type === 'schedule') {
+    if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
       d3.select(container).select('.activity-drag-guide').remove();
@@ -511,8 +512,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
-
-    if (this.type === 'schedule') {
+    if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       const { offsetX } = event;
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
@@ -528,8 +528,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-
-    if (this.type === 'schedule') {
+    if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
       d3.select(container).select('.activity-drag-guide').remove();

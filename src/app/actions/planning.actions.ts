@@ -5,8 +5,12 @@ import {
   CreateActivityInstance,
   CreateAdaptation,
   CreatePlan,
+  Guide,
+  GuideDialogData,
+  Panel,
   Plan,
   PlanDetail,
+  SimulationResult,
   TimeRange,
   UpdateActivityInstance,
 } from '../types';
@@ -91,8 +95,43 @@ export const getPlansSuccess = createAction(
   props<{ plans: Plan[] }>(),
 );
 
+export const guideAdd = createAction(
+  '[planning] guideAdd',
+  props<{ guide: Guide }>(),
+);
+
+export const guideOpenDialog = createAction(
+  '[planning] guideOpenDialog',
+  props<{ data: GuideDialogData }>(),
+);
+
+export const guideRemove = createAction(
+  '[planning] guideRemove',
+  props<{ guide: Guide }>(),
+);
+
+export const guideUpdate = createAction(
+  '[planning] guideUpdate',
+  props<{ id: string; changes: Partial<Guide> }>(),
+);
+
 export const restoreViewTimeRange = createAction(
-  '[timeline] restoreViewTimeRange',
+  '[planning] restoreViewTimeRange',
+);
+
+export const runSimulation = createAction(
+  '[planning] runSimulation',
+  props<{ planId: string }>(),
+);
+
+export const runSimulationFailure = createAction(
+  '[planning] runSimulationFailure',
+  props<{ errorMsg: string }>(),
+);
+
+export const runSimulationSuccess = createAction(
+  '[planning] runSimulationSuccess',
+  props<{ simulationResults: SimulationResult[] }>(),
 );
 
 export const setSelectedActivityInstanceId = createAction(
@@ -119,6 +158,11 @@ export const updateActivityInstanceFailure = createAction(
 export const updateActivityInstanceSuccess = createAction(
   '[planning] updateActivityInstanceSuccess',
   props<{ activityInstance: UpdateActivityInstance }>(),
+);
+
+export const updateAllPanels = createAction(
+  '[planning] updateAllPanels',
+  props<{ panels: Panel[] }>(),
 );
 
 export const updateViewTimeRange = createAction(

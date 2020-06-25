@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { GuideActions, PlanningActions } from '../../actions';
+import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
@@ -40,7 +40,7 @@ import {
 })
 export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input()
-  bands: Band[] | null;
+  bands: Band[] | null | undefined;
 
   @Input()
   constraintViolations: Violation[] = [];
@@ -98,25 +98,29 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
     for (const violation of violations) {
       const { activityInstanceIds, stateIds } = violation.associations;
-      for (const band of this.bands) {
-        const { type } = band;
-        if (type === 'schedule' && activityInstanceIds.length) {
-          for (const activityInstanceId of activityInstanceIds) {
-            if (activityInstanceId === band.id) {
-              if (!this.filteredConstraintViolations[band.id]) {
-                this.filteredConstraintViolations[band.id] = [];
+      const bands = this.bands || [];
+      for (const band of bands) {
+        const { subBands } = band;
+        for (const subBand of subBands) {
+          const { type } = subBand;
+          if (type === 'activity' && activityInstanceIds.length) {
+            for (const activityInstanceId of activityInstanceIds) {
+              if (activityInstanceId === subBand.id) {
+                if (!this.filteredConstraintViolations[band.id]) {
+                  this.filteredConstraintViolations[band.id] = [];
+                }
+                this.filteredConstraintViolations[band.id].push(violation);
               }
-              this.filteredConstraintViolations[band.id].push(violation);
             }
           }
-        }
-        if (type === 'simulation' && stateIds.length) {
-          for (const stateId of stateIds) {
-            if (stateId === band.id) {
-              if (!this.filteredConstraintViolations[band.id]) {
-                this.filteredConstraintViolations[band.id] = [];
+          if (type === 'state' && stateIds.length) {
+            for (const stateId of stateIds) {
+              if (stateId === subBand.id) {
+                if (!this.filteredConstraintViolations[band.id]) {
+                  this.filteredConstraintViolations[band.id] = [];
+                }
+                this.filteredConstraintViolations[band.id].push(violation);
               }
-              this.filteredConstraintViolations[band.id].push(violation);
             }
           }
         }
@@ -124,17 +128,17 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
     }
   }
 
-  onDeleteHorizontalGuide(id: string): void {
-    this.store.dispatch(GuideActions.removeOne({ id }));
+  onDeleteHorizontalGuide(guide: Guide): void {
+    this.store.dispatch(PlanningActions.guideRemove({ guide }));
   }
 
   onOpenGuideDialog(data: GuideDialogData): void {
-    this.store.dispatch(GuideActions.openGuideDialog({ data }));
+    this.store.dispatch(PlanningActions.guideOpenDialog({ data }));
   }
 
   onUpdateHorizontalGuide(guide: Partial<Guide>): void {
     this.store.dispatch(
-      GuideActions.updateOne({ id: guide.id, changes: guide }),
+      PlanningActions.guideUpdate({ id: guide.id, changes: guide }),
     );
   }
 

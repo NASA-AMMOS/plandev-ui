@@ -47,7 +47,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   maxTimeRange: TimeRange;
 
   @Input()
-  points: PointLine[];
+  points: PointLine[] | undefined;
 
   @Input()
   viewTimeRange: TimeRange;
@@ -133,7 +133,9 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
     const yAxes = this.yAxes || [];
     const [yAxis] = yAxes.filter(axis => this.yAxisId === axis.id);
-    const yScale = getYScale(yAxis.scaleDomain, this.drawHeight);
+    const domain = yAxis?.scaleDomain || [];
+    const yScale = getYScale(domain, this.drawHeight);
+    const points = this.points || [];
 
     // Line.
     const interpolationType = this.interpolationType || 'curveLinear';
@@ -145,15 +147,15 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       .curve(curve);
     forEachCanvas(canvases, (_, ctx) => {
       ctx.beginPath();
-      line.context(ctx)(this.points);
+      line.context(ctx)(points);
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = this.color || '#d651ff';
       ctx.stroke();
     });
 
     // Points.
-    for (let i = 0, l = this.points.length; i < l; ++i) {
-      const point = this.points[i];
+    for (let i = 0, l = points.length; i < l; ++i) {
+      const point = points[i];
 
       const x = Math.floor(xScale(point.x));
       const y = Math.floor(yScale(point.y));

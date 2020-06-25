@@ -55,8 +55,5 @@
 /***************************************************************************************************
  * Zone JS is required by default for Angular itself.
  */
+import 'codemirror/mode/javascript/javascript';
 import 'zone.js/dist/zone'; // Included with Angular CLI.
-
-/***************************************************************************************************
- * APPLICATION IMPORTS
- */
