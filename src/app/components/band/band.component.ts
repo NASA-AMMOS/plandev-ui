@@ -210,7 +210,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
           .attr('stroke', guide.color || '#c9c9c9')
           .attr('stroke-width', guide.width || 2.0);
         let labelVisibility = 'visible';
-        if (!this.showHorizontalGuideLabels) labelVisibility = 'hidden';
+        if (!this.showHorizontalGuideLabels) {
+          labelVisibility = 'hidden';
+        }
         lineGroup
           .append('text')
           .style('visibility', labelVisibility)
