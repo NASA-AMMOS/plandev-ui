@@ -15,6 +15,14 @@ as-split-area > div {
   overflow: hidden !important;
 }
 
+iframe {
+  border: 0;
+  height: calc(100% - var(--toolbar-height, 36px));
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
 ngx-codemirror {
   height: calc(100% - var(--toolbar-height, 36px));
   width: calc(100% - 10px);

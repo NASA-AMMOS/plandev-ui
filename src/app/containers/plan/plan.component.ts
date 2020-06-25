@@ -27,6 +27,7 @@ import {
 import { getPanelsText, hideTooltip } from '../../functions';
 import { MaterialModule } from '../../material';
 import { violations } from '../../mocks';
+import { PipesModule } from '../../pipes';
 import {
   getActivityInstances,
   getActivityTypes,
@@ -250,6 +251,7 @@ export class PlanComponent implements OnDestroy {
     ActivityTypeListModule,
     FormsModule,
     PanelHeaderModule,
+    PipesModule,
     PlaceholderModule,
     TimelineModule,
     ToolbarModule,

@@ -40,6 +40,7 @@
         <ng-container
           *ngTemplateOutlet="
             {
+              iframe: iframe,
               timeline: timeline,
               table: table
             }[panel.type];
@@ -113,6 +114,13 @@
     </div>
   </as-split-area>
 </as-split>
+
+<ng-template #iframe let-panel>
+  <app-panel-header>
+    {{ panel.title }}
+  </app-panel-header>
+  <iframe allow="fullscreen" [src]="panel.iframe.src | safe"></iframe>
+</ng-template>
 
 <ng-template #timeline let-panel>
   <app-panel-header>

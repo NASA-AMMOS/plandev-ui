@@ -11,12 +11,15 @@ export interface PanelMenuItem {
 export interface Panel {
   bands?: Band[];
   id: string;
+  iframe?: {
+    src: string;
+  };
   menu?: PanelMenuItem[];
   table?: {
     columns: string[];
     type: 'activity';
   };
   title: string;
-  type: 'table' | 'timeline';
+  type: 'iframe' | 'table' | 'timeline';
   verticalGuides?: Guide[];
 }
