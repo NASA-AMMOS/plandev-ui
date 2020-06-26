@@ -307,7 +307,7 @@ export class PlanningEffects {
       switchMap(({ data }) => {
         const guideDialog = this.dialog.open(GuideDialogComponent, {
           data,
-          width: '300px',
+          width: '400px',
         });
         return forkJoin<GuideDialogData, Guide | null>([
           of(data),

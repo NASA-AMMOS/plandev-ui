@@ -29,22 +29,22 @@ export interface DeletePoint {
 
 export interface Guide {
   bandId?: string;
-  color?: string;
   id: string;
   label: Label;
-  position?: number;
   time?: number;
   timestamp?: string;
   type: 'horizontal' | 'vertical';
-  width?: number;
+  x?: number;
+  y?: number;
+  yAxisId?: string;
 }
 
 export interface GuideDialogData {
   bandId?: string;
   guide?: Guide;
-  maxPosition: number;
   mode: 'create' | 'edit';
   type: 'horizontal' | 'vertical';
+  yAxes?: Axis[];
 }
 
 export interface Label {

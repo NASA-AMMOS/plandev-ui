@@ -17,9 +17,16 @@ import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import { Guide, GuideDialogData } from '../../types';
 
+const labelValidators = [
+  Validators.required,
+  Validators.minLength(1),
+  Validators.maxLength(20),
+];
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-guide-dialog',
+  styleUrls: ['./guide-dialog.component.css'],
   templateUrl: './guide-dialog.component.html',
 })
 export class GuideDialogComponent {
@@ -30,26 +37,27 @@ export class GuideDialogComponent {
     private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: GuideDialogData,
   ) {
-    const labelValidators = [
-      Validators.required,
-      Validators.minLength(1),
-      Validators.maxLength(20),
-    ];
-    const positionValidators = [
-      Validators.required,
-      Validators.min(0),
-      Validators.max(data.maxPosition),
-    ];
     if (data.mode === 'edit' && data.guide) {
-      this.form = this.fb.group({
-        label: [data.guide.label.text, labelValidators],
-        position: [data.guide.position, positionValidators],
-      });
+      if (data.type === 'horizontal') {
+        this.form = this.fb.group({
+          label: [data.guide.label.text, labelValidators],
+          y: [data.guide.y, [Validators.required]],
+          yAxis:
+            data?.yAxes.find(axis => axis.id === data.guide.yAxisId) || null,
+        });
+      } else if (data.type === 'vertical') {
+        // TODO.
+      }
     } else {
-      this.form = this.fb.group({
-        label: ['', labelValidators],
-        position: ['', positionValidators],
-      });
+      if (data.type === 'horizontal') {
+        this.form = this.fb.group({
+          label: ['', labelValidators],
+          y: ['', [Validators.required]],
+          yAxis: data?.yAxes[0] || null,
+        });
+      } else if (data.type === 'vertical') {
+        // TODO.
+      }
     }
   }
 
@@ -60,23 +68,29 @@ export class GuideDialogComponent {
   onSubmit() {
     if (this.form.valid) {
       const { bandId } = this.data;
-      const { label: text, position } = this.form.value;
-      if (this.data.mode === 'create') {
-        const guide: Guide = {
-          bandId,
-          id: uniqueId('horizontalGuide'),
-          label: { text },
-          position,
-          type: 'horizontal',
-        };
-        this.dialogRef.close(guide);
-      } else if (this.data.mode === 'edit') {
-        const guide: Guide = {
-          ...this.data.guide,
-          label: { text },
-          position,
-        };
-        this.dialogRef.close(guide);
+      if (this.data.type === 'horizontal') {
+        const { label: text, y, yAxis } = this.form.value;
+        if (this.data.mode === 'create') {
+          const guide: Guide = {
+            bandId,
+            id: uniqueId('horizontalGuide'),
+            label: { text },
+            type: 'horizontal',
+            y,
+            yAxisId: yAxis?.id,
+          };
+          this.dialogRef.close(guide);
+        } else if (this.data.mode === 'edit') {
+          const guide: Guide = {
+            ...this.data.guide,
+            label: { text },
+            y,
+            yAxisId: yAxis?.id,
+          };
+          this.dialogRef.close(guide);
+        }
+      } else if (this.data.type === 'vertical') {
+        // TODO.
       }
     }
   }

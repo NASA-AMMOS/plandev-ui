@@ -77,7 +77,7 @@ export class SvgVerticalGuide {
    * Append guide group to the container group.
    */
   draw(visible = true) {
-    const { id, label, position } = this.guide;
+    const { id, label, x } = this.guide;
     const {
       circleColor,
       circleGroupOffset,
@@ -97,7 +97,7 @@ export class SvgVerticalGuide {
     this.circle = this.group
       .append('circle')
       .attr('class', 'guide-circle')
-      .attr('cx', position)
+      .attr('cx', x)
       .attr('cy', 0)
       .attr('r', circleRadius)
       .attr('fill', circleColor);
@@ -115,37 +115,37 @@ export class SvgVerticalGuide {
     this.circleGroup0 = this.circleGroup
       .append('circle')
       .attr('class', 'guide-circle-group-0')
-      .attr('cx', position)
+      .attr('cx', x)
       .attr('cy', circleGroupOffset)
       .attr('r', circleGroupRadius)
       .attr('fill', '#ffffff');
     this.circleGroup1 = this.circleGroup
       .append('circle')
       .attr('class', 'guide-circle-group-1')
-      .attr('cx', position - circleGroupOffset)
+      .attr('cx', x - circleGroupOffset)
       .attr('cy', -circleGroupOffset)
       .attr('r', circleGroupRadius)
       .attr('fill', '#ffffff');
     this.circleGroup2 = this.circleGroup
       .append('circle')
       .attr('class', 'guide-circle-group-2')
-      .attr('cx', position + circleGroupOffset)
+      .attr('cx', x + circleGroupOffset)
       .attr('cy', -circleGroupOffset)
       .attr('r', circleGroupRadius)
       .attr('fill', '#ffffff');
     this.line = this.group
       .append('line')
       .attr('class', 'guide-line')
-      .attr('x1', position)
+      .attr('x1', x)
       .attr('y1', circleRadius)
-      .attr('x2', position)
+      .attr('x2', x)
       .attr('y2', containerHeight)
       .attr('stroke', 'gray')
       .attr('stroke-dasharray', 2);
     this.label = this.group
       .append('text')
       .attr('class', 'guide-label')
-      .attr('x', position + circleRadius + labelPadding)
+      .attr('x', x + circleRadius + labelPadding)
       .attr('y', circleRadius / 2)
       .text(label.text);
 

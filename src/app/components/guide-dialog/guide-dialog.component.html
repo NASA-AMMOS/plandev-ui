@@ -6,7 +6,34 @@
 </h1>
 
 <div mat-dialog-content>
-  <form class="p-1" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <form
+    *ngIf="data?.type === 'horizontal'"
+    class="p-1"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+  >
+    <div class="alert alert-warning" *ngIf="form.controls.yAxis.value === null">
+      This band has no axes so horizontal guides will not be visible.
+    </div>
+    <div
+      class="alert alert-info"
+      *ngIf="form.controls.yAxis.value?.scaleDomain.length === 0"
+    >
+      This axis has no domain so horizontal guides will not be visible yet.
+    </div>
+    <mat-form-field
+      *ngIf="data?.yAxes?.length"
+      class="w-100"
+      appearance="outline"
+    >
+      <mat-label>Y-Axis</mat-label>
+      <mat-select formControlName="yAxis">
+        <mat-option *ngFor="let axis of data.yAxes" [value]="axis">
+          {{ axis.label.text }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <mat-form-field class="w-100" appearance="outline">
       <mat-label>Label</mat-label>
       <input
@@ -21,37 +48,19 @@
       <mat-error *ngIf="form.controls.label.getError('required')">
         You must enter label
       </mat-error>
-      <mat-error
-        *ngIf="
-          form.controls.position.getError('minLength') ||
-          form.controls.position.getError('maxlength')
-        "
-      >
-        Label must be between 1 and 20 characters
-      </mat-error>
     </mat-form-field>
 
     <mat-form-field class="w-100" appearance="outline">
-      <mat-label>Position</mat-label>
+      <mat-label>Y-Value</mat-label>
       <input
         [required]="true"
         autocomplete="off"
-        formControlName="position"
+        formControlName="y"
         matInput
         type="number"
-        min="0"
-        [max]="data.maxPosition"
       />
-      <mat-error *ngIf="form.controls.position.getError('required')">
-        You must enter a position
-      </mat-error>
-      <mat-error
-        *ngIf="
-          form.controls.position.getError('min') ||
-          form.controls.position.getError('max')
-        "
-      >
-        Position must be between 0 and {{ data.maxPosition }}
+      <mat-error *ngIf="form.controls.y.getError('required')">
+        You must enter a Y-value
       </mat-error>
     </mat-form-field>
 

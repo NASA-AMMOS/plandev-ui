@@ -196,59 +196,37 @@ export class BandComponent implements AfterViewInit, OnChanges {
     const horizontalGuides = this.horizontalGuides || [];
     for (const guide of horizontalGuides) {
       if (this.showHorizontalGuides) {
-        const lineGroup = horizontalGuideGroup
-          .append('g')
-          .attr('class', 'guide--horizontal');
-        lineGroup
-          .append('line')
-          .attr('class', 'guide--horizontal-line')
-          .attr('id', guide.id)
-          .attr('x1', 0)
-          .attr('y1', guide.position)
-          .attr('x2', this.drawWidth)
-          .attr('y2', guide.position)
-          .attr('stroke', guide.color || '#c9c9c9')
-          .attr('stroke-width', guide.width || 2.0);
-        let labelVisibility = 'visible';
-        if (!this.showHorizontalGuideLabels) {
-          labelVisibility = 'hidden';
+        const yAxis = this.yAxes.find(axis => axis.id === guide.yAxisId);
+        const domain = yAxis?.scaleDomain;
+        if (domain && domain.length) {
+          const yScale = getYScale(domain, this.drawHeight);
+          const y = yScale(guide.y);
+          const lineGroup = horizontalGuideGroup
+            .append('g')
+            .attr('class', 'guide--horizontal');
+          lineGroup
+            .append('line')
+            .attr('class', 'guide--horizontal-line')
+            .attr('id', guide.id)
+            .attr('x1', 0)
+            .attr('y1', y)
+            .attr('x2', this.drawWidth)
+            .attr('y2', y)
+            .attr('stroke', '#c9c9c9')
+            .attr('stroke-width', 2.0);
+          let labelVisibility = 'visible';
+          if (!this.showHorizontalGuideLabels) {
+            labelVisibility = 'hidden';
+          }
+          lineGroup
+            .append('text')
+            .style('visibility', labelVisibility)
+            .attr('class', 'guide--horizontal-text')
+            .attr('x', 5)
+            .attr('y', y + yOffset)
+            .attr('contentEditable', true)
+            .text(guide.label.text || '');
         }
-        lineGroup
-          .append('text')
-          .style('visibility', labelVisibility)
-          .attr('class', 'guide--horizontal-text')
-          .attr('x', 5)
-          .attr('y', guide.position + yOffset)
-          .attr('contentEditable', true)
-          .text(guide.label.text || '');
-        lineGroup.call(
-          d3
-            .drag()
-            .subject(() => d3.event.sourceEvent.target)
-            .on('drag', () => {
-              const { event } = d3;
-              const { y } = event;
-              const { subject: line } = event;
-              const { nextSibling: text } = line;
-
-              if (text && y >= 0 && y <= this.drawHeight) {
-                d3.select(line).attr('y1', y).attr('y2', y);
-                d3.select(text).attr('y', y + yOffset);
-              }
-            })
-            .on('end', () => {
-              const { event } = d3;
-              const { y } = event;
-              const { subject: line } = event;
-              const partialGuide: Partial<Guide> = {
-                bandId: guide.bandId,
-                id: line.id,
-                position: y,
-                type: guide.type,
-              };
-              this.updateHorizontalGuide.emit(partialGuide);
-            }),
-        );
       }
     }
   }
@@ -256,9 +234,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
   onCreateHorizontalGuide() {
     const data: GuideDialogData = {
       bandId: this.id,
-      maxPosition: this.drawHeight,
       mode: 'create',
       type: 'horizontal',
+      yAxes: this.yAxes,
     };
     this.openGuideDialog.emit(data);
   }
@@ -267,9 +245,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
     const data: GuideDialogData = {
       bandId: this.id,
       guide,
-      maxPosition: this.drawHeight,
       mode: 'edit',
       type: 'horizontal',
+      yAxes: this.yAxes,
     };
     this.openGuideDialog.emit(data);
   }

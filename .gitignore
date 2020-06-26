@@ -43,6 +43,7 @@ testem.log
 package-lock.json
 version.ts
 unit-test-results.xml
+report.*.json
 
 # System Files
 .DS_Store

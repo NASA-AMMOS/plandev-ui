@@ -76,9 +76,9 @@ export class SvgVerticalGuideCollection {
           lineGroup
             .append('line')
             .attr('class', 'guide--vertical-line')
-            .attr('x1', ({ guide }) => guide.position)
+            .attr('x1', ({ guide }) => guide.x)
             .attr('y1', 0)
-            .attr('x2', ({ guide }) => guide.position)
+            .attr('x2', ({ guide }) => guide.x)
             .attr('y2', 300)
             .attr('stroke', 'gray')
             .attr('stroke-dasharray', 2);
@@ -87,8 +87,8 @@ export class SvgVerticalGuideCollection {
         update => {
           update
             .select('.guide--vertical-line')
-            .attr('x1', ({ guide }) => guide.position)
-            .attr('x2', ({ guide }) => guide.position);
+            .attr('x1', ({ guide }) => guide.x)
+            .attr('x2', ({ guide }) => guide.x);
           return update;
         },
       );
@@ -160,8 +160,8 @@ export class SvgVerticalGuideCollection {
           this.containerWidth,
           {
             ...guide,
-            position: this.xScale(time),
             time,
+            x: this.xScale(time),
           },
         );
 
