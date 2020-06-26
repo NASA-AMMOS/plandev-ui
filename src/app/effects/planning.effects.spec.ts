@@ -5,7 +5,7 @@ import { Actions } from '@ngrx/effects';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
 import { provideMockStore } from '@ngrx/store/testing';
-import { Observable, of } from 'rxjs';
+import { Observable, Observer, of } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 import { AppActions, PlanningActions, ToastActions } from '../actions';
 import {
@@ -15,8 +15,10 @@ import {
   adaptationId,
   plan,
   planId,
+  simulationResults,
 } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
+import { SimulationResult } from '../types';
 import { PlanningEffects } from './planning.effects';
 
 describe('planning effects', () => {
@@ -406,6 +408,40 @@ describe('planning effects', () => {
             message: errorMsg,
             toastType: 'error',
           }),
+          d: AppActions.setLoading({ loading: false }),
+        });
+      });
+    });
+  });
+
+  describe('runSimulation', () => {
+    it('should dispatch the appropriate actions when successfully running a simulation', () => {
+      testScheduler.run(({ hot, expectObservable }) => {
+        spyOn(apiService, 'simulate').and.returnValue(
+          new Observable((o: Observer<SimulationResult[]>) => {
+            o.next(simulationResults);
+            o.complete();
+          }),
+        );
+        const action = PlanningActions.runSimulation({ planId });
+        actions = hot('-a', { a: action });
+        expectObservable(effects.runSimulation).toBe('-(bcd)', {
+          b: AppActions.setLoading({ loading: true }),
+          c: PlanningActions.runSimulationSuccess({ simulationResults }),
+          d: AppActions.setLoading({ loading: false }),
+        });
+      });
+    });
+
+    it('should dispatch the appropriate actions when failing to run a simulation', () => {
+      testScheduler.run(({ cold, hot, expectObservable }) => {
+        const error = new Error('Simulation failed');
+        const action = PlanningActions.runSimulation({ planId });
+        actions = hot('-a', { a: action });
+        spyOn(apiService, 'simulate').and.returnValue(cold('#|', null, error));
+        expectObservable(effects.runSimulation).toBe('-(bcd)', {
+          b: AppActions.setLoading({ loading: true }),
+          c: PlanningActions.runSimulationFailure({ errorMsg: error.message }),
           d: AppActions.setLoading({ loading: false }),
         });
       });
