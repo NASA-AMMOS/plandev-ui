@@ -270,7 +270,7 @@ export const reducer = createReducer(
   on(PlanningActions.guideRemove, (state, { guide: removedGuide }) => ({
     ...state,
     panels: state.panels.map(panel => {
-      if (removedGuide.type === 'vertical') {
+      if (removedGuide.type === 'vertical' && panel.verticalGuides) {
         return {
           ...panel,
           verticalGuides: panel.verticalGuides.filter(
@@ -300,7 +300,7 @@ export const reducer = createReducer(
   on(PlanningActions.guideUpdate, (state, { id, changes: updatedGuide }) => ({
     ...state,
     panels: state.panels.map(panel => {
-      if (updatedGuide.type === 'vertical') {
+      if (updatedGuide.type === 'vertical' && panel.verticalGuides) {
         return {
           ...panel,
           verticalGuides: panel.verticalGuides.map(guide => {
@@ -358,10 +358,6 @@ export const reducer = createReducer(
         !keepSelected && state.selectedActivityInstanceId === id ? null : id,
     }),
   ),
-  on(PlanningActions.updateAllPanels, (state, { panels }) => ({
-    ...state,
-    panels,
-  })),
   on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
@@ -371,6 +367,10 @@ export const reducer = createReducer(
         ...action.activityInstance,
       },
     },
+  })),
+  on(PlanningActions.updateAllPanels, (state, { panels }) => ({
+    ...state,
+    panels,
   })),
   on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
     ...state,
