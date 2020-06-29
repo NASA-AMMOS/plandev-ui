@@ -87,6 +87,7 @@
           "options": {
             "main": "src/test.ts",
             "codeCoverageExclude": [
+              "src/app/classes/*.ts",
               "src/app/functions/band.ts",
               "src/app/functions/tooltip.ts",
               "src/app/mocks/*.ts",
