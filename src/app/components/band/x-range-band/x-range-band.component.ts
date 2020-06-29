@@ -27,6 +27,9 @@ import { SubBandService } from '../sub-band.service';
 })
 export class XRangeBandComponent implements AfterViewInit, OnChanges {
   @Input()
+  color: string | undefined;
+
+  @Input()
   drawHeight: number;
 
   @Input()
@@ -130,7 +133,7 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = point.color || '#d651ff';
+          ctx.fillStyle = this.color || point?.color || '#d651ff';
         }
 
         // Rect.

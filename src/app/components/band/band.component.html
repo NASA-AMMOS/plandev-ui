@@ -35,6 +35,7 @@
   <ng-container *ngFor="let subBand of subBands">
     <app-activity-band
       *ngIf="subBand.chartType === 'activity'"
+      [color]="subBand.color"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
       [id]="subBand.id"
@@ -58,6 +59,7 @@
     ></app-line-band>
     <app-x-range-band
       *ngIf="subBand.chartType === 'x-range'"
+      [color]="subBand.color"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
       [id]="subBand.id"

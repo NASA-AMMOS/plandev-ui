@@ -108,6 +108,7 @@ export interface SubBand {
 export type SubBandWithPoints = SubBandActivity | SubBandLine | SubBandXRange;
 
 export interface SubBandActivity extends SubBand {
+  color?: string;
   layout?: string;
   points?: PointActivity[];
 }
@@ -120,6 +121,7 @@ export interface SubBandLine extends SubBand {
 }
 
 export interface SubBandXRange extends SubBand {
+  color?: string;
   points?: PointXRange[];
 }
 

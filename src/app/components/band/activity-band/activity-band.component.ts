@@ -27,6 +27,9 @@ import { SubBandService } from '../sub-band.service';
 })
 export class ActivityBandComponent implements AfterViewInit, OnChanges {
   @Input()
+  color: string | undefined;
+
+  @Input()
   drawHeight: number;
 
   @Input()
@@ -145,7 +148,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         if (selected) {
           ctx.fillStyle = '#f5ec42';
         } else {
-          ctx.fillStyle = point.color || '#d651ff';
+          ctx.fillStyle = this.color || point?.color || '#d651ff';
         }
 
         // Rect.

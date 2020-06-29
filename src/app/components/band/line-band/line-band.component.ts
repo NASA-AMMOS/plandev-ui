@@ -169,7 +169,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = point.color || '#d651ff';
+          ctx.fillStyle = this.color || point?.color || '#d651ff';
         }
         ctx.fill(circle);
       });
