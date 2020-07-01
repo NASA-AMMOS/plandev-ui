@@ -12,12 +12,14 @@ import {
   SimulationResult,
   StringTMap,
   TimeRange,
+  Violation,
 } from '../types';
 
 export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
+  constraintViolations: Violation[] | null;
   panels: Panel[];
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
@@ -30,6 +32,7 @@ export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
+  constraintViolations: null,
   panels: [
     {
       bands: [
@@ -50,6 +53,7 @@ export const initialState: PlanningState = {
           ],
         },
       ],
+      constraintViolations: [],
       id: 'panel0',
       menu: [
         {
@@ -127,6 +131,7 @@ export const initialState: PlanningState = {
           ],
         },
       ],
+      constraintViolations: [],
       id: 'panel1',
       menu: [
         {
@@ -346,10 +351,14 @@ export const reducer = createReducer(
       start: getUnixEpochTime(state.selectedPlan.startTimestamp),
     },
   })),
-  on(PlanningActions.runSimulationSuccess, (state, { simulationResults }) => ({
-    ...state,
-    simulationResults,
-  })),
+  on(
+    PlanningActions.runSimulationSuccess,
+    (state, { simulationResponse: { results, violations } }) => ({
+      ...state,
+      constraintViolations: violations || [],
+      simulationResults: results || [],
+    }),
+  ),
   on(
     PlanningActions.setSelectedActivityInstanceId,
     (state, { keepSelected, selectedActivityInstanceId: id }) => ({

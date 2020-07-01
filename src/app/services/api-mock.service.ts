@@ -7,7 +7,7 @@ import {
   planDetail,
   planId,
   plans,
-  simulationResults,
+  simulationResponse,
 } from '../mocks';
 import * as types from '../types';
 
@@ -105,9 +105,9 @@ export class ApiMockService {
     });
   }
 
-  simulate(): Observable<types.SimulationResult[]> {
-    return new Observable((o: Observer<types.SimulationResult[]>) => {
-      o.next(simulationResults);
+  simulate(): Observable<types.SimulationResponse> {
+    return new Observable((o: Observer<types.SimulationResponse>) => {
+      o.next(simulationResponse);
       o.complete();
     });
   }

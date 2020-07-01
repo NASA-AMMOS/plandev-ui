@@ -8,7 +8,7 @@
     (updateViewTimeRange)="onUpdateViewTimeRange($event)"
   ></app-time-axis-global>
   <app-time-axis
-    [constraintViolations]="filteredConstraintViolations | values"
+    [constraintViolations]="constraintViolations"
     [marginLeft]="marginLeft"
     [marginRight]="marginRight"
     [maxTimeRange]="maxTimeRange"
@@ -20,7 +20,7 @@
 <div #bandContainer class="band-container">
   <app-band
     *ngFor="let band of bands; trackBy: trackByBands"
-    [constraintViolations]="filteredConstraintViolations[band.id]"
+    [constraintViolations]="band.constraintViolations"
     [height]="band.height"
     [horizontalGuides]="band.horizontalGuides"
     [id]="band.id"

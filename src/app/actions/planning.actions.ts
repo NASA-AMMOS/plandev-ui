@@ -10,7 +10,7 @@ import {
   Panel,
   Plan,
   PlanDetail,
-  SimulationResult,
+  SimulationResponse,
   TimeRange,
   UpdateActivityInstance,
 } from '../types';
@@ -131,7 +131,7 @@ export const runSimulationFailure = createAction(
 
 export const runSimulationSuccess = createAction(
   '[planning] runSimulationSuccess',
-  props<{ simulationResults: SimulationResult[] }>(),
+  props<{ simulationResponse: SimulationResponse }>(),
 );
 
 export const setSelectedActivityInstanceId = createAction(

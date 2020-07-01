@@ -15,7 +15,7 @@ import {
   planDetail,
   planId,
   plans,
-  simulationResults,
+  simulationResponse,
 } from '../mocks';
 import { CreatePlan } from '../types';
 import { ApiService } from './api.service';
@@ -307,11 +307,11 @@ describe('api service', () => {
 
   it('simulate', () => {
     apiService.simulate(planId, 1000000).subscribe(response => {
-      expect(response).toEqual(simulationResults);
+      expect(response).toEqual(simulationResponse);
     });
     apolloTestingController
       .expectOne(gql.SIMULATE)
-      .flush({ data: { simulate: simulationResults } });
+      .flush({ data: { simulate: simulationResponse } });
   });
 
   describe('updateActivityInstance', () => {

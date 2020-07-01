@@ -15,10 +15,10 @@ import {
   adaptationId,
   plan,
   planId,
-  simulationResults,
+  simulationResponse,
 } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
-import { SimulationResult } from '../types';
+import { SimulationResponse } from '../types';
 import { PlanningEffects } from './planning.effects';
 
 describe('planning effects', () => {
@@ -418,8 +418,8 @@ describe('planning effects', () => {
     it('should dispatch the appropriate actions when successfully running a simulation', () => {
       testScheduler.run(({ hot, expectObservable }) => {
         spyOn(apiService, 'simulate').and.returnValue(
-          new Observable((o: Observer<SimulationResult[]>) => {
-            o.next(simulationResults);
+          new Observable((o: Observer<SimulationResponse>) => {
+            o.next(simulationResponse);
             o.complete();
           }),
         );
@@ -427,7 +427,9 @@ describe('planning effects', () => {
         actions = hot('-a', { a: action });
         expectObservable(effects.runSimulation).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
-          c: PlanningActions.runSimulationSuccess({ simulationResults }),
+          c: PlanningActions.runSimulationSuccess({
+            simulationResponse,
+          }),
           d: AppActions.setLoading({ loading: false }),
         });
       });

@@ -1,4 +1,5 @@
 import { ActivityType } from './activity-type';
+import { Violation } from './simulation';
 
 export interface Axis {
   id: string;
@@ -9,6 +10,7 @@ export interface Axis {
 }
 
 export interface Band {
+  constraintViolations?: Violation[];
   height?: number;
   horizontalGuides?: Guide[];
   id: string;

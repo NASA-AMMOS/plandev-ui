@@ -14,6 +14,7 @@ import {
   planDetail,
   planId,
   plans,
+  simulationResponse,
 } from '../mocks';
 import { Guide } from '../types';
 import { initialState, PlanningState, reducer } from './planning.reducer';
@@ -391,22 +392,16 @@ describe('planning reducer', () => {
 
   describe('runSimulationSuccess', () => {
     it('should update simulation results', () => {
-      const simulationResults = [
-        {
-          name: 'peel',
-          start: '2020-001T00:00:00',
-          values: [{ x: 0, y: 10 }],
-        },
-      ];
       const state: PlanningState = reducer(
         { ...initialState },
         PlanningActions.runSimulationSuccess({
-          simulationResults,
+          simulationResponse,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        simulationResults,
+        constraintViolations: simulationResponse.violations,
+        simulationResults: simulationResponse.results,
       });
     });
   });

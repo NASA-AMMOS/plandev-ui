@@ -193,12 +193,19 @@ export class ApiService {
 
   simulate(planId: string, samplingPeriod: number) {
     return this.apollo
-      .query<{ simulate: types.SimulationResult[] }>({
+      .query<{ simulate: types.SimulationResponse }>({
         fetchPolicy: 'no-cache',
         query: gql.SIMULATE,
         variables: { planId, samplingPeriod },
       })
-      .pipe(map(({ data: { simulate } }) => simulate));
+      .pipe(
+        map(({ data: { simulate } }) => {
+          if (!simulate.success) {
+            throw new Error(simulate.message);
+          }
+          return simulate;
+        }),
+      );
   }
 
   updateActivityInstance(

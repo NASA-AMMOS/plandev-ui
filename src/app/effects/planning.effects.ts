@@ -349,9 +349,9 @@ export class PlanningEffects {
         return concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.simulate(action.planId, samplingPeriod).pipe(
-            switchMap(simulationResults => {
+            switchMap(simulationResponse => {
               return [
-                PlanningActions.runSimulationSuccess({ simulationResults }),
+                PlanningActions.runSimulationSuccess({ simulationResponse }),
               ];
             }),
             catchError((error: Error) => {

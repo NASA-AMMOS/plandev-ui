@@ -88,6 +88,10 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     let shouldRedraw = false;
     this.setDrawBounds();
 
+    if (changes.constraintViolations) {
+      shouldRedraw = true;
+    }
+
     if (changes.maxTimeRange && !changes.maxTimeRange.isFirstChange()) {
       shouldRedraw = true;
     }

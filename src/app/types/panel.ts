@@ -1,4 +1,5 @@
 import { Band, Guide } from './band';
+import { Violation } from './simulation';
 
 export type PanelMenuItemAction = 'restore' | 'simulate';
 
@@ -10,6 +11,7 @@ export interface PanelMenuItem {
 
 export interface Panel {
   bands?: Band[];
+  constraintViolations?: Violation[];
   id: string;
   iframe?: {
     src: string;
