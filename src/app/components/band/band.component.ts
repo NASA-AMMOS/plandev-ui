@@ -254,20 +254,18 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   drawConstraintViolations(): void {
     const constraintViolations = this.constraintViolations || [];
-    if (constraintViolations.length) {
-      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-      this.violationCollection = new SvgConstraintViolationCollection(
-        this.constraintViolationsGroup.nativeElement,
-        this.id,
-        this.drawHeight,
-        this.drawWidth,
-        this.marginTop,
-        this.viewTimeRange,
-        constraintViolations,
-        xScale,
-      );
-      this.violationCollection.drawAll();
-    }
+    const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+    this.violationCollection = new SvgConstraintViolationCollection(
+      this.constraintViolationsGroup.nativeElement,
+      this.id,
+      this.drawHeight,
+      this.drawWidth,
+      this.marginTop,
+      this.viewTimeRange,
+      constraintViolations,
+      xScale,
+    );
+    this.violationCollection.drawAll();
   }
 
   drawXAxis(): void {

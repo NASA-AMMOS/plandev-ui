@@ -29,7 +29,15 @@ export class SvgConstraintViolationCollection {
     this.marginTop = marginTop;
     this.viewTimeRange = viewTimeRange;
     this.xScale = xScale;
+    this.clearAll();
     this.setViolations(violations);
+  }
+
+  /**
+   * Removes all violations from the document.
+   */
+  clearAll() {
+    d3.select(this.container).selectAll(`.constraint-violation-group`).remove();
   }
 
   /**

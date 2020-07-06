@@ -122,20 +122,19 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   drawConstraintViolations() {
-    if (this.constraintViolations.length) {
-      const xScale = this.getXScale();
-      this.violationCollection = new SvgConstraintViolationCollection(
-        this.constraintViolationsGroup.nativeElement,
-        this.id,
-        this.height,
-        this.drawWidth,
-        this.marginTop,
-        this.viewTimeRange,
-        this.constraintViolations,
-        xScale,
-      );
-      this.violationCollection.drawAll();
-    }
+    const constraintViolations = this.constraintViolations || [];
+    const xScale = this.getXScale();
+    this.violationCollection = new SvgConstraintViolationCollection(
+      this.constraintViolationsGroup.nativeElement,
+      this.id,
+      this.height,
+      this.drawWidth,
+      this.marginTop,
+      this.viewTimeRange,
+      constraintViolations,
+      xScale,
+    );
+    this.violationCollection.drawAll();
   }
 
   drawTimeAxis(): void {

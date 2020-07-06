@@ -122,7 +122,7 @@ export const getPanelsWithPoints = createSelector(
 
             if (subBand.type === 'state') {
               const points: PointLine[] = [];
-              const yAxisId = `axis-${subBand.id}`;
+              const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
               let minY = Number.MAX_SAFE_INTEGER;
               let maxY = Number.MIN_SAFE_INTEGER;
               if (simulationResults && simulationResults.length) {

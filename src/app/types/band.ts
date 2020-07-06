@@ -95,6 +95,7 @@ export interface SelectPoint {
 
 export interface SubBand {
   chartType: 'activity' | 'line' | 'x-range';
+  color?: string;
   filter?: {
     activity?: {
       type?: string;
@@ -105,25 +106,22 @@ export interface SubBand {
   };
   id: string;
   type: 'activity' | 'state';
+  yAxisId?: string;
 }
 
 export type SubBandWithPoints = SubBandActivity | SubBandLine | SubBandXRange;
 
 export interface SubBandActivity extends SubBand {
-  color?: string;
   layout?: string;
   points?: PointActivity[];
 }
 
 export interface SubBandLine extends SubBand {
-  color?: string;
   interpolationType?: string;
   points?: PointLine[];
-  yAxisId: string;
 }
 
 export interface SubBandXRange extends SubBand {
-  color?: string;
   points?: PointXRange[];
 }
 
