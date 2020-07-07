@@ -185,7 +185,8 @@ export const getPanelsWithPoints = createSelector(
             subBands,
             yAxes: (band.yAxes || []).map(axis => ({
               ...axis,
-              scaleDomain: yAxisIdToScaleDomain[axis.id] || [],
+              scaleDomain:
+                axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
             })),
           };
         });
