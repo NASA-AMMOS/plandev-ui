@@ -41,7 +41,7 @@ import {
   ActivityType,
   CreateActivityInstance,
   Panel,
-  PanelMenuItemAction,
+  PanelMenuItem,
   Plan,
   TimeRange,
   UpdateActivityInstance,
@@ -182,7 +182,11 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onPanelMenuAction(action: PanelMenuItemAction) {
+  onPanelMenuAction(item: PanelMenuItem) {
+    const { action, data } = item;
+    if (action === 'link' && data && data.url) {
+      window.open(data.url, '_blank');
+    }
     if (action === 'restore') {
       this.store.dispatch(PlanningActions.restoreViewTimeRange());
     }

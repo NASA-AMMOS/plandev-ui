@@ -1,10 +1,13 @@
 import { Band, Guide } from './band';
 import { Violation } from './simulation';
 
-export type PanelMenuItemAction = 'restore' | 'simulate';
+export type PanelMenuItemAction = 'link' | 'restore' | 'simulate';
 
 export interface PanelMenuItem {
   action: PanelMenuItemAction;
+  data?: {
+    url?: string;
+  };
   icon: string;
   title: string;
 }

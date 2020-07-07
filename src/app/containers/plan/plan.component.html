@@ -138,7 +138,7 @@
         <button
           *ngFor="let item of panel.menu"
           mat-menu-item
-          (click)="onPanelMenuAction(item.action)"
+          (click)="onPanelMenuAction(item)"
         >
           <mat-icon>{{ item.icon }}</mat-icon>
           <span>{{ item.title }}</span>
