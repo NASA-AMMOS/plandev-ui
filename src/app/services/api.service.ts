@@ -173,6 +173,15 @@ export class ApiService {
       .pipe(map(({ data }) => data));
   }
 
+  getUiStates(): Observable<types.UiState[]> {
+    return this.apollo
+      .query<{ uiStates: types.UiState[] }>({
+        fetchPolicy: 'no-cache',
+        query: gql.GET_UI_STATES,
+      })
+      .pipe(map(({ data: { uiStates } }) => uiStates));
+  }
+
   login(username: string, password: string): Observable<string> {
     return new Observable((o: Observer<string>) => {
       if (username === 'testuser' && password === '123456') {

@@ -13,7 +13,7 @@ import {
   ToastActions,
 } from '../actions';
 import { RouterState } from '../app-routing.module';
-import { adaptations, planDetail, planId, plans } from '../mocks';
+import { adaptations, planDetail, planId, plans, uiStates } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
 import { NavEffects } from './nav.effects';
 
@@ -163,12 +163,15 @@ describe('nav effects', () => {
           { id: planId },
         );
         actions = hot('-a', { a: action });
-        expectObservable(effects.navPlansWithId).toBe('-(bcd)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
           b: AppActions.setLoading({ loading: true }),
-          c: PlanningActions.getPlanDetailSuccess({
+          c: PlanningActions.updateAllUiStates({
+            uiStates,
+          }),
+          d: PlanningActions.getPlanDetailSuccess({
             plan: planDetail,
           }),
-          d: AppActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -184,13 +187,16 @@ describe('nav effects', () => {
         spyOn(apiService, 'getPlanDetail').and.returnValue(
           cold('#|', null, ''),
         );
-        expectObservable(effects.navPlansWithId).toBe('-(bcd)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
           b: AppActions.setLoading({ loading: true }),
-          c: ToastActions.showToast({
+          c: PlanningActions.updateAllUiStates({
+            uiStates,
+          }),
+          d: ToastActions.showToast({
             message: 'Fetch plan detail failed',
             toastType: 'error',
           }),
-          d: AppActions.setLoading({ loading: false }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });

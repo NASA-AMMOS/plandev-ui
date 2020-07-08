@@ -10,12 +10,13 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { CodemirrorModule } from '@ctrl/ngx-codemirror';
 import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
 import { SubSink } from 'subsink';
-import { AppActions, PlanningActions } from '../../actions';
+import { AppActions, PlanningActions, ToastActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
   ActivityTypeListModule,
@@ -34,6 +35,8 @@ import {
   getPanelsWithPoints,
   getSelectedActivityInstance,
   getSelectedPlan,
+  getSelectedUiState,
+  getUiStates,
   getViewTimeRange,
 } from '../../selectors';
 import {
@@ -44,6 +47,7 @@ import {
   PanelMenuItem,
   Plan,
   TimeRange,
+  UiState,
   UpdateActivityInstance,
 } from '../../types';
 import { TimelineModule } from '../timeline/timeline.component';
@@ -82,11 +86,25 @@ export class PlanComponent implements OnDestroy {
       'Cmd-S': () => {
         this.ngZone.run(() => {
           try {
-            const panels = JSON.parse(this.panelsText);
-            this.store.dispatch(PlanningActions.updateAllPanels({ panels }));
-            this.onResize();
-          } catch (e) {
-            console.error(e.message);
+            if (this.selectedUiState) {
+              const panels = JSON.parse(this.panelsText);
+              this.store.dispatch(
+                PlanningActions.updateUiState({
+                  id: this.selectedUiState.id,
+                  uiState: { panels },
+                }),
+              );
+              this.onResize();
+            }
+          } catch (error) {
+            const { message } = error;
+            console.error(message);
+            this.store.dispatch(
+              ToastActions.showToast({
+                message,
+                toastType: 'error',
+              }),
+            );
           }
         });
       },
@@ -100,6 +118,8 @@ export class PlanComponent implements OnDestroy {
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
+  selectedUiState: UiState | null;
+  uiStates: UiState[];
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -143,6 +163,14 @@ export class PlanComponent implements OnDestroy {
         this.plan = plan;
         this.cdRef.markForCheck();
       }),
+      this.store.pipe(select(getSelectedUiState)).subscribe(selectedUiState => {
+        this.selectedUiState = selectedUiState;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getUiStates)).subscribe(uiStates => {
+        this.uiStates = uiStates;
+        this.cdRef.markForCheck();
+      }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();
@@ -177,8 +205,13 @@ export class PlanComponent implements OnDestroy {
   onKeydown(event: KeyboardEvent): void {
     const { key, metaKey } = event;
     if (metaKey && key === 'e') {
+      event.preventDefault();
       this.showDrawerType('panelEditor');
       this.onResize();
+    }
+    if (metaKey && key === 's') {
+      event.preventDefault();
+      this.runSimulation();
     }
   }
 
@@ -191,8 +224,7 @@ export class PlanComponent implements OnDestroy {
       this.store.dispatch(PlanningActions.restoreViewTimeRange());
     }
     if (action === 'simulate') {
-      const { id: planId } = this.route.snapshot.params;
-      this.store.dispatch(PlanningActions.runSimulation({ planId }));
+      this.runSimulation();
     }
   }
 
@@ -213,6 +245,11 @@ export class PlanComponent implements OnDestroy {
     this.showDrawerType('createActivityInstance');
   }
 
+  onUiStateChanged(change: MatSelectChange): void {
+    const { value: id } = change;
+    this.store.dispatch(PlanningActions.updateSelectedUiStateId({ id }));
+  }
+
   onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
@@ -221,6 +258,11 @@ export class PlanComponent implements OnDestroy {
         planId,
       }),
     );
+  }
+
+  runSimulation() {
+    const { id: planId } = this.route.snapshot.params;
+    this.store.dispatch(PlanningActions.runSimulation({ planId }));
   }
 
   showDrawerType(type: string): void {

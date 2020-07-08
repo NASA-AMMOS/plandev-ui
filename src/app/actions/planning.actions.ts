@@ -7,11 +7,11 @@ import {
   CreatePlan,
   Guide,
   GuideDialogData,
-  Panel,
   Plan,
   PlanDetail,
   SimulationResponse,
   TimeRange,
+  UiState,
   UpdateActivityInstance,
 } from '../types';
 
@@ -160,9 +160,19 @@ export const updateActivityInstanceSuccess = createAction(
   props<{ activityInstance: UpdateActivityInstance }>(),
 );
 
-export const updateAllPanels = createAction(
-  '[planning] updateAllPanels',
-  props<{ panels: Panel[] }>(),
+export const updateAllUiStates = createAction(
+  '[planning] updateAllUiStates',
+  props<{ uiStates: UiState[] }>(),
+);
+
+export const updateSelectedUiStateId = createAction(
+  '[planning] updateSelectedUiStateId',
+  props<{ id: string }>(),
+);
+
+export const updateUiState = createAction(
+  '[planning] updateUiState',
+  props<{ id: string; uiState: Partial<UiState> }>(),
 );
 
 export const updateViewTimeRange = createAction(

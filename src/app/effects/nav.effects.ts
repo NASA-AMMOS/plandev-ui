@@ -102,6 +102,18 @@ export class NavEffects {
       switchMap(planId =>
         concat(
           of(AppActions.setLoading({ loading: true })),
+          this.apiService.getUiStates().pipe(
+            map(uiStates => PlanningActions.updateAllUiStates({ uiStates })),
+            catchError((error: Error) => {
+              console.error(error);
+              return [
+                ToastActions.showToast({
+                  message: 'Fetch UI states failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          ),
           this.apiService.getPlanDetail(planId).pipe(
             map(plan => PlanningActions.getPlanDetailSuccess({ plan })),
             catchError((error: Error) => {

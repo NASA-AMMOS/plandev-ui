@@ -15,6 +15,7 @@ import {
   planId,
   plans,
   simulationResponse,
+  uiStates,
 } from '../mocks';
 import { Guide } from '../types';
 import { initialState, PlanningState, reducer } from './planning.reducer';
@@ -182,13 +183,15 @@ describe('planning reducer', () => {
         type: 'vertical',
       };
       const state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
-      state.panels.forEach(panel => {
-        if (panel.verticalGuides) {
-          expect(panel.verticalGuides.pop()).toEqual(guide);
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.verticalGuides) {
+            expect(panel.verticalGuides.pop()).toEqual(guide);
+          }
+        });
       });
     });
 
@@ -200,17 +203,19 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       const state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
-      state.panels.forEach(panel => {
-        if (panel.bands) {
-          panel.bands.forEach(band => {
-            if (band.id === guide.id) {
-              expect(band.horizontalGuides.pop()).toEqual(guide);
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.bands) {
+            panel.bands.forEach(band => {
+              if (band.id === guide.id) {
+                expect(band.horizontalGuides.pop()).toEqual(guide);
+              }
+            });
+          }
+        });
       });
     });
 
@@ -222,18 +227,20 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       let state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
       state = reducer(state, PlanningActions.guideAdd({ guide }));
-      state.panels.forEach(panel => {
-        if (panel.bands) {
-          panel.bands.forEach(band => {
-            if (band.id === guide.id) {
-              expect(band.horizontalGuides.pop()).toEqual(guide);
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.bands) {
+            panel.bands.forEach(band => {
+              if (band.id === guide.id) {
+                expect(band.horizontalGuides.pop()).toEqual(guide);
+              }
+            });
+          }
+        });
       });
     });
   });
@@ -246,15 +253,17 @@ describe('planning reducer', () => {
         type: 'vertical',
       };
       const state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideRemove({ guide }),
       );
-      state.panels.forEach(panel => {
-        if (panel.verticalGuides) {
-          panel.verticalGuides.forEach(vGuide => {
-            expect(vGuide.id).not.toEqual(guide.id);
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.verticalGuides) {
+            panel.verticalGuides.forEach(vGuide => {
+              expect(vGuide.id).not.toEqual(guide.id);
+            });
+          }
+        });
       });
     });
 
@@ -266,20 +275,22 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       let state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
       state = reducer(state, PlanningActions.guideRemove({ guide }));
-      state.panels.forEach(panel => {
-        if (panel.bands) {
-          panel.bands.forEach(band => {
-            if (band.horizontalGuides) {
-              band.horizontalGuides.forEach(hGuide => {
-                expect(hGuide.id).not.toEqual(guide.id);
-              });
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.bands) {
+            panel.bands.forEach(band => {
+              if (band.horizontalGuides) {
+                band.horizontalGuides.forEach(hGuide => {
+                  expect(hGuide.id).not.toEqual(guide.id);
+                });
+              }
+            });
+          }
+        });
       });
     });
   });
@@ -292,17 +303,19 @@ describe('planning reducer', () => {
         type: 'vertical',
       };
       const state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideUpdate({ id, changes }),
       );
-      state.panels.forEach(panel => {
-        if (panel.verticalGuides) {
-          panel.verticalGuides.forEach(vGuide => {
-            if (vGuide.id === id) {
-              expect(vGuide.label.text).toEqual(changes.label.text);
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.verticalGuides) {
+            panel.verticalGuides.forEach(vGuide => {
+              if (vGuide.id === id) {
+                expect(vGuide.label.text).toEqual(changes.label.text);
+              }
+            });
+          }
+        });
       });
     });
 
@@ -315,7 +328,7 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       let state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
       const changes: Partial<Guide> = {
@@ -324,18 +337,20 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       state = reducer(state, PlanningActions.guideUpdate({ id, changes }));
-      state.panels.forEach(panel => {
-        if (panel.bands) {
-          panel.bands.forEach(band => {
-            if (band.horizontalGuides) {
-              band.horizontalGuides.forEach(hGuide => {
-                if (hGuide.id === id) {
-                  expect(hGuide.label.text).toEqual(changes.label.text);
-                }
-              });
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.bands) {
+            panel.bands.forEach(band => {
+              if (band.horizontalGuides) {
+                band.horizontalGuides.forEach(hGuide => {
+                  if (hGuide.id === id) {
+                    expect(hGuide.label.text).toEqual(changes.label.text);
+                  }
+                });
+              }
+            });
+          }
+        });
       });
     });
 
@@ -348,7 +363,7 @@ describe('planning reducer', () => {
         type: 'horizontal',
       };
       let state: PlanningState = reducer(
-        { ...initialState },
+        { ...initialState, uiStates },
         PlanningActions.guideAdd({ guide }),
       );
       const changes: Partial<Guide> = {
@@ -360,16 +375,18 @@ describe('planning reducer', () => {
         state,
         PlanningActions.guideUpdate({ id: '52', changes }),
       );
-      state.panels.forEach(panel => {
-        if (panel.bands) {
-          panel.bands.forEach(band => {
-            if (band.horizontalGuides) {
-              band.horizontalGuides.forEach(hGuide => {
-                expect(hGuide).toEqual(hGuide);
-              });
-            }
-          });
-        }
+      state.uiStates.forEach(uiState => {
+        uiState.panels.forEach(panel => {
+          if (panel.bands) {
+            panel.bands.forEach(band => {
+              if (band.horizontalGuides) {
+                band.horizontalGuides.forEach(hGuide => {
+                  expect(hGuide).toEqual(hGuide);
+                });
+              }
+            });
+          }
+        });
       });
     });
   });
@@ -490,18 +507,18 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('updateAllPanels', () => {
-    it('should update all the panels', () => {
-      const panels = [];
+  describe('updateAllUiStates', () => {
+    it('should update all the uiStates', () => {
+      const states = [];
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.updateAllPanels({
-          panels,
+        PlanningActions.updateAllUiStates({
+          uiStates: states,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        panels,
+        uiStates: states,
       });
     });
   });

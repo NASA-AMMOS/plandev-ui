@@ -3,6 +3,11 @@
   height: calc(100% - var(--toolbar-height, 36px));
 }
 
+::ng-deep .ui-state-form-field > div {
+  padding: 0;
+  margin: 0;
+}
+
 as-split-area > div {
   height: 100%;
 }
@@ -29,5 +34,6 @@ ngx-codemirror {
 }
 
 ::ng-deep .CodeMirror {
-  height: calc(100% - var(--panel-header-height, 36px));
+  /* 82px is the height of the select form field */
+  height: calc(100% - var(--panel-header-height, 36px) - 82px);
 }

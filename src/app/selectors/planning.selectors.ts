@@ -5,12 +5,12 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
-  Panel,
   Plan,
   PointLine,
   SimulationResult,
   StringTMap,
   TimeRange,
+  UiState,
   Violation,
 } from '../types';
 
@@ -69,136 +69,151 @@ export const getSimulationResults = createSelector(
   (state: PlanningState): SimulationResult[] => state.simulationResults || [],
 );
 
-export const getPanels = createSelector(
+export const getUiStates = createSelector(
   getPlanningState,
-  (state: PlanningState) => state.panels,
+  (state: PlanningState) => state.uiStates,
+);
+
+export const getSelectedUiStateId = createSelector(
+  getPlanningState,
+  (state: PlanningState) => state.selectedUiStateId,
+);
+
+export const getSelectedUiState = createSelector(
+  getUiStates,
+  getSelectedUiStateId,
+  (uiStates: UiState[], selectedUiStateId: string) =>
+    uiStates.find(({ id }) => id === selectedUiStateId) || null,
 );
 
 export const getPanelsWithPoints = createSelector(
   getActivityInstances,
   getConstraintViolations,
-  getPanels,
   getSelectedActivityInstanceId,
+  getSelectedUiState,
   getSimulationResults,
   (
     activityInstances: ActivityInstance[] | null,
     constraintViolations: Violation[],
-    panels: Panel[],
     selectedActivityInstanceId: string | null,
+    uiState: UiState,
     simulationResults: SimulationResult[],
   ) => {
-    return panels.map(panel => {
-      const panelConstraintViolations: Violation[] = [];
+    if (uiState) {
+      return uiState.panels.map(panel => {
+        const panelConstraintViolations: Violation[] = [];
 
-      if (panel.bands) {
-        const bands = panel.bands.map(band => {
-          const yAxisIdToScaleDomain: StringTMap<number[]> = {};
-          const bandConstraintViolations: Violation[] = [];
-          const subBands = band.subBands.map(subBand => {
-            if (subBand.type === 'activity') {
-              const activities = activityInstances || [];
-              const points = activities.reduce((newPoints, point) => {
-                const r = new RegExp(subBand?.filter?.activity?.type);
-                const includePoint = r.test(point.type);
-                if (includePoint) {
-                  newPoints.push({
-                    duration: 0,
-                    id: point.id,
-                    label: {
-                      text: point.type,
-                    },
-                    selected: selectedActivityInstanceId === point.id,
-                    type: 'activity',
-                    x: getUnixEpochTime(point.startTimestamp),
-                  });
-                }
-                return newPoints;
-              }, []);
-              return {
-                ...subBand,
-                points,
-              };
-            }
+        if (panel.bands) {
+          const bands = panel.bands.map(band => {
+            const yAxisIdToScaleDomain: StringTMap<number[]> = {};
+            const bandConstraintViolations: Violation[] = [];
+            const subBands = band.subBands.map(subBand => {
+              if (subBand.type === 'activity') {
+                const activities = activityInstances || [];
+                const points = activities.reduce((newPoints, point) => {
+                  const r = new RegExp(subBand?.filter?.activity?.type);
+                  const includePoint = r.test(point.type);
+                  if (includePoint) {
+                    newPoints.push({
+                      duration: 0,
+                      id: point.id,
+                      label: {
+                        text: point.type,
+                      },
+                      selected: selectedActivityInstanceId === point.id,
+                      type: 'activity',
+                      x: getUnixEpochTime(point.startTimestamp),
+                    });
+                  }
+                  return newPoints;
+                }, []);
+                return {
+                  ...subBand,
+                  points,
+                };
+              }
 
-            if (subBand.type === 'state') {
-              const points: PointLine[] = [];
-              const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
-              let minY = Number.MAX_SAFE_INTEGER;
-              let maxY = Number.MIN_SAFE_INTEGER;
-              if (simulationResults && simulationResults.length) {
-                for (const { name, start, values } of simulationResults) {
-                  const r = new RegExp(subBand?.filter?.state?.name);
-                  const includeResult = r.test(name);
-                  if (includeResult) {
-                    // Find constraint violations for this result.
-                    for (const constraintViolation of constraintViolations) {
-                      const { associations } = constraintViolation;
-                      if (
-                        associations.stateIds &&
-                        associations.stateIds.find(id => id === name)
-                      ) {
-                        bandConstraintViolations.push({
-                          ...constraintViolation,
+              if (subBand.type === 'state') {
+                const points: PointLine[] = [];
+                const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
+                let minY = Number.MAX_SAFE_INTEGER;
+                let maxY = Number.MIN_SAFE_INTEGER;
+                if (simulationResults && simulationResults.length) {
+                  for (const { name, start, values } of simulationResults) {
+                    const r = new RegExp(subBand?.filter?.state?.name);
+                    const includeResult = r.test(name);
+                    if (includeResult) {
+                      // Find constraint violations for this result.
+                      for (const constraintViolation of constraintViolations) {
+                        const { associations } = constraintViolation;
+                        if (
+                          associations.stateIds &&
+                          associations.stateIds.find(id => id === name)
+                        ) {
+                          bandConstraintViolations.push({
+                            ...constraintViolation,
+                          });
+                          panelConstraintViolations.push({
+                            ...constraintViolation,
+                          });
+                        }
+                      }
+
+                      // Map result values into points that can be displayed.
+                      for (let i = 0; i < values.length; ++i) {
+                        const { x, y } = values[i];
+                        points.push({
+                          id: `${subBand.id}-state-${name}-${i}`,
+                          type: 'line',
+                          x: getUnixEpochTime(start) + x / 1000,
+                          y,
                         });
-                        panelConstraintViolations.push({
-                          ...constraintViolation,
-                        });
+                        minY = y < minY ? y : minY;
+                        maxY = y > maxY ? y : maxY;
                       }
                     }
-
-                    // Map result values into points that can be displayed.
-                    for (let i = 0; i < values.length; ++i) {
-                      const { x, y } = values[i];
-                      points.push({
-                        id: `${subBand.id}-state-${name}-${i}`,
-                        type: 'line',
-                        x: getUnixEpochTime(start) + x / 1000,
-                        y,
-                      });
-                      minY = y < minY ? y : minY;
-                      maxY = y > maxY ? y : maxY;
-                    }
                   }
-                }
 
-                if (minY === maxY) {
-                  // If extents are equal, clip first extent to 0
-                  // so axis and line gets properly drawn by D3.
-                  minY = 0;
-                }
+                  if (minY === maxY) {
+                    // If extents are equal, clip first extent to 0
+                    // so axis and line gets properly drawn by D3.
+                    minY = 0;
+                  }
 
-                yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                  yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                }
+                return {
+                  ...subBand,
+                  points,
+                  yAxisId,
+                };
               }
-              return {
-                ...subBand,
-                points,
-                yAxisId,
-              };
-            }
 
-            return subBand;
+              return subBand;
+            });
+
+            return {
+              ...band,
+              constraintViolations: bandConstraintViolations,
+              subBands,
+              yAxes: (band.yAxes || []).map(axis => ({
+                ...axis,
+                scaleDomain:
+                  axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
+              })),
+            };
           });
-
           return {
-            ...band,
-            constraintViolations: bandConstraintViolations,
-            subBands,
-            yAxes: (band.yAxes || []).map(axis => ({
-              ...axis,
-              scaleDomain:
-                axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
-            })),
+            ...panel,
+            bands,
+            constraintViolations: panelConstraintViolations,
           };
-        });
-        return {
-          ...panel,
-          bands,
-          constraintViolations: panelConstraintViolations,
-        };
-      }
+        }
 
-      return panel;
-    });
+        return panel;
+      });
+    }
+    return [];
   },
 );
 

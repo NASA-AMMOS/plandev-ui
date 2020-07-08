@@ -16,6 +16,7 @@ import {
   planId,
   plans,
   simulationResponse,
+  uiStates,
 } from '../mocks';
 import { CreatePlan } from '../types';
 import { ApiService } from './api.service';
@@ -282,6 +283,15 @@ describe('api service', () => {
     apolloTestingController
       .expectOne(gql.GET_PLANS_AND_ADAPTATIONS)
       .flush({ data: { adaptations, plans } });
+  });
+
+  it('getUiStates', () => {
+    apiService.getUiStates().subscribe(response => {
+      expect(response).toEqual(uiStates);
+    });
+    apolloTestingController
+      .expectOne(gql.GET_UI_STATES)
+      .flush({ data: { uiStates } });
   });
 
   it('login success', () => {

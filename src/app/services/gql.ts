@@ -120,6 +120,16 @@ export const GET_PLANS_AND_ADAPTATIONS = gql(`
   }
 `);
 
+export const GET_UI_STATES = gql(`
+  query GetUiStates {
+    uiStates {
+      id
+      name
+      panels
+    }
+  }
+`);
+
 export const DELETE_ACTIVITY_INSTANCE = gql(`
   mutation DeleteActivityInstance(
     $activityInstanceId: ID!

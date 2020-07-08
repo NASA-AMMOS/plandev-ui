@@ -36,6 +36,7 @@
         [ngClass]="{
           'panel-overflow-hidden': panel.type === 'timeline'
         }"
+        [size]="panel.size"
       >
         <ng-container
           *ngTemplateOutlet="
@@ -89,6 +90,18 @@
       <app-panel-header>
         Panel Editor
       </app-panel-header>
+      <form class="p-1">
+        <mat-form-field class="ui-state-form-field w-100" appearance="outline">
+          <mat-select
+            [value]="selectedUiState?.id"
+            (selectionChange)="onUiStateChanged($event)"
+          >
+            <mat-option *ngFor="let uiState of uiStates" [value]="uiState.id">
+              {{ uiState.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
       <ngx-codemirror
         [(ngModel)]="panelsText"
         [options]="panelsEditorOptions"

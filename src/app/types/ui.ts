@@ -20,6 +20,7 @@ export interface Panel {
     src: string;
   };
   menu?: PanelMenuItem[];
+  size: number;
   table?: {
     columns: string[];
     type: 'activity';
@@ -27,4 +28,10 @@ export interface Panel {
   title: string;
   type: 'iframe' | 'table' | 'timeline';
   verticalGuides?: Guide[];
+}
+
+export interface UiState {
+  id: string;
+  name: string;
+  panels: Panel[];
 }
