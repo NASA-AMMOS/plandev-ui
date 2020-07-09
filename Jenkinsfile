@@ -102,7 +102,7 @@ pipeline {
               "files": [
                 {
                   "pattern": "dist/aerie-ui-*.tar.gz",
-                  "target": "general-develop/gov/nasa/jpl/ammos/mpsa/aerie-ui/",
+                  "target": "general/gov/nasa/jpl/aerie/aerie-ui/",
                   "recursive": false
                 }
               ]
