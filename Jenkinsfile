@@ -1,6 +1,26 @@
+def getArtifactoryPort() {
+  if (GIT_BRANCH ==~ /release-.*/) {
+    return "16003"
+  } else if (GIT_BRANCH ==~ /staging/) {
+    return "16002"
+  } else {
+    return "16001"
+  }
+}
+
 def getDockerCompatibleTag(tag) {
   def fixedTag = tag.replaceAll('\\+', '-').replaceAll('/', '-')
   return fixedTag
+}
+
+def getPublishPath() {
+  if (GIT_BRANCH ==~ /release-.*/) {
+    return "general/gov/nasa/jpl/aerie/aerie-ui/"
+  } else if (GIT_BRANCH ==~ /staging/) {
+    return "general-stage/gov/nasa/jpl/aerie/aerie-ui/"
+  } else {
+    return "general-develop/gov/nasa/jpl/aerie/aerie-ui/"
+  }
 }
 
 pipeline {
@@ -12,7 +32,7 @@ pipeline {
   }
   environment {
     ARTIFACT_TAG = "${GIT_BRANCH}"
-    ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:16001"
+    ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:${getArtifactoryPort()}"
     AWS_ACCESS_KEY_ID = credentials('aerie-aws-access-key')
     AWS_CLUSTER = "aerie-${GIT_BRANCH}-cluster"
     AWS_DEFAULT_REGION = 'us-gov-west-1'
@@ -102,7 +122,7 @@ pipeline {
               "files": [
                 {
                   "pattern": "dist/aerie-ui-*.tar.gz",
-                  "target": "general/gov/nasa/jpl/aerie/aerie-ui/",
+                  "target": "${getPublishPath()}",
                   "recursive": false
                 }
               ]
