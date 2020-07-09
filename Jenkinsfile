@@ -39,7 +39,7 @@ pipeline {
     AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
     DOCKER_TAG = "${getDockerCompatibleTag(ARTIFACT_TAG)}"
-    DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/ammos/mpsa/aerie-ui:${DOCKER_TAG}"
+    DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/aerie/aerie-ui:${DOCKER_TAG}"
     DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${DOCKER_TAG}"
   }
   stages {
@@ -118,7 +118,7 @@ pipeline {
           try {
             def server = Artifactory.newServer url: 'https://cae-artifactory.jpl.nasa.gov/artifactory', credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86'
             def uploadSpec =
-            '''{
+            """{
               "files": [
                 {
                   "pattern": "dist/aerie-ui-*.tar.gz",
@@ -126,7 +126,7 @@ pipeline {
                   "recursive": false
                 }
               ]
-            }'''
+            }"""
             def buildInfo = server.upload spec: uploadSpec
             server.publishBuildInfo buildInfo
           } catch (Exception e) {
