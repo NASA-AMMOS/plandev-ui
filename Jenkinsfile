@@ -15,11 +15,11 @@ def getDockerCompatibleTag(tag) {
 
 def getPublishPath() {
   if (GIT_BRANCH ==~ /release-.*/) {
-    return "general/gov/nasa/jpl/aerie/aerie-ui/"
+    return "general/gov/nasa/jpl/aerie/"
   } else if (GIT_BRANCH ==~ /staging/) {
-    return "general-stage/gov/nasa/jpl/aerie/aerie-ui/"
+    return "general-stage/gov/nasa/jpl/aerie/"
   } else {
-    return "general-develop/gov/nasa/jpl/aerie/aerie-ui/"
+    return "general-develop/gov/nasa/jpl/aerie/"
   }
 }
 
