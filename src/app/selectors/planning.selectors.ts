@@ -1,4 +1,5 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
+import uniqBy from 'lodash-es/uniqBy';
 import { compare, getUnixEpochTime } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
@@ -51,17 +52,51 @@ export const getAdaptations = createSelector(
 
 export const getConstraintViolations = createSelector(
   getPlanningState,
-  (state: PlanningState): Violation[] =>
-    state.constraintViolations?.map(constraintViolation => ({
-      ...constraintViolation,
-      windows: constraintViolation.windows.map(({ end, start }) => {
-        const planStart = getUnixEpochTime(state.selectedPlan.startTimestamp);
-        return {
-          end: planStart + end / 1000,
-          start: planStart + start / 1000,
-        };
-      }),
-    })) || [],
+  (state: PlanningState): Violation[] => state.constraintViolations || [],
+);
+
+export const getSelectedPlan = createSelector(
+  getPlanningState,
+  (state: PlanningState): Plan | null => state.selectedPlan,
+);
+
+export const getIdsToViolations = createSelector(
+  getConstraintViolations,
+  getSelectedPlan,
+  (
+    constraintViolations: Violation[],
+    selectedPlan: Plan,
+  ): StringTMap<Violation[]> => {
+    if (constraintViolations) {
+      return constraintViolations.reduce(
+        (idsToViolations, constraintViolation) => {
+          const violation = {
+            ...constraintViolation,
+            windows: constraintViolation.windows.map(({ end, start }) => {
+              const planStart = getUnixEpochTime(selectedPlan.startTimestamp);
+              return {
+                end: planStart + end / 1000,
+                start: planStart + start / 1000,
+              };
+            }),
+          };
+          for (const associationType of Object.keys(violation.associations)) {
+            if (associationType !== '__typename') {
+              for (const id of violation.associations[associationType]) {
+                idsToViolations[id] = [
+                  ...(idsToViolations[id] || []),
+                  violation,
+                ];
+              }
+            }
+          }
+          return idsToViolations;
+        },
+        {},
+      );
+    }
+    return {};
+  },
 );
 
 export const getSimulationResults = createSelector(
@@ -88,13 +123,13 @@ export const getSelectedUiState = createSelector(
 
 export const getPanelsWithPoints = createSelector(
   getActivityInstances,
-  getConstraintViolations,
+  getIdsToViolations,
   getSelectedActivityInstanceId,
   getSelectedUiState,
   getSimulationResults,
   (
     activityInstances: ActivityInstance[] | null,
-    constraintViolations: Violation[],
+    idsToViolations: StringTMap<Violation[]>,
     selectedActivityInstanceId: string | null,
     uiState: UiState,
     simulationResults: SimulationResult[],
@@ -114,6 +149,15 @@ export const getPanelsWithPoints = createSelector(
                   const r = new RegExp(subBand?.filter?.activity?.type);
                   const includePoint = r.test(point.type);
                   if (includePoint) {
+                    if (idsToViolations[point.id]) {
+                      bandConstraintViolations.push(
+                        ...idsToViolations[point.id],
+                      );
+                      panelConstraintViolations.push(
+                        ...idsToViolations[point.id],
+                      );
+                    }
+
                     newPoints.push({
                       duration: 0,
                       id: point.id,
@@ -143,23 +187,13 @@ export const getPanelsWithPoints = createSelector(
                     const r = new RegExp(subBand?.filter?.state?.name);
                     const includeResult = r.test(name);
                     if (includeResult) {
-                      // Find constraint violations for this result.
-                      for (const constraintViolation of constraintViolations) {
-                        const { associations } = constraintViolation;
-                        if (
-                          associations.stateIds &&
-                          associations.stateIds.find(id => id === name)
-                        ) {
-                          bandConstraintViolations.push({
-                            ...constraintViolation,
-                          });
-                          panelConstraintViolations.push({
-                            ...constraintViolation,
-                          });
-                        }
+                      if (idsToViolations[name]) {
+                        bandConstraintViolations.push(...idsToViolations[name]);
+                        panelConstraintViolations.push(
+                          ...idsToViolations[name],
+                        );
                       }
 
-                      // Map result values into points that can be displayed.
                       for (let i = 0; i < values.length; ++i) {
                         const { x, y } = values[i];
                         points.push({
@@ -194,7 +228,10 @@ export const getPanelsWithPoints = createSelector(
 
             return {
               ...band,
-              constraintViolations: bandConstraintViolations,
+              constraintViolations: uniqBy(
+                bandConstraintViolations,
+                ({ constraint: { id } }) => id,
+              ),
               subBands,
               yAxes: (band.yAxes || []).map(axis => ({
                 ...axis,
@@ -203,10 +240,14 @@ export const getPanelsWithPoints = createSelector(
               })),
             };
           });
+
           return {
             ...panel,
             bands,
-            constraintViolations: panelConstraintViolations,
+            constraintViolations: uniqBy(
+              panelConstraintViolations,
+              ({ constraint: { id } }) => id,
+            ),
           };
         }
 
@@ -238,11 +279,6 @@ export const getSelectedActivityInstance = createSelector(
     }
     return null;
   },
-);
-
-export const getSelectedPlan = createSelector(
-  getPlanningState,
-  (state: PlanningState): Plan | null => state.selectedPlan,
 );
 
 export const getMaxTimeRange = createSelector(
