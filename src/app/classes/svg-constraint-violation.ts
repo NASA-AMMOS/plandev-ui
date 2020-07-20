@@ -29,8 +29,8 @@ export class SvgConstraintViolation {
     this.container = d3.select(container);
     this.containerHeight = containerHeight;
     this.containerWidth = containerWidth;
-    this.group = this.container.select(`#${violation.constraint.id}`);
-    this.id = `${containerId}-${violation.constraint.id}`;
+    this.group = this.container.select(`#${violation.constraint.name}`);
+    this.id = `${containerId}-${violation.constraint.name}`;
     this.marginTop = marginTop;
     this.tooltipText = violation.constraint.message;
     this.viewTimeRange = viewTimeRange;

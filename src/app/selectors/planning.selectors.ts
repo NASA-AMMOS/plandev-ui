@@ -230,7 +230,7 @@ export const getPanelsWithPoints = createSelector(
               ...band,
               constraintViolations: uniqBy(
                 bandConstraintViolations,
-                ({ constraint: { id } }) => id,
+                ({ constraint: { name } }) => name,
               ),
               subBands,
               yAxes: (band.yAxes || []).map(axis => ({
@@ -246,7 +246,7 @@ export const getPanelsWithPoints = createSelector(
             bands,
             constraintViolations: uniqBy(
               panelConstraintViolations,
-              ({ constraint: { id } }) => id,
+              ({ constraint: { name } }) => name,
             ),
           };
         }

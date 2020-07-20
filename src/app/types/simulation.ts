@@ -7,7 +7,6 @@ export interface Associations {
 
 export interface Constraint {
   category: string;
-  id: string;
   message: string;
   name: string;
 }

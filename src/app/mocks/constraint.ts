@@ -8,9 +8,8 @@ export const violations: Violation[] = [
     },
     constraint: {
       category: '',
-      id: 'constraint-0',
       message: 'Foo violation',
-      name: '',
+      name: 'constraint-0',
     },
     windows: [
       { start: 1577837323538, end: 1577838419190 },
@@ -25,9 +24,8 @@ export const violations: Violation[] = [
     },
     constraint: {
       category: '',
-      id: 'constraint-1',
       message: 'Fee violation',
-      name: '',
+      name: 'constraint-1',
     },
     windows: [{ start: 1577838621176, end: 1577839007058 }],
   },
@@ -38,9 +36,8 @@ export const violations: Violation[] = [
     },
     constraint: {
       category: '',
-      id: 'constraint-2',
       message: 'Bar violation',
-      name: '',
+      name: 'constraint-2',
     },
     windows: [{ start: 1577838621176, end: 1577839007058 }],
   },
@@ -51,9 +48,8 @@ export const violations: Violation[] = [
     },
     constraint: {
       category: '',
-      id: 'constraint-3',
       message: 'Baz violation',
-      name: '',
+      name: 'constraint-3',
     },
     windows: [{ start: 1577838277647, end: 1577838357647 }],
   },
