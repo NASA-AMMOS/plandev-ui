@@ -15,7 +15,17 @@ describe('validators', () => {
 
     it('should return error for invalid date', () => {
       const res = doyTimestampValidator(new FormControl('2020'));
-      expect(res).toBeDefined();
+      expect(res).not.toEqual(null);
+    });
+
+    it('should return an error for a date with days all set to 000', () => {
+      const res = doyTimestampValidator(new FormControl('2020-000T00:00:00'));
+      expect(res).not.toEqual(null);
+    });
+
+    it('should return an error for a date with days out of range', () => {
+      const res = doyTimestampValidator(new FormControl('2020-366T00:00:00'));
+      expect(res).not.toEqual(null);
     });
   });
 });
