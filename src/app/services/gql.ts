@@ -183,7 +183,6 @@ export const SIMULATE = gql(`
         }
         constraint {
           category
-          id
           message
           name
         }
