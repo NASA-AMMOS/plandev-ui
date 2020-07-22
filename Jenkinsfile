@@ -71,6 +71,7 @@ pipeline {
             nvm install v12.14.1
 
             # Install dependencies, test, and build
+            rm -rf node_modules
             npx yarn --silent
             npx yarn test
             npx yarn build --prod
