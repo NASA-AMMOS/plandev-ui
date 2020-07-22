@@ -4,8 +4,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   NgModule,
+  Output,
   ViewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -61,6 +63,9 @@ export class TimelineComponent implements AfterViewChecked {
 
   @Input()
   viewTimeRange: TimeRange = { end: 0, start: 0 };
+
+  @Output()
+  showDrawerType: EventEmitter<string> = new EventEmitter<string>();
 
   @ViewChild('bandContainer', { static: true })
   bandContainer: ElementRef<HTMLDivElement>;
@@ -139,6 +144,7 @@ export class TimelineComponent implements AfterViewChecked {
           selectedActivityInstanceId: event.id,
         }),
       );
+      this.showDrawerType.emit('selectedActivityInstance');
     }
   }
 

@@ -4,6 +4,20 @@
 
   <div class="right">
     <button
+      mat-raised-button
+      class="right-button"
+      [matBadge]="totalConstraintViolations"
+      [matBadgeHidden]="totalConstraintViolations === 0"
+      matBadgeColor="warn"
+      matBadgePosition="before"
+      matBadgeSize="small"
+      matTooltip="Violations"
+      [style.opacity]="totalConstraintViolations > 0 ? 1.0 : 0.5"
+      (click)="showDrawerType('violations')"
+    >
+      Violations
+    </button>
+    <button
       mat-icon-button
       matTooltip="Activity Dictionary"
       (click)="showDrawerType('activityDictionary')"
@@ -125,6 +139,13 @@
         <mat-card>No Activity Instance Selected</mat-card>
       </ng-template>
     </div>
+
+    <div [style.display]="drawer.violations.visible ? 'block' : 'none'">
+      <app-constraint-violation-list
+        [constraintViolationsByCategory]="constraintViolationsByCategory"
+        [violationListState]="violationListState"
+      ></app-constraint-violation-list>
+    </div>
   </as-split-area>
 </as-split>
 
@@ -167,6 +188,7 @@
     [maxTimeRange]="maxTimeRange"
     [verticalGuides]="panel.verticalGuides"
     [viewTimeRange]="viewTimeRange"
+    (showDrawerType)="showDrawerType($event)"
   ></app-timeline>
 </ng-template>
 

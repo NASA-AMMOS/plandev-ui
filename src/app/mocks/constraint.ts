@@ -7,9 +7,9 @@ export const violations: Violation[] = [
       stateIds: [],
     },
     constraint: {
-      category: '',
+      category: 'warning',
       message: 'Foo violation',
-      name: 'constraint-0',
+      name: 'constraint0',
     },
     windows: [
       { start: 1577837323538, end: 1577838419190 },
@@ -23,9 +23,9 @@ export const violations: Violation[] = [
       stateIds: [],
     },
     constraint: {
-      category: '',
+      category: 'warning',
       message: 'Fee violation',
-      name: 'constraint-1',
+      name: 'constraint1',
     },
     windows: [{ start: 1577838621176, end: 1577839007058 }],
   },
@@ -35,9 +35,9 @@ export const violations: Violation[] = [
       stateIds: ['subBand1'],
     },
     constraint: {
-      category: '',
+      category: 'warning',
       message: 'Bar violation',
-      name: 'constraint-2',
+      name: 'constraint2',
     },
     windows: [{ start: 1577838621176, end: 1577839007058 }],
   },
@@ -47,9 +47,9 @@ export const violations: Violation[] = [
       stateIds: ['subBand2'],
     },
     constraint: {
-      category: '',
+      category: 'warning',
       message: 'Baz violation',
-      name: 'constraint-3',
+      name: 'constraint3',
     },
     windows: [{ start: 1577838277647, end: 1577838357647 }],
   },

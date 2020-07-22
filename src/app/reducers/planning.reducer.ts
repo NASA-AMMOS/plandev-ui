@@ -13,6 +13,7 @@ import {
   TimeRange,
   UiState,
   Violation,
+  ViolationListState,
 } from '../types';
 
 export interface PlanningState {
@@ -27,6 +28,7 @@ export interface PlanningState {
   simulationResults: SimulationResult[] | null;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
+  violationListState: ViolationListState;
 }
 
 export const initialState: PlanningState = {
@@ -41,6 +43,7 @@ export const initialState: PlanningState = {
   simulationResults: null,
   uiStates: [],
   viewTimeRange: { start: 0, end: 0 },
+  violationListState: { category: {}, constraint: {} },
 };
 
 export const reducer = createReducer(
@@ -226,10 +229,45 @@ export const reducer = createReducer(
   })),
   on(
     PlanningActions.runSimulationSuccess,
-    (state, { simulationResponse: { results, violations } }) => ({
+    (state, { simulationResponse: { results, violations = [] } }) => ({
       ...state,
-      constraintViolations: violations || [],
+      constraintViolations: violations.map(violation => ({
+        ...violation,
+        windows: violation.windows.map(({ end, start }) => {
+          const planStart = getUnixEpochTime(state.selectedPlan.startTimestamp);
+          return {
+            end: planStart + end / 1000,
+            start: planStart + start / 1000,
+          };
+        }),
+      })),
       simulationResults: results || [],
+      violationListState: {
+        ...violations.reduce(
+          (violationListState: ViolationListState, violation) => {
+            const { constraint } = violation;
+            const { category, name } = constraint;
+            if (state.violationListState.category[category] === undefined) {
+              violationListState.category[category] = {
+                expanded: true,
+                visible: true,
+              };
+            }
+            if (state.violationListState.constraint[name] === undefined) {
+              violationListState.constraint[name] = {
+                expanded: false,
+                visible: true,
+              };
+            }
+            return violationListState;
+          },
+          {
+            ...state.violationListState,
+            category: { ...state.violationListState.category },
+            constraint: { ...state.violationListState.constraint },
+          },
+        ),
+      },
     }),
   ),
   on(
@@ -252,8 +290,21 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.updateAllUiStates, (state, { uiStates }) => ({
     ...state,
-    selectedUiStateId: uiStates[0]?.id || null,
+    selectedUiStateId: uiStates[2]?.id || null,
     uiStates,
+  })),
+  on(PlanningActions.updateViolationListState, (state, action) => ({
+    ...state,
+    violationListState: {
+      ...state.violationListState,
+      [action.formType]: {
+        ...state.violationListState[action.formType],
+        [action.formValue]: {
+          ...state.violationListState[action.formType][action.formValue],
+          [action.key]: action.value,
+        },
+      },
+    },
   })),
   on(PlanningActions.updateSelectedUiStateId, (state, { id }) => ({
     ...state,

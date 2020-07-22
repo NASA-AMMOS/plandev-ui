@@ -1,8 +1,9 @@
 import { NgModule } from '@angular/core';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatRippleModule } from '@angular/material/core';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -15,16 +16,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 const MODULES = [
+  MatBadgeModule,
   MatButtonModule,
   MatCardModule,
   MatCheckboxModule,
-  MatChipsModule,
   MatDialogModule,
   MatDividerModule,
   MatExpansionModule,
@@ -35,9 +35,9 @@ const MODULES = [
   MatMenuModule,
   MatProgressBarModule,
   MatProgressSpinnerModule,
+  MatRippleModule,
   MatSelectModule,
   MatSidenavModule,
-  MatSlideToggleModule,
   MatTableModule,
   MatToolbarModule,
   MatTooltipModule,

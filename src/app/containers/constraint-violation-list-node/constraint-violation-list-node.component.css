@@ -1,0 +1,62 @@
+ul {
+  padding-inline-start: 40px;
+}
+
+li {
+  list-style: none;
+}
+
+.association,
+.violation {
+  align-items: center;
+  display: flex;
+}
+
+.violation {
+  cursor: pointer;
+}
+
+.violation-left {
+  align-items: center;
+  display: flex;
+  flex-grow: 1;
+}
+
+.violation-right {
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: 20px;
+}
+
+.association > mat-icon {
+  color: #bdbdbd;
+  font-size: 15px;
+  height: 15px;
+  padding-right: 5px;
+  user-select: none;
+  width: 15px;
+}
+
+.violation > mat-icon {
+  cursor: pointer;
+  font-size: 20px;
+  height: 20px;
+  padding-right: 5px;
+  user-select: none;
+  width: 20px;
+}
+
+.visibility-icon {
+  color: rgba(0, 0, 0, 0.54);
+  cursor: pointer;
+  font-size: 18px;
+  height: 18px;
+  user-select: none;
+  width: 18px;
+}
+
+.window {
+  cursor: pointer;
+  margin-right: 10px;
+  text-decoration: underline;
+}

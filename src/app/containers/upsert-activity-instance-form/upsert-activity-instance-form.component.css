@@ -27,8 +27,7 @@ mat-expansion-panel-header {
   display: grid;
   grid-template-columns: 30% 70%;
   justify-items: start;
-  padding-top: 12px;
-  padding-bottom: 5px;
+  padding: 15px;
 }
 
 .parameter-label {

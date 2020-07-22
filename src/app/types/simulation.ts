@@ -1,3 +1,4 @@
+import { StringTMap } from './string-t-map';
 import { TimeRange } from './time-range';
 
 export interface Associations {
@@ -33,4 +34,9 @@ export interface Violation {
   associations: Associations;
   constraint: Constraint;
   windows: TimeRange[];
+}
+
+export interface ViolationListState {
+  category: StringTMap<{ expanded: boolean; visible: boolean }>;
+  constraint: StringTMap<{ expanded: boolean; visible: boolean }>;
 }

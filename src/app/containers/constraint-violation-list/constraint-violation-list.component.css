@@ -1,0 +1,52 @@
+mat-expansion-panel {
+  border-radius: 0px;
+}
+
+mat-expansion-panel-header {
+  border-radius: 0px;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  font-family: Roboto;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: normal;
+}
+
+mat-panel-title,
+mat-panel-description {
+  flex-basis: 0;
+}
+
+mat-panel-description {
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: 10px;
+}
+
+::ng-deep mat-expansion-panel-header > .mat-content {
+  overflow: initial !important;
+}
+
+::ng-deep .mat-expansion-panel-body {
+  padding: 0px !important;
+}
+
+ul {
+  padding-inline-start: 20px;
+}
+
+li {
+  list-style: none;
+}
+
+.category {
+  padding-bottom: 15px;
+}
+
+.visibility-icon {
+  cursor: pointer;
+  font-size: 18px;
+  height: 18px;
+  user-select: none;
+  width: 18px;
+}

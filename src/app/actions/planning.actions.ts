@@ -179,3 +179,13 @@ export const updateViewTimeRange = createAction(
   '[planning] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),
 );
+
+export const updateViolationListState = createAction(
+  '[planning] updateViolationListState',
+  props<{
+    formType: 'category' | 'constraint';
+    formValue: string;
+    key: 'expanded' | 'visible';
+    value: boolean;
+  }>(),
+);

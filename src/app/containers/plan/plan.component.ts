@@ -31,6 +31,7 @@ import { PipesModule } from '../../pipes';
 import {
   getActivityInstances,
   getActivityTypes,
+  getConstraintViolationsByCategory,
   getMaxTimeRange,
   getPanelsWithPoints,
   getSelectedActivityInstance,
@@ -38,6 +39,7 @@ import {
   getSelectedUiState,
   getUiStates,
   getViewTimeRange,
+  getViolationListState,
 } from '../../selectors';
 import {
   ActivityInstance,
@@ -46,10 +48,14 @@ import {
   Panel,
   PanelMenuItem,
   Plan,
+  StringTMap,
   TimeRange,
   UiState,
   UpdateActivityInstance,
+  Violation,
+  ViolationListState,
 } from '../../types';
+import { ConstraintViolationListModule } from '../constraint-violation-list/constraint-violation-list.component';
 import { TimelineModule } from '../timeline/timeline.component';
 import { UpsertActivityInstanceFormModule } from '../upsert-activity-instance-form/upsert-activity-instance-form.component';
 
@@ -65,6 +71,7 @@ export class PlanComponent implements OnDestroy {
 
   activityInstances: ActivityInstance[] | null = null;
   activityTypes: ActivityType[] | null = null;
+  constraintViolationsByCategory: StringTMap<Violation[]>;
   drawer = {
     activityDictionary: {
       visible: true,
@@ -76,6 +83,9 @@ export class PlanComponent implements OnDestroy {
       visible: false,
     },
     selectedActivityInstance: {
+      visible: false,
+    },
+    violations: {
       visible: false,
     },
   };
@@ -119,8 +129,10 @@ export class PlanComponent implements OnDestroy {
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
   selectedUiState: UiState | null;
+  totalConstraintViolations = 0;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
+  violationListState: ViolationListState;
 
   private subs = new SubSink();
 
@@ -141,6 +153,20 @@ export class PlanComponent implements OnDestroy {
         this.activityTypes = activityTypes;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getConstraintViolationsByCategory))
+        .subscribe(constraintViolationsByCategory => {
+          this.constraintViolationsByCategory = constraintViolationsByCategory;
+          this.totalConstraintViolations = 0;
+          if (constraintViolationsByCategory) {
+            const categories = Object.keys(this.constraintViolationsByCategory);
+            for (const category of categories) {
+              this.totalConstraintViolations +=
+                constraintViolationsByCategory[category].length;
+            }
+          }
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();
@@ -175,6 +201,12 @@ export class PlanComponent implements OnDestroy {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getViolationListState))
+        .subscribe(violationListState => {
+          this.violationListState = violationListState;
+          this.cdRef.markForCheck();
+        }),
     );
   }
 
@@ -292,6 +324,7 @@ export class PlanComponent implements OnDestroy {
     AngularSplitModule.forChild(),
     DataTableModule,
     ActivityTypeListModule,
+    ConstraintViolationListModule,
     FormsModule,
     PanelHeaderModule,
     PipesModule,

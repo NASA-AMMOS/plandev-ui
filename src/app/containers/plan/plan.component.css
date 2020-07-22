@@ -20,6 +20,11 @@ as-split-area > div {
   overflow: hidden !important;
 }
 
+.right-button {
+  line-height: 14px;
+  padding: 0 12px;
+}
+
 iframe {
   border: 0;
   height: calc(100% - var(--toolbar-height, 36px));

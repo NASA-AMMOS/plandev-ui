@@ -13,6 +13,7 @@ import {
   TimeRange,
   UiState,
   Violation,
+  ViolationListState,
 } from '../types';
 
 export const getPlanningState = createFeatureSelector<PlanningState>(
@@ -55,6 +56,28 @@ export const getConstraintViolations = createSelector(
   (state: PlanningState): Violation[] => state.constraintViolations || [],
 );
 
+export const getViolationListState = createSelector(
+  getPlanningState,
+  (state: PlanningState): ViolationListState => state.violationListState,
+);
+
+export const getConstraintViolationsByCategory = createSelector(
+  getConstraintViolations,
+  (violations: Violation[]): StringTMap<Violation[]> | null => {
+    const categories = violations.reduce((categoryMap, violation) => {
+      const { constraint } = violation;
+      const { category } = constraint;
+      const prevViolations = categoryMap[category] || [];
+      categoryMap[category] = [...prevViolations, violation];
+      return categoryMap;
+    }, {});
+    if (Object.keys(categories).length === 0) {
+      return null;
+    }
+    return categories;
+  },
+);
+
 export const getSelectedPlan = createSelector(
   getPlanningState,
   (state: PlanningState): Plan | null => state.selectedPlan,
@@ -62,38 +85,31 @@ export const getSelectedPlan = createSelector(
 
 export const getIdsToViolations = createSelector(
   getConstraintViolations,
-  getSelectedPlan,
+  getViolationListState,
   (
     constraintViolations: Violation[],
-    selectedPlan: Plan,
+    violationListState: ViolationListState,
   ): StringTMap<Violation[]> => {
     if (constraintViolations) {
-      return constraintViolations.reduce(
-        (idsToViolations, constraintViolation) => {
-          const violation = {
-            ...constraintViolation,
-            windows: constraintViolation.windows.map(({ end, start }) => {
-              const planStart = getUnixEpochTime(selectedPlan.startTimestamp);
-              return {
-                end: planStart + end / 1000,
-                start: planStart + start / 1000,
-              };
-            }),
-          };
+      return constraintViolations.reduce((idsToViolations, violation) => {
+        const { constraint } = violation;
+        const { category, name } = constraint;
+        if (violationListState.category[category].visible) {
           for (const associationType of Object.keys(violation.associations)) {
             if (associationType !== '__typename') {
               for (const id of violation.associations[associationType]) {
-                idsToViolations[id] = [
-                  ...(idsToViolations[id] || []),
-                  violation,
-                ];
+                if (violationListState.constraint[name].visible) {
+                  idsToViolations[id] = [
+                    ...(idsToViolations[id] || []),
+                    violation,
+                  ];
+                }
               }
             }
           }
-          return idsToViolations;
-        },
-        {},
-      );
+        }
+        return idsToViolations;
+      }, {});
     }
     return {};
   },
