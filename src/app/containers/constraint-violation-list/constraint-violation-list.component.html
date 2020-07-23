@@ -70,6 +70,7 @@
       <ul>
         <li *ngFor="let violation of category.value">
           <app-constraint-violation-list-node
+            [activityInstances]="activityInstances"
             [violation]="violation"
             [violationListState]="violationListState"
             (selectWindow)="onSelectWindow($event)"

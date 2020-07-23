@@ -14,6 +14,7 @@ import { PanelHeaderModule } from '../../components';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
+  ActivityInstance,
   StringTMap,
   TimeRange,
   Violation,
@@ -28,6 +29,9 @@ import { ConstraintViolationListNodeModule } from '../constraint-violation-list-
   templateUrl: './constraint-violation-list.component.html',
 })
 export class ConstraintViolationListComponent implements OnChanges {
+  @Input()
+  activityInstances: ActivityInstance[];
+
   @Input()
   constraintViolationsByCategory: StringTMap<Violation[]> | null = null;
 

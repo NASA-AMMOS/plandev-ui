@@ -142,6 +142,7 @@
 
     <div [style.display]="drawer.violations.visible ? 'block' : 'none'">
       <app-constraint-violation-list
+        [activityInstances]="activityInstances"
         [constraintViolationsByCategory]="constraintViolationsByCategory"
         [violationListState]="violationListState"
       ></app-constraint-violation-list>

@@ -5,14 +5,22 @@ import {
   EventEmitter,
   Input,
   NgModule,
+  OnChanges,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
-import { TimeRange, Violation, ViolationListState } from '../../types';
+import {
+  ActivityInstance,
+  StringTMap,
+  TimeRange,
+  Violation,
+  ViolationListState,
+} from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,7 +28,10 @@ import { TimeRange, Violation, ViolationListState } from '../../types';
   styleUrls: ['./constraint-violation-list-node.component.css'],
   templateUrl: './constraint-violation-list-node.component.html',
 })
-export class ConstraintViolationListNodeComponent {
+export class ConstraintViolationListNodeComponent implements OnChanges {
+  @Input()
+  activityInstances: ActivityInstance[];
+
   @Input()
   violation: Violation;
 
@@ -30,7 +41,21 @@ export class ConstraintViolationListNodeComponent {
   @Output()
   selectWindow: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
+  activityInstanceIdToType: StringTMap<string> = {};
+
   constructor(private store: Store<RootState>) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.activityInstances) {
+      this.activityInstanceIdToType = this.activityInstances.reduce(
+        (activityInstanceIdToType, activityInstance) => {
+          activityInstanceIdToType[activityInstance.id] = activityInstance.type;
+          return activityInstanceIdToType;
+        },
+        {},
+      );
+    }
+  }
 
   get expanded() {
     const { constraint } = this.violationListState;
