@@ -12,15 +12,17 @@
       autocomplete="off"
     />
     <mat-icon matSuffix>search</mat-icon>
-    <mat-hint>Violation Category</mat-hint>
+    <mat-hint>
+      Violation Name, Activity Instance Type, State Name, or Window
+    </mat-hint>
   </mat-form-field>
 </form>
 
-<mat-card *ngIf="filteredConstraintViolations === null">
+<mat-card *ngIf="emptyConstraintViolations">
   No Constraint Violations Found
 </mat-card>
 
-<ng-container *ngIf="filteredConstraintViolations">
+<ng-container *ngIf="!emptyConstraintViolations">
   <div
     class="category"
     *ngFor="let category of filteredConstraintViolations | keyvalue"
@@ -68,9 +70,11 @@
       </mat-expansion-panel-header>
 
       <ul>
-        <li *ngFor="let violation of category.value">
+        <li
+          *ngFor="let violation of category.value; trackBy: trackByViolations"
+        >
           <app-constraint-violation-list-node
-            [activityInstances]="activityInstances"
+            [activityInstanceIdToType]="activityInstanceIdToType"
             [violation]="violation"
             [violationListState]="violationListState"
             (selectWindow)="onSelectWindow($event)"
