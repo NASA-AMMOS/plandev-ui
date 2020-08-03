@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { PlanningActions } from '../../actions';
+import { AppActions, PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { TimeAxisGlobalModule, TimeAxisModule } from '../../components';
 import { BandModule } from '../../components/band/band.component';
@@ -152,6 +152,7 @@ export class TimelineComponent implements AfterViewChecked {
   onUpdateBand(event: UpdateBand): void {
     const { id, update } = event;
     this.store.dispatch(PlanningActions.updateBand({ id, update }));
+    this.store.dispatch(AppActions.resize());
   }
 
   onUpdatePoint(event: UpdatePoint): void {
