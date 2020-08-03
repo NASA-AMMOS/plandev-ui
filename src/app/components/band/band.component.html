@@ -35,14 +35,17 @@
   <ng-container *ngFor="let subBand of subBands">
     <app-activity-band
       *ngIf="subBand.chartType === 'activity'"
+      [bandId]="id"
       [color]="subBand.color"
       [drawHeight]="drawHeight"
       [drawWidth]="drawWidth"
+      [height]="height"
       [id]="subBand.id"
       [layout]="subBand.layout"
       [maxTimeRange]="maxTimeRange"
       [points]="subBand.points"
       [viewTimeRange]="viewTimeRange"
+      (updateBand)="updateBand.emit($event)"
     ></app-activity-band>
     <app-line-band
       *ngIf="subBand.chartType === 'line'"

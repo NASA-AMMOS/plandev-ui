@@ -40,6 +40,7 @@ import {
   SelectPoint,
   SubBand,
   TimeRange,
+  UpdateBand,
   UpdatePoint,
   Violation,
 } from '../../types';
@@ -119,6 +120,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+
+  @Output()
+  updateBand: EventEmitter<UpdateBand> = new EventEmitter<UpdateBand>();
 
   @ViewChild('axisContainerGroup', { static: true })
   axisContainerGroup: ElementRef<SVGGElement>;

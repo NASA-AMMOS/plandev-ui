@@ -293,6 +293,29 @@ export const reducer = createReducer(
     selectedUiStateId: uiStates[2]?.id || null,
     uiStates,
   })),
+  on(PlanningActions.updateBand, (state, { id, update }) => ({
+    ...state,
+    uiStates: state.uiStates.map(uiState => ({
+      ...uiState,
+      panels: uiState.panels.map(panel => {
+        if (panel.bands) {
+          return {
+            ...panel,
+            bands: panel.bands.map(band => {
+              if (band.id === id) {
+                return {
+                  ...band,
+                  ...update,
+                };
+              }
+              return band;
+            }),
+          };
+        }
+        return panel;
+      }),
+    })),
+  })),
   on(PlanningActions.updateViolationListState, (state, action) => ({
     ...state,
     violationListState: {

@@ -125,6 +125,11 @@ export interface SubBandXRange extends SubBand {
   points?: PointXRange[];
 }
 
+export interface UpdateBand {
+  id: string;
+  update: any;
+}
+
 export interface UpdatePoint {
   id: string;
   type: string;

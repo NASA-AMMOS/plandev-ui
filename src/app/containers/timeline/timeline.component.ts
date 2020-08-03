@@ -26,6 +26,7 @@ import {
   SavePoint,
   SelectPoint,
   TimeRange,
+  UpdateBand,
   UpdatePoint,
   Violation,
 } from '../../types';
@@ -146,6 +147,11 @@ export class TimelineComponent implements AfterViewChecked {
       );
       this.showDrawerType.emit('selectedActivityInstance');
     }
+  }
+
+  onUpdateBand(event: UpdateBand): void {
+    const { id, update } = event;
+    this.store.dispatch(PlanningActions.updateBand({ id, update }));
   }
 
   onUpdatePoint(event: UpdatePoint): void {

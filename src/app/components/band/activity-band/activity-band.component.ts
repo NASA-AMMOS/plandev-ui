@@ -4,10 +4,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  EventEmitter,
   HostListener,
   Input,
   NgModule,
   OnChanges,
+  Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -16,7 +18,7 @@ import {
   getXScale,
   rgbColorGenerator,
 } from '../../../functions';
-import { PointActivity, TimeRange } from '../../../types';
+import { PointActivity, TimeRange, UpdateBand } from '../../../types';
 import { SubBandService } from '../sub-band.service';
 
 @Component({
@@ -27,6 +29,9 @@ import { SubBandService } from '../sub-band.service';
 })
 export class ActivityBandComponent implements AfterViewInit, OnChanges {
   @Input()
+  bandId: string;
+
+  @Input()
   color: string | undefined;
 
   @Input()
@@ -34,6 +39,9 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
   @Input()
   drawWidth: number;
+
+  @Input()
+  height: number | undefined;
 
   @Input()
   id: string;
@@ -49,6 +57,9 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
   @Input()
   viewTimeRange: TimeRange;
+
+  @Output()
+  updateBand: EventEmitter<UpdateBand> = new EventEmitter<UpdateBand>();
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;
@@ -96,6 +107,26 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
+  getLabelTextWidth(
+    canvases: HTMLCanvasElement[],
+    point: PointActivity,
+  ): number {
+    let textWidth = 0;
+    forEachCanvas(canvases, (canvas, ctx) => {
+      if (!canvas.classList.contains('hidden')) {
+        const fontSize = point.label?.fontSize || 12;
+        const fontFace = point.label?.fontFace || 'Georgia';
+        ctx.font = `${fontSize}px ${fontFace}`;
+        ctx.textAlign = point.label?.align || 'start';
+        ctx.textBaseline = point.label?.baseline || 'alphabetic';
+        const labelText = point.label?.text || '';
+        const textMetrics = ctx.measureText(labelText);
+        textWidth = textMetrics.width;
+      }
+    });
+    return textWidth;
+  }
+
   @HostListener('window:resize', ['$event'])
   onWindowResize(): void {
     this.resize();
@@ -111,7 +142,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
   }
 
   redraw(): void {
-    const layout = this.layout || 'waterfall';
+    const layout = this.layout || 'compact';
     if (layout === 'compact') {
       this.redrawCompact();
     } else {
@@ -190,39 +221,47 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     );
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
 
-    const rowHeight = Math.max(5, Math.floor(this.drawHeight / points.length));
-    const height = Math.min(20, rowHeight - Math.ceil(rowHeight / 3));
-
-    let y = 0;
+    const activityHeight = 20;
+    const rowPadding = 20;
+    let largestY = Number.MIN_SAFE_INTEGER;
     const rows = {};
-    const rowGap = 0.5;
 
     for (let i = 0, l = points.length; i < l; ++i) {
       const point = points[i];
       const x = Math.floor(xScale(point.x));
       const end = Math.floor(xScale(point.x + point.duration));
+      const textWidth = this.getLabelTextWidth(canvases, point);
+      const width = end + textWidth;
 
-      let row = 0.5; // Initial padding.
+      let row = 0.5;
       let rowFound = false;
       while (!rowFound) {
         if (rows[row] !== undefined && rows[row] >= x) {
-          row += rowGap;
+          ++row;
         } else {
-          rows[row] = end;
+          rows[row] = width;
           rowFound = true;
         }
       }
-      y = row * rowHeight;
+      const y = row * (activityHeight + rowPadding);
+      if (y > largestY) {
+        largestY = y;
+      }
 
       this.redrawCanvases(
         canvases,
         end,
-        height,
+        activityHeight,
         hiddenCanvasColor,
         point,
         x,
         y,
       );
+    }
+
+    const newHeight = largestY + activityHeight + rowPadding;
+    if (this.height !== newHeight) {
+      this.updateBand.emit({ id: this.bandId, update: { height: newHeight } });
     }
   }
 

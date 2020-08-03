@@ -165,6 +165,11 @@ export const updateAllUiStates = createAction(
   props<{ uiStates: UiState[] }>(),
 );
 
+export const updateBand = createAction(
+  '[planning] updateBand',
+  props<{ id: string; update: any }>(),
+);
+
 export const updateSelectedUiStateId = createAction(
   '[planning] updateSelectedUiStateId',
   props<{ id: string }>(),
