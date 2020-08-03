@@ -1,5 +1,0 @@
-version: '3.3'
-services:
-  aerie_ui:
-    image: '${DOCKER_URL}:${DOCKER_TAG}'
-    ports: ['8080:80']

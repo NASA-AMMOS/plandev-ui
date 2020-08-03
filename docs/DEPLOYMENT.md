@@ -2,57 +2,27 @@
 
 This document describes how to deploy aerie-ui via Docker. All of these instructions should be carried out on the machine you are deploying to.
 
-## Steps
+## Docker Artifactory
 
-1. Make sure [Docker][docker] and [Git][git] are installed, and that Docker is running. `docker-compose` should be automatically installed with the installation of Docker:
-
-```bash
-which docker
-which docker-compose
-which git
-docker info
-```
-
-2. Clone the [aerie-ui repository][aerie-ui-repository]:
+These commands pull the [release-0.4.0](https://cae-artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-release-local/gov/nasa/jpl/aerie/aerie-ui/release-0.4.0) Docker image from Artifactory and start a container from that image.
 
 ```bash
-git clone git@github.jpl.nasa.gov:MPS/aerie-ui.git
+docker login cae-artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie
+docker run --name aerie-ui -d -p 8080:80 cae-artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.4.0
 ```
 
-3. Log into the [Artifactory][artifactory] Docker repository:
+Goto [http://localhost:8080/](http://localhost:8080/)
 
-```bash
-docker login cae-artifactory.jpl.nasa.gov:16001/gov/nasa/jpl/ammos/mpsa/aerie-ui
-```
+## Docker Local
 
-4. Use [Docker Compose][docker-compose] to start the application:
+First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the aerie-ui, build a Docker image, and start a container using the built image. 
 
 ```bash
 cd aerie-ui
-docker-compose up --build
+yarn install
+yarn build --prod
+docker build -t aerie-ui .
+docker run --name aerie-ui -d -p 8080:80 aerie-ui
 ```
 
-5. To stop and remove all the containers run:
-
-```bash
-docker-compose down
-```
-
-## Configuration
-
-The `docker-compose` files are parameterized with the [***REMOVED***](../***REMOVED***) file in the root of the aerie-ui repository.
-
-| Environment Variable | Description |
-| - | - |
-| DOCKER_TAG | A [Docker Tag][docker-tag] of the aerie-ui version you are deploying. It has the form: `[BRANCH_NAME]-b[BUILD_NUMBER].r[SHORT_GIT_COMMIT_HASH].[yyyyMMdd]`. For example this is a tag: `develop-b1.r4bc461f.20191126`. For a list of Docker image tags, first [log into Artifactory][artifactory-login]. The complete list of aerie-ui images can be found [here][artifactory-aerie-ui]. |
-| DOCKER_URL | The URL of a Docker repository. Defaults to Artifactories [docker-develop-local][docker-develop-local] repository. |
-
-[aerie-ui-repository]: https://github.jpl.nasa.gov/MPS/aerie-ui
-[artifactory]: https://cae-artifactory.jpl.nasa.gov
-[artifactory-aerie-ui]: https://cae-artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-develop-local/gov/nasa/jpl/ammos/mpsa/aerie-ui
-[artifactory-login]: https://cae-artifactory.jpl.nasa.gov/artifactory/webapp/#/login
-[docker]: https://www.docker.com/
-[docker-compose]: https://docs.docker.com/compose/reference/
-[docker-develop-local]: https://cae-artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-develop-local
-[docker-tag]: https://docs.docker.com/engine/reference/commandline/tag/
-[git]: https://git-scm.com/
+Goto [http://localhost:8080/](http://localhost:8080/)
