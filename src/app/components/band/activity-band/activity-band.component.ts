@@ -29,6 +29,9 @@ import { SubBandService } from '../sub-band.service';
 })
 export class ActivityBandComponent implements AfterViewInit, OnChanges {
   @Input()
+  activityHeight = 20;
+
+  @Input()
   bandId: string;
 
   @Input()
@@ -107,6 +110,15 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
+  setLabelContext(point: PointActivity, ctx: CanvasRenderingContext2D): void {
+    const fontSize = point.label?.fontSize || 12;
+    const fontFace = point.label?.fontFace || 'Georgia';
+    ctx.fillStyle = point.label?.color || '#000000';
+    ctx.font = `${fontSize}px ${fontFace}`;
+    ctx.textAlign = point.label?.align || 'start';
+    ctx.textBaseline = point.label?.baseline || 'alphabetic';
+  }
+
   getLabelTextWidth(
     canvases: HTMLCanvasElement[],
     point: PointActivity,
@@ -114,11 +126,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     let textWidth = 0;
     forEachCanvas(canvases, (canvas, ctx) => {
       if (!canvas.classList.contains('hidden')) {
-        const fontSize = point.label?.fontSize || 12;
-        const fontFace = point.label?.fontFace || 'Georgia';
-        ctx.font = `${fontSize}px ${fontFace}`;
-        ctx.textAlign = point.label?.align || 'start';
-        ctx.textBaseline = point.label?.baseline || 'alphabetic';
+        this.setLabelContext(point, ctx);
         const labelText = point.label?.text || '';
         const textMetrics = ctx.measureText(labelText);
         textWidth = textMetrics.width;
@@ -188,12 +196,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         // Label Text.
         const hideLabel = point.label?.hidden || false;
         if (!hideLabel) {
-          ctx.fillStyle = point.label?.color || '#000000';
-          const fontSize = point.label?.fontSize || 12;
-          const fontFace = point.label?.fontFace || 'Georgia';
-          ctx.font = `${fontSize}px ${fontFace}`;
-          ctx.textAlign = point.label?.align || 'start';
-          ctx.textBaseline = point.label?.baseline || 'alphabetic';
+          this.setLabelContext(point, ctx);
           const labelText = point.label?.text || '';
           const textMetrics = ctx.measureText(labelText);
           const textWidth = textMetrics.width;
@@ -219,49 +222,53 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         point.x + point.duration >= this.viewTimeRange.start &&
         point.x <= this.viewTimeRange.end,
     );
-    const xScale = getXScale(this.viewTimeRange, this.drawWidth);
 
-    const activityHeight = 20;
-    const rowPadding = 20;
-    let largestY = Number.MIN_SAFE_INTEGER;
-    const rows = {};
+    if (points.length) {
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const rowPadding = 20;
+      let largestY = Number.MIN_SAFE_INTEGER;
+      const rows = {};
 
-    for (let i = 0, l = points.length; i < l; ++i) {
-      const point = points[i];
-      const x = Math.floor(xScale(point.x));
-      const end = Math.floor(xScale(point.x + point.duration));
-      const textWidth = this.getLabelTextWidth(canvases, point);
-      const width = end + textWidth;
+      for (let i = 0, l = points.length; i < l; ++i) {
+        const point = points[i];
+        const x = Math.floor(xScale(point.x));
+        const end = Math.floor(xScale(point.x + point.duration));
+        const textWidth = this.getLabelTextWidth(canvases, point);
+        const width = end + textWidth;
 
-      let row = 0.5;
-      let rowFound = false;
-      while (!rowFound) {
-        if (rows[row] !== undefined && rows[row] >= x) {
-          ++row;
-        } else {
-          rows[row] = width;
-          rowFound = true;
+        let row = 0.5;
+        let rowFound = false;
+        while (!rowFound) {
+          if (rows[row] !== undefined && rows[row] >= x) {
+            ++row;
+          } else {
+            rows[row] = width;
+            rowFound = true;
+          }
         }
-      }
-      const y = row * (activityHeight + rowPadding);
-      if (y > largestY) {
-        largestY = y;
+        const y = row * (this.activityHeight + rowPadding);
+        if (y > largestY) {
+          largestY = y;
+        }
+
+        this.redrawCanvases(
+          canvases,
+          end,
+          this.activityHeight,
+          hiddenCanvasColor,
+          point,
+          x,
+          y,
+        );
       }
 
-      this.redrawCanvases(
-        canvases,
-        end,
-        activityHeight,
-        hiddenCanvasColor,
-        point,
-        x,
-        y,
-      );
-    }
-
-    const newHeight = largestY + activityHeight + rowPadding;
-    if (this.height !== newHeight) {
-      this.updateBand.emit({ id: this.bandId, update: { height: newHeight } });
+      const newHeight = largestY + this.activityHeight + rowPadding;
+      if (this.height !== newHeight) {
+        this.updateBand.emit({
+          id: this.bandId,
+          update: { height: newHeight },
+        });
+      }
     }
   }
 
@@ -281,29 +288,34 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         point.x + point.duration >= this.viewTimeRange.start &&
         point.x <= this.viewTimeRange.end,
     );
-    const xScale = getXScale(this.viewTimeRange, this.drawWidth);
 
-    const rowHeight = Math.max(5, Math.floor(this.drawHeight / points.length));
-    const height = Math.min(20, rowHeight - Math.ceil(rowHeight / 3));
-    let y = 15; // Initial padding.
-
-    for (let i = 0, l = points.length; i < l; ++i) {
-      const point = points[i];
-      const x = Math.floor(xScale(point.x));
-      const end = Math.floor(xScale(point.x + point.duration));
-
-      this.redrawCanvases(
-        canvases,
-        end,
-        height,
-        hiddenCanvasColor,
-        point,
-        x,
-        y,
+    if (points.length) {
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const rowHeight = Math.max(
+        5,
+        Math.floor(this.drawHeight / points.length),
       );
+      const height = Math.min(20, rowHeight - Math.ceil(rowHeight / 3));
+      let y = 15; // Initial padding.
 
-      if (y + rowHeight + height <= this.drawHeight) {
-        y += rowHeight;
+      for (let i = 0, l = points.length; i < l; ++i) {
+        const point = points[i];
+        const x = Math.floor(xScale(point.x));
+        const end = Math.floor(xScale(point.x + point.duration));
+
+        this.redrawCanvases(
+          canvases,
+          end,
+          height,
+          hiddenCanvasColor,
+          point,
+          x,
+          y,
+        );
+
+        if (y + rowHeight + height <= this.drawHeight) {
+          y += rowHeight;
+        }
       }
     }
   }
