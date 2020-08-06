@@ -4,6 +4,5 @@ export * from './panel';
 export * from './router';
 export * from './sort';
 export * from './testing';
-export * from './time';
 export * from './tooltip';
 export * from './validators';

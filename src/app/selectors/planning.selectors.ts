@@ -1,6 +1,7 @@
+import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import uniqBy from 'lodash-es/uniqBy';
-import { compare, getUnixEpochTime } from '../functions';
+import { compare } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
   ActivityInstance,

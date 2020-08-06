@@ -1,8 +1,8 @@
+import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { createReducer, on } from '@ngrx/store';
 import keyBy from 'lodash-es/keyBy';
 import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
-import { getUnixEpochTime } from '../functions';
 import {
   ActivityInstance,
   ActivityType,

@@ -12,6 +12,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import * as d3 from 'd3';
 import uniqueId from 'lodash-es/uniqueId';
 import {
@@ -19,7 +20,6 @@ import {
   SvgVerticalGuideCollection,
 } from '../../classes';
 import {
-  getDoyTimestamp,
   getTimeFromSvgMousePosition,
   hideTooltip,
   showTooltip,

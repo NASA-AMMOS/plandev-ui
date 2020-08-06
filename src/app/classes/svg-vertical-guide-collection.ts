@@ -1,5 +1,5 @@
+import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import * as d3 from 'd3';
-import { getUnixEpochTime } from '../functions';
 import { Guide, TimeRange } from '../types';
 import { calcBounds, SvgVerticalGuide } from './svg-vertical-guide';
 

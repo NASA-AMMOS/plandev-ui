@@ -1,7 +1,7 @@
+import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import keyBy from 'lodash-es/keyBy';
 import omit from 'lodash-es/omit';
 import { PlanningActions } from '../actions';
-import { getUnixEpochTime } from '../functions';
 import {
   activityInstance,
   activityInstanceId,

@@ -31,6 +31,7 @@
     "version": "node ./scripts/git-version.js"
   },
   "dependencies": {
+    "@gov.nasa.jpl.aerie/time": "~1.0.0",
     "@angular/animations": "~10.0.4",
     "@angular/cdk": "~10.1.0",
     "@angular/common": "~10.0.4",

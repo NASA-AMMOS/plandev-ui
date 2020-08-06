@@ -1,6 +1,6 @@
+import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import * as d3 from 'd3';
 import { Point, PointActivity, PointLine, PointXRange } from '../types';
-import { getDoyTimestamp } from './time';
 
 export function getTooltipTextForPoints(points: Point[]): string {
   let tooltipText = '';

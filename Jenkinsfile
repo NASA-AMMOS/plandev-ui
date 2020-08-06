@@ -47,9 +47,9 @@ pipeline {
       steps {
         withCredentials([
           usernamePassword(
-            credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86',
-            passwordVariable: 'DOCKER_LOGIN_PASSWORD',
-            usernameVariable: 'DOCKER_LOGIN_USERNAME'
+            credentialsId: '34c6de8f-197d-46e5-aeb3-2153697dcb9c',
+            passwordVariable: 'PASS',
+            usernameVariable: 'EMAIL'
           )
         ]) {
           script {
@@ -70,14 +70,21 @@ pipeline {
             [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
             nvm install v12.14.1
 
+            # Setup NPM to fetch from Artifactory
+            npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-develop-virtual/
+            npm config set email=$EMAIL
+            npm config set always-auth=true
+            npm config set _auth=$PASS
+
             # Install dependencies, test, and build
             rm -rf node_modules
-            npx yarn --silent
-            npx yarn test
-            npx yarn build --prod
+            rm -rf package-lock.json
+            npm install
+            npm test
+            npm run build --prod
 
             # Cloc, then print size of dist folder
-            npx yarn cloc
+            npm run cloc
             du -sh dist
             du -sh dist/*
 

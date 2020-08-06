@@ -1,6 +1,6 @@
+import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import * as d3 from 'd3';
 import { Point, StringTMap, SubBand, TimeRange } from '../types';
-import { getDoyTimestamp } from './time';
 
 export function forEachCanvas(
   canvases: HTMLCanvasElement[],

@@ -7,11 +7,11 @@ import {
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
+import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { Store } from '@ngrx/store';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import { PanelHeaderModule } from '../../components';
-import { getDoyTimestamp } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {

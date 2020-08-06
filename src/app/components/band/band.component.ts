@@ -14,10 +14,10 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import * as d3 from 'd3';
 import { SvgConstraintViolationCollection } from '../../classes';
 import {
-  getDoyTimestamp,
   getPointFromCanvasSelection,
   getSvgMousePosition,
   getTimeFromSvgMousePosition,
