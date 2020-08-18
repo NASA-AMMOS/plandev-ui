@@ -71,7 +71,7 @@ pipeline {
             nvm install v12.14.1
 
             # Setup NPM to fetch from Artifactory
-            npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-develop-virtual/
+            npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
             npm config set email=$EMAIL
             npm config set always-auth=true
             npm config set _auth=$PASS
