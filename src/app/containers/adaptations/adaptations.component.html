@@ -4,9 +4,7 @@
 
 <as-split [gutterSize]="4">
   <as-split-area [size]="25">
-    <app-panel-header>
-      Create Adaptation
-    </app-panel-header>
+    <app-panel-header> Create Adaptation </app-panel-header>
     <div class="p-1">
       <mat-card>
         <form [formGroup]="createAdaptationForm" (ngSubmit)="onSubmit()">
@@ -94,9 +92,7 @@
   </as-split-area>
 
   <as-split-area [size]="75">
-    <app-panel-header>
-      Adaptation List
-    </app-panel-header>
+    <app-panel-header> Adaptation List </app-panel-header>
     <div class="p-1">
       <app-placeholder *ngIf="adaptations === null"></app-placeholder>
       <ng-container *ngIf="adaptations !== null">

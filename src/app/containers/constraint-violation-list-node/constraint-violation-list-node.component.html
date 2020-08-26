@@ -1,11 +1,7 @@
 <div class="violation" (click)="toggleExpanded()">
   <div class="violation-left">
-    <mat-icon *ngIf="expanded">
-      expand_more
-    </mat-icon>
-    <mat-icon *ngIf="!expanded">
-      chevron_right
-    </mat-icon>
+    <mat-icon *ngIf="expanded"> expand_more </mat-icon>
+    <mat-icon *ngIf="!expanded"> chevron_right </mat-icon>
     <div>{{ violation.constraint.name }}</div>
   </div>
   <div class="violation-right">
