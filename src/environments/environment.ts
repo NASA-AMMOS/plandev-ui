@@ -2,7 +2,7 @@
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-const windowBaseUrl = `http://localhost`;
+const windowBaseUrl = `${window.location.protocol}//${window.location.hostname}`;
 
 export const environment = {
   aerieApolloServerUrl: `${windowBaseUrl}:27184`,
