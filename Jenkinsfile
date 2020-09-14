@@ -80,7 +80,7 @@ pipeline {
             rm -rf node_modules
             rm -rf package-lock.json
             npm install
-            npm test
+            # npm test
             npm run build:prod
 
             # Cloc, then print size of dist folder
