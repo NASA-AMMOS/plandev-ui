@@ -15,7 +15,6 @@
           "options": {
             "allowedCommonJsDependencies": [
               "@ctrl/ngx-codemirror",
-              "graphql-tag",
               "hammerjs",
               "subsink",
               "zen-observable",

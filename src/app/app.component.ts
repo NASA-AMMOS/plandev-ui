@@ -9,14 +9,14 @@ import {
 import { MatIconRegistry } from '@angular/material/icon';
 import { BrowserModule, DomSanitizer } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { InMemoryCache } from '@apollo/client/core';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreRouterConnectingModule } from '@ngrx/router-store';
 import { select, Store, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { AngularSplitModule } from 'angular-split';
-import { ApolloModule, APOLLO_OPTIONS } from 'apollo-angular';
-import { HttpLink, HttpLinkModule } from 'apollo-angular-link-http';
-import { InMemoryCache } from 'apollo-cache-inmemory';
+import { APOLLO_OPTIONS } from 'apollo-angular';
+import { HttpLink } from 'apollo-angular/http';
 import { ToastrModule } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
@@ -105,8 +105,6 @@ export class AppComponent implements OnDestroy {
     BrowserAnimationsModule,
     HttpClientModule,
     AngularSplitModule.forRoot(),
-    ApolloModule,
-    HttpLinkModule,
     ToastrModule.forRoot({
       countDuplicates: true,
       maxOpened: 4,
