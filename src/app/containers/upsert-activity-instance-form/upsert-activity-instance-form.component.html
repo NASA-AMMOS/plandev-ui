@@ -70,7 +70,7 @@
   <div class="pb-4" *ngIf="formParameters?.controls.length">
     <mat-expansion-panel [expanded]="parametersExpanded">
       <mat-expansion-panel-header collapsedHeight="40px" expandedHeight="40px">
-        <mat-panel-title> Parameters </mat-panel-title>
+        <mat-panel-title>Parameters</mat-panel-title>
       </mat-expansion-panel-header>
 
       <div class="expansion-panel-body">
@@ -121,6 +121,18 @@
             *ngIf="i !== formParameters?.controls.length - 1"
           ></mat-divider>
         </div>
+      </div>
+    </mat-expansion-panel>
+  </div>
+
+  <div class="pb-4">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header collapsedHeight="40px" expandedHeight="40px">
+        <mat-panel-title>Decomposition</mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <div class="expansion-panel-body">
+        <app-decomposition-tree></app-decomposition-tree>
       </div>
     </mat-expansion-panel>
   </div>

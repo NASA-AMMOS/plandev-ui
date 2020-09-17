@@ -1,0 +1,22 @@
+<div class="activity-instance" (click)="toggleExpanded()">
+  <div class="left">
+    <ng-container *ngIf="hasChildren">
+      <mat-icon *ngIf="expanded">expand_more</mat-icon>
+      <mat-icon *ngIf="!expanded">chevron_right</mat-icon>
+    </ng-container>
+    <div>{{ activityInstance?.type }}</div>
+  </div>
+  <div class="right">
+    <div class="timestamp" (click)="onClickTimestamp($event)">
+      {{ activityInstance?.startTimestamp }}
+    </div>
+  </div>
+</div>
+
+<ul *ngIf="hasChildren && expanded">
+  <li *ngFor="let childId of activityInstance?.children">
+    <app-decomposition-tree
+      [activityInstance]="activityInstances[childId]"
+    ></app-decomposition-tree>
+  </li>
+</ul>

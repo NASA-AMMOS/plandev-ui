@@ -41,6 +41,7 @@ import {
   CreateActivityInstance,
   UpdateActivityInstance,
 } from '../../types';
+import { DecompositionTreeModule } from '../decomposition-tree/decomposition-tree.component';
 
 export class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
   isErrorState(
@@ -274,6 +275,7 @@ export class UpsertActivityInstanceFormComponent
   imports: [
     CommonModule,
     MaterialModule,
+    DecompositionTreeModule,
     PanelHeaderModule,
     PipesModule,
     ReactiveFormsModule,

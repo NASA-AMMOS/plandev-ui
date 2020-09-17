@@ -12,6 +12,10 @@ export interface Constraint {
   name: string;
 }
 
+export interface DecompositionTreeState {
+  instance: StringTMap<{ expanded: boolean }>;
+}
+
 export interface SimulationResponse {
   message?: string;
   results?: SimulationResult[];

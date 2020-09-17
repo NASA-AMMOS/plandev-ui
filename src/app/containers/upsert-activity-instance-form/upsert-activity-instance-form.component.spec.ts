@@ -1,6 +1,7 @@
 import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, FormControl, FormGroup, NgForm } from '@angular/forms';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideMockStore } from '@ngrx/store/testing';
 import { ApolloTestingModule } from 'apollo-angular/testing';
 import { of } from 'rxjs';
@@ -25,6 +26,7 @@ describe('UpsertActivityInstanceFormComponent', () => {
         UpsertActivityInstanceFormModule,
         ApolloTestingModule,
         MaterialModule,
+        NoopAnimationsModule,
       ],
       providers: [
         {

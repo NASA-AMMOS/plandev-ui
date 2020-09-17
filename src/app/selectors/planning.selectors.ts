@@ -7,6 +7,7 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
+  DecompositionTreeState,
   Plan,
   PointLine,
   SimulationResult,
@@ -55,6 +56,12 @@ export const getAdaptations = createSelector(
 export const getConstraintViolations = createSelector(
   getPlanningState,
   (state: PlanningState): Violation[] => state.constraintViolations || [],
+);
+
+export const getDecompositionTreeState = createSelector(
+  getPlanningState,
+  (state: PlanningState): DecompositionTreeState =>
+    state.decompositionTreeState,
 );
 
 export const getViolationListState = createSelector(

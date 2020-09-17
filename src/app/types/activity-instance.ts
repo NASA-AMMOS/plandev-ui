@@ -1,6 +1,9 @@
 export interface ActivityInstance {
+  children: string[];
+  duration: number;
   id: string;
   parameters: ActivityInstanceParameter[];
+  parent: string | null;
   startTimestamp: string;
   type: string;
 }

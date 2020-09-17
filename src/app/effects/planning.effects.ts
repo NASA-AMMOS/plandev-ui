@@ -36,7 +36,13 @@ export class PlanningEffects {
                     toastType: 'success',
                   }),
                   PlanningActions.createActivityInstanceSuccess({
-                    activityInstance: { ...activityInstance, id },
+                    activityInstance: {
+                      ...activityInstance,
+                      children: [],
+                      duration: 0,
+                      id,
+                      parent: '',
+                    },
                   }),
                 ];
               }),

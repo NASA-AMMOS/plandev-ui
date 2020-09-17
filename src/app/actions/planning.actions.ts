@@ -170,6 +170,16 @@ export const updateBand = createAction(
   props<{ id: string; update: any }>(),
 );
 
+export const updateDecompositionTreeState = createAction(
+  '[planning] updateDecompositionTreeState',
+  props<{
+    formType: 'instance';
+    formValue: string;
+    key: 'expanded' | 'visible';
+    value: boolean;
+  }>(),
+);
+
 export const updateSelectedUiStateId = createAction(
   '[planning] updateSelectedUiStateId',
   props<{ id: string }>(),

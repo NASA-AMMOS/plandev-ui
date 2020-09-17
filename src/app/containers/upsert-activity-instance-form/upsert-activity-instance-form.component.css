@@ -19,7 +19,7 @@ mat-expansion-panel-header {
 }
 
 .expansion-panel-body {
-  padding-top: 12px;
+  padding: 12px;
 }
 
 .parameters {

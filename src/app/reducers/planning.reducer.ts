@@ -7,6 +7,7 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
+  DecompositionTreeState,
   Plan,
   SimulationResult,
   StringTMap,
@@ -21,6 +22,7 @@ export interface PlanningState {
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
   constraintViolations: Violation[] | null;
+  decompositionTreeState: DecompositionTreeState;
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
@@ -36,6 +38,7 @@ export const initialState: PlanningState = {
   activityTypes: null,
   adaptations: null,
   constraintViolations: null,
+  decompositionTreeState: { instance: {} },
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
@@ -315,6 +318,19 @@ export const reducer = createReducer(
         return panel;
       }),
     })),
+  })),
+  on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
+    ...state,
+    decompositionTreeState: {
+      ...state.decompositionTreeState,
+      [action.formType]: {
+        ...state.decompositionTreeState[action.formType],
+        [action.formValue]: {
+          ...state.decompositionTreeState[action.formType][action.formValue],
+          [action.key]: action.value,
+        },
+      },
+    },
   })),
   on(PlanningActions.updateViolationListState, (state, action) => ({
     ...state,
