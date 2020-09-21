@@ -23,6 +23,17 @@ def getPublishPath() {
   }
 }
 
+void setBuildStatus(String message, String state, String context) {
+  step([
+    $class: "GitHubCommitStatusSetter",
+    reposSource: [$class: "ManuallyEnteredRepositorySource", url: env.GIT_URL],
+    commitShaSource: [$class: "ManuallyEnteredShaSource", sha: env.GIT_COMMIT],
+    contextSource: [$class: "ManuallyEnteredCommitContextSource", context: context],
+    errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
+    statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state.toUpperCase()]] ]
+  ]);
+}
+
 pipeline {
   options {
     disableConcurrentBuilds()
@@ -53,6 +64,7 @@ pipeline {
           )
         ]) {
           script {
+            setBuildStatus("Building & Testing", "pending", "jenkins/branch-check");
             def statusCode = sh returnStatus: true, script:
             """
             # Don't echo commands by default
@@ -210,6 +222,8 @@ pipeline {
 
       echo 'Logging out docker'
       sh 'docker logout || true'
+
+      setBuildStatus("Build ${currentBuild.currentResult}", "${currentBuild.currentResult}", "jenkins/branch-check")
     }
     unstable {
       emailext subject: "Jenkins UNSTABLE: ${env.JOB_BASE_NAME} #${env.BUILD_NUMBER}",
