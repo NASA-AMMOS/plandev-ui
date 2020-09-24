@@ -1,3 +1,4 @@
+import { ActivityInstance } from './activity-instance';
 import { StringTMap } from './string-t-map';
 import { TimeRange } from './time-range';
 
@@ -17,6 +18,7 @@ export interface DecompositionTreeState {
 }
 
 export interface SimulationResponse {
+  activities: ActivityInstance[];
   message?: string;
   results?: SimulationResult[];
   success: boolean;

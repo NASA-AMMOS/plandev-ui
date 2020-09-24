@@ -232,8 +232,14 @@ export const reducer = createReducer(
   })),
   on(
     PlanningActions.runSimulationSuccess,
-    (state, { simulationResponse: { results, violations = [] } }) => ({
+    (
+      state,
+      { simulationResponse: { activities = [], results, violations = [] } },
+    ) => ({
       ...state,
+      activityInstances: {
+        ...keyBy(activities, 'id'),
+      },
       constraintViolations: violations.map(violation => ({
         ...violation,
         windows: violation.windows.map(({ end, start }) => {

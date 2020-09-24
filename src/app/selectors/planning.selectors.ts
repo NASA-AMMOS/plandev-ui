@@ -183,7 +183,7 @@ export const getPanelsWithPoints = createSelector(
                     }
 
                     newPoints.push({
-                      duration: 0,
+                      duration: point?.duration / 1000 || 0, // µs -> ms
                       id: point.id,
                       label: {
                         text: point.type,

@@ -1,6 +1,7 @@
 import { SimulationResponse } from '../types';
 
 export const simulationResponse: SimulationResponse = {
+  activities: [],
   results: [
     {
       name: 'a',

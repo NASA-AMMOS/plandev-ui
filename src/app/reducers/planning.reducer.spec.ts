@@ -417,6 +417,7 @@ describe('planning reducer', () => {
       );
       expect(state).toEqual({
         ...initialState,
+        activityInstances: {},
         constraintViolations: simulationResponse.violations,
         simulationResults: simulationResponse.results,
       });

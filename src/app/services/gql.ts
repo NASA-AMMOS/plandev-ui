@@ -166,6 +166,18 @@ export const DELETE_PLAN = gql(`
 export const SIMULATE = gql(`
   query Simulate($planId: String!, $samplingPeriod: Float!) {
     simulate(planId: $planId, samplingPeriod: $samplingPeriod) {
+      activities {
+        children
+        duration
+        id
+        parameters {
+          name
+          value
+        }
+        parent
+        startTimestamp
+        type
+      }
       message
       results {
         name
