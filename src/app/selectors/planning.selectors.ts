@@ -9,6 +9,7 @@ import {
   Adaptation,
   DecompositionTreeState,
   Plan,
+  PointActivity,
   PointLine,
   SimulationResult,
   StringTMap,
@@ -18,15 +19,68 @@ import {
   ViolationListState,
 } from '../types';
 
+/**
+ * Convert an activity instance to a point.
+ */
+function activityInstanceToPoint(
+  activityInstance: ActivityInstance,
+  selectedActivityInstanceId: string,
+  activityInstancesMap: StringTMap<ActivityInstance> | null,
+): PointActivity | null {
+  if (activityInstance) {
+    const point: PointActivity = {
+      duration: activityInstance?.duration / 1000 || 0, // µs -> ms
+      id: activityInstance.id,
+      label: {
+        text: activityInstance.type,
+      },
+      selected: selectedActivityInstanceId === activityInstance.id,
+      type: 'activity',
+      x: getUnixEpochTime(activityInstance.startTimestamp),
+    };
+
+    if (activityInstance?.children?.length) {
+      point.children = activityInstance.children.reduce(
+        (children: PointActivity[], childId: string) => {
+          const childActivityInstance = activityInstancesMap[childId];
+          if (childActivityInstance) {
+            const newChild = activityInstanceToPoint(
+              childActivityInstance,
+              selectedActivityInstanceId,
+              activityInstancesMap,
+            );
+            if (newChild) {
+              children.push(newChild);
+            }
+          }
+          return children;
+        },
+        [],
+      );
+    }
+
+    return point;
+  }
+  return null;
+}
+
 export const getPlanningState = createFeatureSelector<PlanningState>(
   'planning',
 );
 
-export const getActivityInstances = createSelector(
+export const getActivityInstancesMap = createSelector(
   getPlanningState,
-  (state: PlanningState): ActivityInstance[] | null =>
-    state.activityInstances
-      ? Object.values(state.activityInstances).sort((a, b) =>
+  (state: PlanningState): StringTMap<ActivityInstance> =>
+    state.activityInstances,
+);
+
+export const getActivityInstances = createSelector(
+  getActivityInstancesMap,
+  (
+    activityInstances: StringTMap<ActivityInstance> | null,
+  ): ActivityInstance[] | null =>
+    activityInstances
+      ? Object.values(activityInstances).sort((a, b) =>
           compare(
             getUnixEpochTime(a.startTimestamp),
             getUnixEpochTime(b.startTimestamp),
@@ -147,12 +201,14 @@ export const getSelectedUiState = createSelector(
 
 export const getPanelsWithPoints = createSelector(
   getActivityInstances,
+  getActivityInstancesMap,
   getIdsToViolations,
   getSelectedActivityInstanceId,
   getSelectedUiState,
   getSimulationResults,
   (
     activityInstances: ActivityInstance[] | null,
+    activityInstancesMap: StringTMap<ActivityInstance> | null,
     idsToViolations: StringTMap<Violation[]>,
     selectedActivityInstanceId: string | null,
     uiState: UiState,
@@ -172,7 +228,10 @@ export const getPanelsWithPoints = createSelector(
                 const points = activities.reduce((newPoints, point) => {
                   const r = new RegExp(subBand?.filter?.activity?.type);
                   const includePoint = r.test(point.type);
-                  if (includePoint) {
+                  if (
+                    includePoint &&
+                    (point.parent === null || point.parent === undefined)
+                  ) {
                     if (idsToViolations[point.id]) {
                       bandConstraintViolations.push(
                         ...idsToViolations[point.id],
@@ -182,16 +241,12 @@ export const getPanelsWithPoints = createSelector(
                       );
                     }
 
-                    newPoints.push({
-                      duration: point?.duration / 1000 || 0, // µs -> ms
-                      id: point.id,
-                      label: {
-                        text: point.type,
-                      },
-                      selected: selectedActivityInstanceId === point.id,
-                      type: 'activity',
-                      x: getUnixEpochTime(point.startTimestamp),
-                    });
+                    const activityPoint = activityInstanceToPoint(
+                      point,
+                      selectedActivityInstanceId,
+                      activityInstancesMap,
+                    );
+                    newPoints.push(activityPoint);
                   }
                   return newPoints;
                 }, []);

@@ -23,7 +23,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import { Subject } from 'rxjs';
 import { debounceTime, first, tap } from 'rxjs/operators';
 import { SubSink } from 'subsink';
@@ -32,6 +32,7 @@ import { PanelHeaderModule } from '../../components';
 import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
+import { getActivityInstancesMap } from '../../selectors';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
@@ -39,6 +40,7 @@ import {
   ActivityInstanceParameter,
   ActivityType,
   CreateActivityInstance,
+  StringTMap,
   UpdateActivityInstance,
 } from '../../types';
 import { DecompositionTreeModule } from '../decomposition-tree/decomposition-tree.component';
@@ -96,6 +98,7 @@ export class UpsertActivityInstanceFormComponent
     UpdateActivityInstance
   >();
 
+  activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   errorStateMatcher: ErrorStateMatcher = new ActivityInstanceFormStateMatcher();
   form: FormGroup;
   inputListener: Subject<AbstractControl> = new Subject<AbstractControl>();
@@ -109,6 +112,12 @@ export class UpsertActivityInstanceFormComponent
     private store: Store<RootState>,
   ) {
     this.subs.add(
+      this.store
+        .pipe(select(getActivityInstancesMap))
+        .subscribe(activityInstancesMap => {
+          this.activityInstancesMap = activityInstancesMap;
+          this.cdRef.markForCheck();
+        }),
       this.inputListener
         .pipe(
           // Assume form has error before validation so it does not flicker

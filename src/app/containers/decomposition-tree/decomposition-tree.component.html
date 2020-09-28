@@ -14,9 +14,9 @@
 </div>
 
 <ul *ngIf="hasChildren && expanded">
-  <li *ngFor="let childId of activityInstance?.children">
+  <li *ngFor="let childId of sortedChildIds">
     <app-decomposition-tree
-      [activityInstance]="activityInstances[childId]"
+      [activityInstance]="activityInstancesMap[childId]"
     ></app-decomposition-tree>
   </li>
 </ul>

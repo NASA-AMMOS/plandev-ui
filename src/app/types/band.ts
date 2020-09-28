@@ -68,6 +68,7 @@ export interface Point {
 }
 
 export interface PointActivity extends Point {
+  children?: PointActivity[];
   duration: number;
   label?: Label;
 }

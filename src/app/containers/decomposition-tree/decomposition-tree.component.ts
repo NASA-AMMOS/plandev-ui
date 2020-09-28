@@ -5,8 +5,11 @@ import {
   Component,
   Input,
   NgModule,
+  OnChanges,
   OnDestroy,
+  SimpleChanges,
 } from '@angular/core';
+import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { select, Store } from '@ngrx/store';
 import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
@@ -25,77 +28,15 @@ import {
   styleUrls: ['./decomposition-tree.component.css'],
   templateUrl: './decomposition-tree.component.html',
 })
-export class DecompositionTreeComponent implements OnDestroy {
+export class DecompositionTreeComponent implements OnChanges, OnDestroy {
   @Input()
-  activityInstance: ActivityInstance = {
-    children: ['instance1', 'instance2', 'instance3'],
-    duration: 0,
-    id: 'instance0',
-    parameters: [],
-    parent: null,
-    startTimestamp: '2020-001T00:00:00',
-    type: 'RunInstrument',
-  };
+  activityInstance: ActivityInstance | null = null;
 
   @Input()
-  activityInstances: StringTMap<ActivityInstance> | null = {
-    instance1: {
-      children: ['instance4', 'instance5', 'instance6'],
-      duration: 0,
-      id: 'instance1',
-      parameters: [],
-      parent: 'instance0',
-      startTimestamp: '2020-001T00:00:10',
-      type: 'PointCamera',
-    },
-    instance2: {
-      children: [],
-      duration: 0,
-      id: 'instance2',
-      parameters: [],
-      parent: 'instance0',
-      startTimestamp: '2020-001T00:00:20',
-      type: 'CaptureImage',
-    },
-    instance3: {
-      children: [],
-      duration: 0,
-      id: 'instance3',
-      parameters: [],
-      parent: 'instance0',
-      startTimestamp: '2020-001T00:00:30',
-      type: 'DownlinkData',
-    },
-    instance4: {
-      children: [],
-      duration: 0,
-      id: 'instance4',
-      parameters: [],
-      parent: 'instance1',
-      startTimestamp: '2020-001T00:00:02',
-      type: 'RotateCamera',
-    },
-    instance5: {
-      children: [],
-      duration: 0,
-      id: 'instance5',
-      parameters: [],
-      parent: 'instance1',
-      startTimestamp: '2020-001T00:00:04',
-      type: 'TranslateCamera',
-    },
-    instance6: {
-      children: [],
-      duration: 0,
-      id: 'instance6',
-      parameters: [],
-      parent: 'instance1',
-      startTimestamp: '2020-001T00:00:06',
-      type: 'RotateCamera',
-    },
-  };
+  activityInstancesMap: StringTMap<ActivityInstance> | null = null;
 
   decompositionTreeState: DecompositionTreeState = { instance: {} };
+  sortedChildIds: string[] = [];
 
   private subs = new SubSink();
 
@@ -111,6 +52,30 @@ export class DecompositionTreeComponent implements OnDestroy {
           this.cdRef.markForCheck();
         }),
     );
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.activityInstance) {
+      if (this.activityInstance?.children?.length) {
+        this.sortedChildIds = [...this.activityInstance.children].sort(
+          (id0: string, id1: string) => {
+            const a = this.activityInstancesMap[id0];
+            const b = this.activityInstancesMap[id1];
+            const aTime = getUnixEpochTime(a.startTimestamp);
+            const bTime = getUnixEpochTime(b.startTimestamp);
+            if (aTime < bTime) {
+              return -1;
+            }
+            if (aTime > bTime) {
+              return 1;
+            }
+            return 0;
+          },
+        );
+      } else {
+        this.sortedChildIds = [];
+      }
+    }
   }
 
   ngOnDestroy(): void {

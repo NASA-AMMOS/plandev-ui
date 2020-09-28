@@ -132,7 +132,10 @@
       </mat-expansion-panel-header>
 
       <div class="expansion-panel-body">
-        <app-decomposition-tree></app-decomposition-tree>
+        <app-decomposition-tree
+          [activityInstance]="activityInstance"
+          [activityInstancesMap]="activityInstancesMap"
+        ></app-decomposition-tree>
       </div>
     </mat-expansion-panel>
   </div>
