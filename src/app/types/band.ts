@@ -71,6 +71,7 @@ export interface PointActivity extends Point {
   children?: PointActivity[];
   duration: number;
   label?: Label;
+  parent: string | null;
 }
 
 export interface PointLine extends Point {

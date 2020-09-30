@@ -13,6 +13,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import type { ScaleTime } from 'd3';
 import {
   forEachCanvas,
   getXScale,
@@ -30,6 +31,9 @@ import { SubBandService } from '../sub-band.service';
 export class ActivityBandComponent implements AfterViewInit, OnChanges {
   @Input()
   activityHeight = 20;
+
+  @Input()
+  activityRowPadding = 20;
 
   @Input()
   bandId: string;
@@ -110,6 +114,13 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     this.redraw();
   }
 
+  /**
+   * Get the next y value for a row in an activity band.
+   */
+  get nextY() {
+    return this.activityHeight + this.activityRowPadding;
+  }
+
   setLabelContext(point: PointActivity, ctx: CanvasRenderingContext2D): void {
     const fontSize = point.label?.fontSize || 12;
     const fontFace = point.label?.fontFace || 'Georgia';
@@ -153,7 +164,9 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     const layout = this.layout || 'compact';
     if (layout === 'compact') {
       this.redrawCompact();
-    } else {
+    } else if (layout === 'decomposition') {
+      this.redrawDecomposition();
+    } else if (layout === 'waterfall') {
       this.redrawWaterfall();
     }
   }
@@ -185,9 +198,13 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
       } else {
         const selected = point.selected || false;
         if (selected) {
-          ctx.fillStyle = '#f5ec42';
+          ctx.fillStyle = '#81D4FA';
         } else {
-          ctx.fillStyle = this.color || point?.color || '#d651ff';
+          let defaultColor = '#283593';
+          if (point?.parent !== null) {
+            defaultColor = '#798aed';
+          }
+          ctx.fillStyle = this.color || point?.color || defaultColor;
         }
 
         // Rect.
@@ -225,7 +242,6 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
     if (points.length) {
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-      const rowPadding = 20;
       let largestY = Number.MIN_SAFE_INTEGER;
       const rows = {};
 
@@ -236,7 +252,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         const textWidth = this.getLabelTextWidth(canvases, point);
         const width = end + textWidth;
 
-        let row = 0.5;
+        let row = 1.0;
         let rowFound = false;
         while (!rowFound) {
           if (rows[row] !== undefined && rows[row] >= x) {
@@ -246,7 +262,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
             rowFound = true;
           }
         }
-        const y = row * (this.activityHeight + rowPadding);
+        const y = row * this.nextY;
         if (y > largestY) {
           largestY = y;
         }
@@ -262,7 +278,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         );
       }
 
-      const newHeight = largestY + this.activityHeight + rowPadding;
+      const newHeight = largestY + this.nextY;
       if (this.height !== newHeight) {
         this.updateBand.emit({
           id: this.bandId,
@@ -270,6 +286,133 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         });
       }
     }
+  }
+
+  /**
+   * @note Assumes points is sorted by x increasing.
+   */
+  redrawDecomposition() {
+    const hiddenCanvasColor = rgbColorGenerator();
+    const canvases = this.subBandService.getCanvases(this.id);
+
+    forEachCanvas(canvases, (_, ctx) => {
+      ctx.clearRect(0, 0, this.drawWidth, this.drawHeight);
+    });
+
+    const points = (this.points || []).filter(
+      point =>
+        point.x + point.duration >= this.viewTimeRange.start &&
+        point.x <= this.viewTimeRange.end,
+    );
+
+    if (points.length) {
+      const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      const coords = [];
+      const rows = {};
+
+      for (let i = 0, l = points.length; i < l; ++i) {
+        const point = points[i];
+        const xStart = Math.floor(xScale(point.x));
+        const end = Math.floor(xScale(point.x + point.duration));
+        const textWidth = this.getLabelTextWidth(canvases, point);
+        const xEnd = end + textWidth;
+
+        let row = 1;
+        let rowFound = false;
+        while (!rowFound) {
+          if (rows[row] !== undefined && rows[row] >= xStart) {
+            ++row;
+          } else {
+            rows[row] = xEnd;
+            rowFound = true;
+          }
+        }
+        const y = row * this.nextY;
+
+        this.redrawCanvases(
+          canvases,
+          end,
+          this.activityHeight,
+          hiddenCanvasColor,
+          point,
+          xStart,
+          y,
+        );
+
+        coords.push({ xStart, xEnd, y });
+
+        const childCoords = this.redrawDecompositionChildren(
+          point,
+          y,
+          xScale,
+          canvases,
+          hiddenCanvasColor,
+        );
+
+        coords.push(...childCoords);
+      }
+
+      let largestY = Number.MIN_SAFE_INTEGER;
+      for (const { y } of coords) {
+        if (y > largestY) {
+          largestY = y;
+        }
+      }
+
+      const extraBottomPadding = 20;
+      const newHeight = largestY + this.nextY + extraBottomPadding;
+      if (this.height !== newHeight) {
+        this.updateBand.emit({
+          id: this.bandId,
+          update: { height: newHeight },
+        });
+      }
+    }
+  }
+
+  /**
+   * @note Assumes child points are sorted by x increasing.
+   */
+  redrawDecompositionChildren(
+    parent: PointActivity,
+    parentY: number,
+    xScale: ScaleTime<number, number>,
+    canvases: HTMLCanvasElement[],
+    hiddenCanvasColor: IterableIterator<string>,
+  ) {
+    const coords = [];
+
+    if (parent?.children?.length) {
+      let y = parentY;
+
+      for (const point of parent.children) {
+        y = y + this.nextY;
+        const x = Math.floor(xScale(point.x));
+        const end = Math.floor(xScale(point.x + point.duration));
+        const textWidth = this.getLabelTextWidth(canvases, point);
+        const width = end + textWidth;
+        this.redrawCanvases(
+          canvases,
+          end,
+          this.activityHeight,
+          hiddenCanvasColor,
+          point,
+          x,
+          y,
+        );
+        coords.push({ xEnd: width, xStart: x, y });
+        const childCoords = this.redrawDecompositionChildren(
+          point,
+          y,
+          xScale,
+          canvases,
+          hiddenCanvasColor,
+        );
+        coords.push(...childCoords);
+      }
+    }
+
+    return coords;
   }
 
   /**

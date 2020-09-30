@@ -41,7 +41,7 @@ export class PlanningEffects {
                       children: [],
                       duration: 0,
                       id,
-                      parent: '',
+                      parent: null,
                     },
                   }),
                 ];

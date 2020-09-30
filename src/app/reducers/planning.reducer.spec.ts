@@ -419,6 +419,8 @@ describe('planning reducer', () => {
         ...initialState,
         activityInstances: {},
         constraintViolations: simulationResponse.violations,
+        lastActivityInstanceUpdate: state.lastActivityInstanceUpdate,
+        lastSimulationTime: state.lastSimulationTime,
         simulationResults: simulationResponse.results,
       });
     });
@@ -504,6 +506,7 @@ describe('planning reducer', () => {
             type: 'EatCake',
           },
         },
+        lastActivityInstanceUpdate: state.lastActivityInstanceUpdate,
       });
     });
   });

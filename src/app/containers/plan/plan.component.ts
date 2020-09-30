@@ -37,6 +37,7 @@ import {
   getSelectedActivityInstance,
   getSelectedPlan,
   getSelectedUiState,
+  getSimulationOutOfDate,
   getUiStates,
   getViewTimeRange,
   getViolationListState,
@@ -129,6 +130,7 @@ export class PlanComponent implements OnDestroy {
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
   selectedUiState: UiState | null;
+  simulationOutOfDate = false;
   totalConstraintViolations = 0;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
@@ -193,6 +195,12 @@ export class PlanComponent implements OnDestroy {
         this.selectedUiState = selectedUiState;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getSimulationOutOfDate))
+        .subscribe(simulationOutOfDate => {
+          this.simulationOutOfDate = simulationOutOfDate;
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getUiStates)).subscribe(uiStates => {
         this.uiStates = uiStates;
         this.cdRef.markForCheck();

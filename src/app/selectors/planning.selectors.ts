@@ -34,6 +34,7 @@ function activityInstanceToPoint(
       label: {
         text: activityInstance.type,
       },
+      parent: activityInstance?.parent || null,
       selected: selectedActivityInstanceId === activityInstance.id,
       type: 'activity',
       x: getUnixEpochTime(activityInstance.startTimestamp),
@@ -57,6 +58,7 @@ function activityInstanceToPoint(
         },
         [],
       );
+      point.children = point.children.sort((a, b) => compare(a.x, b.x, true));
     }
 
     return point;
@@ -143,6 +145,23 @@ export const getConstraintViolationsByCategory = createSelector(
 export const getSelectedPlan = createSelector(
   getPlanningState,
   (state: PlanningState): Plan | null => state.selectedPlan,
+);
+
+export const getLastActivityInstanceUpdate = createSelector(
+  getPlanningState,
+  (state: PlanningState): number => state.lastActivityInstanceUpdate,
+);
+
+export const getLastSimulationTime = createSelector(
+  getPlanningState,
+  (state: PlanningState): number => state.lastSimulationTime,
+);
+
+export const getSimulationOutOfDate = createSelector(
+  getLastActivityInstanceUpdate,
+  getLastSimulationTime,
+  (lastActivityInstanceUpdate: number, lastSimulationTime: number) =>
+    lastActivityInstanceUpdate > lastSimulationTime,
 );
 
 export const getIdsToViolations = createSelector(

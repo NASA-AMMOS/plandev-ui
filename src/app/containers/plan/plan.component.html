@@ -4,6 +4,15 @@
 
   <div class="right">
     <button
+      class="simulation-out-of-date"
+      *ngIf="simulationOutOfDate"
+      mat-icon-button
+      matTooltip="Simulation out of date. Click here to simulate."
+      (click)="runSimulation()"
+    >
+      <mat-icon>error_outline</mat-icon>
+    </button>
+    <button
       mat-raised-button
       class="right-button"
       [matBadge]="totalConstraintViolations"

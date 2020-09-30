@@ -42,3 +42,7 @@ ngx-codemirror {
   /* 82px is the height of the select form field */
   height: calc(100% - var(--panel-header-height, 36px) - 82px);
 }
+
+.simulation-out-of-date {
+  color: #f44336;
+}

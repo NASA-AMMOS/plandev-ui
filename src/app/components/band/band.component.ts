@@ -384,7 +384,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         .on('drag', () => {
           const { event } = d3;
           const { sourceEvent, subject: point } = event;
-          const { id, type } = point;
+          const { id, parent, type } = point;
           const xScale = getXScale(this.viewTimeRange, this.drawWidth);
           const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
             this.interactionContainerSvg.nativeElement,
@@ -398,6 +398,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
             id &&
             type &&
             type === 'activity' &&
+            parent === null &&
             unixEpochTime >= this.maxTimeRange.start &&
             unixEpochTime <= this.maxTimeRange.end
           ) {
@@ -415,7 +416,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         .on('end', () => {
           const { event } = d3;
           const { sourceEvent, subject: point } = event;
-          const { id, type } = point;
+          const { id, parent, type } = point;
           const xScale = getXScale(this.viewTimeRange, this.drawWidth);
           const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
             this.interactionContainerSvg.nativeElement,
@@ -424,7 +425,13 @@ export class BandComponent implements AfterViewInit, OnChanges {
             offsetX,
           );
 
-          if (id && type && type === 'activity' && point.x !== unixEpochTime) {
+          if (
+            id &&
+            type &&
+            type === 'activity' &&
+            parent === null &&
+            point.x !== unixEpochTime
+          ) {
             this.savePoint.emit({
               id,
               type,

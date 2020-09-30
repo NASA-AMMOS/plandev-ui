@@ -23,6 +23,8 @@ export interface PlanningState {
   adaptations: StringTMap<Adaptation> | null;
   constraintViolations: Violation[] | null;
   decompositionTreeState: DecompositionTreeState;
+  lastActivityInstanceUpdate: number;
+  lastSimulationTime: number;
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
@@ -39,6 +41,8 @@ export const initialState: PlanningState = {
   adaptations: null,
   constraintViolations: null,
   decompositionTreeState: { instance: {} },
+  lastActivityInstanceUpdate: 0,
+  lastSimulationTime: 0,
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
@@ -235,49 +239,56 @@ export const reducer = createReducer(
     (
       state,
       { simulationResponse: { activities = [], results, violations = [] } },
-    ) => ({
-      ...state,
-      activityInstances: {
-        ...keyBy(activities, 'id'),
-      },
-      constraintViolations: violations.map(violation => ({
-        ...violation,
-        windows: violation.windows.map(({ end, start }) => {
-          const planStart = getUnixEpochTime(state.selectedPlan.startTimestamp);
-          return {
-            end: planStart + end / 1000,
-            start: planStart + start / 1000,
-          };
-        }),
-      })),
-      simulationResults: results || [],
-      violationListState: {
-        ...violations.reduce(
-          (violationListState: ViolationListState, violation) => {
-            const { constraint } = violation;
-            const { category, name } = constraint;
-            if (state.violationListState.category[category] === undefined) {
-              violationListState.category[category] = {
-                expanded: true,
-                visible: true,
-              };
-            }
-            if (state.violationListState.constraint[name] === undefined) {
-              violationListState.constraint[name] = {
-                expanded: false,
-                visible: true,
-              };
-            }
-            return violationListState;
-          },
-          {
-            ...state.violationListState,
-            category: { ...state.violationListState.category },
-            constraint: { ...state.violationListState.constraint },
-          },
-        ),
-      },
-    }),
+    ) => {
+      const now = performance.now();
+      return {
+        ...state,
+        activityInstances: {
+          ...keyBy(activities, 'id'),
+        },
+        constraintViolations: violations.map(violation => ({
+          ...violation,
+          windows: violation.windows.map(({ end, start }) => {
+            const planStart = getUnixEpochTime(
+              state.selectedPlan.startTimestamp,
+            );
+            return {
+              end: planStart + end / 1000,
+              start: planStart + start / 1000,
+            };
+          }),
+        })),
+        lastActivityInstanceUpdate: now,
+        lastSimulationTime: now,
+        simulationResults: results || [],
+        violationListState: {
+          ...violations.reduce(
+            (violationListState: ViolationListState, violation) => {
+              const { constraint } = violation;
+              const { category, name } = constraint;
+              if (state.violationListState.category[category] === undefined) {
+                violationListState.category[category] = {
+                  expanded: true,
+                  visible: true,
+                };
+              }
+              if (state.violationListState.constraint[name] === undefined) {
+                violationListState.constraint[name] = {
+                  expanded: false,
+                  visible: true,
+                };
+              }
+              return violationListState;
+            },
+            {
+              ...state.violationListState,
+              category: { ...state.violationListState.category },
+              constraint: { ...state.violationListState.constraint },
+            },
+          ),
+        },
+      };
+    },
   ),
   on(
     PlanningActions.setSelectedActivityInstanceId,
@@ -296,6 +307,7 @@ export const reducer = createReducer(
         ...action.activityInstance,
       },
     },
+    lastActivityInstanceUpdate: performance.now(),
   })),
   on(PlanningActions.updateAllUiStates, (state, { uiStates }) => ({
     ...state,

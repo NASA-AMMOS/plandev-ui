@@ -149,7 +149,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       ctx.beginPath();
       line.context(ctx)(points);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = this.color || '#d651ff';
+      ctx.strokeStyle = this.color || '#283593';
       ctx.stroke();
     });
 
@@ -169,7 +169,7 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = this.color || point?.color || '#d651ff';
+          ctx.fillStyle = this.color || point?.color || '#283593';
         }
         ctx.fill(circle);
       });

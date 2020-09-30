@@ -16,7 +16,7 @@ export const activityInstance: ActivityInstance = {
       value: 'down',
     },
   ],
-  parent: '',
+  parent: null,
   startTimestamp: '2020-001T00:00:00',
   type: 'PeelBanana',
 };
