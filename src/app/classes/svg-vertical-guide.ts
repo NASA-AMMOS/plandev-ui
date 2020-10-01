@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+import { select } from 'd3-selection';
 import { hideTooltip, showTooltip } from '../functions';
 import { Guide, Selection } from '../types';
 
@@ -56,7 +56,7 @@ export class SvgVerticalGuide {
     guide: Guide,
   ) {
     this.collapsedCount = 1;
-    this.container = d3.select(container);
+    this.container = select(container);
     this.group = this.container.select<SVGGElement>(`#${guide.id}`);
     this.guide = guide;
     this.id = guide.id;
@@ -102,9 +102,13 @@ export class SvgVerticalGuide {
       .attr('r', circleRadius)
       .attr('fill', circleColor);
     this.circle
-      .on('mousemove', () =>
-        showTooltip(d3.event, this.tooltipText, this.options.containerWidth),
-      )
+      .on('mousemove', (event: MouseEvent) => {
+        return showTooltip(
+          event,
+          this.tooltipText,
+          this.options.containerWidth,
+        );
+      })
       .on('mouseleave', () => {
         hideTooltip();
       });

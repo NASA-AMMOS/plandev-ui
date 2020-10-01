@@ -1,5 +1,6 @@
 import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
-import * as d3 from 'd3';
+import type { ScaleTime } from 'd3-scale';
+import { select } from 'd3-selection';
 import { Guide, TimeRange } from '../types';
 import { calcBounds, SvgVerticalGuide } from './svg-vertical-guide';
 
@@ -17,7 +18,7 @@ export class SvgVerticalGuideCollection {
   public containerWidth: number;
   public guides: SvgVerticalGuide[];
   public viewTimeRange: TimeRange;
-  public xScale: d3.ScaleTime<number, number>;
+  public xScale: ScaleTime<number, number>;
 
   constructor(
     bandContainer: HTMLDivElement,
@@ -26,7 +27,7 @@ export class SvgVerticalGuideCollection {
     containerWidth: number,
     guides: Guide[],
     viewTimeRange: TimeRange,
-    xScale: d3.ScaleTime<number, number>,
+    xScale: ScaleTime<number, number>,
   ) {
     this.bandContainer = bandContainer;
     this.container = container;
@@ -42,7 +43,7 @@ export class SvgVerticalGuideCollection {
    * Removes all guides from the document.
    */
   clearAll() {
-    d3.select(this.container).selectAll(`.guide-group`).remove();
+    select(this.container).selectAll(`.guide-group`).remove();
   }
 
   /**
@@ -63,7 +64,7 @@ export class SvgVerticalGuideCollection {
    * Attach guide lines to child bands.
    */
   drawGuideLines() {
-    d3.select(this.bandContainer)
+    select(this.bandContainer)
       .selectAll('app-band .interaction-container .vertical-guide-group')
       .selectAll('.guide--vertical')
       .data(this.guides)

@@ -12,7 +12,12 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import * as d3 from 'd3';
+import type { D3BrushEvent } from 'd3-brush';
+import { brushX } from 'd3-brush';
+import type { ScaleTime } from 'd3-scale';
+import { scaleTime } from 'd3-scale';
+import type { Selection } from 'd3-selection';
+import { select } from 'd3-selection';
 import {
   getTimeFromSvgMousePosition,
   hideTooltip,
@@ -53,7 +58,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
 
   public drawHeight: number = this.height;
   public drawWidth: number;
-  public gBrush: d3.Selection<SVGGElement, unknown, null, undefined>;
+  public gBrush: Selection<SVGGElement, unknown, null, undefined>;
   public marginBottom = 0;
 
   constructor(private elRef: ElementRef) {
@@ -78,11 +83,11 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
   }
 
   ngAfterViewInit(): void {
-    d3.select(this.brush.nativeElement).on('mousemove', () => {
-      this.showTooltip(d3.event);
+    select(this.brush.nativeElement).on('mousemove', (event: MouseEvent) => {
+      this.showTooltip(event);
     });
 
-    d3.select(this.brush.nativeElement).on('mouseleave', () => {
+    select(this.brush.nativeElement).on('mouseleave', () => {
       hideTooltip();
     });
 
@@ -90,23 +95,25 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
   }
 
   drawBrush(): void {
-    const xBrush = d3
-      .brushX()
+    const xBrush = brushX()
       .extent([
         [0, 0],
         [this.drawWidth, this.drawHeight],
       ])
-      .on('start', () => {
-        this.setBrushStyles(d3.event.selection);
-        this.showTooltip(d3.event.sourceEvent);
+      .on('start', (event: D3BrushEvent<number[]>) => {
+        const selection = event.selection as number[];
+        this.setBrushStyles(selection);
+        this.showTooltip(event.sourceEvent);
       })
-      .on('brush', () => {
-        this.setBrushStyles(d3.event.selection);
-        this.showTooltip(d3.event.sourceEvent);
+      .on('brush', (event: D3BrushEvent<number[]>) => {
+        const selection = event.selection as number[];
+        this.setBrushStyles(selection);
+        this.showTooltip(event.sourceEvent);
       })
-      .on('end', () => {
-        this.setBrushStyles(d3.event.selection);
-        this.brushEnd();
+      .on('end', (event: D3BrushEvent<number[]>) => {
+        const selection = event.selection as number[];
+        this.setBrushStyles(selection);
+        this.brushEnd(event);
         hideTooltip();
       });
 
@@ -116,7 +123,7 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
       new Date(this.viewTimeRange.end),
     ].map(xScale);
 
-    this.gBrush = d3.select(this.brush.nativeElement).call(xBrush);
+    this.gBrush = select(this.brush.nativeElement).call(xBrush);
     this.gBrush.call(xBrush.move, extent).call(g =>
       g
         .select('.overlay')
@@ -130,11 +137,8 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
     return [new Date(this.maxTimeRange.start), new Date(this.maxTimeRange.end)];
   }
 
-  getXScale(): d3.ScaleTime<number, number> {
-    return d3
-      .scaleTime()
-      .domain(this.getDomain())
-      .rangeRound([0, this.drawWidth]);
+  getXScale(): ScaleTime<number, number> {
+    return scaleTime().domain(this.getDomain()).rangeRound([0, this.drawWidth]);
   }
 
   @HostListener('window:resize', ['$event'])
@@ -201,16 +205,17 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  brushEnd(): void {
-    if (!d3.event.sourceEvent) {
+  brushEnd(event: D3BrushEvent<number[]>): void {
+    if (!event.sourceEvent) {
       return;
     }
-    if (!d3.event.selection) {
+    if (!event.selection) {
       return;
     }
 
     const x = this.getXScale();
-    const [start, end] = d3.event.selection.map(x.invert);
+    const selection = event.selection as number[];
+    const [start, end] = selection.map(x.invert);
 
     this.updateViewTimeRange.emit({
       end: end.getTime(),

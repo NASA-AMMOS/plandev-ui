@@ -1,4 +1,5 @@
-import * as d3 from 'd3';
+import type { ScaleTime } from 'd3-scale';
+import { select } from 'd3-selection';
 import { Constraint, Selection, TimeRange, Violation } from '../types';
 
 export class SvgConstraintViolation {
@@ -13,7 +14,7 @@ export class SvgConstraintViolation {
   public tooltipText: string;
   public viewTimeRange: TimeRange;
   public windows: TimeRange[];
-  public xScale: d3.ScaleTime<number, number>;
+  public xScale: ScaleTime<number, number>;
 
   constructor(
     container: SVGGElement,
@@ -23,10 +24,10 @@ export class SvgConstraintViolation {
     marginTop: number,
     viewTimeRange: TimeRange,
     violation: Violation,
-    xScale: d3.ScaleTime<number, number>,
+    xScale: ScaleTime<number, number>,
   ) {
     this.constraint = violation.constraint;
-    this.container = d3.select(container);
+    this.container = select(container);
     this.containerHeight = containerHeight;
     this.containerWidth = containerWidth;
     this.group = this.container.select(`#${violation.constraint.name}`);

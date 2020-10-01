@@ -15,7 +15,9 @@ import {
   ViewChild,
 } from '@angular/core';
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
-import * as d3 from 'd3';
+import { axisBottom, axisLeft } from 'd3-axis';
+import { D3DragEvent, drag } from 'd3-drag';
+import { select } from 'd3-selection';
 import { SvgConstraintViolationCollection } from '../../classes';
 import {
   getPointFromCanvasSelection,
@@ -36,6 +38,7 @@ import {
   Guide,
   GuideDialogData,
   Point,
+  PointActivity,
   SavePoint,
   SelectPoint,
   SubBand,
@@ -193,7 +196,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   drawHorizontalGuides(): void {
     const { nativeElement } = this.horizontalGuideGroup;
-    const horizontalGuideGroup = d3.select(nativeElement);
+    const horizontalGuideGroup = select(nativeElement);
     horizontalGuideGroup.selectAll('.guide--horizontal').remove();
 
     const yOffset = 15;
@@ -274,11 +277,10 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   drawXAxis(): void {
     const xScale = getXScale(this.viewTimeRange, this.drawWidth);
-    const xAxis = d3
-      .axisBottom(xScale)
+    const xAxis = axisBottom(xScale)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime(), false))
       .tickSizeInner(-this.drawHeight);
-    const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
+    const axisContainerGroup = select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--x').remove();
     const axisG = axisContainerGroup
       .append('g')
@@ -289,7 +291,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
   drawYAxis(): void {
     let totalWidth = 0;
-    const axisContainerGroup = d3.select(this.axisContainerGroup.nativeElement);
+    const axisContainerGroup = select(this.axisContainerGroup.nativeElement);
     axisContainerGroup.selectAll('.axis--y').remove();
 
     const yAxes = this.yAxes || [];
@@ -300,7 +302,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       const yAxis = yAxes[i];
       const domain = yAxis?.scaleDomain || [];
       const yScale = getYScale(domain, this.drawHeight);
-      const axis = d3.axisLeft(yScale).ticks(yAxis.tickCount || 5);
+      const axis = axisLeft(yScale).ticks(yAxis.tickCount || 5);
 
       const axisMargin = 20;
       const startPosition = -(totalWidth + axisMargin * i);
@@ -355,11 +357,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
   initEvents(): void {
     let offsetX = 0;
 
-    d3.select(this.interactionContainerSvg.nativeElement).call(
-      d3
-        .drag()
-        .subject(() => {
-          const { event } = d3;
+    select(this.interactionContainerSvg.nativeElement).call(
+      drag()
+        .subject((event: D3DragEvent<SVGElement, null, null>) => {
           const { sourceEvent } = event;
           const points = this.getPointsFromMouseEvent(sourceEvent);
 
@@ -371,8 +371,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
 
           return {};
         })
-        .on('start', () => {
-          const { event } = d3;
+        .on('start', (event: D3DragEvent<SVGElement, null, Point>) => {
           const { sourceEvent, subject: point } = event;
           const { x } = getSvgMousePosition(
             this.interactionContainerSvg.nativeElement,
@@ -381,8 +380,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
           const xScale = getXScale(this.viewTimeRange, this.drawWidth);
           offsetX = x - xScale(point.x);
         })
-        .on('drag', () => {
-          const { event } = d3;
+        .on('drag', (event: D3DragEvent<SVGElement, null, PointActivity>) => {
           const { sourceEvent, subject: point } = event;
           const { id, parent, type } = point;
           const xScale = getXScale(this.viewTimeRange, this.drawWidth);
@@ -413,8 +411,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
             });
           }
         })
-        .on('end', () => {
-          const { event } = d3;
+        .on('end', (event: D3DragEvent<SVGElement, null, PointActivity>) => {
           const { sourceEvent, subject: point } = event;
           const { id, parent, type } = point;
           const xScale = getXScale(this.viewTimeRange, this.drawWidth);
@@ -441,10 +438,9 @@ export class BandComponent implements AfterViewInit, OnChanges {
         }),
     );
 
-    d3.select(this.interactionContainerSvg.nativeElement).on(
+    select(this.interactionContainerSvg.nativeElement).on(
       'mousemove',
-      () => {
-        const event = d3.event as MouseEvent;
+      (event: MouseEvent) => {
         const points = this.getPointsFromMouseEvent(event);
         const xScale = getXScale(this.viewTimeRange, this.drawWidth);
         const { doyTimestamp, unixEpochTime } = getTimeFromSvgMousePosition(
@@ -463,7 +459,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
       },
     );
 
-    d3.select(this.interactionContainerSvg.nativeElement).on('mouseout', () => {
+    select(this.interactionContainerSvg.nativeElement).on('mouseout', () => {
       hideTooltip();
     });
   }
@@ -480,7 +476,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         xScale,
       );
       showTooltip(event, doyTimestamp, this.drawWidth);
-      d3.select(this.interactionContainerSvg.nativeElement)
+      select(this.interactionContainerSvg.nativeElement)
         .append('rect')
         .attr('class', 'activity-drag-guide')
         .attr('x', offsetX)
@@ -495,7 +491,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
-      d3.select(container).select('.activity-drag-guide').remove();
+      select(container).select('.activity-drag-guide').remove();
     }
   }
 
@@ -511,7 +507,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
         xScale,
       );
       showTooltip(event, doyTimestamp, this.drawWidth);
-      d3.select(container).select('.activity-drag-guide').attr('x', offsetX);
+      select(container).select('.activity-drag-guide').attr('x', offsetX);
     }
   }
 
@@ -520,7 +516,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
     if (hasSubBandOfType(this.subBands, 'activity')) {
       const container = this.interactionContainerSvg.nativeElement;
       hideTooltip();
-      d3.select(container).select('.activity-drag-guide').remove();
+      select(container).select('.activity-drag-guide').remove();
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
       const { doyTimestamp: startTimestamp } = getTimeFromSvgMousePosition(
         container,

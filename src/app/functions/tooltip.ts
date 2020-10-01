@@ -1,5 +1,5 @@
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
-import * as d3 from 'd3';
+import { select } from 'd3-selection';
 import { Point, PointActivity, PointLine, PointXRange } from '../types';
 
 export function getTooltipTextForPoints(points: Point[]): string {
@@ -73,7 +73,7 @@ export function getTooltipTextPointXRange(point: PointXRange): string {
 }
 
 export function hideTooltip() {
-  d3.select('app-tooltip').style('opacity', 0).style('z-index', -1).html('');
+  select('app-tooltip').style('opacity', 0).style('z-index', -1).html('');
 }
 
 export function showTooltip(
@@ -82,7 +82,7 @@ export function showTooltip(
   drawWidth: number,
 ): void {
   const { clientX, clientY } = event;
-  const appTooltip = d3.select('app-tooltip');
+  const appTooltip = select('app-tooltip');
   appTooltip.html(text); // Set html first so we can calculate the true width.
 
   const node = appTooltip.node() as HTMLElement;

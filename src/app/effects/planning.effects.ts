@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { scaleTime } from 'd3';
+import { scaleTime } from 'd3-scale';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { AppActions, PlanningActions, ToastActions } from '../actions';

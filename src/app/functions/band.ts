@@ -1,5 +1,6 @@
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
-import * as d3 from 'd3';
+import type { ScaleLinear, ScaleTime } from 'd3-scale';
+import { scaleLinear, scaleTime } from 'd3-scale';
 import { Point, StringTMap, SubBand, TimeRange } from '../types';
 
 export function forEachCanvas(
@@ -23,7 +24,7 @@ export function forEachCanvas(
 export function getTimeFromSvgMousePosition(
   el: SVGElement | SVGGElement,
   event: MouseEvent | DragEvent,
-  scale: d3.ScaleTime<number, number>,
+  scale: ScaleTime<number, number>,
   offsetX: number = 0,
 ): { doyTimestamp: string; unixEpochTime: number } {
   const position = getSvgMousePosition(el, event);
@@ -72,9 +73,8 @@ export function getSvgMousePosition(
 export function getXScale(
   timeRange: TimeRange = { end: 0, start: 0 },
   drawWidth: number,
-): d3.ScaleTime<number, number> {
-  return d3
-    .scaleTime()
+): ScaleTime<number, number> {
+  return scaleTime()
     .domain([new Date(timeRange.start), new Date(timeRange.end)])
     .range([0, drawWidth]);
 }
@@ -86,13 +86,12 @@ export function getXScale(
 export function getYScale(
   domain: number[],
   drawHeight: number,
-): d3.ScaleLinear<number, number> {
-  const scale = d3.scaleLinear().domain(domain);
+): ScaleLinear<number, number> {
+  const scale = scaleLinear().domain(domain);
   const [t0, t1] = scale.ticks();
   const step = Math.abs(t1 - t0);
   const [min, max] = domain;
-  return d3
-    .scaleLinear()
+  return scaleLinear()
     .domain([min - step, max + step])
     .range([drawHeight, 0]);
 }

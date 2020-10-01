@@ -1,4 +1,5 @@
-import * as d3 from 'd3';
+import type { ScaleTime } from 'd3-scale';
+import { select } from 'd3-selection';
 import { TimeRange, Violation } from '../types';
 import { SvgConstraintViolation } from './svg-constraint-violation';
 
@@ -10,7 +11,7 @@ export class SvgConstraintViolationCollection {
   public marginTop: number;
   public viewTimeRange: TimeRange;
   public violations: SvgConstraintViolation[];
-  public xScale: d3.ScaleTime<number, number>;
+  public xScale: ScaleTime<number, number>;
 
   constructor(
     container: SVGGElement,
@@ -20,7 +21,7 @@ export class SvgConstraintViolationCollection {
     marginTop: number,
     viewTimeRange: TimeRange,
     violations: Violation[],
-    xScale: d3.ScaleTime<number, number>,
+    xScale: ScaleTime<number, number>,
   ) {
     this.container = container;
     this.containerId = containerId;
@@ -37,7 +38,7 @@ export class SvgConstraintViolationCollection {
    * Removes all violations from the document.
    */
   clearAll() {
-    d3.select(this.container).selectAll(`.constraint-violation-group`).remove();
+    select(this.container).selectAll(`.constraint-violation-group`).remove();
   }
 
   /**

@@ -13,7 +13,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import type { ScaleTime } from 'd3';
+import type { ScaleTime } from 'd3-scale';
 import {
   forEachCanvas,
   getXScale,

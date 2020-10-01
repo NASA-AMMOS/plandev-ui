@@ -11,7 +11,7 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import * as d3 from 'd3';
+import { curveLinear, line as d3Line } from 'd3-shape';
 import {
   forEachCanvas,
   getXScale,
@@ -138,13 +138,10 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
     const points = this.points || [];
 
     // Line.
-    const interpolationType = this.interpolationType || 'curveLinear';
-    const curve = d3[interpolationType] || d3.curveLinear;
-    const line = d3
-      .line<PointLine>()
+    const line = d3Line<PointLine>()
       .x(d => Math.floor(xScale(d.x)))
       .y(d => Math.floor(yScale(d.y)))
-      .curve(curve);
+      .curve(curveLinear);
     forEachCanvas(canvases, (_, ctx) => {
       ctx.beginPath();
       line.context(ctx)(points);

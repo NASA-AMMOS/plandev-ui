@@ -13,7 +13,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
-import * as d3 from 'd3';
+import { axisBottom } from 'd3-axis';
+import type { D3BrushEvent } from 'd3-brush';
+import { brushX } from 'd3-brush';
+import type { ScaleTime } from 'd3-scale';
+import { scaleTime } from 'd3-scale';
+import { select } from 'd3-selection';
 import uniqueId from 'lodash-es/uniqueId';
 import {
   SvgConstraintViolationCollection,
@@ -110,11 +115,11 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   ngAfterViewInit(): void {
-    d3.select(this.brush.nativeElement).on('mousemove', () => {
-      this.showTooltip(d3.event);
+    select(this.brush.nativeElement).on('mousemove', (event: MouseEvent) => {
+      this.showTooltip(event);
     });
 
-    d3.select(this.brush.nativeElement).on('mouseleave', () => {
+    select(this.brush.nativeElement).on('mouseleave', () => {
       hideTooltip();
     });
 
@@ -139,9 +144,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
 
   drawTimeAxis(): void {
     const x = this.getXScale();
-    const axisGroup = d3.select(this.timeAxis.nativeElement);
-    const axis = d3
-      .axisBottom(x)
+    const axisGroup = select(this.timeAxis.nativeElement);
+    const axis = axisBottom(x)
       .tickFormat((date: Date) =>
         getDoyTimestamp(date.getTime(), false).split('T').pop(),
       )
@@ -186,9 +190,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
         return dates;
       }, {}),
     );
-    const axisGroup = d3.select(this.yearDayAxis.nativeElement);
-    const axis = d3
-      .axisBottom(x)
+    const axisGroup = select(this.yearDayAxis.nativeElement);
+    const axis = axisBottom(x)
       .tickValues(ticks)
       .tickFormat((date: Date) => getDoyTimestamp(date.getTime()).split('T')[0])
       .tickSize(this.tickSize);
@@ -203,23 +206,22 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
   }
 
   drawBrush(): void {
-    const xBrush = d3
-      .brushX()
+    const xBrush = brushX()
       .extent([
         [0, -11],
         [this.drawWidth, 22],
       ])
-      .on('start', () => {
-        this.showTooltip(d3.event.sourceEvent);
+      .on('start', (event: D3BrushEvent<number[]>) => {
+        this.showTooltip(event.sourceEvent);
       })
-      .on('brush', () => {
-        this.showTooltip(d3.event.sourceEvent);
+      .on('brush', (event: D3BrushEvent<number[]>) => {
+        this.showTooltip(event.sourceEvent);
       })
-      .on('end', () => {
-        this.brushEnd();
+      .on('end', (event: D3BrushEvent<number[]>) => {
+        this.brushEnd(event);
       });
 
-    const brush = d3.select(this.brush.nativeElement).call(xBrush);
+    const brush = select(this.brush.nativeElement).call(xBrush);
     brush.call(xBrush.move, null);
   }
 
@@ -230,8 +232,8 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     ];
   }
 
-  getXScale(): d3.ScaleTime<number, number> {
-    return d3.scaleTime().domain(this.getDomain()).range([0, this.drawWidth]);
+  getXScale(): ScaleTime<number, number> {
+    return scaleTime().domain(this.getDomain()).range([0, this.drawWidth]);
   }
 
   @HostListener('window:resize', ['$event'])
@@ -274,16 +276,17 @@ export class TimeAxisComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  brushEnd(): void {
-    if (!d3.event.sourceEvent) {
+  brushEnd(event: D3BrushEvent<number[]>): void {
+    if (!event.sourceEvent) {
       return;
     }
-    if (!d3.event.selection) {
+    if (!event.selection) {
       return;
     }
 
     const x = this.getXScale();
-    const [start, end] = d3.event.selection.map(x.invert);
+    const selection = event.selection as number[];
+    const [start, end] = selection.map(x.invert);
 
     this.updateViewTimeRange.emit({
       end: end.getTime(),
