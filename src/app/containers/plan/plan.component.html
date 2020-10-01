@@ -1,8 +1,7 @@
 <app-toolbar>
   <span *ngIf="!plan">Plan</span>
   <span *ngIf="plan">Plan: {{ plan.name }}</span>
-
-  <div class="right">
+  <span>
     <button
       class="simulation-out-of-date"
       *ngIf="simulationOutOfDate"
@@ -12,6 +11,9 @@
     >
       <mat-icon>error_outline</mat-icon>
     </button>
+  </span>
+
+  <div class="right">
     <button
       mat-raised-button
       class="right-button"

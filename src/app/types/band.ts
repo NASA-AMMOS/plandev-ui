@@ -119,7 +119,6 @@ export interface SubBandActivity extends SubBand {
 }
 
 export interface SubBandLine extends SubBand {
-  interpolationType?: string;
   points?: PointLine[];
 }
 

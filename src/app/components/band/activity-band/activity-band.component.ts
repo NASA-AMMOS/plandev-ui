@@ -308,26 +308,22 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     if (points.length) {
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
       const coords = [];
-      const rows = {};
 
       for (let i = 0, l = points.length; i < l; ++i) {
+        let largestXEnd = Number.MIN_SAFE_INTEGER;
+        let largestY = Number.MIN_SAFE_INTEGER;
         const point = points[i];
         const xStart = Math.floor(xScale(point.x));
         const end = Math.floor(xScale(point.x + point.duration));
         const textWidth = this.getLabelTextWidth(canvases, point);
         const xEnd = end + textWidth;
+        let y = this.nextY;
 
-        let row = 1;
-        let rowFound = false;
-        while (!rowFound) {
-          if (rows[row] !== undefined && rows[row] >= xStart) {
-            ++row;
-          } else {
-            rows[row] = xEnd;
-            rowFound = true;
+        for (const coord of coords) {
+          if (xStart <= coord.xEnd) {
+            y = coord.y + this.nextY;
           }
         }
-        const y = row * this.nextY;
 
         this.redrawCanvases(
           canvases,
@@ -339,7 +335,12 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
           y,
         );
 
-        coords.push({ xStart, xEnd, y });
+        if (xEnd > largestXEnd) {
+          largestXEnd = xEnd;
+        }
+        if (y > largestY) {
+          largestY = y;
+        }
 
         const childCoords = this.redrawDecompositionChildren(
           point,
@@ -349,18 +350,27 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
           hiddenCanvasColor,
         );
 
-        coords.push(...childCoords);
+        if (childCoords) {
+          if (childCoords.xEnd > largestXEnd) {
+            largestXEnd = childCoords.xEnd;
+          }
+          if (childCoords.y > largestY) {
+            largestY = childCoords.y;
+          }
+        }
+
+        coords.push({ xEnd: largestXEnd, y: largestY });
       }
 
-      let largestY = Number.MIN_SAFE_INTEGER;
+      let maxY = Number.MIN_SAFE_INTEGER;
       for (const { y } of coords) {
-        if (y > largestY) {
-          largestY = y;
+        if (y > maxY) {
+          maxY = y;
         }
       }
 
       const extraBottomPadding = 20;
-      const newHeight = largestY + this.nextY + extraBottomPadding;
+      const newHeight = maxY + this.nextY + extraBottomPadding;
       if (this.height !== newHeight) {
         this.updateBand.emit({
           id: this.bandId,
@@ -380,27 +390,35 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
     canvases: HTMLCanvasElement[],
     hiddenCanvasColor: IterableIterator<string>,
   ) {
-    const coords = [];
-
     if (parent?.children?.length) {
+      let largestXEnd = Number.MIN_SAFE_INTEGER;
+      let largestY = Number.MIN_SAFE_INTEGER;
       let y = parentY;
 
       for (const point of parent.children) {
-        y = y + this.nextY;
-        const x = Math.floor(xScale(point.x));
+        const xStart = Math.floor(xScale(point.x));
         const end = Math.floor(xScale(point.x + point.duration));
         const textWidth = this.getLabelTextWidth(canvases, point);
-        const width = end + textWidth;
+        const xEnd = end + textWidth;
+        y = y + this.nextY;
+
         this.redrawCanvases(
           canvases,
           end,
           this.activityHeight,
           hiddenCanvasColor,
           point,
-          x,
+          xStart,
           y,
         );
-        coords.push({ xEnd: width, xStart: x, y });
+
+        if (xEnd > largestXEnd) {
+          largestXEnd = xEnd;
+        }
+        if (y > largestY) {
+          largestY = y;
+        }
+
         const childCoords = this.redrawDecompositionChildren(
           point,
           y,
@@ -408,11 +426,21 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
           canvases,
           hiddenCanvasColor,
         );
-        coords.push(...childCoords);
+
+        if (childCoords) {
+          if (childCoords.xEnd > largestXEnd) {
+            largestXEnd = childCoords.xEnd;
+          }
+          if (childCoords.y > largestY) {
+            largestY = childCoords.y;
+          }
+        }
       }
+
+      return { xEnd: largestXEnd, y: largestY };
     }
 
-    return coords;
+    return null;
   }
 
   /**

@@ -305,6 +305,7 @@ export const reducer = createReducer(
       [action.activityInstance.id]: {
         ...state.activityInstances[action.activityInstance.id],
         ...action.activityInstance,
+        children: [],
       },
     },
     lastActivityInstanceUpdate: performance.now(),

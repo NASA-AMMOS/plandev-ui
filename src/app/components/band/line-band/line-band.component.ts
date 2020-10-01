@@ -41,9 +41,6 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
   id: string;
 
   @Input()
-  interpolationType: string | undefined;
-
-  @Input()
   maxTimeRange: TimeRange;
 
   @Input()
