@@ -307,6 +307,7 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
     if (points.length) {
       const xScale = getXScale(this.viewTimeRange, this.drawWidth);
+      let maxY = Number.MIN_SAFE_INTEGER;
       const coords = [];
 
       for (let i = 0, l = points.length; i < l; ++i) {
@@ -360,12 +361,9 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
         }
 
         coords.push({ xEnd: largestXEnd, y: largestY });
-      }
 
-      let maxY = Number.MIN_SAFE_INTEGER;
-      for (const { y } of coords) {
-        if (y > maxY) {
-          maxY = y;
+        if (largestY > maxY) {
+          maxY = largestY;
         }
       }
 

@@ -74,11 +74,14 @@ export const GET_PLAN_DETAIL = gql(`
   query GetPlanDetail($id: ID!) {
     plan(id: $id) {
       activityInstances {
+        children
+        duration
         id
         parameters {
           name
           value
         }
+        parent
         startTimestamp
         type
       }

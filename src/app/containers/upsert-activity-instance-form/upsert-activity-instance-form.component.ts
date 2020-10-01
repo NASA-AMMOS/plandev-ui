@@ -165,7 +165,10 @@ export class UpsertActivityInstanceFormComponent
       this.form = this.fb.group({
         parameters: this.fb.array([]),
         startTimestamp: [
-          this.activityInstance.startTimestamp,
+          {
+            disabled: this.isNotParent,
+            value: this.activityInstance.startTimestamp,
+          },
           [Validators.required, doyTimestampValidator],
         ],
         type: [
@@ -195,6 +198,13 @@ export class UpsertActivityInstanceFormComponent
     if (changes.selectedActivityType && this.selectedActivityType !== null) {
       this.form.controls.type.setValue(this.selectedActivityType.name);
     }
+  }
+
+  get isNotParent() {
+    if (this.type === 'update' && this.activityInstance) {
+      return this.activityInstance.parent !== null;
+    }
+    return false;
   }
 
   ngOnDestroy() {
