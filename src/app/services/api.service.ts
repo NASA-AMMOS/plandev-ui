@@ -200,12 +200,12 @@ export class ApiService {
     });
   }
 
-  simulate(planId: string, samplingPeriod: number) {
+  simulate(adaptationId: string, planId: string, samplingPeriod: number) {
     return this.apollo
       .query<{ simulate: types.SimulationResponse }>({
         fetchPolicy: 'no-cache',
         query: gql.SIMULATE,
-        variables: { planId, samplingPeriod },
+        variables: { adaptationId, planId, samplingPeriod },
       })
       .pipe(
         map(({ data: { simulate } }) => {

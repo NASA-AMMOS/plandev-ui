@@ -27,6 +27,7 @@ export interface SimulationResponse {
 
 export interface SimulationResult {
   name: string;
+  schema: any;
   start: string;
   values: SimulationResultValue[];
 }

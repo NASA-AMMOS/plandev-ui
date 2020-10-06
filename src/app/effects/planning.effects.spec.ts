@@ -28,7 +28,10 @@ describe('planning effects', () => {
   let effects: PlanningEffects;
   let testScheduler: TestScheduler;
   const initialState = {
-    planning: { viewTimeRange: { end: 1735689600000, start: 1577836800000 } },
+    planning: {
+      selectedPlan: { adaptationId: '42' },
+      viewTimeRange: { end: 1735689600000, start: 1577836800000 },
+    },
   };
 
   beforeEach(() => {

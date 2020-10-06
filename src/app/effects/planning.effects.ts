@@ -352,23 +352,26 @@ export class PlanningEffects {
         const scale = scaleTime().domain([new Date(start), new Date(end)]);
         const [t0, t1] = scale.ticks();
         const samplingPeriod = ((t1.getTime() - t0.getTime()) / 8) * 1000;
+        const { adaptationId } = state.planning.selectedPlan;
         return concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService.simulate(action.planId, samplingPeriod).pipe(
-            switchMap(simulationResponse => {
-              return [
-                PlanningActions.runSimulationSuccess({ simulationResponse }),
-              ];
-            }),
-            catchError((error: Error) => {
-              console.log(error.message);
-              return [
-                PlanningActions.runSimulationFailure({
-                  errorMsg: error.message,
-                }),
-              ];
-            }),
-          ),
+          this.apiService
+            .simulate(adaptationId, action.planId, samplingPeriod)
+            .pipe(
+              switchMap(simulationResponse => {
+                return [
+                  PlanningActions.runSimulationSuccess({ simulationResponse }),
+                ];
+              }),
+              catchError((error: Error) => {
+                console.log(error.message);
+                return [
+                  PlanningActions.runSimulationFailure({
+                    errorMsg: error.message,
+                  }),
+                ];
+              }),
+            ),
           of(AppActions.setLoading({ loading: false })),
         );
       }),

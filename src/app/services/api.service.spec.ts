@@ -316,7 +316,7 @@ describe('api service', () => {
   });
 
   it('simulate', () => {
-    apiService.simulate(planId, 1000000).subscribe(response => {
+    apiService.simulate(adaptationId, planId, 1000000).subscribe(response => {
       expect(response).toEqual(simulationResponse);
     });
     apolloTestingController
