@@ -123,7 +123,7 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
       const x = Math.floor(xScale(point.x));
       const end = Math.floor(xScale(point.x + point.duration));
       const range = end - x;
-      const width = Math.max(1.0, range);
+      const width = Math.max(10.0, range);
       const rect = new Path2D();
       rect.rect(x, 0, width, this.drawHeight);
 
@@ -133,7 +133,7 @@ export class XRangeBandComponent implements AfterViewInit, OnChanges {
           this.subBandService.updateColorToPoint(this.id, color, point);
           ctx.fillStyle = color;
         } else {
-          ctx.fillStyle = this.color || point?.color || '#d651ff';
+          ctx.fillStyle = this.color || point?.color || '#798aed';
         }
 
         // Rect.

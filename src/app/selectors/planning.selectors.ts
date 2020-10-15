@@ -11,6 +11,7 @@ import {
   Plan,
   PointActivity,
   PointLine,
+  PointXRange,
   SimulationResult,
   StringTMap,
   TimeRange,
@@ -276,49 +277,110 @@ export const getPanelsWithPoints = createSelector(
               }
 
               if (subBand.type === 'state') {
-                const points: PointLine[] = [];
-                const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
-                let minY = Number.MAX_SAFE_INTEGER;
-                let maxY = Number.MIN_SAFE_INTEGER;
-                if (simulationResults && simulationResults.length) {
-                  for (const { name, start, values } of simulationResults) {
-                    const r = new RegExp(subBand?.filter?.state?.name);
-                    const includeResult = r.test(name);
-                    if (includeResult) {
-                      if (idsToViolations[name]) {
-                        bandConstraintViolations.push(...idsToViolations[name]);
-                        panelConstraintViolations.push(
-                          ...idsToViolations[name],
-                        );
-                      }
+                if (subBand.chartType === 'line') {
+                  const points: PointLine[] = [];
+                  const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
 
-                      for (let i = 0; i < values.length; ++i) {
-                        const { x, y } = values[i];
-                        points.push({
-                          id: `${subBand.id}-state-${name}-${i}`,
-                          type: 'line',
-                          x: getUnixEpochTime(start) + x / 1000,
-                          y,
-                        });
-                        minY = y < minY ? y : minY;
-                        maxY = y > maxY ? y : maxY;
+                  let minY = Number.MAX_SAFE_INTEGER;
+                  let maxY = Number.MIN_SAFE_INTEGER;
+                  if (simulationResults && simulationResults.length) {
+                    for (const {
+                      name,
+                      schema,
+                      start,
+                      values,
+                    } of simulationResults) {
+                      if (schema.type === 'double') {
+                        const r = new RegExp(subBand?.filter?.state?.name);
+                        const includeResult = r.test(name);
+                        if (includeResult) {
+                          if (idsToViolations[name]) {
+                            bandConstraintViolations.push(
+                              ...idsToViolations[name],
+                            );
+                            panelConstraintViolations.push(
+                              ...idsToViolations[name],
+                            );
+                          }
+
+                          for (let i = 0; i < values.length; ++i) {
+                            const value = values[i];
+                            const { x } = value;
+                            const y = value.y as number;
+                            points.push({
+                              id: `${subBand.id}-state-${name}-${i}`,
+                              type: 'line',
+                              x: getUnixEpochTime(start) + x / 1000,
+                              y,
+                            });
+                            minY = y < minY ? y : minY;
+                            maxY = y > maxY ? y : maxY;
+                          }
+                        }
+                      }
+                    }
+
+                    if (minY === maxY) {
+                      // If extents are equal, clip first extent to 0
+                      // so axis and line gets properly drawn by D3.
+                      minY = 0;
+                    }
+
+                    yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                  }
+
+                  return {
+                    ...subBand,
+                    points,
+                    yAxisId,
+                  };
+                } else if (subBand.chartType === 'x-range') {
+                  const points: PointXRange[] = [];
+                  const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
+
+                  if (simulationResults && simulationResults.length) {
+                    for (const {
+                      name,
+                      schema,
+                      start,
+                      values,
+                    } of simulationResults) {
+                      if (schema.type === 'enumerated') {
+                        const r = new RegExp(subBand?.filter?.state?.name);
+                        const includeResult = r.test(name);
+                        if (includeResult) {
+                          if (idsToViolations[name]) {
+                            bandConstraintViolations.push(
+                              ...idsToViolations[name],
+                            );
+                            panelConstraintViolations.push(
+                              ...idsToViolations[name],
+                            );
+                          }
+
+                          for (let i = 0; i < values.length; ++i) {
+                            const { x, y } = values[i];
+                            points.push({
+                              duration: 0,
+                              id: `${subBand.id}-state-${name}-${i}`,
+                              label: {
+                                text: y as string,
+                              },
+                              type: 'x-range',
+                              x: getUnixEpochTime(start) + x / 1000,
+                            });
+                          }
+                        }
                       }
                     }
                   }
 
-                  if (minY === maxY) {
-                    // If extents are equal, clip first extent to 0
-                    // so axis and line gets properly drawn by D3.
-                    minY = 0;
-                  }
-
-                  yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                  return {
+                    ...subBand,
+                    points,
+                    yAxisId,
+                  };
                 }
-                return {
-                  ...subBand,
-                  points,
-                  yAxisId,
-                };
               }
 
               return subBand;

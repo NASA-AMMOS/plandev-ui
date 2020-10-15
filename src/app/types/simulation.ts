@@ -34,7 +34,7 @@ export interface SimulationResult {
 
 export interface SimulationResultValue {
   x: number;
-  y: number;
+  y: number | string;
 }
 
 export interface Violation {
