@@ -40,10 +40,10 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
-package-lock.json
 version.ts
 unit-test-results.xml
 report.*.json
+yarn.lock
 
 # System Files
 .DS_Store

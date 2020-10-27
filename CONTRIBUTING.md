@@ -55,7 +55,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 1. Follow our [Coding Rules](#rules).
 1. Run the full aerie-ui test suite, as described in the [developer documentation][dev-doc], and ensure that all tests pass.
    ```shell
-   yarn test
+   npm test
    ```
 1. Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit). Adherence to these conventions is necessary because release notes are automatically generated from these messages.
    ```shell
@@ -118,8 +118,8 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 - All features or bug fixes **must be tested** by one or more specs (unit-tests).
 - We use [Prettier][prettier] and [TSLint](./tslint.json) to keep code formatted.
   ```shell
-  yarn format
-  yarn lint
+  npm run format
+  npm run lint
   ```
 
 ## <a name="commit"></a> Commit Message Guidelines

@@ -32,8 +32,8 @@ pipeline {
             nvm install v12.14.1
 
             # Install dependencies, test, and build
-            npx yarn --silent
-            npx yarn test
+            npm install
+            npm test
             """
             if (statusCode > 0) {
               error "setup failed"

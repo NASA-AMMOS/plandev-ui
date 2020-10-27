@@ -22,11 +22,6 @@ following products on your development machine:
 brew install node
 ```
 
-* [Yarn](https://yarnpkg.com) (version specified in the engines field of [`package.json`](../package.json)) which is used to install dependencies.
-```shell
-npm i yarn -g
-```
-
 ## Getting the Sources
 
 Clone the aerie-ui repository:
@@ -48,17 +43,17 @@ This project makes use of packages in the [aerie-js](https://github.jpl.nasa.gov
 Next, install the JavaScript modules needed to build and test aerie-ui:
 
 ```shell
-yarn install
+npm install
 ```
 
 ## Start Development Server
 
-Run `yarn start` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `npm start` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
 ## Building
 
-Run `yarn build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+Run `npm run build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `npm run build:prod` flag for a production build.
 
 ## Running Unit Tests
 
-Run `yarn test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `npm test` to execute the unit tests via [Karma](https://karma-runner.github.io).
