@@ -8,8 +8,11 @@
 }
 
 .error {
-  display: flex;
-  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 1.25em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .login-container {

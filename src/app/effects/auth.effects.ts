@@ -23,13 +23,13 @@ export class AuthEffects {
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.login(username, password).pipe(
-            switchMap(() => {
-              const user: User = { name: username };
+            switchMap(({ ssoCookieValue }) => {
+              const user: User = { name: username, ssoCookieValue };
               localStorage.setItem(AERIE_USER, JSON.stringify(user));
               return [AuthActions.loginSuccess({ redirectTo: '/plans', user })];
             }),
-            catchError((errorMsg: string) => {
-              console.log(errorMsg);
+            catchError((error: Error) => {
+              const errorMsg = error.message;
               return [AuthActions.loginError({ errorMsg })];
             }),
           ),
@@ -61,7 +61,9 @@ export class AuthEffects {
             }),
             catchError((errorMsg: string) => {
               console.log(errorMsg);
-              return [AuthActions.logoutError({ errorMsg })];
+              localStorage.removeItem(AERIE_USER);
+              // Even if we fail, succeed so we redirect to the login page.
+              return [AuthActions.logoutSuccess()];
             }),
           ),
           of(AppActions.setLoading({ loading: false })),

@@ -1,6 +1,4 @@
-import { gql } from 'apollo-angular';
-
-export const CREATE_ACTIVITY_INSTANCES = gql(`
+export const CREATE_ACTIVITY_INSTANCES = `
   mutation CreateActivityInstances(
     $activityInstances: [CreateActivityInstance]!
     $planId: ID!
@@ -14,9 +12,9 @@ export const CREATE_ACTIVITY_INSTANCES = gql(`
       success
     }
   }
-`);
+`;
 
-export const CREATE_ADAPTATION = gql(`
+export const CREATE_ADAPTATION = `
   mutation CreateAdaptation(
     $file: Upload!
     $mission: String!
@@ -36,9 +34,9 @@ export const CREATE_ADAPTATION = gql(`
       success
     }
   }
-`);
+`;
 
-export const CREATE_PLAN = gql(`
+export const CREATE_PLAN = `
   mutation CreatePlan(
     $adaptationId: String!
     $endTimestamp: String!
@@ -56,9 +54,9 @@ export const CREATE_PLAN = gql(`
       success
     }
   }
-`);
+`;
 
-export const GET_ADAPTATIONS = gql(`
+export const GET_ADAPTATIONS = `
   query GetAdaptations {
     adaptations {
       id
@@ -68,9 +66,9 @@ export const GET_ADAPTATIONS = gql(`
       version
     }
   }
-`);
+`;
 
-export const GET_PLAN_DETAIL = gql(`
+export const GET_PLAN_DETAIL = `
   query GetPlanDetail($id: ID!) {
     plan(id: $id) {
       activityInstances {
@@ -102,9 +100,9 @@ export const GET_PLAN_DETAIL = gql(`
       startTimestamp
     }
   }
-`);
+`;
 
-export const GET_PLANS_AND_ADAPTATIONS = gql(`
+export const GET_PLANS_AND_ADAPTATIONS = `
   query GetPlansAndAdaptations {
     adaptations {
       id
@@ -121,9 +119,9 @@ export const GET_PLANS_AND_ADAPTATIONS = gql(`
       startTimestamp
     }
   }
-`);
+`;
 
-export const GET_UI_STATES = gql(`
+export const GET_UI_STATES = `
   query GetUiStates {
     uiStates {
       id
@@ -131,9 +129,9 @@ export const GET_UI_STATES = gql(`
       panels
     }
   }
-`);
+`;
 
-export const DELETE_ACTIVITY_INSTANCE = gql(`
+export const DELETE_ACTIVITY_INSTANCE = `
   mutation DeleteActivityInstance(
     $activityInstanceId: ID!
     $planId: ID!
@@ -146,27 +144,27 @@ export const DELETE_ACTIVITY_INSTANCE = gql(`
       success
     }
   }
-`);
+`;
 
-export const DELETE_ADAPTATION = gql(`
+export const DELETE_ADAPTATION = `
   mutation DeleteAdaptation($id: ID!) {
     deleteAdaptation(id: $id) {
       message
       success
     }
   }
-`);
+`;
 
-export const DELETE_PLAN = gql(`
+export const DELETE_PLAN = `
   mutation DeletePlan($id: ID!) {
     deletePlan(id: $id) {
       message
       success
     }
   }
-`);
+`;
 
-export const SIMULATE = gql(`
+export const SIMULATE = `
   query Simulate($adaptationId: String!, $planId: String!, $samplingPeriod: Float!) {
     simulate(adaptationId: $adaptationId, planId: $planId, samplingPeriod: $samplingPeriod) {
       activities {
@@ -209,9 +207,9 @@ export const SIMULATE = gql(`
       }
     }
   }
-`);
+`;
 
-export const UPDATE_ACTIVITY_INSTANCE = gql(`
+export const UPDATE_ACTIVITY_INSTANCE = `
   mutation UpdateActivityInstance(
     $activityInstance: UpdateActivityInstance!
     $planId: ID!
@@ -224,9 +222,9 @@ export const UPDATE_ACTIVITY_INSTANCE = gql(`
       success
     }
   }
-`);
+`;
 
-export const VALIDATE_PARAMETERS = gql(`
+export const VALIDATE_PARAMETERS = `
   query ValidateParameters(
     $activityTypeName: String!
     $adaptationId: ID!
@@ -241,4 +239,4 @@ export const VALIDATE_PARAMETERS = gql(`
       success
     }
   }
-`);
+`;

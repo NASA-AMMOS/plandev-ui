@@ -1,9 +1,8 @@
 <mat-card>
-  <div *ngIf="loginErrorMsg" class="alert alert-danger error">
-    {{ loginErrorMsg }}
-  </div>
-
   <form class="login-container" [formGroup]="loginForm" (ngSubmit)="login()">
+    <div *ngIf="loginErrorMsg" class="alert alert-danger error">
+      {{ loginErrorMsg }}
+    </div>
     <mat-form-field>
       <input
         autocomplete="off"

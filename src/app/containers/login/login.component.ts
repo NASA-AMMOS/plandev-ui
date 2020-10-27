@@ -38,8 +38,8 @@ export class LoginComponent implements OnDestroy {
     private store: Store<RootState>,
   ) {
     this.loginForm = this.fb.group({
-      password: ['123456', Validators.required],
-      username: ['testuser', Validators.required],
+      password: ['', Validators.required],
+      username: ['', Validators.required],
     });
 
     this.subs.add(

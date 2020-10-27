@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
   Actions,
@@ -54,9 +55,13 @@ export class NavEffects {
             ),
             catchError((error: Error) => {
               console.error(error);
+              let message = 'Fetch adaptations failed';
+              if (error instanceof HttpErrorResponse && error.status === 401) {
+                message = 'SSO token expired. Unauthorized.';
+              }
               return [
                 ToastActions.showToast({
-                  message: 'Fetch adaptations failed',
+                  message,
                   toastType: 'error',
                 }),
               ];
@@ -81,9 +86,13 @@ export class NavEffects {
             ]),
             catchError((error: Error) => {
               console.error(error);
+              let message = 'Fetch plans and adaptations failed';
+              if (error instanceof HttpErrorResponse && error.status === 401) {
+                message = 'SSO token expired. Unauthorized.';
+              }
               return [
                 ToastActions.showToast({
-                  message: 'Fetch plans and adaptations failed',
+                  message,
                   toastType: 'error',
                 }),
               ];
@@ -106,9 +115,13 @@ export class NavEffects {
             map(uiStates => PlanningActions.updateAllUiStates({ uiStates })),
             catchError((error: Error) => {
               console.error(error);
+              let message = 'Fetch UI states failed';
+              if (error instanceof HttpErrorResponse && error.status === 401) {
+                message = 'SSO token expired. Unauthorized.';
+              }
               return [
                 ToastActions.showToast({
-                  message: 'Fetch UI states failed',
+                  message,
                   toastType: 'error',
                 }),
               ];
@@ -118,9 +131,13 @@ export class NavEffects {
             map(plan => PlanningActions.getPlanDetailSuccess({ plan })),
             catchError((error: Error) => {
               console.error(error);
+              let message = 'Fetch plan detail failed';
+              if (error instanceof HttpErrorResponse && error.status === 401) {
+                message = 'SSO token expired. Unauthorized.';
+              }
               return [
                 ToastActions.showToast({
-                  message: 'Fetch plan detail failed',
+                  message,
                   toastType: 'error',
                 }),
               ];

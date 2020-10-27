@@ -18,9 +18,4 @@ export const loginSuccess = createAction(
 
 export const logout = createAction('[auth] logout');
 
-export const logoutError = createAction(
-  '[auth] logoutError',
-  props<{ errorMsg: string }>(),
-);
-
 export const logoutSuccess = createAction('[auth] logoutSuccess');

@@ -1,31 +1,50 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Apollo } from 'apollo-angular';
-import { Observable, Observer } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
+import { AERIE_USER } from '../constants';
 import * as types from '../types';
+import { User } from '../types';
 import * as gql from './gql';
+
+const { aerieApolloServerUrl } = environment;
+
+function getAuthorization() {
+  const item: string | null = localStorage.getItem(AERIE_USER);
+  if (item !== null) {
+    const user: User = JSON.parse(item);
+    return user.ssoCookieValue;
+  }
+  return '';
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  constructor(private apollo: Apollo) {}
+  constructor(private http: HttpClient) {}
 
   createActivityInstances(
     planId: string,
     activityInstances: types.CreateActivityInstance[],
   ): Observable<types.CreateActivityInstancesResponse> {
-    return this.apollo
-      .mutate<{
-        createActivityInstances: types.CreateActivityInstancesResponse;
-      }>({
-        fetchPolicy: 'no-cache',
-        mutation: gql.CREATE_ACTIVITY_INSTANCES,
-        variables: {
-          activityInstances,
-          planId,
-        },
-      })
+    const body = {
+      query: gql.CREATE_ACTIVITY_INSTANCES,
+      variables: {
+        activityInstances,
+        planId,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          createActivityInstances: types.CreateActivityInstancesResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { createActivityInstances } }) => {
           if (!createActivityInstances.success) {
@@ -39,21 +58,36 @@ export class ApiService {
   createAdaptation(
     adaptation: types.CreateAdaptation,
   ): Observable<types.CreateAdaptationResponse> {
-    return this.apollo
-      .mutate<{ createAdaptation: types.CreateAdaptationResponse }>({
-        context: {
-          useMultipart: true,
-        },
-        fetchPolicy: 'no-cache',
-        mutation: gql.CREATE_ADAPTATION,
-        variables: {
-          file: adaptation.file,
-          mission: adaptation.mission,
-          name: adaptation.name,
-          owner: adaptation.owner,
-          version: adaptation.version,
-        },
-      })
+    const { file } = adaptation;
+    const fileMap = {
+      file: ['variables.file'],
+    };
+    const operations = {
+      query: gql.CREATE_ADAPTATION,
+      variables: {
+        file: null,
+        mission: adaptation.mission,
+        name: adaptation.name,
+        owner: adaptation.owner,
+        version: adaptation.version,
+      },
+    };
+
+    const body = new FormData();
+    body.append('file', file, file.name);
+    body.append('map', JSON.stringify(fileMap));
+    body.append('operations', JSON.stringify(operations));
+
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+
+    return this.http
+      .post<{ data: { createAdaptation: types.CreateAdaptationResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(
         map(({ data: { createAdaptation } }) => {
           if (!createAdaptation.success) {
@@ -65,17 +99,24 @@ export class ApiService {
   }
 
   createPlan(plan: types.CreatePlan): Observable<types.CreatePlanResponse> {
-    return this.apollo
-      .mutate<{ createPlan: types.CreatePlanResponse }>({
-        fetchPolicy: 'no-cache',
-        mutation: gql.CREATE_PLAN,
-        variables: {
-          adaptationId: plan.adaptationId,
-          endTimestamp: plan.endTimestamp,
-          name: plan.name,
-          startTimestamp: plan.startTimestamp,
-        },
-      })
+    const body = {
+      query: gql.CREATE_PLAN,
+      variables: {
+        adaptationId: plan.adaptationId,
+        endTimestamp: plan.endTimestamp,
+        name: plan.name,
+        startTimestamp: plan.startTimestamp,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { createPlan: types.CreatePlanResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(
         map(({ data: { createPlan } }) => {
           if (!createPlan.success) {
@@ -90,14 +131,17 @@ export class ApiService {
     planId: string,
     activityInstanceId: string,
   ): Observable<types.DeleteActivityInstanceResponse> {
-    return this.apollo
-      .mutate<{ deleteActivityInstance: types.DeleteActivityInstanceResponse }>(
-        {
-          fetchPolicy: 'no-cache',
-          mutation: gql.DELETE_ACTIVITY_INSTANCE,
-          variables: { activityInstanceId, planId },
-        },
-      )
+    const body = {
+      query: gql.DELETE_ACTIVITY_INSTANCE,
+      variables: { activityInstanceId, planId },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: { deleteActivityInstance: types.DeleteActivityInstanceResponse };
+      }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { deleteActivityInstance } }) => {
           if (!deleteActivityInstance.success) {
@@ -109,12 +153,19 @@ export class ApiService {
   }
 
   deleteAdaptation(id: string): Observable<types.DeleteAdaptationResponse> {
-    return this.apollo
-      .mutate<{ deleteAdaptation: types.DeleteAdaptationResponse }>({
-        fetchPolicy: 'no-cache',
-        mutation: gql.DELETE_ADAPTATION,
-        variables: { id },
-      })
+    const body = {
+      query: gql.DELETE_ADAPTATION,
+      variables: { id },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { deleteAdaptation: types.DeleteAdaptationResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(
         map(({ data: { deleteAdaptation } }) => {
           if (!deleteAdaptation.success) {
@@ -126,12 +177,19 @@ export class ApiService {
   }
 
   deletePlan(id: string): Observable<types.DeletePlanResponse> {
-    return this.apollo
-      .mutate<{ deletePlan: types.DeletePlanResponse }>({
-        fetchPolicy: 'no-cache',
-        mutation: gql.DELETE_PLAN,
-        variables: { id },
-      })
+    const body = {
+      query: gql.DELETE_PLAN,
+      variables: { id },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { deletePlan: types.DeletePlanResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(
         map(({ data: { deletePlan } }) => {
           if (!deletePlan.success) {
@@ -143,21 +201,35 @@ export class ApiService {
   }
 
   getAdaptations(): Observable<types.Adaptation[]> {
-    return this.apollo
-      .query<{ adaptations: types.Adaptation[] }>({
-        fetchPolicy: 'no-cache',
-        query: gql.GET_ADAPTATIONS,
-      })
+    const body = {
+      query: gql.GET_ADAPTATIONS,
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { adaptations: types.Adaptation[] } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(map(({ data: { adaptations } }) => adaptations));
   }
 
   getPlanDetail(id: string): Observable<types.PlanDetail> {
-    return this.apollo
-      .query<{ plan: types.PlanDetail }>({
-        fetchPolicy: 'no-cache',
-        query: gql.GET_PLAN_DETAIL,
-        variables: { id },
-      })
+    const body = {
+      query: gql.GET_PLAN_DETAIL,
+      variables: { id },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { plan: types.PlanDetail } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(map(({ data: { plan } }) => plan));
   }
 
@@ -165,48 +237,85 @@ export class ApiService {
     adaptations: types.Adaptation[];
     plans: types.Plan[];
   }> {
-    return this.apollo
-      .query<{ adaptations: types.Adaptation[]; plans: types.Plan[] }>({
-        fetchPolicy: 'no-cache',
-        query: gql.GET_PLANS_AND_ADAPTATIONS,
-      })
+    const body = {
+      query: gql.GET_PLANS_AND_ADAPTATIONS,
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { adaptations: types.Adaptation[]; plans: types.Plan[] } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(map(({ data }) => data));
   }
 
   getUiStates(): Observable<types.UiState[]> {
-    return this.apollo
-      .query<{ uiStates: types.UiState[] }>({
-        fetchPolicy: 'no-cache',
-        query: gql.GET_UI_STATES,
-      })
+    const body = {
+      query: gql.GET_UI_STATES,
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { uiStates: types.UiState[] } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(map(({ data: { uiStates } }) => uiStates));
   }
 
-  login(username: string, password: string): Observable<string> {
-    return new Observable((o: Observer<string>) => {
-      if (username === 'testuser' && password === '123456') {
-        o.next('Login success');
-        o.complete();
-      } else {
-        o.error('Login failed. Invalid username or password.');
-      }
-    });
+  login(username: string, password: string) {
+    const url = `${aerieApolloServerUrl}/auth/login`;
+    return this.http
+      .post<{ message: string; ssoCookieValue: string; success: boolean }>(
+        url,
+        { username, password },
+      )
+      .pipe(
+        map(res => {
+          if (res.success) {
+            return res;
+          } else {
+            throw new Error(res.message);
+          }
+        }),
+      );
   }
 
-  logout(): Observable<string> {
-    return new Observable((o: Observer<string>) => {
-      o.next('Logout success');
-      o.complete();
-    });
+  logout() {
+    const url = `${aerieApolloServerUrl}/auth/logout`;
+    const ssoToken = getAuthorization();
+    return this.http
+      .post<{ message: string; success: boolean }>(url, { ssoToken })
+      .pipe(
+        map(res => {
+          if (res.success) {
+            return res;
+          } else {
+            throw new Error(res.message);
+          }
+        }),
+      );
   }
 
   simulate(adaptationId: string, planId: string, samplingPeriod: number) {
-    return this.apollo
-      .query<{ simulate: types.SimulationResponse }>({
-        fetchPolicy: 'no-cache',
-        query: gql.SIMULATE,
-        variables: { adaptationId, planId, samplingPeriod },
-      })
+    const body = {
+      query: gql.SIMULATE,
+      variables: { adaptationId, planId, samplingPeriod },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { simulate: types.SimulationResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(
         map(({ data: { simulate } }) => {
           if (!simulate.success) {
@@ -221,17 +330,20 @@ export class ApiService {
     planId: string,
     activityInstance: types.UpdateActivityInstance,
   ): Observable<types.UpdateActivityInstanceResponse> {
-    return this.apollo
-      .mutate<{ updateActivityInstance: types.UpdateActivityInstanceResponse }>(
-        {
-          fetchPolicy: 'no-cache',
-          mutation: gql.UPDATE_ACTIVITY_INSTANCE,
-          variables: {
-            activityInstance,
-            planId,
-          },
-        },
-      )
+    const body = {
+      query: gql.UPDATE_ACTIVITY_INSTANCE,
+      variables: {
+        activityInstance,
+        planId,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: { updateActivityInstance: types.UpdateActivityInstanceResponse };
+      }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { updateActivityInstance } }) => {
           if (!updateActivityInstance.success) {
@@ -247,12 +359,19 @@ export class ApiService {
     adaptationId: string,
     parameters: types.ActivityInstanceParameter[],
   ): Observable<types.ValidationResponse> {
-    return this.apollo
-      .query<{ validateParameters: types.ValidationResponse }>({
-        fetchPolicy: 'no-cache',
-        query: gql.VALIDATE_PARAMETERS,
-        variables: { activityTypeName, adaptationId, parameters },
-      })
+    const body = {
+      query: gql.VALIDATE_PARAMETERS,
+      variables: { activityTypeName, adaptationId, parameters },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{ data: { validateParameters: types.ValidationResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
       .pipe(map(({ data: { validateParameters } }) => validateParameters));
   }
 }

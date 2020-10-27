@@ -26,7 +26,7 @@ describe('auth reducer', () => {
   });
 
   it('loginSuccess', () => {
-    const user: User = { name: 'testuser ' };
+    const user: User = { name: 'testuser ', ssoCookieValue: '42' };
     const state: AuthState = reducer(
       { ...initialState },
       AuthActions.loginSuccess({ redirectTo: '/', user }),

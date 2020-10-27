@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, FormControl, FormGroup, NgForm } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideMockStore } from '@ngrx/store/testing';
-import { ApolloTestingModule } from 'apollo-angular/testing';
 import { of } from 'rxjs';
 import { ngOnChanges } from 'src/app/functions';
 import { MaterialModule } from 'src/app/material';
@@ -24,7 +23,6 @@ describe('UpsertActivityInstanceFormComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         UpsertActivityInstanceFormModule,
-        ApolloTestingModule,
         MaterialModule,
         NoopAnimationsModule,
       ],

@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -9,14 +9,11 @@ import {
 import { MatIconRegistry } from '@angular/material/icon';
 import { BrowserModule, DomSanitizer } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { InMemoryCache } from '@apollo/client/core';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreRouterConnectingModule } from '@ngrx/router-store';
 import { select, Store, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { AngularSplitModule } from 'angular-split';
-import { APOLLO_OPTIONS } from 'apollo-angular';
-import { HttpLink } from 'apollo-angular/http';
 import { ToastrModule } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
@@ -32,6 +29,7 @@ import {
   PlanningEffects,
   ToastEffects,
 } from './effects';
+import { UnauthorizedInterceptor } from './interceptors';
 import { MaterialModule } from './material';
 import { getLoading, getPath } from './selectors';
 
@@ -73,12 +71,6 @@ export class AppComponent implements OnDestroy {
       'activity_dictionary',
       this.domSanitizer.bypassSecurityTrustResourceUrl(
         'assets/icons/activity_dictionary.svg',
-      ),
-    );
-    this.matIconRegistry.addSvgIcon(
-      'graphql',
-      this.domSanitizer.bypassSecurityTrustResourceUrl(
-        'assets/icons/graphql.svg',
       ),
     );
   }
@@ -139,14 +131,9 @@ export class AppComponent implements OnDestroy {
   ],
   providers: [
     {
-      deps: [HttpLink],
-      provide: APOLLO_OPTIONS,
-      useFactory: (httpLink: HttpLink) => ({
-        cache: new InMemoryCache(),
-        link: httpLink.create({
-          uri: environment.aerieApolloServerUrl,
-        }),
-      }),
+      multi: true,
+      provide: HTTP_INTERCEPTORS,
+      useClass: UnauthorizedInterceptor,
     },
   ],
 })
