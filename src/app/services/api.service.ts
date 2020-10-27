@@ -73,10 +73,11 @@ export class ApiService {
       },
     };
 
+    // Form append order matters here!
     const body = new FormData();
-    body.append('file', file, file.name);
-    body.append('map', JSON.stringify(fileMap));
     body.append('operations', JSON.stringify(operations));
+    body.append('map', JSON.stringify(fileMap));
+    body.append('file', file, file.name);
 
     const options = {
       headers: { authorization: getAuthorization() },
