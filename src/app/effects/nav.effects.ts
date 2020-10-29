@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
   Actions,
@@ -8,12 +7,7 @@ import {
 } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import {
-  AppActions,
-  AuthActions,
-  PlanningActions,
-  ToastActions,
-} from '../actions';
+import { AppActions, AuthActions, PlanningActions } from '../actions';
 import { AERIE_USER } from '../constants';
 import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
@@ -55,16 +49,7 @@ export class NavEffects {
             ),
             catchError((error: Error) => {
               console.error(error);
-              let message = 'Fetch adaptations failed';
-              if (error instanceof HttpErrorResponse && error.status === 401) {
-                message = 'SSO token expired. Unauthorized.';
-              }
-              return [
-                ToastActions.showToast({
-                  message,
-                  toastType: 'error',
-                }),
-              ];
+              return [];
             }),
           ),
           of(AppActions.setLoading({ loading: false })),
@@ -86,16 +71,7 @@ export class NavEffects {
             ]),
             catchError((error: Error) => {
               console.error(error);
-              let message = 'Fetch plans and adaptations failed';
-              if (error instanceof HttpErrorResponse && error.status === 401) {
-                message = 'SSO token expired. Unauthorized.';
-              }
-              return [
-                ToastActions.showToast({
-                  message,
-                  toastType: 'error',
-                }),
-              ];
+              return [];
             }),
           ),
           of(AppActions.setLoading({ loading: false })),
@@ -115,32 +91,14 @@ export class NavEffects {
             map(uiStates => PlanningActions.updateAllUiStates({ uiStates })),
             catchError((error: Error) => {
               console.error(error);
-              let message = 'Fetch UI states failed';
-              if (error instanceof HttpErrorResponse && error.status === 401) {
-                message = 'SSO token expired. Unauthorized.';
-              }
-              return [
-                ToastActions.showToast({
-                  message,
-                  toastType: 'error',
-                }),
-              ];
+              return [];
             }),
           ),
           this.apiService.getPlanDetail(planId).pipe(
             map(plan => PlanningActions.getPlanDetailSuccess({ plan })),
             catchError((error: Error) => {
               console.error(error);
-              let message = 'Fetch plan detail failed';
-              if (error instanceof HttpErrorResponse && error.status === 401) {
-                message = 'SSO token expired. Unauthorized.';
-              }
-              return [
-                ToastActions.showToast({
-                  message,
-                  toastType: 'error',
-                }),
-              ];
+              return [];
             }),
           ),
           of(AppActions.setLoading({ loading: false })),

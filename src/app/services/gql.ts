@@ -56,6 +56,39 @@ export const CREATE_PLAN = `
   }
 `;
 
+export const DELETE_ACTIVITY_INSTANCE = `
+  mutation DeleteActivityInstance(
+    $activityInstanceId: ID!
+    $planId: ID!
+  ) {
+    deleteActivityInstance(
+      activityInstanceId: $activityInstanceId
+      planId: $planId
+    ) {
+      message
+      success
+    }
+  }
+`;
+
+export const DELETE_ADAPTATION = `
+  mutation DeleteAdaptation($id: ID!) {
+    deleteAdaptation(id: $id) {
+      message
+      success
+    }
+  }
+`;
+
+export const DELETE_PLAN = `
+  mutation DeletePlan($id: ID!) {
+    deletePlan(id: $id) {
+      message
+      success
+    }
+  }
+`;
+
 export const GET_ADAPTATIONS = `
   query GetAdaptations {
     adaptations {
@@ -131,33 +164,20 @@ export const GET_UI_STATES = `
   }
 `;
 
-export const DELETE_ACTIVITY_INSTANCE = `
-  mutation DeleteActivityInstance(
-    $activityInstanceId: ID!
-    $planId: ID!
-  ) {
-    deleteActivityInstance(
-      activityInstanceId: $activityInstanceId
-      planId: $planId
-    ) {
+export const LOGIN = `
+  mutation Login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
       message
+      ssoCookieName
+      ssoCookieValue
       success
     }
   }
 `;
 
-export const DELETE_ADAPTATION = `
-  mutation DeleteAdaptation($id: ID!) {
-    deleteAdaptation(id: $id) {
-      message
-      success
-    }
-  }
-`;
-
-export const DELETE_PLAN = `
-  mutation DeletePlan($id: ID!) {
-    deletePlan(id: $id) {
+export const LOGOUT = `
+  mutation Logout($ssoToken: String!) {
+    logout(ssoToken: $ssoToken) {
       message
       success
     }

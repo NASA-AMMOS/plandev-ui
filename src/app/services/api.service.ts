@@ -270,35 +270,44 @@ export class ApiService {
   }
 
   login(username: string, password: string) {
-    const url = `${aerieApolloServerUrl}/auth/login`;
+    const body = {
+      query: gql.LOGIN,
+      variables: { password, username },
+    };
     return this.http
-      .post<{ message: string; ssoCookieValue: string; success: boolean }>(
-        url,
-        { username, password },
-      )
+      .post<{
+        data: {
+          login: { message: string; ssoCookieValue: string; success: boolean };
+        };
+      }>(aerieApolloServerUrl, body)
       .pipe(
-        map(res => {
-          if (res.success) {
-            return res;
-          } else {
-            throw new Error(res.message);
+        map(({ data: { login } }) => {
+          if (!login.success) {
+            throw new Error(login.message);
           }
+          return login;
         }),
       );
   }
 
   logout() {
-    const url = `${aerieApolloServerUrl}/auth/logout`;
     const ssoToken = getAuthorization();
+    const body = {
+      query: gql.LOGOUT,
+      variables: { ssoToken },
+    };
     return this.http
-      .post<{ message: string; success: boolean }>(url, { ssoToken })
+      .post<{
+        data: {
+          logout: { message: string; success: boolean };
+        };
+      }>(aerieApolloServerUrl, body)
       .pipe(
-        map(res => {
-          if (res.success) {
-            return res;
-          } else {
-            throw new Error(res.message);
+        map(({ data: { logout } }) => {
+          if (!logout.success) {
+            throw new Error(logout.message);
           }
+          return logout;
         }),
       );
   }

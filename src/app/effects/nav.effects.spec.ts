@@ -6,12 +6,7 @@ import { RouterNavigatedAction } from '@ngrx/router-store';
 import { Action } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
-import {
-  AppActions,
-  AuthActions,
-  PlanningActions,
-  ToastActions,
-} from '../actions';
+import { AppActions, AuthActions, PlanningActions } from '../actions';
 import { RouterState } from '../app-routing.module';
 import { adaptations, planDetail, planId, plans, uiStates } from '../mocks';
 import { ApiMockService, ApiService } from '../services';
@@ -109,13 +104,9 @@ describe('nav effects', () => {
         spyOn(apiService, 'getAdaptations').and.returnValue(
           cold('#|', null, ''),
         );
-        expectObservable(effects.navAdaptations).toBe('-(bcd)', {
+        expectObservable(effects.navAdaptations).toBe('-(bc)', {
           b: AppActions.setLoading({ loading: true }),
-          c: ToastActions.showToast({
-            message: 'Fetch adaptations failed',
-            toastType: 'error',
-          }),
-          d: AppActions.setLoading({ loading: false }),
+          c: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -142,13 +133,9 @@ describe('nav effects', () => {
         spyOn(apiService, 'getPlansAndAdaptations').and.returnValue(
           cold('#|', null, ''),
         );
-        expectObservable(effects.navPlans).toBe('-(bcd)', {
+        expectObservable(effects.navPlans).toBe('-(bc)', {
           b: AppActions.setLoading({ loading: true }),
-          c: ToastActions.showToast({
-            message: 'Fetch plans and adaptations failed',
-            toastType: 'error',
-          }),
-          d: AppActions.setLoading({ loading: false }),
+          c: AppActions.setLoading({ loading: false }),
         });
       });
     });
@@ -187,16 +174,12 @@ describe('nav effects', () => {
         spyOn(apiService, 'getPlanDetail').and.returnValue(
           cold('#|', null, ''),
         );
-        expectObservable(effects.navPlansWithId).toBe('-(bcde)', {
+        expectObservable(effects.navPlansWithId).toBe('-(bcd)', {
           b: AppActions.setLoading({ loading: true }),
           c: PlanningActions.updateAllUiStates({
             uiStates,
           }),
-          d: ToastActions.showToast({
-            message: 'Fetch plan detail failed',
-            toastType: 'error',
-          }),
-          e: AppActions.setLoading({ loading: false }),
+          d: AppActions.setLoading({ loading: false }),
         });
       });
     });
