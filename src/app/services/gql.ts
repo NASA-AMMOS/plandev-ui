@@ -176,8 +176,8 @@ export const LOGIN = `
 `;
 
 export const LOGOUT = `
-  mutation Logout($ssoToken: String!) {
-    logout(ssoToken: $ssoToken) {
+  mutation Logout {
+    logout {
       message
       success
     }

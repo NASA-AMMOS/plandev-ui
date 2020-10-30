@@ -291,17 +291,18 @@ export class ApiService {
   }
 
   logout() {
-    const ssoToken = getAuthorization();
     const body = {
       query: gql.LOGOUT,
-      variables: { ssoToken },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
     };
     return this.http
       .post<{
         data: {
           logout: { message: string; success: boolean };
         };
-      }>(aerieApolloServerUrl, body)
+      }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { logout } }) => {
           if (!logout.success) {
