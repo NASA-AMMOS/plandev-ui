@@ -247,10 +247,10 @@ export class UpsertActivityInstanceFormComponent
     parameter: ActivityInstanceFormParameter,
   ): ActivityInstanceParameter {
     const { name, type, value } = parameter;
-    if (type === 'double' || type === 'int') {
+    if (type === 'real' || type === 'int') {
       const newValue = parseFloat(value) || value;
       return { name, value: newValue };
-    } else if (type === 'bool') {
+    } else if (type === 'boolean') {
       const newValue =
         value === 'true' ? true : value === 'false' ? false : value;
       return { name, value: newValue };

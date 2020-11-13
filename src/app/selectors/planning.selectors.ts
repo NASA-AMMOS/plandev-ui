@@ -290,7 +290,7 @@ export const getPanelsWithPoints = createSelector(
                       start,
                       values,
                     } of simulationResults) {
-                      if (schema.type === 'double') {
+                      if (schema.type === 'real') {
                         const r = new RegExp(subBand?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {
@@ -345,7 +345,7 @@ export const getPanelsWithPoints = createSelector(
                       start,
                       values,
                     } of simulationResults) {
-                      if (schema.type === 'enumerated') {
+                      if (schema.type === 'variant') {
                         const r = new RegExp(subBand?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {

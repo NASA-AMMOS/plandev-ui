@@ -5,7 +5,7 @@ export const simulationResponse: SimulationResponse = {
   results: [
     {
       name: 'a',
-      schema: { type: 'double' },
+      schema: { type: 'real' },
       start: '2020-001T00:00:00',
       values: [
         { x: 10000000, y: 0 },
@@ -17,7 +17,7 @@ export const simulationResponse: SimulationResponse = {
     },
     {
       name: 'b',
-      schema: { type: 'double' },
+      schema: { type: 'real' },
       start: '2020-001T00:00:00',
       values: [
         { x: 10000000, y: 1 },
@@ -29,7 +29,7 @@ export const simulationResponse: SimulationResponse = {
     },
     {
       name: 'c',
-      schema: { type: 'double' },
+      schema: { type: 'real' },
       start: '2020-001T00:00:00',
       values: [
         { x: 10000000, y: 2 },
@@ -41,7 +41,7 @@ export const simulationResponse: SimulationResponse = {
     },
     {
       name: 'd',
-      schema: { type: 'double' },
+      schema: { type: 'real' },
       start: '2020-001T00:00:00',
       values: [
         { x: 10000000, y: 1 },
@@ -53,7 +53,7 @@ export const simulationResponse: SimulationResponse = {
     },
     {
       name: 'e',
-      schema: { type: 'double' },
+      schema: { type: 'real' },
       start: '2020-001T00:00:00',
       values: [
         { x: 10000000, y: 4 },

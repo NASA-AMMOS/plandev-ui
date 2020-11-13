@@ -185,14 +185,14 @@ describe('UpsertActivityInstanceFormComponent', () => {
   });
 
   describe('reduceParameter', () => {
-    it('double', () => {
-      const parameter = { name: 'biteSize', type: 'double', value: '2.5' };
+    it('real', () => {
+      const parameter = { name: 'biteSize', type: 'real', value: '2.5' };
       const { value } = comp.reduceParameter(parameter);
       expect(value).toBe(2.5);
     });
 
-    it('double - fail to parseFloat', () => {
-      const parameter = { name: 'biteSize', type: 'double', value: 'a' };
+    it('real - fail to parseFloat', () => {
+      const parameter = { name: 'biteSize', type: 'real', value: 'a' };
       const { value } = comp.reduceParameter(parameter);
       expect(value).toBe('a');
     });
@@ -203,20 +203,20 @@ describe('UpsertActivityInstanceFormComponent', () => {
       expect(value).toBe(2);
     });
 
-    it('bool - true', () => {
-      const parameter = { name: 'canPeel', type: 'bool', value: 'true' };
+    it('boolean - true', () => {
+      const parameter = { name: 'canPeel', type: 'boolean', value: 'true' };
       const { value } = comp.reduceParameter(parameter);
       expect(value).toBe(true);
     });
 
-    it('bool - false', () => {
-      const parameter = { name: 'canPeel', type: 'bool', value: 'false' };
+    it('boolean - false', () => {
+      const parameter = { name: 'canPeel', type: 'boolean', value: 'false' };
       const { value } = comp.reduceParameter(parameter);
       expect(value).toBe(false);
     });
 
-    it('bool - other', () => {
-      const parameter = { name: 'canPeel', type: 'bool', value: 'abc' };
+    it('boolean - other', () => {
+      const parameter = { name: 'canPeel', type: 'boolean', value: 'abc' };
       const { value } = comp.reduceParameter(parameter);
       expect(value).toBe('abc');
     });
@@ -230,16 +230,16 @@ describe('UpsertActivityInstanceFormComponent', () => {
 
   describe('reduceParameters', () => {
     it('remove empty string valued parameters', () => {
-      const parameters = [{ name: 'biteSize', type: 'double', value: '' }];
+      const parameters = [{ name: 'biteSize', type: 'real', value: '' }];
       const res = comp.reduceParameters(parameters);
       expect(res).toEqual([]);
     });
 
     it('map reduce parameters', () => {
       const parameters = [
-        { name: 'biteSize', type: 'double', value: '2.5' },
+        { name: 'biteSize', type: 'real', value: '2.5' },
         { name: 'fruitSize', type: 'int', value: '2' },
-        { name: 'canPeel', type: 'bool', value: 'false' },
+        { name: 'canPeel', type: 'boolean', value: 'false' },
         { name: 'bad', type: 'string', value: '' },
       ];
       const res = comp.reduceParameters(parameters);
