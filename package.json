@@ -25,7 +25,8 @@
     "prebuild": "npm run version",
     "prestart": "npm run version",
     "pretest": "npm run version",
-    "start": "ng serve --hmr",
+    "start": "ng serve",
+    "start:hmr": "ng serve --hmr",
     "test": "ng test --watch=false --browsers FirefoxHeadless",
     "test:watch": "ng test --code-coverage --watch=true --browsers Firefox",
     "version": "node ./scripts/git-version.js"
