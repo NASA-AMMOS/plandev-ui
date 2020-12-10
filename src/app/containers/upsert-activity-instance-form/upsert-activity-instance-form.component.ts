@@ -86,17 +86,13 @@ export class UpsertActivityInstanceFormComponent
   cancel: EventEmitter<void> = new EventEmitter<void>();
 
   @Output()
-  create: EventEmitter<CreateActivityInstance> = new EventEmitter<
-    CreateActivityInstance
-  >();
+  create: EventEmitter<CreateActivityInstance> = new EventEmitter<CreateActivityInstance>();
 
   @Output()
   delete: EventEmitter<string> = new EventEmitter<string>();
 
   @Output()
-  update: EventEmitter<UpdateActivityInstance> = new EventEmitter<
-    UpdateActivityInstance
-  >();
+  update: EventEmitter<UpdateActivityInstance> = new EventEmitter<UpdateActivityInstance>();
 
   activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   errorStateMatcher: ErrorStateMatcher = new ActivityInstanceFormStateMatcher();

@@ -312,7 +312,7 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.updateAllUiStates, (state, { uiStates }) => ({
     ...state,
-    selectedUiStateId: uiStates[2]?.id || null,
+    selectedUiStateId: uiStates[0]?.id || null,
     uiStates,
   })),
   on(PlanningActions.updateBand, (state, { id, update }) => ({

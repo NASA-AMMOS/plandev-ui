@@ -1,4 +1,8 @@
 {
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true
+  },
   "compileOnSave": false,
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
@@ -14,9 +18,5 @@
     "target": "es2015",
     "typeRoots": ["node_modules/@types"],
     "lib": ["es2019", "dom"]
-  },
-  "angularCompilerOptions": {
-    "fullTemplateTypeCheck": true,
-    "strictInjectionParameters": true
   }
 }

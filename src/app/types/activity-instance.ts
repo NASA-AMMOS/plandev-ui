@@ -36,9 +36,9 @@ export interface DeleteActivityInstanceResponse {
   success: boolean;
 }
 
-export type UpdateActivityInstance = { id: string } & Partial<
-  CreateActivityInstance
->;
+export type UpdateActivityInstance = {
+  id: string;
+} & Partial<CreateActivityInstance>;
 
 export interface UpdateActivityInstanceResponse {
   message: string | null;

@@ -97,9 +97,7 @@ export class BandComponent implements AfterViewInit, OnChanges {
   yAxes: Axis[] | undefined;
 
   @Output()
-  openGuideDialog: EventEmitter<GuideDialogData> = new EventEmitter<
-    GuideDialogData
-  >();
+  openGuideDialog: EventEmitter<GuideDialogData> = new EventEmitter<GuideDialogData>();
 
   @Output()
   deleteHorizontalGuide: EventEmitter<Guide> = new EventEmitter<Guide>();

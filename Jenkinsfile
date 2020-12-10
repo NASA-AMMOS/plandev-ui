@@ -108,7 +108,6 @@ pipeline {
             }
           }
         }
-        junit allowEmptyResults: true, healthScaleFactor: 10.0, keepLongStdio: true, testResults: '**/unit-test-results.xml'
       }
     }
     stage ('build archive') {

@@ -15,7 +15,6 @@
           "options": {
             "allowedCommonJsDependencies": [
               "@ctrl/ngx-codemirror",
-              "hammerjs",
               "subsink",
               "zen-observable",
               "zone.js/dist/zone-error"
@@ -85,13 +84,7 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "main": "src/test.ts",
-            "codeCoverageExclude": [
-              "src/app/classes/*.ts",
-              "src/app/functions/band.ts",
-              "src/app/functions/tooltip.ts",
-              "src/app/mocks/*.ts",
-              "src/app/services/api-mock.service.ts"
-            ],
+            "codeCoverageExclude": [],
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
