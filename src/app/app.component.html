@@ -26,12 +26,10 @@
         </a>
         <a
           *ngIf="!isLoginPage"
-          [href]="vsCodeServerUrl"
           mat-list-item
           matTooltip="Editor"
           matTooltipPosition="right"
-          rel="noopener noreferrer"
-          target="_blank"
+          (click)="onOpenEditor()"
         >
           <mat-icon mat-list-icon>code</mat-icon>
           <span matLine>Editor</span>

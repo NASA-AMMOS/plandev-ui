@@ -277,7 +277,12 @@ export class ApiService {
     return this.http
       .post<{
         data: {
-          login: { message: string; ssoCookieValue: string; success: boolean };
+          login: {
+            editorUrl: string;
+            message: string;
+            ssoCookieValue: string;
+            success: boolean;
+          };
         };
       }>(aerieApolloServerUrl, body)
       .pipe(

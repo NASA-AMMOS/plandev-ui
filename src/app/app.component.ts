@@ -21,6 +21,7 @@ import { AppActions, AuthActions } from './actions';
 import { AppRoutingModule, RouterSerializer } from './app-routing.module';
 import { metaReducers, RootState, ROOT_REDUCERS } from './app-store';
 import { TooltipModule } from './components';
+import { AERIE_USER } from './constants';
 import { ContainersModule } from './containers';
 import {
   AppEffects,
@@ -32,6 +33,7 @@ import {
 import { UnauthorizedInterceptor } from './interceptors';
 import { MaterialModule } from './material';
 import { getLoading, getPath } from './selectors';
+import { User } from './types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +45,6 @@ export class AppComponent implements OnDestroy {
   aerieApolloServerUrl = environment.aerieApolloServerUrl;
   isLoginPage = true;
   loading = false;
-  vsCodeServerUrl = environment.vsCodeServerUrl;
 
   private subs = new SubSink();
 
@@ -91,6 +92,11 @@ export class AppComponent implements OnDestroy {
 
   onLogout(): void {
     this.store.dispatch(AuthActions.logout());
+  }
+
+  onOpenEditor(): void {
+    const user: User = JSON.parse(localStorage.getItem(AERIE_USER));
+    open(`${user.editorUrl}?ssoToken=${user.ssoCookieValue}`, '_newtab');
   }
 }
 
