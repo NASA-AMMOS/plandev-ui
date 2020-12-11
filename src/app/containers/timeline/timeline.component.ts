@@ -94,7 +94,7 @@ export class TimelineComponent implements AfterViewChecked {
 
   onUpdateHorizontalGuide(guide: Partial<Guide>): void {
     this.store.dispatch(
-      PlanningActions.guideUpdate({ id: guide.id, changes: guide }),
+      PlanningActions.guideUpdate({ changes: guide, id: guide.id }),
     );
   }
 
@@ -108,7 +108,7 @@ export class TimelineComponent implements AfterViewChecked {
         type: activityType.name,
       };
       this.store.dispatch(
-        PlanningActions.createActivityInstance({ planId, activityInstance }),
+        PlanningActions.createActivityInstance({ activityInstance, planId }),
       );
     }
   }

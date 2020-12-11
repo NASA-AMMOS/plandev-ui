@@ -10,12 +10,6 @@ import { User } from '../types';
 
 @Injectable()
 export class AuthEffects {
-  constructor(
-    private actions: Actions,
-    private apiService: ApiService,
-    private router: Router,
-  ) {}
-
   login = createEffect(() =>
     this.actions.pipe(
       ofType(AuthActions.login),
@@ -80,4 +74,10 @@ export class AuthEffects {
       ),
     { dispatch: false },
   );
+
+  constructor(
+    private actions: Actions,
+    private apiService: ApiService,
+    private router: Router,
+  ) {}
 }

@@ -8,11 +8,11 @@ import { Point, StringTMap } from '../../types';
  */
 @Injectable()
 export class SubBandService {
-  constructor(private cdRef: ChangeDetectorRef) {}
-
   canvases: StringTMap<HTMLCanvasElement> = {};
   colorToPoint: StringTMap<StringTMap<Point>> = {};
   hiddenCanvases: StringTMap<HTMLCanvasElement> = {};
+
+  constructor(private cdRef: ChangeDetectorRef) {}
 
   getCanvas(subTimelineId: string): HTMLCanvasElement {
     return this.canvases[subTimelineId];

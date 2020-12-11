@@ -153,6 +153,11 @@ export class BandComponent implements AfterViewInit, OnChanges {
     private subBandService: SubBandService,
   ) {}
 
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(): void {
+    this.resize();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     let shouldRedraw = false;
     let shouldResize = false;
@@ -526,11 +531,6 @@ export class BandComponent implements AfterViewInit, OnChanges {
       );
       this.createPoint.emit({ activityType, startTimestamp, type: 'activity' });
     }
-  }
-
-  @HostListener('window:resize', ['$event'])
-  onWindowResize(): void {
-    this.resize();
   }
 
   resize(): void {

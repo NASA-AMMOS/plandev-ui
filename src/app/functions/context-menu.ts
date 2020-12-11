@@ -2,6 +2,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 
 /**
  * Opens a context menu for a given menu trigger.
+ *
  * @see https://github.com/angular/components/issues/5007
  */
 export function contextMenu(

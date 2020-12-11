@@ -7,18 +7,17 @@ import {
 } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { AppActions, AuthActions, PlanningActions } from '../actions';
 import { AERIE_USER } from '../constants';
+import { AppActions, AuthActions, PlanningActions } from '../actions';
 import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
 import { User } from '../types';
 
 @Injectable()
 export class NavEffects {
-  constructor(private actions: Actions, private apiService: ApiService) {}
-
   /**
    * Application-level store initialization can go in here.
+   *
    * @see https://ngrx.io/guide/effects/lifecycle#root_effects_init
    */
   init = createEffect(() =>
@@ -40,7 +39,7 @@ export class NavEffects {
   navAdaptations = createEffect(() =>
     this.actions.pipe(
       ofRoute('adaptations'),
-      switchMap(_ =>
+      switchMap(() =>
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.getAdaptations().pipe(
@@ -61,7 +60,7 @@ export class NavEffects {
   navPlans = createEffect(() =>
     this.actions.pipe(
       ofRoute('plans'),
-      switchMap(_ =>
+      switchMap(() =>
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.getPlansAndAdaptations().pipe(
@@ -106,4 +105,6 @@ export class NavEffects {
       ),
     ),
   );
+
+  constructor(private actions: Actions, private apiService: ApiService) {}
 }

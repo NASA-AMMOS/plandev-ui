@@ -45,10 +45,10 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
   marginTop = 10;
 
   @Input()
-  maxTimeRange: TimeRange = { start: 0, end: 0 };
+  maxTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Input()
-  viewTimeRange: TimeRange = { start: 0, end: 0 };
+  viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   @Output()
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
@@ -63,6 +63,11 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
 
   constructor(private elRef: ElementRef) {
     this.elRef.nativeElement.style.setProperty('--height', `${this.height}px`);
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(): void {
+    this.resize();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -139,11 +144,6 @@ export class TimeAxisGlobalComponent implements AfterViewInit, OnChanges {
 
   getXScale(): ScaleTime<number, number> {
     return scaleTime().domain(this.getDomain()).rangeRound([0, this.drawWidth]);
-  }
-
-  @HostListener('window:resize', ['$event'])
-  onWindowResize(): void {
-    this.resize();
   }
 
   resize(): void {

@@ -168,7 +168,7 @@ export class UpsertActivityInstanceFormComponent
           [Validators.required, doyTimestampValidator],
         ],
         type: [
-          { value: this.activityInstance.type, disabled: true },
+          { disabled: true, value: this.activityInstance.type },
           Validators.required,
         ],
       });

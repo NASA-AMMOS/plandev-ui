@@ -94,7 +94,7 @@ export class PlanComponent implements OnDestroy {
   maxTimeRange: TimeRange;
   panelsEditorOptions = {
     extraKeys: {
-      'Cmd-S': () => {
+      ['Cmd-S']: () => {
         this.ngZone.run(() => {
           try {
             if (this.selectedUiState) {
@@ -218,6 +218,20 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    const { key, metaKey } = event;
+    if (metaKey && key === 'e') {
+      event.preventDefault();
+      this.showDrawerType('panelEditor');
+      this.onResize();
+    }
+    if (metaKey && key === 's') {
+      event.preventDefault();
+      this.runSimulation();
+    }
+  }
+
   ngOnDestroy(): void {
     this.subs.unsubscribe();
     hideTooltip();
@@ -237,22 +251,8 @@ export class PlanComponent implements OnDestroy {
   onDeleteActivityInstance(activityInstanceId: string): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
-      PlanningActions.deleteActivityInstance({ planId, activityInstanceId }),
+      PlanningActions.deleteActivityInstance({ activityInstanceId, planId }),
     );
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    const { key, metaKey } = event;
-    if (metaKey && key === 'e') {
-      event.preventDefault();
-      this.showDrawerType('panelEditor');
-      this.onResize();
-    }
-    if (metaKey && key === 's') {
-      event.preventDefault();
-      this.runSimulation();
-    }
   }
 
   onPanelMenuAction(item: PanelMenuItem) {

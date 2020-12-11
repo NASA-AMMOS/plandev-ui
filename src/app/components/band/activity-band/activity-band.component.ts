@@ -73,6 +73,11 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
 
   constructor(private subBandService: SubBandService) {}
 
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(): void {
+    this.resize();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     let shouldRedraw = false;
     let shouldResize = false;
@@ -144,11 +149,6 @@ export class ActivityBandComponent implements AfterViewInit, OnChanges {
       }
     });
     return textWidth;
-  }
-
-  @HostListener('window:resize', ['$event'])
-  onWindowResize(): void {
-    this.resize();
   }
 
   resize(): void {

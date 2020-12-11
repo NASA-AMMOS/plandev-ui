@@ -67,7 +67,7 @@ export class SvgConstraintViolation {
       end = this.viewTimeRange.end;
     }
 
-    return { start, end };
+    return { end, start };
   }
 
   /**

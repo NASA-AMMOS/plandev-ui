@@ -8,8 +8,6 @@ import { AboutDialogComponent } from '../components';
 
 @Injectable()
 export class AppEffects {
-  constructor(private actions: Actions, private dialog: MatDialog) {}
-
   openAboutDialog = createEffect(
     () =>
       this.actions.pipe(
@@ -36,4 +34,6 @@ export class AppEffects {
       ),
     { dispatch: false },
   );
+
+  constructor(private actions: Actions, private dialog: MatDialog) {}
 }

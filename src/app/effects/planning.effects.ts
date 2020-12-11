@@ -13,15 +13,8 @@ import { Guide, GuideDialogData } from '../types';
 
 @Injectable()
 export class PlanningEffects {
-  constructor(
-    private actions: Actions,
-    private apiService: ApiService,
-    private dialog: MatDialog,
-    private store: Store<RootState>,
-  ) {}
-
-  createActivityInstance = createEffect(() => {
-    return this.actions.pipe(
+  createActivityInstance = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.createActivityInstance),
       switchMap(({ planId, activityInstance }) =>
         concat(
@@ -29,23 +22,21 @@ export class PlanningEffects {
           this.apiService
             .createActivityInstances(planId, [activityInstance])
             .pipe(
-              switchMap(({ ids: [id] }) => {
-                return [
-                  ToastActions.showToast({
-                    message: 'Activity instance created',
-                    toastType: 'success',
-                  }),
-                  PlanningActions.createActivityInstanceSuccess({
-                    activityInstance: {
-                      ...activityInstance,
-                      children: [],
-                      duration: 0,
-                      id,
-                      parent: null,
-                    },
-                  }),
-                ];
-              }),
+              switchMap(({ ids: [id] }) => [
+                ToastActions.showToast({
+                  message: 'Activity instance created',
+                  toastType: 'success',
+                }),
+                PlanningActions.createActivityInstanceSuccess({
+                  activityInstance: {
+                    ...activityInstance,
+                    children: [],
+                    duration: 0,
+                    id,
+                    parent: null,
+                  },
+                }),
+              ]),
               catchError((error: Error) => {
                 console.error(error.message);
                 return [
@@ -62,33 +53,31 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         ),
       ),
-    );
-  });
+    ),
+  );
 
-  createAdaptation = createEffect(() => {
-    return this.actions.pipe(
+  createAdaptation = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.createAdaptation),
       switchMap(({ adaptation }) =>
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.createAdaptation(adaptation).pipe(
-            switchMap(({ id }) => {
-              return [
-                ToastActions.showToast({
-                  message: 'Adaptation created',
-                  toastType: 'success',
-                }),
-                PlanningActions.createAdaptationSuccess({
-                  adaptation: {
-                    id,
-                    mission: adaptation.mission,
-                    name: adaptation.name,
-                    owner: adaptation.owner,
-                    version: adaptation.version,
-                  },
-                }),
-              ];
-            }),
+            switchMap(({ id }) => [
+              ToastActions.showToast({
+                message: 'Adaptation created',
+                toastType: 'success',
+              }),
+              PlanningActions.createAdaptationSuccess({
+                adaptation: {
+                  id,
+                  mission: adaptation.mission,
+                  name: adaptation.name,
+                  owner: adaptation.owner,
+                  version: adaptation.version,
+                },
+              }),
+            ]),
             catchError((error: Error) => {
               console.error(error.message);
               return [
@@ -102,33 +91,31 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         ),
       ),
-    );
-  });
+    ),
+  );
 
-  createPlan = createEffect(() => {
-    return this.actions.pipe(
+  createPlan = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.createPlan),
       switchMap(({ plan }) =>
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.createPlan(plan).pipe(
-            switchMap(({ id }) => {
-              return [
-                ToastActions.showToast({
-                  message: 'Plan created',
-                  toastType: 'success',
-                }),
-                PlanningActions.createPlanSuccess({
-                  plan: {
-                    adaptationId: plan.adaptationId,
-                    endTimestamp: plan.endTimestamp,
-                    id,
-                    name: plan.name,
-                    startTimestamp: plan.startTimestamp,
-                  },
-                }),
-              ];
-            }),
+            switchMap(({ id }) => [
+              ToastActions.showToast({
+                message: 'Plan created',
+                toastType: 'success',
+              }),
+              PlanningActions.createPlanSuccess({
+                plan: {
+                  adaptationId: plan.adaptationId,
+                  endTimestamp: plan.endTimestamp,
+                  id,
+                  name: plan.name,
+                  startTimestamp: plan.startTimestamp,
+                },
+              }),
+            ]),
             catchError((error: Error) => {
               console.error(error.message);
               return [
@@ -142,11 +129,11 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         ),
       ),
-    );
-  });
+    ),
+  );
 
-  deleteActivityInstance = createEffect(() => {
-    return this.actions.pipe(
+  deleteActivityInstance = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.deleteActivityInstance),
       switchMap(({ planId, activityInstanceId }) => {
         const deleteActivityInstanceDialog = this.dialog.open(
@@ -178,17 +165,15 @@ export class PlanningEffects {
             this.apiService
               .deleteActivityInstance(planId, activityInstanceId)
               .pipe(
-                switchMap(() => {
-                  return [
-                    ToastActions.showToast({
-                      message: 'Activity instance deleted',
-                      toastType: 'success',
-                    }),
-                    PlanningActions.deleteActivityInstanceSuccess({
-                      activityInstanceId,
-                    }),
-                  ];
-                }),
+                switchMap(() => [
+                  ToastActions.showToast({
+                    message: 'Activity instance deleted',
+                    toastType: 'success',
+                  }),
+                  PlanningActions.deleteActivityInstanceSuccess({
+                    activityInstanceId,
+                  }),
+                ]),
                 catchError((error: Error) => {
                   console.error(error.message);
                   return [
@@ -204,11 +189,11 @@ export class PlanningEffects {
         }
         return [];
       }),
-    );
-  });
+    ),
+  );
 
-  deleteAdaptation = createEffect(() => {
-    return this.actions.pipe(
+  deleteAdaptation = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.deleteAdaptation),
       switchMap(({ id }) => {
         const deleteAdaptationDialog = this.dialog.open(
@@ -233,15 +218,13 @@ export class PlanningEffects {
           return concat(
             of(AppActions.setLoading({ loading: true })),
             this.apiService.deleteAdaptation(id).pipe(
-              switchMap(() => {
-                return [
-                  ToastActions.showToast({
-                    message: 'Adaptation deleted',
-                    toastType: 'success',
-                  }),
-                  PlanningActions.deleteAdaptationSuccess({ id }),
-                ];
-              }),
+              switchMap(() => [
+                ToastActions.showToast({
+                  message: 'Adaptation deleted',
+                  toastType: 'success',
+                }),
+                PlanningActions.deleteAdaptationSuccess({ id }),
+              ]),
               catchError((error: Error) => {
                 console.error(error.message);
                 return [
@@ -257,11 +240,11 @@ export class PlanningEffects {
         }
         return [];
       }),
-    );
-  });
+    ),
+  );
 
-  deletePlan = createEffect(() => {
-    return this.actions.pipe(
+  deletePlan = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.deletePlan),
       switchMap(({ id }) => {
         const deletePlanDialog = this.dialog.open(ConfirmDialogComponent, {
@@ -280,15 +263,13 @@ export class PlanningEffects {
           return concat(
             of(AppActions.setLoading({ loading: true })),
             this.apiService.deletePlan(id).pipe(
-              switchMap(() => {
-                return [
-                  ToastActions.showToast({
-                    message: 'Plan deleted',
-                    toastType: 'success',
-                  }),
-                  PlanningActions.deletePlanSuccess({ id }),
-                ];
-              }),
+              switchMap(() => [
+                ToastActions.showToast({
+                  message: 'Plan deleted',
+                  toastType: 'success',
+                }),
+                PlanningActions.deletePlanSuccess({ id }),
+              ]),
               catchError((error: Error) => {
                 console.error(error.message);
                 return [
@@ -304,11 +285,11 @@ export class PlanningEffects {
         }
         return [];
       }),
-    );
-  });
+    ),
+  );
 
-  guideOpenDialog = createEffect(() => {
-    return this.actions.pipe(
+  guideOpenDialog = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.guideOpenDialog),
       switchMap(({ data }) => {
         const guideDialog = this.dialog.open(GuideDialogComponent, {
@@ -326,14 +307,14 @@ export class PlanningEffects {
           return [PlanningActions.guideAdd({ guide })];
         } else if (guide && data.mode === 'edit') {
           return [
-            PlanningActions.guideUpdate({ id: guide.id, changes: guide }),
+            PlanningActions.guideUpdate({ changes: guide, id: guide.id }),
           ];
         } else {
           return [];
         }
       }),
-    );
-  });
+    ),
+  );
 
   /**
    * @note We are using a simple heuristic to calculate the sampling period.
@@ -358,11 +339,9 @@ export class PlanningEffects {
           this.apiService
             .simulate(adaptationId, action.planId, samplingPeriod)
             .pipe(
-              switchMap(simulationResponse => {
-                return [
-                  PlanningActions.runSimulationSuccess({ simulationResponse }),
-                ];
-              }),
+              switchMap(simulationResponse => [
+                PlanningActions.runSimulationSuccess({ simulationResponse }),
+              ]),
               catchError((error: Error) => {
                 console.log(error.message);
                 return [
@@ -378,8 +357,8 @@ export class PlanningEffects {
     ),
   );
 
-  updateActivityInstance = createEffect(() => {
-    return this.actions.pipe(
+  updateActivityInstance = createEffect(() =>
+    this.actions.pipe(
       ofType(PlanningActions.updateActivityInstance),
       switchMap(({ planId, activityInstance }) =>
         concat(
@@ -410,6 +389,13 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         ),
       ),
-    );
-  });
+    ),
+  );
+
+  constructor(
+    private actions: Actions,
+    private apiService: ApiService,
+    private dialog: MatDialog,
+    private store: Store<RootState>,
+  ) {}
 }

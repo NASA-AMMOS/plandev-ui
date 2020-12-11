@@ -102,13 +102,9 @@ export class SvgVerticalGuide {
       .attr('r', circleRadius)
       .attr('fill', circleColor);
     this.circle
-      .on('mousemove', (event: MouseEvent) => {
-        return showTooltip(
-          event,
-          this.tooltipText,
-          this.options.containerWidth,
-        );
-      })
+      .on('mousemove', (event: MouseEvent) =>
+        showTooltip(event, this.tooltipText, this.options.containerWidth),
+      )
       .on('mouseleave', () => {
         hideTooltip();
       });

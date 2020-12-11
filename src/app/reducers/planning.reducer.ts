@@ -49,7 +49,7 @@ export const initialState: PlanningState = {
   selectedUiStateId: null,
   simulationResults: null,
   uiStates: [],
-  viewTimeRange: { start: 0, end: 0 },
+  viewTimeRange: { end: 0, start: 0 },
   violationListState: { category: {}, constraint: {} },
 };
 

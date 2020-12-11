@@ -1,4 +1,4 @@
-/* tslint:disable */
+/* eslint-disable */
 
 import 'zone.js/dist/zone-testing'; // MUST BE FIRST.
 

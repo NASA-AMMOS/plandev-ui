@@ -60,6 +60,11 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
 
   constructor(private subBandService: SubBandService) {}
 
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(): void {
+    this.resize();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     let shouldRedraw = false;
     let shouldResize = false;
@@ -100,11 +105,6 @@ export class LineBandComponent implements AfterViewInit, OnChanges {
       this.drawWidth,
     );
     this.redraw();
-  }
-
-  @HostListener('window:resize', ['$event'])
-  onWindowResize(): void {
-    this.resize();
   }
 
   resize(): void {

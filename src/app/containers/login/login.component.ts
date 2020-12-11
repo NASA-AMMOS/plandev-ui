@@ -57,7 +57,7 @@ export class LoginComponent implements OnDestroy {
   login() {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
-      this.store.dispatch(AuthActions.login({ username, password }));
+      this.store.dispatch(AuthActions.login({ password, username }));
     }
   }
 }

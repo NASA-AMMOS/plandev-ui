@@ -450,7 +450,7 @@ export const getMaxTimeRange = createSelector(
         start: getUnixEpochTime(plan.startTimestamp),
       };
     }
-    return { start: 0, end: 0 };
+    return { end: 0, start: 0 };
   },
 );
 

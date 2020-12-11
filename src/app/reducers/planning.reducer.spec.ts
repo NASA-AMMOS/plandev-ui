@@ -304,7 +304,7 @@ describe('planning reducer', () => {
       };
       const state: PlanningState = reducer(
         { ...initialState, uiStates },
-        PlanningActions.guideUpdate({ id, changes }),
+        PlanningActions.guideUpdate({ changes, id }),
       );
       state.uiStates.forEach(uiState => {
         uiState.panels.forEach(panel => {
@@ -336,7 +336,7 @@ describe('planning reducer', () => {
         label: { text: 'hi' },
         type: 'horizontal',
       };
-      state = reducer(state, PlanningActions.guideUpdate({ id, changes }));
+      state = reducer(state, PlanningActions.guideUpdate({ changes, id }));
       state.uiStates.forEach(uiState => {
         uiState.panels.forEach(panel => {
           if (panel.bands) {
@@ -373,7 +373,7 @@ describe('planning reducer', () => {
       };
       state = reducer(
         state,
-        PlanningActions.guideUpdate({ id: '52', changes }),
+        PlanningActions.guideUpdate({ changes, id: '52' }),
       );
       state.uiStates.forEach(uiState => {
         uiState.panels.forEach(panel => {
