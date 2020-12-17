@@ -25,13 +25,13 @@ import {
   PlaceholderModule,
   ToolbarModule,
 } from '../../components';
+import { TimelineModule } from '../../components/timeline/timeline.component';
 import { getPanelsText, hideTooltip } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
   getActivityInstances,
   getActivityTypes,
-  getConstraintViolationsByCategory,
   getMaxTimeRange,
   getPanelsWithPoints,
   getSelectedActivityInstance,
@@ -41,24 +41,32 @@ import {
   getUiStates,
   getViewTimeRange,
   getViolationListState,
+  getViolationsByCategory,
 } from '../../selectors';
 import {
   ActivityInstance,
   ActivityType,
   CreateActivityInstance,
+  CreatePoint,
+  DeletePoint,
+  HorizontalGuide,
+  HorizontalGuideEvent,
   Panel,
   PanelMenuItem,
   Plan,
+  SavePoint,
+  SelectPoint,
   StringTMap,
   TimeRange,
   UiState,
   UpdateActivityInstance,
+  UpdatePoint,
+  UpdateRow,
   Violation,
   ViolationListState,
 } from '../../types';
-import { ConstraintViolationListModule } from '../constraint-violation-list/constraint-violation-list.component';
-import { TimelineModule } from '../timeline/timeline.component';
 import { UpsertActivityInstanceFormModule } from '../upsert-activity-instance-form/upsert-activity-instance-form.component';
+import { ViolationListModule } from '../violation-list/violation-list.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,7 +80,7 @@ export class PlanComponent implements OnDestroy {
 
   activityInstances: ActivityInstance[] | null = null;
   activityTypes: ActivityType[] | null = null;
-  constraintViolationsByCategory: StringTMap<Violation[]>;
+  violationsByCategory: StringTMap<Violation[]>;
   drawer = {
     activityDictionary: {
       visible: true,
@@ -131,7 +139,7 @@ export class PlanComponent implements OnDestroy {
   selectedActivityType: ActivityType | null = null;
   selectedUiState: UiState | null;
   simulationOutOfDate = false;
-  totalConstraintViolations = 0;
+  totalViolations = 0;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
   violationListState: ViolationListState;
@@ -156,15 +164,14 @@ export class PlanComponent implements OnDestroy {
         this.cdRef.markForCheck();
       }),
       this.store
-        .pipe(select(getConstraintViolationsByCategory))
-        .subscribe(constraintViolationsByCategory => {
-          this.constraintViolationsByCategory = constraintViolationsByCategory;
-          this.totalConstraintViolations = 0;
-          if (constraintViolationsByCategory) {
-            const categories = Object.keys(this.constraintViolationsByCategory);
+        .pipe(select(getViolationsByCategory))
+        .subscribe(violationsByCategory => {
+          this.violationsByCategory = violationsByCategory;
+          this.totalViolations = 0;
+          if (violationsByCategory) {
+            const categories = Object.keys(this.violationsByCategory);
             for (const category of categories) {
-              this.totalConstraintViolations +=
-                constraintViolationsByCategory[category].length;
+              this.totalViolations += violationsByCategory[category].length;
             }
           }
           this.cdRef.markForCheck();
@@ -223,8 +230,7 @@ export class PlanComponent implements OnDestroy {
     const { key, metaKey } = event;
     if (metaKey && key === 'e') {
       event.preventDefault();
-      this.showDrawerType('panelEditor');
-      this.onResize();
+      this.showPanelEditor();
     }
     if (metaKey && key === 's') {
       event.preventDefault();
@@ -246,6 +252,41 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(
       PlanningActions.createActivityInstance({ activityInstance, planId }),
     );
+  }
+
+  onCreateHorizontalGuide(event: HorizontalGuideEvent) {
+    this.store.dispatch(PlanningActions.horizontalGuideOpenDialog({ event }));
+  }
+
+  onCreatePoint(event: CreatePoint): void {
+    if (event.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      const activityType = event.activityType;
+      const activityInstance: CreateActivityInstance = {
+        parameters: [],
+        startTimestamp: event.startTimestamp,
+        type: activityType.name,
+      };
+      this.store.dispatch(
+        PlanningActions.createActivityInstance({ activityInstance, planId }),
+      );
+    }
+  }
+
+  onDeleteHorizontalGuide(guide: HorizontalGuide): void {
+    this.store.dispatch(PlanningActions.horizontalGuideDelete({ guide }));
+  }
+
+  onDeletePoint(event: DeletePoint): void {
+    if (event.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      this.store.dispatch(
+        PlanningActions.deleteActivityInstance({
+          activityInstanceId: event.id,
+          planId,
+        }),
+      );
+    }
   }
 
   onDeleteActivityInstance(activityInstanceId: string): void {
@@ -272,6 +313,18 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(AppActions.resize());
   }
 
+  onSavePoint(event: SavePoint): void {
+    if (event.type === 'activity') {
+      const { id: planId } = this.route.snapshot.params;
+      this.store.dispatch(
+        PlanningActions.updateActivityInstance({
+          activityInstance: { ...event.value, id: event.id },
+          planId,
+        }),
+      );
+    }
+  }
+
   onSelectActivityInstance(activityInstance: ActivityInstance): void {
     this.store.dispatch(
       PlanningActions.setSelectedActivityInstanceId({
@@ -283,6 +336,18 @@ export class PlanComponent implements OnDestroy {
   onSelectActivityType(activityType: ActivityType): void {
     this.selectedActivityType = { ...activityType };
     this.showDrawerType('createActivityInstance');
+  }
+
+  onSelectPoint(event: SelectPoint): void {
+    if (event.type === 'activity') {
+      this.store.dispatch(
+        PlanningActions.setSelectedActivityInstanceId({
+          keepSelected: true,
+          selectedActivityInstanceId: event.id,
+        }),
+      );
+      this.showDrawerType('selectedActivityInstance');
+    }
   }
 
   onUiStateChanged(change: MatSelectChange): void {
@@ -298,6 +363,30 @@ export class PlanComponent implements OnDestroy {
         planId,
       }),
     );
+  }
+
+  onUpdateHorizontalGuide(event: HorizontalGuideEvent): void {
+    this.store.dispatch(PlanningActions.horizontalGuideOpenDialog({ event }));
+  }
+
+  onUpdatePoint(event: UpdatePoint): void {
+    if (event.type === 'activity') {
+      this.store.dispatch(
+        PlanningActions.updateActivityInstanceSuccess({
+          activityInstance: { ...event.value, id: event.id },
+        }),
+      );
+    }
+  }
+
+  onUpdateRow(event: UpdateRow): void {
+    const { rowId, update } = event;
+    this.store.dispatch(PlanningActions.updateRow({ rowId, update }));
+    this.store.dispatch(AppActions.resize());
+  }
+
+  onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
+    this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
   }
 
   runSimulation() {
@@ -317,6 +406,11 @@ export class PlanComponent implements OnDestroy {
     this.drawerVisible = true;
   }
 
+  showPanelEditor() {
+    this.showDrawerType('panelEditor');
+    this.onResize();
+  }
+
   trackByPanels(index: number, panel: Panel): string {
     return `${panel.id}-${index}`;
   }
@@ -332,7 +426,6 @@ export class PlanComponent implements OnDestroy {
     AngularSplitModule.forChild(),
     DataTableModule,
     ActivityTypeListModule,
-    ConstraintViolationListModule,
     FormsModule,
     PanelHeaderModule,
     PipesModule,
@@ -340,6 +433,7 @@ export class PlanComponent implements OnDestroy {
     TimelineModule,
     ToolbarModule,
     UpsertActivityInstanceFormModule,
+    ViolationListModule,
   ],
 })
 export class PlanModule {}

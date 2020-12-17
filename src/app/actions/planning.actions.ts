@@ -5,8 +5,8 @@ import {
   CreateActivityInstance,
   CreateAdaptation,
   CreatePlan,
-  Guide,
-  GuideDialogData,
+  HorizontalGuide,
+  HorizontalGuideEvent,
   Plan,
   PlanDetail,
   SimulationResponse,
@@ -95,24 +95,24 @@ export const getPlansSuccess = createAction(
   props<{ plans: Plan[] }>(),
 );
 
-export const guideAdd = createAction(
-  '[planning] guideAdd',
-  props<{ guide: Guide }>(),
+export const horizontalGuideCreate = createAction(
+  '[planning] horizontalGuideCreate',
+  props<{ guide: HorizontalGuide }>(),
 );
 
-export const guideOpenDialog = createAction(
-  '[planning] guideOpenDialog',
-  props<{ data: GuideDialogData }>(),
+export const horizontalGuideOpenDialog = createAction(
+  '[planning] horizontalGuideOpenDialog',
+  props<{ event: HorizontalGuideEvent }>(),
 );
 
-export const guideRemove = createAction(
-  '[planning] guideRemove',
-  props<{ guide: Guide }>(),
+export const horizontalGuideDelete = createAction(
+  '[planning] horizontalGuideDelete',
+  props<{ guide: HorizontalGuide }>(),
 );
 
-export const guideUpdate = createAction(
-  '[planning] guideUpdate',
-  props<{ id: string; changes: Partial<Guide> }>(),
+export const horizontalGuideUpdate = createAction(
+  '[planning] horizontalGuideUpdate',
+  props<{ guide: HorizontalGuide }>(),
 );
 
 export const restoreViewTimeRange = createAction(
@@ -164,12 +164,6 @@ export const updateAllUiStates = createAction(
   '[planning] updateAllUiStates',
   props<{ uiStates: UiState[] }>(),
 );
-
-export const updateBand = createAction(
-  '[planning] updateBand',
-  props<{ id: string; update: any }>(),
-);
-
 export const updateDecompositionTreeState = createAction(
   '[planning] updateDecompositionTreeState',
   props<{
@@ -178,6 +172,11 @@ export const updateDecompositionTreeState = createAction(
     key: 'expanded' | 'visible';
     value: boolean;
   }>(),
+);
+
+export const updateRow = createAction(
+  '[planning] updateRow',
+  props<{ rowId: string; update: any }>(),
 );
 
 export const updateSelectedUiStateId = createAction(

@@ -6,25 +6,6 @@ export const uiStates: UiState[] = [
     name: 'Example 0',
     panels: [
       {
-        bands: [
-          {
-            height: 200,
-            id: 'band0',
-            subBands: [
-              {
-                chartType: 'activity',
-                filter: {
-                  activity: {
-                    type: '.*',
-                  },
-                },
-                id: 'subBand0',
-                type: 'activity',
-              },
-            ],
-          },
-        ],
-        constraintViolations: [],
         id: 'panel0',
         menu: [
           {
@@ -34,6 +15,26 @@ export const uiStates: UiState[] = [
           },
         ],
         size: 35,
+        timeline: {
+          rows: [
+            {
+              height: 200,
+              id: 'row0',
+              layers: [
+                {
+                  chartType: 'activity',
+                  filter: {
+                    activity: {
+                      type: '.*',
+                    },
+                  },
+                  id: 'layer0',
+                  type: 'activity',
+                },
+              ],
+            },
+          ],
+        },
         title: 'Schedule',
         type: 'timeline',
         verticalGuides: [
@@ -50,60 +51,9 @@ export const uiStates: UiState[] = [
             type: 'vertical',
           },
         ],
+        violations: [],
       },
       {
-        bands: [
-          {
-            height: 100,
-            horizontalGuides: [],
-            id: 'band1',
-            subBands: [
-              {
-                chartType: 'line',
-                filter: {
-                  state: {
-                    name: 'peel',
-                  },
-                },
-                id: 'subBand1',
-                type: 'state',
-              },
-            ],
-            yAxes: [
-              {
-                id: 'axis-subBand1',
-                label: {
-                  text: 'peel',
-                },
-              },
-            ],
-          },
-          {
-            height: 100,
-            id: 'band2',
-            subBands: [
-              {
-                chartType: 'line',
-                filter: {
-                  state: {
-                    name: 'fruit',
-                  },
-                },
-                id: 'subBand2',
-                type: 'state',
-              },
-            ],
-            yAxes: [
-              {
-                id: 'axis-subBand2',
-                label: {
-                  text: 'fruit',
-                },
-              },
-            ],
-          },
-        ],
-        constraintViolations: [],
         id: 'panel1',
         menu: [
           {
@@ -118,6 +68,59 @@ export const uiStates: UiState[] = [
           },
         ],
         size: 35,
+        timeline: {
+          rows: [
+            {
+              height: 100,
+              horizontalGuides: [],
+              id: 'row1',
+              layers: [
+                {
+                  chartType: 'line',
+                  filter: {
+                    state: {
+                      name: 'peel',
+                    },
+                  },
+                  id: 'layer1',
+                  type: 'state',
+                },
+              ],
+              yAxes: [
+                {
+                  id: 'axis-layer1',
+                  label: {
+                    text: 'peel',
+                  },
+                },
+              ],
+            },
+            {
+              height: 100,
+              id: 'row2',
+              layers: [
+                {
+                  chartType: 'line',
+                  filter: {
+                    state: {
+                      name: 'fruit',
+                    },
+                  },
+                  id: 'layer2',
+                  type: 'state',
+                },
+              ],
+              yAxes: [
+                {
+                  id: 'axis-layer2',
+                  label: {
+                    text: 'fruit',
+                  },
+                },
+              ],
+            },
+          ],
+        },
         title: 'Simulation',
         type: 'timeline',
         verticalGuides: [
@@ -134,6 +137,7 @@ export const uiStates: UiState[] = [
             type: 'vertical',
           },
         ],
+        violations: [],
       },
       {
         id: 'panel2',

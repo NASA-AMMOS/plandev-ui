@@ -1,5 +1,5 @@
-import { Band, Guide } from './band';
 import { Violation } from './simulation';
+import { Timeline } from './timeline';
 
 export type PanelMenuItemAction = 'link' | 'restore' | 'simulate';
 
@@ -13,8 +13,6 @@ export interface PanelMenuItem {
 }
 
 export interface Panel {
-  bands?: Band[];
-  constraintViolations?: Violation[];
   id: string;
   iframe?: {
     src: string;
@@ -25,9 +23,11 @@ export interface Panel {
     columns: string[];
     type: 'activity';
   };
+  timeline?: Timeline;
   title: string;
   type: 'iframe' | 'table' | 'timeline';
-  verticalGuides?: Guide[];
+  verticalGuides?: any[];
+  violations?: Violation[];
 }
 
 export interface UiState {

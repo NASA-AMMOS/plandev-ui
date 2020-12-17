@@ -5,19 +5,19 @@ import { compare } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
   ActivityInstance,
+  ActivityPoint,
   ActivityType,
   Adaptation,
   DecompositionTreeState,
+  LinePoint,
   Plan,
-  PointActivity,
-  PointLine,
-  PointXRange,
   SimulationResult,
   StringTMap,
   TimeRange,
   UiState,
   Violation,
   ViolationListState,
+  XRangePoint,
 } from '../types';
 
 /**
@@ -27,9 +27,9 @@ function activityInstanceToPoint(
   activityInstance: ActivityInstance,
   selectedActivityInstanceId: string,
   activityInstancesMap: StringTMap<ActivityInstance> | null,
-): PointActivity | null {
+): ActivityPoint | null {
   if (activityInstance) {
-    const point: PointActivity = {
+    const point: ActivityPoint = {
       duration: activityInstance?.duration / 1000 || 0, // µs -> ms
       id: activityInstance.id,
       label: {
@@ -43,7 +43,7 @@ function activityInstanceToPoint(
 
     if (activityInstance?.children?.length) {
       point.children = activityInstance.children.reduce(
-        (children: PointActivity[], childId: string) => {
+        (children: ActivityPoint[], childId: string) => {
           const childActivityInstance = activityInstancesMap[childId];
           if (childActivityInstance) {
             const newChild = activityInstanceToPoint(
@@ -110,11 +110,6 @@ export const getAdaptations = createSelector(
     state.adaptations ? Object.values(state.adaptations) : null,
 );
 
-export const getConstraintViolations = createSelector(
-  getPlanningState,
-  (state: PlanningState): Violation[] => state.constraintViolations || [],
-);
-
 export const getDecompositionTreeState = createSelector(
   getPlanningState,
   (state: PlanningState): DecompositionTreeState =>
@@ -126,8 +121,13 @@ export const getViolationListState = createSelector(
   (state: PlanningState): ViolationListState => state.violationListState,
 );
 
-export const getConstraintViolationsByCategory = createSelector(
-  getConstraintViolations,
+export const getViolations = createSelector(
+  getPlanningState,
+  (state: PlanningState): Violation[] => state.violations || [],
+);
+
+export const getViolationsByCategory = createSelector(
+  getViolations,
   (violations: Violation[]): StringTMap<Violation[]> | null => {
     const categories = violations.reduce((categoryMap, violation) => {
       const { constraint } = violation;
@@ -166,14 +166,14 @@ export const getSimulationOutOfDate = createSelector(
 );
 
 export const getIdsToViolations = createSelector(
-  getConstraintViolations,
+  getViolations,
   getViolationListState,
   (
-    constraintViolations: Violation[],
+    violations: Violation[],
     violationListState: ViolationListState,
   ): StringTMap<Violation[]> => {
-    if (constraintViolations) {
-      return constraintViolations.reduce((idsToViolations, violation) => {
+    if (violations) {
+      return violations.reduce((idsToViolations, violation) => {
         const { constraint } = violation;
         const { category, name } = constraint;
         if (violationListState.category[category].visible) {
@@ -236,29 +236,25 @@ export const getPanelsWithPoints = createSelector(
   ) => {
     if (uiState) {
       return uiState.panels.map(panel => {
-        const panelConstraintViolations: Violation[] = [];
+        const panelViolations: Violation[] = [];
 
-        if (panel.bands) {
-          const bands = panel.bands.map(band => {
+        if (panel.timeline) {
+          const rows = panel.timeline.rows.map(row => {
             const yAxisIdToScaleDomain: StringTMap<number[]> = {};
-            const bandConstraintViolations: Violation[] = [];
-            const subBands = band.subBands.map(subBand => {
-              if (subBand.type === 'activity') {
+            const rowViolations: Violation[] = [];
+            const layers = row.layers.map(layer => {
+              if (layer.type === 'activity') {
                 const activities = activityInstances || [];
                 const points = activities.reduce((newPoints, point) => {
-                  const r = new RegExp(subBand?.filter?.activity?.type);
+                  const r = new RegExp(layer?.filter?.activity?.type);
                   const includePoint = r.test(point.type);
                   if (
                     includePoint &&
                     (point.parent === null || point.parent === undefined)
                   ) {
                     if (idsToViolations[point.id]) {
-                      bandConstraintViolations.push(
-                        ...idsToViolations[point.id],
-                      );
-                      panelConstraintViolations.push(
-                        ...idsToViolations[point.id],
-                      );
+                      rowViolations.push(...idsToViolations[point.id]);
+                      panelViolations.push(...idsToViolations[point.id]);
                     }
 
                     const activityPoint = activityInstanceToPoint(
@@ -271,15 +267,15 @@ export const getPanelsWithPoints = createSelector(
                   return newPoints;
                 }, []);
                 return {
-                  ...subBand,
+                  ...layer,
                   points,
                 };
               }
 
-              if (subBand.type === 'state') {
-                if (subBand.chartType === 'line') {
-                  const points: PointLine[] = [];
-                  const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
+              if (layer.type === 'state') {
+                if (layer.chartType === 'line') {
+                  const points: LinePoint[] = [];
+                  const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
 
                   let minY = Number.MAX_SAFE_INTEGER;
                   let maxY = Number.MIN_SAFE_INTEGER;
@@ -291,16 +287,12 @@ export const getPanelsWithPoints = createSelector(
                       values,
                     } of simulationResults) {
                       if (schema.type === 'real') {
-                        const r = new RegExp(subBand?.filter?.state?.name);
+                        const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {
                           if (idsToViolations[name]) {
-                            bandConstraintViolations.push(
-                              ...idsToViolations[name],
-                            );
-                            panelConstraintViolations.push(
-                              ...idsToViolations[name],
-                            );
+                            rowViolations.push(...idsToViolations[name]);
+                            panelViolations.push(...idsToViolations[name]);
                           }
 
                           for (let i = 0; i < values.length; ++i) {
@@ -308,7 +300,7 @@ export const getPanelsWithPoints = createSelector(
                             const { x } = value;
                             const y = value.y as number;
                             points.push({
-                              id: `${subBand.id}-state-${name}-${i}`,
+                              id: `${layer.id}-state-${name}-${i}`,
                               type: 'line',
                               x: getUnixEpochTime(start) + x / 1000,
                               y,
@@ -330,13 +322,13 @@ export const getPanelsWithPoints = createSelector(
                   }
 
                   return {
-                    ...subBand,
+                    ...layer,
                     points,
                     yAxisId,
                   };
-                } else if (subBand.chartType === 'x-range') {
-                  const points: PointXRange[] = [];
-                  const yAxisId = subBand?.yAxisId || `axis-${subBand.id}`;
+                } else if (layer.chartType === 'x-range') {
+                  const points: XRangePoint[] = [];
+                  const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
 
                   if (simulationResults && simulationResults.length) {
                     for (const {
@@ -346,23 +338,18 @@ export const getPanelsWithPoints = createSelector(
                       values,
                     } of simulationResults) {
                       if (schema.type === 'variant') {
-                        const r = new RegExp(subBand?.filter?.state?.name);
+                        const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {
                           if (idsToViolations[name]) {
-                            bandConstraintViolations.push(
-                              ...idsToViolations[name],
-                            );
-                            panelConstraintViolations.push(
-                              ...idsToViolations[name],
-                            );
+                            rowViolations.push(...idsToViolations[name]);
+                            panelViolations.push(...idsToViolations[name]);
                           }
 
                           for (let i = 0; i < values.length; ++i) {
                             const { x, y } = values[i];
                             points.push({
-                              duration: 0,
-                              id: `${subBand.id}-state-${name}-${i}`,
+                              id: `${layer.id}-state-${name}-${i}`,
                               label: {
                                 text: y as string,
                               },
@@ -376,24 +363,24 @@ export const getPanelsWithPoints = createSelector(
                   }
 
                   return {
-                    ...subBand,
+                    ...layer,
                     points,
                     yAxisId,
                   };
                 }
               }
 
-              return subBand;
+              return layer;
             });
 
             return {
-              ...band,
-              constraintViolations: uniqBy(
-                bandConstraintViolations,
+              ...row,
+              layers,
+              violations: uniqBy(
+                rowViolations,
                 ({ constraint: { name } }) => name,
               ),
-              subBands,
-              yAxes: (band.yAxes || []).map(axis => ({
+              yAxes: (row.yAxes || []).map(axis => ({
                 ...axis,
                 scaleDomain:
                   axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
@@ -403,11 +390,14 @@ export const getPanelsWithPoints = createSelector(
 
           return {
             ...panel,
-            bands,
-            constraintViolations: uniqBy(
-              panelConstraintViolations,
-              ({ constraint: { name } }) => name,
-            ),
+            timeline: {
+              ...panel.timeline,
+              rows,
+              violations: uniqBy(
+                panelViolations,
+                ({ constraint: { name } }) => name,
+              ),
+            },
           };
         }
 

@@ -7,9 +7,12 @@ import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { AppActions, PlanningActions, ToastActions } from '../actions';
 import { RootState } from '../app-store';
-import { ConfirmDialogComponent, GuideDialogComponent } from '../components';
+import {
+  ConfirmDialogComponent,
+  HorizontalGuideDialogComponent,
+} from '../components';
 import { ApiService } from '../services';
-import { Guide, GuideDialogData } from '../types';
+import { HorizontalGuide, HorizontalGuideEvent } from '../types';
 
 @Injectable()
 export class PlanningEffects {
@@ -288,27 +291,25 @@ export class PlanningEffects {
     ),
   );
 
-  guideOpenDialog = createEffect(() =>
+  horizontalGuideOpenDialog = createEffect(() =>
     this.actions.pipe(
-      ofType(PlanningActions.guideOpenDialog),
-      switchMap(({ data }) => {
-        const guideDialog = this.dialog.open(GuideDialogComponent, {
-          data,
+      ofType(PlanningActions.horizontalGuideOpenDialog),
+      switchMap(({ event }) => {
+        const guideDialog = this.dialog.open(HorizontalGuideDialogComponent, {
+          data: event,
           width: '400px',
         });
-        return forkJoin<GuideDialogData, Guide | null>([
-          of(data),
+        return forkJoin<HorizontalGuideEvent, HorizontalGuide | null>([
+          of(event),
           guideDialog.afterClosed(),
         ]);
       }),
-      map(([data, guide]) => ({ data, guide })),
-      switchMap(({ data, guide }) => {
-        if (guide && data.mode === 'create') {
-          return [PlanningActions.guideAdd({ guide })];
-        } else if (guide && data.mode === 'edit') {
-          return [
-            PlanningActions.guideUpdate({ changes: guide, id: guide.id }),
-          ];
+      map(([event, guide]) => ({ event, guide })),
+      switchMap(({ event, guide }) => {
+        if (guide && event.mode === 'create') {
+          return [PlanningActions.horizontalGuideCreate({ guide })];
+        } else if (guide && event.mode === 'edit') {
+          return [PlanningActions.horizontalGuideUpdate({ guide })];
         } else {
           return [];
         }

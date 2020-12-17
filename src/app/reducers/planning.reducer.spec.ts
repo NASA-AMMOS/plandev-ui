@@ -15,9 +15,7 @@ import {
   planId,
   plans,
   simulationResponse,
-  uiStates,
 } from '../mocks';
-import { Guide } from '../types';
 import { initialState, PlanningState, reducer } from './planning.reducer';
 
 describe('planning reducer', () => {
@@ -175,222 +173,6 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('guideAdd', () => {
-    it('vertical guide', () => {
-      const guide: Guide = {
-        id: '42',
-        label: { text: 'hello ' },
-        type: 'vertical',
-      };
-      const state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.verticalGuides) {
-            expect(panel.verticalGuides.pop()).toEqual(guide);
-          }
-        });
-      });
-    });
-
-    it('first horizontal guide', () => {
-      const guide: Guide = {
-        bandId: 'band0',
-        id: '42',
-        label: { text: 'hello ' },
-        type: 'horizontal',
-      };
-      const state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.bands) {
-            panel.bands.forEach(band => {
-              if (band.id === guide.id) {
-                expect(band.horizontalGuides.pop()).toEqual(guide);
-              }
-            });
-          }
-        });
-      });
-    });
-
-    it('append horizontal guide', () => {
-      const guide: Guide = {
-        bandId: 'band0',
-        id: '42',
-        label: { text: 'hello ' },
-        type: 'horizontal',
-      };
-      let state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      state = reducer(state, PlanningActions.guideAdd({ guide }));
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.bands) {
-            panel.bands.forEach(band => {
-              if (band.id === guide.id) {
-                expect(band.horizontalGuides.pop()).toEqual(guide);
-              }
-            });
-          }
-        });
-      });
-    });
-  });
-
-  describe('guideRemove', () => {
-    it('vertical guide', () => {
-      const guide: Guide = {
-        id: 'verticalGuide0',
-        label: { text: 'hello ' },
-        type: 'vertical',
-      };
-      const state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideRemove({ guide }),
-      );
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.verticalGuides) {
-            panel.verticalGuides.forEach(vGuide => {
-              expect(vGuide.id).not.toEqual(guide.id);
-            });
-          }
-        });
-      });
-    });
-
-    it('horizontal guide', () => {
-      const guide: Guide = {
-        bandId: 'band0',
-        id: '42',
-        label: { text: 'hello ' },
-        type: 'horizontal',
-      };
-      let state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      state = reducer(state, PlanningActions.guideRemove({ guide }));
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.bands) {
-            panel.bands.forEach(band => {
-              if (band.horizontalGuides) {
-                band.horizontalGuides.forEach(hGuide => {
-                  expect(hGuide.id).not.toEqual(guide.id);
-                });
-              }
-            });
-          }
-        });
-      });
-    });
-  });
-
-  describe('guideUpdate', () => {
-    it('vertical guide', () => {
-      const id = 'verticalGuide0';
-      const changes: Partial<Guide> = {
-        label: { text: 'hello ' },
-        type: 'vertical',
-      };
-      const state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideUpdate({ changes, id }),
-      );
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.verticalGuides) {
-            panel.verticalGuides.forEach(vGuide => {
-              if (vGuide.id === id) {
-                expect(vGuide.label.text).toEqual(changes.label.text);
-              }
-            });
-          }
-        });
-      });
-    });
-
-    it('horizontal guide', () => {
-      const id = '42';
-      const guide: Guide = {
-        bandId: 'band0',
-        id,
-        label: { text: 'hello ' },
-        type: 'horizontal',
-      };
-      let state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      const changes: Partial<Guide> = {
-        bandId: 'band0',
-        label: { text: 'hi' },
-        type: 'horizontal',
-      };
-      state = reducer(state, PlanningActions.guideUpdate({ changes, id }));
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.bands) {
-            panel.bands.forEach(band => {
-              if (band.horizontalGuides) {
-                band.horizontalGuides.forEach(hGuide => {
-                  if (hGuide.id === id) {
-                    expect(hGuide.label.text).toEqual(changes.label.text);
-                  }
-                });
-              }
-            });
-          }
-        });
-      });
-    });
-
-    it('horizontal guide with unknown horizontal guide id', () => {
-      const id = '42';
-      const guide: Guide = {
-        bandId: 'band0',
-        id,
-        label: { text: 'hello ' },
-        type: 'horizontal',
-      };
-      let state: PlanningState = reducer(
-        { ...initialState, uiStates },
-        PlanningActions.guideAdd({ guide }),
-      );
-      const changes: Partial<Guide> = {
-        bandId: 'band0',
-        label: { text: 'hi' },
-        type: 'horizontal',
-      };
-      state = reducer(
-        state,
-        PlanningActions.guideUpdate({ changes, id: '52' }),
-      );
-      state.uiStates.forEach(uiState => {
-        uiState.panels.forEach(panel => {
-          if (panel.bands) {
-            panel.bands.forEach(band => {
-              if (band.horizontalGuides) {
-                band.horizontalGuides.forEach(hGuide => {
-                  expect(hGuide).toEqual(hGuide);
-                });
-              }
-            });
-          }
-        });
-      });
-    });
-  });
-
   describe('restoreViewTimeRange', () => {
     it('should restore the view time range', () => {
       let state: PlanningState = {
@@ -418,10 +200,10 @@ describe('planning reducer', () => {
       expect(state).toEqual({
         ...initialState,
         activityInstances: {},
-        constraintViolations: simulationResponse.violations,
         lastActivityInstanceUpdate: state.lastActivityInstanceUpdate,
         lastSimulationTime: state.lastSimulationTime,
         simulationResults: simulationResponse.results,
+        violations: simulationResponse.violations,
       });
     });
   });

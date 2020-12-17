@@ -17,16 +17,23 @@
     <button
       mat-raised-button
       class="right-button"
-      [matBadge]="totalConstraintViolations"
-      [matBadgeHidden]="totalConstraintViolations === 0"
+      [matBadge]="totalViolations"
+      [matBadgeHidden]="totalViolations === 0"
       matBadgeColor="warn"
       matBadgePosition="before"
       matBadgeSize="small"
       matTooltip="Violations"
-      [style.opacity]="totalConstraintViolations > 0 ? 1.0 : 0.5"
+      [style.opacity]="totalViolations > 0 ? 1.0 : 0.5"
       (click)="showDrawerType('violations')"
     >
       Violations
+    </button>
+    <button
+      mat-icon-button
+      matTooltip="UI State Editor"
+      (click)="showPanelEditor()"
+    >
+      <mat-icon svgIcon="wysiwyg"></mat-icon>
     </button>
     <button
       mat-icon-button
@@ -148,11 +155,11 @@
     </div>
 
     <div [style.display]="drawer.violations.visible ? 'block' : 'none'">
-      <app-constraint-violation-list
+      <violation-list
         [activityInstances]="activityInstances"
-        [constraintViolationsByCategory]="constraintViolationsByCategory"
         [violationListState]="violationListState"
-      ></app-constraint-violation-list>
+        [violationsByCategory]="violationsByCategory"
+      ></violation-list>
     </div>
   </as-split-area>
 </as-split>
@@ -189,15 +196,21 @@
     </div>
   </app-panel-header>
   <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
-  <app-timeline
-    *ngIf="activityInstances"
-    [bands]="panel.bands"
-    [constraintViolations]="panel.constraintViolations"
+  <aerie-timeline
     [maxTimeRange]="maxTimeRange"
-    [verticalGuides]="panel.verticalGuides"
+    [rows]="panel.timeline.rows"
     [viewTimeRange]="viewTimeRange"
-    (showDrawerType)="showDrawerType($event)"
-  ></app-timeline>
+    (createHorizontalGuide)="onCreateHorizontalGuide($event)"
+    (createPoint)="onCreatePoint($event)"
+    (deleteHorizontalGuide)="onDeleteHorizontalGuide($event)"
+    (deletePoint)="onDeletePoint($event)"
+    (savePoint)="onSavePoint($event)"
+    (selectPoint)="onSelectPoint($event)"
+    (updateHorizontalGuide)="onUpdateHorizontalGuide($event)"
+    (updatePoint)="onUpdatePoint($event)"
+    (updateRow)="onUpdateRow($event)"
+    (updateViewTimeRange)="onUpdateViewTimeRange($event)"
+  ></aerie-timeline>
 </ng-template>
 
 <ng-template #table let-panel>

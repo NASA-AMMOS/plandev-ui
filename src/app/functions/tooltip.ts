@@ -1,6 +1,6 @@
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { select } from 'd3-selection';
-import { Point, PointActivity, PointLine, PointXRange } from '../types';
+import { ActivityPoint, LinePoint, Point, XRangePoint } from '../types';
 
 export function getTooltipTextForPoints(points: Point[]): string {
   let tooltipText = '';
@@ -9,19 +9,19 @@ export function getTooltipTextForPoints(points: Point[]): string {
     if (point.type === 'activity') {
       tooltipText = `
         ${tooltipText}
-        ${getTooltipTextPointActivity(point as PointActivity)}
+        ${getTooltipTextActivityPoint(point as ActivityPoint)}
       `;
     }
     if (point.type === 'line') {
       tooltipText = `
         ${tooltipText}
-        ${getTooltipTextPointLine(point as PointLine)}
+        ${getTooltipTextLinePoint(point as LinePoint)}
       `;
     }
     if (point.type === 'x-range') {
       tooltipText = `
         ${tooltipText}
-        ${getTooltipTextPointXRange(point as PointXRange)}
+        ${getTooltipTextXRangePoint(point as XRangePoint)}
       `;
     }
     if (i !== points.length - 1) {
@@ -32,7 +32,7 @@ export function getTooltipTextForPoints(points: Point[]): string {
   return tooltipText;
 }
 
-export function getTooltipTextPointActivity(point: PointActivity): string {
+export function getTooltipTextActivityPoint(point: ActivityPoint): string {
   const { id, x } = point;
   const labelText = point.label?.text || '';
   return `
@@ -46,7 +46,7 @@ export function getTooltipTextPointActivity(point: PointActivity): string {
   `;
 }
 
-export function getTooltipTextPointLine(point: PointLine): string {
+export function getTooltipTextLinePoint(point: LinePoint): string {
   const { id, x, y } = point;
   return `
     <div>
@@ -59,15 +59,15 @@ export function getTooltipTextPointLine(point: PointLine): string {
   `;
 }
 
-export function getTooltipTextPointXRange(point: PointXRange): string {
-  const { duration, id, x } = point;
+export function getTooltipTextXRangePoint(point: XRangePoint): string {
+  const { id, x } = point;
   return `
     <div>
       <strong>Id:</strong> ${id}
       <br>
       <strong>Start:</strong> ${getDoyTimestamp(x)}
       <br>
-      <strong>Duration:</strong> ${duration}
+      <strong>Value:</strong> ${point.label.text}
     </div>
   `;
 }

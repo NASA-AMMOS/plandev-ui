@@ -1,26 +1,31 @@
-import { Panel, SubBandWithPoints } from '../types';
+import { ActivityLayer, LineLayer, Panel, XRangeLayer } from '../types';
 
 export function getPanelsText(panels: Panel[]): string {
   panels = panels.map(panel => {
-    if (panel.bands) {
+    if (panel.timeline) {
       return {
         ...panel,
-        bands: panel.bands.map(band => {
-          band = { ...band };
+        timeline: {
+          ...panel.timeline,
+          rows: panel.timeline.rows.map(row => {
+            row = { ...row };
 
-          return {
-            ...band,
-            subBands: band.subBands.map((subBand: SubBandWithPoints) => {
-              subBand = { ...subBand };
+            return {
+              ...row,
+              layers: row.layers.map(
+                (layer: ActivityLayer | LineLayer | XRangeLayer) => {
+                  layer = { ...layer };
 
-              if (subBand.points) {
-                delete subBand.points;
-              }
+                  if (layer.points) {
+                    delete layer.points;
+                  }
 
-              return subBand;
-            }),
-          };
-        }),
+                  return layer;
+                },
+              ),
+            };
+          }),
+        },
       };
     }
     return panel;

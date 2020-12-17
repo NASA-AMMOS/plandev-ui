@@ -1,0 +1,78 @@
+<h1 mat-dialog-title>
+  {{ data.mode === 'create' ? 'Create' : 'Edit' }} Horizontal Guide
+</h1>
+
+<div mat-dialog-content>
+  <form class="p-1" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="alert alert-warning" *ngIf="form.controls.yAxis.value === null">
+      This row has no axes so horizontal guides will not be visible.
+    </div>
+    <div
+      class="alert alert-info"
+      *ngIf="form.controls.yAxis.value?.scaleDomain.length === 0"
+    >
+      This row axis has no domain yet so horizontal guides will not be visible.
+    </div>
+    <mat-form-field
+      *ngIf="data?.yAxes?.length"
+      class="w-100"
+      appearance="outline"
+    >
+      <mat-label>Y-Axis</mat-label>
+      <mat-select formControlName="yAxis">
+        <mat-option *ngFor="let axis of data.yAxes" [value]="axis">
+          {{ axis.label.text }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Label</mat-label>
+      <input
+        [required]="true"
+        autocomplete="off"
+        formControlName="label"
+        matInput
+        minlength="1"
+        maxlength="20"
+        type="text"
+      />
+      <mat-error *ngIf="form.controls.label.getError('required')">
+        You must enter label
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field class="w-100" appearance="outline">
+      <mat-label>Y-Value</mat-label>
+      <input
+        [required]="true"
+        autocomplete="off"
+        formControlName="y"
+        matInput
+        type="number"
+      />
+      <mat-hint>
+        {{ yAxisDomainHint }}
+      </mat-hint>
+      <mat-error *ngIf="form.controls.y.getError('required')">
+        You must enter a Y-value
+      </mat-error>
+    </mat-form-field>
+
+    <div class="buttons">
+      <button
+        class="mr-2"
+        [disabled]="form.invalid"
+        mat-raised-button
+        color="primary"
+        type="submit"
+      >
+        {{ data.mode === 'edit' ? 'Update' : 'Create' }}
+      </button>
+
+      <button type="button" mat-raised-button (click)="onCancel()">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

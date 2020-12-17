@@ -8,6 +8,7 @@ import {
   ActivityType,
   Adaptation,
   DecompositionTreeState,
+  HorizontalGuide,
   Plan,
   SimulationResult,
   StringTMap,
@@ -21,7 +22,6 @@ export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
-  constraintViolations: Violation[] | null;
   decompositionTreeState: DecompositionTreeState;
   lastActivityInstanceUpdate: number;
   lastSimulationTime: number;
@@ -33,13 +33,13 @@ export interface PlanningState {
   uiStates: UiState[];
   viewTimeRange: TimeRange;
   violationListState: ViolationListState;
+  violations: Violation[] | null;
 }
 
 export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
-  constraintViolations: null,
   decompositionTreeState: { instance: {} },
   lastActivityInstanceUpdate: 0,
   lastSimulationTime: 0,
@@ -51,6 +51,7 @@ export const initialState: PlanningState = {
   uiStates: [],
   viewTimeRange: { end: 0, start: 0 },
   violationListState: { category: {}, constraint: {} },
+  violations: null,
 };
 
 export const reducer = createReducer(
@@ -116,117 +117,104 @@ export const reducer = createReducer(
     ...state,
     plans: keyBy(plans, 'id'),
   })),
-  on(PlanningActions.guideAdd, (state, { guide }) => ({
+  on(PlanningActions.horizontalGuideCreate, (state, { guide }) => ({
     ...state,
     uiStates: state.uiStates.map(uiState => ({
       ...uiState,
       panels: uiState.panels.map(panel => {
-        if (guide.type === 'vertical') {
+        if (panel.timeline) {
           return {
             ...panel,
-            verticalGuides: panel.verticalGuides
-              ? [...panel.verticalGuides, guide]
-              : [guide],
-          };
-        }
-        if (guide.type === 'horizontal' && panel.bands) {
-          return {
-            ...panel,
-            bands: panel.bands.map(band => {
-              if (band.id === guide.bandId) {
-                return {
-                  ...band,
-                  horizontalGuides: band.horizontalGuides
-                    ? [...band.horizontalGuides, guide]
-                    : [guide],
-                };
-              }
-              return band;
-            }),
+            timeline: {
+              ...panel.timeline,
+              rows: panel.timeline.rows.map(row => {
+                if (row.id === guide.rowId) {
+                  return {
+                    ...row,
+                    horizontalGuides: row.horizontalGuides
+                      ? [...row.horizontalGuides, guide]
+                      : [guide],
+                  };
+                }
+                return row;
+              }),
+            },
           };
         }
         return panel;
       }),
     })),
   })),
-  on(PlanningActions.guideRemove, (state, { guide: removedGuide }) => ({
-    ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (removedGuide.type === 'vertical' && panel.verticalGuides) {
-          return {
-            ...panel,
-            verticalGuides: panel.verticalGuides.filter(
-              guide => removedGuide.id !== guide.id,
-            ),
-          };
-        }
-        if (removedGuide.type === 'horizontal' && panel.bands) {
-          return {
-            ...panel,
-            bands: panel.bands.map(band => {
-              if (band.id === removedGuide.bandId) {
-                return {
-                  ...band,
-                  horizontalGuides: band.horizontalGuides.filter(
-                    guide => removedGuide.id !== guide.id,
-                  ),
-                };
-              }
-              return band;
-            }),
-          };
-        }
-        return panel;
-      }),
-    })),
-  })),
-  on(PlanningActions.guideUpdate, (state, { id, changes: updatedGuide }) => ({
-    ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (updatedGuide.type === 'vertical' && panel.verticalGuides) {
-          return {
-            ...panel,
-            verticalGuides: panel.verticalGuides.map(guide => {
-              if (id === guide.id) {
-                return {
-                  ...guide,
-                  ...updatedGuide,
-                };
-              }
-              return guide;
-            }),
-          };
-        }
-        if (updatedGuide.type === 'horizontal' && panel.bands) {
-          return {
-            ...panel,
-            bands: panel.bands.map(band => {
-              if (band.id === updatedGuide.bandId) {
-                return {
-                  ...band,
-                  horizontalGuides: band.horizontalGuides.map(guide => {
-                    if (id === guide.id) {
-                      return {
-                        ...guide,
-                        ...updatedGuide,
-                      };
-                    }
-                    return guide;
-                  }),
-                };
-              }
-              return band;
-            }),
-          };
-        }
-        return panel;
-      }),
-    })),
-  })),
+  on(
+    PlanningActions.horizontalGuideDelete,
+    (state, { guide: removedGuide }) => ({
+      ...state,
+      uiStates: state.uiStates.map(uiState => ({
+        ...uiState,
+        panels: uiState.panels.map(panel => {
+          if (panel.timeline) {
+            return {
+              ...panel,
+              timeline: {
+                ...panel.timeline,
+                rows: panel.timeline.rows.map(row => {
+                  if (row.id === removedGuide.rowId) {
+                    return {
+                      ...row,
+                      horizontalGuides: row.horizontalGuides.filter(
+                        (guide: HorizontalGuide) =>
+                          removedGuide.id !== guide.id,
+                      ),
+                    };
+                  }
+                  return row;
+                }),
+              },
+            };
+          }
+          return panel;
+        }),
+      })),
+    }),
+  ),
+  on(
+    PlanningActions.horizontalGuideUpdate,
+    (state, { guide: updatedGuide }) => ({
+      ...state,
+      uiStates: state.uiStates.map(uiState => ({
+        ...uiState,
+        panels: uiState.panels.map(panel => {
+          if (panel.timeline) {
+            return {
+              ...panel,
+              timeline: {
+                ...panel.timeline,
+                rows: panel.timeline.rows.map(row => {
+                  if (row.id === updatedGuide.rowId) {
+                    const { horizontalGuides = [] } = row;
+                    return {
+                      ...row,
+                      horizontalGuides: horizontalGuides.map(guide => {
+                        if (updatedGuide.id === guide.id) {
+                          return {
+                            ...guide,
+                            ...updatedGuide,
+                          };
+                        }
+                        return guide;
+                      }),
+                    };
+                  }
+                  return row;
+                }),
+              },
+            };
+          }
+          return panel;
+        }),
+      })),
+    }),
+  ),
   on(PlanningActions.restoreViewTimeRange, state => ({
     ...state,
     viewTimeRange: {
@@ -246,18 +234,6 @@ export const reducer = createReducer(
         activityInstances: {
           ...keyBy(activities, 'id'),
         },
-        constraintViolations: violations.map(violation => ({
-          ...violation,
-          windows: violation.windows.map(({ end, start }) => {
-            const planStart = getUnixEpochTime(
-              state.selectedPlan.startTimestamp,
-            );
-            return {
-              end: planStart + end / 1000,
-              start: planStart + start / 1000,
-            };
-          }),
-        })),
         lastActivityInstanceUpdate: now,
         lastSimulationTime: now,
         simulationResults: results || [],
@@ -287,6 +263,18 @@ export const reducer = createReducer(
             },
           ),
         },
+        violations: violations.map(violation => ({
+          ...violation,
+          windows: violation.windows.map(({ end, start }) => {
+            const planStart = getUnixEpochTime(
+              state.selectedPlan.startTimestamp,
+            );
+            return {
+              end: planStart + end / 1000,
+              start: planStart + start / 1000,
+            };
+          }),
+        })),
       };
     },
   ),
@@ -315,29 +303,6 @@ export const reducer = createReducer(
     selectedUiStateId: uiStates[0]?.id || null,
     uiStates,
   })),
-  on(PlanningActions.updateBand, (state, { id, update }) => ({
-    ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.bands) {
-          return {
-            ...panel,
-            bands: panel.bands.map(band => {
-              if (band.id === id) {
-                return {
-                  ...band,
-                  ...update,
-                };
-              }
-              return band;
-            }),
-          };
-        }
-        return panel;
-      }),
-    })),
-  })),
   on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
     ...state,
     decompositionTreeState: {
@@ -350,6 +315,32 @@ export const reducer = createReducer(
         },
       },
     },
+  })),
+  on(PlanningActions.updateRow, (state, { rowId, update }) => ({
+    ...state,
+    uiStates: state.uiStates.map(uiState => ({
+      ...uiState,
+      panels: uiState.panels.map(panel => {
+        if (panel.timeline) {
+          return {
+            ...panel,
+            timeline: {
+              ...panel.timeline,
+              rows: panel.timeline.rows.map(row => {
+                if (row.id === rowId) {
+                  return {
+                    ...row,
+                    ...update,
+                  };
+                }
+                return row;
+              }),
+            },
+          };
+        }
+        return panel;
+      }),
+    })),
   })),
   on(PlanningActions.updateViolationListState, (state, action) => ({
     ...state,
