@@ -97,7 +97,7 @@ export const getPlansSuccess = createAction(
 
 export const horizontalGuideCreate = createAction(
   '[planning] horizontalGuideCreate',
-  props<{ guide: HorizontalGuide }>(),
+  props<{ guide: HorizontalGuide; rowId: string }>(),
 );
 
 export const horizontalGuideOpenDialog = createAction(
@@ -107,12 +107,12 @@ export const horizontalGuideOpenDialog = createAction(
 
 export const horizontalGuideDelete = createAction(
   '[planning] horizontalGuideDelete',
-  props<{ guide: HorizontalGuide }>(),
+  props<{ guide: HorizontalGuide; rowId: string }>(),
 );
 
 export const horizontalGuideUpdate = createAction(
   '[planning] horizontalGuideUpdate',
-  props<{ guide: HorizontalGuide }>(),
+  props<{ guide: HorizontalGuide; rowId: string }>(),
 );
 
 export const restoreViewTimeRange = createAction(

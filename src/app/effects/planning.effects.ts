@@ -306,10 +306,11 @@ export class PlanningEffects {
       }),
       map(([event, guide]) => ({ event, guide })),
       switchMap(({ event, guide }) => {
+        const { rowId } = event;
         if (guide && event.mode === 'create') {
-          return [PlanningActions.horizontalGuideCreate({ guide })];
+          return [PlanningActions.horizontalGuideCreate({ guide, rowId })];
         } else if (guide && event.mode === 'edit') {
-          return [PlanningActions.horizontalGuideUpdate({ guide })];
+          return [PlanningActions.horizontalGuideUpdate({ guide, rowId })];
         } else {
           return [];
         }

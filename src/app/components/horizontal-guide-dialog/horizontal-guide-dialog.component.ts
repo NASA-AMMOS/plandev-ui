@@ -96,7 +96,6 @@ export class HorizontalGuideDialogComponent implements OnDestroy {
         const guide: HorizontalGuide = {
           id: uniqueId('horizontal-guide'),
           label: { text },
-          rowId,
           y,
           yAxisId: yAxis?.id,
         };

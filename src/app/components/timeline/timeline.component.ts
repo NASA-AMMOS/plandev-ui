@@ -17,7 +17,6 @@ import { scaleTime, ScaleTime } from 'd3-scale';
 import {
   CreatePoint,
   DeletePoint,
-  HorizontalGuide,
   HorizontalGuideEvent,
   Row,
   SavePoint,
@@ -119,7 +118,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter<HorizontalGuide>();
+  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
 
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();

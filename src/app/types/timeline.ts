@@ -35,15 +35,14 @@ export interface DeletePoint {
 export interface HorizontalGuide {
   id: string;
   label: Label;
-  rowId: string;
   y: number;
   yAxisId: string;
 }
 
 export interface HorizontalGuideEvent {
   guide?: HorizontalGuide;
-  mode: 'create' | 'edit';
-  rowId?: string;
+  mode: 'create' | 'delete' | 'edit';
+  rowId: string;
   yAxes?: Axis[];
 }
 

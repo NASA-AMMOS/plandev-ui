@@ -49,7 +49,6 @@ import {
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
-  HorizontalGuide,
   HorizontalGuideEvent,
   Panel,
   PanelMenuItem,
@@ -273,8 +272,11 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onDeleteHorizontalGuide(guide: HorizontalGuide): void {
-    this.store.dispatch(PlanningActions.horizontalGuideDelete({ guide }));
+  onDeleteHorizontalGuide(event: HorizontalGuideEvent): void {
+    const { guide, rowId } = event;
+    this.store.dispatch(
+      PlanningActions.horizontalGuideDelete({ guide, rowId }),
+    );
   }
 
   onDeletePoint(event: DeletePoint): void {

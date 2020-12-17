@@ -117,7 +117,7 @@ export const reducer = createReducer(
     ...state,
     plans: keyBy(plans, 'id'),
   })),
-  on(PlanningActions.horizontalGuideCreate, (state, { guide }) => ({
+  on(PlanningActions.horizontalGuideCreate, (state, { guide, rowId }) => ({
     ...state,
     uiStates: state.uiStates.map(uiState => ({
       ...uiState,
@@ -128,7 +128,7 @@ export const reducer = createReducer(
             timeline: {
               ...panel.timeline,
               rows: panel.timeline.rows.map(row => {
-                if (row.id === guide.rowId) {
+                if (row.id === rowId) {
                   return {
                     ...row,
                     horizontalGuides: row.horizontalGuides
@@ -147,7 +147,7 @@ export const reducer = createReducer(
   })),
   on(
     PlanningActions.horizontalGuideDelete,
-    (state, { guide: removedGuide }) => ({
+    (state, { guide: removedGuide, rowId }) => ({
       ...state,
       uiStates: state.uiStates.map(uiState => ({
         ...uiState,
@@ -158,7 +158,7 @@ export const reducer = createReducer(
               timeline: {
                 ...panel.timeline,
                 rows: panel.timeline.rows.map(row => {
-                  if (row.id === removedGuide.rowId) {
+                  if (row.id === rowId) {
                     return {
                       ...row,
                       horizontalGuides: row.horizontalGuides.filter(
@@ -179,7 +179,7 @@ export const reducer = createReducer(
   ),
   on(
     PlanningActions.horizontalGuideUpdate,
-    (state, { guide: updatedGuide }) => ({
+    (state, { guide: updatedGuide, rowId }) => ({
       ...state,
       uiStates: state.uiStates.map(uiState => ({
         ...uiState,
@@ -190,7 +190,7 @@ export const reducer = createReducer(
               timeline: {
                 ...panel.timeline,
                 rows: panel.timeline.rows.map(row => {
-                  if (row.id === updatedGuide.rowId) {
+                  if (row.id === rowId) {
                     const { horizontalGuides = [] } = row;
                     return {
                       ...row,

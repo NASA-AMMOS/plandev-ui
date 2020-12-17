@@ -190,7 +190,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
       <aerie-timeline-row-menu
         [horizontalGuides]="horizontalGuides"
         (createHorizontalGuide)="onCreateHorizontalGuide()"
-        (deleteHorizontalGuide)="deleteHorizontalGuide.emit($event)"
+        (deleteHorizontalGuide)="onDeleteHorizontalGuide($event)"
         (updateHorizontalGuide)="onUpdateHorizontalGuide($event)"
       ></aerie-timeline-row-menu>
     </div>
@@ -244,7 +244,7 @@ export class TimelineRowComponent
   createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter<HorizontalGuide>();
+  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
 
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
@@ -385,6 +385,15 @@ export class TimelineRowComponent
       yAxes: this.yAxes,
     };
     this.createHorizontalGuide.emit(event);
+  }
+
+  onDeleteHorizontalGuide(guide: HorizontalGuide) {
+    const event: HorizontalGuideEvent = {
+      guide,
+      mode: 'delete',
+      rowId: this.id,
+    };
+    this.deleteHorizontalGuide.emit(event);
   }
 
   onUpdateHorizontalGuide(guide: HorizontalGuide) {
