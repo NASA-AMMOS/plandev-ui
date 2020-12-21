@@ -24,6 +24,7 @@ import {
   TimeRange,
   UpdatePoint,
   UpdateRow,
+  VerticalGuide,
   XAxisTick,
 } from '../../types';
 import { TimelineRowModule } from './timeline-row.component';
@@ -59,10 +60,12 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
       <aerie-timeline-x-axis
         [drawWidth]="drawWidth"
         [marginLeft]="marginLeft"
+        [verticalGuides]="verticalGuides"
         [viewTimeRange]="viewTimeRange"
         [xScaleMax]="xScaleMax"
         [xScaleView]="xScaleView"
         [xTicksView]="xTicksView"
+        (collapsedVerticalGuides)="onCollapsedVerticalGuides($event)"
         (updateViewTimeRange)="updateViewTimeRange.emit($event)"
       ></aerie-timeline-x-axis>
     </div>
@@ -78,6 +81,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         [marginLeft]="marginLeft"
         [marginRight]="marginRight"
         [maxTimeRange]="maxTimeRange"
+        [verticalGuides]="collapsedVerticalGuides"
         [viewTimeRange]="viewTimeRange"
         [xScaleView]="xScaleView"
         [xTicksView]="xTicksView"
@@ -103,13 +107,16 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   marginRight = 40;
 
   @Input()
-  maxTimeRange: TimeRange = { end: 0, start: 0 };
+  maxTimeRange: TimeRange;
 
   @Input()
   rows: Row[] | null | undefined;
 
   @Input()
-  viewTimeRange: TimeRange = { end: 0, start: 0 };
+  verticalGuides: VerticalGuide[];
+
+  @Input()
+  viewTimeRange: TimeRange;
 
   @Output()
   createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
@@ -147,6 +154,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   @ViewChild('xAxisContainer', { static: true })
   xAxisContainer: ElementRef<HTMLDivElement>;
 
+  collapsedVerticalGuides: VerticalGuide[];
   drawWidth: number;
   xDomainMax: [Date, Date];
   xDomainView: [Date, Date];
@@ -170,31 +178,37 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   }
 
   draw() {
-    const { clientWidth } = this.elRef.nativeElement;
-    this.drawWidth =
-      clientWidth > 0 ? clientWidth - this.marginLeft - this.marginRight : 0;
+    if (this.maxTimeRange && this.viewTimeRange) {
+      const { clientWidth } = this.elRef.nativeElement;
+      this.drawWidth =
+        clientWidth > 0 ? clientWidth - this.marginLeft - this.marginRight : 0;
 
-    this.xDomainMax = [
-      new Date(this.maxTimeRange.start),
-      new Date(this.maxTimeRange.end),
-    ];
-    this.xDomainView = [
-      new Date(this.viewTimeRange.start),
-      new Date(this.viewTimeRange.end),
-    ];
+      this.xDomainMax = [
+        new Date(this.maxTimeRange.start),
+        new Date(this.maxTimeRange.end),
+      ];
+      this.xDomainView = [
+        new Date(this.viewTimeRange.start),
+        new Date(this.viewTimeRange.end),
+      ];
 
-    this.xScaleMax = scaleTime()
-      .domain(this.xDomainMax)
-      .range([0, this.drawWidth]);
-    this.xScaleView = scaleTime()
-      .domain(this.xDomainView)
-      .range([0, this.drawWidth]);
+      this.xScaleMax = scaleTime()
+        .domain(this.xDomainMax)
+        .range([0, this.drawWidth]);
+      this.xScaleView = scaleTime()
+        .domain(this.xDomainView)
+        .range([0, this.drawWidth]);
 
-    this.xTicksView = this.xScaleView.ticks().map((date: Date) => {
-      const doyTimestamp = getDoyTimestamp(date.getTime(), false);
-      const [yearDay, time] = doyTimestamp.split('T');
-      return { date, time, yearDay };
-    });
+      this.xTicksView = this.xScaleView.ticks().map((date: Date) => {
+        const doyTimestamp = getDoyTimestamp(date.getTime(), false);
+        const [yearDay, time] = doyTimestamp.split('T');
+        return { date, time, yearDay };
+      });
+    }
+  }
+
+  onCollapsedVerticalGuides(collapsedVerticalGuides: VerticalGuide[]) {
+    this.collapsedVerticalGuides = collapsedVerticalGuides;
   }
 
   setRowContainerMaxHeight() {

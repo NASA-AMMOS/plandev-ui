@@ -419,7 +419,7 @@ export class TimelineRowLayerActivityComponent
       }
 
       const newHeight = maxY + this.rowHeight;
-      if (this.height !== newHeight) {
+      if (newHeight > 0 && this.height !== newHeight) {
         this.updateRow.emit({
           rowId: this.rowId,
           update: { height: newHeight },

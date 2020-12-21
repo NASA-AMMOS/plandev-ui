@@ -34,23 +34,21 @@ export const uiStates: UiState[] = [
               ],
             },
           ],
+          verticalGuides: [
+            {
+              id: 'verticalGuide0',
+              label: { text: 'Guide 0000000000000000000000' },
+              timestamp: '2020-001T00:00:11',
+            },
+            {
+              id: 'verticalGuide1',
+              label: { text: 'Guide 1' },
+              timestamp: '2020-001T00:00:23',
+            },
+          ],
         },
         title: 'Schedule',
         type: 'timeline',
-        verticalGuides: [
-          {
-            id: 'verticalGuide0',
-            label: { text: 'Guide 0000000000000000000000' },
-            timestamp: '2020-001T00:00:11',
-            type: 'vertical',
-          },
-          {
-            id: 'verticalGuide1',
-            label: { text: 'Guide 1' },
-            timestamp: '2020-001T00:00:23',
-            type: 'vertical',
-          },
-        ],
         violations: [],
       },
       {
@@ -120,23 +118,21 @@ export const uiStates: UiState[] = [
               ],
             },
           ],
+          verticalGuides: [
+            {
+              id: 'verticalGuide2',
+              label: { text: 'Guide 2' },
+              timestamp: '2020-001T00:00:42',
+            },
+            {
+              id: 'verticalGuide3',
+              label: { text: 'Guide 3' },
+              timestamp: '2020-001T00:00:52',
+            },
+          ],
         },
         title: 'Simulation',
         type: 'timeline',
-        verticalGuides: [
-          {
-            id: 'verticalGuide2',
-            label: { text: 'Guide 2' },
-            timestamp: '2020-001T00:00:42',
-            type: 'vertical',
-          },
-          {
-            id: 'verticalGuide3',
-            label: { text: 'Guide 3' },
-            timestamp: '2020-001T00:00:52',
-            type: 'vertical',
-          },
-        ],
         violations: [],
       },
       {

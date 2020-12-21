@@ -59,7 +59,8 @@ export class TimelineRowHorizontalGuidesComponent implements OnChanges {
 
         const lineGroup = g.append('g').attr('class', horizontalGuideClass);
 
-        const color = '#adadad';
+        const color = 'gray';
+        const dashLength = 2;
         const width = 1.0;
         lineGroup
           .append('line')
@@ -70,6 +71,7 @@ export class TimelineRowHorizontalGuidesComponent implements OnChanges {
           .attr('x2', this.drawWidth)
           .attr('y2', y)
           .attr('stroke', color)
+          .attr('stroke-dasharray', dashLength)
           .attr('stroke-width', width);
 
         const labelVisibility = this.showGuideLabels ? 'visible' : 'hidden';

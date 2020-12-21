@@ -26,7 +26,6 @@ export interface Panel {
   timeline?: Timeline;
   title: string;
   type: 'iframe' | 'table' | 'timeline';
-  verticalGuides?: any[];
   violations?: Violation[];
 }
 

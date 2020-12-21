@@ -355,6 +355,7 @@ export class PlanComponent implements OnDestroy {
   onUiStateChanged(change: MatSelectChange): void {
     const { value: id } = change;
     this.store.dispatch(PlanningActions.updateSelectedUiStateId({ id }));
+    this.store.dispatch(AppActions.resize());
   }
 
   onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {

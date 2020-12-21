@@ -36,6 +36,7 @@ import {
   TimeRange,
   UpdatePoint,
   UpdateRow,
+  VerticalGuide,
   XAxisTick,
   XRangePoint,
 } from '../../types';
@@ -44,6 +45,7 @@ import { TimelineRowLayerActivityModule } from './timeline-row-layer-activity.co
 import { TimelineRowLayerLineModule } from './timeline-row-layer-line.component';
 import { TimelineRowLayerXRangeModule } from './timeline-row-layer-x-range.component';
 import { TimelineRowMenuModule } from './timeline-row-menu.component';
+import { TimelineRowVerticalGuidesModule } from './timeline-row-vertical-guides.component';
 import { TimelineRowXAxisTicksModule } from './timeline-row-x-axis-ticks.component';
 import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
 
@@ -187,6 +189,14 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
         [yAxes]="yAxes"
       ></aerie-timeline-row-y-axes>
 
+      <aerie-timeline-row-vertical-guides
+        [drawHeight]="drawHeight"
+        [marginLeft]="marginLeft"
+        [marginTop]="marginTop"
+        [verticalGuides]="verticalGuides"
+        [xScaleView]="xScaleView"
+      ></aerie-timeline-row-vertical-guides>
+
       <aerie-timeline-row-menu
         [horizontalGuides]="horizontalGuides"
         (createHorizontalGuide)="onCreateHorizontalGuide()"
@@ -224,6 +234,9 @@ export class TimelineRowComponent
 
   @Input()
   maxTimeRange: TimeRange;
+
+  @Input()
+  verticalGuides: VerticalGuide[];
 
   @Input()
   viewTimeRange: TimeRange;
@@ -455,6 +468,7 @@ export class TimelineRowComponent
     TimelineRowLayerLineModule,
     TimelineRowLayerXRangeModule,
     TimelineRowMenuModule,
+    TimelineRowVerticalGuidesModule,
     TimelineRowXAxisTicksModule,
     TimelineRowYAxesModule,
   ],

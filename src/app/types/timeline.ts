@@ -124,6 +124,7 @@ export interface SelectPoint {
 
 export interface Timeline {
   rows: Row[];
+  verticalGuides: VerticalGuide[];
 }
 
 export interface UpdatePoint {
@@ -135,6 +136,13 @@ export interface UpdatePoint {
 export interface UpdateRow {
   rowId: string;
   update: any;
+}
+
+export interface VerticalGuide {
+  id: string;
+  label: Label;
+  timestamp: string;
+  x?: number;
 }
 
 export interface XAxisTick {

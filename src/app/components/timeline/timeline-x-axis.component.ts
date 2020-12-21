@@ -8,14 +8,19 @@ import {
   Output,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
-import { TimeRange, XAxisTick } from '../../types';
+import { TimeRange, VerticalGuide, XAxisTick } from '../../types';
 import { TimelineXAxisBrushModule } from './timeline-x-axis-brush.component';
+import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-guides.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'aerie-timeline-x-axis',
   styles: [
     `
+      :host {
+        display: flex;
+      }
+
       svg {
         height: 100%;
         width: 100%;
@@ -43,6 +48,33 @@ import { TimelineXAxisBrushModule } from './timeline-x-axis-brush.component';
             (updateViewTimeRange)="updateViewTimeRange.emit($event)"
           ></g>
         </g>
+        <g
+          [attr.transform]="
+            'translate(' + 0 + ',' + verticalGuidesRowYOffset + ')'
+          "
+        >
+          <g
+            class="label"
+            [attr.transform]="'translate(' + labelsXOffset + ',' + 0 + ')'"
+          >
+            <text
+              fill="rgb(0, 0, 0)"
+              font-size="10"
+              text-anchor="middle"
+              dy="0.5em"
+            >
+              GUIDES
+            </text>
+          </g>
+          <g
+            aerie-timeline-x-axis-vertical-guides
+            [drawHeight]="drawHeight"
+            [drawWidth]="drawWidth"
+            [verticalGuides]="verticalGuides"
+            [xScaleView]="xScaleView"
+            (collapsedVerticalGuides)="collapsedVerticalGuides.emit($event)"
+          ></g>
+        </g>
         <g [attr.transform]="'translate(' + 0 + ',' + axisRowYOffset + ')'">
           <g
             aerie-timeline-x-axis-brush
@@ -58,13 +90,13 @@ import { TimelineXAxisBrushModule } from './timeline-x-axis-brush.component';
           <g fill="none" font-size="10" text-anchor="middle">
             <g
               class="label"
-              [attr.transform]="'translate(' + -60 + ',' + 0 + ')'"
+              [attr.transform]="'translate(' + labelsXOffset + ',' + 0 + ')'"
             >
               <text fill="rgb(0, 0, 0)" dy="0.5em">YEAR-DAY</text>
             </g>
             <g
               class="label"
-              [attr.transform]="'translate(' + -60 + ',' + 20 + ')'"
+              [attr.transform]="'translate(' + labelsXOffset + ',' + 20 + ')'"
             >
               <text fill="rgb(0, 0, 0)" dy="0.5em">TIME</text>
             </g>
@@ -94,13 +126,16 @@ import { TimelineXAxisBrushModule } from './timeline-x-axis-brush.component';
 })
 export class TimelineXAxisComponent {
   @Input()
-  drawHeight = 70;
+  drawHeight = 90;
 
   @Input()
   drawWidth: number;
 
   @Input()
   marginLeft: number;
+
+  @Input()
+  verticalGuides: VerticalGuide[];
 
   @Input()
   viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -115,14 +150,25 @@ export class TimelineXAxisComponent {
   xTicksView: XAxisTick[] = [];
 
   @Output()
+  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter<
+    VerticalGuide[]
+  >();
+
+  @Output()
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
-  axisRowYOffset = 35;
+  axisRowYOffset = 55;
+  labelsXOffset = -60;
+  verticalGuidesRowYOffset = 35;
 }
 
 @NgModule({
   declarations: [TimelineXAxisComponent],
   exports: [TimelineXAxisComponent],
-  imports: [CommonModule, TimelineXAxisBrushModule],
+  imports: [
+    CommonModule,
+    TimelineXAxisBrushModule,
+    TimelineXAxisVerticalGuidesModule,
+  ],
 })
 export class TimelineXAxisModule {}
