@@ -106,14 +106,14 @@
       [style.display]="drawer.createActivityInstance.visible ? 'block' : 'none'"
     >
       <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-      <app-upsert-activity-instance-form
+      <activity-instance-form
         *ngIf="activityTypes !== null"
         type="create"
         [activityTypes]="activityTypes"
         [selectedActivityType]="selectedActivityType"
         (cancel)="onCancel()"
         (create)="onCreateActivityInstance($event)"
-      ></app-upsert-activity-instance-form>
+      ></activity-instance-form>
     </div>
 
     <div [style.display]="drawer.panelEditor.visible ? 'block' : 'none'">
@@ -141,14 +141,14 @@
         drawer.selectedActivityInstance.visible ? 'block' : 'none'
       "
     >
-      <app-upsert-activity-instance-form
+      <activity-instance-form
         *ngIf="selectedActivityInstance; else elseBlock"
         type="update"
         [activityInstance]="selectedActivityInstance"
         [activityTypes]="activityTypes"
         (delete)="onDeleteActivityInstance($event)"
         (update)="onUpdateActivityInstance($event)"
-      ></app-upsert-activity-instance-form>
+      ></activity-instance-form>
       <ng-template #elseBlock>
         <mat-card>No Activity Instance Selected</mat-card>
       </ng-template>

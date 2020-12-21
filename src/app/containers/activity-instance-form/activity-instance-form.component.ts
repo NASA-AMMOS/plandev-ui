@@ -61,12 +61,11 @@ export class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-upsert-activity-instance-form',
-  styleUrls: ['./upsert-activity-instance-form.component.css'],
-  templateUrl: './upsert-activity-instance-form.component.html',
+  selector: 'activity-instance-form',
+  styleUrls: ['./activity-instance-form.component.css'],
+  templateUrl: './activity-instance-form.component.html',
 })
-export class UpsertActivityInstanceFormComponent
-  implements OnChanges, OnDestroy {
+export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   @Input()
   activityInstance: ActivityInstance | undefined;
 
@@ -285,8 +284,8 @@ export class UpsertActivityInstanceFormComponent
 }
 
 @NgModule({
-  declarations: [UpsertActivityInstanceFormComponent],
-  exports: [UpsertActivityInstanceFormComponent],
+  declarations: [ActivityInstanceFormComponent],
+  exports: [ActivityInstanceFormComponent],
   imports: [
     CommonModule,
     MaterialModule,
@@ -296,4 +295,4 @@ export class UpsertActivityInstanceFormComponent
     ReactiveFormsModule,
   ],
 })
-export class UpsertActivityInstanceFormModule {}
+export class ActivityInstanceFormModule {}

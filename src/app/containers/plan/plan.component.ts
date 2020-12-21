@@ -64,7 +64,7 @@ import {
   Violation,
   ViolationListState,
 } from '../../types';
-import { UpsertActivityInstanceFormModule } from '../upsert-activity-instance-form/upsert-activity-instance-form.component';
+import { ActivityInstanceFormModule } from '../activity-instance-form/activity-instance-form.component';
 import { ViolationListModule } from '../violation-list/violation-list.component';
 
 @Component({
@@ -435,7 +435,7 @@ export class PlanComponent implements OnDestroy {
     PlaceholderModule,
     TimelineModule,
     ToolbarModule,
-    UpsertActivityInstanceFormModule,
+    ActivityInstanceFormModule,
     ViolationListModule,
   ],
 })
