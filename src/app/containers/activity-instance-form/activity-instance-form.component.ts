@@ -23,16 +23,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
-import { select, Store } from '@ngrx/store';
 import { Subject } from 'rxjs';
 import { debounceTime, first, tap } from 'rxjs/operators';
 import { SubSink } from 'subsink';
-import { RootState } from '../../app-store';
 import { PanelHeaderModule } from '../../components';
 import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
-import { getActivityInstancesMap } from '../../selectors';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
@@ -70,7 +67,13 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   activityInstance: ActivityInstance | undefined;
 
   @Input()
+  activityInstancesMap: StringTMap<ActivityInstance> | null;
+
+  @Input()
   activityTypes: ActivityType[] = [];
+
+  @Input()
+  adaptationId: string;
 
   @Input()
   parametersExpanded = false;
@@ -93,7 +96,6 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   @Output()
   update: EventEmitter<UpdateActivityInstance> = new EventEmitter<UpdateActivityInstance>();
 
-  activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   errorStateMatcher: ErrorStateMatcher = new ActivityInstanceFormStateMatcher();
   form: FormGroup;
   inputListener: Subject<AbstractControl> = new Subject<AbstractControl>();
@@ -104,15 +106,8 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
     private apiService: ApiService,
     private cdRef: ChangeDetectorRef,
     private fb: FormBuilder,
-    private store: Store<RootState>,
   ) {
     this.subs.add(
-      this.store
-        .pipe(select(getActivityInstancesMap))
-        .subscribe(activityInstancesMap => {
-          this.activityInstancesMap = activityInstancesMap;
-          this.cdRef.markForCheck();
-        }),
       this.inputListener
         .pipe(
           // Assume form has error before validation so it does not flicker
@@ -265,11 +260,10 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   async validateParameterValue(control: AbstractControl) {
     const { value: type } = this.form.controls.type;
     const activityType = this.activityTypes.find(({ name }) => name === type);
-    const { planning } = await this.store.pipe(first()).toPromise();
     const { errors, success } = await this.apiService
       .validateParameters(
         activityType.name,
-        planning.selectedPlan.adaptationId,
+        this.adaptationId,
         this.reduceParameters([control.value]),
       )
       .pipe(first())

@@ -31,7 +31,9 @@ import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
   getActivityInstances,
+  getActivityInstancesMap,
   getActivityTypes,
+  getAdaptationId,
   getMaxTimeRange,
   getPanelsWithPoints,
   getSelectedActivityInstance,
@@ -78,7 +80,9 @@ export class PlanComponent implements OnDestroy {
   verticalSplitAreas: SplitComponent;
 
   activityInstances: ActivityInstance[] | null = null;
+  activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   activityTypes: ActivityType[] | null = null;
+  adaptationId = '';
   violationsByCategory: StringTMap<Violation[]>;
   drawer = {
     activityDictionary: {
@@ -158,8 +162,18 @@ export class PlanComponent implements OnDestroy {
           this.activityInstances = activityInstances;
           this.cdRef.markForCheck();
         }),
+      this.store
+        .pipe(select(getActivityInstancesMap))
+        .subscribe(activityInstancesMap => {
+          this.activityInstancesMap = activityInstancesMap;
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getActivityTypes)).subscribe(activityTypes => {
         this.activityTypes = activityTypes;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getAdaptationId)).subscribe(adaptationId => {
+        this.adaptationId = adaptationId;
         this.cdRef.markForCheck();
       }),
       this.store

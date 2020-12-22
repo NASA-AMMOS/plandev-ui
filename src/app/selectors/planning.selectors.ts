@@ -93,6 +93,12 @@ export const getActivityInstances = createSelector(
       : null,
 );
 
+export const getAdaptationId = createSelector(
+  getPlanningState,
+  (state: PlanningState): string | null =>
+    state.selectedPlan?.adaptationId || '',
+);
+
 export const getSelectedActivityInstanceId = createSelector(
   getPlanningState,
   (state: PlanningState): string | null => state.selectedActivityInstanceId,

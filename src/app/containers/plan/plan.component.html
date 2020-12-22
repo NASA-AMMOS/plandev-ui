@@ -109,7 +109,9 @@
       <activity-instance-form
         *ngIf="activityTypes !== null"
         type="create"
+        [activityInstancesMap]="activityInstancesMap"
         [activityTypes]="activityTypes"
+        [adaptationId]="adaptationId"
         [selectedActivityType]="selectedActivityType"
         (cancel)="onCancel()"
         (create)="onCreateActivityInstance($event)"
@@ -145,7 +147,9 @@
         *ngIf="selectedActivityInstance; else elseBlock"
         type="update"
         [activityInstance]="selectedActivityInstance"
+        [activityInstancesMap]="activityInstancesMap"
         [activityTypes]="activityTypes"
+        [adaptationId]="adaptationId"
         (delete)="onDeleteActivityInstance($event)"
         (update)="onUpdateActivityInstance($event)"
       ></activity-instance-form>
