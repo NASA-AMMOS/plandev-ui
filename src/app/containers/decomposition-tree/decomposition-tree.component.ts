@@ -24,7 +24,7 @@ import {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-decomposition-tree',
+  selector: 'decomposition-tree',
   styleUrls: ['./decomposition-tree.component.css'],
   templateUrl: './decomposition-tree.component.html',
 })
