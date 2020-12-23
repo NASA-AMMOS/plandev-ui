@@ -19,31 +19,5 @@ mat-expansion-panel-header {
 }
 
 .expansion-panel-body {
-  padding: 12px;
-}
-
-.parameters {
-  align-items: center;
-  display: grid;
-  grid-template-columns: 30% 70%;
-  justify-items: start;
   padding: 15px;
-}
-
-.parameter-label {
-  color: rgba(0, 0, 0, 0.6);
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 500;
-  letter-spacing: 0.1px;
-  line-height: 24px;
-  max-width: 100%;
-  overflow: hidden;
-  padding-right: 24px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.text-error {
-  color: #f44336;
 }

@@ -8,10 +8,37 @@ export interface ActivityInstance {
   type: string;
 }
 
-export interface ActivityInstanceFormParameter {
-  name: string;
+export interface ActivityInstanceForm {
+  id: string;
+  isChild: boolean;
+  parameters: ActivityInstanceFormParameter[];
+  startTimestamp: string;
   type: string;
+  valid: boolean;
+}
+
+export type ActivityInstanceFormParameterType =
+  | 'boolean'
+  | 'duration'
+  | 'int'
+  | 'real'
+  | 'series'
+  | 'string'
+  | 'struct'
+  | 'variant';
+
+export interface ActivityInstanceFormParameter {
+  error: string | null;
+  loading: boolean;
+  name: string;
+  schema: any;
+  type: ActivityInstanceFormParameterType;
   value: any;
+}
+
+export interface ActivityInstanceFormParameterChange {
+  newValue: any;
+  parameter: ActivityInstanceFormParameter;
 }
 
 export interface ActivityInstanceParameter {

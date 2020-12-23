@@ -7,54 +7,25 @@ import {
   Input,
   NgModule,
   OnChanges,
-  OnDestroy,
   Output,
   SimpleChanges,
 } from '@angular/core';
-import {
-  AbstractControl,
-  FormArray,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  FormGroupDirective,
-  NgForm,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { Subject } from 'rxjs';
-import { debounceTime, first, tap } from 'rxjs/operators';
-import { SubSink } from 'subsink';
+import { first } from 'rxjs/operators';
 import { PanelHeaderModule } from '../../components';
-import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
-import { PipesModule } from '../../pipes';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
+  ActivityInstanceForm,
   ActivityInstanceFormParameter,
-  ActivityInstanceParameter,
+  ActivityInstanceFormParameterChange,
   ActivityType,
   CreateActivityInstance,
   StringTMap,
   UpdateActivityInstance,
 } from '../../types';
 import { DecompositionTreeModule } from '../decomposition-tree/decomposition-tree.component';
-
-export class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
-  isErrorState(
-    control: FormControl | null,
-    form: FormGroupDirective | NgForm | null,
-  ): boolean {
-    const isSubmitted = form && form.submitted;
-    return !!(
-      control &&
-      control.invalid &&
-      (control.dirty || control.touched || isSubmitted)
-    );
-  }
-}
+import { ActivityInstanceFormParametersModule } from './activity-instance-form-parameters.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,7 +33,7 @@ export class ActivityInstanceFormStateMatcher implements ErrorStateMatcher {
   styleUrls: ['./activity-instance-form.component.css'],
   templateUrl: './activity-instance-form.component.html',
 })
-export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
+export class ActivityInstanceFormComponent implements OnChanges {
   @Input()
   activityInstance: ActivityInstance | undefined;
 
@@ -74,9 +45,6 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
 
   @Input()
   adaptationId: string;
-
-  @Input()
-  parametersExpanded = false;
 
   @Input()
   selectedActivityType: ActivityType | null = null;
@@ -96,182 +64,146 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   @Output()
   update: EventEmitter<UpdateActivityInstance> = new EventEmitter<UpdateActivityInstance>();
 
-  errorStateMatcher: ErrorStateMatcher = new ActivityInstanceFormStateMatcher();
-  form: FormGroup;
-  inputListener: Subject<AbstractControl> = new Subject<AbstractControl>();
-
-  private subs = new SubSink();
+  instance: ActivityInstanceForm;
 
   constructor(
     private apiService: ApiService,
     private cdRef: ChangeDetectorRef,
-    private fb: FormBuilder,
-  ) {
-    this.subs.add(
-      this.inputListener
-        .pipe(
-          // Assume form has error before validation so it does not flicker
-          // from valid/invalid during the async validation request.
-          tap(control =>
-            control.get('value').setErrors({ invalid: '', loading: true }),
-          ),
-          debounceTime(250),
-        )
-        .subscribe(this.validateParameterValue.bind(this)),
+  ) {}
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.activityInstance) {
+      this.instance = {
+        id: this.activityInstance.id,
+        isChild: this.activityInstance.parent !== null,
+        parameters: this.getParameters(this.activityInstance.type),
+        startTimestamp: this.activityInstance.startTimestamp,
+        type: this.activityInstance.type,
+        valid: false,
+      };
+    }
+
+    if (changes.selectedActivityType && this.selectedActivityType) {
+      const { name } = this.selectedActivityType;
+      this.instance = {
+        ...this.instance,
+        parameters: this.getParameters(name),
+        type: name,
+      };
+    }
+
+    if (changes.type && this.type === 'create') {
+      this.instance = {
+        id: '',
+        isChild: false,
+        parameters: [],
+        startTimestamp: '',
+        type: '',
+        valid: false,
+      };
+    }
+  }
+
+  /**
+   * Return a list of parameters for a given activity type.
+   * If there is a corresponding activity instance parameter available, then use it's value.
+   * Otherwise use the activity type default value, or a null value.
+   */
+  getParameters(activityTypeName: string): ActivityInstanceFormParameter[] {
+    const activityType = this.activityTypes.find(
+      ({ name }) => name === activityTypeName,
     );
 
+    const parameters = activityType.parameters.map(activityTypeParameter => {
+      let value = activityTypeParameter?.default || null;
+
+      if (this.activityInstance) {
+        const activityInstanceParameter = this.activityInstance.parameters.find(
+          instanceParameter =>
+            instanceParameter.name === activityTypeParameter.name,
+        );
+        value = activityInstanceParameter?.value || value;
+      }
+
+      const parameter: ActivityInstanceFormParameter = {
+        error: null,
+        loading: false,
+        name: activityTypeParameter.name,
+        schema: activityTypeParameter.schema,
+        type: activityTypeParameter.schema.type,
+        value,
+      };
+
+      return parameter;
+    });
+
+    return parameters;
+  }
+
+  async onParameterChange(change: ActivityInstanceFormParameterChange) {
+    await this.validateParameterValue(change);
+  }
+
+  onCreateOrUpdate() {
+    const parameters = this.instance.parameters.map(({ name, value }) => ({
+      name,
+      value,
+    }));
+
     if (this.type === 'create') {
-      this.form = this.fb.group({
-        parameters: this.fb.array([]),
-        startTimestamp: ['', [Validators.required, doyTimestampValidator]],
-        type: ['', Validators.required],
-      });
-
-      this.subs.add(
-        this.form.controls.type.valueChanges.subscribe(type => {
-          const activityType = this.activityTypes.find(
-            ({ name }) => name === type,
-          );
-          if (activityType) {
-            const { parameters } = activityType;
-            this.formParameters.clear();
-            parameters.forEach(parameter => {
-              this.formParameters.push(
-                this.fb.group({
-                  name: parameter.name,
-                  type: parameter.schema.type,
-                  value: parameter.default,
-                }),
-              );
-            });
-          }
-        }),
-      );
+      const activityInstance: CreateActivityInstance = {
+        parameters,
+        startTimestamp: this.instance.startTimestamp,
+        type: this.instance.type,
+      };
+      this.create.emit(activityInstance);
+    } else if (this.type === 'update') {
+      const activityInstance: UpdateActivityInstance = {
+        id: this.instance.id,
+        parameters,
+        startTimestamp: this.instance.startTimestamp,
+        type: this.instance.type,
+      };
+      this.update.emit(activityInstance);
     }
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (this.type === 'update' && changes.activityInstance) {
-      this.form = this.fb.group({
-        parameters: this.fb.array([]),
-        startTimestamp: [
-          {
-            disabled: this.isNotParent,
-            value: this.activityInstance.startTimestamp,
-          },
-          [Validators.required, doyTimestampValidator],
-        ],
-        type: [
-          { disabled: true, value: this.activityInstance.type },
-          Validators.required,
-        ],
-      });
-
-      const { type } = this.activityInstance;
-      const activityType = this.activityTypes.find(({ name }) => name === type);
-      if (activityType) {
-        const { parameters } = activityType;
-        this.formParameters.clear();
-        parameters.forEach(({ name, schema }) => {
-          const value = this.getParameterValue(this.activityInstance, name);
-          this.formParameters.push(
-            this.fb.group({
-              name,
-              type: schema.type,
-              value,
-            }),
-          );
-        });
-      }
-    }
-
-    if (changes.selectedActivityType && this.selectedActivityType !== null) {
-      this.form.controls.type.setValue(this.selectedActivityType.name);
-    }
+  setParameter(
+    change: ActivityInstanceFormParameterChange,
+    update: Partial<ActivityInstanceFormParameter>,
+  ) {
+    this.instance = {
+      ...this.instance,
+      parameters: this.instance.parameters.map(parameter => {
+        if (parameter.name === change.parameter.name) {
+          return {
+            ...parameter,
+            ...update,
+            value: change.newValue,
+          };
+        }
+        return parameter;
+      }),
+    };
   }
 
-  get isNotParent() {
-    if (this.type === 'update' && this.activityInstance) {
-      return this.activityInstance.parent !== null;
-    }
-    return false;
-  }
-
-  ngOnDestroy() {
-    this.subs.unsubscribe();
-  }
-
-  get formParameters() {
-    return this.form.get('parameters') as FormArray;
-  }
-
-  getParameterValue(
-    activityInstance: ActivityInstance,
-    parameterName: string,
-  ): string {
-    const { parameters } = activityInstance;
-    const parameter = parameters.find(({ name }) => name === parameterName);
-    return parameter ? parameter.value : '';
-  }
-
-  onSubmit() {
-    if (this.form && this.form.valid) {
-      if (this.type === 'create') {
-        const activityInstance: CreateActivityInstance = {
-          ...this.form.value,
-          parameters: this.reduceParameters(this.form.value.parameters),
-        };
-        this.create.emit(activityInstance);
-      } else if (this.type === 'update') {
-        const activityInstance: UpdateActivityInstance = {
-          ...this.form.value,
-          id: this.activityInstance.id,
-          parameters: this.reduceParameters(this.form.value.parameters),
-        };
-        this.update.emit(activityInstance);
-      }
-    }
-  }
-
-  reduceParameter(
-    parameter: ActivityInstanceFormParameter,
-  ): ActivityInstanceParameter {
-    const { name, type, value } = parameter;
-    if (type === 'real' || type === 'int') {
-      const newValue = parseFloat(value) || value;
-      return { name, value: newValue };
-    } else if (type === 'boolean') {
-      const newValue =
-        value === 'true' ? true : value === 'false' ? false : value;
-      return { name, value: newValue };
-    } else {
-      return { name, value };
-    }
-  }
-
-  reduceParameters(
-    parameters: ActivityInstanceFormParameter[],
-  ): ActivityInstanceParameter[] {
-    return parameters
-      .filter(p => p.value !== '')
-      .map(p => this.reduceParameter(p));
-  }
-
-  async validateParameterValue(control: AbstractControl) {
-    const { value: type } = this.form.controls.type;
-    const activityType = this.activityTypes.find(({ name }) => name === type);
+  async validateParameterValue(change: ActivityInstanceFormParameterChange) {
+    const { newValue, parameter } = change;
+    const activityType = this.activityTypes.find(
+      ({ name }) => name === this.instance.type,
+    );
+    this.setParameter(change, { error: null, loading: true });
     const { errors, success } = await this.apiService
-      .validateParameters(
-        activityType.name,
-        this.adaptationId,
-        this.reduceParameters([control.value]),
-      )
+      .validateParameters(activityType.name, this.adaptationId, [
+        { name: parameter.name, value: newValue },
+      ])
       .pipe(first())
       .toPromise();
     if (success) {
-      control.get('value').setErrors(null);
+      this.setParameter(change, { error: null, loading: false });
     } else {
-      control.get('value').setErrors({ invalid: errors[0], loading: false });
+      const [error] = errors;
+      this.setParameter(change, { error, loading: false });
     }
     this.cdRef.markForCheck();
   }
@@ -282,11 +214,10 @@ export class ActivityInstanceFormComponent implements OnChanges, OnDestroy {
   exports: [ActivityInstanceFormComponent],
   imports: [
     CommonModule,
-    MaterialModule,
+    ActivityInstanceFormParametersModule,
     DecompositionTreeModule,
+    MaterialModule,
     PanelHeaderModule,
-    PipesModule,
-    ReactiveFormsModule,
   ],
 })
 export class ActivityInstanceFormModule {}
