@@ -11,7 +11,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { first } from 'rxjs/operators';
-import { PanelHeaderModule } from '../../components';
+import { DecompositionTreeModule } from '../../containers/decomposition-tree/decomposition-tree.component';
 import { MaterialModule } from '../../material';
 import { ApiService } from '../../services';
 import {
@@ -24,7 +24,7 @@ import {
   StringTMap,
   UpdateActivityInstance,
 } from '../../types';
-import { DecompositionTreeModule } from '../decomposition-tree/decomposition-tree.component';
+import { PanelHeaderModule } from '../panel-header/panel-header.component';
 import { ActivityInstanceFormParametersModule } from './activity-instance-form-parameters.component';
 
 @Component({

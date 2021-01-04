@@ -19,13 +19,14 @@ import { SubSink } from 'subsink';
 import { AppActions, PlanningActions, ToastActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
+  ActivityInstanceFormModule,
   ActivityTypeListModule,
   DataTableModule,
   PanelHeaderModule,
   PlaceholderModule,
+  TimelineModule,
   ToolbarModule,
 } from '../../components';
-import { TimelineModule } from '../../components/timeline/timeline.component';
 import { getPanelsText, hideTooltip } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
@@ -66,7 +67,6 @@ import {
   Violation,
   ViolationListState,
 } from '../../types';
-import { ActivityInstanceFormModule } from '../activity-instance-form/activity-instance-form.component';
 import { ViolationListModule } from '../violation-list/violation-list.component';
 
 @Component({

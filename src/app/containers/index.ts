@@ -1,4 +1,3 @@
-export * from './activity-instance-form/activity-instance-form.component';
 export * from './adaptations/adaptations.component';
 export * from './containers.module';
 export * from './login/login.component';
