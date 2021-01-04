@@ -39,7 +39,7 @@ pipeline {
     disableConcurrentBuilds()
   }
   agent {
-    label 'coronado || Pismo || San-clemente || Sugarloaf'
+    label 'Pismo || San-clemente || Sugarloaf'
   }
   environment {
     ARTIFACT_TAG = "${GIT_BRANCH}"
