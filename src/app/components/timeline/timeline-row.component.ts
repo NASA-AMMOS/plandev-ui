@@ -239,7 +239,7 @@ export class TimelineRowComponent
   verticalGuides: VerticalGuide[];
 
   @Input()
-  viewTimeRange: TimeRange;
+  viewTimeRange: TimeRange | undefined;
 
   @Input()
   xScaleView: ScaleTime<number, number>;

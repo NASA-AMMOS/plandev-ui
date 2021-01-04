@@ -13,7 +13,7 @@ import {
 import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { ScaleTime } from 'd3-scale';
 import { select } from 'd3-selection';
-import { VerticalGuide } from '../../types';
+import { TimeRange, VerticalGuide } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +31,9 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
   verticalGuides: VerticalGuide[] | undefined;
 
   @Input()
+  viewTimeRange: TimeRange | undefined;
+
+  @Input()
   xScaleView: ScaleTime<number, number>;
 
   @Output()
@@ -42,7 +45,9 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
   g: ElementRef<SVGGElement>;
 
   ngOnChanges() {
-    this.draw();
+    if (this.viewTimeRange) {
+      this.draw();
+    }
   }
 
   draw() {
@@ -56,47 +61,53 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
     const labelPadding = 3;
 
     const verticalGuides = this.verticalGuides || [];
+    const collapsedVerticalGuides = [];
     for (let i = 0, l = verticalGuides.length; i < l; ++i) {
       const guide = verticalGuides[i];
-      const x = this.xScaleView(getUnixEpochTime(guide.timestamp));
+      const time = getUnixEpochTime(guide.timestamp);
+      if (this.viewTimeRange.start <= time && time <= this.viewTimeRange.end) {
+        const x = this.xScaleView(time);
 
-      const guideGroup = g
-        .append('g')
-        .attr('class', verticalGuideClass)
-        .attr('id', guide.id);
+        const guideGroup = g
+          .append('g')
+          .attr('class', verticalGuideClass)
+          .attr('id', guide.id);
 
-      guideGroup
-        .append('circle')
-        .attr('cx', x)
-        .attr('cy', 0)
-        .attr('r', circleRadius)
-        .attr('fill', circleColor);
+        guideGroup
+          .append('circle')
+          .attr('cx', x)
+          .attr('cy', 0)
+          .attr('r', circleRadius)
+          .attr('fill', circleColor);
 
-      guideGroup
-        .append('line')
-        .attr('x1', x)
-        .attr('y1', circleRadius)
-        .attr('x2', x)
-        .attr('y2', this.drawHeight)
-        .attr('stroke', 'gray')
-        .attr('stroke-dasharray', 2);
+        guideGroup
+          .append('line')
+          .attr('x1', x)
+          .attr('y1', circleRadius)
+          .attr('x2', x)
+          .attr('y2', this.drawHeight)
+          .attr('stroke', 'gray')
+          .attr('stroke-dasharray', 2);
 
-      const labelColor = guide?.label?.color || 'black';
-      const labelFontFace = guide?.label?.fontFace || 'Helvetica Neue';
-      const labelFontSize = guide?.label?.fontSize || 12;
-      const labelText = guide?.label?.text || '';
+        const labelColor = guide?.label?.color || 'black';
+        const labelFontFace = guide?.label?.fontFace || 'Helvetica Neue';
+        const labelFontSize = guide?.label?.fontSize || 12;
+        const labelText = guide?.label?.text || '';
 
-      guideGroup
-        .append('text')
-        .attr('fill', labelColor)
-        .attr('font-family', labelFontFace)
-        .attr('font-size', `${labelFontSize}px`)
-        .attr('x', x + circleRadius + labelPadding)
-        .attr('y', circleRadius / 2)
-        .text(labelText);
+        guideGroup
+          .append('text')
+          .attr('fill', labelColor)
+          .attr('font-family', labelFontFace)
+          .attr('font-size', `${labelFontSize}px`)
+          .attr('x', x + circleRadius + labelPadding)
+          .attr('y', circleRadius / 2)
+          .text(labelText);
+
+        collapsedVerticalGuides.push(guide);
+      }
     }
 
-    this.collapsedVerticalGuides.emit(verticalGuides);
+    this.collapsedVerticalGuides.emit(collapsedVerticalGuides);
   }
 }
 

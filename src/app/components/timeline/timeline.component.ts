@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   AfterViewChecked,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -116,7 +117,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   verticalGuides: VerticalGuide[];
 
   @Input()
-  viewTimeRange: TimeRange;
+  viewTimeRange: TimeRange | undefined;
 
   @Output()
   createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
@@ -162,7 +163,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   xScaleView: ScaleTime<number, number>;
   xTicksView: XAxisTick[];
 
-  constructor(private elRef: ElementRef) {}
+  constructor(private cdRef: ChangeDetectorRef, private elRef: ElementRef) {}
 
   @HostListener('window:resize', ['$event.target'])
   onWindowResize() {
@@ -209,6 +210,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   onCollapsedVerticalGuides(collapsedVerticalGuides: VerticalGuide[]) {
     this.collapsedVerticalGuides = collapsedVerticalGuides;
+    this.cdRef.detectChanges();
   }
 
   setRowContainerMaxHeight() {

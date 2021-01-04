@@ -71,6 +71,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [verticalGuides]="verticalGuides"
+            [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
             (collapsedVerticalGuides)="collapsedVerticalGuides.emit($event)"
           ></g>
@@ -138,7 +139,7 @@ export class TimelineXAxisComponent {
   verticalGuides: VerticalGuide[];
 
   @Input()
-  viewTimeRange: TimeRange = { end: 0, start: 0 };
+  viewTimeRange: TimeRange | undefined;
 
   @Input()
   xScaleMax: ScaleTime<number, number>;
