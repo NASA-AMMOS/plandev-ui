@@ -1,53 +1,44 @@
-#### 0.5.0 (2020-10-05)
+#### 0.6.0 (2021-01-04)
 
 ##### Build System / Dependencies
 
-*  update d3 to latest ([398568f2](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/398568f2e43be19a7727bafe49f50b8fbf77c921))
-*  shrinkwrap deps ([76b39d55](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/76b39d55c81451e773bb35a8a7148dda69d64649))
-*  update deps ([f60f8a18](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f60f8a189ee90cce3e43b7662809319298ac618d))
-*  update deps ([3f18b1da](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/3f18b1dac1a793846d0e40bb1fd53704a03542d3))
-*  update yarn.lock ([7844377b](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/7844377b64d8f07e2c73aa73324e8c201b6498f8))
-*  remove install.sh ([d7b00fbf](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d7b00fbf5017c2800bf4d8847942d30152797091))
-
-##### Continuous Integration
-
-*  use Jenkins Git plugin deployment key ([b69610a3](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b69610a36a6962ecb12a0389ae45b7ea4ab9641f))
-*  add back test ([9ec74813](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/9ec748138a026362c46dd0c8018d9f94155db519))
-*  remove test for now ([dbe13236](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/dbe13236b4a3c9351abcce898439f9772542765f))
-*  build with new env ([33324c65](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/33324c6560705af3497c7ef6be94c23524cee540))
-*  build env prod ([b8a572cc](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b8a572cc6b8cfcfb4c53ca87cb095289097a57b2))
-*  remove test call, FirefoxHeadless is failing ([c5d8f34c](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/c5d8f34cab9f4dc3399650feba3b4b608a41ed27))
-*  use ng build not ng-build ([a70a9a52](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a70a9a5262521420d32618ce1a8af034a3da160e))
-*  make sure prod build is running ([3536664a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/3536664a5493c14c1b90cc026d8366d3b49ad437))
-*  update artifactory npm repo ([d5b41c2c](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d5b41c2c8d93519b82a608cbbfc78803250e9c7a))
-*  remove old node_modules if they exist ([2407aec9](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2407aec92455a5f9892e2a7999624079017b1e29))
+*  break out start scripts for hmr ([cdfafc20](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/cdfafc20d869a2c4ff0377645f40b2b9b7519116))
+*  upgrade to Angular 11 ([60e69cf8](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/60e69cf89c20b9a4f62700b49404cd91cc684634))
+*  update package ([db11d6c4](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/db11d6c4de7b26eed1d26baa1baae6ee21587759))
+*  update to 0.5.0 ([13c057d5](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/13c057d5a10c3ddbbc2b3026b5c9ffba638bf34b))
 
 ##### Documentation Changes
 
-*  remove docker-compose from deploymnent ([f3c10fce](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f3c10fce1c7b56c529a3f25b16bcd1ce1cc82a8a))
+*  update deployment ([39f2b121](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/39f2b1211dcc2d4910f0cb3ac38ef9ec776714ef))
 
 ##### New Features
 
-*  more decomposition visualization features ([c7402318](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/c7402318ce5e9b798c826816a7cecd766744dbdc))
-*  connect decomposition tree to sim results ([ab6fac24](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/ab6fac2436b0c4ec9778abd34f9fbd09fe32ceeb))
-*  sim results activity decomposition ([cc0f4201](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/cc0f4201ff8dc0809d50a034a8bc36280cedcab9))
-*  first draft of decomposition tree ([4efb7779](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/4efb77794d55d123d3784c9ee6a452ea83716254))
-*  constraint violation list view ([378f6ede](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/378f6ede447cc239eac91ffd0f6aa95a6d9b4fa2))
+*  activity instance parameter form base types ([1d3adc43](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/1d3adc4321a4400fcf8dd737c7513a42bf05ccbc))
+*  fetch editor url on login ([cac50e7a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/cac50e7a9f51caa53fd1f9611dbdad73bf34ca82))
+*  CAM authorization ([5824b7b7](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/5824b7b75ba308b95c23633a95c6b20c75f2a11e))
+*  fetch schema with simulation results ([6e3a0ca1](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/6e3a0ca178f10ab58dfc54b84cedd89befea5161))
 
 ##### Bug Fixes
 
-*  resize after update band ([4b29bc32](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/4b29bc32acff81efc281b797ccc06d4cf6df60d4))
+*  FormData append order ([2f1a7bdf](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2f1a7bdf4ce299e2e1d82b4560ad0dfb8870a38c))
 
 ##### Refactors
 
-*  activity instance form ([ba4709e8](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/ba4709e82fd35965f506ae4c57ec338e6aee21d5))
-*  decomposition visualization updates ([ea7286a3](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/ea7286a30fcab595927751919dd0192e01f59f15))
-*  aerie-js time package ([6642d59e](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/6642d59ead5a75e49c799eecebcd8413c6cf3cdb))
-*  activity band ([df16404f](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/df16404f522269ebc7e7a7a7fc255c7dd4bf961e))
-*  compact activity visualization ([a41c06a0](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a41c06a0838d800564e79e504d608eaaf4c118f9))
-*  constraint violation list search filter ([ce1568d7](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/ce1568d7a26b061314362271f123f890811ed208))
-*  activity instance name in violation list ([1ce12111](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/1ce12111bbfa2274c3241a14e5d9a2e2989baa7c))
+*  move activity-instance-form component ([f381a92d](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f381a92de38e92572707a902e39804e0aaa1f427))
+*  vertical guides time range ([a0960635](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a09606359a565255028a17171bc32ce786ba37ab))
+*  remove store from activity instance form ([b90a34c2](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b90a34c254836307dd85320739b44e7d1cf60389))
+*  rename decomposition-tree selector ([8d46fb92](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/8d46fb92a31bc186d26bf05590c969f76a73026b))
+*  remove unused README ([c36f4c03](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/c36f4c035b555c4b1af5ecf8379e0464d64dd68c))
+*  rename activity instance form ([c2db01af](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/c2db01afcf0c05f035df16a89ea3cc60583b5068))
+*  vertical guides ([0050faaa](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/0050faaaef96197eecaec93614ef8d4f6ef67764))
+*  remove row id from horizontal guide ([b62bd5c5](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/b62bd5c5a0592439ab2aa231d4fc30d8b89bde21))
+*  timeline ([2c19d3c6](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/2c19d3c6c6b8c8d3c9e4fb3e443df6caee0b4ab9))
+*  eslint ([d34b25f3](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d34b25f375d3ac19c5831b83e18efdc9570a5b39))
+*  update tsconfig to ng 11 format ([f35ba111](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f35ba111f35fac3f52e73a091486f234c5f8dcc9))
+*  update deps, tests, remove unused stuff ([460acc75](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/460acc759cb304827157337e9b416ab35a21faad))
+*  rename schema types ([e61347d9](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/e61347d959777d6a1115774d30db700db693f1c3))
+*  auth header for logout ([a7490b53](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/a7490b53b11a561dd6d4c85c15042c14a278ae36))
+*  CAM auth via GQL ([f5cae06a](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/f5cae06a673fbaac7c309454300feb0c05655a33))
+*  update deps, remove yarn ([62493c06](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/62493c067927cd3d91f1c7407ed200d9f03e173b))
+*  output x-range band for sim results ([d6d3970b](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/d6d3970b34ce9c8db4d11791538d08c370f8df10))
 
-##### Code Style Changes
-
-*  format html ([e4476a74](https://github.jpl.nasa.gov/MPS/aerie-ui/commit/e4476a74ae2a233690437425b83178990fe4cafe))
