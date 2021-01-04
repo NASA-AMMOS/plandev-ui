@@ -13,14 +13,10 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-struct',
-  styles: activityInstanceFormParameterStyles,
+  styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
-    <div class="field">
-      <mat-form-field>
-        <mat-label>Struct</mat-label>
-      </mat-form-field>
-    </div>
+    <div class="field">struct</div>
   `,
 })
 export class ActivityInstanceFormParameterStructComponent {

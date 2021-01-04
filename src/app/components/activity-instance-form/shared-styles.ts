@@ -1,8 +1,7 @@
-export const activityInstanceFormParameterStyles = [
-  `
+export const activityInstanceFormParameterStyles = `
     :host {
       display: grid;
-      grid-template-columns: 40% 60%;
+      grid-template-columns: 30% 70%;
       padding: 10px;
     }
 
@@ -18,5 +17,4 @@ export const activityInstanceFormParameterStyles = [
     .field :first-child {
       width: 100%;
     }
-  `,
-];
+  `;

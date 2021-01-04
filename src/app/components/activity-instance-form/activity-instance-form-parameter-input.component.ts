@@ -18,7 +18,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-input',
-  styles: activityInstanceFormParameterStyles,
+  styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
     <div class="field">

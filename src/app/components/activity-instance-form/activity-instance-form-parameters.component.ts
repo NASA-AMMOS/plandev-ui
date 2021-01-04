@@ -26,7 +26,7 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'activity-instance-form-parameters',
   template: `
-    <ng-container *ngFor="let parameter of parameters">
+    <ng-container *ngFor="let parameter of parameters; let i = index">
       <parameter-boolean
         *ngIf="parameter.type === 'boolean'"
         [parameter]="parameter"
@@ -78,6 +78,8 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
         *ngIf="parameter.type === 'variant'"
         [parameter]="parameter"
       ></parameter-variant>
+
+      <mat-divider *ngIf="i !== parameters?.length - 1"></mat-divider>
     </ng-container>
   `,
 })
