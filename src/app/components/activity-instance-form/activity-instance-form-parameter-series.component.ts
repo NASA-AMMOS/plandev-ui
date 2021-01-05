@@ -86,7 +86,12 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
 
     <ul *ngIf="expanded">
-      <li *ngFor="let subParameter of subParameters">
+      <li
+        *ngFor="
+          let subParameter of subParameters;
+          trackBy: trackBySubParameters
+        "
+      >
         <parameter-boolean
           *ngIf="subParameter.type === 'boolean'"
           [parameter]="subParameter"
@@ -143,7 +148,7 @@ export class ActivityInstanceFormParameterSeriesComponent implements OnChanges {
   parameter: ActivityInstanceFormParameter | undefined;
 
   expanded = false;
-  indices = 3;
+  indices = 1;
   subParameters: ActivityInstanceFormParameter[] = [];
 
   ngOnChanges(changes: SimpleChanges) {
@@ -160,6 +165,10 @@ export class ActivityInstanceFormParameterSeriesComponent implements OnChanges {
 
   toggleExpanded() {
     this.expanded = !this.expanded;
+  }
+
+  trackBySubParameters(_: number, parameter: ActivityInstanceFormParameter) {
+    return parameter.name;
   }
 
   updateSubParameters() {

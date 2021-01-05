@@ -26,7 +26,13 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'activity-instance-form-parameters',
   template: `
-    <ng-container *ngFor="let parameter of parameters; let i = index">
+    <ng-container
+      *ngFor="
+        let parameter of parameters;
+        trackBy: trackByParameters;
+        let i = index
+      "
+    >
       <parameter-boolean
         *ngIf="parameter.type === 'boolean'"
         [parameter]="parameter"
@@ -89,6 +95,10 @@ export class ActivityInstanceFormParametersComponent {
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+
+  trackByParameters(_: number, parameter: ActivityInstanceFormParameter) {
+    return parameter.name;
+  }
 }
 
 @NgModule({
