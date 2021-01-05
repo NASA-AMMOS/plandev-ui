@@ -12,12 +12,9 @@ import {
   ActivityInstanceFormParameter,
   ActivityInstanceFormParameterChange,
 } from '../../types';
-import { ActivityInstanceFormParameterBooleanModule } from './activity-instance-form-parameter-boolean.component';
-import { ActivityInstanceFormParameterInputModule } from './activity-instance-form-parameter-input.component';
-import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { ActivityInstanceFormParameterSeriesModule } from './activity-instance-form-parameter-series.component';
-import { ActivityInstanceFormParameterStructModule } from './activity-instance-form-parameter-struct.component';
-import { ActivityInstanceFormParameterVariantModule } from './activity-instance-form-parameter-variant.component';
+import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
+import { ActivityInstanceFormParameterRecSeriesModule } from './activity-instance-form-parameter-rec-series.component';
+import { ActivityInstanceFormParameterRecStructModule } from './activity-instance-form-parameter-rec-struct.component';
 
 /**
  * @see https://wiki.jpl.nasa.gov/pages/viewpage.action?spaceKey=MPSA&title=Merlin+ValueSchema+Definitions
@@ -33,57 +30,24 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
         let i = index
       "
     >
-      <parameter-boolean
-        *ngIf="parameter.schema.type === 'boolean'"
-        [parameter]="parameter"
-      ></parameter-boolean>
-
-      <parameter-input
-        *ngIf="parameter.schema.type === 'duration'"
-        label="Duration"
-        type="text"
+      <parameter-base
+        *ngIf="
+          parameter.schema.type !== 'series' &&
+          parameter.schema.type !== 'struct'
+        "
         [parameter]="parameter"
         (parameterChange)="parameterChange.emit($event)"
-      ></parameter-input>
+      ></parameter-base>
 
-      <parameter-input
-        *ngIf="parameter.schema.type === 'int'"
-        label="Integer"
-        type="number"
-        [parameter]="parameter"
-        (parameterChange)="parameterChange.emit($event)"
-      ></parameter-input>
-
-      <parameter-input
-        *ngIf="parameter.schema.type === 'real'"
-        label="Real Number"
-        type="number"
-        [parameter]="parameter"
-        (parameterChange)="parameterChange.emit($event)"
-      ></parameter-input>
-
-      <parameter-series
+      <parameter-rec-series
         *ngIf="parameter.schema.type === 'series'"
         [parameter]="parameter"
-      ></parameter-series>
+      ></parameter-rec-series>
 
-      <parameter-input
-        *ngIf="parameter.schema.type === 'string'"
-        label="String"
-        type="text"
-        [parameter]="parameter"
-        (parameterChange)="parameterChange.emit($event)"
-      ></parameter-input>
-
-      <parameter-struct
+      <parameter-rec-struct
         *ngIf="parameter.schema.type === 'struct'"
         [parameter]="parameter"
-      ></parameter-struct>
-
-      <parameter-variant
-        *ngIf="parameter.schema.type === 'variant'"
-        [parameter]="parameter"
-      ></parameter-variant>
+      ></parameter-rec-struct>
 
       <mat-divider *ngIf="i !== parameters?.length - 1"></mat-divider>
     </ng-container>
@@ -107,12 +71,9 @@ export class ActivityInstanceFormParametersComponent {
   imports: [
     CommonModule,
     MaterialModule,
-    ActivityInstanceFormParameterBooleanModule,
-    ActivityInstanceFormParameterInputModule,
-    ActivityInstanceFormParameterNameModule,
-    ActivityInstanceFormParameterSeriesModule,
-    ActivityInstanceFormParameterStructModule,
-    ActivityInstanceFormParameterVariantModule,
+    ActivityInstanceFormParameterBaseModule,
+    ActivityInstanceFormParameterRecSeriesModule,
+    ActivityInstanceFormParameterRecStructModule,
   ],
 })
 export class ActivityInstanceFormParametersModule {}

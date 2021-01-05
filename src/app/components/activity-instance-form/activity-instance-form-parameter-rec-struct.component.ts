@@ -12,25 +12,25 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'parameter-struct',
+  selector: 'parameter-rec-struct',
   styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
     <div class="field">struct</div>
   `,
 })
-export class ActivityInstanceFormParameterStructComponent {
+export class ActivityInstanceFormParameterRecStructComponent {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterStructComponent],
-  exports: [ActivityInstanceFormParameterStructComponent],
+  declarations: [ActivityInstanceFormParameterRecStructComponent],
+  exports: [ActivityInstanceFormParameterRecStructComponent],
   imports: [
     CommonModule,
     MaterialModule,
     ActivityInstanceFormParameterNameModule,
   ],
 })
-export class ActivityInstanceFormParameterStructModule {}
+export class ActivityInstanceFormParameterRecStructModule {}

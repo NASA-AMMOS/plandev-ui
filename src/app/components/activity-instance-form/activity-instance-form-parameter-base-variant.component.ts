@@ -12,7 +12,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'parameter-variant',
+  selector: 'parameter-base-variant',
   styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
@@ -31,18 +31,18 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterVariantComponent {
+export class ActivityInstanceFormParameterBaseVariantComponent {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterVariantComponent],
-  exports: [ActivityInstanceFormParameterVariantComponent],
+  declarations: [ActivityInstanceFormParameterBaseVariantComponent],
+  exports: [ActivityInstanceFormParameterBaseVariantComponent],
   imports: [
     CommonModule,
     MaterialModule,
     ActivityInstanceFormParameterNameModule,
   ],
 })
-export class ActivityInstanceFormParameterVariantModule {}
+export class ActivityInstanceFormParameterBaseVariantModule {}

@@ -17,7 +17,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'parameter-input',
+  selector: 'parameter-base-input',
   styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
@@ -45,7 +45,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterInputComponent {
+export class ActivityInstanceFormParameterBaseInputComponent {
   @Input()
   label: 'Integer' | 'Real Number' | 'String' | 'Duration';
 
@@ -69,12 +69,12 @@ export class ActivityInstanceFormParameterInputComponent {
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterInputComponent],
-  exports: [ActivityInstanceFormParameterInputComponent],
+  declarations: [ActivityInstanceFormParameterBaseInputComponent],
+  exports: [ActivityInstanceFormParameterBaseInputComponent],
   imports: [
     CommonModule,
     MaterialModule,
     ActivityInstanceFormParameterNameModule,
   ],
 })
-export class ActivityInstanceFormParameterInputModule {}
+export class ActivityInstanceFormParameterBaseInputModule {}

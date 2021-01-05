@@ -9,16 +9,14 @@ import {
 } from '@angular/core';
 import { MaterialModule } from '../../material';
 import { ActivityInstanceFormParameter } from '../../types';
-import { ActivityInstanceFormParameterBooleanModule } from './activity-instance-form-parameter-boolean.component';
-import { ActivityInstanceFormParameterInputModule } from './activity-instance-form-parameter-input.component';
+import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
 import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { ActivityInstanceFormParameterStructModule } from './activity-instance-form-parameter-struct.component';
-import { ActivityInstanceFormParameterVariantModule } from './activity-instance-form-parameter-variant.component';
+import { ActivityInstanceFormParameterRecStructModule } from './activity-instance-form-parameter-rec-struct.component';
 import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'parameter-series',
+  selector: 'parameter-rec-series',
   styles: [
     activityInstanceFormParameterStyles,
     `
@@ -92,58 +90,29 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
           trackBy: trackBySubParameters
         "
       >
-        <parameter-boolean
-          *ngIf="subParameter.schema.type === 'boolean'"
+        <parameter-base
+          *ngIf="
+            subParameter.schema.type !== 'series' &&
+            subParameter.schema.type !== 'struct'
+          "
           [parameter]="subParameter"
-        ></parameter-boolean>
+        ></parameter-base>
 
-        <parameter-input
-          *ngIf="subParameter.schema.type === 'duration'"
-          label="Duration"
-          type="text"
-          [parameter]="subParameter"
-        ></parameter-input>
-
-        <parameter-input
-          *ngIf="subParameter.schema.type === 'int'"
-          label="Integer"
-          type="number"
-          [parameter]="subParameter"
-        ></parameter-input>
-
-        <parameter-input
-          *ngIf="subParameter.schema.type === 'real'"
-          label="Real Number"
-          type="number"
-          [parameter]="subParameter"
-        ></parameter-input>
-
-        <parameter-series
+        <parameter-rec-series
           *ngIf="subParameter.schema.type === 'series'"
           [parameter]="subParameter"
-        ></parameter-series>
+        ></parameter-rec-series>
 
-        <parameter-input
-          *ngIf="subParameter.schema.type === 'string'"
-          label="String"
-          type="text"
-          [parameter]="subParameter"
-        ></parameter-input>
-
-        <parameter-struct
+        <parameter-rec-struct
           *ngIf="subParameter.schema.type === 'struct'"
           [parameter]="subParameter"
-        ></parameter-struct>
-
-        <parameter-variant
-          *ngIf="subParameter.schema.type === 'variant'"
-          [parameter]="subParameter"
-        ></parameter-variant>
+        ></parameter-rec-struct>
       </li>
     </ul>
   `,
 })
-export class ActivityInstanceFormParameterSeriesComponent implements OnChanges {
+export class ActivityInstanceFormParameterRecSeriesComponent
+  implements OnChanges {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
 
@@ -187,16 +156,14 @@ export class ActivityInstanceFormParameterSeriesComponent implements OnChanges {
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterSeriesComponent],
-  exports: [ActivityInstanceFormParameterSeriesComponent],
+  declarations: [ActivityInstanceFormParameterRecSeriesComponent],
+  exports: [ActivityInstanceFormParameterRecSeriesComponent],
   imports: [
     CommonModule,
     MaterialModule,
-    ActivityInstanceFormParameterBooleanModule,
-    ActivityInstanceFormParameterInputModule,
+    ActivityInstanceFormParameterBaseModule,
     ActivityInstanceFormParameterNameModule,
-    ActivityInstanceFormParameterStructModule,
-    ActivityInstanceFormParameterVariantModule,
+    ActivityInstanceFormParameterRecStructModule,
   ],
 })
-export class ActivityInstanceFormParameterSeriesModule {}
+export class ActivityInstanceFormParameterRecSeriesModule {}

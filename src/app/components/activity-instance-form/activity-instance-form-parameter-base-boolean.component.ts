@@ -12,7 +12,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'parameter-boolean',
+  selector: 'parameter-base-boolean',
   styles: [activityInstanceFormParameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
@@ -21,18 +21,18 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterBooleanComponent {
+export class ActivityInstanceFormParameterBaseBooleanComponent {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterBooleanComponent],
-  exports: [ActivityInstanceFormParameterBooleanComponent],
+  declarations: [ActivityInstanceFormParameterBaseBooleanComponent],
+  exports: [ActivityInstanceFormParameterBaseBooleanComponent],
   imports: [
     CommonModule,
     MaterialModule,
     ActivityInstanceFormParameterNameModule,
   ],
 })
-export class ActivityInstanceFormParameterBooleanModule {}
+export class ActivityInstanceFormParameterBaseBooleanModule {}
