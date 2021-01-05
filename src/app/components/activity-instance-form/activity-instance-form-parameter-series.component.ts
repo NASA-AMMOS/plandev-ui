@@ -93,50 +93,50 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
         "
       >
         <parameter-boolean
-          *ngIf="subParameter.type === 'boolean'"
+          *ngIf="subParameter.schema.type === 'boolean'"
           [parameter]="subParameter"
         ></parameter-boolean>
 
         <parameter-input
-          *ngIf="subParameter.type === 'duration'"
+          *ngIf="subParameter.schema.type === 'duration'"
           label="Duration"
           type="text"
           [parameter]="subParameter"
         ></parameter-input>
 
         <parameter-input
-          *ngIf="subParameter.type === 'int'"
+          *ngIf="subParameter.schema.type === 'int'"
           label="Integer"
           type="number"
           [parameter]="subParameter"
         ></parameter-input>
 
         <parameter-input
-          *ngIf="subParameter.type === 'real'"
+          *ngIf="subParameter.schema.type === 'real'"
           label="Real Number"
           type="number"
           [parameter]="subParameter"
         ></parameter-input>
 
         <parameter-series
-          *ngIf="subParameter.type === 'series'"
+          *ngIf="subParameter.schema.type === 'series'"
           [parameter]="subParameter"
         ></parameter-series>
 
         <parameter-input
-          *ngIf="subParameter.type === 'string'"
+          *ngIf="subParameter.schema.type === 'string'"
           label="String"
           type="text"
           [parameter]="subParameter"
         ></parameter-input>
 
         <parameter-struct
-          *ngIf="subParameter.type === 'struct'"
+          *ngIf="subParameter.schema.type === 'struct'"
           [parameter]="subParameter"
         ></parameter-struct>
 
         <parameter-variant
-          *ngIf="subParameter.type === 'variant'"
+          *ngIf="subParameter.schema.type === 'variant'"
           [parameter]="subParameter"
         ></parameter-variant>
       </li>
@@ -179,8 +179,7 @@ export class ActivityInstanceFormParameterSeriesComponent implements OnChanges {
         loading: false,
         name: `Index ${i + 1}`,
         schema: this.parameter.schema.items,
-        type: this.parameter.schema.items.type,
-        value: this.parameter.schema.items.value || null,
+        value: null,
       };
       this.subParameters.push(subParameter);
     }

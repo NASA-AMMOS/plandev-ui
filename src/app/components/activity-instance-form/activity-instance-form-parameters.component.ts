@@ -34,12 +34,12 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
       "
     >
       <parameter-boolean
-        *ngIf="parameter.type === 'boolean'"
+        *ngIf="parameter.schema.type === 'boolean'"
         [parameter]="parameter"
       ></parameter-boolean>
 
       <parameter-input
-        *ngIf="parameter.type === 'duration'"
+        *ngIf="parameter.schema.type === 'duration'"
         label="Duration"
         type="text"
         [parameter]="parameter"
@@ -47,7 +47,7 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
       ></parameter-input>
 
       <parameter-input
-        *ngIf="parameter.type === 'int'"
+        *ngIf="parameter.schema.type === 'int'"
         label="Integer"
         type="number"
         [parameter]="parameter"
@@ -55,7 +55,7 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
       ></parameter-input>
 
       <parameter-input
-        *ngIf="parameter.type === 'real'"
+        *ngIf="parameter.schema.type === 'real'"
         label="Real Number"
         type="number"
         [parameter]="parameter"
@@ -63,12 +63,12 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
       ></parameter-input>
 
       <parameter-series
-        *ngIf="parameter.type === 'series'"
+        *ngIf="parameter.schema.type === 'series'"
         [parameter]="parameter"
       ></parameter-series>
 
       <parameter-input
-        *ngIf="parameter.type === 'string'"
+        *ngIf="parameter.schema.type === 'string'"
         label="String"
         type="text"
         [parameter]="parameter"
@@ -76,12 +76,12 @@ import { ActivityInstanceFormParameterVariantModule } from './activity-instance-
       ></parameter-input>
 
       <parameter-struct
-        *ngIf="parameter.type === 'struct'"
+        *ngIf="parameter.schema.type === 'struct'"
         [parameter]="parameter"
       ></parameter-struct>
 
       <parameter-variant
-        *ngIf="parameter.type === 'variant'"
+        *ngIf="parameter.schema.type === 'variant'"
         [parameter]="parameter"
       ></parameter-variant>
 

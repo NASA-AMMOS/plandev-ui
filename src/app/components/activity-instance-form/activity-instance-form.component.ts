@@ -147,7 +147,6 @@ export class ActivityInstanceFormComponent implements OnChanges {
         loading: false,
         name: activityTypeParameter.name,
         schema: activityTypeParameter.schema,
-        type: activityTypeParameter.schema.type,
         value,
       };
 

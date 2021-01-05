@@ -1,3 +1,5 @@
+import { ActivityTypeParameterSchema } from './activity-type';
+
 export interface ActivityInstance {
   children: string[];
   duration: number;
@@ -22,8 +24,7 @@ export interface ActivityInstanceFormParameter {
   error: string | null;
   loading: boolean;
   name: string;
-  schema: any;
-  type: ActivityInstanceFormParameterType;
+  schema: ActivityTypeParameterSchema;
   value: any;
 }
 
