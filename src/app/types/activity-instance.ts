@@ -8,15 +8,6 @@ export interface ActivityInstance {
   type: string;
 }
 
-export interface ActivityInstanceForm {
-  id: string;
-  isChild: boolean;
-  parameters: ActivityInstanceFormParameter[];
-  startTimestamp: string;
-  type: string;
-  valid: boolean;
-}
-
 export type ActivityInstanceFormParameterType =
   | 'boolean'
   | 'duration'

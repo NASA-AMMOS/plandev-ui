@@ -10,13 +10,19 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
+import {
+  FormControl,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { first } from 'rxjs/operators';
 import { DecompositionTreeModule } from '../../containers/decomposition-tree/decomposition-tree.component';
+import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
-  ActivityInstanceForm,
   ActivityInstanceFormParameter,
   ActivityInstanceFormParameterChange,
   ActivityType,
@@ -64,43 +70,54 @@ export class ActivityInstanceFormComponent implements OnChanges {
   @Output()
   update: EventEmitter<UpdateActivityInstance> = new EventEmitter<UpdateActivityInstance>();
 
-  instance: ActivityInstanceForm;
+  isChild: boolean;
+  parameters: ActivityInstanceFormParameter[];
+  valid: boolean;
+
+  idControl: FormControl;
+  startTimestampControl: FormControl;
+  typeControl: FormControl;
 
   constructor(
     private apiService: ApiService,
     private cdRef: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.idControl = new FormControl(
+      { disabled: true, value: '' },
+      Validators.required,
+    );
+    this.startTimestampControl = new FormControl('', [
+      Validators.required,
+      doyTimestampValidator,
+    ]);
+    this.typeControl = new FormControl('', Validators.required);
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.activityInstance) {
-      this.instance = {
-        id: this.activityInstance.id,
-        isChild: this.activityInstance.parent !== null,
-        parameters: this.getParameters(this.activityInstance.type),
-        startTimestamp: this.activityInstance.startTimestamp,
-        type: this.activityInstance.type,
-        valid: false,
-      };
+      this.isChild = this.activityInstance.parent !== null;
+      this.parameters = this.getParameters(this.activityInstance.type);
+      this.valid = false;
+
+      this.idControl.setValue(this.activityInstance.id);
+      this.startTimestampControl.setValue(this.activityInstance.startTimestamp);
+      if (this.isChild) {
+        this.startTimestampControl.disable();
+      }
+      this.typeControl.setValue(this.activityInstance.type);
+      this.typeControl.disable();
     }
 
     if (changes.selectedActivityType && this.selectedActivityType) {
       const { name } = this.selectedActivityType;
-      this.instance = {
-        ...this.instance,
-        parameters: this.getParameters(name),
-        type: name,
-      };
+      this.parameters = this.getParameters(name);
+      this.typeControl.setValue(name);
     }
 
     if (changes.type && this.type === 'create') {
-      this.instance = {
-        id: '',
-        isChild: false,
-        parameters: [],
-        startTimestamp: '',
-        type: '',
-        valid: false,
-      };
+      this.idControl.setValue('');
+      this.startTimestampControl.setValue('');
+      this.typeControl.setValue('');
     }
   }
 
@@ -145,7 +162,7 @@ export class ActivityInstanceFormComponent implements OnChanges {
   }
 
   onCreateOrUpdate() {
-    const parameters = this.instance.parameters.map(({ name, value }) => ({
+    const parameters = this.parameters.map(({ name, value }) => ({
       name,
       value,
     }));
@@ -153,16 +170,16 @@ export class ActivityInstanceFormComponent implements OnChanges {
     if (this.type === 'create') {
       const activityInstance: CreateActivityInstance = {
         parameters,
-        startTimestamp: this.instance.startTimestamp,
-        type: this.instance.type,
+        startTimestamp: this.startTimestampControl.value,
+        type: this.typeControl.value,
       };
       this.create.emit(activityInstance);
     } else if (this.type === 'update') {
       const activityInstance: UpdateActivityInstance = {
-        id: this.instance.id,
+        id: this.idControl.value,
         parameters,
-        startTimestamp: this.instance.startTimestamp,
-        type: this.instance.type,
+        startTimestamp: this.startTimestampControl.value,
+        type: this.typeControl.value,
       };
       this.update.emit(activityInstance);
     }
@@ -172,25 +189,22 @@ export class ActivityInstanceFormComponent implements OnChanges {
     change: ActivityInstanceFormParameterChange,
     update: Partial<ActivityInstanceFormParameter>,
   ) {
-    this.instance = {
-      ...this.instance,
-      parameters: this.instance.parameters.map(parameter => {
-        if (parameter.name === change.parameter.name) {
-          return {
-            ...parameter,
-            ...update,
-            value: change.newValue,
-          };
-        }
-        return parameter;
-      }),
-    };
+    this.parameters = this.parameters.map(parameter => {
+      if (parameter.name === change.parameter.name) {
+        return {
+          ...parameter,
+          ...update,
+          value: change.newValue,
+        };
+      }
+      return parameter;
+    });
   }
 
   async validateParameterValue(change: ActivityInstanceFormParameterChange) {
     const { newValue, parameter } = change;
     const activityType = this.activityTypes.find(
-      ({ name }) => name === this.instance.type,
+      ({ name }) => name === this.typeControl.value,
     );
     this.setParameter(change, { error: null, loading: true });
     const { errors, success } = await this.apiService
@@ -214,9 +228,11 @@ export class ActivityInstanceFormComponent implements OnChanges {
   exports: [ActivityInstanceFormComponent],
   imports: [
     CommonModule,
+    FormsModule,
+    MaterialModule,
+    ReactiveFormsModule,
     ActivityInstanceFormParametersModule,
     DecompositionTreeModule,
-    MaterialModule,
     PanelHeaderModule,
   ],
 })

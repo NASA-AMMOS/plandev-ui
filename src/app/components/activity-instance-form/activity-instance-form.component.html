@@ -10,12 +10,7 @@
       class="w-100"
     >
       <mat-label>Id</mat-label>
-      <input
-        matInput
-        [disabled]="true"
-        [readonly]="true"
-        [value]="instance.id"
-      />
+      <input matInput [formControl]="idControl" [readonly]="true" />
       <mat-icon matSuffix>lock</mat-icon>
     </mat-form-field>
 
@@ -30,6 +25,9 @@
           {{ type.name }}
         </mat-option>
       </mat-select>
+      <mat-error *ngIf="typeControl.invalid">
+        You must enter an activity type
+      </mat-error>
     </mat-form-field>
 
     <mat-form-field
@@ -38,12 +36,7 @@
       appearance="outline"
     >
       <mat-label>Activity Type</mat-label>
-      <input
-        matInput
-        [disabled]="true"
-        [readonly]="true"
-        [value]="instance.type"
-      />
+      <input matInput [formControl]="typeControl" [readonly]="true" />
       <mat-icon matSuffix>lock</mat-icon>
     </mat-form-field>
 
@@ -54,9 +47,17 @@
         matInput
         type="text"
         placeholder="YYYY-DDDThh:mm:ss"
+        [formControl]="startTimestampControl"
         [required]="true"
-        [value]="instance.startTimestamp"
       />
+      <mat-error *ngIf="startTimestampControl.getError('required')">
+        You must enter a start date/time
+      </mat-error>
+      <mat-error
+        *ngIf="startTimestampControl.getError('doyTimestamp') as message"
+      >
+        {{ message }}
+      </mat-error>
     </mat-form-field>
   </div>
 
@@ -68,7 +69,7 @@
 
       <div class="expansion-panel-body">
         <activity-instance-form-parameters
-          [parameters]="instance.parameters"
+          [parameters]="parameters"
           (parameterChange)="onParameterChange($event)"
         ></activity-instance-form-parameters>
       </div>
@@ -107,7 +108,7 @@
       class="mr-2"
       mat-raised-button
       color="warn"
-      (click)="delete.emit(instance.id)"
+      (click)="delete.emit(idControl.value)"
     >
       Delete
     </button>
