@@ -13,8 +13,7 @@ import {
   ActivityInstanceFormParameterChange,
 } from '../../types';
 import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
-import { ActivityInstanceFormParameterRecSeriesModule } from './activity-instance-form-parameter-rec-series.component';
-import { ActivityInstanceFormParameterRecStructModule } from './activity-instance-form-parameter-rec-struct.component';
+import { ActivityInstanceFormParameterRecModule } from './activity-instance-form-parameter-rec.component';
 
 /**
  * @see https://wiki.jpl.nasa.gov/pages/viewpage.action?spaceKey=MPSA&title=Merlin+ValueSchema+Definitions
@@ -39,15 +38,13 @@ import { ActivityInstanceFormParameterRecStructModule } from './activity-instanc
         (parameterChange)="parameterChange.emit($event)"
       ></parameter-base>
 
-      <parameter-rec-series
-        *ngIf="parameter.schema.type === 'series'"
+      <parameter-rec
+        *ngIf="
+          parameter.schema.type === 'series' ||
+          parameter.schema.type === 'struct'
+        "
         [parameter]="parameter"
-      ></parameter-rec-series>
-
-      <parameter-rec-struct
-        *ngIf="parameter.schema.type === 'struct'"
-        [parameter]="parameter"
-      ></parameter-rec-struct>
+      ></parameter-rec>
 
       <mat-divider *ngIf="i !== parameters?.length - 1"></mat-divider>
     </ng-container>
@@ -72,8 +69,7 @@ export class ActivityInstanceFormParametersComponent {
     CommonModule,
     MaterialModule,
     ActivityInstanceFormParameterBaseModule,
-    ActivityInstanceFormParameterRecSeriesModule,
-    ActivityInstanceFormParameterRecStructModule,
+    ActivityInstanceFormParameterRecModule,
   ],
 })
 export class ActivityInstanceFormParametersModule {}

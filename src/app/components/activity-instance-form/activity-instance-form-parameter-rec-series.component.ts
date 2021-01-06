@@ -11,7 +11,7 @@ import { MaterialModule } from '../../material';
 import { ActivityInstanceFormParameter } from '../../types';
 import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
 import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { ActivityInstanceFormParameterRecStructModule } from './activity-instance-form-parameter-rec-struct.component';
+import { ActivityInstanceFormParameterRecModule } from './activity-instance-form-parameter-rec.component';
 import { activityInstanceFormParameterStyles } from './shared-styles';
 
 @Component({
@@ -98,15 +98,13 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
           [parameter]="subParameter"
         ></parameter-base>
 
-        <parameter-rec-series
-          *ngIf="subParameter.schema.type === 'series'"
+        <parameter-rec
+          *ngIf="
+            parameter.schema.type === 'series' ||
+            parameter.schema.type === 'struct'
+          "
           [parameter]="subParameter"
-        ></parameter-rec-series>
-
-        <parameter-rec-struct
-          *ngIf="subParameter.schema.type === 'struct'"
-          [parameter]="subParameter"
-        ></parameter-rec-struct>
+        ></parameter-rec>
       </li>
     </ul>
   `,
@@ -163,7 +161,7 @@ export class ActivityInstanceFormParameterRecSeriesComponent
     MaterialModule,
     ActivityInstanceFormParameterBaseModule,
     ActivityInstanceFormParameterNameModule,
-    ActivityInstanceFormParameterRecStructModule,
+    ActivityInstanceFormParameterRecModule,
   ],
 })
 export class ActivityInstanceFormParameterRecSeriesModule {}
