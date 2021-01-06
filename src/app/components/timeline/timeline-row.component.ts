@@ -145,6 +145,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
           <aerie-timeline-row-layer-line
             *ngIf="layer.chartType === 'line'"
             [color]="layer.color"
+            [curveType]="layer.curveType"
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
