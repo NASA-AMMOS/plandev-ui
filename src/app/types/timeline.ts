@@ -73,6 +73,12 @@ export interface Layer {
 }
 
 export interface LineLayer extends Layer {
+  curveType?:
+    | 'curveLinear'
+    | 'curveNatural'
+    | 'curveStep'
+    | 'curveStepAfter'
+    | 'curveStepBefore';
   points?: LinePoint[];
 }
 
