@@ -22,6 +22,7 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
     <parameter-base-boolean
       *ngIf="parameter.schema.type === 'boolean'"
       [parameter]="parameter"
+      (parameterChange)="parameterChange.emit($event)"
     ></parameter-base-boolean>
 
     <parameter-base-input
@@ -59,6 +60,7 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
     <parameter-base-variant
       *ngIf="parameter.schema.type === 'variant'"
       [parameter]="parameter"
+      (parameterChange)="parameterChange.emit($event)"
     ></parameter-base-variant>
   `,
 })

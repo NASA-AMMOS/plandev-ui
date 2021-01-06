@@ -2,11 +2,16 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   Input,
   NgModule,
+  Output,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import { ActivityInstanceFormParameter } from '../../types';
+import {
+  ActivityInstanceFormParameter,
+  ActivityInstanceFormParameterChange,
+} from '../../types';
 import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
 import { activityInstanceFormParameterStyles } from './shared-styles';
 
@@ -24,6 +29,9 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 export class ActivityInstanceFormParameterBaseBooleanComponent {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
+
+  @Output()
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
 }
 
 @NgModule({
