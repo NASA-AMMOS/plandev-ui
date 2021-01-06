@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -93,6 +92,5 @@ export class ActivityInstanceFormParameterRecComponent
 @NgModule({
   declarations: [ActivityInstanceFormParameterRecComponent],
   exports: [ActivityInstanceFormParameterRecComponent],
-  imports: [CommonModule],
 })
 export class ActivityInstanceFormParameterRecModule {}
