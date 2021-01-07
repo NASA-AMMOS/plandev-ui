@@ -158,6 +158,7 @@ export interface XAxisTick {
 }
 
 export interface XRangeLayer extends Layer {
+  color?: string;
   points?: XRangePoint[];
 }
 

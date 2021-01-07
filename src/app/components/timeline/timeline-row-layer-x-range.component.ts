@@ -49,6 +49,9 @@ import {
 export class TimelineRowLayerXRangeComponent
   implements AfterViewInit, OnChanges {
   @Input()
+  color: string;
+
+  @Input()
   drawHeight: number;
 
   @Input()
@@ -155,7 +158,7 @@ export class TimelineRowLayerXRangeComponent
           const { id } = point;
           this.visiblePointsById[id] = point;
 
-          this.ctx.fillStyle = point?.color || '#abcbff';
+          this.ctx.fillStyle = this?.color || point?.color || '#abcbff';
           const rect = new Path2D();
           rect.rect(xStart, y, xWidth, this.drawHeight);
           this.ctx.fill(rect);

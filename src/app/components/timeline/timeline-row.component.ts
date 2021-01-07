@@ -161,6 +161,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
           ></aerie-timeline-row-layer-line>
           <aerie-timeline-row-layer-x-range
             *ngIf="layer.chartType === 'x-range'"
+            [color]="layer.color"
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
