@@ -44,6 +44,7 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
           parameter.schema.type === 'struct'
         "
         [parameter]="parameter"
+        (parameterChange)="parameterChange.emit($event)"
       ></parameter-rec>
 
       <mat-divider *ngIf="i !== parameters?.length - 1"></mat-divider>

@@ -4,15 +4,21 @@ import {
   Component,
   ComponentFactoryResolver,
   ComponentRef,
+  EventEmitter,
   Input,
   NgModule,
   OnChanges,
   OnDestroy,
+  Output,
   SimpleChange,
   SimpleChanges,
   ViewContainerRef,
 } from '@angular/core';
-import { ActivityInstanceFormParameter } from '../../types';
+import { SubSink } from 'subsink';
+import {
+  ActivityInstanceFormParameter,
+  ActivityInstanceFormParameterChange,
+} from '../../types';
 import { ActivityInstanceFormParameterRecSeriesComponent } from './activity-instance-form-parameter-rec-series.component';
 import { ActivityInstanceFormParameterRecStructComponent } from './activity-instance-form-parameter-rec-struct.component';
 
@@ -29,7 +35,11 @@ export class ActivityInstanceFormParameterRecComponent
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
 
+  @Output()
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+
   component: ComponentRef<SeriesComponent | StructComponent> | null = null;
+  subs = new SubSink();
 
   constructor(
     private cdRef: ChangeDetectorRef,
@@ -46,6 +56,7 @@ export class ActivityInstanceFormParameterRecComponent
 
   ngOnDestroy() {
     this.component = null;
+    this.subs.unsubscribe();
     this.vcr.clear();
   }
 
@@ -66,6 +77,7 @@ export class ActivityInstanceFormParameterRecComponent
   async tryMount() {
     if (this.component === null) {
       this.vcr.clear();
+
       if (this.parameter.schema.type === 'series') {
         const module = await this.loadSeries();
         const { ActivityInstanceFormParameterRecSeriesComponent: cmp } = module;
@@ -76,6 +88,16 @@ export class ActivityInstanceFormParameterRecComponent
         const { ActivityInstanceFormParameterRecStructComponent: cmp } = module;
         const factory = this.cfr.resolveComponentFactory<StructComponent>(cmp);
         this.component = this.vcr.createComponent<StructComponent>(factory);
+      }
+
+      if (this.component && this.component.instance) {
+        this.subs.add(
+          this.component.instance.parameterChange.subscribe(
+            (change: ActivityInstanceFormParameterChange) => {
+              this.parameterChange.emit(change);
+            },
+          ),
+        );
       }
     }
   }

@@ -7,6 +7,7 @@ import {
   NgModule,
   Output,
 } from '@angular/core';
+import { MatSelectChange } from '@angular/material/select';
 import { MaterialModule } from '../../material';
 import {
   ActivityInstanceFormParameter,
@@ -24,7 +25,10 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     <div class="field">
       <mat-form-field>
         <mat-label>Variant</mat-label>
-        <mat-select [value]="parameter.value">
+        <mat-select
+          [value]="parameter.value"
+          (selectionChange)="onParameterChange($event)"
+        >
           <mat-option
             *ngFor="let variant of parameter.schema.variants"
             [value]="variant.key"
@@ -42,6 +46,11 @@ export class ActivityInstanceFormParameterBaseVariantComponent {
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+
+  onParameterChange(change: MatSelectChange) {
+    const { value: newValue } = change;
+    this.parameterChange.emit({ newValue, parameter: this.parameter });
+  }
 }
 
 @NgModule({

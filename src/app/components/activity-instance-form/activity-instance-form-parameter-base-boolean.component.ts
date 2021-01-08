@@ -7,6 +7,7 @@ import {
   NgModule,
   Output,
 } from '@angular/core';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MaterialModule } from '../../material';
 import {
   ActivityInstanceFormParameter,
@@ -22,7 +23,10 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
     <div class="field">
-      <mat-checkbox [checked]="parameter.value"></mat-checkbox>
+      <mat-checkbox
+        [checked]="parameter.value"
+        (change)="onParameterChange($event)"
+      ></mat-checkbox>
     </div>
   `,
 })
@@ -32,6 +36,11 @@ export class ActivityInstanceFormParameterBaseBooleanComponent {
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+
+  onParameterChange(change: MatCheckboxChange) {
+    const { checked: newValue } = change;
+    this.parameterChange.emit({ newValue, parameter: this.parameter });
+  }
 }
 
 @NgModule({

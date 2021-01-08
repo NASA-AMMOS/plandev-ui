@@ -2,13 +2,18 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   Input,
   NgModule,
   OnChanges,
+  Output,
   SimpleChanges,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import { ActivityInstanceFormParameter } from '../../types';
+import {
+  ActivityInstanceFormParameter,
+  ActivityInstanceFormParameterChange,
+} from '../../types';
 import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
 import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
 import { ActivityInstanceFormParameterRecModule } from './activity-instance-form-parameter-rec.component';
@@ -96,6 +101,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             subParameter.schema.type !== 'struct'
           "
           [parameter]="subParameter"
+          (parameterChange)="parameterChange.emit($event)"
         ></parameter-base>
 
         <parameter-rec
@@ -104,6 +110,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             parameter.schema.type === 'struct'
           "
           [parameter]="subParameter"
+          (parameterChange)="parameterChange.emit($event)"
         ></parameter-rec>
       </li>
     </ul>
@@ -113,6 +120,9 @@ export class ActivityInstanceFormParameterRecSeriesComponent
   implements OnChanges {
   @Input()
   parameter: ActivityInstanceFormParameter | undefined;
+
+  @Output()
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
 
   expanded = false;
   indices = 1;
