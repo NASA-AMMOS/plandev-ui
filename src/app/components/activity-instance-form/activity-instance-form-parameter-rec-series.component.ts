@@ -130,6 +130,7 @@ export class ActivityInstanceFormParameterRecSeriesComponent
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.parameter) {
+      this.indices = this.parameter?.value?.length || 1;
       this.updateSubParameters();
     }
   }

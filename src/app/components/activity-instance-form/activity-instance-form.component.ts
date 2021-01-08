@@ -132,14 +132,19 @@ export class ActivityInstanceFormComponent implements OnChanges {
     );
 
     const parameters = activityType.parameters.map(activityTypeParameter => {
-      let value = activityTypeParameter?.default || null;
+      let value = activityTypeParameter.default;
 
       if (this.activityInstance) {
         const activityInstanceParameter = this.activityInstance.parameters.find(
           instanceParameter =>
             instanceParameter.name === activityTypeParameter.name,
         );
-        value = activityInstanceParameter?.value || value;
+        if (activityInstanceParameter) {
+          const paramValue = activityInstanceParameter.value;
+          if (paramValue !== null && paramValue !== undefined) {
+            value = paramValue;
+          }
+        }
       }
 
       const parameter: ActivityInstanceFormParameter = {
