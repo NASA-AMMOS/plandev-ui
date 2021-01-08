@@ -124,6 +124,7 @@ export class ActivityInstanceFormParameterRecStructComponent
   updateSubParameters() {
     this.subParameters = [];
     const { items: keys } = this.parameter.schema;
+    const { value } = this.parameter;
     const structKeys = Object.keys(keys).sort();
     for (const key of structKeys) {
       const subParameter: ActivityInstanceFormParameter = {
@@ -131,7 +132,7 @@ export class ActivityInstanceFormParameterRecStructComponent
         loading: false,
         name: capitalize(key),
         schema: this.parameter.schema.items[key],
-        value: null,
+        value: value ? value[key] || null : null,
       };
       this.subParameters.push(subParameter);
     }

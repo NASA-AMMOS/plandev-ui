@@ -150,13 +150,15 @@ export class ActivityInstanceFormParameterRecSeriesComponent
 
   updateSubParameters() {
     this.subParameters = [];
+    const { value = [] } = this.parameter;
     for (let i = 0; i < this.indices; ++i) {
       const subParameter: ActivityInstanceFormParameter = {
         error: null,
+        index: i,
         loading: false,
         name: `Index ${i + 1}`,
         schema: this.parameter.schema.items,
-        value: null,
+        value: value ? value[i] || null : null,
       };
       this.subParameters.push(subParameter);
     }
