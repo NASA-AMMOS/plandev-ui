@@ -117,7 +117,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     MaterialModule,
     ReactiveFormsModule,
     RouterModule,
-    AngularSplitModule.forChild(),
+    AngularSplitModule,
     PanelHeaderModule,
     PlaceholderModule,
     PlansTableModule,

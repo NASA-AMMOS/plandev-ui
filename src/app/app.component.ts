@@ -114,7 +114,7 @@ export class AppComponent implements OnDestroy {
     AppRoutingModule,
     BrowserAnimationsModule,
     HttpClientModule,
-    AngularSplitModule.forRoot(),
+    AngularSplitModule,
     ToastrModule.forRoot({
       countDuplicates: true,
       maxOpened: 4,

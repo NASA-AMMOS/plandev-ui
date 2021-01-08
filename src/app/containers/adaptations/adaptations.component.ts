@@ -101,7 +101,7 @@ export class AdaptationsComponent implements OnDestroy {
     CommonModule,
     MaterialModule,
     ReactiveFormsModule,
-    AngularSplitModule.forChild(),
+    AngularSplitModule,
     AdaptationsTableModule,
     PanelHeaderModule,
     PlaceholderModule,

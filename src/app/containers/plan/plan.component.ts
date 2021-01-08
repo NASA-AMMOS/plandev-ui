@@ -440,7 +440,7 @@ export class PlanComponent implements OnDestroy {
     CommonModule,
     CodemirrorModule,
     MaterialModule,
-    AngularSplitModule.forChild(),
+    AngularSplitModule,
     DataTableModule,
     ActivityTypeListModule,
     FormsModule,
