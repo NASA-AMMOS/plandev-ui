@@ -92,6 +92,7 @@ pipeline {
             rm -rf node_modules
             rm -rf package-lock.json
             npm install
+            npm run version
             # npm test # Disable for now until we have a more robust build system.
             npm run build:prod
 
