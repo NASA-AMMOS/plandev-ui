@@ -28,7 +28,7 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
     <parameter-base-input
       *ngIf="parameter.schema.type === 'duration'"
       label="Duration"
-      type="text"
+      type="number"
       [parameter]="parameter"
       (parameterChange)="parameterChange.emit($event)"
     ></parameter-base-input>
