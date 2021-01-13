@@ -139,6 +139,12 @@ export class ActivityInstanceFormParameterRecSeriesComponent
     const { valueAsNumber } = event.target as HTMLInputElement;
     this.indices = valueAsNumber;
     this.updateSubParameters();
+    const newValue = this.subParameters.map(({ value }) => value);
+    const change = {
+      newValue,
+      parameter: this.parameter,
+    };
+    this.parameterChange.emit(change);
   }
 
   onParameterChange(change: ActivityInstanceFormParameterChange) {
@@ -169,7 +175,7 @@ export class ActivityInstanceFormParameterRecSeriesComponent
         loading: false,
         name: `Index ${i + 1}`,
         schema: this.parameter.schema.items,
-        value: value ? value[i] || null : null,
+        value: value ? value[i] || value[i - 1] || null : null,
       };
       this.subParameters.push(subParameter);
     }
