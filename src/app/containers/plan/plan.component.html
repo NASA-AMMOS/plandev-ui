@@ -216,12 +216,12 @@
   <app-panel-header>
     {{ panel.title }}
   </app-panel-header>
-  <app-data-table
+  <aerie-table
     *ngIf="panel.table.type === 'activity'"
     [columns]="panel.table.columns"
     [data]="activityInstances"
     [selectedElement]="selectedActivityInstance"
     (deleteElement)="onDeleteActivityInstance($event)"
     (selectElement)="onSelectActivityInstance($event)"
-  ></app-data-table>
+  ></aerie-table>
 </ng-template>

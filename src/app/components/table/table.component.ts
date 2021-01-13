@@ -15,11 +15,11 @@ import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-data-table',
-  styleUrls: ['./data-table.component.css'],
-  templateUrl: './data-table.component.html',
+  selector: 'aerie-table',
+  styleUrls: ['./table.component.css'],
+  templateUrl: './table.component.html',
 })
-export class DataTableComponent implements OnChanges {
+export class TableComponent implements OnChanges {
   @Input()
   columns: string[] = [];
 
@@ -56,8 +56,8 @@ export class DataTableComponent implements OnChanges {
 }
 
 @NgModule({
-  declarations: [DataTableComponent],
-  exports: [DataTableComponent],
+  declarations: [TableComponent],
+  exports: [TableComponent],
   imports: [CommonModule, MaterialModule],
 })
-export class DataTableModule {}
+export class TableModule {}

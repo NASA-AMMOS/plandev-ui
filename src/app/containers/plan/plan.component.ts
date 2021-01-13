@@ -21,9 +21,9 @@ import { RootState } from '../../app-store';
 import {
   ActivityInstanceFormModule,
   ActivityTypeListModule,
-  DataTableModule,
   PanelHeaderModule,
   PlaceholderModule,
+  TableModule,
   TimelineModule,
   ToolbarModule,
 } from '../../components';
@@ -439,17 +439,17 @@ export class PlanComponent implements OnDestroy {
   imports: [
     CommonModule,
     CodemirrorModule,
+    FormsModule,
     MaterialModule,
     AngularSplitModule,
-    DataTableModule,
+    ActivityInstanceFormModule,
     ActivityTypeListModule,
-    FormsModule,
     PanelHeaderModule,
     PipesModule,
     PlaceholderModule,
+    TableModule,
     TimelineModule,
     ToolbarModule,
-    ActivityInstanceFormModule,
     ViolationListModule,
   ],
 })
