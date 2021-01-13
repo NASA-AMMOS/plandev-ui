@@ -38,9 +38,6 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
           mode="indeterminate"
         >
         </mat-progress-spinner>
-        <mat-hint class="error-hint" *ngIf="parameter.error">
-          {{ parameter.error }}
-        </mat-hint>
       </mat-form-field>
     </div>
   `,

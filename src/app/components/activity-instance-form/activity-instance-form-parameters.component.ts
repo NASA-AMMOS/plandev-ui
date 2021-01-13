@@ -21,6 +21,15 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'activity-instance-form-parameters',
+  styles: [
+    `
+      .error {
+        font-size: 12px;
+        margin-bottom: 0;
+        margin-top: 10px;
+      }
+    `,
+  ],
   template: `
     <ng-container
       *ngFor="
@@ -29,6 +38,10 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
         let i = index
       "
     >
+      <div *ngIf="parameter.error" class="alert alert-danger error">
+        {{ parameter.error }}
+      </div>
+
       <parameter-base
         *ngIf="
           parameter.schema.type !== 'series' &&

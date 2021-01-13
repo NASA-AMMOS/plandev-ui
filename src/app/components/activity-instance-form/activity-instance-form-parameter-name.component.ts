@@ -5,6 +5,7 @@ import {
   Input,
   NgModule,
 } from '@angular/core';
+import { MaterialModule } from '../../material';
 import { ActivityInstanceFormParameter } from '../../types';
 
 @Component({
@@ -19,6 +20,7 @@ import { ActivityInstanceFormParameter } from '../../types';
 
       div {
         color: rgba(0, 0, 0, 0.6);
+        cursor: pointer;
         font-size: 14px;
         font-style: normal;
         font-weight: 500;
@@ -36,7 +38,11 @@ import { ActivityInstanceFormParameter } from '../../types';
     `,
   ],
   template: `
-    <div [ngClass]="{ error: parameter?.error }">
+    <div
+      [matTooltip]="parameter?.name"
+      [ngClass]="{ error: parameter?.error }"
+      matTooltipPosition="above"
+    >
       {{ parameter?.name }}
     </div>
   `,
@@ -49,6 +55,6 @@ export class ActivityInstanceFormParameterNameComponent {
 @NgModule({
   declarations: [ActivityInstanceFormParameterNameComponent],
   exports: [ActivityInstanceFormParameterNameComponent],
-  imports: [CommonModule],
+  imports: [CommonModule, MaterialModule],
 })
 export class ActivityInstanceFormParameterNameModule {}

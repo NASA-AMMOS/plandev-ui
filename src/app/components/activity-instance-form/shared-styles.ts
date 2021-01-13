@@ -5,10 +5,6 @@ export const activityInstanceFormParameterStyles = `
     padding: 10px;
   }
 
-  .error-hint {
-    color: red;
-  }
-
   .field {
     display: flex;
     width: 100%;
