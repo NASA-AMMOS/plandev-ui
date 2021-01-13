@@ -11,6 +11,7 @@ export interface ActivityInstance {
 export interface ActivityInstanceFormParameter {
   error: string | null;
   index?: number;
+  key?: string;
   loading: boolean;
   name: string;
   schema: any;

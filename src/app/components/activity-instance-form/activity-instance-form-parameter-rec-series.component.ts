@@ -101,7 +101,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             subParameter.schema.type !== 'struct'
           "
           [parameter]="subParameter"
-          (parameterChange)="parameterChange.emit($event)"
+          (parameterChange)="onParameterChange($event)"
         ></parameter-base>
 
         <parameter-rec
@@ -110,7 +110,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             parameter.schema.type === 'struct'
           "
           [parameter]="subParameter"
-          (parameterChange)="parameterChange.emit($event)"
+          (parameterChange)="onParameterChange($event)"
         ></parameter-rec>
       </li>
     </ul>
@@ -139,6 +139,16 @@ export class ActivityInstanceFormParameterRecSeriesComponent
     const { valueAsNumber } = event.target as HTMLInputElement;
     this.indices = valueAsNumber;
     this.updateSubParameters();
+  }
+
+  onParameterChange(change: ActivityInstanceFormParameterChange) {
+    const newValue = [...this.parameter.value];
+    newValue[change.parameter.index] = change.newValue;
+    const newChange = {
+      newValue,
+      parameter: this.parameter,
+    };
+    this.parameterChange.emit(newChange);
   }
 
   toggleExpanded() {

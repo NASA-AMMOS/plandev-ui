@@ -81,7 +81,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             subParameter.schema.type !== 'struct'
           "
           [parameter]="subParameter"
-          (parameterChange)="parameterChange.emit($event)"
+          (parameterChange)="onParameterChange($event)"
         ></parameter-base>
 
         <parameter-rec
@@ -90,7 +90,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
             subParameter.schema.type === 'struct'
           "
           [parameter]="subParameter"
-          (parameterChange)="parameterChange.emit($event)"
+          (parameterChange)="onParameterChange($event)"
         ></parameter-rec>
       </li>
     </ul>
@@ -113,6 +113,18 @@ export class ActivityInstanceFormParameterRecStructComponent
     }
   }
 
+  onParameterChange(change: ActivityInstanceFormParameterChange) {
+    const newValue = {
+      ...this.parameter.value,
+      [change.parameter.key]: change.newValue,
+    };
+    const newChange = {
+      newValue,
+      parameter: this.parameter,
+    };
+    this.parameterChange.emit(newChange);
+  }
+
   toggleExpanded() {
     this.expanded = !this.expanded;
   }
@@ -129,6 +141,7 @@ export class ActivityInstanceFormParameterRecStructComponent
     for (const key of structKeys) {
       const subParameter: ActivityInstanceFormParameter = {
         error: null,
+        key,
         loading: false,
         name: capitalize(key),
         schema: this.parameter.schema.items[key],
