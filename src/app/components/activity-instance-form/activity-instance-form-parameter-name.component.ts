@@ -31,18 +31,10 @@ import { ActivityInstanceFormParameter } from '../../types';
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-
-      .error {
-        color: red;
-      }
     `,
   ],
   template: `
-    <div
-      [matTooltip]="parameter?.name"
-      [ngClass]="{ error: parameter?.error }"
-      matTooltipPosition="above"
-    >
+    <div [matTooltip]="parameter?.name" matTooltipPosition="above">
       {{ parameter?.name }}
     </div>
   `,
