@@ -76,6 +76,7 @@ export class ActivityInstanceFormComponent
 
   isChild: boolean;
   parameters: ActivityInstanceFormParameter[];
+  parametersExpanded = false;
   valid: boolean;
 
   idControl: FormControl;

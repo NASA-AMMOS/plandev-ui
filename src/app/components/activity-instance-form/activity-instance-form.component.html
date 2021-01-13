@@ -62,12 +62,16 @@
   </div>
 
   <div class="pb-4">
-    <mat-expansion-panel>
+    <mat-expansion-panel
+      [expanded]="parametersExpanded"
+      (closed)="parametersExpanded = false"
+      (opened)="parametersExpanded = true"
+    >
       <mat-expansion-panel-header collapsedHeight="40px" expandedHeight="40px">
         <mat-panel-title>Parameters</mat-panel-title>
       </mat-expansion-panel-header>
 
-      <div class="expansion-panel-body">
+      <div class="expansion-panel-body" *ngIf="parametersExpanded">
         <activity-instance-form-parameters
           [parameters]="parameters"
           (parameterChange)="onParameterChange($event)"
