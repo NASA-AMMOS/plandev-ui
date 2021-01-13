@@ -7,6 +7,8 @@ import {
   Input,
   NgModule,
   OnChanges,
+  OnDestroy,
+  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
@@ -17,6 +19,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { first } from 'rxjs/operators';
+import { SubSink } from 'subsink';
 import { DecompositionTreeModule } from '../../containers/decomposition-tree/decomposition-tree.component';
 import { doyTimestampValidator } from '../../functions';
 import { MaterialModule } from '../../material';
@@ -39,7 +42,8 @@ import { ActivityInstanceFormParametersModule } from './activity-instance-form-p
   styleUrls: ['./activity-instance-form.component.css'],
   templateUrl: './activity-instance-form.component.html',
 })
-export class ActivityInstanceFormComponent implements OnChanges {
+export class ActivityInstanceFormComponent
+  implements OnChanges, OnDestroy, OnInit {
   @Input()
   activityInstance: ActivityInstance | undefined;
 
@@ -78,6 +82,8 @@ export class ActivityInstanceFormComponent implements OnChanges {
   startTimestampControl: FormControl;
   typeControl: FormControl;
 
+  private subs = new SubSink();
+
   constructor(
     private apiService: ApiService,
     private cdRef: ChangeDetectorRef,
@@ -91,6 +97,14 @@ export class ActivityInstanceFormComponent implements OnChanges {
       doyTimestampValidator,
     ]);
     this.typeControl = new FormControl('', Validators.required);
+  }
+
+  ngOnInit() {
+    this.subs.add(
+      this.typeControl.valueChanges.subscribe(type => {
+        this.parameters = this.getParameters(type);
+      }),
+    );
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -119,6 +133,10 @@ export class ActivityInstanceFormComponent implements OnChanges {
       this.startTimestampControl.setValue('');
       this.typeControl.setValue('');
     }
+  }
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
   }
 
   /**
@@ -207,12 +225,10 @@ export class ActivityInstanceFormComponent implements OnChanges {
 
   async validateParameterValue(change: ActivityInstanceFormParameterChange) {
     const { newValue, parameter } = change;
-    const activityType = this.activityTypes.find(
-      ({ name }) => name === this.typeControl.value,
-    );
+    const { value: activityTypeName } = this.typeControl;
     this.setParameter(change, { error: null, loading: true });
     const { errors, success } = await this.apiService
-      .validateParameters(activityType.name, this.adaptationId, [
+      .validateParameters(activityTypeName, this.adaptationId, [
         { name: parameter.name, value: newValue },
       ])
       .pipe(first())

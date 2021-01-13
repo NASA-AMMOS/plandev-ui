@@ -20,7 +20,7 @@
       class="w-100"
     >
       <mat-label>Activity Type</mat-label>
-      <mat-select [required]="true" [value]="selectedActivityType?.name">
+      <mat-select [formControl]="typeControl" [required]="true">
         <mat-option *ngFor="let type of activityTypes" [value]="type.name">
           {{ type.name }}
         </mat-option>
