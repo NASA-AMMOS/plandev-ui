@@ -36,8 +36,8 @@ import { ActivityInstanceFormParameter } from '../../types';
     `,
   ],
   template: `
-    <div [ngClass]="{ error: parameter.error }">
-      {{ parameter.name }}
+    <div [ngClass]="{ error: parameter?.error }">
+      {{ parameter?.name }}
     </div>
   `,
 })

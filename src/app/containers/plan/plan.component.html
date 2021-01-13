@@ -90,7 +90,7 @@
     size="450"
     [visible]="drawerVisible"
   >
-    <div [style.display]="drawer.activityDictionary.visible ? 'block' : 'none'">
+    <div *ngIf="drawer.activityDictionary.visible">
       <app-panel-header> Activity Dictionary </app-panel-header>
       <div class="p-1">
         <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
@@ -102,9 +102,7 @@
       </div>
     </div>
 
-    <div
-      [style.display]="drawer.createActivityInstance.visible ? 'block' : 'none'"
-    >
+    <div *ngIf="drawer.createActivityInstance.visible">
       <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
       <activity-instance-form
         *ngIf="activityTypes !== null"
@@ -118,7 +116,7 @@
       ></activity-instance-form>
     </div>
 
-    <div [style.display]="drawer.panelEditor.visible ? 'block' : 'none'">
+    <div *ngIf="drawer.panelEditor.visible">
       <app-panel-header> Panel Editor </app-panel-header>
       <form class="p-1">
         <mat-form-field class="ui-state-form-field w-100" appearance="outline">
@@ -138,11 +136,7 @@
       ></ngx-codemirror>
     </div>
 
-    <div
-      [style.display]="
-        drawer.selectedActivityInstance.visible ? 'block' : 'none'
-      "
-    >
+    <div *ngIf="drawer.selectedActivityInstance.visible">
       <activity-instance-form
         *ngIf="selectedActivityInstance; else elseBlock"
         type="update"
@@ -158,7 +152,7 @@
       </ng-template>
     </div>
 
-    <div [style.display]="drawer.violations.visible ? 'block' : 'none'">
+    <div *ngIf="drawer.violations.visible">
       <violation-list
         [activityInstances]="activityInstances"
         [violationListState]="violationListState"
