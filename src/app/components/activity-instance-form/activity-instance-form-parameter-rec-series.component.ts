@@ -169,14 +169,22 @@ export class ActivityInstanceFormParameterRecSeriesComponent
     this.subParameters = [];
     const { value = [] } = this.parameter;
     for (let i = 0; i < this.indices; ++i) {
+      let subParameterValue = null;
+      if (value[i] !== null && value[i] !== undefined) {
+        subParameterValue = value[i];
+      } else if (value[i - 1] !== null && value[i - 1] !== undefined) {
+        subParameterValue = value[i - 1];
+      }
+
       const subParameter: ActivityInstanceFormParameter = {
         error: null,
         index: i,
         loading: false,
         name: `Index ${i + 1}`,
         schema: this.parameter.schema.items,
-        value: value ? value[i] || value[i - 1] || null : null,
+        value: subParameterValue,
       };
+
       this.subParameters.push(subParameter);
     }
   }

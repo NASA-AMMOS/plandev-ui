@@ -58,8 +58,13 @@ export class ActivityInstanceFormParameterBaseInputComponent {
   onParameterChange(event: Event) {
     const { value, valueAsNumber } = event.target as HTMLInputElement;
     let newValue: any = value || '';
-    if (this.type === 'number' && valueAsNumber) {
-      newValue = valueAsNumber;
+    if (this.type === 'number') {
+      if (valueAsNumber) {
+        newValue = valueAsNumber;
+      } else {
+        // Server throws error if you send a string so we set to 0 here just in case.
+        newValue = 0;
+      }
     }
     this.parameterChange.emit({ newValue, parameter: this.parameter });
   }
