@@ -13,7 +13,12 @@ import {
 import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { ScaleTime } from 'd3-scale';
 import { select } from 'd3-selection';
-import { TimeRange, VerticalGuide } from '../../types';
+import { Selection, TimeRange, VerticalGuide } from '../../types';
+
+type VerticalGuideSelection = {
+  group: Selection<SVGGElement>;
+  label: Selection<SVGTextElement>;
+};
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +55,26 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
     }
   }
 
+  /**
+   * Calculate the overlap between two SVG element selections.
+   * Element a is assumed to be to the left of element b with
+   * respect to the horizontal axis.
+   */
+  calcBounds(a: Selection<SVGElement>, b: Selection<SVGElement>) {
+    if (a && b && !a.empty() && !b.empty()) {
+      const { right, width } = a.node().getBoundingClientRect();
+      const { left } = b.node().getBoundingClientRect();
+      if (width > 0) {
+        const overlap = right - left;
+        const percentage = (overlap / width) * 100;
+        return { overlap, percentage };
+      } else {
+        return null;
+      }
+    }
+    return null;
+  }
+
   draw() {
     const { nativeElement } = this.g;
     const g = select(nativeElement);
@@ -62,25 +87,28 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
 
     const verticalGuides = this.verticalGuides || [];
     const collapsedVerticalGuides = [];
+    const collapsedVerticalGuideSelections: VerticalGuideSelection[] = [];
+
     for (let i = 0, l = verticalGuides.length; i < l; ++i) {
       const guide = verticalGuides[i];
       const time = getUnixEpochTime(guide.timestamp);
+
       if (this.viewTimeRange.start <= time && time <= this.viewTimeRange.end) {
         const x = this.xScaleView(time);
 
-        const guideGroup = g
+        const group = g
           .append('g')
           .attr('class', verticalGuideClass)
           .attr('id', guide.id);
 
-        guideGroup
+        group
           .append('circle')
           .attr('cx', x)
           .attr('cy', 0)
           .attr('r', circleRadius)
           .attr('fill', circleColor);
 
-        guideGroup
+        group
           .append('line')
           .attr('x1', x)
           .attr('y1', circleRadius)
@@ -94,7 +122,7 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
         const labelFontSize = guide?.label?.fontSize || 12;
         const labelText = guide?.label?.text || '';
 
-        guideGroup
+        const label = group
           .append('text')
           .attr('fill', labelColor)
           .attr('font-family', labelFontFace)
@@ -104,10 +132,41 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
           .text(labelText);
 
         collapsedVerticalGuides.push(guide);
+        collapsedVerticalGuideSelections.push({ group, label });
       }
     }
 
     this.collapsedVerticalGuides.emit(collapsedVerticalGuides);
+    this.updateGuideLabelsWithEllipsis(collapsedVerticalGuideSelections);
+  }
+
+  /**
+   * Calculate overlap with this guide's label and it's immediate right
+   * neighbor. If there is overlap then add ellipsis to the label.
+   * If we go past the overlap threshold, then we hide the label.
+   */
+  updateGuideLabelsWithEllipsis(
+    verticalGuideSelections: VerticalGuideSelection[],
+    ellipsisPadding: number = 15,
+  ) {
+    for (let i = 0; i < verticalGuideSelections.length; ++i) {
+      const curr = verticalGuideSelections[i];
+      const next = verticalGuideSelections[i + 1];
+
+      if (next) {
+        let bounds = this.calcBounds(curr.label, next.group);
+        if (bounds && bounds.percentage > 0) {
+          while (bounds && bounds.overlap + ellipsisPadding > 0) {
+            curr.label.text(curr.label.text().slice(0, -1));
+            bounds = this.calcBounds(curr.label, next.group);
+          }
+          const text = curr.label.text();
+          if (text !== '') {
+            curr.label.text(`${text}...`);
+          }
+        }
+      }
+    }
   }
 }
 
