@@ -1,5 +1,5 @@
 import { ActivityType } from './activity-type';
-import { Violation } from './simulation';
+import { ConstraintViolation } from './simulation';
 import { StringTMap } from './string-t-map';
 
 export interface ActivityLayer extends Layer {
@@ -113,7 +113,7 @@ export interface Row {
   horizontalGuides?: HorizontalGuide[];
   id: string;
   layers: Layer[];
-  violations?: Violation[];
+  violations?: ConstraintViolation[];
   yAxes?: Axis[];
 }
 

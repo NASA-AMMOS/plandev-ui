@@ -2,15 +2,21 @@ import { ActivityInstance } from './activity-instance';
 import { StringTMap } from './string-t-map';
 import { TimeRange } from './time-range';
 
-export interface Associations {
-  activityInstanceIds?: string[];
-  stateIds?: string[];
-}
-
 export interface Constraint {
   category: string;
   message: string;
   name: string;
+}
+
+export interface ConstraintViolation {
+  associations: ConstraintViolationAssociations;
+  constraint: Constraint;
+  windows: TimeRange[];
+}
+
+export interface ConstraintViolationAssociations {
+  activityInstanceIds?: string[];
+  stateIds?: string[];
 }
 
 export interface DecompositionTreeState {
@@ -22,7 +28,7 @@ export interface SimulationResponse {
   message?: string;
   results?: SimulationResult[];
   success: boolean;
-  violations?: Violation[];
+  violations?: ConstraintViolation[];
 }
 
 export interface SimulationResult {
@@ -35,12 +41,6 @@ export interface SimulationResult {
 export interface SimulationResultValue {
   x: number;
   y: number | string;
-}
-
-export interface Violation {
-  associations: Associations;
-  constraint: Constraint;
-  windows: TimeRange[];
 }
 
 export interface ViolationListState {

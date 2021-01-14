@@ -1,6 +1,6 @@
-import { Violation } from '../types';
+import { ConstraintViolation } from '../types';
 
-export const violations: Violation[] = [
+export const violations: ConstraintViolation[] = [
   {
     associations: {
       activityInstanceIds: ['row0'],

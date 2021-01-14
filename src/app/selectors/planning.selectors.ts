@@ -8,6 +8,7 @@ import {
   ActivityPoint,
   ActivityType,
   Adaptation,
+  ConstraintViolation,
   DecompositionTreeState,
   LinePoint,
   Plan,
@@ -15,7 +16,6 @@ import {
   StringTMap,
   TimeRange,
   UiState,
-  Violation,
   ViolationListState,
   XRangePoint,
 } from '../types';
@@ -129,12 +129,14 @@ export const getViolationListState = createSelector(
 
 export const getViolations = createSelector(
   getPlanningState,
-  (state: PlanningState): Violation[] => state.violations || [],
+  (state: PlanningState): ConstraintViolation[] => state.violations || [],
 );
 
 export const getViolationsByCategory = createSelector(
   getViolations,
-  (violations: Violation[]): StringTMap<Violation[]> | null => {
+  (
+    violations: ConstraintViolation[],
+  ): StringTMap<ConstraintViolation[]> | null => {
     const categories = violations.reduce((categoryMap, violation) => {
       const { constraint } = violation;
       const { category } = constraint;
@@ -175,9 +177,9 @@ export const getIdsToViolations = createSelector(
   getViolations,
   getViolationListState,
   (
-    violations: Violation[],
+    violations: ConstraintViolation[],
     violationListState: ViolationListState,
-  ): StringTMap<Violation[]> => {
+  ): StringTMap<ConstraintViolation[]> => {
     if (violations) {
       return violations.reduce((idsToViolations, violation) => {
         const { constraint } = violation;
@@ -235,19 +237,19 @@ export const getPanelsWithPoints = createSelector(
   (
     activityInstances: ActivityInstance[] | null,
     activityInstancesMap: StringTMap<ActivityInstance> | null,
-    idsToViolations: StringTMap<Violation[]>,
+    idsToViolations: StringTMap<ConstraintViolation[]>,
     selectedActivityInstanceId: string | null,
     uiState: UiState,
     simulationResults: SimulationResult[],
   ) => {
     if (uiState) {
       return uiState.panels.map(panel => {
-        const panelViolations: Violation[] = [];
+        const panelViolations: ConstraintViolation[] = [];
 
         if (panel.timeline) {
           const rows = panel.timeline.rows.map(row => {
             const yAxisIdToScaleDomain: StringTMap<number[]> = {};
-            const rowViolations: Violation[] = [];
+            const rowViolations: ConstraintViolation[] = [];
             const layers = row.layers.map(layer => {
               if (layer.type === 'activity') {
                 const activities = activityInstances || [];

@@ -1,4 +1,4 @@
-import { Violation } from './simulation';
+import { ConstraintViolation } from './simulation';
 import { Timeline } from './timeline';
 
 export type PanelMenuItemAction = 'link' | 'restore' | 'simulate';
@@ -26,7 +26,7 @@ export interface Panel {
   timeline?: Timeline;
   title: string;
   type: 'iframe' | 'table' | 'timeline';
-  violations?: Violation[];
+  violations?: ConstraintViolation[];
 }
 
 export interface UiState {

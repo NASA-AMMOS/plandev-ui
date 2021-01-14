@@ -13,9 +13,9 @@ import { RootState } from '../../app-store';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
+  ConstraintViolation,
   StringTMap,
   TimeRange,
-  Violation,
   ViolationListState,
 } from '../../types';
 
@@ -30,7 +30,7 @@ export class ViolationListNodeComponent {
   activityInstanceIdToType: StringTMap<string>;
 
   @Input()
-  violation: Violation;
+  violation: ConstraintViolation;
 
   @Input()
   violationListState: ViolationListState;

@@ -16,10 +16,10 @@ import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
   ActivityInstance,
-  Associations,
+  ConstraintViolation,
+  ConstraintViolationAssociations,
   StringTMap,
   TimeRange,
-  Violation,
   ViolationListState,
 } from '../../types';
 import { ViolationListNodeModule } from '../violation-list-node/violation-list-node.component';
@@ -38,10 +38,10 @@ export class ViolationListComponent implements OnChanges {
   violationListState: ViolationListState;
 
   @Input()
-  violationsByCategory: StringTMap<Violation[]> | null = null;
+  violationsByCategory: StringTMap<ConstraintViolation[]> | null = null;
 
   activityInstanceIdToType: StringTMap<string> = {};
-  filteredViolations: StringTMap<Violation[]> | null = null;
+  filteredViolations: StringTMap<ConstraintViolation[]> | null = null;
   searchText = '';
 
   constructor(private store: Store<RootState>) {}
@@ -97,7 +97,7 @@ export class ViolationListComponent implements OnChanges {
   }
 
   hasActivityInstanceTypes(
-    associations: Associations,
+    associations: ConstraintViolationAssociations,
     lowerCaseText: string,
   ): boolean {
     if (associations.activityInstanceIds) {
@@ -111,7 +111,10 @@ export class ViolationListComponent implements OnChanges {
     return false;
   }
 
-  hasStateIds(associations: Associations, lowerCaseText: string): boolean {
+  hasStateIds(
+    associations: ConstraintViolationAssociations,
+    lowerCaseText: string,
+  ): boolean {
     if (associations.stateIds) {
       for (const id of associations.stateIds) {
         if (id.toLowerCase().includes(lowerCaseText)) {
@@ -170,7 +173,7 @@ export class ViolationListComponent implements OnChanges {
     );
   }
 
-  trackByViolations(_: number, violation: Violation): string {
+  trackByViolations(_: number, violation: ConstraintViolation): string {
     return violation.constraint.name;
   }
 }

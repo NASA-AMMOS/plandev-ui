@@ -7,6 +7,7 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
+  ConstraintViolation,
   DecompositionTreeState,
   HorizontalGuide,
   Plan,
@@ -14,7 +15,6 @@ import {
   StringTMap,
   TimeRange,
   UiState,
-  Violation,
   ViolationListState,
 } from '../types';
 
@@ -33,7 +33,7 @@ export interface PlanningState {
   uiStates: UiState[];
   viewTimeRange: TimeRange;
   violationListState: ViolationListState;
-  violations: Violation[] | null;
+  violations: ConstraintViolation[] | null;
 }
 
 export const initialState: PlanningState = {

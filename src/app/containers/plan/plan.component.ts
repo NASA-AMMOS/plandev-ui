@@ -49,6 +49,7 @@ import {
 import {
   ActivityInstance,
   ActivityType,
+  ConstraintViolation,
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
@@ -64,7 +65,6 @@ import {
   UpdateActivityInstance,
   UpdatePoint,
   UpdateRow,
-  Violation,
   ViolationListState,
 } from '../../types';
 import { ViolationListModule } from '../violation-list/violation-list.component';
@@ -83,7 +83,7 @@ export class PlanComponent implements OnDestroy {
   activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   activityTypes: ActivityType[] | null = null;
   adaptationId = '';
-  violationsByCategory: StringTMap<Violation[]>;
+  violationsByCategory: StringTMap<ConstraintViolation[]>;
   drawer = {
     activityDictionary: {
       visible: true,
