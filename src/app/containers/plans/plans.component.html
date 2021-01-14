@@ -4,7 +4,7 @@
 
 <as-split [gutterSize]="4">
   <as-split-area [size]="25">
-    <app-panel-header> Create Plan </app-panel-header>
+    <panel-header> Create Plan </panel-header>
     <div class="p-1">
       <app-placeholder
         *ngIf="adaptations === null"
@@ -126,7 +126,7 @@
   </as-split-area>
 
   <as-split-area [size]="75">
-    <app-panel-header> Plan List </app-panel-header>
+    <panel-header> Plan List </panel-header>
     <div class="p-1">
       <app-placeholder *ngIf="plans === null"></app-placeholder>
       <ng-container *ngIf="plans !== null">
@@ -134,12 +134,12 @@
           No plans found
         </mat-card>
 
-        <app-plans-table
+        <plans-table
           *ngIf="plans.length"
           [plans]="plans"
           (deletePlan)="onDeletePlan($event)"
           (openPlan)="onOpenPlan($event)"
-        ></app-plans-table>
+        ></plans-table>
       </ng-container>
     </div>
   </as-split-area>

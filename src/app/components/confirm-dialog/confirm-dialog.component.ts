@@ -10,7 +10,7 @@ import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-confirm-dialog',
+  selector: 'confirm-dialog',
   templateUrl: './confirm-dialog.component.html',
 })
 export class ConfirmDialogComponent {

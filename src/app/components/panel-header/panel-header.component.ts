@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, NgModule } from '@angular/core';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-panel-header',
+  selector: 'panel-header',
   styleUrls: ['./panel-header.component.css'],
   templateUrl: './panel-header.component.html',
 })

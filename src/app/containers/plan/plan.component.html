@@ -91,14 +91,14 @@
     [visible]="drawerVisible"
   >
     <div *ngIf="drawer.activityDictionary.visible">
-      <app-panel-header> Activity Dictionary </app-panel-header>
+      <panel-header> Activity Dictionary </panel-header>
       <div class="p-1">
         <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
-        <app-activity-type-list
+        <activity-type-list
           *ngIf="activityTypes !== null"
           [activityTypes]="activityTypes"
           (selectActivityType)="onSelectActivityType($event)"
-        ></app-activity-type-list>
+        ></activity-type-list>
       </div>
     </div>
 
@@ -117,7 +117,7 @@
     </div>
 
     <div *ngIf="drawer.panelEditor.visible">
-      <app-panel-header> Panel Editor </app-panel-header>
+      <panel-header> Panel Editor </panel-header>
       <form class="p-1">
         <mat-form-field class="ui-state-form-field w-100" appearance="outline">
           <mat-select
@@ -163,14 +163,14 @@
 </as-split>
 
 <ng-template #iframe let-panel>
-  <app-panel-header>
+  <panel-header>
     {{ panel.title }}
-  </app-panel-header>
+  </panel-header>
   <iframe allow="fullscreen" [src]="panel.iframe.src | safe"></iframe>
 </ng-template>
 
 <ng-template #timeline let-panel>
-  <app-panel-header>
+  <panel-header>
     {{ panel.title }}
     <div class="right">
       <button
@@ -192,7 +192,7 @@
         </button>
       </mat-menu>
     </div>
-  </app-panel-header>
+  </panel-header>
   <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
   <aerie-timeline
     [maxTimeRange]="maxTimeRange"
@@ -213,9 +213,9 @@
 </ng-template>
 
 <ng-template #table let-panel>
-  <app-panel-header>
+  <panel-header>
     {{ panel.title }}
-  </app-panel-header>
+  </panel-header>
   <aerie-table
     *ngIf="panel.table.type === 'activity'"
     [columns]="panel.table.columns"

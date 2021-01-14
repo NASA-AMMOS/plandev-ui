@@ -12,7 +12,7 @@ import { Adaptation } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-adaptations-table',
+  selector: 'adaptations-table',
   styleUrls: ['./adaptations-table.component.css'],
   templateUrl: './adaptations-table.component.html',
 })

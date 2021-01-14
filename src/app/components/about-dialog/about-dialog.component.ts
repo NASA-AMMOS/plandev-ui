@@ -11,7 +11,7 @@ import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-about-dialog',
+  selector: 'about-dialog',
   templateUrl: './about-dialog.component.html',
 })
 export class AboutDialogComponent {

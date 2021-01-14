@@ -8,7 +8,7 @@ import { MaterialModule } from '../../material';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-not-found',
+  selector: 'not-found',
   styleUrls: ['./not-found.component.css'],
   templateUrl: './not-found.component.html',
 })

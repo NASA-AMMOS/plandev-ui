@@ -12,7 +12,7 @@ import { Plan } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-plans-table',
+  selector: 'plans-table',
   styleUrls: ['./plans-table.component.css'],
   templateUrl: './plans-table.component.html',
 })

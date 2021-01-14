@@ -14,7 +14,7 @@ import { ActivityType } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'app-activity-type-list',
+  selector: 'activity-type-list',
   styleUrls: ['./activity-type-list.component.css'],
   templateUrl: './activity-type-list.component.html',
 })
