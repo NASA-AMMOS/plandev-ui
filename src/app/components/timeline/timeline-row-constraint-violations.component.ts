@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
 import { select } from 'd3-selection';
+import { clampWidth, clampWindow } from '../../functions';
 import { ConstraintViolation, TimeRange } from '../../types';
 
 @Component({
@@ -63,34 +64,6 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
     this.draw();
   }
 
-  /**
-   * Clamp width to 1 if it is 0 or less so we always
-   * draw at least a line.
-   */
-  clampWidth(width: number): number {
-    const floorWidth = Math.floor(width);
-    return floorWidth > 0 ? floorWidth : 1;
-  }
-
-  /**
-   * Make sure the window is between the current view time range
-   * so we don't draw out of bounds.
-   */
-  clampWindow(window: TimeRange): TimeRange {
-    let start = window.start;
-    let end = window.end;
-
-    if (start < this.viewTimeRange.start) {
-      start = this.viewTimeRange.start;
-    }
-
-    if (end > this.viewTimeRange.end) {
-      end = this.viewTimeRange.end;
-    }
-
-    return { end, start };
-  }
-
   draw() {
     const { nativeElement } = this.g;
     const g = select(nativeElement);
@@ -103,10 +76,10 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
       const group = g.append('g').attr('class', constraintViolationClass);
 
       for (const window of windows) {
-        const { end, start } = this.clampWindow(window);
+        const { end, start } = clampWindow(window, this.viewTimeRange);
         const xStart = this.xScaleView(start);
         const xEnd = this.xScaleView(end);
-        const width = this.clampWidth(xEnd - xStart);
+        const width = clampWidth(xEnd - xStart);
         group
           .append('rect')
           .attr('fill', '#B00020')
