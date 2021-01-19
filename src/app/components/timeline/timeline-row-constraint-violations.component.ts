@@ -22,7 +22,7 @@ import { ConstraintViolation, TimeRange } from '../../types';
         height: 100%;
         position: absolute;
         width: 100%;
-        z-index: -2;
+        z-index: 1;
       }
     `,
   ],
@@ -71,6 +71,9 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
     g.selectAll(`.${constraintViolationClass}`).remove();
 
     const constraintViolations = this.constraintViolations || [];
+    const heightPadding = 20;
+    const yOffset = -10;
+
     for (const constraintViolation of constraintViolations) {
       const { windows } = constraintViolation;
       const group = g.append('g').attr('class', constraintViolationClass);
@@ -84,10 +87,10 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
           .append('rect')
           .attr('fill', '#B00020')
           .attr('fill-opacity', 0.15)
-          .attr('height', this.drawHeight)
+          .attr('height', this.drawHeight + heightPadding)
           .attr('width', width)
           .attr('x', xStart)
-          .attr('y', 0);
+          .attr('y', yOffset);
       }
     }
   }
