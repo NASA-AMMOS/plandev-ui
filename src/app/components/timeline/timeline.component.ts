@@ -16,6 +16,7 @@ import {
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { scaleTime, ScaleTime } from 'd3-scale';
 import {
+  ConstraintViolation,
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
@@ -74,6 +75,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
       <aerie-timeline-row
         *ngFor="let row of rows; trackBy: trackByRows"
         [autoAdjustHeight]="row.autoAdjustHeight"
+        [constraintViolations]="constraintViolations"
         [drawWidth]="drawWidth"
         [height]="row.height"
         [horizontalGuides]="row.horizontalGuides"
@@ -101,6 +103,9 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
   `,
 })
 export class TimelineComponent implements OnChanges, AfterViewChecked {
+  @Input()
+  constraintViolations: ConstraintViolation[] = [];
+
   @Input()
   marginLeft = 100;
 

@@ -23,6 +23,7 @@ import {
 import {
   ActivityPoint,
   Axis,
+  ConstraintViolation,
   CreatePoint,
   DeletePoint,
   HorizontalGuide,
@@ -40,6 +41,7 @@ import {
   XAxisTick,
   XRangePoint,
 } from '../../types';
+import { TimelineRowConstraintViolationsModule } from './timeline-row-constraint-violations.component';
 import { TimelineRowHorizontalGuidesModule } from './timeline-row-horizontal-guides.component';
 import { TimelineRowLayerActivityModule } from './timeline-row-layer-activity.component';
 import { TimelineRowLayerLineModule } from './timeline-row-layer-line.component';
@@ -176,6 +178,16 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
         </ng-container>
       </div>
 
+      <aerie-timeline-row-constraint-violations
+        [constraintViolations]="constraintViolations"
+        [drawHeight]="drawHeight"
+        [drawWidth]="drawWidth"
+        [marginLeft]="marginLeft"
+        [marginTop]="marginTop"
+        [viewTimeRange]="viewTimeRange"
+        [xScaleView]="xScaleView"
+      ></aerie-timeline-row-constraint-violations>
+
       <aerie-timeline-row-x-axis-ticks
         [drawHeight]="drawHeight"
         [marginLeft]="marginLeft"
@@ -212,6 +224,9 @@ export class TimelineRowComponent
   implements AfterViewInit, OnChanges, OnDestroy {
   @Input()
   autoAdjustHeight: boolean | undefined;
+
+  @Input()
+  constraintViolations: ConstraintViolation[];
 
   @Input()
   drawWidth: number;
@@ -465,6 +480,7 @@ export class TimelineRowComponent
   exports: [TimelineRowComponent],
   imports: [
     CommonModule,
+    TimelineRowConstraintViolationsModule,
     TimelineRowHorizontalGuidesModule,
     TimelineRowLayerActivityModule,
     TimelineRowLayerLineModule,
