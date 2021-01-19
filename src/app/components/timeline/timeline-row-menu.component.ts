@@ -18,6 +18,7 @@ import { HorizontalGuide } from '../../types';
       .menu {
         position: relative;
         left: calc(100% - 40px);
+        z-index: 2;
       }
 
       .menu-icon {
