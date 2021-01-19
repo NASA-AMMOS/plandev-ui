@@ -88,6 +88,8 @@ export interface LinePoint extends Point {
 }
 
 export interface MouseOverPoints<T> {
+  doyTimestamp?: string;
+  drawWidth?: number;
   e: MouseEvent;
   points: T[];
   pointsById?: StringTMap<T>;

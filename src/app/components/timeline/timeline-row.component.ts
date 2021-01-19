@@ -14,12 +14,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
-import {
-  getTimeFromSvgMousePosition,
-  getTooltipTextForPoints,
-  hideTooltip,
-  showTooltip,
-} from '../../functions';
+import { getTimeFromSvgMousePosition } from '../../functions';
 import {
   ActivityPoint,
   Axis,
@@ -32,6 +27,7 @@ import {
   LinePoint,
   MouseOverPoints,
   MouseSelectPoints,
+  Point,
   SavePoint,
   SelectPoint,
   TimeRange,
@@ -280,6 +276,11 @@ export class TimelineRowComponent
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
 
   @Output()
+  mouseOverPoints: EventEmitter<MouseOverPoints<Point>> = new EventEmitter<
+    MouseOverPoints<Point>
+  >();
+
+  @Output()
   savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
 
   @Output()
@@ -437,20 +438,16 @@ export class TimelineRowComponent
   }
 
   onMouseOverPoints(event: MouseOverPoints<LinePoint | XRangePoint>) {
-    if (event.points.length) {
-      const { doyTimestamp } = getTimeFromSvgMousePosition(
-        this.overlay.nativeElement,
-        event.e,
-        this.xScaleView,
-      );
-      let tooltipText = `${doyTimestamp}<br>`;
-      if (event.points.length) {
-        tooltipText += getTooltipTextForPoints(event.points);
-      }
-      showTooltip(event.e, tooltipText, this.drawWidth);
-    } else {
-      hideTooltip();
-    }
+    const { doyTimestamp } = getTimeFromSvgMousePosition(
+      this.overlay.nativeElement,
+      event.e,
+      this.xScaleView,
+    );
+    this.mouseOverPoints.emit({
+      ...event,
+      doyTimestamp,
+      drawWidth: this.drawWidth,
+    });
   }
 
   onMouseSelectPoints(event: MouseSelectPoints<ActivityPoint>) {

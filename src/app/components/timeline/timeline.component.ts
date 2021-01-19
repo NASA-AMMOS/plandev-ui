@@ -20,6 +20,8 @@ import {
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
+  MouseOverPoints,
+  Point,
   Row,
   SavePoint,
   SelectPoint,
@@ -93,6 +95,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         (createPoint)="createPoint.emit($event)"
         (deleteHorizontalGuide)="deleteHorizontalGuide.emit($event)"
         (deletePoint)="deletePoint.emit($event)"
+        (mouseOverPoints)="mouseOverPoints.emit($event)"
         (savePoint)="savePoint.emit($event)"
         (selectPoint)="selectPoint.emit($event)"
         (updateHorizontalGuide)="updateHorizontalGuide.emit($event)"
@@ -135,6 +138,11 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   @Output()
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
+
+  @Output()
+  mouseOverPoints: EventEmitter<MouseOverPoints<Point>> = new EventEmitter<
+    MouseOverPoints<Point>
+  >();
 
   @Output()
   savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();

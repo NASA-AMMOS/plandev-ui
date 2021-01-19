@@ -27,7 +27,12 @@ import {
   TimelineModule,
   ToolbarModule,
 } from '../../components';
-import { getPanelsText, hideTooltip } from '../../functions';
+import {
+  getPanelsText,
+  getTooltipTextForPoints,
+  hideTooltip,
+  showTooltip,
+} from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
@@ -54,9 +59,11 @@ import {
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
+  MouseOverPoints,
   Panel,
   PanelMenuItem,
   Plan,
+  Point,
   SavePoint,
   SelectPoint,
   StringTMap,
@@ -310,6 +317,18 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(
       PlanningActions.deleteActivityInstance({ activityInstanceId, planId }),
     );
+  }
+
+  onMouseOverPoints(event: MouseOverPoints<Point>) {
+    if (event.points.length) {
+      let tooltipText = `${event?.doyTimestamp || ''}<br>`;
+      if (event.points.length) {
+        tooltipText += getTooltipTextForPoints(event.points);
+      }
+      showTooltip(event.e, tooltipText, event.drawWidth);
+    } else {
+      hideTooltip();
+    }
   }
 
   onPanelMenuAction(item: PanelMenuItem) {
