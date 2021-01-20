@@ -20,8 +20,8 @@ import {
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
+  MouseOverConstraintViolations,
   MouseOverPoints,
-  Point,
   Row,
   SavePoint,
   SelectPoint,
@@ -32,6 +32,7 @@ import {
   XAxisTick,
 } from '../../types';
 import { TimelineRowModule } from './timeline-row.component';
+import { TimelineTooltipModule } from './timeline-tooltip.component';
 import { TimelineXAxisModule } from './timeline-x-axis.component';
 
 @Component({
@@ -95,7 +96,10 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         (createPoint)="createPoint.emit($event)"
         (deleteHorizontalGuide)="deleteHorizontalGuide.emit($event)"
         (deletePoint)="deletePoint.emit($event)"
-        (mouseOverPoints)="mouseOverPoints.emit($event)"
+        (mouseOverConstraintViolations)="
+          onMouseOverConstraintViolations($event)
+        "
+        (mouseOverPoints)="onMouseOverPoints($event)"
         (savePoint)="savePoint.emit($event)"
         (selectPoint)="selectPoint.emit($event)"
         (updateHorizontalGuide)="updateHorizontalGuide.emit($event)"
@@ -103,6 +107,12 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         (updateRow)="updateRow.emit($event)"
       ></aerie-timeline-row>
     </div>
+
+    <aerie-timeline-tooltip
+      [drawWidth]="drawWidth"
+      [mouseOverConstraintViolations]="mouseOverConstraintViolations"
+      [mouseOverPoints]="mouseOverPoints"
+    ></aerie-timeline-tooltip>
   `,
 })
 export class TimelineComponent implements OnChanges, AfterViewChecked {
@@ -140,11 +150,6 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints<Point>> = new EventEmitter<
-    MouseOverPoints<Point>
-  >();
-
-  @Output()
   savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
 
   @Output()
@@ -170,6 +175,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   collapsedVerticalGuides: VerticalGuide[];
   drawWidth: number;
+  mouseOverConstraintViolations: MouseOverConstraintViolations;
+  mouseOverPoints: MouseOverPoints;
   xDomainMax: [Date, Date];
   xDomainView: [Date, Date];
   xScaleMax: ScaleTime<number, number>;
@@ -226,6 +233,14 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
     this.cdRef.detectChanges();
   }
 
+  onMouseOverConstraintViolations(event: MouseOverConstraintViolations) {
+    this.mouseOverConstraintViolations = event;
+  }
+
+  onMouseOverPoints(event: MouseOverPoints) {
+    this.mouseOverPoints = event;
+  }
+
   setRowContainerMaxHeight() {
     const cssStyle = getComputedStyle(document.documentElement);
     const toolbarHeightProperty = cssStyle.getPropertyValue('--toolbar-height');
@@ -248,6 +263,11 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 @NgModule({
   declarations: [TimelineComponent],
   exports: [TimelineComponent],
-  imports: [CommonModule, TimelineRowModule, TimelineXAxisModule],
+  imports: [
+    CommonModule,
+    TimelineRowModule,
+    TimelineTooltipModule,
+    TimelineXAxisModule,
+  ],
 })
 export class TimelineModule {}

@@ -14,7 +14,6 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
-import { getTimeFromSvgMousePosition } from '../../functions';
 import {
   ActivityPoint,
   Axis,
@@ -24,10 +23,9 @@ import {
   HorizontalGuide,
   HorizontalGuideEvent,
   Layer,
-  LinePoint,
+  MouseOverConstraintViolations,
   MouseOverPoints,
   MouseSelectPoints,
-  Point,
   SavePoint,
   SelectPoint,
   TimeRange,
@@ -35,7 +33,6 @@ import {
   UpdateRow,
   VerticalGuide,
   XAxisTick,
-  XRangePoint,
 } from '../../types';
 import { TimelineRowConstraintViolationsModule } from './timeline-row-constraint-violations.component';
 import { TimelineRowHorizontalGuidesModule } from './timeline-row-horizontal-guides.component';
@@ -133,7 +130,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
             [rowId]="id"
             [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
-            (mouseOverPoints)="onMouseOverPoints($event)"
+            (mouseOverPoints)="mouseOverPoints.emit($event)"
             (mouseSelectPoints)="onMouseSelectPoints($event)"
             (createPoint)="createPoint.emit($event)"
             (savePoint)="savePoint.emit($event)"
@@ -155,7 +152,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
             [xScaleView]="xScaleView"
             [yAxes]="yAxes"
             [yAxisId]="layer.yAxisId"
-            (mouseOverPoints)="onMouseOverPoints($event)"
+            (mouseOverPoints)="mouseOverPoints.emit($event)"
           ></aerie-timeline-row-layer-line>
           <aerie-timeline-row-layer-x-range
             *ngIf="layer.chartType === 'x-range'"
@@ -169,7 +166,7 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
             [points]="layer.points"
             [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
-            (mouseOverPoints)="onMouseOverPoints($event)"
+            (mouseOverPoints)="mouseOverPoints.emit($event)"
           ></aerie-timeline-row-layer-x-range>
         </ng-container>
       </div>
@@ -180,8 +177,13 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
         [drawWidth]="drawWidth"
         [marginLeft]="marginLeft"
         [marginTop]="marginTop"
+        [mousemove]="mousemove"
+        [mouseout]="mouseout"
         [viewTimeRange]="viewTimeRange"
         [xScaleView]="xScaleView"
+        (mouseOverConstraintViolations)="
+          mouseOverConstraintViolations.emit($event)
+        "
       ></aerie-timeline-row-constraint-violations>
 
       <aerie-timeline-row-x-axis-ticks
@@ -276,9 +278,10 @@ export class TimelineRowComponent
   deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints<Point>> = new EventEmitter<
-    MouseOverPoints<Point>
-  >();
+  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter<MouseOverConstraintViolations>();
+
+  @Output()
+  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
 
   @Output()
   savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
@@ -435,19 +438,6 @@ export class TimelineRowComponent
       yAxes: this.yAxes,
     };
     this.updateHorizontalGuide.emit(event);
-  }
-
-  onMouseOverPoints(event: MouseOverPoints<LinePoint | XRangePoint>) {
-    const { doyTimestamp } = getTimeFromSvgMousePosition(
-      this.overlay.nativeElement,
-      event.e,
-      this.xScaleView,
-    );
-    this.mouseOverPoints.emit({
-      ...event,
-      doyTimestamp,
-      drawWidth: this.drawWidth,
-    });
   }
 
   onMouseSelectPoints(event: MouseSelectPoints<ActivityPoint>) {

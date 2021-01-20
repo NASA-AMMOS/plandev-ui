@@ -96,9 +96,7 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
   yAxisId: string;
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints<LinePoint>> = new EventEmitter<
-    MouseOverPoints<LinePoint>
-  >();
+  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;

@@ -3,7 +3,5 @@ export * from './panel';
 export * from './quadtree';
 export * from './router';
 export * from './sort';
-export * from './testing';
 export * from './timeline';
-export * from './tooltip';
 export * from './validators';

@@ -87,12 +87,15 @@ export interface LinePoint extends Point {
   y: number;
 }
 
-export interface MouseOverPoints<T> {
-  doyTimestamp?: string;
-  drawWidth?: number;
+export interface MouseOverConstraintViolations {
+  constraintViolations: ConstraintViolation[];
   e: MouseEvent;
-  points: T[];
-  pointsById?: StringTMap<T>;
+}
+
+export interface MouseOverPoints {
+  e: MouseEvent;
+  points: Point[];
+  pointsById?: StringTMap<Point>;
 }
 
 export interface MouseSelectPoints<T> {

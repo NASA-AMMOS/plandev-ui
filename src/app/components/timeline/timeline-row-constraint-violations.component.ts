@@ -3,15 +3,26 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   NgModule,
   OnChanges,
+  Output,
+  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
 import { select } from 'd3-selection';
-import { clampWidth, clampWindow } from '../../functions';
-import { ConstraintViolation, TimeRange } from '../../types';
+import {
+  clampWidth,
+  clampWindow,
+  getConstraintViolationsWithinTime,
+} from '../../functions';
+import {
+  ConstraintViolation,
+  MouseOverConstraintViolations,
+  TimeRange,
+} from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,16 +63,47 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
   marginTop: number;
 
   @Input()
+  mousemove: MouseEvent;
+
+  @Input()
+  mouseout: MouseEvent;
+
+  @Input()
   viewTimeRange: TimeRange | undefined;
 
   @Input()
   xScaleView: ScaleTime<number, number>;
 
+  @Output()
+  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter<MouseOverConstraintViolations>();
+
   @ViewChild('g', { static: true })
   g: ElementRef<SVGGElement>;
 
-  ngOnChanges() {
-    this.draw();
+  ngOnChanges(changes: SimpleChanges) {
+    let shouldDraw = false;
+
+    if (
+      changes.constraintViolations ||
+      changes.drawHeight ||
+      changes.drawWidth ||
+      changes.viewTimeRange ||
+      changes.xScaleView
+    ) {
+      shouldDraw = true;
+    }
+
+    if (changes.mousemove) {
+      this.onMousemove(this.mousemove);
+    }
+
+    if (changes.mouseout) {
+      this.onMouseout(this.mouseout);
+    }
+
+    if (shouldDraw) {
+      this.draw();
+    }
   }
 
   draw() {
@@ -92,6 +134,24 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
           .attr('x', xStart)
           .attr('y', yOffset);
       }
+    }
+  }
+
+  onMousemove(e: MouseEvent | undefined): void {
+    if (e) {
+      const { offsetX } = e;
+      const unixEpochTime = this.xScaleView.invert(offsetX).getTime();
+      const constraintViolations = getConstraintViolationsWithinTime(
+        this.constraintViolations,
+        unixEpochTime,
+      );
+      this.mouseOverConstraintViolations.emit({ constraintViolations, e });
+    }
+  }
+
+  onMouseout(e: MouseEvent | undefined): void {
+    if (e) {
+      this.mouseOverConstraintViolations.emit({ constraintViolations: [], e });
     }
   }
 }

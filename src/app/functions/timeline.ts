@@ -1,7 +1,7 @@
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import type { ScaleLinear, ScaleTime } from 'd3-scale';
 import { scaleLinear } from 'd3-scale';
-import { TimeRange } from '../types';
+import { ConstraintViolation, TimeRange } from '../types';
 
 /**
  * Clamp width to 1 if it is 0 or less.
@@ -31,6 +31,31 @@ export function clampWindow(
   }
 
   return { end, start };
+}
+
+export function getConstraintViolationsWithinTime(
+  constraintViolations: ConstraintViolation[] = [],
+  unixEpochTime: number,
+): ConstraintViolation[] {
+  const violations = [];
+
+  for (const constraintViolation of constraintViolations) {
+    const { windows } = constraintViolation;
+    let count = 0;
+
+    for (const window of windows) {
+      const { start, end } = window;
+      if (start <= unixEpochTime && unixEpochTime <= end) {
+        ++count;
+      }
+    }
+
+    if (count > 0) {
+      violations.push(constraintViolation);
+    }
+  }
+
+  return violations;
 }
 
 export function getTimeFromSvgMousePosition(

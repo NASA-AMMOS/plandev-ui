@@ -11,4 +11,3 @@ export * from './table/table.component';
 export * from './timeline/timeline-x-axis.component';
 export * from './timeline/timeline.component';
 export * from './toolbar/toolbar.component';
-export * from './tooltip/tooltip.component';

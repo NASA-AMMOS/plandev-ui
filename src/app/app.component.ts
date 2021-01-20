@@ -20,7 +20,6 @@ import { SubSink } from 'subsink';
 import { AppActions, AuthActions } from './actions';
 import { AppRoutingModule, RouterSerializer } from './app-routing.module';
 import { metaReducers, RootState, ROOT_REDUCERS } from './app-store';
-import { TooltipModule } from './components';
 import { AERIE_USER } from './constants';
 import { ContainersModule } from './containers';
 import {
@@ -145,7 +144,6 @@ export class AppComponent implements OnDestroy {
     ]),
     MaterialModule,
     ContainersModule,
-    TooltipModule,
   ],
   providers: [
     {
