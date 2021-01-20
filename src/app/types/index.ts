@@ -2,7 +2,6 @@ export * from './activity-instance';
 export * from './activity-type';
 export * from './adaptation';
 export * from './plan';
-export * from './quadtree';
 export * from './selection';
 export * from './simulation';
 export * from './string-t-map';

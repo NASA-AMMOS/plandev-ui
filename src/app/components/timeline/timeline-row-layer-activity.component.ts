@@ -134,9 +134,7 @@ export class TimelineRowLayerActivityComponent
   mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
 
   @Output()
-  mouseSelectPoints: EventEmitter<
-    MouseSelectPoints<ActivityPoint>
-  > = new EventEmitter<MouseSelectPoints<ActivityPoint>>();
+  mouseSelectPoints: EventEmitter<MouseSelectPoints> = new EventEmitter<MouseSelectPoints>();
 
   @Output()
   savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();

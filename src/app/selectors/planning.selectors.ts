@@ -1,7 +1,6 @@
 import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import uniqBy from 'lodash-es/uniqBy';
-import { compare } from '../functions';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
   ActivityInstance,
@@ -19,6 +18,14 @@ import {
   ViolationListState,
   XRangePoint,
 } from '../types';
+
+function compare(
+  a: number | string,
+  b: number | string,
+  isAsc: boolean,
+): number {
+  return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+}
 
 /**
  * Convert an activity instance to a point.

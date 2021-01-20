@@ -15,7 +15,6 @@ import {
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
 import {
-  ActivityPoint,
   Axis,
   ConstraintViolation,
   CreatePoint,
@@ -440,7 +439,7 @@ export class TimelineRowComponent
     this.updateHorizontalGuide.emit(event);
   }
 
-  onMouseSelectPoints(event: MouseSelectPoints<ActivityPoint>) {
+  onMouseSelectPoints(event: MouseSelectPoints) {
     if (event.points.length) {
       const [point] = event.points;
       this.selectPoint.emit({ id: point.id, type: point.type });

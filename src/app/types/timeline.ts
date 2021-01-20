@@ -98,10 +98,10 @@ export interface MouseOverPoints {
   pointsById?: StringTMap<Point>;
 }
 
-export interface MouseSelectPoints<T> {
+export interface MouseSelectPoints {
   e: MouseEvent;
-  points: T[];
-  pointsById?: StringTMap<T>;
+  points: Point[];
+  pointsById?: StringTMap<Point>;
 }
 
 export interface Point {
@@ -110,6 +110,20 @@ export interface Point {
   selected?: boolean;
   type: 'activity' | 'line' | 'x-range';
   x: number;
+}
+
+export interface QuadtreePoint {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface QuadtreeRect {
+  height: number;
+  id: string;
+  width: number;
+  x: number;
+  y: number;
 }
 
 export interface Row {
