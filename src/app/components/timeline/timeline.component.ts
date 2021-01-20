@@ -109,7 +109,6 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
     </div>
 
     <aerie-timeline-tooltip
-      [drawWidth]="drawWidth"
       [mouseOverConstraintViolations]="mouseOverConstraintViolations"
       [mouseOverPoints]="mouseOverPoints"
     ></aerie-timeline-tooltip>
