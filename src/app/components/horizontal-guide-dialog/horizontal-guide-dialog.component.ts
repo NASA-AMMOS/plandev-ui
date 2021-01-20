@@ -89,7 +89,7 @@ export class HorizontalGuideDialogComponent implements OnDestroy {
 
   onSubmit() {
     if (this.form.valid) {
-      const { mode, rowId } = this.data;
+      const { mode } = this.data;
       const { label: text, y, yAxis } = this.form.value;
 
       if (mode === 'create') {
