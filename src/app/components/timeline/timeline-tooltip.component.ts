@@ -25,9 +25,6 @@ import {
 })
 export class TimelineTooltipComponent implements OnChanges {
   @Input()
-  drawWidth: number;
-
-  @Input()
   mouseOverConstraintViolations: MouseOverConstraintViolations | undefined;
 
   @Input()
@@ -78,20 +75,28 @@ export class TimelineTooltipComponent implements OnChanges {
       const tooltip = this.tooltip();
       tooltip.html(text); // Set html so we can calculate the true tooltip width.
 
-      const { clientX, clientY } = event;
-      const node = tooltip.node() as HTMLElement;
-      const { height, width } = node.getBoundingClientRect();
-      let xPosition = clientX;
-      if (this.drawWidth - xPosition < 0) {
-        xPosition = clientX - width;
-      }
-      const yPosition = clientY - height;
+      const { pageX, pageY } = event;
+      const pointerOffset = 10;
 
+      let xPosition = pageX + pointerOffset;
+      let yPosition = pageY + pointerOffset;
       tooltip
         .style('opacity', 0.8)
         .style('left', `${xPosition}px`)
         .style('top', `${yPosition}px`)
         .style('z-index', 5);
+
+      const node = tooltip.node() as HTMLElement;
+      const { height, width, x, y } = node.getBoundingClientRect();
+
+      if (x + width > window.innerWidth) {
+        xPosition -= width;
+      }
+      if (y + height > window.innerHeight) {
+        yPosition -= height;
+      }
+
+      tooltip.style('left', `${xPosition}px`).style('top', `${yPosition}px`);
     } else {
       this.hide();
     }
@@ -152,11 +157,11 @@ export class TimelineTooltipComponent implements OnChanges {
     let tooltipText = '';
 
     this.constraintViolations.forEach(
-      (constraintViolation: ConstraintViolation, index: number) => {
+      (constraintViolation: ConstraintViolation, i: number) => {
         const { message, name } = constraintViolation.constraint;
         const text = `
           <div>
-            Constraint Violation ${index + 1}
+            Constraint Violation ${i + 1}
             <br>
             Constraint Name: ${name}
             <br>
@@ -164,6 +169,9 @@ export class TimelineTooltipComponent implements OnChanges {
           </div>
         `;
         tooltipText = `${tooltipText} ${text}`;
+        if (i !== this.constraintViolations.length - 1) {
+          tooltipText += `<hr>`;
+        }
       },
     );
 
