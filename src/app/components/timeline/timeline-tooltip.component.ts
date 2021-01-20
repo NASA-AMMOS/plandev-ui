@@ -161,9 +161,9 @@ export class TimelineTooltipComponent implements OnChanges {
         const { message, name } = constraintViolation.constraint;
         const text = `
           <div>
-            Constraint Violation ${i + 1}
+            Constraint Violation
             <br>
-            Constraint Name: ${name}
+            Name: ${name}
             <br>
             Message: ${message}
           </div>

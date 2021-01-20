@@ -109,7 +109,7 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
   draw() {
     const { nativeElement } = this.g;
     const g = select(nativeElement);
-    const constraintViolationClass = 'constraint-violation';
+    const constraintViolationClass = 'row-constraint-violation';
     g.selectAll(`.${constraintViolationClass}`).remove();
 
     const constraintViolations = this.constraintViolations || [];
