@@ -88,9 +88,10 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
     const verticalGuides = this.verticalGuides || [];
     const collapsedVerticalGuides = [];
     const collapsedVerticalGuideSelections: VerticalGuideSelection[] = [];
+    const sortedVerticalGuides = this.sort(verticalGuides);
 
-    for (let i = 0, l = verticalGuides.length; i < l; ++i) {
-      const guide = verticalGuides[i];
+    for (let i = 0, l = sortedVerticalGuides.length; i < l; ++i) {
+      const guide = sortedVerticalGuides[i];
       const time = getUnixEpochTime(guide.timestamp);
 
       if (this.viewTimeRange.start <= time && time <= this.viewTimeRange.end) {
@@ -138,6 +139,23 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
 
     this.collapsedVerticalGuides.emit(collapsedVerticalGuides);
     this.updateGuideLabelsWithEllipsis(collapsedVerticalGuideSelections);
+  }
+
+  /**
+   * Sort vertical guides in time order ascending.
+   */
+  sort(verticalGuides: VerticalGuide[]): VerticalGuide[] {
+    return [...verticalGuides].sort((a: VerticalGuide, b: VerticalGuide) => {
+      const aTime = getUnixEpochTime(a.timestamp);
+      const bTime = getUnixEpochTime(b.timestamp);
+      if (aTime < bTime) {
+        return -1;
+      }
+      if (aTime > bTime) {
+        return 1;
+      }
+      return 0;
+    });
   }
 
   /**
