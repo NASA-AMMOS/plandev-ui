@@ -20,10 +20,10 @@ import {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'aerie-timeline-tooltip',
+  selector: 'aerie-timeline-shared-tooltip',
   template: '',
 })
-export class TimelineTooltipComponent implements OnChanges {
+export class TimelineSharedTooltipComponent implements OnChanges {
   @Input()
   mouseOverConstraintViolations: MouseOverConstraintViolations | undefined;
 
@@ -32,7 +32,7 @@ export class TimelineTooltipComponent implements OnChanges {
 
   constraintViolations: ConstraintViolation[] = [];
   points: Point[] = [];
-  tooltipClass = 'aerie-timeline-tooltip';
+  tooltipClass = 'aerie-timeline-shared-tooltip';
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.mouseOverConstraintViolations) {
@@ -236,7 +236,7 @@ export class TimelineTooltipComponent implements OnChanges {
 }
 
 @NgModule({
-  declarations: [TimelineTooltipComponent],
-  exports: [TimelineTooltipComponent],
+  declarations: [TimelineSharedTooltipComponent],
+  exports: [TimelineSharedTooltipComponent],
 })
-export class TimelineTooltipModule {}
+export class TimelineSharedTooltipModule {}

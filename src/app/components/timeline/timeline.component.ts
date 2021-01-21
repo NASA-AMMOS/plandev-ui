@@ -32,7 +32,7 @@ import {
   XAxisTick,
 } from '../../types';
 import { TimelineRowModule } from './timeline-row.component';
-import { TimelineTooltipModule } from './timeline-tooltip.component';
+import { TimelineSharedTooltipModule } from './timeline-shared-tooltip.component';
 import { TimelineXAxisModule } from './timeline-x-axis.component';
 
 @Component({
@@ -109,10 +109,10 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
       ></aerie-timeline-row>
     </div>
 
-    <aerie-timeline-tooltip
+    <aerie-timeline-shared-tooltip
       [mouseOverConstraintViolations]="mouseOverConstraintViolations"
       [mouseOverPoints]="mouseOverPoints"
-    ></aerie-timeline-tooltip>
+    ></aerie-timeline-shared-tooltip>
   `,
 })
 export class TimelineComponent implements OnChanges, AfterViewChecked {
@@ -266,7 +266,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   imports: [
     CommonModule,
     TimelineRowModule,
-    TimelineTooltipModule,
+    TimelineSharedTooltipModule,
     TimelineXAxisModule,
   ],
 })
