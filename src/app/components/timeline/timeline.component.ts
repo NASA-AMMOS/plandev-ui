@@ -63,6 +63,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
   template: `
     <div #xAxisContainer class="x-axis-container">
       <aerie-timeline-x-axis
+        [constraintViolations]="constraintViolations"
         [drawWidth]="drawWidth"
         [marginLeft]="marginLeft"
         [verticalGuides]="verticalGuides"

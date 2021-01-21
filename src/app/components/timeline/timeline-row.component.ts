@@ -33,7 +33,6 @@ import {
   VerticalGuide,
   XAxisTick,
 } from '../../types';
-import { TimelineRowConstraintViolationsModule } from './timeline-row-constraint-violations.component';
 import { TimelineRowHorizontalGuidesModule } from './timeline-row-horizontal-guides.component';
 import { TimelineRowLayerActivityModule } from './timeline-row-layer-activity.component';
 import { TimelineRowLayerLineModule } from './timeline-row-layer-line.component';
@@ -42,6 +41,7 @@ import { TimelineRowMenuModule } from './timeline-row-menu.component';
 import { TimelineRowVerticalGuidesModule } from './timeline-row-vertical-guides.component';
 import { TimelineRowXAxisTicksModule } from './timeline-row-x-axis-ticks.component';
 import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
+import { TimelineSharedConstraintViolationsModule } from './timeline-shared-constraint-violations.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -90,6 +90,19 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
           width: drawWidth + 'px'
         }"
       >
+        <g
+          aerie-timeline-shared-constraint-violations
+          [constraintViolations]="constraintViolations"
+          [drawHeight]="drawHeight"
+          [drawWidth]="drawWidth"
+          [mousemove]="mousemove"
+          [mouseout]="mouseout"
+          [viewTimeRange]="viewTimeRange"
+          [xScaleView]="xScaleView"
+          (mouseOverConstraintViolations)="
+            mouseOverConstraintViolations.emit($event)
+          "
+        ></g>
         <g
           aerie-timeline-row-horizontal-guides
           [drawHeight]="drawHeight"
@@ -169,21 +182,6 @@ import { TimelineRowYAxesModule } from './timeline-row-y-axes.component';
           ></aerie-timeline-row-layer-x-range>
         </ng-container>
       </div>
-
-      <aerie-timeline-row-constraint-violations
-        [constraintViolations]="constraintViolations"
-        [drawHeight]="drawHeight"
-        [drawWidth]="drawWidth"
-        [marginLeft]="marginLeft"
-        [marginTop]="marginTop"
-        [mousemove]="mousemove"
-        [mouseout]="mouseout"
-        [viewTimeRange]="viewTimeRange"
-        [xScaleView]="xScaleView"
-        (mouseOverConstraintViolations)="
-          mouseOverConstraintViolations.emit($event)
-        "
-      ></aerie-timeline-row-constraint-violations>
 
       <aerie-timeline-row-x-axis-ticks
         [drawHeight]="drawHeight"
@@ -318,8 +316,8 @@ export class TimelineRowComponent
   mouseupListener: (mouseout: MouseEvent) => void;
 
   drawHeight: number;
-  marginBottom = 2;
-  marginTop = 2;
+  marginBottom = 0;
+  marginTop = 0;
 
   constructor(private cdRef: ChangeDetectorRef) {}
 
@@ -466,7 +464,6 @@ export class TimelineRowComponent
   exports: [TimelineRowComponent],
   imports: [
     CommonModule,
-    TimelineRowConstraintViolationsModule,
     TimelineRowHorizontalGuidesModule,
     TimelineRowLayerActivityModule,
     TimelineRowLayerLineModule,
@@ -475,6 +472,7 @@ export class TimelineRowComponent
     TimelineRowVerticalGuidesModule,
     TimelineRowXAxisTicksModule,
     TimelineRowYAxesModule,
+    TimelineSharedConstraintViolationsModule,
   ],
 })
 export class TimelineRowModule {}

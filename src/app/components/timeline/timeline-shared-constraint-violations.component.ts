@@ -26,27 +26,10 @@ import {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'aerie-timeline-row-constraint-violations',
-  styles: [
-    `
-      svg {
-        height: 100%;
-        position: absolute;
-        width: 100%;
-        z-index: 1;
-      }
-    `,
-  ],
-  template: `
-    <svg>
-      <g
-        #g
-        [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'"
-      ></g>
-    </svg>
-  `,
+  selector: 'g[aerie-timeline-shared-constraint-violations]',
+  template: `<svg:g #g />`,
 })
-export class TimelineRowConstraintViolationsComponent implements OnChanges {
+export class TimelineSharedConstraintViolationsComponent implements OnChanges {
   @Input()
   constraintViolations: ConstraintViolation[];
 
@@ -55,12 +38,6 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
 
   @Input()
   drawWidth: number;
-
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  marginTop: number;
 
   @Input()
   mousemove: MouseEvent;
@@ -109,12 +86,10 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
   draw() {
     const { nativeElement } = this.g;
     const g = select(nativeElement);
-    const constraintViolationClass = 'row-constraint-violation';
+    const constraintViolationClass = 'constraint-violation';
     g.selectAll(`.${constraintViolationClass}`).remove();
 
     const constraintViolations = this.constraintViolations || [];
-    const heightPadding = 20;
-    const yOffset = -10;
 
     for (const constraintViolation of constraintViolations) {
       const { windows } = constraintViolation;
@@ -129,10 +104,10 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
           .append('rect')
           .attr('fill', '#B00020')
           .attr('fill-opacity', 0.15)
-          .attr('height', this.drawHeight + heightPadding)
+          .attr('height', this.drawHeight)
           .attr('width', width)
           .attr('x', xStart)
-          .attr('y', yOffset);
+          .attr('y', 0);
       }
     }
   }
@@ -157,8 +132,8 @@ export class TimelineRowConstraintViolationsComponent implements OnChanges {
 }
 
 @NgModule({
-  declarations: [TimelineRowConstraintViolationsComponent],
-  exports: [TimelineRowConstraintViolationsComponent],
+  declarations: [TimelineSharedConstraintViolationsComponent],
+  exports: [TimelineSharedConstraintViolationsComponent],
   imports: [CommonModule],
 })
-export class TimelineRowConstraintViolationsModule {}
+export class TimelineSharedConstraintViolationsModule {}

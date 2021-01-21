@@ -8,7 +8,13 @@ import {
   Output,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
-import { TimeRange, VerticalGuide, XAxisTick } from '../../types';
+import {
+  ConstraintViolation,
+  TimeRange,
+  VerticalGuide,
+  XAxisTick,
+} from '../../types';
+import { TimelineSharedConstraintViolationsModule } from './timeline-shared-constraint-violations.component';
 import { TimelineXAxisBrushModule } from './timeline-x-axis-brush.component';
 import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-guides.component';
 
@@ -46,6 +52,20 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             [xScaleView]="xScaleView"
             [yOffset]="10"
             (updateViewTimeRange)="updateViewTimeRange.emit($event)"
+          ></g>
+        </g>
+        <g
+          [attr.transform]="
+            'translate(' + 0 + ',' + constraintViolationsRowYOffset + ')'
+          "
+        >
+          <g
+            aerie-timeline-shared-constraint-violations
+            [constraintViolations]="constraintViolations"
+            [drawHeight]="drawHeight"
+            [drawWidth]="drawWidth"
+            [viewTimeRange]="viewTimeRange"
+            [xScaleView]="xScaleView"
           ></g>
         </g>
         <g
@@ -127,6 +147,9 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
 })
 export class TimelineXAxisComponent {
   @Input()
+  constraintViolations: ConstraintViolation[];
+
+  @Input()
   drawHeight = 90;
 
   @Input()
@@ -159,6 +182,7 @@ export class TimelineXAxisComponent {
   updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
 
   axisRowYOffset = 55;
+  constraintViolationsRowYOffset = 20;
   labelsXOffset = -60;
   verticalGuidesRowYOffset = 35;
 }
@@ -168,6 +192,7 @@ export class TimelineXAxisComponent {
   exports: [TimelineXAxisComponent],
   imports: [
     CommonModule,
+    TimelineSharedConstraintViolationsModule,
     TimelineXAxisBrushModule,
     TimelineXAxisVerticalGuidesModule,
   ],

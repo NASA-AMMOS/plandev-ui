@@ -77,7 +77,7 @@ export class TimelineRowYAxesComponent implements OnChanges {
       const labelText = axis?.label?.text || '';
       const tickCount = axis?.tickCount || 5;
 
-      const axisLeft = d3AxisLeft(scale).ticks(tickCount);
+      const axisLeft = d3AxisLeft(scale).ticks(tickCount).tickSizeOuter(0);
       const axisMargin = 20;
       const startPosition = -(totalWidth + axisMargin * i);
       axisG.attr('transform', `translate(${startPosition}, 0)`);
