@@ -148,6 +148,7 @@ export interface SelectPoint {
 }
 
 export interface Timeline {
+  id: string;
   rows: Row[];
   verticalGuides: VerticalGuide[];
 }
@@ -167,7 +168,12 @@ export interface VerticalGuide {
   id: string;
   label: Label;
   timestamp: string;
-  x?: number;
+}
+
+export interface VerticalGuideEvent {
+  guide?: VerticalGuide;
+  mode: 'create' | 'delete' | 'edit';
+  timelineId: string;
 }
 
 export interface XAxisTick {

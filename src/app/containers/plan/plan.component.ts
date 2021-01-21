@@ -65,6 +65,8 @@ import {
   UpdateActivityInstance,
   UpdatePoint,
   UpdateRow,
+  VerticalGuide,
+  VerticalGuideEvent,
   ViolationListState,
 } from '../../types';
 import { ViolationListModule } from '../violation-list/violation-list.component';
@@ -285,6 +287,20 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
+  onCreateVerticalGuide(timelineId: string): void {
+    const event: VerticalGuideEvent = {
+      mode: 'create',
+      timelineId,
+    };
+    this.store.dispatch(PlanningActions.verticalGuideOpenDialog({ event }));
+  }
+
+  onDeleteVerticalGuide(guide: VerticalGuide, timelineId: string) {
+    this.store.dispatch(
+      PlanningActions.verticalGuideDelete({ guide, timelineId }),
+    );
+  }
+
   onDeleteHorizontalGuide(event: HorizontalGuideEvent): void {
     const { guide, rowId } = event;
     this.store.dispatch(
@@ -399,6 +415,15 @@ export class PlanComponent implements OnDestroy {
     const { rowId, update } = event;
     this.store.dispatch(PlanningActions.updateRow({ rowId, update }));
     this.store.dispatch(AppActions.resize());
+  }
+
+  onUpdateVerticalGuide(guide: VerticalGuide, timelineId: string) {
+    const event: VerticalGuideEvent = {
+      guide,
+      mode: 'edit',
+      timelineId,
+    };
+    this.store.dispatch(PlanningActions.verticalGuideOpenDialog({ event }));
   }
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {

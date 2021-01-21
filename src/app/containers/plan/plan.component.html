@@ -182,6 +182,10 @@
         <mat-icon>more_horiz</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
+        <button mat-menu-item [matMenuTriggerFor]="verticalGuidesMenu">
+          <mat-icon>view_column</mat-icon>
+          <span>Vertical Guides</span>
+        </button>
         <button
           *ngFor="let item of panel.menu"
           mat-menu-item
@@ -190,6 +194,54 @@
           <mat-icon>{{ item.icon }}</mat-icon>
           <span>{{ item.title }}</span>
         </button>
+      </mat-menu>
+
+      <mat-menu #verticalGuidesMenu="matMenu">
+        <button
+          mat-menu-item
+          (click)="onCreateVerticalGuide(panel.timeline.id)"
+        >
+          <mat-icon>add</mat-icon>
+          <span>Create New</span>
+        </button>
+        <button mat-menu-item [matMenuTriggerFor]="verticalGuidesEditMenu">
+          <mat-icon>create</mat-icon>
+          <span>Edit</span>
+        </button>
+        <button mat-menu-item [matMenuTriggerFor]="verticalGuidesDeleteMenu">
+          <mat-icon>delete_forever</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #verticalGuidesEditMenu="matMenu">
+        <ng-container *ngIf="!panel.timeline?.verticalGuides.length">
+          <button mat-menu-item>No Vertical Guides Found</button>
+        </ng-container>
+        <ng-container *ngIf="panel.timeline?.verticalGuides.length">
+          <button
+            *ngFor="let guide of panel.timeline.verticalGuides"
+            mat-menu-item
+            (click)="onUpdateVerticalGuide(guide, panel.timeline.id)"
+          >
+            <span>{{ guide.label.text }}</span>
+          </button>
+        </ng-container>
+      </mat-menu>
+
+      <mat-menu #verticalGuidesDeleteMenu="matMenu">
+        <ng-container *ngIf="!panel.timeline?.verticalGuides.length">
+          <button mat-menu-item>No Vertical Guides Found</button>
+        </ng-container>
+        <ng-container *ngIf="panel.timeline?.verticalGuides.length">
+          <button
+            *ngFor="let guide of panel.timeline.verticalGuides"
+            mat-menu-item
+            (click)="onDeleteVerticalGuide(guide, panel.timeline.id)"
+          >
+            <span>{{ guide.label.text }}</span>
+          </button>
+        </ng-container>
       </mat-menu>
     </div>
   </panel-header>

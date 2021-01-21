@@ -16,6 +16,7 @@ export const uiStates: UiState[] = [
         ],
         size: 35,
         timeline: {
+          id: 'timeline0',
           rows: [
             {
               height: 200,
@@ -67,6 +68,7 @@ export const uiStates: UiState[] = [
         ],
         size: 35,
         timeline: {
+          id: 'timeline1',
           rows: [
             {
               height: 100,

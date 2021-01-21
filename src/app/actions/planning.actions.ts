@@ -13,6 +13,8 @@ import {
   TimeRange,
   UiState,
   UpdateActivityInstance,
+  VerticalGuide,
+  VerticalGuideEvent,
 } from '../types';
 
 export const createActivityInstance = createAction(
@@ -202,4 +204,24 @@ export const updateViolationListState = createAction(
     key: 'expanded' | 'visible';
     value: boolean;
   }>(),
+);
+
+export const verticalGuideCreate = createAction(
+  '[planning] verticalGuideCreate',
+  props<{ guide: VerticalGuide; timelineId: string }>(),
+);
+
+export const verticalGuideOpenDialog = createAction(
+  '[planning] verticalGuideOpenDialog',
+  props<{ event: VerticalGuideEvent }>(),
+);
+
+export const verticalGuideDelete = createAction(
+  '[planning] verticalGuideDelete',
+  props<{ guide: VerticalGuide; timelineId: string }>(),
+);
+
+export const verticalGuideUpdate = createAction(
+  '[planning] verticalGuideUpdate',
+  props<{ guide: VerticalGuide; timelineId: string }>(),
 );

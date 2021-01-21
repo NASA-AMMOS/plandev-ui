@@ -11,8 +11,14 @@ import {
   ConfirmDialogComponent,
   HorizontalGuideDialogComponent,
 } from '../components';
+import { VerticalGuideDialogComponent } from '../components/vertical-guide-dialog/vertical-guide-dialog.component';
 import { ApiService } from '../services';
-import { HorizontalGuide, HorizontalGuideEvent } from '../types';
+import {
+  HorizontalGuide,
+  HorizontalGuideEvent,
+  VerticalGuide,
+  VerticalGuideEvent,
+} from '../types';
 
 @Injectable()
 export class PlanningEffects {
@@ -391,6 +397,33 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         ),
       ),
+    ),
+  );
+
+  verticalGuideOpenDialog = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.verticalGuideOpenDialog),
+      switchMap(({ event }) => {
+        const guideDialog = this.dialog.open(VerticalGuideDialogComponent, {
+          data: event,
+          width: '400px',
+        });
+        return forkJoin<VerticalGuideEvent, VerticalGuide | null>([
+          of(event),
+          guideDialog.afterClosed(),
+        ]);
+      }),
+      map(([event, guide]) => ({ event, guide })),
+      switchMap(({ event, guide }) => {
+        const { timelineId } = event;
+        if (guide && event.mode === 'create') {
+          return [PlanningActions.verticalGuideCreate({ guide, timelineId })];
+        } else if (guide && event.mode === 'edit') {
+          return [PlanningActions.verticalGuideUpdate({ guide, timelineId })];
+        } else {
+          return [];
+        }
+      }),
     ),
   );
 

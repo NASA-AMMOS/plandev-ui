@@ -15,6 +15,7 @@ import {
   StringTMap,
   TimeRange,
   UiState,
+  VerticalGuide,
   ViolationListState,
 } from '../types';
 
@@ -375,4 +376,78 @@ export const reducer = createReducer(
     ...state,
     viewTimeRange,
   })),
+  on(PlanningActions.verticalGuideCreate, (state, { guide, timelineId }) => ({
+    ...state,
+    uiStates: state.uiStates.map(uiState => ({
+      ...uiState,
+      panels: uiState.panels.map(panel => {
+        if (panel.timeline && panel.timeline.id === timelineId) {
+          return {
+            ...panel,
+            timeline: {
+              ...panel.timeline,
+              verticalGuides: panel.timeline.verticalGuides
+                ? [...panel.timeline.verticalGuides, guide]
+                : [guide],
+            },
+          };
+        }
+        return panel;
+      }),
+    })),
+  })),
+  on(
+    PlanningActions.verticalGuideDelete,
+    (state, { guide: removedGuide, timelineId }) => ({
+      ...state,
+      uiStates: state.uiStates.map(uiState => ({
+        ...uiState,
+        panels: uiState.panels.map(panel => {
+          if (panel.timeline && panel.timeline.id === timelineId) {
+            return {
+              ...panel,
+              timeline: {
+                ...panel.timeline,
+                verticalGuides: (panel.timeline.verticalGuides || []).filter(
+                  (guide: VerticalGuide) => removedGuide.id !== guide.id,
+                ),
+              },
+            };
+          }
+          return panel;
+        }),
+      })),
+    }),
+  ),
+  on(
+    PlanningActions.verticalGuideUpdate,
+    (state, { guide: updatedGuide, timelineId }) => ({
+      ...state,
+      uiStates: state.uiStates.map(uiState => ({
+        ...uiState,
+        panels: uiState.panels.map(panel => {
+          if (panel.timeline && panel.timeline.id === timelineId) {
+            return {
+              ...panel,
+              timeline: {
+                ...panel.timeline,
+                verticalGuides: (panel.timeline.verticalGuides || []).map(
+                  guide => {
+                    if (updatedGuide.id === guide.id) {
+                      return {
+                        ...guide,
+                        ...updatedGuide,
+                      };
+                    }
+                    return guide;
+                  },
+                ),
+              },
+            };
+          }
+          return panel;
+        }),
+      })),
+    }),
+  ),
 );
