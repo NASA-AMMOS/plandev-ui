@@ -180,7 +180,7 @@ export class ActivityInstanceFormParameterRecSeriesComponent
         error: null,
         index: i,
         loading: false,
-        name: `Index ${i + 1}`,
+        name: `[${i}]`,
         schema: this.parameter.schema.items,
         value: subParameterValue,
       };
