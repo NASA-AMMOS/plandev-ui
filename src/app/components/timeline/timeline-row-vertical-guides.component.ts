@@ -31,9 +31,9 @@ import { VerticalGuide } from '../../types';
         <line
           *ngFor="let guide of filteredVerticalGuides"
           [attr.x1]="guide.x"
-          [attr.y1]="-linePadding"
+          [attr.y1]="0"
           [attr.x2]="guide.x"
-          [attr.y2]="drawHeight + linePadding"
+          [attr.y2]="drawHeight"
           stroke="gray"
           stroke-dasharray="2"
         ></line>
@@ -58,7 +58,6 @@ export class TimelineRowVerticalGuidesComponent implements OnChanges {
   xScaleView: ScaleTime<number, number>;
 
   filteredVerticalGuides: VerticalGuide[];
-  linePadding = 10;
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.verticalGuides && (changes.verticalGuides || changes.xScaleView)) {
