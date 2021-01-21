@@ -153,11 +153,11 @@
     </div>
 
     <div *ngIf="drawer.violations.visible">
-      <violation-list
+      <constraint-violation-list
         [activityInstances]="activityInstances"
-        [violationListState]="constraintViolationListState"
-        [violationsByCategory]="constraintViolationsByCategory"
-      ></violation-list>
+        [constraintViolations]="constraintViolations"
+        [constraintViolationListState]="constraintViolationListState"
+      ></constraint-violation-list>
     </div>
   </as-split-area>
 </as-split>

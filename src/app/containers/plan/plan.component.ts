@@ -37,7 +37,6 @@ import {
   getAdaptationId,
   getConstraintViolationListState,
   getConstraintViolations,
-  getConstraintViolationsByCategory,
   getMaxTimeRange,
   getPanelsWithPoints,
   getSelectedActivityInstance,
@@ -70,7 +69,7 @@ import {
   VerticalGuide,
   VerticalGuideEvent,
 } from '../../types';
-import { ViolationListModule } from '../violation-list/violation-list.component';
+import { ConstraintViolationListModule } from '../constraint-violation-list/constraint-violation-list.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,7 +87,6 @@ export class PlanComponent implements OnDestroy {
   adaptationId = '';
   constraintViolations: ConstraintViolation[] = [];
   constraintViolationListState: ConstraintViolationListState;
-  constraintViolationsByCategory: StringTMap<ConstraintViolation[]>;
   drawer = {
     activityDictionary: {
       visible: true,
@@ -191,12 +189,6 @@ export class PlanComponent implements OnDestroy {
         .pipe(select(getConstraintViolationListState))
         .subscribe(constraintViolationListState => {
           this.constraintViolationListState = constraintViolationListState;
-          this.cdRef.markForCheck();
-        }),
-      this.store
-        .pipe(select(getConstraintViolationsByCategory))
-        .subscribe(constraintViolationsByCategory => {
-          this.constraintViolationsByCategory = constraintViolationsByCategory;
           this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
@@ -470,13 +462,13 @@ export class PlanComponent implements OnDestroy {
     AngularSplitModule,
     ActivityInstanceFormModule,
     ActivityTypeListModule,
+    ConstraintViolationListModule,
     PanelHeaderModule,
     PipesModule,
     PlaceholderModule,
     TableModule,
     TimelineModule,
     ToolbarModule,
-    ViolationListModule,
   ],
 })
 export class PlanModule {}

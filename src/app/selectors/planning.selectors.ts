@@ -146,28 +146,6 @@ export const getConstraintViolations = createSelector(
     state.constraintViolations || [],
 );
 
-export const getConstraintViolationsByCategory = createSelector(
-  getConstraintViolations,
-  (
-    constraintViolations: ConstraintViolation[],
-  ): StringTMap<ConstraintViolation[]> | null => {
-    const categories = constraintViolations.reduce(
-      (categoryMap, constraintViolation) => {
-        const { constraint } = constraintViolation;
-        const { category } = constraint;
-        const prevViolations = categoryMap[category] || [];
-        categoryMap[category] = [...prevViolations, constraintViolation];
-        return categoryMap;
-      },
-      {},
-    );
-    if (Object.keys(categories).length === 0) {
-      return null;
-    }
-    return categories;
-  },
-);
-
 export const getSelectedPlan = createSelector(
   getPlanningState,
   (state: PlanningState): Plan | null => state.selectedPlan,
