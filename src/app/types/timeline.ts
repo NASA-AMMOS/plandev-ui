@@ -132,7 +132,6 @@ export interface Row {
   horizontalGuides?: HorizontalGuide[];
   id: string;
   layers: Layer[];
-  violations?: ConstraintViolation[];
   yAxes?: Axis[];
 }
 

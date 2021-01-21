@@ -50,7 +50,6 @@ export const uiStates: UiState[] = [
         },
         title: 'Schedule',
         type: 'timeline',
-        violations: [],
       },
       {
         id: 'panel1',
@@ -135,7 +134,6 @@ export const uiStates: UiState[] = [
         },
         title: 'Simulation',
         type: 'timeline',
-        violations: [],
       },
       {
         id: 'panel2',

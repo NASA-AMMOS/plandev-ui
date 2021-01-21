@@ -1,21 +1,26 @@
 import { getUnixEpochTime } from '@gov.nasa.jpl.aerie/time';
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import uniqBy from 'lodash-es/uniqBy';
 import { PlanningState } from '../reducers/planning.reducer';
 import {
   ActivityInstance,
+  ActivityLayer,
   ActivityPoint,
   ActivityType,
   Adaptation,
   ConstraintViolation,
   DecompositionTreeState,
+  Layer,
+  LineLayer,
   LinePoint,
+  Panel,
   Plan,
+  Row,
   SimulationResult,
   StringTMap,
   TimeRange,
   UiState,
   ViolationListState,
+  XRangeLayer,
   XRangePoint,
 } from '../types';
 
@@ -180,38 +185,6 @@ export const getSimulationOutOfDate = createSelector(
     lastActivityInstanceUpdate > lastSimulationTime,
 );
 
-export const getIdsToViolations = createSelector(
-  getViolations,
-  getViolationListState,
-  (
-    violations: ConstraintViolation[],
-    violationListState: ViolationListState,
-  ): StringTMap<ConstraintViolation[]> => {
-    if (violations) {
-      return violations.reduce((idsToViolations, violation) => {
-        const { constraint } = violation;
-        const { category, name } = constraint;
-        if (violationListState.category[category].visible) {
-          for (const associationType of Object.keys(violation.associations)) {
-            if (associationType !== '__typename') {
-              for (const id of violation.associations[associationType]) {
-                if (violationListState.constraint[name].visible) {
-                  idsToViolations[id] = [
-                    ...(idsToViolations[id] || []),
-                    violation,
-                  ];
-                }
-              }
-            }
-          }
-        }
-        return idsToViolations;
-      }, {});
-    }
-    return {};
-  },
-);
-
 export const getSimulationResults = createSelector(
   getPlanningState,
   (state: PlanningState): SimulationResult[] => state.simulationResults || [],
@@ -237,29 +210,26 @@ export const getSelectedUiState = createSelector(
 export const getPanelsWithPoints = createSelector(
   getActivityInstances,
   getActivityInstancesMap,
-  getIdsToViolations,
   getSelectedActivityInstanceId,
   getSelectedUiState,
   getSimulationResults,
   (
     activityInstances: ActivityInstance[] | null,
     activityInstancesMap: StringTMap<ActivityInstance> | null,
-    idsToViolations: StringTMap<ConstraintViolation[]>,
     selectedActivityInstanceId: string | null,
     uiState: UiState,
     simulationResults: SimulationResult[],
   ) => {
     if (uiState) {
       return uiState.panels.map(panel => {
-        const panelViolations: ConstraintViolation[] = [];
-
         if (panel.timeline) {
           const rows = panel.timeline.rows.map(row => {
             const yAxisIdToScaleDomain: StringTMap<number[]> = {};
-            const rowViolations: ConstraintViolation[] = [];
-            const layers = row.layers.map(layer => {
+
+            const layers: Layer[] = row.layers.map(layer => {
               if (layer.type === 'activity') {
                 const activities = activityInstances || [];
+
                 const points = activities.reduce((newPoints, point) => {
                   const r = new RegExp(layer?.filter?.activity?.type);
                   const includePoint = r.test(point.type);
@@ -267,11 +237,6 @@ export const getPanelsWithPoints = createSelector(
                     includePoint &&
                     (point.parent === null || point.parent === undefined)
                   ) {
-                    if (idsToViolations[point.id]) {
-                      rowViolations.push(...idsToViolations[point.id]);
-                      panelViolations.push(...idsToViolations[point.id]);
-                    }
-
                     const activityPoint = activityInstanceToPoint(
                       point,
                       selectedActivityInstanceId,
@@ -281,35 +246,26 @@ export const getPanelsWithPoints = createSelector(
                   }
                   return newPoints;
                 }, []);
-                return {
+
+                const newLayer: ActivityLayer = {
                   ...layer,
                   points,
                 };
-              }
-
-              if (layer.type === 'state') {
+                return newLayer;
+              } else if (layer.type === 'state') {
                 if (layer.chartType === 'line') {
                   const points: LinePoint[] = [];
                   const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
-
                   let minY = Number.MAX_SAFE_INTEGER;
                   let maxY = Number.MIN_SAFE_INTEGER;
+
                   if (simulationResults && simulationResults.length) {
-                    for (const {
-                      name,
-                      schema,
-                      start,
-                      values,
-                    } of simulationResults) {
+                    for (const result of simulationResults) {
+                      const { name, schema, start, values } = result;
                       if (schema.type === 'real') {
                         const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {
-                          if (idsToViolations[name]) {
-                            rowViolations.push(...idsToViolations[name]);
-                            panelViolations.push(...idsToViolations[name]);
-                          }
-
                           for (let i = 0; i < values.length; ++i) {
                             const value = values[i];
                             const { x } = value;
@@ -336,31 +292,23 @@ export const getPanelsWithPoints = createSelector(
                     yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
                   }
 
-                  return {
+                  const newLayer: LineLayer = {
                     ...layer,
                     points,
                     yAxisId,
                   };
+                  return newLayer;
                 } else if (layer.chartType === 'x-range') {
                   const points: XRangePoint[] = [];
                   const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
 
                   if (simulationResults && simulationResults.length) {
-                    for (const {
-                      name,
-                      schema,
-                      start,
-                      values,
-                    } of simulationResults) {
+                    for (const result of simulationResults) {
+                      const { name, schema, start, values } = result;
                       if (schema.type === 'variant') {
                         const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
                         if (includeResult) {
-                          if (idsToViolations[name]) {
-                            rowViolations.push(...idsToViolations[name]);
-                            panelViolations.push(...idsToViolations[name]);
-                          }
-
                           for (let i = 0; i < values.length; ++i) {
                             const { x, y } = values[i];
                             points.push({
@@ -377,43 +325,38 @@ export const getPanelsWithPoints = createSelector(
                     }
                   }
 
-                  return {
+                  const newLayer: XRangeLayer = {
                     ...layer,
                     points,
                     yAxisId,
                   };
+                  return newLayer;
                 }
               }
 
               return layer;
             });
 
-            return {
+            const newRow: Row = {
               ...row,
               layers,
-              violations: uniqBy(
-                rowViolations,
-                ({ constraint: { name } }) => name,
-              ),
               yAxes: (row.yAxes || []).map(axis => ({
                 ...axis,
                 scaleDomain:
                   axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
               })),
             };
+            return newRow;
           });
 
-          return {
+          const newPanel: Panel = {
             ...panel,
             timeline: {
               ...panel.timeline,
               rows,
-              violations: uniqBy(
-                panelViolations,
-                ({ constraint: { name } }) => name,
-              ),
             },
           };
+          return newPanel;
         }
 
         return panel;
