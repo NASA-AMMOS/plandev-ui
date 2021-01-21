@@ -17,13 +17,13 @@
     <button
       mat-raised-button
       class="right-button"
-      [matBadge]="totalViolations"
-      [matBadgeHidden]="totalViolations === 0"
+      [matBadge]="totalConstraintViolations"
+      [matBadgeHidden]="totalConstraintViolations === 0"
       matBadgeColor="warn"
       matBadgePosition="before"
       matBadgeSize="small"
       matTooltip="Violations"
-      [style.opacity]="totalViolations > 0 ? 1.0 : 0.5"
+      [style.opacity]="totalConstraintViolations > 0 ? 1.0 : 0.5"
       (click)="showDrawerType('violations')"
     >
       Violations
@@ -155,8 +155,8 @@
     <div *ngIf="drawer.violations.visible">
       <violation-list
         [activityInstances]="activityInstances"
-        [violationListState]="violationListState"
-        [violationsByCategory]="violationsByCategory"
+        [violationListState]="constraintViolationListState"
+        [violationsByCategory]="constraintViolationsByCategory"
       ></violation-list>
     </div>
   </as-split-area>
@@ -247,6 +247,7 @@
   </panel-header>
   <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
   <aerie-timeline
+    [constraintViolations]="constraintViolations"
     [maxTimeRange]="maxTimeRange"
     [rows]="panel.timeline.rows"
     [verticalGuides]="panel.timeline.verticalGuides"

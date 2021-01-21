@@ -8,6 +8,7 @@ import {
   ActivityType,
   Adaptation,
   ConstraintViolation,
+  ConstraintViolationListState,
   DecompositionTreeState,
   Layer,
   LineLayer,
@@ -19,7 +20,6 @@ import {
   StringTMap,
   TimeRange,
   UiState,
-  ViolationListState,
   XRangeLayer,
   XRangePoint,
 } from '../types';
@@ -134,28 +134,33 @@ export const getDecompositionTreeState = createSelector(
     state.decompositionTreeState,
 );
 
-export const getViolationListState = createSelector(
+export const getConstraintViolationListState = createSelector(
   getPlanningState,
-  (state: PlanningState): ViolationListState => state.violationListState,
+  (state: PlanningState): ConstraintViolationListState =>
+    state.constraintViolationListState,
 );
 
-export const getViolations = createSelector(
+export const getConstraintViolations = createSelector(
   getPlanningState,
-  (state: PlanningState): ConstraintViolation[] => state.violations || [],
+  (state: PlanningState): ConstraintViolation[] =>
+    state.constraintViolations || [],
 );
 
-export const getViolationsByCategory = createSelector(
-  getViolations,
+export const getConstraintViolationsByCategory = createSelector(
+  getConstraintViolations,
   (
-    violations: ConstraintViolation[],
+    constraintViolations: ConstraintViolation[],
   ): StringTMap<ConstraintViolation[]> | null => {
-    const categories = violations.reduce((categoryMap, violation) => {
-      const { constraint } = violation;
-      const { category } = constraint;
-      const prevViolations = categoryMap[category] || [];
-      categoryMap[category] = [...prevViolations, violation];
-      return categoryMap;
-    }, {});
+    const categories = constraintViolations.reduce(
+      (categoryMap, constraintViolation) => {
+        const { constraint } = constraintViolation;
+        const { category } = constraint;
+        const prevViolations = categoryMap[category] || [];
+        categoryMap[category] = [...prevViolations, constraintViolation];
+        return categoryMap;
+      },
+      {},
+    );
     if (Object.keys(categories).length === 0) {
       return null;
     }

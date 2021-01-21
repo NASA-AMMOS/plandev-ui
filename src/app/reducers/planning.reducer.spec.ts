@@ -200,10 +200,10 @@ describe('planning reducer', () => {
       expect(state).toEqual({
         ...initialState,
         activityInstances: {},
+        constraintViolations: simulationResponse.violations,
         lastActivityInstanceUpdate: state.lastActivityInstanceUpdate,
         lastSimulationTime: state.lastSimulationTime,
         simulationResults: simulationResponse.results,
-        violations: simulationResponse.violations,
       });
     });
   });

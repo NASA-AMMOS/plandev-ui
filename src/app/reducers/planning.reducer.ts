@@ -8,6 +8,7 @@ import {
   ActivityType,
   Adaptation,
   ConstraintViolation,
+  ConstraintViolationListState,
   DecompositionTreeState,
   HorizontalGuide,
   Plan,
@@ -16,13 +17,14 @@ import {
   TimeRange,
   UiState,
   VerticalGuide,
-  ViolationListState,
 } from '../types';
 
 export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
+  constraintViolationListState: ConstraintViolationListState;
+  constraintViolations: ConstraintViolation[] | null;
   decompositionTreeState: DecompositionTreeState;
   lastActivityInstanceUpdate: number;
   lastSimulationTime: number;
@@ -33,14 +35,14 @@ export interface PlanningState {
   simulationResults: SimulationResult[] | null;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
-  violationListState: ViolationListState;
-  violations: ConstraintViolation[] | null;
 }
 
 export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
   adaptations: null,
+  constraintViolationListState: { category: {}, constraint: {} },
+  constraintViolations: null,
   decompositionTreeState: { instance: {} },
   lastActivityInstanceUpdate: 0,
   lastSimulationTime: 0,
@@ -51,8 +53,6 @@ export const initialState: PlanningState = {
   simulationResults: null,
   uiStates: [],
   viewTimeRange: { end: 0, start: 0 },
-  violationListState: { category: {}, constraint: {} },
-  violations: null,
 };
 
 export const reducer = createReducer(
@@ -235,36 +235,42 @@ export const reducer = createReducer(
         activityInstances: {
           ...keyBy(activities, 'id'),
         },
-        lastActivityInstanceUpdate: now,
-        lastSimulationTime: now,
-        simulationResults: results || [],
-        violationListState: {
+        constraintViolationListState: {
           ...violations.reduce(
-            (violationListState: ViolationListState, violation) => {
+            (
+              constraintViolationListState: ConstraintViolationListState,
+              violation,
+            ) => {
               const { constraint } = violation;
               const { category, name } = constraint;
-              if (state.violationListState.category[category] === undefined) {
-                violationListState.category[category] = {
+              if (
+                state.constraintViolationListState.category[category] ===
+                undefined
+              ) {
+                constraintViolationListState.category[category] = {
                   expanded: true,
                   visible: true,
                 };
               }
-              if (state.violationListState.constraint[name] === undefined) {
-                violationListState.constraint[name] = {
+              if (
+                state.constraintViolationListState.constraint[name] ===
+                undefined
+              ) {
+                constraintViolationListState.constraint[name] = {
                   expanded: false,
                   visible: true,
                 };
               }
-              return violationListState;
+              return constraintViolationListState;
             },
             {
-              ...state.violationListState,
-              category: { ...state.violationListState.category },
-              constraint: { ...state.violationListState.constraint },
+              ...state.constraintViolationListState,
+              category: { ...state.constraintViolationListState.category },
+              constraint: { ...state.constraintViolationListState.constraint },
             },
           ),
         },
-        violations: violations.map(violation => ({
+        constraintViolations: violations.map(violation => ({
           ...violation,
           windows: violation.windows.map(({ end, start }) => {
             const planStart = getUnixEpochTime(
@@ -276,6 +282,9 @@ export const reducer = createReducer(
             };
           }),
         })),
+        lastActivityInstanceUpdate: now,
+        lastSimulationTime: now,
+        simulationResults: results || [],
       };
     },
   ),
@@ -343,14 +352,16 @@ export const reducer = createReducer(
       }),
     })),
   })),
-  on(PlanningActions.updateViolationListState, (state, action) => ({
+  on(PlanningActions.updateConstraintViolationListState, (state, action) => ({
     ...state,
-    violationListState: {
-      ...state.violationListState,
+    constraintViolationListState: {
+      ...state.constraintViolationListState,
       [action.formType]: {
-        ...state.violationListState[action.formType],
+        ...state.constraintViolationListState[action.formType],
         [action.formValue]: {
-          ...state.violationListState[action.formType][action.formValue],
+          ...state.constraintViolationListState[action.formType][
+            action.formValue
+          ],
           [action.key]: action.value,
         },
       },

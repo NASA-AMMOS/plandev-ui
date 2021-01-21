@@ -35,6 +35,9 @@ import {
   getActivityInstancesMap,
   getActivityTypes,
   getAdaptationId,
+  getConstraintViolationListState,
+  getConstraintViolations,
+  getConstraintViolationsByCategory,
   getMaxTimeRange,
   getPanelsWithPoints,
   getSelectedActivityInstance,
@@ -43,13 +46,12 @@ import {
   getSimulationOutOfDate,
   getUiStates,
   getViewTimeRange,
-  getViolationListState,
-  getViolationsByCategory,
 } from '../../selectors';
 import {
   ActivityInstance,
   ActivityType,
   ConstraintViolation,
+  ConstraintViolationListState,
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
@@ -67,7 +69,6 @@ import {
   UpdateRow,
   VerticalGuide,
   VerticalGuideEvent,
-  ViolationListState,
 } from '../../types';
 import { ViolationListModule } from '../violation-list/violation-list.component';
 
@@ -85,7 +86,9 @@ export class PlanComponent implements OnDestroy {
   activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   activityTypes: ActivityType[] | null = null;
   adaptationId = '';
-  violationsByCategory: StringTMap<ConstraintViolation[]>;
+  constraintViolations: ConstraintViolation[] = [];
+  constraintViolationListState: ConstraintViolationListState;
+  constraintViolationsByCategory: StringTMap<ConstraintViolation[]>;
   drawer = {
     activityDictionary: {
       visible: true,
@@ -144,10 +147,9 @@ export class PlanComponent implements OnDestroy {
   selectedActivityType: ActivityType | null = null;
   selectedUiState: UiState | null;
   simulationOutOfDate = false;
-  totalViolations = 0;
+  totalConstraintViolations = 0;
   uiStates: UiState[];
   viewTimeRange: TimeRange;
-  violationListState: ViolationListState;
 
   private subs = new SubSink();
 
@@ -179,16 +181,22 @@ export class PlanComponent implements OnDestroy {
         this.cdRef.markForCheck();
       }),
       this.store
-        .pipe(select(getViolationsByCategory))
-        .subscribe(violationsByCategory => {
-          this.violationsByCategory = violationsByCategory;
-          this.totalViolations = 0;
-          if (violationsByCategory) {
-            const categories = Object.keys(this.violationsByCategory);
-            for (const category of categories) {
-              this.totalViolations += violationsByCategory[category].length;
-            }
-          }
+        .pipe(select(getConstraintViolations))
+        .subscribe(constraintViolations => {
+          this.constraintViolations = constraintViolations;
+          this.totalConstraintViolations = constraintViolations.length;
+          this.cdRef.markForCheck();
+        }),
+      this.store
+        .pipe(select(getConstraintViolationListState))
+        .subscribe(constraintViolationListState => {
+          this.constraintViolationListState = constraintViolationListState;
+          this.cdRef.markForCheck();
+        }),
+      this.store
+        .pipe(select(getConstraintViolationsByCategory))
+        .subscribe(constraintViolationsByCategory => {
+          this.constraintViolationsByCategory = constraintViolationsByCategory;
           this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
@@ -231,12 +239,6 @@ export class PlanComponent implements OnDestroy {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();
       }),
-      this.store
-        .pipe(select(getViolationListState))
-        .subscribe(violationListState => {
-          this.violationListState = violationListState;
-          this.cdRef.markForCheck();
-        }),
     );
   }
 

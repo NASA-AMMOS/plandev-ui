@@ -18,9 +18,9 @@ import {
   ActivityInstance,
   ConstraintViolation,
   ConstraintViolationAssociations,
+  ConstraintViolationListState,
   StringTMap,
   TimeRange,
-  ViolationListState,
 } from '../../types';
 import { ViolationListNodeModule } from '../violation-list-node/violation-list-node.component';
 
@@ -35,7 +35,7 @@ export class ViolationListComponent implements OnChanges {
   activityInstances: ActivityInstance[] | null;
 
   @Input()
-  violationListState: ViolationListState;
+  violationListState: ConstraintViolationListState;
 
   @Input()
   violationsByCategory: StringTMap<ConstraintViolation[]> | null = null;
@@ -146,9 +146,12 @@ export class ViolationListComponent implements OnChanges {
     );
   }
 
-  onToggleViolationCategoryExpanded(category: string, expanded: boolean) {
+  onToggleConstraintViolationCategoryExpanded(
+    category: string,
+    expanded: boolean,
+  ) {
     this.store.dispatch(
-      PlanningActions.updateViolationListState({
+      PlanningActions.updateConstraintViolationListState({
         formType: 'category',
         formValue: category,
         key: 'expanded',
@@ -157,14 +160,14 @@ export class ViolationListComponent implements OnChanges {
     );
   }
 
-  onToggleViolationCategoryVisibility(
+  onToggleConstraintViolationCategoryVisibility(
     event: MouseEvent,
     category: string,
     visible: boolean,
   ) {
     event.cancelBubble = true;
     this.store.dispatch(
-      PlanningActions.updateViolationListState({
+      PlanningActions.updateConstraintViolationListState({
         formType: 'category',
         formValue: category,
         key: 'visible',
@@ -173,8 +176,11 @@ export class ViolationListComponent implements OnChanges {
     );
   }
 
-  trackByViolations(_: number, violation: ConstraintViolation): string {
-    return violation.constraint.name;
+  trackByConstraintViolations(
+    _: number,
+    constraintViolation: ConstraintViolation,
+  ): string {
+    return constraintViolation.constraint.name;
   }
 }
 

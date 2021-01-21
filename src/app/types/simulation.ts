@@ -19,6 +19,11 @@ export interface ConstraintViolationAssociations {
   stateIds?: string[];
 }
 
+export interface ConstraintViolationListState {
+  category: StringTMap<{ expanded: boolean; visible: boolean }>;
+  constraint: StringTMap<{ expanded: boolean; visible: boolean }>;
+}
+
 export interface DecompositionTreeState {
   instance: StringTMap<{ expanded: boolean }>;
 }
@@ -41,9 +46,4 @@ export interface SimulationResult {
 export interface SimulationResultValue {
   x: number;
   y: number | string;
-}
-
-export interface ViolationListState {
-  category: StringTMap<{ expanded: boolean; visible: boolean }>;
-  constraint: StringTMap<{ expanded: boolean; visible: boolean }>;
 }

@@ -166,6 +166,17 @@ export const updateAllUiStates = createAction(
   '[planning] updateAllUiStates',
   props<{ uiStates: UiState[] }>(),
 );
+
+export const updateConstraintViolationListState = createAction(
+  '[planning] updateConstraintViolationListState',
+  props<{
+    formType: 'category' | 'constraint';
+    formValue: string;
+    key: 'expanded' | 'visible';
+    value: boolean;
+  }>(),
+);
+
 export const updateDecompositionTreeState = createAction(
   '[planning] updateDecompositionTreeState',
   props<{
@@ -194,16 +205,6 @@ export const updateUiState = createAction(
 export const updateViewTimeRange = createAction(
   '[planning] updateViewTimeRange',
   props<{ viewTimeRange: TimeRange }>(),
-);
-
-export const updateViolationListState = createAction(
-  '[planning] updateViolationListState',
-  props<{
-    formType: 'category' | 'constraint';
-    formValue: string;
-    key: 'expanded' | 'visible';
-    value: boolean;
-  }>(),
 );
 
 export const verticalGuideCreate = createAction(

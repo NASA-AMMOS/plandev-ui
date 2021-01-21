@@ -14,9 +14,9 @@ import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
   ConstraintViolation,
+  ConstraintViolationListState,
   StringTMap,
   TimeRange,
-  ViolationListState,
 } from '../../types';
 
 @Component({
@@ -33,7 +33,7 @@ export class ViolationListNodeComponent {
   violation: ConstraintViolation;
 
   @Input()
-  violationListState: ViolationListState;
+  violationListState: ConstraintViolationListState;
 
   @Output()
   selectWindow: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
@@ -54,7 +54,7 @@ export class ViolationListNodeComponent {
 
   toggleExpanded() {
     this.store.dispatch(
-      PlanningActions.updateViolationListState({
+      PlanningActions.updateConstraintViolationListState({
         formType: 'constraint',
         formValue: this.violation.constraint.name,
         key: 'expanded',
@@ -66,7 +66,7 @@ export class ViolationListNodeComponent {
   toggleVisible(event: MouseEvent) {
     event.cancelBubble = true;
     this.store.dispatch(
-      PlanningActions.updateViolationListState({
+      PlanningActions.updateConstraintViolationListState({
         formType: 'constraint',
         formValue: this.violation.constraint.name,
         key: 'visible',
