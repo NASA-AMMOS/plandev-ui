@@ -7,6 +7,7 @@ import {
   ActivityPoint,
   ActivityType,
   Adaptation,
+  Axis,
   ConstraintViolation,
   ConstraintViolationListState,
   DecompositionTreeState,
@@ -216,6 +217,7 @@ export const getPanelsWithPoints = createSelector(
                 const points = activities.reduce((newPoints, point) => {
                   const r = new RegExp(layer?.filter?.activity?.type);
                   const includePoint = r.test(point.type);
+
                   if (
                     includePoint &&
                     (point.parent === null || point.parent === undefined)
@@ -227,6 +229,7 @@ export const getPanelsWithPoints = createSelector(
                     );
                     newPoints.push(activityPoint);
                   }
+
                   return newPoints;
                 }, []);
 
@@ -234,6 +237,7 @@ export const getPanelsWithPoints = createSelector(
                   ...layer,
                   points,
                 };
+
                 return newLayer;
               } else if (layer.type === 'state') {
                 if (layer.chartType === 'line') {
@@ -245,9 +249,11 @@ export const getPanelsWithPoints = createSelector(
                   if (simulationResults && simulationResults.length) {
                     for (const result of simulationResults) {
                       const { name, schema, start, values } = result;
+
                       if (schema.type === 'real') {
                         const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
+
                         if (includeResult) {
                           for (let i = 0; i < values.length; ++i) {
                             const value = values[i];
@@ -280,6 +286,7 @@ export const getPanelsWithPoints = createSelector(
                     points,
                     yAxisId,
                   };
+
                   return newLayer;
                 } else if (layer.chartType === 'x-range') {
                   const points: XRangePoint[] = [];
@@ -288,9 +295,11 @@ export const getPanelsWithPoints = createSelector(
                   if (simulationResults && simulationResults.length) {
                     for (const result of simulationResults) {
                       const { name, schema, start, values } = result;
+
                       if (schema.type === 'variant') {
                         const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
+
                         if (includeResult) {
                           for (let i = 0; i < values.length; ++i) {
                             const { x, y } = values[i];
@@ -313,6 +322,7 @@ export const getPanelsWithPoints = createSelector(
                     points,
                     yAxisId,
                   };
+
                   return newLayer;
                 }
               }
@@ -320,15 +330,18 @@ export const getPanelsWithPoints = createSelector(
               return layer;
             });
 
+            const yAxes: Axis[] = (row.yAxes || []).map(axis => ({
+              ...axis,
+              scaleDomain:
+                axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
+            }));
+
             const newRow: Row = {
               ...row,
               layers,
-              yAxes: (row.yAxes || []).map(axis => ({
-                ...axis,
-                scaleDomain:
-                  axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
-              })),
+              yAxes,
             };
+
             return newRow;
           });
 
@@ -339,6 +352,7 @@ export const getPanelsWithPoints = createSelector(
               rows,
             },
           };
+
           return newPanel;
         }
 

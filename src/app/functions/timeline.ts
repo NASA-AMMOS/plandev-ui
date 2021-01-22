@@ -1,6 +1,5 @@
-import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
-import type { ScaleLinear, ScaleTime } from 'd3-scale';
+import type { ScaleLinear } from 'd3-scale';
 import { scaleLinear } from 'd3-scale';
 import type {
   ConstraintViolation,
@@ -63,23 +62,6 @@ export function getConstraintViolationsWithinTime(
   }
 
   return violations;
-}
-
-export function getTimeFromSvgMousePosition(
-  el: SVGElement | SVGGElement,
-  event: MouseEvent | DragEvent,
-  scale: ScaleTime<number, number>,
-  offsetX: number = 0,
-): { doyTimestamp: string; unixEpochTime: number } {
-  const rect = el.getBoundingClientRect();
-  const position = {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  };
-  const x = position.x - offsetX;
-  const unixEpochTime = scale.invert(x).getTime();
-  const doyTimestamp = getDoyTimestamp(unixEpochTime);
-  return { doyTimestamp, unixEpochTime };
 }
 
 /**
