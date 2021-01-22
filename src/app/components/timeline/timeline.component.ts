@@ -11,6 +11,7 @@ import {
   NgModule,
   OnChanges,
   Output,
+  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
@@ -25,6 +26,7 @@ import {
   Row,
   SavePoint,
   SelectPoint,
+  StringTMap,
   TimeRange,
   UpdatePoint,
   UpdateRow,
@@ -63,7 +65,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
   template: `
     <div #xAxisContainer class="x-axis-container">
       <aerie-timeline-x-axis
-        [constraintViolations]="constraintViolations"
+        [constraintViolations]="xAxisConstraintViolations"
         [drawWidth]="drawWidth"
         [marginLeft]="marginLeft"
         [verticalGuides]="verticalGuides"
@@ -79,7 +81,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
       <aerie-timeline-row
         *ngFor="let row of rows; trackBy: trackByRows"
         [autoAdjustHeight]="row.autoAdjustHeight"
-        [constraintViolations]="constraintViolations"
+        [constraintViolations]="constraintViolationByRowId[row.id]"
         [drawWidth]="drawWidth"
         [height]="row.height"
         [horizontalGuides]="row.horizontalGuides"
@@ -174,9 +176,11 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   xAxisContainer: ElementRef<HTMLDivElement>;
 
   collapsedVerticalGuides: VerticalGuide[];
+  constraintViolationByRowId: StringTMap<ConstraintViolation[]> = {};
   drawWidth: number;
   mouseOverConstraintViolations: MouseOverConstraintViolations;
   mouseOverPoints: MouseOverPoints;
+  xAxisConstraintViolations: ConstraintViolation[] = [];
   xDomainMax: [Date, Date];
   xDomainView: [Date, Date];
   xScaleMax: ScaleTime<number, number>;
@@ -190,8 +194,28 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
     this.draw();
   }
 
-  ngOnChanges() {
-    this.draw();
+  ngOnChanges(changes: SimpleChanges) {
+    let shouldDraw = false;
+
+    if (
+      changes.marginLeft ||
+      changes.marginRight ||
+      changes.maxTimeRange ||
+      changes.rows ||
+      changes.viewTimeRange
+    ) {
+      shouldDraw = true;
+    }
+
+    if (changes.constraintViolations) {
+      // TODO.
+      this.constraintViolationByRowId = {};
+      this.xAxisConstraintViolations = [];
+    }
+
+    if (shouldDraw) {
+      this.draw();
+    }
   }
 
   ngAfterViewChecked() {
