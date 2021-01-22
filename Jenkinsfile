@@ -126,7 +126,6 @@ pipeline {
             error "build archive failed"
           }
         }
-        archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/*.tar.gz'
       }
     }
     stage ('publish') {
