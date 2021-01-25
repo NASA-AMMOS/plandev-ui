@@ -72,13 +72,15 @@ export interface Layer {
   yAxisId?: string;
 }
 
+export type LineCurveType =
+  | 'curveLinear'
+  | 'curveNatural'
+  | 'curveStep'
+  | 'curveStepAfter'
+  | 'curveStepBefore';
+
 export interface LineLayer extends Layer {
-  curveType?:
-    | 'curveLinear'
-    | 'curveNatural'
-    | 'curveStep'
-    | 'curveStepAfter'
-    | 'curveStepBefore';
+  curveType?: LineCurveType;
   points?: LinePoint[];
 }
 

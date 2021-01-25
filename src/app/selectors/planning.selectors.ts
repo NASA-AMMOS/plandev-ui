@@ -12,6 +12,7 @@ import {
   ConstraintViolationListState,
   DecompositionTreeState,
   Layer,
+  LineCurveType,
   LineLayer,
   LinePoint,
   Panel,
@@ -245,6 +246,7 @@ export const getPanelsWithPoints = createSelector(
                   const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
                   let minY = Number.MAX_SAFE_INTEGER;
                   let maxY = Number.MIN_SAFE_INTEGER;
+                  let curveType: LineCurveType = 'curveLinear';
 
                   if (simulationResults && simulationResults.length) {
                     for (const result of simulationResults) {
@@ -253,6 +255,7 @@ export const getPanelsWithPoints = createSelector(
                       if (schema.type === 'real') {
                         const r = new RegExp(layer?.filter?.state?.name);
                         const includeResult = r.test(name);
+                        curveType = 'curveLinear';
 
                         if (includeResult) {
                           for (let i = 0; i < values.length; ++i) {
@@ -283,6 +286,7 @@ export const getPanelsWithPoints = createSelector(
 
                   const newLayer: LineLayer = {
                     ...layer,
+                    curveType,
                     points,
                     yAxisId,
                   };
