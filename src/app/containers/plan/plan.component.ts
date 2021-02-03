@@ -58,6 +58,7 @@ import {
   Panel,
   PanelMenuItem,
   Plan,
+  Row,
   SavePoint,
   SelectPoint,
   StringTMap,
@@ -289,9 +290,10 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(PlanningActions.verticalGuideOpenDialog({ event }));
   }
 
-  onDeleteVerticalGuide(guide: VerticalGuide, timelineId: string) {
+  onDeleteActivityInstance(activityInstanceId: string): void {
+    const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
-      PlanningActions.verticalGuideDelete({ guide, timelineId }),
+      PlanningActions.deleteActivityInstance({ activityInstanceId, planId }),
     );
   }
 
@@ -314,10 +316,13 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onDeleteActivityInstance(activityInstanceId: string): void {
-    const { id: planId } = this.route.snapshot.params;
+  onDeleteRow(row: Row, timelineId: string) {
+    this.store.dispatch(PlanningActions.deleteRow({ row, timelineId }));
+  }
+
+  onDeleteVerticalGuide(guide: VerticalGuide, timelineId: string) {
     this.store.dispatch(
-      PlanningActions.deleteActivityInstance({ activityInstanceId, planId }),
+      PlanningActions.verticalGuideDelete({ guide, timelineId }),
     );
   }
 

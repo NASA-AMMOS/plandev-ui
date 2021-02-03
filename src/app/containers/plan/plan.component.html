@@ -181,7 +181,12 @@
       >
         <mat-icon>more_horiz</mat-icon>
       </button>
+
       <mat-menu #menu="matMenu">
+        <button mat-menu-item [matMenuTriggerFor]="rowsMenu">
+          <mat-icon>calendar_view_day</mat-icon>
+          <span>Rows</span>
+        </button>
         <button mat-menu-item [matMenuTriggerFor]="verticalGuidesMenu">
           <mat-icon>view_column</mat-icon>
           <span>Vertical Guides</span>
@@ -194,6 +199,28 @@
           <mat-icon>{{ item.icon }}</mat-icon>
           <span>{{ item.title }}</span>
         </button>
+      </mat-menu>
+
+      <mat-menu #rowsMenu="matMenu">
+        <button mat-menu-item [matMenuTriggerFor]="rowsDeleteMenu">
+          <mat-icon>delete_forever</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #rowsDeleteMenu="matMenu">
+        <ng-container *ngIf="!panel.timeline?.rows.length">
+          <button mat-menu-item>No Rows Found</button>
+        </ng-container>
+        <ng-container *ngIf="panel.timeline?.rows.length">
+          <button
+            *ngFor="let row of panel.timeline.rows; let i = index"
+            mat-menu-item
+            (click)="onDeleteRow(row, panel.timeline.id)"
+          >
+            <span>Row {{ i }}</span>
+          </button>
+        </ng-container>
       </mat-menu>
 
       <mat-menu #verticalGuidesMenu="matMenu">

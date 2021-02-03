@@ -12,6 +12,7 @@ import {
   DecompositionTreeState,
   HorizontalGuide,
   Plan,
+  Row,
   SimulationResult,
   StringTMap,
   TimeRange,
@@ -99,6 +100,26 @@ export const reducer = createReducer(
   on(PlanningActions.deletePlanSuccess, (state, { id }) => ({
     ...state,
     plans: omit(state.plans, id),
+  })),
+  on(PlanningActions.deleteRow, (state, { row: removedRow, timelineId }) => ({
+    ...state,
+    uiStates: state.uiStates.map(uiState => ({
+      ...uiState,
+      panels: uiState.panels.map(panel => {
+        if (panel.timeline && panel.timeline.id === timelineId) {
+          return {
+            ...panel,
+            timeline: {
+              ...panel.timeline,
+              rows: (panel.timeline.rows || []).filter(
+                (row: Row) => removedRow.id !== row.id,
+              ),
+            },
+          };
+        }
+        return panel;
+      }),
+    })),
   })),
   on(PlanningActions.getAdaptationsSuccess, (state, { adaptations }) => ({
     ...state,

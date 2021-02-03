@@ -9,6 +9,7 @@ import {
   HorizontalGuideEvent,
   Plan,
   PlanDetail,
+  Row,
   SimulationResponse,
   TimeRange,
   UiState,
@@ -80,6 +81,11 @@ export const deletePlan = createAction(
 export const deletePlanSuccess = createAction(
   '[planning] deletePlanSuccess',
   props<{ id: string }>(),
+);
+
+export const deleteRow = createAction(
+  '[planning] deleteRow',
+  props<{ row: Row; timelineId: string }>(),
 );
 
 export const getAdaptationsSuccess = createAction(
