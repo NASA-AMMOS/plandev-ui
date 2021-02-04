@@ -183,8 +183,24 @@ export interface XAxisTick {
   yearDay: string;
 }
 
+/**
+ * @see https://github.com/d3/d3-scale-chromatic#categorical
+ */
+export type XRangeLayerColorScheme =
+  | 'schemeAccent'
+  | 'schemeCategory10'
+  | 'schemeDark2'
+  | 'schemePaired'
+  | 'schemePastel1'
+  | 'schemePastel2'
+  | 'schemeSet1'
+  | 'schemeSet2'
+  | 'schemeSet3'
+  | 'schemeTableau10'
+  | string[];
+
 export interface XRangeLayer extends Layer {
-  color?: string;
+  colorScheme?: XRangeLayerColorScheme;
   points?: XRangePoint[];
 }
 

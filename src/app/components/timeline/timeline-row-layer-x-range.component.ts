@@ -13,13 +13,26 @@ import {
   ViewChild,
 } from '@angular/core';
 import { quadtree, Quadtree } from 'd3-quadtree';
-import { ScaleTime } from 'd3-scale';
+import { scaleOrdinal, ScaleTime } from 'd3-scale';
+import {
+  schemeAccent,
+  schemeCategory10,
+  schemeDark2,
+  schemePaired,
+  schemePastel1,
+  schemePastel2,
+  schemeSet1,
+  schemeSet2,
+  schemeSet3,
+  schemeTableau10,
+} from 'd3-scale-chromatic';
 import { searchQuadtreeRect, tick } from '../../functions';
 import {
   MouseOverPoints,
   QuadtreeRect,
   StringTMap,
   TimeRange,
+  XRangeLayerColorScheme,
   XRangePoint,
 } from '../../types';
 
@@ -49,7 +62,7 @@ import {
 export class TimelineRowLayerXRangeComponent
   implements AfterViewInit, OnChanges {
   @Input()
-  color: string;
+  colorScheme: XRangeLayerColorScheme | undefined;
 
   @Input()
   drawHeight: number;
@@ -124,6 +137,44 @@ export class TimelineRowLayerXRangeComponent
     return Math.min(Math.max(x, 0), this.drawWidth);
   }
 
+  colorScale() {
+    if (this.colorSchemeIsArray()) {
+      return scaleOrdinal(this.colorScheme);
+    }
+
+    switch (this.colorScheme) {
+      case 'schemeAccent':
+        return scaleOrdinal(schemeAccent);
+      case 'schemeCategory10':
+        return scaleOrdinal(schemeCategory10);
+      case 'schemeDark2':
+        return scaleOrdinal(schemeDark2);
+      case 'schemePaired':
+        return scaleOrdinal(schemePaired);
+      case 'schemePastel1':
+        return scaleOrdinal(schemePastel1);
+      case 'schemePastel2':
+        return scaleOrdinal(schemePastel2);
+      case 'schemeSet1':
+        return scaleOrdinal(schemeSet1);
+      case 'schemeSet2':
+        return scaleOrdinal(schemeSet2);
+      case 'schemeSet3':
+        return scaleOrdinal(schemeSet3);
+      case 'schemeTableau10':
+        return scaleOrdinal(schemeTableau10);
+      default:
+        return scaleOrdinal(schemeTableau10);
+    }
+  }
+
+  colorSchemeIsArray() {
+    if (Array.isArray(this.colorScheme)) {
+      return this.colorScheme.every(i => typeof i === 'string');
+    }
+    return false;
+  }
+
   async draw() {
     if (this.ctx) {
       await tick();
@@ -141,6 +192,7 @@ export class TimelineRowLayerXRangeComponent
       this.visiblePointsById = {};
 
       this.maxXWidth = Number.MIN_SAFE_INTEGER;
+      const colorScale = this.colorScale();
 
       for (let i = 0; i < this.points.length; ++i) {
         const point = this.points[i];
@@ -156,7 +208,8 @@ export class TimelineRowLayerXRangeComponent
           const { id } = point;
           this.visiblePointsById[id] = point;
 
-          this.ctx.fillStyle = this?.color || point?.color || '#abcbff';
+          const labelText = this.getLabelText(point);
+          this.ctx.fillStyle = colorScale(labelText);
           const rect = new Path2D();
           rect.rect(xStart, y, xWidth, this.drawHeight);
           this.ctx.fill(rect);
@@ -174,18 +227,22 @@ export class TimelineRowLayerXRangeComponent
             this.maxXWidth = xWidth;
           }
 
-          const { labelText, textHeight, textWidth } = this.setLabelContext(
-            point,
-          );
-          this.ctx.fillText(
-            labelText,
-            xStart + xWidth / 2 - textWidth / 2,
-            this.drawHeight / 2 + textHeight / 2,
-            textWidth,
-          );
+          const { textHeight, textWidth } = this.setLabelContext(point);
+          if (textWidth < xWidth) {
+            this.ctx.fillText(
+              labelText,
+              xStart + xWidth / 2 - textWidth / 2,
+              this.drawHeight / 2 + textHeight / 2,
+              textWidth,
+            );
+          }
         }
       }
     }
+  }
+
+  getLabelText(point: XRangePoint) {
+    return point.label?.text || '';
   }
 
   onMousemove(e: MouseEvent | undefined): void {
@@ -216,7 +273,7 @@ export class TimelineRowLayerXRangeComponent
     const fontFace = point.label?.fontFace || 'Helvetica Neue';
     this.ctx.fillStyle = point.label?.color || '#000000';
     this.ctx.font = `${fontSize}px ${fontFace}`;
-    const labelText = point.label?.text || '';
+    const labelText = this.getLabelText(point);
     const textMetrics = this.ctx.measureText(labelText);
     const textWidth = textMetrics.width;
     const textHeight =
