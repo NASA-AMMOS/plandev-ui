@@ -39,7 +39,7 @@ pipeline {
     disableConcurrentBuilds()
   }
   agent {
-    label 'San-clemente'
+    label 'CAE-Jenkins2-DH-Agents-Linux'
   }
   environment {
     ARTIFACT_TAG = "${GIT_BRANCH}"
@@ -54,173 +54,171 @@ pipeline {
     DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${DOCKER_TAG}"
   }
   stages {
-    stage ('build') {
-      steps {
-        withCredentials([
-          usernamePassword(
-            credentialsId: '34c6de8f-197d-46e5-aeb3-2153697dcb9c',
-            passwordVariable: 'PASS',
-            usernameVariable: 'EMAIL'
-          )
-        ]) {
-          script {
-            setBuildStatus("Building & Testing", "pending", "jenkins/branch-check");
-            def statusCode = sh returnStatus: true, script:
-            """
-            # Don't echo commands by default
-            set +x
-
-            # Setup ENV
-            export PATH=/usr/local/bin:/usr/bin
-            export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib
-
-            # Setup NVM/Node.js
-            export NVM_DIR="\$HOME/.nvm"
-            if [ ! -d \$NVM_DIR ]; then
-              curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
-            fi
-            [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
-            nvm install v12.14.1
-
-            # Setup NPM to fetch from Artifactory
-            npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
-            npm config set email=$EMAIL
-            npm config set always-auth=true
-            npm config set _auth=$PASS
-
-            # Install dependencies, test, and build
-            rm -rf node_modules
-            rm -rf package-lock.json
-            npm install
-            npm run version
-            # npm test # Disable for now until we have a more robust build system.
-            npm run build:prod
-
-            # Cloc, then print size of dist folder
-            npm run cloc
-            du -sh dist
-            du -sh dist/*
-
-            # Build Docker image
-            docker build -t "${DOCKER_TAG_ARTIFACTORY}" --rm .
-            """
-            if (statusCode > 0) {
-              error "build failed"
-            }
-          }
+    stage ('Enter Docker Container') {
+      agent {
+        docker {
+          reuseNode true
+          registryUrl 'https://cae-artifactory.jpl.nasa.gov:16001'
+          registryCredentialsId 'Artifactory-credential'
+          image 'gov/nasa/jpl/ammos/mpsa/aerie/jenkins/aerie-ui:latest'
+          alwaysPull true
+          args '-u root --mount type=bind,source=${WORKSPACE},target=/home --workdir=/home -v /var/run/docker.sock:/var/run/docker.sock'
         }
       }
-    }
-    stage ('build archive') {
-      when {
-        expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
-      }
-      steps {
-        script {
-          def statusCode = sh returnStatus: true, script:
-          """
-          cd dist
-          tar -czf aerie-ui-${GIT_BRANCH}.tar.gz `ls -A`
-          """
-          if (statusCode > 0) {
-            error "build archive failed"
-          }
-        }
-      }
-    }
-    stage ('publish') {
-      when {
-        expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
-      }
-      steps {
-        script {
-          try {
-            def server = Artifactory.newServer url: 'https://cae-artifactory.jpl.nasa.gov/artifactory', credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86'
-            def uploadSpec =
-            """{
-              "files": [
-                {
-                  "pattern": "dist/aerie-ui-*.tar.gz",
-                  "target": "${getPublishPath()}",
-                  "recursive": false
-                }
-              ]
-            }"""
-            def buildInfo = server.upload spec: uploadSpec
-            server.publishBuildInfo buildInfo
-          } catch (Exception e) {
-            println("Publishing to Artifactory failed with exception: ${e.message}")
-            currentBuild.result = 'UNSTABLE'
-          }
-        }
-        withCredentials([
-          usernamePassword(
-            credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86',
-            passwordVariable: 'DOCKER_LOGIN_PASSWORD',
-            usernameVariable: 'DOCKER_LOGIN_USERNAME'
-          )
-        ]) {
-          script {
-            def statusCode = sh returnStatus: true, script:
-            """
-            echo "${DOCKER_LOGIN_PASSWORD}" | docker login -u "${DOCKER_LOGIN_USERNAME}" ${ARTIFACTORY_URL} --password-stdin
-            docker push "${DOCKER_TAG_ARTIFACTORY}"
-            docker logout ${ARTIFACTORY_URL}
-            """
-            if (statusCode > 0) {
-              error "publish failed"
-            }
-          }
-        }
-      }
-    }
-    stage('deploy') {
-      when {
-        expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
-      }
-      steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'mpsa-aws-test-account']]) {
-          script{
-            echo 'Logging out docker'
-            sh 'docker logout || true'
-
-            echo 'Logging into ECR using aws cli version 2'
-            sh ('aws ecr get-login-password | docker login --username AWS --password-stdin https://$AWS_ECR')
-
-            docker.withRegistry(AWS_ECR) {
-              echo "Tagging docker image to point to AWS ECR"
+      stages {
+        stage ('build') {
+          steps {
+            withCredentials([
+              usernamePassword(
+                credentialsId: '34c6de8f-197d-46e5-aeb3-2153697dcb9c',
+                passwordVariable: 'PASS',
+                usernameVariable: 'EMAIL'
+              )
+            ]) {
+              script { setBuildStatus("Building & Testing", "pending", "jenkins/branch-check"); }
               sh '''
-              docker tag ${DOCKER_TAG_ARTIFACTORY} ${DOCKER_TAG_AWS}
-              '''
-              echo 'Pushing image to ECR'
-              sh "docker push ${DOCKER_TAG_AWS}"
+              # Don't echo commands by default
+              set +x
 
-              sleep 5
-              echo "Restarting the task in ECS cluster"
+              # Setup ENV
+              export PATH=/usr/local/bin:/usr/bin
+              export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib
+
+              # Setup NVM/Node.js
+              export NVM_DIR="\$HOME/.nvm"
+              if [ ! -d \$NVM_DIR ]; then
+                curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+              fi
+              [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
+              nvm install v12.14.1
+
+              # Setup NPM to fetch from Artifactory
+              npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
+              npm config set email=$EMAIL
+              npm config set always-auth=true
+              npm config set _auth=$PASS
+
+              # Install dependencies, test, and build
+              rm -rf node_modules
+              rm -rf package-lock.json
+              npm install
+              npm run version
+              # npm test # Disable for now until we have a more robust build system.
+              npm run build:prod
+
+              # Cloc, then print size of dist folder
+              npm run cloc
+              du -sh dist
+              du -sh dist/*
+
+              # Build Docker image
+              docker build -t "${DOCKER_TAG_ARTIFACTORY}" --rm .
+              '''
+            }
+          }
+        }
+        stage ('build archive') {
+          when {
+            expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
+          }
+          steps {
+            sh '''
+            cd dist
+            tar -czf aerie-ui-${GIT_BRANCH}.tar.gz `ls -A`
+            '''
+          }
+        }
+        stage ('publish') {
+          when {
+            expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
+          }
+          steps {
+            script {
               try {
-                sh '''
-                aws ecs stop-task --cluster "${AWS_CLUSTER}" --task $(aws ecs list-tasks --cluster "${AWS_CLUSTER}" --output text --query taskArns[0])
-                '''
+                def server = Artifactory.newServer url: 'https://cae-artifactory.jpl.nasa.gov/artifactory', credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86'
+                def uploadSpec =
+                """{
+                  "files": [
+                    {
+                      "pattern": "dist/aerie-ui-*.tar.gz",
+                      "target": "${getPublishPath()}",
+                      "recursive": false
+                    }
+                  ]
+                }"""
+                def buildInfo = server.upload spec: uploadSpec
+                server.publishBuildInfo buildInfo
               } catch (Exception e) {
-                echo "Restarting the task failed"
-                echo e.getMessage()
+                println("Publishing to Artifactory failed with exception: ${e.message}")
+                currentBuild.result = 'UNSTABLE'
+              }
+            }
+            withCredentials([
+              usernamePassword(
+                credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86',
+                passwordVariable: 'DOCKER_LOGIN_PASSWORD',
+                usernameVariable: 'DOCKER_LOGIN_USERNAME'
+              )
+            ]) {
+              sh '''
+              echo "${DOCKER_LOGIN_PASSWORD}" | docker login -u "${DOCKER_LOGIN_USERNAME}" ${ARTIFACTORY_URL} --password-stdin
+              docker push "${DOCKER_TAG_ARTIFACTORY}"
+              docker logout ${ARTIFACTORY_URL}
+              '''
+            }
+          }
+        }
+        stage('deploy') {
+          when {
+            expression { GIT_BRANCH ==~ /(develop|staging|release-.*)/ }
+          }
+          steps {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'mpsa-aws-test-account']]) {
+              script{
+                echo 'Logging out docker'
+                sh 'docker logout || true'
+
+                echo 'Logging into ECR using aws cli version 2'
+                sh ('aws ecr get-login-password | docker login --username AWS --password-stdin https://$AWS_ECR')
+
+                docker.withRegistry(AWS_ECR) {
+                  echo "Tagging docker image to point to AWS ECR"
+                  sh '''
+                  docker tag ${DOCKER_TAG_ARTIFACTORY} ${DOCKER_TAG_AWS}
+                  '''
+                  echo 'Pushing image to ECR'
+                  sh "docker push ${DOCKER_TAG_AWS}"
+
+                  sleep 5
+                  echo "Restarting the task in ECS cluster"
+                  try {
+                    sh '''
+                    aws ecs stop-task --cluster "${AWS_CLUSTER}" --task $(aws ecs list-tasks --cluster "${AWS_CLUSTER}" --output text --query taskArns[0])
+                    '''
+                  } catch (Exception e) {
+                    echo "Restarting the task failed"
+                    echo e.getMessage()
+                  }
+                }
               }
             }
           }
         }
       }
-     }
+      post {
+        cleanup {
+          cleanWs()
+          deleteDir()
+        }
+      }
+    }
   }
   post {
     always {
       sh "docker rmi ${DOCKER_TAG_ARTIFACTORY} || true"
       sh "docker rmi ${DOCKER_TAG_AWS} || true"
-
-      echo 'Cleaning up images'
-      sh "docker image prune -f"
-
-      echo 'Logging out docker'
-      sh 'docker logout || true'
+      sh "docker image prune -f || true"
+      sh "docker logout || true"
 
       setBuildStatus("Build ${currentBuild.currentResult}", "${currentBuild.currentResult}", "jenkins/branch-check")
     }
