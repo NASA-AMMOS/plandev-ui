@@ -16,9 +16,8 @@ export function getPanelsText(panels: Panel[]): string {
                 (layer: ActivityLayer | LineLayer | XRangeLayer) => {
                   layer = { ...layer };
 
-                  if (layer.points) {
-                    delete layer.points;
-                  }
+                  delete layer.points;
+                  delete (layer as XRangeLayer).domain;
 
                   return layer;
                 },
