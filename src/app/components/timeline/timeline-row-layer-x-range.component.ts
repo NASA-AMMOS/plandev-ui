@@ -231,7 +231,6 @@ export class TimelineRowLayerXRangeComponent
           const rect = new Path2D();
           rect.rect(xStart, y, xWidth, this.drawHeight);
           this.ctx.fill(rect);
-          this.ctx.stroke(rect);
 
           this.quadtree.add({
             height: this.drawHeight,
