@@ -295,6 +295,7 @@ export const getPanelsWithPoints = createSelector(
                 } else if (layer.chartType === 'x-range') {
                   const points: XRangePoint[] = [];
                   const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
+                  let domain = null;
 
                   if (simulationResults && simulationResults.length) {
                     for (const result of simulationResults) {
@@ -305,6 +306,7 @@ export const getPanelsWithPoints = createSelector(
                         const includeResult = r.test(name);
 
                         if (includeResult) {
+                          domain = schema.variants.map(({ label }) => label);
                           for (let i = 0; i < values.length; ++i) {
                             const { x, y } = values[i];
                             points.push({
@@ -323,6 +325,7 @@ export const getPanelsWithPoints = createSelector(
 
                   const newLayer: XRangeLayer = {
                     ...layer,
+                    domain,
                     points,
                     yAxisId,
                   };

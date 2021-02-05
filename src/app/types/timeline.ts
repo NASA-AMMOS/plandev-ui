@@ -201,6 +201,7 @@ export type XRangeLayerColorScheme =
 
 export interface XRangeLayer extends Layer {
   colorScheme?: XRangeLayerColorScheme;
+  domain?: string[];
   points?: XRangePoint[];
 }
 

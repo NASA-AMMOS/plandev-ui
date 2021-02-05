@@ -65,6 +65,9 @@ export class TimelineRowLayerXRangeComponent
   colorScheme: XRangeLayerColorScheme | undefined;
 
   @Input()
+  domain: string[] | undefined;
+
+  @Input()
   drawHeight: number;
 
   @Input()
@@ -138,14 +141,7 @@ export class TimelineRowLayerXRangeComponent
   }
 
   colorScale() {
-    const labels: StringTMap<string> = {};
-    for (const point of this.points) {
-      const label = this.getLabelText(point);
-      if (label !== '') {
-        labels[label] = label;
-      }
-    }
-    const domain = Object.values(labels);
+    const domain = this.domain || [];
 
     if (this.colorSchemeIsArray()) {
       return scaleOrdinal(this.colorScheme).domain(domain);

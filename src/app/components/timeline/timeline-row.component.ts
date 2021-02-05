@@ -169,6 +169,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
           <aerie-timeline-row-layer-x-range
             *ngIf="layer.chartType === 'x-range'"
             [colorScheme]="layer.colorScheme"
+            [domain]="layer.domain"
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
