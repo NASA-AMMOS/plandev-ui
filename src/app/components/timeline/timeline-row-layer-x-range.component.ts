@@ -86,6 +86,9 @@ export class TimelineRowLayerXRangeComponent
   mouseout: MouseEvent;
 
   @Input()
+  opacity: number | undefined;
+
+  @Input()
   points: XRangePoint[] | undefined;
 
   @Input()
@@ -186,6 +189,7 @@ export class TimelineRowLayerXRangeComponent
       this.ctx.resetTransform();
       this.ctx.scale(this.dpr, this.dpr);
       this.ctx.clearRect(0, 0, this.drawWidth, this.drawHeight);
+      this.ctx.globalAlpha = this.opacity || 1.0;
 
       this.quadtree = quadtree<QuadtreeRect>()
         .x(p => p.x)

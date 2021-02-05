@@ -176,6 +176,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [maxTimeRange]="maxTimeRange"
             [mousemove]="mousemove"
             [mouseout]="mouseout"
+            [opacity]="layer.opacity"
             [points]="layer.points"
             [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
