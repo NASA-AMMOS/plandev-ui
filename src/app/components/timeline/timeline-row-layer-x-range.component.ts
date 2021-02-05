@@ -138,33 +138,42 @@ export class TimelineRowLayerXRangeComponent
   }
 
   colorScale() {
+    const labels: StringTMap<string> = {};
+    for (const point of this.points) {
+      const label = this.getLabelText(point);
+      if (label !== '') {
+        labels[label] = label;
+      }
+    }
+    const domain = Object.values(labels);
+
     if (this.colorSchemeIsArray()) {
-      return scaleOrdinal(this.colorScheme);
+      return scaleOrdinal(this.colorScheme).domain(domain);
     }
 
     switch (this.colorScheme) {
       case 'schemeAccent':
-        return scaleOrdinal(schemeAccent);
+        return scaleOrdinal(schemeAccent).domain(domain);
       case 'schemeCategory10':
-        return scaleOrdinal(schemeCategory10);
+        return scaleOrdinal(schemeCategory10).domain(domain);
       case 'schemeDark2':
-        return scaleOrdinal(schemeDark2);
+        return scaleOrdinal(schemeDark2).domain(domain);
       case 'schemePaired':
-        return scaleOrdinal(schemePaired);
+        return scaleOrdinal(schemePaired).domain(domain);
       case 'schemePastel1':
-        return scaleOrdinal(schemePastel1);
+        return scaleOrdinal(schemePastel1).domain(domain);
       case 'schemePastel2':
-        return scaleOrdinal(schemePastel2);
+        return scaleOrdinal(schemePastel2).domain(domain);
       case 'schemeSet1':
-        return scaleOrdinal(schemeSet1);
+        return scaleOrdinal(schemeSet1).domain(domain);
       case 'schemeSet2':
-        return scaleOrdinal(schemeSet2);
+        return scaleOrdinal(schemeSet2).domain(domain);
       case 'schemeSet3':
-        return scaleOrdinal(schemeSet3);
+        return scaleOrdinal(schemeSet3).domain(domain);
       case 'schemeTableau10':
-        return scaleOrdinal(schemeTableau10);
+        return scaleOrdinal(schemeTableau10).domain(domain);
       default:
-        return scaleOrdinal(schemeTableau10);
+        return scaleOrdinal(schemeTableau10).domain(domain);
     }
   }
 
@@ -196,7 +205,16 @@ export class TimelineRowLayerXRangeComponent
 
       for (let i = 0; i < this.points.length; ++i) {
         const point = this.points[i];
-        const nextPoint = this.points[i + 1];
+
+        // Scan to the next point with a different label than the current point.
+        let j = i + 1;
+        let nextPoint = this.points[j];
+        while (nextPoint && nextPoint.label.text === point.label.text) {
+          j = j + 1;
+          nextPoint = this.points[j];
+        }
+        i = j - 1; // Minus since the loop auto increments i at the end of the block.
+
         const xStart = this.clamp(Math.floor(this.xScaleView(point.x)));
         const xEnd = nextPoint
           ? this.clamp(Math.floor(this.xScaleView(nextPoint.x)))
