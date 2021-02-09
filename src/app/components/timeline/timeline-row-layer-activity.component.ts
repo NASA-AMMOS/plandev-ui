@@ -128,22 +128,22 @@ export class TimelineRowLayerActivityComponent
   xScaleView: ScaleTime<number, number>;
 
   @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
+  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
+  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
 
   @Output()
-  mouseSelectPoints: EventEmitter<MouseSelectPoints> = new EventEmitter<MouseSelectPoints>();
+  mouseSelectPoints: EventEmitter<MouseSelectPoints> = new EventEmitter();
 
   @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
+  savePoint: EventEmitter<SavePoint> = new EventEmitter();
 
   @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
 
   @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter<UpdateRow>();
+  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;

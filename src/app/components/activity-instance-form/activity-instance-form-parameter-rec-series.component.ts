@@ -122,7 +122,7 @@ export class ActivityInstanceFormParameterRecSeriesComponent
   parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   expanded = false;
   indices = 1;

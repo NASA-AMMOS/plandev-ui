@@ -69,7 +69,7 @@ export class ActivityInstanceFormParameterBaseComponent {
   parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 }
 
 @NgModule({

@@ -30,10 +30,10 @@ export class TableComponent implements OnChanges {
   selectedElement: any | null = null;
 
   @Output()
-  deleteElement: EventEmitter<string> = new EventEmitter<string>();
+  deleteElement: EventEmitter<string> = new EventEmitter();
 
   @Output()
-  selectElement: EventEmitter<any> = new EventEmitter<any>();
+  selectElement: EventEmitter<any> = new EventEmitter();
 
   columnsToDisplay: string[] = [...this.columns];
   onContextMenu = contextMenu;

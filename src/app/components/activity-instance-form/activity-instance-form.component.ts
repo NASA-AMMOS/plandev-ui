@@ -63,16 +63,16 @@ export class ActivityInstanceFormComponent
   type: 'create' | 'update' = 'create';
 
   @Output()
-  cancel: EventEmitter<void> = new EventEmitter<void>();
+  cancel: EventEmitter<void> = new EventEmitter();
 
   @Output()
-  create: EventEmitter<CreateActivityInstance> = new EventEmitter<CreateActivityInstance>();
+  create: EventEmitter<CreateActivityInstance> = new EventEmitter();
 
   @Output()
-  delete: EventEmitter<string> = new EventEmitter<string>();
+  delete: EventEmitter<string> = new EventEmitter();
 
   @Output()
-  update: EventEmitter<UpdateActivityInstance> = new EventEmitter<UpdateActivityInstance>();
+  update: EventEmitter<UpdateActivityInstance> = new EventEmitter();
 
   isChild: boolean;
   parameters: ActivityInstanceFormParameter[];

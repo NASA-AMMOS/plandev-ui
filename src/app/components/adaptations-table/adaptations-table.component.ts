@@ -21,10 +21,10 @@ export class AdaptationsTableComponent {
   adaptations: Adaptation[] = [];
 
   @Output()
-  createPlan: EventEmitter<string> = new EventEmitter<string>();
+  createPlan: EventEmitter<string> = new EventEmitter();
 
   @Output()
-  deleteAdaptation: EventEmitter<string> = new EventEmitter<string>();
+  deleteAdaptation: EventEmitter<string> = new EventEmitter();
 
   displayedColumns: string[] = ['id', 'name', 'version', 'mission', 'owner'];
   onContextMenu = contextMenu;

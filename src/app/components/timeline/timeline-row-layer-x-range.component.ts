@@ -98,7 +98,7 @@ export class TimelineRowLayerXRangeComponent
   xScaleView: ScaleTime<number, number>;
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
+  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;

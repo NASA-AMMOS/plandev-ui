@@ -268,40 +268,40 @@ export class TimelineRowComponent
   yAxes: Axis[] | undefined;
 
   @Output()
-  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
+  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
-  deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
+  deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
 
   @Output()
-  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter<MouseOverConstraintViolations>();
+  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
 
   @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter<MouseOverPoints>();
+  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
 
   @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
+  savePoint: EventEmitter<SavePoint> = new EventEmitter();
 
   @Output()
-  selectPoint: EventEmitter<SelectPoint> = new EventEmitter<SelectPoint>();
+  selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
 
   @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
   updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
 
   @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
 
   @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter<UpdateRow>();
+  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
 
   @ViewChild('overlay', { static: true })
   overlay: ElementRef<SVGElement>;

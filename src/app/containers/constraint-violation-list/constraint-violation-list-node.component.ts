@@ -160,7 +160,7 @@ export class ConstraintViolationListNodeComponent {
   constraintViolationListState: ConstraintViolationListState;
 
   @Output()
-  selectWindow: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
+  selectWindow: EventEmitter<TimeRange> = new EventEmitter();
 
   constructor(private store: Store<RootState>) {}
 

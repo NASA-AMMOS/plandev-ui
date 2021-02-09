@@ -145,37 +145,37 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   viewTimeRange: TimeRange | undefined;
 
   @Output()
-  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter<CreatePoint>();
+  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
-  deletePoint: EventEmitter<DeletePoint> = new EventEmitter<DeletePoint>();
+  deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
 
   @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter<SavePoint>();
+  savePoint: EventEmitter<SavePoint> = new EventEmitter();
 
   @Output()
-  selectPoint: EventEmitter<SelectPoint> = new EventEmitter<SelectPoint>();
+  selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
 
   @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
 
   @Output()
   updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
 
   @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
+  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
 
   @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter<UpdateRow>();
+  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
 
   @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
+  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
   @ViewChild('rowContainer', { static: true })
   rowContainer: ElementRef<HTMLDivElement>;

@@ -174,12 +174,10 @@ export class TimelineXAxisComponent {
   xTicksView: XAxisTick[] = [];
 
   @Output()
-  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter<
-    VerticalGuide[]
-  >();
+  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter();
 
   @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
+  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
   axisRowYOffset = 55;
   constraintViolationsRowYOffset = 20;

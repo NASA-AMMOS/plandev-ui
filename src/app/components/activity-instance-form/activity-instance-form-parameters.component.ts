@@ -69,7 +69,7 @@ export class ActivityInstanceFormParametersComponent {
   parameters: ActivityInstanceFormParameter[] | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   trackByParameters(_: number, parameter: ActivityInstanceFormParameter) {
     return parameter.name;

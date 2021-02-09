@@ -21,10 +21,10 @@ export class PlansTableComponent {
   plans: Plan[] = [];
 
   @Output()
-  deletePlan: EventEmitter<string> = new EventEmitter<string>();
+  deletePlan: EventEmitter<string> = new EventEmitter();
 
   @Output()
-  openPlan: EventEmitter<string> = new EventEmitter<string>();
+  openPlan: EventEmitter<string> = new EventEmitter();
 
   displayedColumns: string[] = [
     'name',

@@ -55,7 +55,7 @@ export class TimelineXAxisBrushComponent implements OnChanges {
   yOffset = 0;
 
   @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter<TimeRange>();
+  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
   @ViewChild('g', { static: true })
   g: ElementRef<SVGGElement>;

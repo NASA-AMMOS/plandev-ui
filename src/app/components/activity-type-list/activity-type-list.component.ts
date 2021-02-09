@@ -23,7 +23,7 @@ export class ActivityTypeListComponent implements OnChanges {
   activityTypes: ActivityType[] = [];
 
   @Output()
-  selectActivityType: EventEmitter<ActivityType> = new EventEmitter<ActivityType>();
+  selectActivityType: EventEmitter<ActivityType> = new EventEmitter();
 
   filteredActivityTypes: ActivityType[] = [];
   searchText = '';

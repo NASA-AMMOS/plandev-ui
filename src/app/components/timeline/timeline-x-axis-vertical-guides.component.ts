@@ -42,9 +42,7 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
   xScaleView: ScaleTime<number, number>;
 
   @Output()
-  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter<
-    VerticalGuide[]
-  >();
+  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter();
 
   @ViewChild('g', { static: true })
   g: ElementRef<SVGGElement>;

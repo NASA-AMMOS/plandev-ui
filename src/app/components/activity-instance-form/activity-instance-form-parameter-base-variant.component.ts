@@ -45,7 +45,7 @@ export class ActivityInstanceFormParameterBaseVariantComponent {
   parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   onParameterChange(change: MatSelectChange) {
     const { value: newValue } = change;

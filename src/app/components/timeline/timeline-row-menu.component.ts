@@ -124,13 +124,13 @@ export class TimelineRowMenuComponent {
   layers: Layer[] | undefined;
 
   @Output()
-  createHorizontalGuide: EventEmitter<void> = new EventEmitter<void>();
+  createHorizontalGuide: EventEmitter<void> = new EventEmitter();
 
   @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter<HorizontalGuide>();
+  deleteHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter();
 
   @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter<HorizontalGuide>();
+  updateHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter();
 
   @Output()
   updateLayer: EventEmitter<Layer> = new EventEmitter();

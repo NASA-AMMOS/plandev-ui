@@ -53,7 +53,7 @@ export class ActivityInstanceFormParameterBaseInputComponent {
   type: 'number' | 'text' = 'text';
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   onParameterChange(event: Event) {
     const { value, valueAsNumber } = event.target as HTMLInputElement;

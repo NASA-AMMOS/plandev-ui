@@ -36,7 +36,7 @@ export class ActivityInstanceFormParameterRecComponent
   parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   component: ComponentRef<SeriesComponent | StructComponent> | null = null;
   subs = new SubSink();

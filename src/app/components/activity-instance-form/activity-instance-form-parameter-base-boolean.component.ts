@@ -35,7 +35,7 @@ export class ActivityInstanceFormParameterBaseBooleanComponent {
   parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter<ActivityInstanceFormParameterChange>();
+  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
 
   onParameterChange(change: MatCheckboxChange) {
     const { checked: newValue } = change;

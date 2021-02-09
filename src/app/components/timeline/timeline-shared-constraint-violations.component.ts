@@ -52,7 +52,7 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
   xScaleView: ScaleTime<number, number>;
 
   @Output()
-  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter<MouseOverConstraintViolations>();
+  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
 
   @ViewChild('g', { static: true })
   g: ElementRef<SVGGElement>;
