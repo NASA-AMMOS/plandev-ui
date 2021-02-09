@@ -55,6 +55,7 @@ import {
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
+  LayerEvent,
   Panel,
   PanelMenuItem,
   Plan,
@@ -398,6 +399,10 @@ export class PlanComponent implements OnDestroy {
 
   onUpdateHorizontalGuide(event: HorizontalGuideEvent): void {
     this.store.dispatch(PlanningActions.horizontalGuideOpenDialog({ event }));
+  }
+
+  onUpdateLayer(event: LayerEvent): void {
+    this.store.dispatch(PlanningActions.layerOpenDialog({ event }));
   }
 
   onUpdatePoint(event: UpdatePoint): void {

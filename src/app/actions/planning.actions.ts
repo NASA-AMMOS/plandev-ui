@@ -7,6 +7,8 @@ import {
   CreatePlan,
   HorizontalGuide,
   HorizontalGuideEvent,
+  Layer,
+  LayerEvent,
   Plan,
   PlanDetail,
   Row,
@@ -121,6 +123,16 @@ export const horizontalGuideDelete = createAction(
 export const horizontalGuideUpdate = createAction(
   '[planning] horizontalGuideUpdate',
   props<{ guide: HorizontalGuide; rowId: string }>(),
+);
+
+export const layerOpenDialog = createAction(
+  '[planning] layerOpenDialog',
+  props<{ event: LayerEvent }>(),
+);
+
+export const layerUpdate = createAction(
+  '[planning] layerUpdate',
+  props<{ layer: Layer; rowId: string }>(),
 );
 
 export const restoreViewTimeRange = createAction(

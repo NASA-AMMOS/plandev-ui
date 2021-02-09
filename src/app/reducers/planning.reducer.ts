@@ -237,6 +237,40 @@ export const reducer = createReducer(
       })),
     }),
   ),
+  on(PlanningActions.layerUpdate, (state, { layer: updatedLayer, rowId }) => ({
+    ...state,
+    uiStates: state.uiStates.map(uiState => ({
+      ...uiState,
+      panels: uiState.panels.map(panel => {
+        if (panel.timeline) {
+          return {
+            ...panel,
+            timeline: {
+              ...panel.timeline,
+              rows: panel.timeline.rows.map(row => {
+                if (row.id === rowId) {
+                  return {
+                    ...row,
+                    layers: (row.layers || []).map(layer => {
+                      if (layer.id === updatedLayer.id) {
+                        return {
+                          ...layer,
+                          ...updatedLayer,
+                        };
+                      }
+                      return layer;
+                    }),
+                  };
+                }
+                return row;
+              }),
+            },
+          };
+        }
+        return panel;
+      }),
+    })),
+  })),
   on(PlanningActions.restoreViewTimeRange, state => ({
     ...state,
     viewTimeRange: {

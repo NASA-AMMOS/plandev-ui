@@ -21,6 +21,7 @@ import {
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
+  LayerEvent,
   MouseOverConstraintViolations,
   MouseOverPoints,
   Row,
@@ -106,6 +107,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         (savePoint)="savePoint.emit($event)"
         (selectPoint)="selectPoint.emit($event)"
         (updateHorizontalGuide)="updateHorizontalGuide.emit($event)"
+        (updateLayer)="updateLayer.emit($event)"
         (updatePoint)="updatePoint.emit($event)"
         (updateRow)="updateRow.emit($event)"
       ></aerie-timeline-row>
@@ -120,6 +122,9 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
 export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input()
   constraintViolations: ConstraintViolation[] = [];
+
+  @Input()
+  id: string;
 
   @Input()
   marginLeft = 100;
@@ -159,6 +164,9 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   @Output()
   updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+
+  @Output()
+  updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
 
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();

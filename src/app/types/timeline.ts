@@ -72,6 +72,12 @@ export interface Layer {
   yAxisId?: string;
 }
 
+export interface LayerEvent {
+  layer?: Layer;
+  mode: 'create' | 'edit';
+  rowId: string;
+}
+
 export type LineCurveType =
   | 'curveLinear'
   | 'curveNatural'

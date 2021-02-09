@@ -11,6 +11,7 @@ import {
   ConfirmDialogComponent,
   HorizontalGuideDialogComponent,
 } from '../components';
+import { LayerDialogComponent } from '../components/layer-dialog/layer-dialog.component';
 import { VerticalGuideDialogComponent } from '../components/vertical-guide-dialog/vertical-guide-dialog.component';
 import { ApiService } from '../services';
 import {
@@ -321,6 +322,22 @@ export class PlanningEffects {
           return [];
         }
       }),
+    ),
+  );
+
+  layerOpenDialog = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.layerOpenDialog),
+      switchMap(({ event }) => {
+        const layerDialog = this.dialog.open(LayerDialogComponent, {
+          autoFocus: false,
+          data: event,
+          hasBackdrop: false,
+          width: '400px',
+        });
+        return layerDialog.afterClosed();
+      }),
+      switchMap(() => []),
     ),
   );
 

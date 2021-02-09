@@ -8,7 +8,7 @@ import {
   Output,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import { HorizontalGuide } from '../../types';
+import { HorizontalGuide, Layer } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +40,10 @@ import { HorizontalGuide } from '../../types';
         <button mat-menu-item [matMenuTriggerFor]="horizontalGuidesMenu">
           <mat-icon>horizontal_split</mat-icon>
           <span>Horizontal Guides</span>
+        </button>
+        <button mat-menu-item [matMenuTriggerFor]="layersMenu">
+          <mat-icon>dynamic_feed</mat-icon>
+          <span>Layers</span>
         </button>
       </mat-menu>
 
@@ -87,12 +91,37 @@ import { HorizontalGuide } from '../../types';
           </button>
         </ng-container>
       </mat-menu>
+
+      <mat-menu #layersMenu="matMenu">
+        <button mat-menu-item [matMenuTriggerFor]="layersEditMenu">
+          <mat-icon>create</mat-icon>
+          <span>Edit</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #layersEditMenu="matMenu">
+        <ng-container *ngIf="!layers?.length">
+          <button mat-menu-item>No Layers Found</button>
+        </ng-container>
+        <ng-container *ngIf="layers?.length">
+          <button
+            *ngFor="let layer of layers; let i = index"
+            mat-menu-item
+            (click)="updateLayer.emit(layer)"
+          >
+            <span>Layer {{ i }}</span>
+          </button>
+        </ng-container>
+      </mat-menu>
     </div>
   `,
 })
 export class TimelineRowMenuComponent {
   @Input()
   horizontalGuides: HorizontalGuide[] | undefined;
+
+  @Input()
+  layers: Layer[] | undefined;
 
   @Output()
   createHorizontalGuide: EventEmitter<void> = new EventEmitter<void>();
@@ -102,6 +131,9 @@ export class TimelineRowMenuComponent {
 
   @Output()
   updateHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter<HorizontalGuide>();
+
+  @Output()
+  updateLayer: EventEmitter<Layer> = new EventEmitter();
 }
 
 @NgModule({

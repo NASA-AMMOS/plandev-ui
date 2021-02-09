@@ -22,6 +22,7 @@ import {
   HorizontalGuide,
   HorizontalGuideEvent,
   Layer,
+  LayerEvent,
   MouseOverConstraintViolations,
   MouseOverPoints,
   MouseSelectPoints,
@@ -210,9 +211,11 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
 
       <aerie-timeline-row-menu
         [horizontalGuides]="horizontalGuides"
+        [layers]="layers"
         (createHorizontalGuide)="onCreateHorizontalGuide()"
         (deleteHorizontalGuide)="onDeleteHorizontalGuide($event)"
         (updateHorizontalGuide)="onUpdateHorizontalGuide($event)"
+        (updateLayer)="onUpdateLayer($event)"
       ></aerie-timeline-row-menu>
     </div>
   `,
@@ -290,6 +293,9 @@ export class TimelineRowComponent
 
   @Output()
   updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter<HorizontalGuideEvent>();
+
+  @Output()
+  updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
 
   @Output()
   updatePoint: EventEmitter<UpdatePoint> = new EventEmitter<UpdatePoint>();
@@ -429,6 +435,13 @@ export class TimelineRowComponent
     this.deleteHorizontalGuide.emit(event);
   }
 
+  onMouseSelectPoints(event: MouseSelectPoints) {
+    if (event.points.length) {
+      const [point] = event.points;
+      this.selectPoint.emit({ id: point.id, type: point.type });
+    }
+  }
+
   onUpdateHorizontalGuide(guide: HorizontalGuide) {
     const event: HorizontalGuideEvent = {
       guide,
@@ -439,11 +452,13 @@ export class TimelineRowComponent
     this.updateHorizontalGuide.emit(event);
   }
 
-  onMouseSelectPoints(event: MouseSelectPoints) {
-    if (event.points.length) {
-      const [point] = event.points;
-      this.selectPoint.emit({ id: point.id, type: point.type });
-    }
+  onUpdateLayer(layer: Layer) {
+    const event: LayerEvent = {
+      layer,
+      mode: 'edit',
+      rowId: this.id,
+    };
+    this.updateLayer.emit(event);
   }
 
   onUpdateRow(event: UpdateRow) {
