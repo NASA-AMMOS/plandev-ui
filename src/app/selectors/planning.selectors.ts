@@ -240,7 +240,7 @@ export const getPanelsWithPoints = createSelector(
                 };
 
                 return newLayer;
-              } else if (layer.type === 'state') {
+              } else if (layer.type === 'resource') {
                 if (layer.chartType === 'line') {
                   const points: LinePoint[] = [];
                   const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
@@ -253,7 +253,7 @@ export const getPanelsWithPoints = createSelector(
                       const { name, schema, start, values } = result;
 
                       if (schema.type === 'real') {
-                        const r = new RegExp(layer?.filter?.state?.name);
+                        const r = new RegExp(layer?.filter?.resource?.name);
                         const includeResult = r.test(name);
                         curveType = 'curveLinear';
 
@@ -263,7 +263,7 @@ export const getPanelsWithPoints = createSelector(
                             const { x } = value;
                             const y = value.y as number;
                             points.push({
-                              id: `${layer.id}-state-${name}-${i}`,
+                              id: `${layer.id}-resource-${name}-${i}`,
                               type: 'line',
                               x: getUnixEpochTime(start) + x / 1000,
                               y,
@@ -302,7 +302,7 @@ export const getPanelsWithPoints = createSelector(
                       const { name, schema, start, values } = result;
 
                       if (schema.type === 'variant') {
-                        const r = new RegExp(layer?.filter?.state?.name);
+                        const r = new RegExp(layer?.filter?.resource?.name);
                         const includeResult = r.test(name);
 
                         if (includeResult) {
@@ -310,7 +310,7 @@ export const getPanelsWithPoints = createSelector(
                           for (let i = 0; i < values.length; ++i) {
                             const { x, y } = values[i];
                             points.push({
-                              id: `${layer.id}-state-${name}-${i}`,
+                              id: `${layer.id}-resource-${name}-${i}`,
                               label: {
                                 text: y as string,
                               },

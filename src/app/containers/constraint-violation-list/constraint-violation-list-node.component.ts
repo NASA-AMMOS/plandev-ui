@@ -131,8 +131,8 @@ import {
           </div>
         </li>
       </ul>
-      <ul *ngIf="constraintViolation?.associations?.stateIds?.length">
-        <li *ngFor="let id of constraintViolation.associations.stateIds">
+      <ul *ngIf="constraintViolation?.associations?.resourceIds?.length">
+        <li *ngFor="let id of constraintViolation.associations.resourceIds">
           <div class="association"><mat-icon>share</mat-icon> {{ id }}</div>
         </li>
       </ul>

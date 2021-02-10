@@ -248,7 +248,7 @@ export class ConstraintViolationListComponent implements OnChanges {
           const { name } = constraint;
           if (
             name.toLowerCase().includes(lowerCaseText) ||
-            this.hasStateIds(associations, lowerCaseText) ||
+            this.hasResourceIds(associations, lowerCaseText) ||
             this.hasActivityInstanceTypes(associations, lowerCaseText) ||
             this.hasWindows(windows, lowerCaseText)
           ) {
@@ -277,12 +277,12 @@ export class ConstraintViolationListComponent implements OnChanges {
     return false;
   }
 
-  hasStateIds(
+  hasResourceIds(
     associations: ConstraintViolationAssociations,
     lowerCaseText: string,
   ): boolean {
-    if (associations.stateIds) {
-      for (const id of associations.stateIds) {
+    if (associations.resourceIds) {
+      for (const id of associations.resourceIds) {
         if (id.toLowerCase().includes(lowerCaseText)) {
           return true;
         }

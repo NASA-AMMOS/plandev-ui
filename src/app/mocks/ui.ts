@@ -77,12 +77,12 @@ export const uiStates: UiState[] = [
                 {
                   chartType: 'line',
                   filter: {
-                    state: {
+                    resource: {
                       name: 'peel',
                     },
                   },
                   id: 'layer1',
-                  type: 'state',
+                  type: 'resource',
                 },
               ],
               yAxes: [
@@ -101,12 +101,12 @@ export const uiStates: UiState[] = [
                 {
                   chartType: 'line',
                   filter: {
-                    state: {
+                    resource: {
                       name: 'fruit',
                     },
                   },
                   id: 'layer2',
-                  type: 'state',
+                  type: 'resource',
                 },
               ],
               yAxes: [

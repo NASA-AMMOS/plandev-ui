@@ -63,12 +63,12 @@ export interface Layer {
     activity?: {
       type?: string;
     };
-    state?: {
+    resource?: {
       name?: string;
     };
   };
   id: string;
-  type: 'activity' | 'state';
+  type: 'activity' | 'resource';
   yAxisId?: string;
 }
 

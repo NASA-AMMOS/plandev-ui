@@ -16,7 +16,7 @@ export interface ConstraintViolation {
 
 export interface ConstraintViolationAssociations {
   activityInstanceIds?: string[];
-  stateIds?: string[];
+  resourceIds?: string[];
 }
 
 export interface ConstraintViolationListState {

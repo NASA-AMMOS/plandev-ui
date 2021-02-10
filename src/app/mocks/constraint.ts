@@ -4,7 +4,7 @@ export const violations: ConstraintViolation[] = [
   {
     associations: {
       activityInstanceIds: ['row0'],
-      stateIds: [],
+      resourceIds: [],
     },
     constraint: {
       category: 'warning',
@@ -20,7 +20,7 @@ export const violations: ConstraintViolation[] = [
   {
     associations: {
       activityInstanceIds: ['row0'],
-      stateIds: [],
+      resourceIds: [],
     },
     constraint: {
       category: 'warning',
@@ -32,7 +32,7 @@ export const violations: ConstraintViolation[] = [
   {
     associations: {
       activityInstanceIds: [],
-      stateIds: ['row1'],
+      resourceIds: ['row1'],
     },
     constraint: {
       category: 'warning',
@@ -44,7 +44,7 @@ export const violations: ConstraintViolation[] = [
   {
     associations: {
       activityInstanceIds: [],
-      stateIds: ['row2'],
+      resourceIds: ['row2'],
     },
     constraint: {
       category: 'warning',

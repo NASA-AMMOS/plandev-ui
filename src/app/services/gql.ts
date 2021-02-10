@@ -214,7 +214,7 @@ export const SIMULATE = `
       violations {
         associations {
           activityInstanceIds
-          stateIds
+          resourceIds
         }
         constraint {
           category
