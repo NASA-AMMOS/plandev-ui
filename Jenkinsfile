@@ -98,17 +98,18 @@ pipeline {
               npm config set always-auth=true
               npm config set _auth=$PASS
 
-              # Install dependencies, test, and build
+              # Install server dependencies
+              cd server
+              rm -rf node_modules
+              npm install
+              cd ..
+
+              # Install front-end dependencies, build, and cloc
               rm -rf node_modules
               npm install
               npm run version
-              # npm test # Disable for now until we have a more robust build system.
               npm run build:prod
-
-              # Cloc, then print size of dist folder
               npm run cloc
-              du -sh dist
-              du -sh dist/*
 
               # Build Docker image
               docker build -t "${DOCKER_TAG_ARTIFACTORY}" --rm .

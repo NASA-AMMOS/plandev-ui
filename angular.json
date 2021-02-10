@@ -43,6 +43,7 @@
               ],
               "optimization": true,
               "outputHashing": "all",
+              "outputPath": "server/public",
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
