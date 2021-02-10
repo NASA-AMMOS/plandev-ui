@@ -140,7 +140,7 @@ pipeline {
                 """{
                   "files": [
                     {
-                      "pattern": "dist/aerie-ui-*.tar.gz",
+                      "pattern": "server/public/aerie-ui-*.tar.gz",
                       "target": "${getPublishPath()}",
                       "recursive": false
                     }
