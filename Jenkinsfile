@@ -123,7 +123,7 @@ pipeline {
           }
           steps {
             sh '''
-            cd dist
+            cd server/public
             tar -czf aerie-ui-${GIT_BRANCH}.tar.gz `ls -A`
             '''
           }
