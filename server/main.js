@@ -15,8 +15,9 @@ function main() {
   app.use(express.static('public'));
 
   app.get('/health', (_, res) => {
-    const uptimeMinutes = process.uptime() / 60;
-    res.json({ status: 'healthy', uptimeMinutes });
+    const date = new Date().toISOString();
+    const uptime = process.uptime();
+    res.json({ date, uptime });
   });
 
   app.get('/ui-states', async (_, res) => {
