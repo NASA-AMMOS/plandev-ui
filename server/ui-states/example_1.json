@@ -1,0 +1,78 @@
+{
+  "id": "5dcd3b10-fc3d-44b9-b9bb-1cb0039bd763",
+  "name": "Banananation 1",
+  "panels": [
+    {
+      "id": "panel0",
+      "menu": [
+        { "action": "restore", "icon": "restore", "title": "Restore Time" },
+        { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
+      ],
+      "size": 60,
+      "timeline": {
+        "id": "timeline0",
+        "rows": [
+          {
+            "autoAdjustHeight": false,
+            "height": 200,
+            "id": "row0",
+            "layers": [
+              {
+                "chartType": "activity",
+                "color": "#fcba03",
+                "filter": { "activity": { "type": "PeelBanana" } },
+                "id": "layer0",
+                "type": "activity"
+              },
+              {
+                "chartType": "line",
+                "color": "#fcba03",
+                "filter": { "resource": { "name": "peel" } },
+                "id": "layer1",
+                "type": "resource",
+                "yAxisId": "yAxis1"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis1", "label": { "text": "Peel" } }]
+          },
+          {
+            "autoAdjustHeight": false,
+            "height": 200,
+            "id": "row1",
+            "layers": [
+              {
+                "chartType": "activity",
+                "color": "#39a8ed",
+                "filter": { "activity": { "type": "BiteBanana" } },
+                "id": "layer2",
+                "type": "activity"
+              },
+              {
+                "chartType": "line",
+                "color": "#39a8ed",
+                "filter": { "resource": { "name": "fruit" } },
+                "id": "layer3",
+                "type": "resource",
+                "yAxisId": "yAxis2"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis2", "label": { "text": "Fruit" } }]
+          }
+        ],
+        "verticalGuides": []
+      },
+      "title": "Schedule & Simulation",
+      "type": "timeline"
+    },
+    {
+      "id": "panel1",
+      "size": 40,
+      "table": {
+        "columns": ["select", "type", "startTimestamp"],
+        "type": "activity"
+      },
+      "title": "Activity Instances",
+      "type": "table"
+    }
+  ]
+}

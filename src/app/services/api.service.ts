@@ -8,7 +8,7 @@ import * as types from '../types';
 import { User } from '../types';
 import * as gql from './gql';
 
-const { aerieApolloServerUrl } = environment;
+const { aerieApolloServerUrl, aerieUiServerUrl } = environment;
 
 function getAuthorization() {
   const item: string | null = localStorage.getItem(AERIE_USER);
@@ -254,19 +254,13 @@ export class ApiService {
   }
 
   getUiStates(): Observable<types.UiState[]> {
-    const body = {
-      query: gql.GET_UI_STATES,
-    };
     const options = {
       headers: { authorization: getAuthorization() },
     };
-    return this.http
-      .post<{ data: { uiStates: types.UiState[] } }>(
-        aerieApolloServerUrl,
-        body,
-        options,
-      )
-      .pipe(map(({ data: { uiStates } }) => uiStates));
+    return this.http.get<types.UiState[]>(
+      `${aerieUiServerUrl}/ui-states`,
+      options,
+    );
   }
 
   login(username: string, password: string) {

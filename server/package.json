@@ -6,7 +6,9 @@
     "start": "node main.js"
   },
   "dependencies": {
+    "cors": "2.8.5",
     "express": "4.17.1",
+    "fast-glob": "3.2.5",
     "helmet": "4.4.1"
   }
 }

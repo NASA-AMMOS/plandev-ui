@@ -1,0 +1,126 @@
+{
+  "id": "e7f07fcc-a07b-4b49-a51e-f38da51d4717",
+  "name": "Banananation 0",
+  "panels": [
+    {
+      "id": "panel0",
+      "menu": [
+        { "action": "restore", "icon": "restore", "title": "Restore Time" }
+      ],
+      "size": 35,
+      "timeline": {
+        "id": "timeline0",
+        "rows": [
+          {
+            "autoAdjustHeight": true,
+            "height": 200,
+            "id": "row0",
+            "layers": [
+              {
+                "chartType": "activity",
+                "filter": { "activity": { "type": ".*" } },
+                "id": "layer0",
+                "type": "activity"
+              }
+            ]
+          }
+        ],
+        "verticalGuides": [
+          {
+            "id": "guide0",
+            "label": { "text": "Guide 0" },
+            "timestamp": "2020-005T00:00:00"
+          },
+          {
+            "id": "guide1",
+            "label": { "text": "Guide 1" },
+            "timestamp": "2020-025T00:00:00"
+          },
+          {
+            "id": "guide2",
+            "label": { "text": "Guide 2" },
+            "timestamp": "2020-045T00:00:00"
+          }
+        ]
+      },
+      "title": "Schedule",
+      "type": "timeline"
+    },
+    {
+      "id": "panel1",
+      "menu": [
+        { "action": "restore", "icon": "restore", "title": "Restore Time" },
+        { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
+      ],
+      "size": 35,
+      "timeline": {
+        "id": "timeline1",
+        "rows": [
+          {
+            "height": 100,
+            "id": "row1",
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": { "resource": { "name": "peel" } },
+                "id": "layer1",
+                "type": "resource",
+                "yAxisId": "yAxis1"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis1", "label": { "text": "peel" } }]
+          },
+          {
+            "height": 100,
+            "id": "row2",
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": { "resource": { "name": "fruit" } },
+                "id": "layer2",
+                "type": "resource",
+                "yAxisId": "yAxis2"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis2", "label": { "text": "fruit" } }]
+          },
+          {
+            "height": 100,
+            "id": "row3",
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": { "resource": { "name": "flag" } },
+                "id": "layer3",
+                "opacity": 1.0,
+                "type": "resource",
+                "yAxisId": "yAxis3"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis3", "label": { "text": "flag" } }]
+          }
+        ],
+        "verticalGuides": [
+          {
+            "id": "guide3",
+            "label": { "text": "Guide 3" },
+            "timestamp": "2020-100T00:00:00"
+          }
+        ]
+      },
+      "title": "Simulation",
+      "type": "timeline"
+    },
+    {
+      "id": "panel2",
+      "size": 30,
+      "table": {
+        "columns": ["select", "type", "startTimestamp"],
+        "type": "activity"
+      },
+      "title": "Activity Instances",
+      "type": "table"
+    }
+  ]
+}
