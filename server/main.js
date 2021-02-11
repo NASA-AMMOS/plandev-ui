@@ -11,11 +11,9 @@ const helmet = require('helmet');
 const config = require('./config/config.json');
 
 function main() {
-  const { cam, editor } = config;
-
+  const { cam, editor, port } = config;
   const app = express();
   const camApi = new CamApi(cam);
-  const port = 80;
 
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
