@@ -43,7 +43,7 @@ pipeline {
   }
   environment {
     ARTIFACT_TAG = "${GIT_BRANCH}"
-    ARTIFACTORY_URL = "cae-artifactory.jpl.nasa.gov:${getArtifactoryPort()}"
+    ARTIFACTORY_URL = "artifactory.jpl.nasa.gov:${getArtifactoryPort()}"
     AWS_ACCESS_KEY_ID = credentials('aerie-aws-access-key')
     AWS_CLUSTER = "aerie-${GIT_BRANCH}-cluster"
     AWS_DEFAULT_REGION = 'us-gov-west-1'
@@ -58,7 +58,7 @@ pipeline {
       agent {
         docker {
           reuseNode true
-          registryUrl 'https://cae-artifactory.jpl.nasa.gov:16001'
+          registryUrl 'https://artifactory.jpl.nasa.gov:16001'
           registryCredentialsId 'Artifactory-credential'
           image 'gov/nasa/jpl/ammos/mpsa/aerie/jenkins/aerie-ui:latest'
           alwaysPull true
@@ -93,7 +93,7 @@ pipeline {
               nvm install v12.14.1
 
               # Setup NPM to fetch from Artifactory
-              npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
+              npm config set @gov.nasa.jpl.aerie:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
               npm config set email=$EMAIL
               npm config set always-auth=true
               npm config set _auth=$PASS
@@ -135,7 +135,7 @@ pipeline {
           steps {
             script {
               try {
-                def server = Artifactory.newServer url: 'https://cae-artifactory.jpl.nasa.gov/artifactory', credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86'
+                def server = Artifactory.newServer url: 'https://artifactory.jpl.nasa.gov/artifactory', credentialsId: '9db65bd3-f8f0-4de0-b344-449ae2782b86'
                 def uploadSpec =
                 """{
                   "files": [

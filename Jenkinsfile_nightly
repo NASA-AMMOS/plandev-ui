@@ -16,7 +16,7 @@ pipeline {
       agent {
         docker {
           reuseNode true
-            registryUrl 'https://cae-artifactory.jpl.nasa.gov:16001'
+            registryUrl 'https://artifactory.jpl.nasa.gov:16001'
             registryCredentialsId 'Artifactory-credential'
             image 'gov/nasa/jpl/ammos/mpsa/aerie/jenkins/testrail-ui:latest'
             alwaysPull true
@@ -50,7 +50,7 @@ pipeline {
               nvm install v12.14.1
 
               # Setup NPM to fetch from Artifactory
-              npm config set @gov.nasa.jpl.aerie:registry=https://cae-artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
+              npm config set @gov.nasa.jpl.aerie:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
               npm config set email=$EMAIL
               npm config set always-auth=true
               npm config set _auth=$PASS

@@ -36,7 +36,7 @@ cd aerie-ui
 
 ## Configuring NPM
 
-This project makes use of packages in the [aerie-js](https://github.jpl.nasa.gov/Aerie/aerie-js) repository. These packages are stored in the private Artifactory [npm-develop-local](https://cae-artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/npm-develop-local) repository. In order to pull packages from `npm-develop-local`, you need to configure NPM via `~/.npmrc` by following [these instructions](https://github.jpl.nasa.gov/Aerie/aerie-js#installation-prerequisites).
+This project makes use of packages in the [aerie-js](https://github.jpl.nasa.gov/Aerie/aerie-js) repository. These packages are stored in the private Artifactory [npm-release-local](https://artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/npm-release-local) repository. In order to pull packages from `npm-release-local`, you need to configure NPM via `~/.npmrc` by following [these instructions](https://github.jpl.nasa.gov/Aerie/aerie-js#installation-prerequisites).
 
 ## Installing NPM Modules
 
