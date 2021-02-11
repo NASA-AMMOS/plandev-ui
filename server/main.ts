@@ -1,14 +1,11 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/naming-convention */
-
-const { readFileSync } = require('fs');
-const { CamApi } = require('@gov.nasa.jpl.aerie/cam');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const express = require('express');
-const fastGlob = require('fast-glob');
-const helmet = require('helmet');
-const config = require('./config/config.json');
+import { CamApi } from '@gov.nasa.jpl.aerie/cam';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import express from 'express';
+import fastGlob from 'fast-glob';
+import { readFileSync } from 'fs';
+import helmet from 'helmet';
+import config from './config/config.json';
 
 function main() {
   const { cam, editor, port } = config;
@@ -36,8 +33,7 @@ function main() {
 
   app.get('/editor', async (req, res) => {
     const { query } = req;
-    const { ssoToken = '' } = query;
-    // @ts-ignore
+    const ssoToken = (query.ssoToken as string) || '';
     const { userId = '' } = await camApi.user(ssoToken);
     const editorUrl = editor[userId] || editor.shared || '';
     res.redirect(`${editorUrl}?ssoToken=${ssoToken}`);

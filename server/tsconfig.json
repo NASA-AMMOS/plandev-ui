@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "lib": ["es2019"],
+    "module": "CommonJS",
+    "outDir": ".",
+    "resolveJsonModule": true,
+    "target": "es2019",
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "files": ["main.ts"]
+}

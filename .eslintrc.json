@@ -23,7 +23,7 @@
           }
         ],
         "arrow-parens": ["off", "always"],
-        "import/order": "error",
+        "import/order": "off",
         "no-bitwise": "off",
         "no-underscore-dangle": "off",
         "prefer-arrow/prefer-arrow-functions": "off",
