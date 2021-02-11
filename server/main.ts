@@ -33,16 +33,16 @@ function main() {
 
   app.get('/editor', async (req, res) => {
     const { query } = req;
-    const ssoToken = (query.ssoToken as string) || '';
+    const ssoToken = (query?.ssoToken as string) || '';
     const { userId = '' } = await camApi.user(ssoToken);
     const editorUrl = editor[userId] || editor.shared || '';
     res.redirect(`${editorUrl}?ssoToken=${ssoToken}`);
   });
 
   app.get('/health', (_, res) => {
-    const date = new Date().toISOString();
+    const timestamp = new Date().toISOString();
     const uptimeMinutes = process.uptime() / 60;
-    res.json({ date, uptimeMinutes });
+    res.json({ timestamp, uptimeMinutes });
   });
 
   app.get('/ui-states', async (_, res) => {

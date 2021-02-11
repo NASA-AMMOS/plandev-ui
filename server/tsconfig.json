@@ -8,5 +8,6 @@
     "target": "es2019",
     "typeRoots": ["./node_modules/@types"]
   },
-  "files": ["main.ts"]
+  "exclude": ["node_modules"],
+  "include": ["main.ts"]
 }
