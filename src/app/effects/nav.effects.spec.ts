@@ -68,7 +68,7 @@ describe('nav effects', () => {
     });
 
     it('should return a login success action if there is an AERIE_USER', () => {
-      const user = { editorUrl: '', name: 'testuser', ssoCookieValue: '42' };
+      const user = { name: 'testuser', ssoToken: '42' };
       spyOn(localStorage.__proto__, 'getItem').and.returnValue(
         JSON.stringify(user),
       );
