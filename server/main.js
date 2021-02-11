@@ -8,10 +8,14 @@ const cors = require('cors');
 const express = require('express');
 const fastGlob = require('fast-glob');
 const helmet = require('helmet');
+const config = require('./config/config.json');
 
 function main() {
+  const { auth, editor } = config;
+  const { camBaseURL: baseUrl, enabled } = auth;
+
   const app = express();
-  const camApi = new CamApi();
+  const camApi = new CamApi({ baseUrl, enabled });
   const port = 80;
 
   app.use(helmet({ contentSecurityPolicy: false }));
@@ -27,24 +31,19 @@ function main() {
   });
 
   app.post('/cam/logout', async (req, res) => {
-    const { body } = req;
-    const { ssoToken } = body;
+    const { headers } = req;
+    const { authorization: ssoToken = '' } = headers;
     const response = await camApi.logout(ssoToken);
     res.json(response);
   });
 
-  app.post('/cam/session', async (req, res) => {
-    const { body } = req;
-    const { ssoToken } = body;
-    const response = await camApi.session(ssoToken);
-    res.json(response);
-  });
-
-  app.post('/cam/user', async (req, res) => {
-    const { body } = req;
-    const { ssoToken } = body;
-    const response = await camApi.user(ssoToken);
-    res.json(response);
+  app.get('/editor', async (req, res) => {
+    const { query } = req;
+    const { ssoToken = '' } = query;
+    // @ts-ignore
+    const { userId = '' } = await camApi.user(ssoToken);
+    const editorUrl = editor[userId] || '';
+    res.redirect(`${editorUrl}?ssoToken=${ssoToken}`);
   });
 
   app.get('/health', (_, res) => {

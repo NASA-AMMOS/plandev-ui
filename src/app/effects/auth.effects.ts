@@ -17,8 +17,8 @@ export class AuthEffects {
         concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.login(username, password).pipe(
-            switchMap(({ editorUrl, ssoCookieValue }) => {
-              const user: User = { editorUrl, name: username, ssoCookieValue };
+            switchMap(({ ssoCookieValue: ssoToken }) => {
+              const user: User = { name: username, ssoToken };
               localStorage.setItem(AERIE_USER, JSON.stringify(user));
               return [AuthActions.loginSuccess({ redirectTo: '/plans', user })];
             }),

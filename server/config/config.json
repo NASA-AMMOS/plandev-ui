@@ -1,0 +1,9 @@
+{
+  "auth": {
+    "camBaseURL": "https://atb-ocio-12b.jpl.nasa.gov:8443/cam-api",
+    "enabled": true
+  },
+  "editor": {
+    "ccamargo": "http://100.64.92.85:8080"
+  }
+}

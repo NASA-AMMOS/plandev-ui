@@ -42,6 +42,7 @@ import { User } from './types';
 })
 export class AppComponent implements OnDestroy {
   aerieApolloServerUrl = environment.aerieApolloServerUrl;
+  aerieUiServerUrl = environment.aerieUiServerUrl;
   isLoginPage = true;
   loading = false;
 
@@ -101,7 +102,10 @@ export class AppComponent implements OnDestroy {
 
   onOpenEditor(): void {
     const user: User = JSON.parse(localStorage.getItem(AERIE_USER));
-    open(`${user.editorUrl}?ssoToken=${user.ssoCookieValue}`, '_newtab');
+    open(
+      `${this.aerieUiServerUrl}/editor?ssoToken=${user.ssoToken}`,
+      '_newtab',
+    );
   }
 }
 

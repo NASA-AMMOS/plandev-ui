@@ -154,37 +154,6 @@ export const GET_PLANS_AND_ADAPTATIONS = `
   }
 `;
 
-export const GET_UI_STATES = `
-  query GetUiStates {
-    uiStates {
-      id
-      name
-      panels
-    }
-  }
-`;
-
-export const LOGIN = `
-  mutation Login($username: String!, $password: String!) {
-    login(username: $username, password: $password) {
-      editorUrl
-      message
-      ssoCookieName
-      ssoCookieValue
-      success
-    }
-  }
-`;
-
-export const LOGOUT = `
-  mutation Logout {
-    logout {
-      message
-      success
-    }
-  }
-`;
-
 export const SIMULATE = `
   query Simulate($adaptationId: String!, $planId: String!, $samplingPeriod: Float!) {
     simulate(adaptationId: $adaptationId, planId: $planId, samplingPeriod: $samplingPeriod) {

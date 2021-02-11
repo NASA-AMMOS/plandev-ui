@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AERIE_USER } from '../constants';
 import * as types from '../types';
-import { User } from '../types';
+import { LoginResponse, LogoutResponse, User } from '../types';
 import * as gql from './gql';
 
 const { aerieApolloServerUrl, aerieUiServerUrl } = environment;
@@ -14,7 +14,7 @@ function getAuthorization() {
   const item: string | null = localStorage.getItem(AERIE_USER);
   if (item !== null) {
     const user: User = JSON.parse(item);
-    return user.ssoCookieValue;
+    return user.ssoToken;
   }
   return '';
 }
@@ -264,50 +264,33 @@ export class ApiService {
   }
 
   login(username: string, password: string) {
-    const body = {
-      query: gql.LOGIN,
-      variables: { password, username },
-    };
     return this.http
-      .post<{
-        data: {
-          login: {
-            editorUrl: string;
-            message: string;
-            ssoCookieValue: string;
-            success: boolean;
-          };
-        };
-      }>(aerieApolloServerUrl, body)
+      .post<LoginResponse>(`${aerieUiServerUrl}/cam/login`, {
+        password,
+        username,
+      })
       .pipe(
-        map(({ data: { login } }) => {
-          if (!login.success) {
-            throw new Error(login.message);
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
           }
-          return login;
+          return response;
         }),
       );
   }
 
   logout() {
-    const body = {
-      query: gql.LOGOUT,
-    };
     const options = {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{
-        data: {
-          logout: { message: string; success: boolean };
-        };
-      }>(aerieApolloServerUrl, body, options)
+      .post<LogoutResponse>(`${aerieUiServerUrl}/cam/logout`, {}, options)
       .pipe(
-        map(({ data: { logout } }) => {
-          if (!logout.success) {
-            throw new Error(logout.message);
+        map(response => {
+          if (!response.success) {
+            throw new Error(response.message);
           }
-          return logout;
+          return response;
         }),
       );
   }
