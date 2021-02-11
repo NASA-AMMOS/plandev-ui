@@ -102,7 +102,6 @@ pipeline {
               cd server
               rm -rf node_modules
               npm install
-              npm run build
               cd ..
 
               # Install front-end dependencies, build, and cloc

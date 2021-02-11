@@ -2,4 +2,4 @@ FROM node:lts
 COPY ./server /app
 WORKDIR /app
 EXPOSE 80
-CMD [ "node", "main.js" ]
+CMD [ "npm", "start" ]
