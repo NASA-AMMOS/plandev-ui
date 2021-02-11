@@ -47,8 +47,8 @@ function main() {
 
   app.get('/health', (_, res) => {
     const date = new Date().toISOString();
-    const uptime = process.uptime();
-    res.json({ date, uptime });
+    const uptimeMinutes = process.uptime() / 60;
+    res.json({ date, uptimeMinutes });
   });
 
   app.get('/ui-states', async (_, res) => {
