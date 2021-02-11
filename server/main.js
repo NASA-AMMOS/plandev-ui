@@ -11,11 +11,10 @@ const helmet = require('helmet');
 const config = require('./config/config.json');
 
 function main() {
-  const { auth, editor } = config;
-  const { camBaseURL: baseUrl, enabled } = auth;
+  const { cam, editor } = config;
 
   const app = express();
-  const camApi = new CamApi({ baseUrl, enabled });
+  const camApi = new CamApi(cam);
   const port = 80;
 
   app.use(helmet({ contentSecurityPolicy: false }));
@@ -42,7 +41,7 @@ function main() {
     const { ssoToken = '' } = query;
     // @ts-ignore
     const { userId = '' } = await camApi.user(ssoToken);
-    const editorUrl = editor[userId] || '';
+    const editorUrl = editor[userId] || editor.shared || '';
     res.redirect(`${editorUrl}?ssoToken=${ssoToken}`);
   });
 
