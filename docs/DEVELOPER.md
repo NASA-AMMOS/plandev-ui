@@ -57,3 +57,7 @@ Run `npm run build` to build the project. The build artifacts will be stored in 
 ## Running Unit Tests
 
 Run `npm test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+
+## Before You Commit
+
+Run `npm run pre-commit` to execute formatting, linting, and unit testing.

@@ -4,41 +4,15 @@ We would love for you to contribute to aerie-ui and help make it even better tha
 today! As a contributor, here are the guidelines we would like you to follow:
 
 - [Question or Problem?](#question)
-- [Issues and Bugs](#issue)
-- [Feature Requests](#feature)
-- [Submission Guidelines](#submit)
+- [Submitting a Pull Request (PR)](#submit-pr)
 - [Coding Rules](#rules)
 - [Commit Message Guidelines](#commit)
 
 ## <a name="question"></a> Got a Question or Problem?
 
-Do not open issues for general support questions as we want to keep GitHub issues for bug reports and feature requests. If you would like to chat about the question in real-time, you can reach out via [our slack channel][slack].
+If you would like to chat about the question in real-time, you can reach out via [our slack channel][slack].
 
-## <a name="issue"></a> Found a Bug?
-
-If you find a bug in the source code, you can help us by
-[submitting an issue](#submit-issue) to our [GitHub Repository][github]. Even better, you can
-[submit a Pull Request](#submit-pr) with a fix.
-
-## <a name="feature"></a> Missing a Feature?
-
-You can _request_ a new feature by [submitting an issue](#submit-issue) to our GitHub
-Repository. If you would like to _implement_ a new feature, please submit an issue with
-a proposal for your work first, to be sure that we can use it.
-Please consider what kind of change it is:
-
-- For a **Major Feature**, first open an issue and outline your proposal so that it can be
-  discussed. This will also allow us to better coordinate our efforts, prevent duplication of work,
-  and help you to craft the change so that it is successfully accepted into the project.
-- **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
-
-## <a name="submit"></a> Submission Guidelines
-
-### <a name="submit-issue"></a> Submitting an Issue
-
-You can file new issues by selecting from our [new issue templates][new-issue] and filling out the issue template.
-
-### <a name="submit-pr"></a> Submitting a Pull Request (PR)
+## <a name="submit-pr"></a> Submitting a Pull Request (PR)
 
 Before you submit your Pull Request (PR) consider the following guidelines:
 
@@ -53,9 +27,9 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```
 1. Create your patch, **including appropriate test cases**.
 1. Follow our [Coding Rules](#rules).
-1. Run the full aerie-ui test suite, as described in the [developer documentation][dev-doc], and ensure that all tests pass.
+1. Run the aerie-ui pre-commit script which runs auto-formatting, linting, and unit test scripts.
    ```shell
-   npm test
+   npm run pre-commit
    ```
 1. Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit). Adherence to these conventions is necessary because release notes are automatically generated from these messages.
    ```shell
@@ -73,17 +47,13 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 - If we suggest changes then:
 
   - Make the required updates.
-  - Re-run the aerie-ui test suites to ensure tests are still passing.
+  - Re-run the aerie-ui pre-commit script.
   - [Rebase your branch][rebase] and force push to your branch to GitHub (this will update your Pull Request):
 
     ```shell
     git rebase develop -i
     git push -f
     ```
-
-That's it! Thank you for your contribution!
-
-#### After your pull request is merged
 
 After your pull request is merged, you can safely delete your branch and pull the changes from the repository:
 
@@ -116,7 +86,7 @@ After your pull request is merged, you can safely delete your branch and pull th
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
 - All features or bug fixes **must be tested** by one or more specs (unit-tests).
-- We use [Prettier][prettier] and [TSLint](./tslint.json) to keep code formatted.
+- We use [Prettier][prettier] and [ESLint](./.eslintrc.json) to keep code formatted.
   ```shell
   npm run format
   npm run lint
@@ -128,22 +98,18 @@ We have very precise rules over how our git commit messages can be formatted. Th
 
 ### Commit Message Format
 
-Each commit message consists of a **header**, a **body** and a **footer**. The header has a special
+Each commit message consists of a **header** and a **body**. The header has a special
 format that includes a **type** and a **subject**:
 
 ```
 <type>: <subject>
 <BLANK LINE>
 <body>
-<BLANK LINE>
-<footer>
 ```
 
 The **header** is mandatory.
 
 Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
-
-The footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
 Samples:
 
@@ -189,21 +155,10 @@ The subject contains a succinct description of the change:
 
 Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes". The body should include the motivation for the change and contrast this with previous behavior.
 
-### Footer
-
-The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
-
 **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
 
-## Special Thanks
-
-This document was created using the [Angular contributing document][angular-contributing].
-
-[angular-contributing]: https://github.com/angular/angular/blob/master/CONTRIBUTING.md
-[dev-doc]: ./docs/DEVELOPER.md
 [github]: https://github.jpl.nasa.gov/MPS/aerie-ui
 [github-pulls]: https://github.jpl.nasa.gov/MPS/aerie-ui/pulls
-[new-issue]: https://github.jpl.nasa.gov/MPS/aerie-ui/issues/new/choose
 [prettier]: https://prettier.io/
 [rebase]: https://dev.to/maxwell_dev/the-git-rebase-introduction-i-wish-id-had
-[slack]: https://jpl.slack.com/app_redirect?channel=CR1M97V1N
+[slack]: https://app.slack.com/client/T024LMMEZ/C0163E42UBF

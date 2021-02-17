@@ -9,11 +9,6 @@
     "type": "git",
     "url": "https://github.jpl.nasa.gov/MPS/aerie-ui.git"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "node ./scripts/pre-commit.js"
-    }
-  },
   "scripts": {
     "analyze": "webpack-bundle-analyzer dist/stats.json",
     "build": "ng build",
@@ -23,7 +18,9 @@
     "format": "prettier --write \"src/**/*.{js,ts,css,html}\" -l",
     "lint": "ng lint",
     "ng": "ng",
+    "pre-commit": "node ./scripts/pre-commit.js",
     "prebuild": "npm run version",
+    "prebuild:prod": "npm run version",
     "prestart": "npm run version",
     "pretest": "npm run version",
     "start": "ng serve",
@@ -94,7 +91,6 @@
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-jsdoc": "32.0.2",
     "eslint-plugin-prefer-arrow": "1.2.3",
-    "husky": "5.0.9",
     "jasmine-core": "3.6.0",
     "karma": "6.1.1",
     "karma-firefox-launcher": "2.1.0",
