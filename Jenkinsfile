@@ -107,7 +107,6 @@ pipeline {
               # Install front-end dependencies, build, and cloc
               rm -rf node_modules
               npm install
-              npm run version
               npm run build:prod
               npm run cloc
 
