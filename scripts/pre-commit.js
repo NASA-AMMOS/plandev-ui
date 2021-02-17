@@ -12,8 +12,8 @@ function exec(cmd) {
 }
 
 function main() {
-  exec('npm run lint');
   exec('npm run format');
+  exec('npm run lint');
   exec('npm test');
 }
 
