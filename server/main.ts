@@ -43,7 +43,7 @@ function main() {
     res.json(response);
   });
 
-  app.get('/editor', auth, async (req, res) => {
+  app.get('/editor', async (req, res) => {
     const { query } = req;
     const ssoToken = (query?.ssoToken as string) || '';
     const { userId = '' } = await camApi.user(ssoToken);
