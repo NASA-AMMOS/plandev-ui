@@ -1,7 +1,7 @@
 import { CamApi } from '@gov.nasa.jpl.aerie/cam';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import fastGlob from 'fast-glob';
 import { readFileSync } from 'fs';
 import helmet from 'helmet';
@@ -17,6 +17,18 @@ function main() {
   app.use(bodyParser.json());
   app.use(express.static('public'));
 
+  async function auth(req: Request, res: Response, next: NextFunction) {
+    const { headers } = req;
+    const { authorization: ssoToken = '' } = headers;
+    const response = await camApi.session(ssoToken);
+
+    if (response.success) {
+      next();
+    } else {
+      res.status(401).send(response);
+    }
+  }
+
   app.post('/cam/login', async (req, res) => {
     const { body } = req;
     const { username, password } = body;
@@ -31,7 +43,7 @@ function main() {
     res.json(response);
   });
 
-  app.get('/editor', async (req, res) => {
+  app.get('/editor', auth, async (req, res) => {
     const { query } = req;
     const ssoToken = (query?.ssoToken as string) || '';
     const { userId = '' } = await camApi.user(ssoToken);
@@ -45,7 +57,7 @@ function main() {
     res.json({ timestamp, uptimeMinutes });
   });
 
-  app.get('/ui-states', async (_, res) => {
+  app.get('/ui-states', auth, async (_, res) => {
     const states = [];
     try {
       const filePaths = await fastGlob('ui-states/*.json');
