@@ -5,6 +5,7 @@ This document describes how to set up your development environment to build and 
 * [Prerequisite Software](#prerequisite-software)
 * [Getting the Sources](#getting-the-sources)
 * [Configuring NPM](#configuring-npm)
+* [Start API Server](#start-api-server)
 * [Installing NPM Modules](#installing-npm-modules)
 * [Start Development Server](#start-development-server)
 * [Building](#building)
@@ -47,6 +48,8 @@ npm install
 ```
 
 ## Start API Server
+
+The UI uses a local REST API for authentication and UI specific functionality.
 
 ```shell
 cd server
