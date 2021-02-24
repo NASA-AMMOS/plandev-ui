@@ -67,7 +67,8 @@ pipeline {
             sh '''
             echo "Uploading test results to test rail."
             ls -la
-            ./scripts/testrail/main.py /home/unit-test-results.xml ${TESTRAIL_SUITE_ID}
+            cd /scripts/testrail
+            ./main.py /home/unit-test-results.xml ${TESTRAIL_SUITE_ID}
             '''
           }
         }
