@@ -3,7 +3,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "start": "ts-node --transpile-only main.ts",
+    "start": "ts-node --transpile-only src/main.ts",
     "start:develop": "ENV=develop npm start",
     "start:local": "ENV=local npm start",
     "start:staging": "ENV=local npm start"
