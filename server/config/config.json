@@ -25,6 +25,15 @@
         "user": "aerie"
       }
     },
+    "production": {
+      "postgres": {
+        "database": "aerie",
+        "host": "postgres",
+        "password": "aerie",
+        "port": 5432,
+        "user": "aerie"
+      }
+    },
     "staging": {
       "postgres": {
         "database": "aerie",

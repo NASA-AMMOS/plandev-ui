@@ -6,6 +6,7 @@
     "start": "ts-node --transpile-only src/main.ts",
     "start:develop": "ENV=develop npm start",
     "start:local": "ENV=local npm start",
+    "start:production": "ENV=production npm start",
     "start:staging": "ENV=staging npm start"
   },
   "dependencies": {
