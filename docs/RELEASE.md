@@ -8,7 +8,7 @@ This document contains instructions on how to release the Aerie UI.
 1. Do a global find and replace on the repository of `PREVIOUS_VERSION` to `NEXT_VERSION`.
 For example if the previous version was `1.0.0` and the next version is `2.0.0`, find and replace all instances of `1.0.0` with `2.0.0`. The most important replacement here is in [package.json](../package.json) so the UI displays the latest version correctly. After changing `package.json` also run `npm install` so the `package-lock.json` is updated to the latest version.
 1. Commit the changes to `develop` so the repository reflects we are on the latest released version going forward.
-1. Create a new branch with the format `release-{MAJOR}.{MINOR}.{PATCH}`, where MAJOR, MINOR, PATCH refer to the `NEXT_VERSION`. For example if we are releasing version `2.0.0`, from `develop` you would do:
+1. Create a new branch with the format `release-{MAJOR}.{MINOR}.{PATCH}`, where MAJOR, MINOR, and PATCH refer to the `NEXT_VERSION`. For example if we are releasing version `2.0.0`, from `develop` you would do:
     ```sh
     git checkout -b release-2.0.0
     ```
