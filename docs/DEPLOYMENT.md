@@ -4,11 +4,11 @@ This document describes how to deploy aerie-ui via Docker. All of these instruct
 
 ## Docker Artifactory
 
-These commands pull the [release-0.6.2](https://artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-release-local/gov/nasa/jpl/aerie/aerie-ui/release-0.6.2) Docker image from Artifactory and start a container from that image.
+These commands pull the [release-0.6.3](https://artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-release-local/gov/nasa/jpl/aerie/aerie-ui/release-0.6.3) Docker image from Artifactory and start a container from that image.
 
 ```bash
 docker login artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie
-docker run --name aerie-ui -d -p 8080:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.2
+docker run --name aerie-ui -d -p 8080:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.3
 ```
 
 Goto [http://localhost:8080/](http://localhost:8080/)
@@ -32,5 +32,5 @@ Goto [http://localhost:8080/](http://localhost:8080/)
 To start a container with custom configuration or UI states, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
 
 ```bash
-docker run --name aerie-ui -d -p 8080:80 -v /path/to/custom/config:config -v /path/to/custom/ui-states:ui-states artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.2
+docker run --name aerie-ui -d -p 8080:80 -v /path/to/custom/config:config -v /path/to/custom/ui-states:ui-states artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.3
 ```
