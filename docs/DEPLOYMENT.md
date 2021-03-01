@@ -29,8 +29,8 @@ Goto [http://localhost:8080/](http://localhost:8080/)
 
 ## Docker Volumes
 
-To start a container with custom UI states, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom states into the container:
+To start a container with custom configuration or UI states, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
 
 ```bash
-docker run --name aerie-ui -d -p 8080:80 -v /path/to/custom/ui-states:ui-states artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.2
+docker run --name aerie-ui -d -p 8080:80 -v /path/to/custom/config:config -v /path/to/custom/ui-states:ui-states artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.2
 ```
