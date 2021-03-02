@@ -25,10 +25,10 @@ npm install
 cd ..
 npm run build:prod
 docker build -t aerie-ui .
-docker run --name aerie-ui -d -p 8080:80 aerie-ui npm run start:develop
+docker run --name aerie-ui -d -p 80:80 aerie-ui npm run start:develop
 ```
 
-Goto [http://localhost:8080/](http://localhost:8080/)
+Goto [http://localhost](http://localhost)
 
 ## Docker Volumes
 
