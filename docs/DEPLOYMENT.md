@@ -2,6 +2,15 @@
 
 This document describes how to deploy aerie-ui via Docker. All of these instructions should be carried out on the machine you are deploying to.
 
+## Dependencies
+
+The deployment of Aerie UI depends on two other containers on the same Docker network in order to work properly.
+
+1. Apollo (API gateway server)
+2. Postgres
+
+See the Aerie [docker-compose.yml](https://github.jpl.nasa.gov/Aerie/aerie/blob/develop/scripts/docker-compose-aerie/docker-compose.yml) file for examples on how to deploy these required containers.
+
 ## Docker Artifactory
 
 These commands pull the [release-0.6.4](https://artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-release-local/gov/nasa/jpl/aerie/aerie-ui/release-0.6.4) Docker image from Artifactory and start a container from that image.
