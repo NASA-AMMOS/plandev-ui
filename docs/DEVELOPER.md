@@ -45,6 +45,9 @@ Next, install the JavaScript modules needed to build and test aerie-ui:
 
 ```shell
 npm install
+cd server
+npm install
+cd ..
 ```
 
 ## Start API Server

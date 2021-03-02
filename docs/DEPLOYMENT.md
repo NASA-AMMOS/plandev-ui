@@ -20,6 +20,9 @@ First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequi
 ```bash
 cd aerie-ui
 npm install
+cd server
+npm install
+cd ..
 npm run build:prod
 docker build -t aerie-ui .
 docker run --name aerie-ui -d -p 8080:80 aerie-ui
