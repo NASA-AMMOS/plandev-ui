@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { scaleTime } from 'd3-scale';
 import { concat, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { AppActions, PlanningActions, ToastActions } from '../actions';
@@ -354,9 +353,6 @@ export class PlanningEffects {
       withLatestFrom(this.store),
       map(([action, state]) => ({ action, state })),
       switchMap(({ action, state }) => {
-        const { start, end } = state.planning.viewTimeRange;
-        const scale = scaleTime().domain([new Date(start), new Date(end)]);
-        const [t0, t1] = scale.ticks();
         const { adaptationId } = state.planning.selectedPlan;
         return concat(
           of(AppActions.setLoading({ loading: true })),
