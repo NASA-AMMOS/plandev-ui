@@ -155,8 +155,8 @@ export const GET_PLANS_AND_ADAPTATIONS = `
 `;
 
 export const SIMULATE = `
-  query Simulate($adaptationId: String!, $planId: String!, $samplingPeriod: Float!) {
-    simulate(adaptationId: $adaptationId, planId: $planId, samplingPeriod: $samplingPeriod) {
+  query Simulate($adaptationId: String!, $planId: String!) {
+    simulate(adaptationId: $adaptationId, planId: $planId) {
       activities {
         children
         duration

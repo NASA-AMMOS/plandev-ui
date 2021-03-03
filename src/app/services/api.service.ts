@@ -295,10 +295,10 @@ export class ApiService {
       );
   }
 
-  simulate(adaptationId: string, planId: string, samplingPeriod: number) {
+  simulate(adaptationId: string, planId: string) {
     const body = {
       query: gql.SIMULATE,
-      variables: { adaptationId, planId, samplingPeriod },
+      variables: { adaptationId, planId },
     };
     const options = {
       headers: { authorization: getAuthorization() },
