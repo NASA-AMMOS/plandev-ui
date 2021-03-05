@@ -16,8 +16,8 @@ import {
   SimulationResult,
   StringTMap,
   TimeRange,
-  UiState,
   VerticalGuide,
+  View,
 } from '../types';
 
 export interface PlanningState {
@@ -32,10 +32,10 @@ export interface PlanningState {
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
-  selectedUiStateId: string | null;
+  selectedViewId: string | null;
   simulationResults: SimulationResult[] | null;
-  uiStates: UiState[];
   viewTimeRange: TimeRange;
+  views: View[];
 }
 
 export const initialState: PlanningState = {
@@ -50,10 +50,10 @@ export const initialState: PlanningState = {
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
-  selectedUiStateId: null,
+  selectedViewId: null,
   simulationResults: null,
-  uiStates: [],
   viewTimeRange: { end: 0, start: 0 },
+  views: [],
 };
 
 export const reducer = createReducer(
@@ -103,21 +103,21 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.deleteRow, (state, { row: removedRow, timelineId }) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.timeline && panel.timeline.id === timelineId) {
+    views: state.views.map(view => ({
+      ...view,
+      sections: view.sections.map(section => {
+        if (section.timeline && section.timeline.id === timelineId) {
           return {
-            ...panel,
+            ...section,
             timeline: {
-              ...panel.timeline,
-              rows: (panel.timeline.rows || []).filter(
+              ...section.timeline,
+              rows: (section.timeline.rows || []).filter(
                 (row: Row) => removedRow.id !== row.id,
               ),
             },
           };
         }
-        return panel;
+        return section;
       }),
     })),
   })),
@@ -141,15 +141,15 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.horizontalGuideCreate, (state, { guide, rowId }) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.timeline) {
+    views: state.views.map(view => ({
+      ...view,
+      sections: view.sections.map(section => {
+        if (section.timeline) {
           return {
-            ...panel,
+            ...section,
             timeline: {
-              ...panel.timeline,
-              rows: panel.timeline.rows.map(row => {
+              ...section.timeline,
+              rows: section.timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -163,7 +163,7 @@ export const reducer = createReducer(
             },
           };
         }
-        return panel;
+        return section;
       }),
     })),
   })),
@@ -171,15 +171,15 @@ export const reducer = createReducer(
     PlanningActions.horizontalGuideDelete,
     (state, { guide: removedGuide, rowId }) => ({
       ...state,
-      uiStates: state.uiStates.map(uiState => ({
-        ...uiState,
-        panels: uiState.panels.map(panel => {
-          if (panel.timeline) {
+      views: state.views.map(view => ({
+        ...view,
+        sections: view.sections.map(section => {
+          if (section.timeline) {
             return {
-              ...panel,
+              ...section,
               timeline: {
-                ...panel.timeline,
-                rows: panel.timeline.rows.map(row => {
+                ...section.timeline,
+                rows: section.timeline.rows.map(row => {
                   if (row.id === rowId) {
                     return {
                       ...row,
@@ -194,7 +194,7 @@ export const reducer = createReducer(
               },
             };
           }
-          return panel;
+          return section;
         }),
       })),
     }),
@@ -203,15 +203,15 @@ export const reducer = createReducer(
     PlanningActions.horizontalGuideUpdate,
     (state, { guide: updatedGuide, rowId }) => ({
       ...state,
-      uiStates: state.uiStates.map(uiState => ({
-        ...uiState,
-        panels: uiState.panels.map(panel => {
-          if (panel.timeline) {
+      views: state.views.map(view => ({
+        ...view,
+        sections: view.sections.map(section => {
+          if (section.timeline) {
             return {
-              ...panel,
+              ...section,
               timeline: {
-                ...panel.timeline,
-                rows: panel.timeline.rows.map(row => {
+                ...section.timeline,
+                rows: section.timeline.rows.map(row => {
                   if (row.id === rowId) {
                     const { horizontalGuides = [] } = row;
                     return {
@@ -232,22 +232,22 @@ export const reducer = createReducer(
               },
             };
           }
-          return panel;
+          return section;
         }),
       })),
     }),
   ),
   on(PlanningActions.layerUpdate, (state, { layer: updatedLayer, rowId }) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.timeline) {
+    views: state.views.map(view => ({
+      ...view,
+      sections: view.sections.map(section => {
+        if (section.timeline) {
           return {
-            ...panel,
+            ...section,
             timeline: {
-              ...panel.timeline,
-              rows: panel.timeline.rows.map(row => {
+              ...section.timeline,
+              rows: section.timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -267,7 +267,7 @@ export const reducer = createReducer(
             },
           };
         }
-        return panel;
+        return section;
       }),
     })),
   })),
@@ -363,10 +363,10 @@ export const reducer = createReducer(
     },
     lastActivityInstanceUpdate: performance.now(),
   })),
-  on(PlanningActions.updateAllUiStates, (state, { uiStates }) => ({
+  on(PlanningActions.updateAllViews, (state, { views }) => ({
     ...state,
-    selectedUiStateId: uiStates[0]?.id || null,
-    uiStates,
+    selectedViewId: views[0]?.id || null,
+    views,
   })),
   on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
     ...state,
@@ -383,15 +383,15 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.updateRow, (state, { rowId, update }) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.timeline) {
+    views: state.views.map(view => ({
+      ...view,
+      sections: view.sections.map(section => {
+        if (section.timeline) {
           return {
-            ...panel,
+            ...section,
             timeline: {
-              ...panel.timeline,
-              rows: panel.timeline.rows.map(row => {
+              ...section.timeline,
+              rows: section.timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -403,7 +403,7 @@ export const reducer = createReducer(
             },
           };
         }
-        return panel;
+        return section;
       }),
     })),
   })),
@@ -422,20 +422,20 @@ export const reducer = createReducer(
       },
     },
   })),
-  on(PlanningActions.updateSelectedUiStateId, (state, { id }) => ({
+  on(PlanningActions.updateSelectedViewId, (state, { id }) => ({
     ...state,
-    selectedUiStateId: id,
+    selectedViewId: id,
   })),
-  on(PlanningActions.updateUiState, (state, action) => ({
+  on(PlanningActions.updateView, (state, action) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => {
-      if (action.id === uiState.id) {
+    views: state.views.map(view => {
+      if (action.id === view.id) {
         return {
-          ...uiState,
-          ...action.uiState,
+          ...view,
+          ...action.view,
         };
       }
-      return uiState;
+      return view;
     }),
   })),
   on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
@@ -444,21 +444,21 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.verticalGuideCreate, (state, { guide, timelineId }) => ({
     ...state,
-    uiStates: state.uiStates.map(uiState => ({
-      ...uiState,
-      panels: uiState.panels.map(panel => {
-        if (panel.timeline && panel.timeline.id === timelineId) {
+    views: state.views.map(view => ({
+      ...view,
+      sections: view.sections.map(section => {
+        if (section.timeline && section.timeline.id === timelineId) {
           return {
-            ...panel,
+            ...section,
             timeline: {
-              ...panel.timeline,
-              verticalGuides: panel.timeline.verticalGuides
-                ? [...panel.timeline.verticalGuides, guide]
+              ...section.timeline,
+              verticalGuides: section.timeline.verticalGuides
+                ? [...section.timeline.verticalGuides, guide]
                 : [guide],
             },
           };
         }
-        return panel;
+        return section;
       }),
     })),
   })),
@@ -466,21 +466,21 @@ export const reducer = createReducer(
     PlanningActions.verticalGuideDelete,
     (state, { guide: removedGuide, timelineId }) => ({
       ...state,
-      uiStates: state.uiStates.map(uiState => ({
-        ...uiState,
-        panels: uiState.panels.map(panel => {
-          if (panel.timeline && panel.timeline.id === timelineId) {
+      views: state.views.map(view => ({
+        ...view,
+        sections: view.sections.map(section => {
+          if (section.timeline && section.timeline.id === timelineId) {
             return {
-              ...panel,
+              ...section,
               timeline: {
-                ...panel.timeline,
-                verticalGuides: (panel.timeline.verticalGuides || []).filter(
+                ...section.timeline,
+                verticalGuides: (section.timeline.verticalGuides || []).filter(
                   (guide: VerticalGuide) => removedGuide.id !== guide.id,
                 ),
               },
             };
           }
-          return panel;
+          return section;
         }),
       })),
     }),
@@ -489,15 +489,15 @@ export const reducer = createReducer(
     PlanningActions.verticalGuideUpdate,
     (state, { guide: updatedGuide, timelineId }) => ({
       ...state,
-      uiStates: state.uiStates.map(uiState => ({
-        ...uiState,
-        panels: uiState.panels.map(panel => {
-          if (panel.timeline && panel.timeline.id === timelineId) {
+      views: state.views.map(view => ({
+        ...view,
+        sections: view.sections.map(section => {
+          if (section.timeline && section.timeline.id === timelineId) {
             return {
-              ...panel,
+              ...section,
               timeline: {
-                ...panel.timeline,
-                verticalGuides: (panel.timeline.verticalGuides || []).map(
+                ...section.timeline,
+                verticalGuides: (section.timeline.verticalGuides || []).map(
                   guide => {
                     if (updatedGuide.id === guide.id) {
                       return {
@@ -511,7 +511,7 @@ export const reducer = createReducer(
               },
             };
           }
-          return panel;
+          return section;
         }),
       })),
     }),

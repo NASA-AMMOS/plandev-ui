@@ -33,7 +33,7 @@ import {
   StringTMap,
   UpdateActivityInstance,
 } from '../../types';
-import { PanelHeaderModule } from '../panel-header/panel-header.component';
+import { HeaderModule } from '../header/header.component';
 import { ActivityInstanceFormParametersModule } from './activity-instance-form-parameters.component';
 
 @Component({
@@ -254,7 +254,7 @@ export class ActivityInstanceFormComponent
     ReactiveFormsModule,
     ActivityInstanceFormParametersModule,
     DecompositionTreeModule,
-    PanelHeaderModule,
+    HeaderModule,
   ],
 })
 export class ActivityInstanceFormModule {}

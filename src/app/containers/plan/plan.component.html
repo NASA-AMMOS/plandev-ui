@@ -28,11 +28,7 @@
     >
       Violations
     </button>
-    <button
-      mat-icon-button
-      matTooltip="UI State Editor"
-      (click)="showPanelEditor()"
-    >
+    <button mat-icon-button matTooltip="View Editor" (click)="showViewEditor()">
       <mat-icon svgIcon="wysiwyg"></mat-icon>
     </button>
     <button
@@ -62,13 +58,17 @@
       [useTransition]="false"
     >
       <as-split-area
-        *ngFor="let panel of panels; trackBy: trackByPanels; let order = index"
+        *ngFor="
+          let section of selectedView?.sections;
+          trackBy: trackByViewSections;
+          let order = index
+        "
         [minSize]="3.2"
         [order]="order"
         [ngClass]="{
-          'panel-overflow-hidden': panel.type === 'timeline'
+          'overflow-hidden': section.type === 'timeline'
         }"
-        [size]="panel.size"
+        [size]="section.size"
       >
         <ng-container
           *ngTemplateOutlet="
@@ -76,8 +76,8 @@
               iframe: iframe,
               timeline: timeline,
               table: table
-            }[panel.type];
-            context: { $implicit: panel }
+            }[section.type];
+            context: { $implicit: section }
           "
         ></ng-container>
       </as-split-area>
@@ -91,7 +91,7 @@
     [visible]="drawerVisible"
   >
     <div *ngIf="drawer.activityDictionary.visible">
-      <panel-header> Activity Dictionary </panel-header>
+      <aerie-header> Activity Dictionary </aerie-header>
       <div class="p-1">
         <app-placeholder *ngIf="activityTypes === null"></app-placeholder>
         <activity-type-list
@@ -116,23 +116,23 @@
       ></activity-instance-form>
     </div>
 
-    <div *ngIf="drawer.panelEditor.visible">
-      <panel-header> Panel Editor </panel-header>
+    <div *ngIf="drawer.viewEditor.visible">
+      <aerie-header> View Editor </aerie-header>
       <form class="p-1">
-        <mat-form-field class="ui-state-form-field w-100" appearance="outline">
+        <mat-form-field class="view-form-field w-100" appearance="outline">
           <mat-select
-            [value]="selectedUiState?.id"
-            (selectionChange)="onUiStateChanged($event)"
+            [value]="selectedView?.id"
+            (selectionChange)="onViewChanged($event)"
           >
-            <mat-option *ngFor="let uiState of uiStates" [value]="uiState.id">
-              {{ uiState.name }}
+            <mat-option *ngFor="let view of views" [value]="view.id">
+              {{ view.name }}
             </mat-option>
           </mat-select>
         </mat-form-field>
       </form>
       <ngx-codemirror
-        [(ngModel)]="panelsText"
-        [options]="panelsEditorOptions"
+        [(ngModel)]="selectedViewText"
+        [options]="viewEditorOptions"
       ></ngx-codemirror>
     </div>
 
@@ -162,20 +162,20 @@
   </as-split-area>
 </as-split>
 
-<ng-template #iframe let-panel>
-  <panel-header>
-    {{ panel.title }}
-  </panel-header>
-  <iframe allow="fullscreen" [src]="panel.iframe.src | safe"></iframe>
+<ng-template #iframe let-section>
+  <aerie-header>
+    {{ section.title }}
+  </aerie-header>
+  <iframe allow="fullscreen" [src]="section.iframe.src | safe"></iframe>
 </ng-template>
 
-<ng-template #timeline let-panel>
-  <panel-header>
-    {{ panel.title }}
+<ng-template #timeline let-section>
+  <aerie-header>
+    {{ section.title }}
     <div class="right">
       <button
-        class="panel-menu"
-        *ngIf="panel.menu"
+        class="section-menu"
+        *ngIf="section.menu"
         mat-icon-button
         [matMenuTriggerFor]="menu"
       >
@@ -192,9 +192,9 @@
           <span>Vertical Guides</span>
         </button>
         <button
-          *ngFor="let item of panel.menu"
+          *ngFor="let item of section.menu"
           mat-menu-item
-          (click)="onPanelMenuAction(item)"
+          (click)="onViewSectionMenuAction(item)"
         >
           <mat-icon>{{ item.icon }}</mat-icon>
           <span>{{ item.title }}</span>
@@ -209,14 +209,14 @@
       </mat-menu>
 
       <mat-menu #rowsDeleteMenu="matMenu">
-        <ng-container *ngIf="!panel.timeline?.rows.length">
+        <ng-container *ngIf="!section.timeline?.rows.length">
           <button mat-menu-item>No Rows Found</button>
         </ng-container>
-        <ng-container *ngIf="panel.timeline?.rows.length">
+        <ng-container *ngIf="section.timeline?.rows.length">
           <button
-            *ngFor="let row of panel.timeline.rows; let i = index"
+            *ngFor="let row of section.timeline.rows; let i = index"
             mat-menu-item
-            (click)="onDeleteRow(row, panel.timeline.id)"
+            (click)="onDeleteRow(row, section.timeline.id)"
           >
             <span>Row {{ i }}</span>
           </button>
@@ -226,7 +226,7 @@
       <mat-menu #verticalGuidesMenu="matMenu">
         <button
           mat-menu-item
-          (click)="onCreateVerticalGuide(panel.timeline.id)"
+          (click)="onCreateVerticalGuide(section.timeline.id)"
         >
           <mat-icon>add</mat-icon>
           <span>Create New</span>
@@ -242,14 +242,14 @@
       </mat-menu>
 
       <mat-menu #verticalGuidesEditMenu="matMenu">
-        <ng-container *ngIf="!panel.timeline?.verticalGuides.length">
+        <ng-container *ngIf="!section.timeline?.verticalGuides.length">
           <button mat-menu-item>No Vertical Guides Found</button>
         </ng-container>
-        <ng-container *ngIf="panel.timeline?.verticalGuides.length">
+        <ng-container *ngIf="section.timeline?.verticalGuides.length">
           <button
-            *ngFor="let guide of panel.timeline.verticalGuides"
+            *ngFor="let guide of section.timeline.verticalGuides"
             mat-menu-item
-            (click)="onUpdateVerticalGuide(guide, panel.timeline.id)"
+            (click)="onUpdateVerticalGuide(guide, section.timeline.id)"
           >
             <span>{{ guide.label.text }}</span>
           </button>
@@ -257,28 +257,28 @@
       </mat-menu>
 
       <mat-menu #verticalGuidesDeleteMenu="matMenu">
-        <ng-container *ngIf="!panel.timeline?.verticalGuides.length">
+        <ng-container *ngIf="!section.timeline?.verticalGuides.length">
           <button mat-menu-item>No Vertical Guides Found</button>
         </ng-container>
-        <ng-container *ngIf="panel.timeline?.verticalGuides.length">
+        <ng-container *ngIf="section.timeline?.verticalGuides.length">
           <button
-            *ngFor="let guide of panel.timeline.verticalGuides"
+            *ngFor="let guide of section.timeline.verticalGuides"
             mat-menu-item
-            (click)="onDeleteVerticalGuide(guide, panel.timeline.id)"
+            (click)="onDeleteVerticalGuide(guide, section.timeline.id)"
           >
             <span>{{ guide.label.text }}</span>
           </button>
         </ng-container>
       </mat-menu>
     </div>
-  </panel-header>
+  </aerie-header>
   <app-placeholder *ngIf="activityInstances === null"></app-placeholder>
   <aerie-timeline
     [constraintViolations]="constraintViolations"
-    [id]="panel.timeline.id"
+    [id]="section.timeline.id"
     [maxTimeRange]="maxTimeRange"
-    [rows]="panel.timeline.rows"
-    [verticalGuides]="panel.timeline.verticalGuides"
+    [rows]="section.timeline.rows"
+    [verticalGuides]="section.timeline.verticalGuides"
     [viewTimeRange]="viewTimeRange"
     (createHorizontalGuide)="onCreateHorizontalGuide($event)"
     (createPoint)="onCreatePoint($event)"
@@ -294,13 +294,13 @@
   ></aerie-timeline>
 </ng-template>
 
-<ng-template #table let-panel>
-  <panel-header>
-    {{ panel.title }}
-  </panel-header>
+<ng-template #table let-section>
+  <aerie-header>
+    {{ section.title }}
+  </aerie-header>
   <aerie-table
-    *ngIf="panel.table.type === 'activity'"
-    [columns]="panel.table.columns"
+    *ngIf="section.table.type === 'activity'"
+    [columns]="section.table.columns"
     [data]="activityInstances"
     [selectedElement]="selectedActivityInstance"
     (deleteElement)="onDeleteActivityInstance($event)"

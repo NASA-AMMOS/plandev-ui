@@ -1,9 +1,9 @@
 {
   "id": "IaNzaiZC3R25wDB",
   "name": "Banananation 1",
-  "panels": [
+  "sections": [
     {
-      "id": "panel0",
+      "id": "section0",
       "menu": [
         { "action": "restore", "icon": "restore", "title": "Restore Time" },
         { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
@@ -65,7 +65,7 @@
       "type": "timeline"
     },
     {
-      "id": "panel1",
+      "id": "section1",
       "size": 40,
       "table": {
         "columns": ["select", "type", "startTimestamp"],

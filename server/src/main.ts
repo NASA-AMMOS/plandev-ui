@@ -1,5 +1,5 @@
 import { CamApi } from '@gov.nasa.jpl.aerie/cam';
-import bodyParser from 'body-parser';
+import { json } from 'body-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -14,7 +14,7 @@ async function main() {
 
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
-  app.use(bodyParser.json());
+  app.use(json());
   app.use(express.static('public'));
 
   async function auth(req: Request, res: Response, next: NextFunction) {
@@ -57,21 +57,22 @@ async function main() {
     res.json({ timestamp, uptimeMinutes });
   });
 
-  app.get('/ui-states', auth, async (_, res) => {
+  app.get('/views', auth, async (_, res) => {
     const { rows } = await dbPool.query(`
-      SELECT state FROM ui.states
+      SELECT view
+      FROM ui.views
     `);
-    const states = rows.map(({ state }) => state);
-    res.json(states);
+    const views = rows.map(({ view }) => view);
+    res.json(views);
   });
 
-  app.post('/ui-states', auth, async (req, res) => {
+  app.post('/views', auth, async (req, res) => {
     const { body } = req;
     const id = Db.uniqueId();
-    const state = JSON.stringify({ ...body, id });
+    const view = JSON.stringify({ ...body, id });
     const { rowCount } = await dbPool.query(`
-      INSERT INTO ui.states (id, state)
-      VALUES ('${id}', '${state}');
+      INSERT INTO ui.views (id, view)
+      VALUES ('${id}', '${view}');
     `);
     if (rowCount > 0) {
       res.json({
@@ -84,13 +85,13 @@ async function main() {
     }
   });
 
-  app.put('/ui-states/:id', auth, async (req, res) => {
+  app.put('/views/:id', auth, async (req, res) => {
     const { body, params } = req;
     const { id = '' } = params;
-    const state = JSON.stringify({ ...body, id });
+    const view = JSON.stringify({ ...body, id });
     const { rowCount } = await dbPool.query(`
-      UPDATE ui.states
-      SET state='${state}'
+      UPDATE ui.views
+      SET view='${view}'
       WHERE id='${id}'
     `);
     if (rowCount > 0) {
@@ -104,16 +105,16 @@ async function main() {
     }
   });
 
-  app.get('/ui-states/:id', auth, async (req, res) => {
+  app.get('/views/:id', auth, async (req, res) => {
     const { params } = req;
     const { id = '' } = params;
     const { rows = [], rowCount } = await dbPool.query(`
-      SELECT state FROM ui.states
+      SELECT view FROM ui.views
       WHERE id = '${id}'
     `);
     if (rowCount > 0) {
-      const [{ state = {} }] = rows;
-      res.json(state);
+      const [{ view = {} }] = rows;
+      res.json(view);
     } else {
       res.status(404).json({
         message: `${id} not found`,
@@ -121,11 +122,11 @@ async function main() {
     }
   });
 
-  app.delete('/ui-states/:id', auth, async (req, res) => {
+  app.delete('/views/:id', auth, async (req, res) => {
     const { params } = req;
     const { id = '' } = params;
     const { rowCount } = await dbPool.query(`
-      DELETE FROM ui.states
+      DELETE FROM ui.views
       WHERE id = '${id}'
     `);
     if (rowCount > 0) {

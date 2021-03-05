@@ -1,12 +1,12 @@
-import { UiState } from '../types';
+import { View } from '../types';
 
-export const uiStates: UiState[] = [
+export const views: View[] = [
   {
-    id: 'uiState0',
+    id: 'view0',
     name: 'Example 0',
-    panels: [
+    sections: [
       {
-        id: 'panel0',
+        id: 'section0',
         menu: [
           {
             action: 'restore',
@@ -52,7 +52,7 @@ export const uiStates: UiState[] = [
         type: 'timeline',
       },
       {
-        id: 'panel1',
+        id: 'section1',
         menu: [
           {
             action: 'restore',
@@ -136,7 +136,7 @@ export const uiStates: UiState[] = [
         type: 'timeline',
       },
       {
-        id: 'panel2',
+        id: 'section2',
         size: 30,
         table: {
           columns: ['select', 'type', 'startTimestamp'],

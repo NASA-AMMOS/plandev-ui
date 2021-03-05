@@ -8,5 +8,5 @@ export * from './simulation';
 export * from './string-t-map';
 export * from './time-range';
 export * from './timeline';
-export * from './ui';
 export * from './user';
+export * from './view';

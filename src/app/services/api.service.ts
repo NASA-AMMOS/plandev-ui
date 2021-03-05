@@ -253,14 +253,11 @@ export class ApiService {
       .pipe(map(({ data }) => data));
   }
 
-  getUiStates(): Observable<types.UiState[]> {
+  getViews(): Observable<types.View[]> {
     const options = {
       headers: { authorization: getAuthorization() },
     };
-    return this.http.get<types.UiState[]>(
-      `${aerieUiServerUrl}/ui-states`,
-      options,
-    );
+    return this.http.get<types.View[]>(`${aerieUiServerUrl}/views`, options);
   }
 
   login(username: string, password: string) {

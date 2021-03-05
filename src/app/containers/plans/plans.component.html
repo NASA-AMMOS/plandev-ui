@@ -4,7 +4,7 @@
 
 <as-split [gutterSize]="4">
   <as-split-area [size]="25">
-    <panel-header> Create Plan </panel-header>
+    <aerie-header> Create Plan </aerie-header>
     <div class="p-1">
       <app-placeholder
         *ngIf="adaptations === null"
@@ -126,7 +126,7 @@
   </as-split-area>
 
   <as-split-area [size]="75">
-    <panel-header> Plan List </panel-header>
+    <aerie-header> Plan List </aerie-header>
     <div class="p-1">
       <app-placeholder *ngIf="plans === null"></app-placeholder>
       <ng-container *ngIf="plans !== null">

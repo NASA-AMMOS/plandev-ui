@@ -22,25 +22,26 @@ export class Db {
       Db.pool = new Pool(postgresConfig);
 
       await this.pool.query(`
-        CREATE SCHEMA IF NOT EXISTS ui AUTHORIZATION ${user};
+        CREATE SCHEMA IF NOT EXISTS ui
+        AUTHORIZATION ${user};
       `);
 
       await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS ui.states (
+        CREATE TABLE IF NOT EXISTS ui.views (
           id text NOT NULL PRIMARY KEY,
-          state jsonb NOT NULL
+          view jsonb NOT NULL
         );
       `);
 
-      // Load default UI states from file system into the database.
-      const filePaths = await fastGlob('ui-states/*.json');
+      // Load default views from file system into the database.
+      const filePaths = await fastGlob('views/*.json');
       for (const filePath of filePaths) {
-        const state = readFileSync(filePath).toString();
-        const { id } = JSON.parse(state);
+        const view = readFileSync(filePath).toString();
+        const { id } = JSON.parse(view);
         await this.pool.query(`
-          INSERT INTO ui.states (id, state)
-          VALUES ('${id}', '${state}')
-          ON CONFLICT (id) DO UPDATE SET state='${state}';
+          INSERT INTO ui.views (id, view)
+          VALUES ('${id}', '${view}')
+          ON CONFLICT (id) DO UPDATE SET view='${view}';
         `);
       }
     } catch (error) {

@@ -41,8 +41,8 @@ Goto [http://localhost](http://localhost)
 
 ## Docker Volumes
 
-To start a container with custom configuration or UI states, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
+To start a container with custom configuration or UI views, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
 
 ```bash
-docker run --name aerie-ui -d -p 80:80 -v /path/to/custom/config:config -v /path/to/custom/ui-states:ui-states artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.4 npm run start:develop
+docker run --name aerie-ui -d -p 80:80 -v /path/to/custom/config:config -v /path/to/custom/views:views artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.6.4 npm run start:develop
 ```

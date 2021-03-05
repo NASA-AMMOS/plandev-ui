@@ -3,7 +3,7 @@
   height: calc(100% - var(--toolbar-height, 36px));
 }
 
-::ng-deep .ui-state-form-field > div {
+::ng-deep .view-form-field > div {
   padding: 0;
   margin: 0;
 }
@@ -12,12 +12,12 @@ as-split-area > div {
   height: 100%;
 }
 
-.panel-menu {
-  color: #c7c7c7;
+.overflow-hidden {
+  overflow: hidden !important;
 }
 
-.panel-overflow-hidden {
-  overflow: hidden !important;
+.section-menu {
+  color: #c7c7c7;
 }
 
 .right-button {
@@ -41,7 +41,7 @@ ngx-codemirror {
 
 ::ng-deep .CodeMirror {
   /* 82px is the height of the select form field */
-  height: calc(100% - var(--panel-header-height, 36px) - 82px);
+  height: calc(100% - var(--header-height, 36px) - 82px);
 }
 
 .simulation-out-of-date {

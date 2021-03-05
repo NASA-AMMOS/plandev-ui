@@ -1,9 +1,9 @@
 {
   "id": "KG5DJ93mFCgldhU",
   "name": "Banananation 0",
-  "panels": [
+  "sections": [
     {
-      "id": "panel0",
+      "id": "section0",
       "menu": [
         { "action": "restore", "icon": "restore", "title": "Restore Time" }
       ],
@@ -47,7 +47,7 @@
       "type": "timeline"
     },
     {
-      "id": "panel1",
+      "id": "section1",
       "menu": [
         { "action": "restore", "icon": "restore", "title": "Restore Time" },
         { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
@@ -113,7 +113,7 @@
       "type": "timeline"
     },
     {
-      "id": "panel2",
+      "id": "section2",
       "size": 30,
       "table": {
         "columns": ["select", "type", "startTimestamp"],

@@ -15,13 +15,13 @@ import {
   LineCurveType,
   LineLayer,
   LinePoint,
-  Panel,
   Plan,
   Row,
   SimulationResult,
   StringTMap,
   TimeRange,
-  UiState,
+  View,
+  ViewSection,
   XRangeLayer,
   XRangePoint,
 } from '../types';
@@ -175,199 +175,197 @@ export const getSimulationResults = createSelector(
   (state: PlanningState): SimulationResult[] => state.simulationResults || [],
 );
 
-export const getUiStates = createSelector(
+export const getViews = createSelector(
   getPlanningState,
-  (state: PlanningState) => state.uiStates,
+  (state: PlanningState) => state.views,
 );
 
-export const getSelectedUiStateId = createSelector(
+export const getSelectedViewId = createSelector(
   getPlanningState,
-  (state: PlanningState) => state.selectedUiStateId,
+  (state: PlanningState) => state.selectedViewId,
 );
 
-export const getSelectedUiState = createSelector(
-  getUiStates,
-  getSelectedUiStateId,
-  (uiStates: UiState[], selectedUiStateId: string) =>
-    uiStates.find(({ id }) => id === selectedUiStateId) || null,
+export const getSelectedView = createSelector(
+  getViews,
+  getSelectedViewId,
+  (views: View[], selectedViewId: string) =>
+    views.find(({ id }) => id === selectedViewId) || null,
 );
 
-export const getPanelsWithPoints = createSelector(
+export const getSelectedViewWithPoints = createSelector(
   getActivityInstances,
   getActivityInstancesMap,
   getSelectedActivityInstanceId,
-  getSelectedUiState,
   getSimulationResults,
+  getSelectedView,
   (
     activityInstances: ActivityInstance[] | null,
     activityInstancesMap: StringTMap<ActivityInstance> | null,
     selectedActivityInstanceId: string | null,
-    uiState: UiState,
     simulationResults: SimulationResult[],
-  ) => {
-    if (uiState) {
-      return uiState.panels.map(panel => {
-        if (panel.timeline) {
-          const rows = panel.timeline.rows.map(row => {
-            const yAxisIdToScaleDomain: StringTMap<number[]> = {};
+    view: View,
+  ): View => ({
+    ...view,
+    sections: (view?.sections || []).map(section => {
+      if (section.timeline) {
+        const rows = section.timeline.rows.map(row => {
+          const yAxisIdToScaleDomain: StringTMap<number[]> = {};
 
-            const layers: Layer[] = row.layers.map(layer => {
-              if (layer.type === 'activity') {
-                const activities = activityInstances || [];
+          const layers: Layer[] = row.layers.map(layer => {
+            if (layer.type === 'activity') {
+              const activities = activityInstances || [];
 
-                const points = activities.reduce((newPoints, point) => {
-                  const r = new RegExp(layer?.filter?.activity?.type);
-                  const includePoint = r.test(point.type);
+              const points = activities.reduce((newPoints, point) => {
+                const r = new RegExp(layer?.filter?.activity?.type);
+                const includePoint = r.test(point.type);
 
-                  if (
-                    includePoint &&
-                    (point.parent === null || point.parent === undefined)
-                  ) {
-                    const activityPoint = activityInstanceToPoint(
-                      point,
-                      selectedActivityInstanceId,
-                      activityInstancesMap,
-                    );
-                    newPoints.push(activityPoint);
+                if (
+                  includePoint &&
+                  (point.parent === null || point.parent === undefined)
+                ) {
+                  const activityPoint = activityInstanceToPoint(
+                    point,
+                    selectedActivityInstanceId,
+                    activityInstancesMap,
+                  );
+                  newPoints.push(activityPoint);
+                }
+
+                return newPoints;
+              }, []);
+
+              const newLayer: ActivityLayer = {
+                ...layer,
+                points,
+              };
+
+              return newLayer;
+            } else if (layer.type === 'resource') {
+              if (layer.chartType === 'line') {
+                const points: LinePoint[] = [];
+                const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
+                let minY = Number.MAX_SAFE_INTEGER;
+                let maxY = Number.MIN_SAFE_INTEGER;
+                let curveType: LineCurveType = 'curveLinear';
+
+                if (simulationResults && simulationResults.length) {
+                  for (const result of simulationResults) {
+                    const { name, schema, start, values } = result;
+
+                    if (schema.type === 'real') {
+                      const r = new RegExp(layer?.filter?.resource?.name);
+                      const includeResult = r.test(name);
+                      curveType = 'curveLinear';
+
+                      if (includeResult) {
+                        for (let i = 0; i < values.length; ++i) {
+                          const value = values[i];
+                          const { x } = value;
+                          const y = value.y as number;
+                          points.push({
+                            id: `${layer.id}-resource-${name}-${i}`,
+                            type: 'line',
+                            x: getUnixEpochTime(start) + x / 1000,
+                            y,
+                          });
+                          minY = y < minY ? y : minY;
+                          maxY = y > maxY ? y : maxY;
+                        }
+                      }
+                    }
                   }
 
-                  return newPoints;
-                }, []);
+                  if (minY === maxY) {
+                    // If extents are equal, clip first extent to 0
+                    // so axis and line gets properly drawn by D3.
+                    minY = 0;
+                  }
 
-                const newLayer: ActivityLayer = {
+                  yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
+                }
+
+                const newLayer: LineLayer = {
                   ...layer,
+                  curveType,
                   points,
+                  yAxisId,
                 };
 
                 return newLayer;
-              } else if (layer.type === 'resource') {
-                if (layer.chartType === 'line') {
-                  const points: LinePoint[] = [];
-                  const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
-                  let minY = Number.MAX_SAFE_INTEGER;
-                  let maxY = Number.MIN_SAFE_INTEGER;
-                  let curveType: LineCurveType = 'curveLinear';
+              } else if (layer.chartType === 'x-range') {
+                const points: XRangePoint[] = [];
+                const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
+                let domain = null;
 
-                  if (simulationResults && simulationResults.length) {
-                    for (const result of simulationResults) {
-                      const { name, schema, start, values } = result;
+                if (simulationResults && simulationResults.length) {
+                  for (const result of simulationResults) {
+                    const { name, schema, start, values } = result;
 
-                      if (schema.type === 'real') {
-                        const r = new RegExp(layer?.filter?.resource?.name);
-                        const includeResult = r.test(name);
-                        curveType = 'curveLinear';
+                    if (schema.type === 'variant') {
+                      const r = new RegExp(layer?.filter?.resource?.name);
+                      const includeResult = r.test(name);
 
-                        if (includeResult) {
-                          for (let i = 0; i < values.length; ++i) {
-                            const value = values[i];
-                            const { x } = value;
-                            const y = value.y as number;
-                            points.push({
-                              id: `${layer.id}-resource-${name}-${i}`,
-                              type: 'line',
-                              x: getUnixEpochTime(start) + x / 1000,
-                              y,
-                            });
-                            minY = y < minY ? y : minY;
-                            maxY = y > maxY ? y : maxY;
-                          }
-                        }
-                      }
-                    }
-
-                    if (minY === maxY) {
-                      // If extents are equal, clip first extent to 0
-                      // so axis and line gets properly drawn by D3.
-                      minY = 0;
-                    }
-
-                    yAxisIdToScaleDomain[yAxisId] = [minY, maxY];
-                  }
-
-                  const newLayer: LineLayer = {
-                    ...layer,
-                    curveType,
-                    points,
-                    yAxisId,
-                  };
-
-                  return newLayer;
-                } else if (layer.chartType === 'x-range') {
-                  const points: XRangePoint[] = [];
-                  const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
-                  let domain = null;
-
-                  if (simulationResults && simulationResults.length) {
-                    for (const result of simulationResults) {
-                      const { name, schema, start, values } = result;
-
-                      if (schema.type === 'variant') {
-                        const r = new RegExp(layer?.filter?.resource?.name);
-                        const includeResult = r.test(name);
-
-                        if (includeResult) {
-                          domain = schema.variants.map(({ label }) => label);
-                          for (let i = 0; i < values.length; ++i) {
-                            const { x, y } = values[i];
-                            points.push({
-                              id: `${layer.id}-resource-${name}-${i}`,
-                              label: {
-                                text: y as string,
-                              },
-                              type: 'x-range',
-                              x: getUnixEpochTime(start) + x / 1000,
-                            });
-                          }
+                      if (includeResult) {
+                        domain = schema.variants.map(({ label }) => label);
+                        for (let i = 0; i < values.length; ++i) {
+                          const { x, y } = values[i];
+                          points.push({
+                            id: `${layer.id}-resource-${name}-${i}`,
+                            label: {
+                              text: y as string,
+                            },
+                            type: 'x-range',
+                            x: getUnixEpochTime(start) + x / 1000,
+                          });
                         }
                       }
                     }
                   }
-
-                  const newLayer: XRangeLayer = {
-                    ...layer,
-                    domain,
-                    points,
-                    yAxisId,
-                  };
-
-                  return newLayer;
                 }
+
+                const newLayer: XRangeLayer = {
+                  ...layer,
+                  domain,
+                  points,
+                  yAxisId,
+                };
+
+                return newLayer;
               }
+            }
 
-              return layer;
-            });
-
-            const yAxes: Axis[] = (row.yAxes || []).map(axis => ({
-              ...axis,
-              scaleDomain:
-                axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
-            }));
-
-            const newRow: Row = {
-              ...row,
-              layers,
-              yAxes,
-            };
-
-            return newRow;
+            return layer;
           });
 
-          const newPanel: Panel = {
-            ...panel,
-            timeline: {
-              ...panel.timeline,
-              rows,
-            },
+          const yAxes: Axis[] = (row.yAxes || []).map(axis => ({
+            ...axis,
+            scaleDomain:
+              axis?.scaleDomain || yAxisIdToScaleDomain[axis.id] || [],
+          }));
+
+          const newRow: Row = {
+            ...row,
+            layers,
+            yAxes,
           };
 
-          return newPanel;
-        }
+          return newRow;
+        });
 
-        return panel;
-      });
-    }
-    return [];
-  },
+        const newSection: ViewSection = {
+          ...section,
+          timeline: {
+            ...section.timeline,
+            rows,
+          },
+        };
+
+        return newSection;
+      }
+
+      return section;
+    }),
+  }),
 );
 
 export const getPlans = createSelector(

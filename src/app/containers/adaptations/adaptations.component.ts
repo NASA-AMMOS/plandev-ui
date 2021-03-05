@@ -20,7 +20,7 @@ import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
   AdaptationsTableModule,
-  PanelHeaderModule,
+  HeaderModule,
   PlaceholderModule,
   ToolbarModule,
 } from '../../components';
@@ -103,7 +103,7 @@ export class AdaptationsComponent implements OnDestroy {
     ReactiveFormsModule,
     AngularSplitModule,
     AdaptationsTableModule,
-    PanelHeaderModule,
+    HeaderModule,
     PlaceholderModule,
     ToolbarModule,
   ],

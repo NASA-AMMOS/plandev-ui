@@ -1,9 +1,9 @@
 import { Timeline } from './timeline';
 
-export type PanelMenuItemAction = 'link' | 'restore' | 'simulate';
+export type ViewSectionMenuItemAction = 'link' | 'restore' | 'simulate';
 
-export interface PanelMenuItem {
-  action: PanelMenuItemAction;
+export interface ViewSectionMenuItem {
+  action: ViewSectionMenuItemAction;
   data?: {
     url?: string;
   };
@@ -11,12 +11,12 @@ export interface PanelMenuItem {
   title: string;
 }
 
-export interface Panel {
+export interface ViewSection {
   id: string;
   iframe?: {
     src: string;
   };
-  menu?: PanelMenuItem[];
+  menu?: ViewSectionMenuItem[];
   size: number;
   table?: {
     columns: string[];
@@ -27,8 +27,8 @@ export interface Panel {
   type: 'iframe' | 'table' | 'timeline';
 }
 
-export interface UiState {
+export interface View {
   id: string;
   name: string;
-  panels: Panel[];
+  sections: ViewSection[];
 }

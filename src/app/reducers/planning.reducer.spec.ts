@@ -293,18 +293,18 @@ describe('planning reducer', () => {
     });
   });
 
-  describe('updateAllUiStates', () => {
-    it('should update all the uiStates', () => {
-      const states = [];
+  describe('updateAllViews', () => {
+    it('should update all the views', () => {
+      const views = [];
       const state: PlanningState = reducer(
         { ...initialState },
-        PlanningActions.updateAllUiStates({
-          uiStates: states,
+        PlanningActions.updateAllViews({
+          views,
         }),
       );
       expect(state).toEqual({
         ...initialState,
-        uiStates: states,
+        views,
       });
     });
   });

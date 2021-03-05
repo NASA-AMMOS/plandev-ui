@@ -9,7 +9,7 @@
   font-size: 16px;
   font-style: normal;
   font-weight: normal;
-  height: var(--panel-header-height, 40px);
+  height: var(--header-height, 40px);
   justify-content: space-between;
   overflow: hidden;
   position: sticky;
@@ -19,6 +19,6 @@
   z-index: 1;
 }
 
-.panel-header-left {
+.header-left {
   padding: 0 16px;
 }

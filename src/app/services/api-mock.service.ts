@@ -8,7 +8,7 @@ import {
   planId,
   plans,
   simulationResponse,
-  uiStates,
+  views,
 } from '../mocks';
 import * as types from '../types';
 
@@ -106,9 +106,9 @@ export class ApiMockService {
     });
   }
 
-  getUiStates(): Observable<types.UiState[]> {
-    return new Observable((o: Observer<types.UiState[]>) => {
-      o.next(uiStates);
+  getViews(): Observable<types.View[]> {
+    return new Observable((o: Observer<types.View[]>) => {
+      o.next(views);
       o.complete();
     });
   }

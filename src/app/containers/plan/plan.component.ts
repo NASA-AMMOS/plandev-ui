@@ -21,13 +21,13 @@ import { RootState } from '../../app-store';
 import {
   ActivityInstanceFormModule,
   ActivityTypeListModule,
-  PanelHeaderModule,
+  HeaderModule,
   PlaceholderModule,
   TableModule,
   TimelineModule,
   ToolbarModule,
 } from '../../components';
-import { getPanelsText } from '../../functions';
+import { getViewText } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
@@ -38,12 +38,11 @@ import {
   getConstraintViolationListState,
   getConstraintViolations,
   getMaxTimeRange,
-  getPanelsWithPoints,
   getSelectedActivityInstance,
   getSelectedPlan,
-  getSelectedUiState,
+  getSelectedViewWithPoints,
   getSimulationOutOfDate,
-  getUiStates,
+  getViews,
   getViewTimeRange,
 } from '../../selectors';
 import {
@@ -56,20 +55,20 @@ import {
   DeletePoint,
   HorizontalGuideEvent,
   LayerEvent,
-  Panel,
-  PanelMenuItem,
   Plan,
   Row,
   SavePoint,
   SelectPoint,
   StringTMap,
   TimeRange,
-  UiState,
   UpdateActivityInstance,
   UpdatePoint,
   UpdateRow,
   VerticalGuide,
   VerticalGuideEvent,
+  View,
+  ViewSection,
+  ViewSectionMenuItem,
 } from '../../types';
 import { ConstraintViolationListModule } from '../constraint-violation-list/constraint-violation-list.component';
 
@@ -96,10 +95,10 @@ export class PlanComponent implements OnDestroy {
     createActivityInstance: {
       visible: false,
     },
-    panelEditor: {
+    selectedActivityInstance: {
       visible: false,
     },
-    selectedActivityInstance: {
+    viewEditor: {
       visible: false,
     },
     violations: {
@@ -108,17 +107,17 @@ export class PlanComponent implements OnDestroy {
   };
   drawerVisible = true;
   maxTimeRange: TimeRange;
-  panelsEditorOptions = {
+  viewEditorOptions = {
     extraKeys: {
       ['Cmd-S']: () => {
         this.ngZone.run(() => {
           try {
-            if (this.selectedUiState) {
-              const panels = JSON.parse(this.panelsText);
+            if (this.selectedView) {
+              const newView = JSON.parse(this.selectedViewText);
               this.store.dispatch(
-                PlanningActions.updateUiState({
-                  id: this.selectedUiState.id,
-                  uiState: { panels },
+                PlanningActions.updateView({
+                  id: this.selectedView.id,
+                  view: newView,
                 }),
               );
               this.onResize();
@@ -140,15 +139,14 @@ export class PlanComponent implements OnDestroy {
     mode: 'javascript',
     theme: 'default',
   };
-  panels: Panel[] = [];
-  panelsText: string;
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
-  selectedUiState: UiState | null;
+  selectedView: View;
+  selectedViewText: string;
   simulationOutOfDate = false;
   totalConstraintViolations = 0;
-  uiStates: UiState[];
+  views: View[];
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -197,9 +195,9 @@ export class PlanComponent implements OnDestroy {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();
       }),
-      this.store.pipe(select(getPanelsWithPoints)).subscribe(panels => {
-        this.panels = panels;
-        this.panelsText = getPanelsText(panels);
+      this.store.pipe(select(getSelectedViewWithPoints)).subscribe(view => {
+        this.selectedView = view;
+        this.selectedViewText = getViewText(view);
         this.cdRef.markForCheck();
       }),
       this.store
@@ -215,18 +213,14 @@ export class PlanComponent implements OnDestroy {
         this.plan = plan;
         this.cdRef.markForCheck();
       }),
-      this.store.pipe(select(getSelectedUiState)).subscribe(selectedUiState => {
-        this.selectedUiState = selectedUiState;
-        this.cdRef.markForCheck();
-      }),
       this.store
         .pipe(select(getSimulationOutOfDate))
         .subscribe(simulationOutOfDate => {
           this.simulationOutOfDate = simulationOutOfDate;
           this.cdRef.markForCheck();
         }),
-      this.store.pipe(select(getUiStates)).subscribe(uiStates => {
-        this.uiStates = uiStates;
+      this.store.pipe(select(getViews)).subscribe(views => {
+        this.views = views;
         this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
@@ -241,7 +235,7 @@ export class PlanComponent implements OnDestroy {
     const { key, metaKey } = event;
     if (metaKey && key === 'e') {
       event.preventDefault();
-      this.showPanelEditor();
+      this.showViewEditor();
     }
     if (metaKey && key === 's') {
       event.preventDefault();
@@ -327,19 +321,6 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
-  onPanelMenuAction(item: PanelMenuItem) {
-    const { action, data } = item;
-    if (action === 'link' && data && data.url) {
-      window.open(data.url, '_blank');
-    }
-    if (action === 'restore') {
-      this.store.dispatch(PlanningActions.restoreViewTimeRange());
-    }
-    if (action === 'simulate') {
-      this.runSimulation();
-    }
-  }
-
   onResize(): void {
     this.store.dispatch(AppActions.resize());
   }
@@ -381,10 +362,23 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onUiStateChanged(change: MatSelectChange): void {
+  onViewChanged(change: MatSelectChange): void {
     const { value: id } = change;
-    this.store.dispatch(PlanningActions.updateSelectedUiStateId({ id }));
+    this.store.dispatch(PlanningActions.updateSelectedViewId({ id }));
     this.store.dispatch(AppActions.resize());
+  }
+
+  onViewSectionMenuAction(item: ViewSectionMenuItem) {
+    const { action, data } = item;
+    if (action === 'link' && data && data.url) {
+      window.open(data.url, '_blank');
+    }
+    if (action === 'restore') {
+      this.store.dispatch(PlanningActions.restoreViewTimeRange());
+    }
+    if (action === 'simulate') {
+      this.runSimulation();
+    }
   }
 
   onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {
@@ -451,13 +445,13 @@ export class PlanComponent implements OnDestroy {
     this.drawerVisible = true;
   }
 
-  showPanelEditor() {
-    this.showDrawerType('panelEditor');
+  showViewEditor() {
+    this.showDrawerType('viewEditor');
     this.onResize();
   }
 
-  trackByPanels(index: number, panel: Panel): string {
-    return `${panel.id}-${index}`;
+  trackByViewSections(index: number, viewSection: ViewSection): string {
+    return `${viewSection.id}-${index}`;
   }
 }
 
@@ -473,7 +467,7 @@ export class PlanComponent implements OnDestroy {
     ActivityInstanceFormModule,
     ActivityTypeListModule,
     ConstraintViolationListModule,
-    PanelHeaderModule,
+    HeaderModule,
     PipesModule,
     PlaceholderModule,
     TableModule,

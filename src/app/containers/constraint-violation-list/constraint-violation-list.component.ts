@@ -11,7 +11,7 @@ import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { Store } from '@ngrx/store';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
-import { PanelHeaderModule } from '../../components';
+import { HeaderModule } from '../../components';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
 import {
@@ -85,7 +85,7 @@ import { ConstraintViolationListNodeModule } from './constraint-violation-list-n
     `,
   ],
   template: `
-    <panel-header> Constraint Violations </panel-header>
+    <aerie-header> Constraint Violations </aerie-header>
 
     <form class="p-1 pb-3">
       <mat-form-field class="w-100" appearance="outline">
@@ -350,7 +350,7 @@ export class ConstraintViolationListComponent implements OnChanges {
     CommonModule,
     MaterialModule,
     ConstraintViolationListNodeModule,
-    PanelHeaderModule,
+    HeaderModule,
     PipesModule,
   ],
 })

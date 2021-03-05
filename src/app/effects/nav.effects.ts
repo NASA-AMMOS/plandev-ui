@@ -7,8 +7,8 @@ import {
 } from '@ngrx/effects';
 import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { AERIE_USER } from '../constants';
 import { AppActions, AuthActions, PlanningActions } from '../actions';
+import { AERIE_USER } from '../constants';
 import { mapToParam, ofRoute } from '../functions';
 import { ApiService } from '../services';
 import { User } from '../types';
@@ -86,8 +86,8 @@ export class NavEffects {
       switchMap(planId =>
         concat(
           of(AppActions.setLoading({ loading: true })),
-          this.apiService.getUiStates().pipe(
-            map(uiStates => PlanningActions.updateAllUiStates({ uiStates })),
+          this.apiService.getViews().pipe(
+            map(views => PlanningActions.updateAllViews({ views })),
             catchError((error: Error) => {
               console.error(error);
               return [];

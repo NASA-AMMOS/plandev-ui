@@ -22,7 +22,7 @@ import { SubSink } from 'subsink';
 import { PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
-  PanelHeaderModule,
+  HeaderModule,
   PlaceholderModule,
   PlansTableModule,
   ToolbarModule,
@@ -118,7 +118,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     ReactiveFormsModule,
     RouterModule,
     AngularSplitModule,
-    PanelHeaderModule,
+    HeaderModule,
     PlaceholderModule,
     PlansTableModule,
     ToolbarModule,

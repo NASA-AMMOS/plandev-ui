@@ -14,10 +14,10 @@ import {
   Row,
   SimulationResponse,
   TimeRange,
-  UiState,
   UpdateActivityInstance,
   VerticalGuide,
   VerticalGuideEvent,
+  View,
 } from '../types';
 
 export const createActivityInstance = createAction(
@@ -180,9 +180,9 @@ export const updateActivityInstanceSuccess = createAction(
   props<{ activityInstance: UpdateActivityInstance }>(),
 );
 
-export const updateAllUiStates = createAction(
-  '[planning] updateAllUiStates',
-  props<{ uiStates: UiState[] }>(),
+export const updateAllViews = createAction(
+  '[planning] updateAllViews',
+  props<{ views: View[] }>(),
 );
 
 export const updateConstraintViolationListState = createAction(
@@ -210,14 +210,14 @@ export const updateRow = createAction(
   props<{ rowId: string; update: any }>(),
 );
 
-export const updateSelectedUiStateId = createAction(
-  '[planning] updateSelectedUiStateId',
+export const updateSelectedViewId = createAction(
+  '[planning] updateSelectedViewId',
   props<{ id: string }>(),
 );
 
-export const updateUiState = createAction(
-  '[planning] updateUiState',
-  props<{ id: string; uiState: Partial<UiState> }>(),
+export const updateView = createAction(
+  '[planning] updateView',
+  props<{ id: string; view: Partial<View> }>(),
 );
 
 export const updateViewTimeRange = createAction(

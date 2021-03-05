@@ -4,4 +4,4 @@ export * from './adaptations';
 export * from './constraint';
 export * from './plans';
 export * from './timeline';
-export * from './ui';
+export * from './view';
