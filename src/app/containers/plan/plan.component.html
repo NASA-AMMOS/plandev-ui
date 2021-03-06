@@ -130,10 +130,10 @@
           </mat-select>
         </mat-form-field>
       </form>
-      <ngx-codemirror
-        [(ngModel)]="selectedViewText"
-        [options]="viewEditorOptions"
-      ></ngx-codemirror>
+      <code-mirror
+        [text]="selectedViewText"
+        (textChanged)="onSelectedViewTextChanged($event)"
+      ></code-mirror>
     </div>
 
     <div *ngIf="drawer.selectedActivityInstance.visible">

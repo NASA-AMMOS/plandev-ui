@@ -34,16 +34,6 @@ iframe {
   width: 100%;
 }
 
-ngx-codemirror {
-  height: calc(100% - var(--toolbar-height, 36px));
-  width: calc(100% - 10px);
-}
-
-::ng-deep .CodeMirror {
-  /* 82px is the height of the select form field */
-  height: calc(100% - var(--header-height, 36px) - 82px);
-}
-
 .simulation-out-of-date {
   color: #f44336;
 }

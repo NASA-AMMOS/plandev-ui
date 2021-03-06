@@ -5,22 +5,21 @@ import {
   Component,
   HostListener,
   NgModule,
-  NgZone,
   OnDestroy,
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
-import { CodemirrorModule } from '@ctrl/ngx-codemirror';
 import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
 import { SubSink } from 'subsink';
-import { AppActions, PlanningActions, ToastActions } from '../../actions';
+import { AppActions, PlanningActions } from '../../actions';
 import { RootState } from '../../app-store';
 import {
   ActivityInstanceFormModule,
   ActivityTypeListModule,
+  CodeMirrorModule,
   HeaderModule,
   PlaceholderModule,
   TableModule,
@@ -107,38 +106,6 @@ export class PlanComponent implements OnDestroy {
   };
   drawerVisible = true;
   maxTimeRange: TimeRange;
-  viewEditorOptions = {
-    extraKeys: {
-      ['Cmd-S']: () => {
-        this.ngZone.run(() => {
-          try {
-            if (this.selectedView) {
-              const newView = JSON.parse(this.selectedViewText);
-              this.store.dispatch(
-                PlanningActions.updateView({
-                  id: this.selectedView.id,
-                  view: newView,
-                }),
-              );
-              this.onResize();
-            }
-          } catch (error) {
-            const { message } = error;
-            console.error(message);
-            this.store.dispatch(
-              ToastActions.showToast({
-                message,
-                toastType: 'error',
-              }),
-            );
-          }
-        });
-      },
-    },
-    lineNumbers: true,
-    mode: 'javascript',
-    theme: 'default',
-  };
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
@@ -153,7 +120,6 @@ export class PlanComponent implements OnDestroy {
 
   constructor(
     private cdRef: ChangeDetectorRef,
-    private ngZone: NgZone,
     private route: ActivatedRoute,
     private store: Store<RootState>,
   ) {
@@ -362,23 +328,14 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onViewChanged(change: MatSelectChange): void {
-    const { value: id } = change;
-    this.store.dispatch(PlanningActions.updateSelectedViewId({ id }));
-    this.store.dispatch(AppActions.resize());
-  }
-
-  onViewSectionMenuAction(item: ViewSectionMenuItem) {
-    const { action, data } = item;
-    if (action === 'link' && data && data.url) {
-      window.open(data.url, '_blank');
-    }
-    if (action === 'restore') {
-      this.store.dispatch(PlanningActions.restoreViewTimeRange());
-    }
-    if (action === 'simulate') {
-      this.runSimulation();
-    }
+  onSelectedViewTextChanged(view: View): void {
+    this.store.dispatch(
+      PlanningActions.updateView({
+        id: this.selectedView.id,
+        view,
+      }),
+    );
+    this.onResize();
   }
 
   onUpdateActivityInstance(activityInstance: UpdateActivityInstance): void {
@@ -428,6 +385,25 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
   }
 
+  onViewChanged(change: MatSelectChange): void {
+    const { value: id } = change;
+    this.store.dispatch(PlanningActions.updateSelectedViewId({ id }));
+    this.store.dispatch(AppActions.resize());
+  }
+
+  onViewSectionMenuAction(item: ViewSectionMenuItem) {
+    const { action, data } = item;
+    if (action === 'link' && data && data.url) {
+      window.open(data.url, '_blank');
+    }
+    if (action === 'restore') {
+      this.store.dispatch(PlanningActions.restoreViewTimeRange());
+    }
+    if (action === 'simulate') {
+      this.runSimulation();
+    }
+  }
+
   runSimulation() {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(PlanningActions.runSimulation({ planId }));
@@ -460,7 +436,7 @@ export class PlanComponent implements OnDestroy {
   exports: [PlanComponent],
   imports: [
     CommonModule,
-    CodemirrorModule,
+    CodeMirrorModule,
     FormsModule,
     MaterialModule,
     AngularSplitModule,
