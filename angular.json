@@ -13,11 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": [
-              "subsink",
-              "zen-observable",
-              "zone.js/dist/zone-error"
-            ],
+            "allowedCommonJsDependencies": ["zone.js/dist/zone-error"],
             "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.ts",
