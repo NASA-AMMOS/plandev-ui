@@ -1,77 +1,125 @@
 {
-  "id": "IaNzaiZC3R25wDB",
+  "id": "KG5DJ93mFCgldhU",
   "meta": {
     "owner": "system",
-    "timeCreated": 1615235194748,
-    "timeUpdated": 1615235194748
+    "timeCreated": 1615235211527,
+    "timeUpdated": 1615235211527
   },
-  "name": "Banananation 1",
+  "name": "Banananation 0",
   "sections": [
     {
       "id": "section0",
       "menu": [
-        { "action": "restore", "icon": "restore", "title": "Restore Time" },
-        { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
+        { "action": "restore", "icon": "restore", "title": "Restore Time" }
       ],
-      "size": 60,
+      "size": 35,
       "timeline": {
         "id": "timeline0",
         "rows": [
           {
-            "autoAdjustHeight": false,
+            "autoAdjustHeight": true,
             "height": 200,
             "id": "row0",
             "layers": [
               {
                 "chartType": "activity",
-                "color": "#fcba03",
-                "filter": { "activity": { "type": "PeelBanana" } },
+                "filter": { "activity": { "type": ".*" } },
                 "id": "layer0",
                 "type": "activity"
-              },
+              }
+            ]
+          }
+        ],
+        "verticalGuides": [
+          {
+            "id": "guide0",
+            "label": { "text": "Guide 0" },
+            "timestamp": "2020-005T00:00:00"
+          },
+          {
+            "id": "guide1",
+            "label": { "text": "Guide 1" },
+            "timestamp": "2020-025T00:00:00"
+          },
+          {
+            "id": "guide2",
+            "label": { "text": "Guide 2" },
+            "timestamp": "2020-045T00:00:00"
+          }
+        ]
+      },
+      "title": "Schedule",
+      "type": "timeline"
+    },
+    {
+      "id": "section1",
+      "menu": [
+        { "action": "restore", "icon": "restore", "title": "Restore Time" },
+        { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
+      ],
+      "size": 35,
+      "timeline": {
+        "id": "timeline1",
+        "rows": [
+          {
+            "height": 100,
+            "id": "row1",
+            "layers": [
               {
                 "chartType": "line",
-                "color": "#fcba03",
                 "filter": { "resource": { "name": "peel" } },
                 "id": "layer1",
                 "type": "resource",
                 "yAxisId": "yAxis1"
               }
             ],
-            "yAxes": [{ "id": "yAxis1", "label": { "text": "Peel" } }]
+            "yAxes": [{ "id": "yAxis1", "label": { "text": "peel" } }]
           },
           {
-            "autoAdjustHeight": false,
-            "height": 200,
-            "id": "row1",
+            "height": 100,
+            "id": "row2",
             "layers": [
               {
-                "chartType": "activity",
-                "color": "#39a8ed",
-                "filter": { "activity": { "type": "BiteBanana" } },
-                "id": "layer2",
-                "type": "activity"
-              },
-              {
                 "chartType": "line",
-                "color": "#39a8ed",
                 "filter": { "resource": { "name": "fruit" } },
-                "id": "layer3",
+                "id": "layer2",
                 "type": "resource",
                 "yAxisId": "yAxis2"
               }
             ],
-            "yAxes": [{ "id": "yAxis2", "label": { "text": "Fruit" } }]
+            "yAxes": [{ "id": "yAxis2", "label": { "text": "fruit" } }]
+          },
+          {
+            "height": 100,
+            "id": "row3",
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": { "resource": { "name": "flag" } },
+                "id": "layer3",
+                "opacity": 1.0,
+                "type": "resource",
+                "yAxisId": "yAxis3"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis3", "label": { "text": "flag" } }]
           }
         ],
-        "verticalGuides": []
+        "verticalGuides": [
+          {
+            "id": "guide3",
+            "label": { "text": "Guide 3" },
+            "timestamp": "2020-100T00:00:00"
+          }
+        ]
       },
-      "title": "Schedule & Simulation",
+      "title": "Simulation",
       "type": "timeline"
     },
     {
-      "id": "section1",
-      "size": 40,
+      "id": "section2",
+      "size": 30,
       "table": {
         "columns": ["select", "type", "startTimestamp"],
         "type": "activity"
