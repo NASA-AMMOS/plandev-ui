@@ -20,12 +20,13 @@ async function main() {
   async function auth(req: Request, res: Response, next: NextFunction) {
     const { headers } = req;
     const { authorization: ssoToken = '' } = headers;
-    const response = await camApi.session(ssoToken);
+    const userResponse = await camApi.user(ssoToken);
 
-    if (response.success) {
+    if (userResponse.success) {
+      req.headers['x-user'] = userResponse.userId;
       next();
     } else {
-      res.status(401).send(response);
+      res.status(401).send(userResponse);
     }
   }
 
@@ -57,10 +58,14 @@ async function main() {
     res.json({ timestamp, uptimeMinutes });
   });
 
-  app.get('/views', auth, async (_, res) => {
+  app.get('/views', auth, async (req, res) => {
+    const owner = req.get('x-user');
     const { rows } = await dbPool.query(`
       SELECT view
       FROM ui.views
+      WHERE view->'meta'->>'owner' = '${owner}'
+      OR view->'meta'->>'owner' = 'system'
+      ORDER BY view->'meta'->>'timeUpdated' DESC;
     `);
     const views = rows.map(({ view }) => view);
     res.json(views);
@@ -69,7 +74,10 @@ async function main() {
   app.post('/views', auth, async (req, res) => {
     const { body } = req;
     const id = Db.uniqueId();
-    const view = JSON.stringify({ ...body, id });
+    const now = Date.now();
+    const owner = req.get('x-user');
+    const meta = { owner, timeCreated: now, timeUpdated: now };
+    const view = JSON.stringify({ ...body, id, meta });
     const { rowCount } = await dbPool.query(`
       INSERT INTO ui.views (id, view)
       VALUES ('${id}', '${view}');
@@ -88,11 +96,27 @@ async function main() {
   app.put('/views/:id', auth, async (req, res) => {
     const { body, params } = req;
     const { id = '' } = params;
-    const view = JSON.stringify({ ...body, id });
+    const owner = req.get('x-user');
+    const { rows } = await dbPool.query(`
+      SELECT view
+      FROM ui.views
+      WHERE id='${id}'
+      AND view->'meta'->>'owner' = '${owner}';
+    `);
+    const [{ view: currentView }] = rows;
+    const now = Date.now();
+    const view = JSON.stringify({
+      ...body,
+      meta: {
+        ...currentView.meta,
+        timeUpdated: now,
+      },
+    });
     const { rowCount } = await dbPool.query(`
       UPDATE ui.views
       SET view='${view}'
       WHERE id='${id}'
+      AND view->'meta'->>'owner' = '${owner}';
     `);
     if (rowCount > 0) {
       res.json({
@@ -108,9 +132,15 @@ async function main() {
   app.get('/views/:id', auth, async (req, res) => {
     const { params } = req;
     const { id = '' } = params;
+    const owner = req.get('x-user');
     const { rows = [], rowCount } = await dbPool.query(`
-      SELECT view FROM ui.views
+      SELECT view
+      FROM ui.views
       WHERE id = '${id}'
+      AND (
+        view->'meta'->>'owner' = '${owner}'
+        OR view->'meta'->>'owner' = 'system'
+      );
     `);
     if (rowCount > 0) {
       const [{ view = {} }] = rows;
@@ -125,9 +155,11 @@ async function main() {
   app.delete('/views/:id', auth, async (req, res) => {
     const { params } = req;
     const { id = '' } = params;
+    const owner = req.get('x-user');
     const { rowCount } = await dbPool.query(`
       DELETE FROM ui.views
       WHERE id = '${id}'
+      AND view->'meta'->>'owner' = '${owner}';
     `);
     if (rowCount > 0) {
       res.json({
