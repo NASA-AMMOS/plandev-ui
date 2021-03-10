@@ -71,6 +71,44 @@ async function main() {
     res.json(views);
   });
 
+  app.get('/views/latest', auth, async (req, res) => {
+    const user = req.get('x-user');
+
+    const { rows } = await dbPool.query(`
+      SELECT view
+      FROM ui.views
+      WHERE view->'meta'->>'owner' = '${user}'
+      OR view->'meta'->>'owner' = 'system'
+      ORDER BY view->'meta'->>'timeUpdated' DESC;
+    `);
+
+    const userViews = [];
+    const systemViews = [];
+    for (const row of rows) {
+      const { view } = row;
+      const { owner } = view.meta;
+      if (owner === user) {
+        userViews.push(view);
+      }
+      if (owner === 'system') {
+        systemViews.push(view);
+      }
+    }
+
+    if (userViews.length) {
+      const [userView] = userViews;
+      res.json(userView);
+    } else if (systemViews.length) {
+      const [systemView] = systemViews;
+      res.json(systemView);
+    } else {
+      res.json({
+        message: `No views found`,
+        success: false,
+      });
+    }
+  });
+
   app.post('/views', auth, async (req, res) => {
     const { body } = req;
     const id = Db.uniqueId();
