@@ -4,10 +4,8 @@
   "private": true,
   "scripts": {
     "start": "ts-node --transpile-only src/main.ts",
-    "start:develop": "ENV=develop npm start",
-    "start:local": "ENV=local npm start",
-    "start:production": "ENV=production npm start",
-    "start:staging": "ENV=staging npm start"
+    "start:docker": "ENV=docker npm start",
+    "start:local": "ENV=local npm start"
   },
   "dependencies": {
     "@gov.nasa.jpl.aerie/cam": "1.0.0",

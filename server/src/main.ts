@@ -211,7 +211,7 @@ async function main() {
   });
 
   app.listen(port, () => {
-    console.log(`🚀 aerie-ui-server listening on port ${port}`);
+    console.log(`🚀 AERIE-UI listening on port ${port}`);
   });
 }
 

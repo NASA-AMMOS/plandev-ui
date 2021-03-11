@@ -7,7 +7,7 @@
     "shared": "http://100.64.92.85:8080"
   },
   "environments": {
-    "develop": {
+    "docker": {
       "postgres": {
         "database": "aerie",
         "host": "postgres",
@@ -20,24 +20,6 @@
       "postgres": {
         "database": "aerie",
         "host": "localhost",
-        "password": "aerie",
-        "port": 5432,
-        "user": "aerie"
-      }
-    },
-    "production": {
-      "postgres": {
-        "database": "aerie",
-        "host": "postgres",
-        "password": "aerie",
-        "port": 5432,
-        "user": "aerie"
-      }
-    },
-    "staging": {
-      "postgres": {
-        "database": "aerie",
-        "host": "postgres",
         "password": "aerie",
         "port": 5432,
         "user": "aerie"
