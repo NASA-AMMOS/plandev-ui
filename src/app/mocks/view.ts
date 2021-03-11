@@ -2,6 +2,11 @@ import { View } from '../types';
 
 export const view: View = {
   id: 'view0',
+  meta: {
+    owner: 'system',
+    timeCreated: 1615235211527,
+    timeUpdated: 1615235211527,
+  },
   name: 'Example 0',
   sections: [
     {

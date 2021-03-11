@@ -2,6 +2,12 @@ import { Timeline } from './timeline';
 
 export type ViewSectionMenuItemAction = 'link' | 'restore' | 'simulate';
 
+export interface ViewMeta {
+  owner: string;
+  timeCreated: number;
+  timeUpdated: number;
+}
+
 export interface ViewSectionMenuItem {
   action: ViewSectionMenuItemAction;
   data?: {
@@ -29,6 +35,7 @@ export interface ViewSection {
 
 export interface View {
   id: string;
+  meta: ViewMeta;
   name: string;
   sections: ViewSection[];
 }
