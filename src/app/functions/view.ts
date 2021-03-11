@@ -29,6 +29,7 @@ export function getViewText(view: View): string {
                     layer = { ...layer };
 
                     delete layer.points;
+                    delete (layer as LineLayer).curveType;
                     delete (layer as XRangeLayer).domain;
 
                     return layer;
