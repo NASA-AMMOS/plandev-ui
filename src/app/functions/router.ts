@@ -19,10 +19,11 @@ export function ofRoute(route: string): MonoTypeOperatorFunction<Action> {
   return filter<Action>(isRoute(route));
 }
 
-export function mapToParam<T>(
-  key: string,
-): OperatorFunction<RouterNavigatedAction<RouterState>, T> {
-  return map<RouterNavigatedAction<RouterState>, T>(
-    routerAction => routerAction.payload.routerState.params[key],
-  );
+export function mapToRouterState(): OperatorFunction<
+  RouterNavigatedAction<RouterState>,
+  RouterState
+> {
+  return map<RouterNavigatedAction<RouterState>, RouterState>(routerAction => {
+    return routerAction.payload.routerState;
+  });
 }

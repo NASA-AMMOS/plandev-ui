@@ -98,7 +98,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
   }
 
   onOpenPlan(id: string) {
-    this.router.navigate(['/plans', id]);
+    this.router.navigateByUrl(`/plans/${id}`);
   }
 
   onSubmit() {

@@ -175,29 +175,17 @@ export const getSimulationResults = createSelector(
   (state: PlanningState): SimulationResult[] => state.simulationResults || [],
 );
 
-export const getViews = createSelector(
+export const getView = createSelector(
   getPlanningState,
-  (state: PlanningState) => state.views,
+  (state: PlanningState) => state.view,
 );
 
-export const getSelectedViewId = createSelector(
-  getPlanningState,
-  (state: PlanningState) => state.selectedViewId,
-);
-
-export const getSelectedView = createSelector(
-  getViews,
-  getSelectedViewId,
-  (views: View[], selectedViewId: string) =>
-    views.find(({ id }) => id === selectedViewId) || null,
-);
-
-export const getSelectedViewWithPoints = createSelector(
+export const getViewWithPoints = createSelector(
   getActivityInstances,
   getActivityInstancesMap,
   getSelectedActivityInstanceId,
   getSimulationResults,
-  getSelectedView,
+  getView,
   (
     activityInstances: ActivityInstance[] | null,
     activityInstancesMap: StringTMap<ActivityInstance> | null,

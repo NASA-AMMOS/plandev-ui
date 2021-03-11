@@ -162,6 +162,11 @@ export const setSelectedActivityInstanceId = createAction(
   }>(),
 );
 
+export const setView = createAction(
+  '[planning] setView',
+  props<{ view: View }>(),
+);
+
 export const updateActivityInstance = createAction(
   '[planning] updateActivityInstance',
   props<{
@@ -178,11 +183,6 @@ export const updateActivityInstanceFailure = createAction(
 export const updateActivityInstanceSuccess = createAction(
   '[planning] updateActivityInstanceSuccess',
   props<{ activityInstance: UpdateActivityInstance }>(),
-);
-
-export const updateAllViews = createAction(
-  '[planning] updateAllViews',
-  props<{ views: View[] }>(),
 );
 
 export const updateConstraintViolationListState = createAction(

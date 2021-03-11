@@ -9,7 +9,6 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { AngularSplitModule, SplitComponent } from 'angular-split';
@@ -39,10 +38,9 @@ import {
   getMaxTimeRange,
   getSelectedActivityInstance,
   getSelectedPlan,
-  getSelectedViewWithPoints,
   getSimulationOutOfDate,
-  getViews,
   getViewTimeRange,
+  getViewWithPoints,
 } from '../../selectors';
 import {
   ActivityInstance,
@@ -109,11 +107,10 @@ export class PlanComponent implements OnDestroy {
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
-  selectedView: View;
-  selectedViewText: string;
   simulationOutOfDate = false;
   totalConstraintViolations = 0;
-  views: View[];
+  view: View | null;
+  viewText: string;
   viewTimeRange: TimeRange;
 
   private subs = new SubSink();
@@ -161,9 +158,9 @@ export class PlanComponent implements OnDestroy {
         this.maxTimeRange = maxTimeRange;
         this.cdRef.markForCheck();
       }),
-      this.store.pipe(select(getSelectedViewWithPoints)).subscribe(view => {
-        this.selectedView = view;
-        this.selectedViewText = getViewText(view);
+      this.store.pipe(select(getViewWithPoints)).subscribe(view => {
+        this.view = view;
+        this.viewText = getViewText(view);
         this.cdRef.markForCheck();
       }),
       this.store
@@ -185,10 +182,6 @@ export class PlanComponent implements OnDestroy {
           this.simulationOutOfDate = simulationOutOfDate;
           this.cdRef.markForCheck();
         }),
-      this.store.pipe(select(getViews)).subscribe(views => {
-        this.views = views;
-        this.cdRef.markForCheck();
-      }),
       this.store.pipe(select(getViewTimeRange)).subscribe(viewTimeRange => {
         this.viewTimeRange = viewTimeRange;
         this.cdRef.markForCheck();
@@ -328,10 +321,10 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
-  onSelectedViewTextChanged(view: View): void {
+  onViewTextChanged(view: View): void {
     this.store.dispatch(
       PlanningActions.updateView({
-        id: this.selectedView.id,
+        id: this.view.id,
         view,
       }),
     );
@@ -383,12 +376,6 @@ export class PlanComponent implements OnDestroy {
 
   onUpdateViewTimeRange(viewTimeRange: TimeRange): void {
     this.store.dispatch(PlanningActions.updateViewTimeRange({ viewTimeRange }));
-  }
-
-  onViewChanged(change: MatSelectChange): void {
-    const { value: id } = change;
-    this.store.dispatch(PlanningActions.updateSelectedViewId({ id }));
-    this.store.dispatch(AppActions.resize());
   }
 
   onViewSectionMenuAction(item: ViewSectionMenuItem) {

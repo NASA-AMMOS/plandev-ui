@@ -32,10 +32,9 @@ export interface PlanningState {
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
-  selectedViewId: string | null;
   simulationResults: SimulationResult[] | null;
+  view: View | null;
   viewTimeRange: TimeRange;
-  views: View[];
 }
 
 export const initialState: PlanningState = {
@@ -50,10 +49,9 @@ export const initialState: PlanningState = {
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
-  selectedViewId: null,
   simulationResults: null,
+  view: null,
   viewTimeRange: { end: 0, start: 0 },
-  views: [],
 };
 
 export const reducer = createReducer(
@@ -103,9 +101,9 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.deleteRow, (state, { row: removedRow, timelineId }) => ({
     ...state,
-    views: state.views.map(view => ({
-      ...view,
-      sections: view.sections.map(section => {
+    view: {
+      ...state.view,
+      sections: state.view.sections.map(section => {
         if (section.timeline && section.timeline.id === timelineId) {
           return {
             ...section,
@@ -119,7 +117,7 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    })),
+    },
   })),
   on(PlanningActions.getAdaptationsSuccess, (state, { adaptations }) => ({
     ...state,
@@ -141,9 +139,9 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.horizontalGuideCreate, (state, { guide, rowId }) => ({
     ...state,
-    views: state.views.map(view => ({
-      ...view,
-      sections: view.sections.map(section => {
+    view: {
+      ...state.view,
+      sections: state.view.sections.map(section => {
         if (section.timeline) {
           return {
             ...section,
@@ -165,15 +163,15 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    })),
+    },
   })),
   on(
     PlanningActions.horizontalGuideDelete,
     (state, { guide: removedGuide, rowId }) => ({
       ...state,
-      views: state.views.map(view => ({
-        ...view,
-        sections: view.sections.map(section => {
+      view: {
+        ...state.view,
+        sections: state.view.sections.map(section => {
           if (section.timeline) {
             return {
               ...section,
@@ -196,16 +194,16 @@ export const reducer = createReducer(
           }
           return section;
         }),
-      })),
+      },
     }),
   ),
   on(
     PlanningActions.horizontalGuideUpdate,
     (state, { guide: updatedGuide, rowId }) => ({
       ...state,
-      views: state.views.map(view => ({
-        ...view,
-        sections: view.sections.map(section => {
+      view: {
+        ...state.view,
+        sections: state.view.sections.map(section => {
           if (section.timeline) {
             return {
               ...section,
@@ -234,14 +232,14 @@ export const reducer = createReducer(
           }
           return section;
         }),
-      })),
+      },
     }),
   ),
   on(PlanningActions.layerUpdate, (state, { layer: updatedLayer, rowId }) => ({
     ...state,
-    views: state.views.map(view => ({
-      ...view,
-      sections: view.sections.map(section => {
+    view: {
+      ...state.view,
+      sections: state.view.sections.map(section => {
         if (section.timeline) {
           return {
             ...section,
@@ -269,7 +267,7 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    })),
+    },
   })),
   on(PlanningActions.restoreViewTimeRange, state => ({
     ...state,
@@ -351,6 +349,10 @@ export const reducer = createReducer(
         !keepSelected && state.selectedActivityInstanceId === id ? null : id,
     }),
   ),
+  on(PlanningActions.setView, (state, { view }) => ({
+    ...state,
+    view,
+  })),
   on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {
@@ -362,11 +364,6 @@ export const reducer = createReducer(
       },
     },
     lastActivityInstanceUpdate: performance.now(),
-  })),
-  on(PlanningActions.updateAllViews, (state, { views }) => ({
-    ...state,
-    selectedViewId: views[0]?.id || null,
-    views,
   })),
   on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
     ...state,
@@ -383,9 +380,9 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.updateRow, (state, { rowId, update }) => ({
     ...state,
-    views: state.views.map(view => ({
-      ...view,
-      sections: view.sections.map(section => {
+    view: {
+      ...state.view,
+      sections: state.view.sections.map(section => {
         if (section.timeline) {
           return {
             ...section,
@@ -405,7 +402,7 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    })),
+    },
   })),
   on(PlanningActions.updateConstraintViolationListState, (state, action) => ({
     ...state,
@@ -428,15 +425,10 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.updateView, (state, action) => ({
     ...state,
-    views: state.views.map(view => {
-      if (action.id === view.id) {
-        return {
-          ...view,
-          ...action.view,
-        };
-      }
-      return view;
-    }),
+    view: {
+      ...state.view,
+      ...action.view,
+    },
   })),
   on(PlanningActions.updateViewTimeRange, (state, { viewTimeRange }) => ({
     ...state,
@@ -444,9 +436,9 @@ export const reducer = createReducer(
   })),
   on(PlanningActions.verticalGuideCreate, (state, { guide, timelineId }) => ({
     ...state,
-    views: state.views.map(view => ({
-      ...view,
-      sections: view.sections.map(section => {
+    views: {
+      ...state.view,
+      sections: state.view.sections.map(section => {
         if (section.timeline && section.timeline.id === timelineId) {
           return {
             ...section,
@@ -460,15 +452,15 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    })),
+    },
   })),
   on(
     PlanningActions.verticalGuideDelete,
     (state, { guide: removedGuide, timelineId }) => ({
       ...state,
-      views: state.views.map(view => ({
-        ...view,
-        sections: view.sections.map(section => {
+      views: {
+        ...state.view,
+        sections: state.view.sections.map(section => {
           if (section.timeline && section.timeline.id === timelineId) {
             return {
               ...section,
@@ -482,16 +474,16 @@ export const reducer = createReducer(
           }
           return section;
         }),
-      })),
+      },
     }),
   ),
   on(
     PlanningActions.verticalGuideUpdate,
     (state, { guide: updatedGuide, timelineId }) => ({
       ...state,
-      views: state.views.map(view => ({
-        ...view,
-        sections: view.sections.map(section => {
+      view: {
+        ...state.view,
+        sections: state.view.sections.map(section => {
           if (section.timeline && section.timeline.id === timelineId) {
             return {
               ...section,
@@ -513,7 +505,7 @@ export const reducer = createReducer(
           }
           return section;
         }),
-      })),
+      },
     }),
   ),
 );

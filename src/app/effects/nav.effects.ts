@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import {
   Actions,
@@ -9,7 +10,7 @@ import { concat, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AppActions, AuthActions, PlanningActions } from '../actions';
 import { AERIE_USER } from '../constants';
-import { mapToParam, ofRoute } from '../functions';
+import { mapToRouterState, ofRoute } from '../functions';
 import { ApiService } from '../services';
 import { User } from '../types';
 
@@ -82,17 +83,41 @@ export class NavEffects {
   navPlansWithId = createEffect(() =>
     this.actions.pipe(
       ofRoute('plans/:id'),
-      mapToParam<string>('id'),
-      switchMap(planId =>
-        concat(
-          of(AppActions.setLoading({ loading: true })),
-          this.apiService.getViews().pipe(
-            map(views => PlanningActions.updateAllViews({ views })),
-            catchError((error: Error) => {
-              console.error(error);
-              return [];
-            }),
-          ),
+      mapToRouterState(),
+      switchMap(routerState => {
+        const { params, queryParams } = routerState;
+        const { id: planId } = params;
+        const { viewId = null } = queryParams;
+
+        const actions = [of(AppActions.setLoading({ loading: true }))];
+
+        if (!viewId) {
+          actions.push(
+            this.apiService.getViewLatest().pipe(
+              map(view => {
+                const path = this.location.path();
+                this.location.replaceState(`${path}?viewId=${view.id}`);
+                return PlanningActions.setView({ view });
+              }),
+              catchError((error: Error) => {
+                console.error(error);
+                return [];
+              }),
+            ),
+          );
+        } else {
+          actions.push(
+            this.apiService.getViewById(viewId).pipe(
+              map(view => PlanningActions.setView({ view })),
+              catchError((error: Error) => {
+                console.error(error);
+                return [];
+              }),
+            ),
+          );
+        }
+
+        actions.push(
           this.apiService.getPlanDetail(planId).pipe(
             map(plan => PlanningActions.getPlanDetailSuccess({ plan })),
             catchError((error: Error) => {
@@ -101,10 +126,16 @@ export class NavEffects {
             }),
           ),
           of(AppActions.setLoading({ loading: false })),
-        ),
-      ),
+        );
+
+        return concat(...actions);
+      }),
     ),
   );
 
-  constructor(private actions: Actions, private apiService: ApiService) {}
+  constructor(
+    private actions: Actions,
+    private apiService: ApiService,
+    private location: Location,
+  ) {}
 }

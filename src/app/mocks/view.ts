@@ -1,150 +1,148 @@
 import { View } from '../types';
 
-export const views: View[] = [
-  {
-    id: 'view0',
-    name: 'Example 0',
-    sections: [
-      {
-        id: 'section0',
-        menu: [
+export const view: View = {
+  id: 'view0',
+  name: 'Example 0',
+  sections: [
+    {
+      id: 'section0',
+      menu: [
+        {
+          action: 'restore',
+          icon: 'restore',
+          title: 'Restore Time',
+        },
+      ],
+      size: 35,
+      timeline: {
+        id: 'timeline0',
+        rows: [
           {
-            action: 'restore',
-            icon: 'restore',
-            title: 'Restore Time',
+            height: 200,
+            id: 'row0',
+            layers: [
+              {
+                chartType: 'activity',
+                filter: {
+                  activity: {
+                    type: '.*',
+                  },
+                },
+                id: 'layer0',
+                type: 'activity',
+              },
+            ],
           },
         ],
-        size: 35,
-        timeline: {
-          id: 'timeline0',
-          rows: [
-            {
-              height: 200,
-              id: 'row0',
-              layers: [
-                {
-                  chartType: 'activity',
-                  filter: {
-                    activity: {
-                      type: '.*',
-                    },
-                  },
-                  id: 'layer0',
-                  type: 'activity',
-                },
-              ],
-            },
-          ],
-          verticalGuides: [
-            {
-              id: 'verticalGuide0',
-              label: { text: 'Guide 0000000000000000000000' },
-              timestamp: '2020-001T00:00:11',
-            },
-            {
-              id: 'verticalGuide1',
-              label: { text: 'Guide 1' },
-              timestamp: '2020-001T00:00:23',
-            },
-          ],
-        },
-        title: 'Schedule',
-        type: 'timeline',
-      },
-      {
-        id: 'section1',
-        menu: [
+        verticalGuides: [
           {
-            action: 'restore',
-            icon: 'restore',
-            title: 'Restore Time',
+            id: 'verticalGuide0',
+            label: { text: 'Guide 0000000000000000000000' },
+            timestamp: '2020-001T00:00:11',
           },
           {
-            action: 'simulate',
-            icon: 'timeline',
-            title: 'Run Simulation',
+            id: 'verticalGuide1',
+            label: { text: 'Guide 1' },
+            timestamp: '2020-001T00:00:23',
           },
         ],
-        size: 35,
-        timeline: {
-          id: 'timeline1',
-          rows: [
-            {
-              height: 100,
-              horizontalGuides: [],
-              id: 'row1',
-              layers: [
-                {
-                  chartType: 'line',
-                  filter: {
-                    resource: {
-                      name: 'peel',
-                    },
-                  },
-                  id: 'layer1',
-                  type: 'resource',
-                },
-              ],
-              yAxes: [
-                {
-                  id: 'axis-layer1',
-                  label: {
-                    text: 'peel',
-                  },
-                },
-              ],
-            },
-            {
-              height: 100,
-              id: 'row2',
-              layers: [
-                {
-                  chartType: 'line',
-                  filter: {
-                    resource: {
-                      name: 'fruit',
-                    },
-                  },
-                  id: 'layer2',
-                  type: 'resource',
-                },
-              ],
-              yAxes: [
-                {
-                  id: 'axis-layer2',
-                  label: {
-                    text: 'fruit',
-                  },
-                },
-              ],
-            },
-          ],
-          verticalGuides: [
-            {
-              id: 'verticalGuide2',
-              label: { text: 'Guide 2' },
-              timestamp: '2020-001T00:00:42',
-            },
-            {
-              id: 'verticalGuide3',
-              label: { text: 'Guide 3' },
-              timestamp: '2020-001T00:00:52',
-            },
-          ],
-        },
-        title: 'Simulation',
-        type: 'timeline',
       },
-      {
-        id: 'section2',
-        size: 30,
-        table: {
-          columns: ['select', 'type', 'startTimestamp'],
-          type: 'activity',
+      title: 'Schedule',
+      type: 'timeline',
+    },
+    {
+      id: 'section1',
+      menu: [
+        {
+          action: 'restore',
+          icon: 'restore',
+          title: 'Restore Time',
         },
-        title: 'Table',
-        type: 'table',
+        {
+          action: 'simulate',
+          icon: 'timeline',
+          title: 'Run Simulation',
+        },
+      ],
+      size: 35,
+      timeline: {
+        id: 'timeline1',
+        rows: [
+          {
+            height: 100,
+            horizontalGuides: [],
+            id: 'row1',
+            layers: [
+              {
+                chartType: 'line',
+                filter: {
+                  resource: {
+                    name: 'peel',
+                  },
+                },
+                id: 'layer1',
+                type: 'resource',
+              },
+            ],
+            yAxes: [
+              {
+                id: 'axis-layer1',
+                label: {
+                  text: 'peel',
+                },
+              },
+            ],
+          },
+          {
+            height: 100,
+            id: 'row2',
+            layers: [
+              {
+                chartType: 'line',
+                filter: {
+                  resource: {
+                    name: 'fruit',
+                  },
+                },
+                id: 'layer2',
+                type: 'resource',
+              },
+            ],
+            yAxes: [
+              {
+                id: 'axis-layer2',
+                label: {
+                  text: 'fruit',
+                },
+              },
+            ],
+          },
+        ],
+        verticalGuides: [
+          {
+            id: 'verticalGuide2',
+            label: { text: 'Guide 2' },
+            timestamp: '2020-001T00:00:42',
+          },
+          {
+            id: 'verticalGuide3',
+            label: { text: 'Guide 3' },
+            timestamp: '2020-001T00:00:52',
+          },
+        ],
       },
-    ],
-  },
-];
+      title: 'Simulation',
+      type: 'timeline',
+    },
+    {
+      id: 'section2',
+      size: 30,
+      table: {
+        columns: ['select', 'type', 'startTimestamp'],
+        type: 'activity',
+      },
+      title: 'Table',
+      type: 'table',
+    },
+  ],
+};

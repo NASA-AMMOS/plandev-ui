@@ -59,7 +59,7 @@
     >
       <as-split-area
         *ngFor="
-          let section of selectedView?.sections;
+          let section of view?.sections;
           trackBy: trackByViewSections;
           let order = index
         "
@@ -118,21 +118,9 @@
 
     <div *ngIf="drawer.viewEditor.visible">
       <aerie-header> View Editor </aerie-header>
-      <form class="p-1">
-        <mat-form-field class="view-form-field w-100" appearance="outline">
-          <mat-select
-            [value]="selectedView?.id"
-            (selectionChange)="onViewChanged($event)"
-          >
-            <mat-option *ngFor="let view of views" [value]="view.id">
-              {{ view.name }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </form>
       <code-mirror
-        [text]="selectedViewText"
-        (textChanged)="onSelectedViewTextChanged($event)"
+        [text]="viewText"
+        (textChanged)="onViewTextChanged($event)"
       ></code-mirror>
     </div>
 

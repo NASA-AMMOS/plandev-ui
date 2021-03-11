@@ -15,6 +15,7 @@ import {
   planId,
   plans,
   simulationResponse,
+  view,
 } from '../mocks';
 import { initialState, PlanningState, reducer } from './planning.reducer';
 
@@ -265,6 +266,21 @@ describe('planning reducer', () => {
     });
   });
 
+  describe('setView', () => {
+    it('should update the view', () => {
+      const state: PlanningState = reducer(
+        { ...initialState },
+        PlanningActions.setView({
+          view,
+        }),
+      );
+      expect(state).toEqual({
+        ...initialState,
+        view,
+      });
+    });
+  });
+
   describe('updateActivityInstanceSuccess', () => {
     it('should update activity instances', () => {
       let state: PlanningState = {
@@ -289,22 +305,6 @@ describe('planning reducer', () => {
           },
         },
         lastActivityInstanceUpdate: state.lastActivityInstanceUpdate,
-      });
-    });
-  });
-
-  describe('updateAllViews', () => {
-    it('should update all the views', () => {
-      const views = [];
-      const state: PlanningState = reducer(
-        { ...initialState },
-        PlanningActions.updateAllViews({
-          views,
-        }),
-      );
-      expect(state).toEqual({
-        ...initialState,
-        views,
       });
     });
   });

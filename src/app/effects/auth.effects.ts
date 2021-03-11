@@ -37,7 +37,7 @@ export class AuthEffects {
     () =>
       this.actions.pipe(
         ofType(AuthActions.loginSuccess),
-        tap(({ redirectTo }) => this.router.navigate([redirectTo])),
+        tap(({ redirectTo }) => this.router.navigateByUrl(redirectTo)),
       ),
     { dispatch: false },
   );
@@ -70,7 +70,7 @@ export class AuthEffects {
     () =>
       this.actions.pipe(
         ofType(AuthActions.logoutSuccess),
-        tap(() => this.router.navigate(['/login'])),
+        tap(() => this.router.navigateByUrl('/login')),
       ),
     { dispatch: false },
   );

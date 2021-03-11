@@ -8,7 +8,6 @@ import {
   planId,
   plans,
   simulationResponse,
-  views,
 } from '../mocks';
 import * as types from '../types';
 
@@ -102,13 +101,6 @@ export class ApiMockService {
   getPlanDetail(): Observable<types.PlanDetail> {
     return new Observable((o: Observer<types.PlanDetail>) => {
       o.next(planDetail);
-      o.complete();
-    });
-  }
-
-  getViews(): Observable<types.View[]> {
-    return new Observable((o: Observer<types.View[]>) => {
-      o.next(views);
       o.complete();
     });
   }
