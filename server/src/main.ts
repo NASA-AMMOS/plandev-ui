@@ -67,7 +67,11 @@ async function main() {
       OR view->'meta'->>'owner' = 'system'
       ORDER BY view->'meta'->>'timeUpdated' DESC;
     `);
-    const views = rows.map(({ view }) => view);
+    const views = rows.map(({ view }) => ({
+      id: view.id,
+      meta: view.meta,
+      name: view.name,
+    }));
     res.json(views);
   });
 

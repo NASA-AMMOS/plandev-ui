@@ -4,8 +4,29 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AERIE_USER } from '../constants';
-import * as types from '../types';
-import { LoginResponse, LogoutResponse, User } from '../types';
+import {
+  ActivityInstanceParameter,
+  Adaptation,
+  CreateActivityInstance,
+  CreateActivityInstancesResponse,
+  CreateAdaptation,
+  CreateAdaptationResponse,
+  CreatePlan,
+  CreatePlanResponse,
+  DeleteActivityInstanceResponse,
+  DeleteAdaptationResponse,
+  DeletePlanResponse,
+  LoginResponse,
+  LogoutResponse,
+  Plan,
+  PlanDetail,
+  SimulationResponse,
+  UpdateActivityInstance,
+  UpdateActivityInstanceResponse,
+  User,
+  ValidationResponse,
+  View,
+} from '../types';
 import * as gql from './gql';
 
 const { aerieApolloServerUrl, aerieUiServerUrl } = environment;
@@ -27,8 +48,8 @@ export class ApiService {
 
   createActivityInstances(
     planId: string,
-    activityInstances: types.CreateActivityInstance[],
-  ): Observable<types.CreateActivityInstancesResponse> {
+    activityInstances: CreateActivityInstance[],
+  ): Observable<CreateActivityInstancesResponse> {
     const body = {
       query: gql.CREATE_ACTIVITY_INSTANCES,
       variables: {
@@ -42,7 +63,7 @@ export class ApiService {
     return this.http
       .post<{
         data: {
-          createActivityInstances: types.CreateActivityInstancesResponse;
+          createActivityInstances: CreateActivityInstancesResponse;
         };
       }>(aerieApolloServerUrl, body, options)
       .pipe(
@@ -56,8 +77,8 @@ export class ApiService {
   }
 
   createAdaptation(
-    adaptation: types.CreateAdaptation,
-  ): Observable<types.CreateAdaptationResponse> {
+    adaptation: CreateAdaptation,
+  ): Observable<CreateAdaptationResponse> {
     const { file } = adaptation;
     const fileMap = {
       file: ['variables.file'],
@@ -84,7 +105,7 @@ export class ApiService {
     };
 
     return this.http
-      .post<{ data: { createAdaptation: types.CreateAdaptationResponse } }>(
+      .post<{ data: { createAdaptation: CreateAdaptationResponse } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -99,7 +120,7 @@ export class ApiService {
       );
   }
 
-  createPlan(plan: types.CreatePlan): Observable<types.CreatePlanResponse> {
+  createPlan(plan: CreatePlan): Observable<CreatePlanResponse> {
     const body = {
       query: gql.CREATE_PLAN,
       variables: {
@@ -113,7 +134,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { createPlan: types.CreatePlanResponse } }>(
+      .post<{ data: { createPlan: CreatePlanResponse } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -131,7 +152,7 @@ export class ApiService {
   deleteActivityInstance(
     planId: string,
     activityInstanceId: string,
-  ): Observable<types.DeleteActivityInstanceResponse> {
+  ): Observable<DeleteActivityInstanceResponse> {
     const body = {
       query: gql.DELETE_ACTIVITY_INSTANCE,
       variables: { activityInstanceId, planId },
@@ -141,7 +162,7 @@ export class ApiService {
     };
     return this.http
       .post<{
-        data: { deleteActivityInstance: types.DeleteActivityInstanceResponse };
+        data: { deleteActivityInstance: DeleteActivityInstanceResponse };
       }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { deleteActivityInstance } }) => {
@@ -153,7 +174,7 @@ export class ApiService {
       );
   }
 
-  deleteAdaptation(id: string): Observable<types.DeleteAdaptationResponse> {
+  deleteAdaptation(id: string): Observable<DeleteAdaptationResponse> {
     const body = {
       query: gql.DELETE_ADAPTATION,
       variables: { id },
@@ -162,7 +183,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { deleteAdaptation: types.DeleteAdaptationResponse } }>(
+      .post<{ data: { deleteAdaptation: DeleteAdaptationResponse } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -177,7 +198,7 @@ export class ApiService {
       );
   }
 
-  deletePlan(id: string): Observable<types.DeletePlanResponse> {
+  deletePlan(id: string): Observable<DeletePlanResponse> {
     const body = {
       query: gql.DELETE_PLAN,
       variables: { id },
@@ -186,7 +207,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { deletePlan: types.DeletePlanResponse } }>(
+      .post<{ data: { deletePlan: DeletePlanResponse } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -201,7 +222,7 @@ export class ApiService {
       );
   }
 
-  getAdaptations(): Observable<types.Adaptation[]> {
+  getAdaptations(): Observable<Adaptation[]> {
     const body = {
       query: gql.GET_ADAPTATIONS,
     };
@@ -209,7 +230,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { adaptations: types.Adaptation[] } }>(
+      .post<{ data: { adaptations: Adaptation[] } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -217,7 +238,7 @@ export class ApiService {
       .pipe(map(({ data: { adaptations } }) => adaptations));
   }
 
-  getPlanDetail(id: string): Observable<types.PlanDetail> {
+  getPlanDetail(id: string): Observable<PlanDetail> {
     const body = {
       query: gql.GET_PLAN_DETAIL,
       variables: { id },
@@ -226,17 +247,13 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { plan: types.PlanDetail } }>(
-        aerieApolloServerUrl,
-        body,
-        options,
-      )
+      .post<{ data: { plan: PlanDetail } }>(aerieApolloServerUrl, body, options)
       .pipe(map(({ data: { plan } }) => plan));
   }
 
   getPlansAndAdaptations(): Observable<{
-    adaptations: types.Adaptation[];
-    plans: types.Plan[];
+    adaptations: Adaptation[];
+    plans: Plan[];
   }> {
     const body = {
       query: gql.GET_PLANS_AND_ADAPTATIONS,
@@ -245,7 +262,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { adaptations: types.Adaptation[]; plans: types.Plan[] } }>(
+      .post<{ data: { adaptations: Adaptation[]; plans: Plan[] } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -253,24 +270,25 @@ export class ApiService {
       .pipe(map(({ data }) => data));
   }
 
-  getViewById(id: string): Observable<types.View> {
+  getViewById(id: string): Observable<View> {
     const options = {
       headers: { authorization: getAuthorization() },
     };
-    return this.http.get<types.View>(
-      `${aerieUiServerUrl}/views/${id}`,
-      options,
-    );
+    return this.http.get<View>(`${aerieUiServerUrl}/views/${id}`, options);
   }
 
-  getViewLatest(): Observable<types.View> {
+  getViewLatest(): Observable<View> {
     const options = {
       headers: { authorization: getAuthorization() },
     };
-    return this.http.get<types.View>(
-      `${aerieUiServerUrl}/views/latest`,
-      options,
-    );
+    return this.http.get<View>(`${aerieUiServerUrl}/views/latest`, options);
+  }
+
+  getViews(): Observable<View[]> {
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http.get<View[]>(`${aerieUiServerUrl}/views`, options);
   }
 
   login(username: string, password: string) {
@@ -314,7 +332,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { simulate: types.SimulationResponse } }>(
+      .post<{ data: { simulate: SimulationResponse } }>(
         aerieApolloServerUrl,
         body,
         options,
@@ -331,8 +349,8 @@ export class ApiService {
 
   updateActivityInstance(
     planId: string,
-    activityInstance: types.UpdateActivityInstance,
-  ): Observable<types.UpdateActivityInstanceResponse> {
+    activityInstance: UpdateActivityInstance,
+  ): Observable<UpdateActivityInstanceResponse> {
     const body = {
       query: gql.UPDATE_ACTIVITY_INSTANCE,
       variables: {
@@ -345,7 +363,7 @@ export class ApiService {
     };
     return this.http
       .post<{
-        data: { updateActivityInstance: types.UpdateActivityInstanceResponse };
+        data: { updateActivityInstance: UpdateActivityInstanceResponse };
       }>(aerieApolloServerUrl, body, options)
       .pipe(
         map(({ data: { updateActivityInstance } }) => {
@@ -360,8 +378,8 @@ export class ApiService {
   validateParameters(
     activityTypeName: string,
     adaptationId: string,
-    parameters: types.ActivityInstanceParameter[],
-  ): Observable<types.ValidationResponse> {
+    parameters: ActivityInstanceParameter[],
+  ): Observable<ValidationResponse> {
     const body = {
       query: gql.VALIDATE_PARAMETERS,
       variables: { activityTypeName, adaptationId, parameters },
@@ -370,7 +388,7 @@ export class ApiService {
       headers: { authorization: getAuthorization() },
     };
     return this.http
-      .post<{ data: { validateParameters: types.ValidationResponse } }>(
+      .post<{ data: { validateParameters: ValidationResponse } }>(
         aerieApolloServerUrl,
         body,
         options,

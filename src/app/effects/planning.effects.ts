@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
@@ -9,6 +10,7 @@ import { RootState } from '../app-store';
 import {
   ConfirmDialogComponent,
   HorizontalGuideDialogComponent,
+  LoadViewDialogComponent,
 } from '../components';
 import { LayerDialogComponent } from '../components/layer-dialog/layer-dialog.component';
 import { VerticalGuideDialogComponent } from '../components/vertical-guide-dialog/vertical-guide-dialog.component';
@@ -18,6 +20,7 @@ import {
   HorizontalGuideEvent,
   VerticalGuide,
   VerticalGuideEvent,
+  View,
 } from '../types';
 
 @Injectable()
@@ -340,6 +343,52 @@ export class PlanningEffects {
     ),
   );
 
+  loadView = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.loadView),
+      switchMap(({ id }) =>
+        concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.getViewById(id).pipe(
+            map((view: View) => {
+              const [basePath] = this.location.path().split('?');
+              this.location.replaceState(basePath, `viewId=${view.id}`);
+              return PlanningActions.setView({ view });
+            }),
+            catchError((error: Error) => {
+              console.error(error);
+              return [];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+          of(AppActions.resize()),
+        ),
+      ),
+    ),
+  );
+
+  openLoadViewDialog = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.openLoadViewDialog),
+      switchMap(() => {
+        const dialog = this.dialog.open(LoadViewDialogComponent, {
+          autoFocus: false,
+          height: '400px',
+          width: '700px',
+        });
+        return dialog.afterClosed();
+      }),
+      switchMap((view: View | null) => {
+        if (view) {
+          const { id } = view;
+          return [PlanningActions.loadView({ id })];
+        } else {
+          return [];
+        }
+      }),
+    ),
+  );
+
   runSimulation = createEffect(() =>
     this.actions.pipe(
       ofType(PlanningActions.runSimulation),
@@ -434,6 +483,7 @@ export class PlanningEffects {
     private actions: Actions,
     private apiService: ApiService,
     private dialog: MatDialog,
+    private location: Location,
     private store: Store<RootState>,
   ) {}
 }

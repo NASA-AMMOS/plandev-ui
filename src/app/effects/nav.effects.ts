@@ -95,8 +95,8 @@ export class NavEffects {
           actions.push(
             this.apiService.getViewLatest().pipe(
               map(view => {
-                const path = this.location.path();
-                this.location.replaceState(`${path}?viewId=${view.id}`);
+                const [basePath] = this.location.path().split('?');
+                this.location.replaceState(basePath, `viewId=${view.id}`);
                 return PlanningActions.setView({ view });
               }),
               catchError((error: Error) => {

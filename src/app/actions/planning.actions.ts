@@ -135,6 +135,13 @@ export const layerUpdate = createAction(
   props<{ layer: Layer; rowId: string }>(),
 );
 
+export const loadView = createAction(
+  '[planning] loadView',
+  props<{ id: string }>(),
+);
+
+export const openLoadViewDialog = createAction('[planning] openLoadViewDialog');
+
 export const restoreViewTimeRange = createAction(
   '[planning] restoreViewTimeRange',
 );

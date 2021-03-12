@@ -7,7 +7,7 @@
       *ngIf="simulationOutOfDate"
       mat-icon-button
       matTooltip="Simulation out of date. Click here to simulate."
-      (click)="runSimulation()"
+      (click)="onSimulate()"
     >
       <mat-icon>error_outline</mat-icon>
     </button>
@@ -28,9 +28,23 @@
     >
       Violations
     </button>
-    <button mat-icon-button matTooltip="View Editor" (click)="showViewEditor()">
-      <mat-icon svgIcon="wysiwyg"></mat-icon>
+    <button mat-icon-button matTooltip="Views" [matMenuTriggerFor]="viewMenu">
+      <mat-icon>dashboard</mat-icon>
     </button>
+    <mat-menu #viewMenu="matMenu">
+      <button mat-menu-item (click)="onEditView()">
+        <mat-icon>create</mat-icon>
+        <span>Edit View JSON</span>
+      </button>
+      <button mat-menu-item (click)="onLoadView()">
+        <mat-icon>input</mat-icon>
+        <span>Load View</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>save</mat-icon>
+        <span>Save View</span>
+      </button>
+    </mat-menu>
     <button
       mat-icon-button
       matTooltip="Activity Dictionary"

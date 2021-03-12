@@ -194,11 +194,11 @@ export class PlanComponent implements OnDestroy {
     const { key, metaKey } = event;
     if (metaKey && key === 'e') {
       event.preventDefault();
-      this.showViewEditor();
+      this.onEditView();
     }
     if (metaKey && key === 's') {
       event.preventDefault();
-      this.runSimulation();
+      this.onSimulate();
     }
   }
 
@@ -280,6 +280,15 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  onEditView() {
+    this.showDrawerType('viewEditor');
+    this.onResize();
+  }
+
+  onLoadView(): void {
+    this.store.dispatch(PlanningActions.openLoadViewDialog());
+  }
+
   onResize(): void {
     this.store.dispatch(AppActions.resize());
   }
@@ -319,6 +328,11 @@ export class PlanComponent implements OnDestroy {
       );
       this.showDrawerType('selectedActivityInstance');
     }
+  }
+
+  onSimulate() {
+    const { id: planId } = this.route.snapshot.params;
+    this.store.dispatch(PlanningActions.runSimulation({ planId }));
   }
 
   onViewTextChanged(view: View): void {
@@ -387,13 +401,8 @@ export class PlanComponent implements OnDestroy {
       this.store.dispatch(PlanningActions.restoreViewTimeRange());
     }
     if (action === 'simulate') {
-      this.runSimulation();
+      this.onSimulate();
     }
-  }
-
-  runSimulation() {
-    const { id: planId } = this.route.snapshot.params;
-    this.store.dispatch(PlanningActions.runSimulation({ planId }));
   }
 
   showDrawerType(type: string): void {
@@ -406,11 +415,6 @@ export class PlanComponent implements OnDestroy {
       }
     });
     this.drawerVisible = true;
-  }
-
-  showViewEditor() {
-    this.showDrawerType('viewEditor');
-    this.onResize();
   }
 
   trackByViewSections(index: number, viewSection: ViewSection): string {
