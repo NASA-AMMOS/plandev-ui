@@ -100,7 +100,7 @@ pipeline {
 
               # Install server dependencies, and build
               cd server
-              npm install --only=production
+              npm install
               npm run build
               cd ..
 
