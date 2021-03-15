@@ -102,6 +102,8 @@ pipeline {
               cd server
               npm install
               npm run build
+              rm -rf node_modules
+              npm install --only=production
               cd ..
 
               # Install front-end dependencies, build, and cloc
