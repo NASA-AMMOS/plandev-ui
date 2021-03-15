@@ -98,14 +98,13 @@ pipeline {
               npm config set always-auth=true
               npm config set _auth=$PASS
 
-              # Install server dependencies
+              # Install server dependencies, and build
               cd server
-              rm -rf node_modules
-              npm install
+              npm install --only=production
+              npm run build
               cd ..
 
               # Install front-end dependencies, build, and cloc
-              rm -rf node_modules
               npm install
               npm run build:prod
               npm run cloc

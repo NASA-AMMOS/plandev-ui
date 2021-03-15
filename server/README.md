@@ -6,5 +6,6 @@ Serves the Aerie UI in production, and also provides a REST API for UI specific 
 
 ```shell
 npm install
-npm start
+npm run build
+npm run start:local
 ```

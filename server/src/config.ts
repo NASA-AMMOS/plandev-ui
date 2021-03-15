@@ -1,4 +1,5 @@
 import { CamApiOptions } from '@gov.nasa.jpl.aerie/cam';
+// @ts-ignore
 import * as configJson from '../config/config.json';
 
 export interface Config {
