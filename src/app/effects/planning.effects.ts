@@ -11,13 +11,16 @@ import {
   ConfirmDialogComponent,
   HorizontalGuideDialogComponent,
   LoadViewDialogComponent,
+  SaveAsViewDialogComponent,
 } from '../components';
 import { LayerDialogComponent } from '../components/layer-dialog/layer-dialog.component';
 import { VerticalGuideDialogComponent } from '../components/vertical-guide-dialog/vertical-guide-dialog.component';
+import { AERIE_USER } from '../constants';
 import { ApiService } from '../services';
 import {
   HorizontalGuide,
   HorizontalGuideEvent,
+  User,
   VerticalGuide,
   VerticalGuideEvent,
   View,
@@ -300,6 +303,49 @@ export class PlanningEffects {
     ),
   );
 
+  deleteView = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.deleteView),
+      withLatestFrom(this.store),
+      switchMap(([{ id }, { planning }]) =>
+        concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.deleteView(id).pipe(
+            switchMap(({ nextView }) => {
+              if (planning.view.id === id) {
+                this.replaceViewId(nextView.id);
+                return [
+                  PlanningActions.setView({ view: nextView }),
+                  ToastActions.showToast({
+                    message: `View deleted`,
+                    toastType: 'success',
+                  }),
+                ];
+              } else {
+                return [
+                  ToastActions.showToast({
+                    message: `View deleted`,
+                    toastType: 'success',
+                  }),
+                ];
+              }
+            }),
+            catchError((error: Error) => {
+              console.error(error.message);
+              return [
+                ToastActions.showToast({
+                  message: 'Delete view failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+        ),
+      ),
+    ),
+  );
+
   horizontalGuideOpenDialog = createEffect(() =>
     this.actions.pipe(
       ofType(PlanningActions.horizontalGuideOpenDialog),
@@ -351,8 +397,7 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: true })),
           this.apiService.getViewById(id).pipe(
             map((view: View) => {
-              const [basePath] = this.location.path().split('?');
-              this.location.replaceState(basePath, `viewId=${view.id}`);
+              this.replaceViewId(view.id);
               return PlanningActions.setView({ view });
             }),
             catchError((error: Error) => {
@@ -371,20 +416,52 @@ export class PlanningEffects {
     this.actions.pipe(
       ofType(PlanningActions.openLoadViewDialog),
       switchMap(() => {
+        const user: User = JSON.parse(localStorage.getItem(AERIE_USER));
         const dialog = this.dialog.open(LoadViewDialogComponent, {
           autoFocus: false,
-          height: '400px',
+          data: { user },
+          maxHeight: '700px',
+          width: '700px',
+        });
+        return dialog.afterClosed();
+      }),
+      switchMap(res => {
+        if (res) {
+          const { action, view } = res;
+          if (action === 'delete' && view) {
+            const { id } = view;
+            return [PlanningActions.deleteView({ id })];
+          } else if (action === 'load' && view) {
+            const { id } = view;
+            return [PlanningActions.loadView({ id })];
+          } else {
+            return [];
+          }
+        } else {
+          return [];
+        }
+      }),
+    ),
+  );
+
+  openSaveAsViewDialog = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.openSaveAsViewDialog),
+      withLatestFrom(this.store),
+      switchMap(([_, { planning }]) => {
+        const { view } = planning;
+        const dialog = this.dialog.open(SaveAsViewDialogComponent, {
+          autoFocus: false,
+          data: { view },
           width: '700px',
         });
         return dialog.afterClosed();
       }),
       switchMap((view: View | null) => {
         if (view) {
-          const { id } = view;
-          return [PlanningActions.loadView({ id })];
-        } else {
-          return [];
+          return [PlanningActions.saveAsView({ view })];
         }
+        return [];
       }),
     ),
   );
@@ -414,6 +491,71 @@ export class PlanningEffects {
           of(AppActions.setLoading({ loading: false })),
         );
       }),
+    ),
+  );
+
+  saveAsView = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.saveAsView),
+      switchMap(({ view }) =>
+        concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.saveAsView(view).pipe(
+            switchMap(({ view: newView }) => {
+              this.replaceViewId(newView.id);
+              return [
+                PlanningActions.setView({ view: newView }),
+                ToastActions.showToast({
+                  message: 'View saved',
+                  toastType: 'success',
+                }),
+              ];
+            }),
+            catchError((error: Error) => {
+              console.error(error.message);
+              return [
+                ToastActions.showToast({
+                  message: 'Save view failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+        ),
+      ),
+    ),
+  );
+
+  saveView = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.saveView),
+      withLatestFrom(this.store),
+      switchMap(([_, { planning }]) =>
+        concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.saveView(planning.view).pipe(
+            switchMap(() => {
+              return [
+                ToastActions.showToast({
+                  message: 'View saved',
+                  toastType: 'success',
+                }),
+              ];
+            }),
+            catchError((error: Error) => {
+              console.error(error.message);
+              return [
+                ToastActions.showToast({
+                  message: 'Save view failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+        ),
+      ),
     ),
   );
 
@@ -486,4 +628,9 @@ export class PlanningEffects {
     private location: Location,
     private store: Store<RootState>,
   ) {}
+
+  replaceViewId(id: string) {
+    const [basePath] = this.location.path().split('?');
+    this.location.replaceState(basePath, `viewId=${id}`);
+  }
 }

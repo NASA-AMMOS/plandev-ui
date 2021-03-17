@@ -77,34 +77,10 @@ async function main() {
 
   app.get('/views/latest', auth, async (req, res) => {
     const user = req.get('x-user');
+    const view = await Db.latestView(user);
 
-    const { rows } = await dbPool.query(`
-      SELECT view
-      FROM ui.views
-      WHERE view->'meta'->>'owner' = '${user}'
-      OR view->'meta'->>'owner' = 'system'
-      ORDER BY view->'meta'->>'timeUpdated' DESC;
-    `);
-
-    const userViews = [];
-    const systemViews = [];
-    for (const row of rows) {
-      const { view } = row;
-      const { owner } = view.meta;
-      if (owner === user) {
-        userViews.push(view);
-      }
-      if (owner === 'system') {
-        systemViews.push(view);
-      }
-    }
-
-    if (userViews.length) {
-      const [userView] = userViews;
-      res.json(userView);
-    } else if (systemViews.length) {
-      const [systemView] = systemViews;
-      res.json(systemView);
+    if (view) {
+      res.json(view);
     } else {
       res.json({
         message: `No views found`,
@@ -119,14 +95,16 @@ async function main() {
     const now = Date.now();
     const owner = req.get('x-user');
     const meta = { owner, timeCreated: now, timeUpdated: now };
-    const view = JSON.stringify({ ...body, id, meta });
+    const view = { ...body, id, meta };
+    const viewStr = JSON.stringify({ ...body, id, meta });
     const { rowCount } = await dbPool.query(`
       INSERT INTO ui.views (id, view)
-      VALUES ('${id}', '${view}');
+      VALUES ('${id}', '${viewStr}');
     `);
     if (rowCount > 0) {
       res.json({
         message: `${id} created`,
+        view,
       });
     } else {
       res.json({
@@ -204,8 +182,11 @@ async function main() {
       AND view->'meta'->>'owner' = '${owner}';
     `);
     if (rowCount > 0) {
+      const nextView = await Db.latestView(owner);
       res.json({
+        deletedViewId: id,
         message: `${id} successfully deleted`,
+        nextView,
       });
     } else {
       res.status(404).json({

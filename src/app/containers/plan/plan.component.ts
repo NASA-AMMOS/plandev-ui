@@ -25,6 +25,7 @@ import {
   TimelineModule,
   ToolbarModule,
 } from '../../components';
+import { AERIE_USER } from '../../constants';
 import { getViewText } from '../../functions';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
@@ -61,6 +62,7 @@ import {
   UpdateActivityInstance,
   UpdatePoint,
   UpdateRow,
+  User,
   VerticalGuide,
   VerticalGuideEvent,
   View,
@@ -109,6 +111,7 @@ export class PlanComponent implements OnDestroy {
   selectedActivityType: ActivityType | null = null;
   simulationOutOfDate = false;
   totalConstraintViolations = 0;
+  user: User;
   view: View | null;
   viewText: string;
   viewTimeRange: TimeRange;
@@ -187,6 +190,7 @@ export class PlanComponent implements OnDestroy {
         this.cdRef.markForCheck();
       }),
     );
+    this.user = JSON.parse(localStorage.getItem(AERIE_USER));
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -293,6 +297,10 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(AppActions.resize());
   }
 
+  onSaveAsView(): void {
+    this.store.dispatch(PlanningActions.openSaveAsViewDialog());
+  }
+
   onSavePoint(event: SavePoint): void {
     if (event.type === 'activity') {
       const { id: planId } = this.route.snapshot.params;
@@ -303,6 +311,10 @@ export class PlanComponent implements OnDestroy {
         }),
       );
     }
+  }
+
+  onSaveView(): void {
+    this.store.dispatch(PlanningActions.saveView());
   }
 
   onSelectActivityInstance(activityInstance: ActivityInstance): void {

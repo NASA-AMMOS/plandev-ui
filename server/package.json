@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf dist && rm -rf public",
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "start": "node dist/main.js",
     "start:docker": "ENV=docker npm start",
     "start:local": "ENV=local npm start"

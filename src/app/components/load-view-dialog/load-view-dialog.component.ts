@@ -3,14 +3,15 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  Inject,
   NgModule,
   OnDestroy,
 } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { SubSink } from 'subsink';
 import { MaterialModule } from '../../material';
 import { ApiService } from '../../services';
-import { View } from '../../types';
+import { User, View } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,7 +39,7 @@ import { View } from '../../types';
       <div class="header-left">Load View</div>
     </h1>
 
-    <div mat-dialog-content class="h-100">
+    <div mat-dialog-content class="h-100 pb-1">
       <div *ngIf="loading">Loading...</div>
       <div *ngIf="!loading">
         <div>
@@ -62,8 +63,20 @@ import { View } from '../../types';
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let element">
-              <button mat-icon-button (click)="loadView(element)">
+              <button
+                matTooltip="Load View"
+                mat-icon-button
+                (click)="loadView(element)"
+              >
                 <mat-icon>input</mat-icon>
+              </button>
+              <button
+                *ngIf="element.meta.owner === data.user.name"
+                matTooltip="Delete View. This cannot be undone."
+                mat-icon-button
+                (click)="deleteView(element)"
+              >
+                <mat-icon>delete_forever</mat-icon>
               </button>
             </td>
           </ng-container>
@@ -105,6 +118,7 @@ export class LoadViewDialogComponent implements OnDestroy {
     private apiService: ApiService,
     private cdRef: ChangeDetectorRef,
     private dialogRef: MatDialogRef<LoadViewDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { user: User },
   ) {
     this.subs.add(
       this.apiService.getViews().subscribe(views => {
@@ -118,6 +132,10 @@ export class LoadViewDialogComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.subs.unsubscribe();
+  }
+
+  deleteView(view: View) {
+    this.dialogRef.close({ action: 'delete', view });
   }
 
   filterViews(input: string = '') {
@@ -135,7 +153,7 @@ export class LoadViewDialogComponent implements OnDestroy {
   }
 
   loadView(view: View) {
-    this.dialogRef.close(view);
+    this.dialogRef.close({ action: 'load', view });
   }
 }
 

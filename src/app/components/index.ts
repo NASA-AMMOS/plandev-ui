@@ -9,6 +9,7 @@ export * from './horizontal-guide-dialog/horizontal-guide-dialog.component';
 export * from './load-view-dialog/load-view-dialog.component';
 export * from './placeholder/placeholder.component';
 export * from './plans-table/plans-table.component';
+export * from './save-as-view-dialog/save-as-view-dialog.component';
 export * from './table/table.component';
 export * from './timeline/timeline-x-axis.component';
 export * from './timeline/timeline.component';

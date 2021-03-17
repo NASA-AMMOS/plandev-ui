@@ -49,6 +49,39 @@ export class Db {
     }
   }
 
+  static async latestView(user: string) {
+    const { rows } = await this.pool.query(`
+      SELECT view
+      FROM ui.views
+      WHERE view->'meta'->>'owner' = '${user}'
+      OR view->'meta'->>'owner' = 'system'
+      ORDER BY view->'meta'->>'timeUpdated' DESC;
+    `);
+
+    const userViews = [];
+    const systemViews = [];
+    for (const row of rows) {
+      const { view } = row;
+      const { owner } = view.meta;
+      if (owner === user) {
+        userViews.push(view);
+      }
+      if (owner === 'system') {
+        systemViews.push(view);
+      }
+    }
+
+    if (userViews.length) {
+      const [userView] = userViews;
+      return userView;
+    } else if (systemViews.length) {
+      const [systemView] = systemViews;
+      return systemView;
+    } else {
+      return null;
+    }
+  }
+
   static uniqueId(): string {
     const alphabet =
       '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

@@ -40,8 +40,16 @@
         <mat-icon>input</mat-icon>
         <span>Load View</span>
       </button>
-      <button mat-menu-item>
+      <button mat-menu-item (click)="onSaveAsView()">
         <mat-icon>save</mat-icon>
+        <span>Save As View</span>
+      </button>
+      <button
+        [disabled]="user?.name !== view?.meta?.owner"
+        mat-menu-item
+        (click)="onSaveView()"
+      >
+        <mat-icon>save_alt</mat-icon>
         <span>Save View</span>
       </button>
     </mat-menu>

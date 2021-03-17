@@ -222,6 +222,13 @@ export class ApiService {
       );
   }
 
+  deleteView(id: string): Observable<any> {
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http.delete(`${aerieUiServerUrl}/views/${id}`, options);
+  }
+
   getAdaptations(): Observable<Adaptation[]> {
     const body = {
       query: gql.GET_ADAPTATIONS,
@@ -321,6 +328,20 @@ export class ApiService {
           return response;
         }),
       );
+  }
+
+  saveAsView(view: Partial<View>): Observable<any> {
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http.post(`${aerieUiServerUrl}/views`, view, options);
+  }
+
+  saveView(view: View): Observable<any> {
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http.put(`${aerieUiServerUrl}/views/${view.id}`, view, options);
   }
 
   simulate(adaptationId: string, planId: string) {

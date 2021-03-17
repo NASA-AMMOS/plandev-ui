@@ -90,6 +90,11 @@ export const deleteRow = createAction(
   props<{ row: Row; timelineId: string }>(),
 );
 
+export const deleteView = createAction(
+  '[planning] deleteView',
+  props<{ id: string }>(),
+);
+
 export const getAdaptationsSuccess = createAction(
   '[planning] getAdaptationsSuccess',
   props<{ adaptations: Adaptation[] }>(),
@@ -142,6 +147,10 @@ export const loadView = createAction(
 
 export const openLoadViewDialog = createAction('[planning] openLoadViewDialog');
 
+export const openSaveAsViewDialog = createAction(
+  '[planning] openSaveAsViewDialog',
+);
+
 export const restoreViewTimeRange = createAction(
   '[planning] restoreViewTimeRange',
 );
@@ -160,6 +169,13 @@ export const runSimulationSuccess = createAction(
   '[planning] runSimulationSuccess',
   props<{ simulationResponse: SimulationResponse }>(),
 );
+
+export const saveAsView = createAction(
+  '[planning] saveAsView',
+  props<{ view: View }>(),
+);
+
+export const saveView = createAction('[planning] saveView');
 
 export const setSelectedActivityInstanceId = createAction(
   '[planning] setSelectedActivityInstanceId',
