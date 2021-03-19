@@ -8,7 +8,6 @@ import {
   EventEmitter,
   Input,
   NgModule,
-  OnChanges,
   OnDestroy,
   Output,
   ViewChild,
@@ -81,7 +80,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
     `,
   ],
   template: `
-    <div class="container" [attr.style]="'height:' + height + 'px;'">
+    <div class="container" [attr.style]="'height:' + drawHeight + 'px;'">
       <svg
         #overlay
         class="overlay-container"
@@ -131,7 +130,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [drop]="drop"
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
-            [height]="height"
             [id]="layer.id"
             [maxTimeRange]="maxTimeRange"
             [mousedown]="mousedown"
@@ -220,8 +218,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
     </div>
   `,
 })
-export class TimelineRowComponent
-  implements AfterViewInit, OnChanges, OnDestroy {
+export class TimelineRowComponent implements AfterViewInit, OnDestroy {
   @Input()
   autoAdjustHeight: boolean | undefined;
 
@@ -229,10 +226,10 @@ export class TimelineRowComponent
   constraintViolations: ConstraintViolation[];
 
   @Input()
-  drawWidth: number;
+  drawHeight: number;
 
   @Input()
-  height = 200;
+  drawWidth: number;
 
   @Input()
   horizontalGuides: HorizontalGuide[] | undefined;
@@ -323,19 +320,13 @@ export class TimelineRowComponent
   mouseup: MouseEvent;
   mouseupListener: (mouseout: MouseEvent) => void;
 
-  drawHeight: number;
   marginBottom = 0;
   marginTop = 0;
 
   constructor(private cdRef: ChangeDetectorRef) {}
 
-  ngOnChanges(): void {
-    this.setHeight();
-  }
-
   ngAfterViewInit(): void {
     this.initEventListeners();
-    this.setHeight();
   }
 
   ngOnDestroy(): void {
@@ -465,10 +456,6 @@ export class TimelineRowComponent
     if (this.autoAdjustHeight === undefined || this.autoAdjustHeight === true) {
       this.updateRow.emit(event);
     }
-  }
-
-  setHeight() {
-    this.drawHeight = this.height - this.marginTop - this.marginBottom;
   }
 
   trackByLayers(_: number, layer: Layer) {

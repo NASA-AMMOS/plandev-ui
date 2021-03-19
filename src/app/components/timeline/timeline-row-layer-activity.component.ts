@@ -89,9 +89,6 @@ export class TimelineRowLayerActivityComponent
   drawWidth: number;
 
   @Input()
-  height: number;
-
-  @Input()
   id: string;
 
   @Input()
@@ -415,7 +412,7 @@ export class TimelineRowLayerActivityComponent
       }
 
       const newHeight = maxY + this.rowHeight;
-      if (newHeight > 0 && this.height !== newHeight) {
+      if (newHeight > 0 && this.drawHeight !== newHeight) {
         this.updateRow.emit({
           rowId: this.rowId,
           update: { height: newHeight },
