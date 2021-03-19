@@ -27,7 +27,7 @@ import { VerticalGuide } from '../../types';
   ],
   template: `
     <svg>
-      <g [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'">
+      <g [attr.transform]="'translate(' + marginLeft + ',' + 0 + ')'">
         <line
           *ngFor="let guide of filteredVerticalGuides"
           [attr.x1]="guide.x"
@@ -47,9 +47,6 @@ export class TimelineRowVerticalGuidesComponent implements OnChanges {
 
   @Input()
   marginLeft: number;
-
-  @Input()
-  marginTop: number;
 
   @Input()
   verticalGuides: VerticalGuide[] | undefined;

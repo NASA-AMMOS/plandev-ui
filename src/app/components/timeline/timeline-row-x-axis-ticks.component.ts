@@ -23,7 +23,7 @@ import { XAxisTick } from '../../types';
   ],
   template: `
     <svg>
-      <g [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'">
+      <g [attr.transform]="'translate(' + marginLeft + ',' + 0 + ')'">
         <g
           *ngFor="let tick of xTicksView"
           class="tick"
@@ -44,9 +44,6 @@ export class TimelineRowXAxisTicksComponent {
 
   @Input()
   marginLeft: number;
-
-  @Input()
-  marginTop: number;
 
   @Input()
   xScaleView: ScaleTime<number, number>;

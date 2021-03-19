@@ -27,10 +27,7 @@ import { Axis } from '../../types';
   ],
   template: `
     <svg>
-      <g
-        #g
-        [attr.transform]="'translate(' + marginLeft + ',' + marginTop + ')'"
-      ></g>
+      <g #g [attr.transform]="'translate(' + marginLeft + ',' + -1 + ')'"></g>
     </svg>
   `,
 })
@@ -40,9 +37,6 @@ export class TimelineRowYAxesComponent implements OnChanges {
 
   @Input()
   marginLeft: number;
-
-  @Input()
-  marginTop: number;
 
   @Input()
   yAxes: Axis[] | undefined;

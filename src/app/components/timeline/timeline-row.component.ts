@@ -187,7 +187,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
       <aerie-timeline-row-x-axis-ticks
         [drawHeight]="drawHeight"
         [marginLeft]="marginLeft"
-        [marginTop]="marginTop"
         [xScaleView]="xScaleView"
         [xTicksView]="xTicksView"
       ></aerie-timeline-row-x-axis-ticks>
@@ -195,14 +194,12 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
       <aerie-timeline-row-y-axes
         [drawHeight]="drawHeight"
         [marginLeft]="marginLeft"
-        [marginTop]="marginTop"
         [yAxes]="yAxes"
       ></aerie-timeline-row-y-axes>
 
       <aerie-timeline-row-vertical-guides
         [drawHeight]="drawHeight"
         [marginLeft]="marginLeft"
-        [marginTop]="marginTop"
         [verticalGuides]="verticalGuides"
         [xScaleView]="xScaleView"
       ></aerie-timeline-row-vertical-guides>
@@ -320,7 +317,6 @@ export class TimelineRowComponent implements AfterViewInit, OnDestroy {
   mouseup: MouseEvent;
   mouseupListener: (mouseout: MouseEvent) => void;
 
-  marginBottom = 0;
   marginTop = 0;
 
   constructor(private cdRef: ChangeDetectorRef) {}
