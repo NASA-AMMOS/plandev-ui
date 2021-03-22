@@ -252,6 +252,27 @@ export class TimelineRowLayerXRangeComponent
               this.drawHeight / 2 + textHeight / 2,
               textWidth,
             );
+          } else {
+            const extraLabelPadding = 10;
+            let newLabelText = labelText;
+            let newTextWidth = textWidth;
+
+            // Remove characters from label until it is small enough to fit in x-range point.
+            while (
+              newTextWidth > 0 &&
+              newTextWidth > xWidth - extraLabelPadding
+            ) {
+              newLabelText = newLabelText.slice(0, -1);
+              const textMeasurement = this.measureText(newLabelText);
+              newTextWidth = textMeasurement.textWidth;
+            }
+
+            this.ctx.fillText(
+              `${newLabelText}...`,
+              xStart + xWidth / 2 - newTextWidth / 2,
+              this.drawHeight / 2 + textHeight / 2,
+              newTextWidth,
+            );
           }
         }
       }
@@ -260,6 +281,15 @@ export class TimelineRowLayerXRangeComponent
 
   getLabelText(point: XRangePoint) {
     return point.label?.text || '';
+  }
+
+  measureText(text: string) {
+    const textMetrics = this.ctx.measureText(text);
+    const textHeight =
+      textMetrics.actualBoundingBoxAscent +
+      textMetrics.actualBoundingBoxDescent;
+    const textWidth = textMetrics.width;
+    return { textHeight, textWidth };
   }
 
   onMousemove(e: MouseEvent | undefined): void {
@@ -291,11 +321,7 @@ export class TimelineRowLayerXRangeComponent
     this.ctx.fillStyle = point.label?.color || '#000000';
     this.ctx.font = `${fontSize}px ${fontFace}`;
     const labelText = this.getLabelText(point);
-    const textMetrics = this.ctx.measureText(labelText);
-    const textWidth = textMetrics.width;
-    const textHeight =
-      textMetrics.actualBoundingBoxAscent +
-      textMetrics.actualBoundingBoxDescent;
+    const { textHeight, textWidth } = this.measureText(labelText);
     return { labelText, textHeight, textWidth };
   }
 }
