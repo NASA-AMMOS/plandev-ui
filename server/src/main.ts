@@ -58,13 +58,10 @@ async function main() {
     res.json({ timestamp, uptimeMinutes });
   });
 
-  app.get('/views', auth, async (req, res) => {
-    const owner = req.get('x-user');
+  app.get('/views', auth, async (_, res) => {
     const { rows } = await dbPool.query(`
       SELECT view
       FROM ui.views
-      WHERE view->'meta'->>'owner' = '${owner}'
-      OR view->'meta'->>'owner' = 'system'
       ORDER BY view->'meta'->>'timeUpdated' DESC;
     `);
     const views = rows.map(({ view }) => ({
@@ -152,15 +149,10 @@ async function main() {
   app.get('/views/:id', auth, async (req, res) => {
     const { params } = req;
     const { id = '' } = params;
-    const owner = req.get('x-user');
     const { rows = [], rowCount } = await dbPool.query(`
       SELECT view
       FROM ui.views
-      WHERE id = '${id}'
-      AND (
-        view->'meta'->>'owner' = '${owner}'
-        OR view->'meta'->>'owner' = 'system'
-      );
+      WHERE id = '${id}';
     `);
     if (rowCount > 0) {
       const [{ view = {} }] = rows;
