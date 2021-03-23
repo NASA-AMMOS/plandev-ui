@@ -420,8 +420,8 @@ export class PlanningEffects {
         const dialog = this.dialog.open(LoadViewDialogComponent, {
           autoFocus: false,
           data: { user },
-          maxHeight: '700px',
-          width: '800px',
+          maxHeight: '600px',
+          width: '850px',
         });
         return dialog.afterClosed();
       }),
