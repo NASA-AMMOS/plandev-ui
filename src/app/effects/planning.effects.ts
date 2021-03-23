@@ -421,7 +421,7 @@ export class PlanningEffects {
           autoFocus: false,
           data: { user },
           maxHeight: '700px',
-          width: '700px',
+          width: '800px',
         });
         return dialog.afterClosed();
       }),

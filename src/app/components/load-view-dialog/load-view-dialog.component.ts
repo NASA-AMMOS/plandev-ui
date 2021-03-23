@@ -10,6 +10,7 @@ import {
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { SubSink } from 'subsink';
 import { MaterialModule } from '../../material';
+import { PipesModule } from '../../pipes';
 import { ApiService } from '../../services';
 import { User, View } from '../../types';
 
@@ -98,6 +99,12 @@ import { User, View } from '../../types';
               {{ element.meta.owner }}
             </td>
           </ng-container>
+          <ng-container matColumnDef="timeUpdated">
+            <th mat-header-cell *matHeaderCellDef>Last Updated</th>
+            <td mat-cell *matCellDef="let element">
+              {{ element.meta.timeUpdated | toLocaleString }}
+            </td>
+          </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
@@ -107,7 +114,13 @@ import { User, View } from '../../types';
   `,
 })
 export class LoadViewDialogComponent implements OnDestroy {
-  displayedColumns: string[] = ['actions', 'id', 'name', 'owner'];
+  displayedColumns: string[] = [
+    'actions',
+    'id',
+    'name',
+    'owner',
+    'timeUpdated',
+  ];
   filteredViews: View[] = [];
   loading = true;
   views: View[] = [];
@@ -161,6 +174,6 @@ export class LoadViewDialogComponent implements OnDestroy {
   declarations: [LoadViewDialogComponent],
   entryComponents: [LoadViewDialogComponent],
   exports: [LoadViewDialogComponent],
-  imports: [CommonModule, MaterialModule],
+  imports: [CommonModule, MaterialModule, PipesModule],
 })
 export class LoadViewDialogModule {}
