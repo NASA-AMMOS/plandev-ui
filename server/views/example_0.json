@@ -12,7 +12,7 @@
       "menu": [
         { "action": "restore", "icon": "restore", "title": "Restore Time" }
       ],
-      "size": 35,
+      "size": 30,
       "timeline": {
         "id": "timeline0",
         "rows": [
@@ -57,7 +57,7 @@
         { "action": "restore", "icon": "restore", "title": "Restore Time" },
         { "action": "simulate", "icon": "timeline", "title": "Run Simulation" }
       ],
-      "size": 35,
+      "size": 50,
       "timeline": {
         "id": "timeline1",
         "rows": [
@@ -104,6 +104,62 @@
               }
             ],
             "yAxes": [{ "id": "yAxis3", "label": { "text": "flag" } }]
+          },
+          {
+            "height": 100,
+            "id": "row4",
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeTableau10",
+                "filter": { "resource": { "name": "conflicted" } },
+                "id": "layer4",
+                "opacity": 1.0,
+                "type": "resource",
+                "yAxisId": "yAxis4"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis4", "label": { "text": "conflicted" } }]
+          },
+          {
+            "height": 100,
+            "id": "row5",
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": { "resource": { "name": "conflicted" } },
+                "id": "layer5",
+                "type": "resource",
+                "yAxisId": "yAxis5"
+              }
+            ],
+            "yAxes": [
+              {
+                "id": "yAxis5",
+                "label": { "text": "conflicted" },
+                "tickCount": 1
+              }
+            ]
+          },
+          {
+            "height": 100,
+            "id": "row6",
+            "layers": [
+              {
+                "chartType": "line",
+                "filter": { "resource": { "name": "plant" } },
+                "id": "layer6",
+                "type": "resource",
+                "yAxisId": "yAxis6"
+              }
+            ],
+            "yAxes": [
+              {
+                "id": "yAxis6",
+                "label": { "text": "plant" },
+                "scaleDomain": [0, 200]
+              }
+            ]
           }
         ],
         "verticalGuides": [
@@ -119,7 +175,7 @@
     },
     {
       "id": "section2",
-      "size": 30,
+      "size": 20,
       "table": {
         "columns": ["select", "type", "startTimestamp"],
         "type": "activity"

@@ -12,7 +12,6 @@ import {
   ConstraintViolationListState,
   DecompositionTreeState,
   Layer,
-  LineCurveType,
   LineLayer,
   LinePoint,
   Plan,
@@ -234,18 +233,32 @@ export const getViewWithPoints = createSelector(
                 const yAxisId = layer?.yAxisId || `axis-${layer.id}`;
                 let minY = Number.MAX_SAFE_INTEGER;
                 let maxY = Number.MIN_SAFE_INTEGER;
-                let curveType: LineCurveType = 'curveLinear';
 
                 if (simulationResults && simulationResults.length) {
                   for (const result of simulationResults) {
                     const { name, schema, start, values } = result;
+                    const r = new RegExp(layer?.filter?.resource?.name);
+                    const includeResult = r.test(name);
 
-                    if (schema.type === 'real') {
-                      const r = new RegExp(layer?.filter?.resource?.name);
-                      const includeResult = r.test(name);
-                      curveType = 'curveLinear';
-
-                      if (includeResult) {
+                    if (includeResult) {
+                      if (schema.type === 'boolean') {
+                        for (let i = 0; i < values.length; ++i) {
+                          const value = values[i];
+                          const { x, y: yBoolean } = value;
+                          const y = yBoolean ? 1 : 0;
+                          points.push({
+                            id: `${layer.id}-resource-${name}-${i}`,
+                            type: 'line',
+                            x: getUnixEpochTime(start) + x / 1000,
+                            y,
+                          });
+                        }
+                        minY = 0;
+                        maxY = 1;
+                      } else if (
+                        schema.type === 'int' ||
+                        schema.type === 'real'
+                      ) {
                         for (let i = 0; i < values.length; ++i) {
                           const value = values[i];
                           const { x } = value;
@@ -274,7 +287,7 @@ export const getViewWithPoints = createSelector(
 
                 const newLayer: LineLayer = {
                   ...layer,
-                  curveType,
+                  curveType: 'curveLinear', // All lines are linear for now.
                   points,
                   yAxisId,
                 };
@@ -288,20 +301,30 @@ export const getViewWithPoints = createSelector(
                 if (simulationResults && simulationResults.length) {
                   for (const result of simulationResults) {
                     const { name, schema, start, values } = result;
+                    const r = new RegExp(layer?.filter?.resource?.name);
+                    const includeResult = r.test(name);
 
-                    if (schema.type === 'variant') {
-                      const r = new RegExp(layer?.filter?.resource?.name);
-                      const includeResult = r.test(name);
-
-                      if (includeResult) {
+                    if (includeResult) {
+                      if (schema.type === 'boolean') {
+                        domain = ['TRUE', 'FALSE'];
+                        for (let i = 0; i < values.length; ++i) {
+                          const { x, y } = values[i];
+                          const text = y ? 'TRUE' : 'FALSE';
+                          points.push({
+                            id: `${layer.id}-resource-${name}-${i}`,
+                            label: { text },
+                            type: 'x-range',
+                            x: getUnixEpochTime(start) + x / 1000,
+                          });
+                        }
+                      } else if (schema.type === 'variant') {
                         domain = schema.variants.map(({ label }) => label);
                         for (let i = 0; i < values.length; ++i) {
                           const { x, y } = values[i];
+                          const text = y as string;
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
-                            label: {
-                              text: y as string,
-                            },
+                            label: { text },
                             type: 'x-range',
                             x: getUnixEpochTime(start) + x / 1000,
                           });
