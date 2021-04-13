@@ -26,13 +26,13 @@ For example if the previous version was `1.0.0` and the next version is `2.0.0`,
 
 1. Start on `develop` (assuming develop is the latest release, and you have completed the Artifactory steps above).
 1. Delete remote (GitHub) `staging` branch.
-1. Delete local `staging` branch:
-    ```sh
-    git branch -D staging
-    ```
 1. Fetch remote to make sure the deleted is synched:
     ```sh
     git fetch -pPf
+    ```
+1. Delete local `staging` branch:
+    ```sh
+    git branch -D staging
     ```
 1. Checkout a new `staging` branch from `develop`:
     ```sh
