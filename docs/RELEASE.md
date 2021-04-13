@@ -2,7 +2,7 @@
 
 This document contains instructions on how to release the Aerie UI.
 
-## Steps
+## Artifactory
 
 1. Figure out what version you are releasing and use the format `release-{MAJOR}.{MINOR}.{PATCH}`. For descriptions of MAJOR, MINOR, and PATCH please refer to the [Semantic Versioning](https://semver.org/) documentation.
 1. Do a global find and replace on the repository of `PREVIOUS_VERSION` to `NEXT_VERSION`.
@@ -20,4 +20,25 @@ For example if the previous version was `1.0.0` and the next version is `2.0.0`,
 1. Switch back to your local `develop` branch and enjoy the rest of your day!
     ```sh
     git checkout develop
+    ```
+
+## Staging (AWS)
+
+1. Start on `develop` (assuming develop is the latest release, and you have completed the Artifactory steps above).
+1. Delete remote (GitHub) `staging` branch.
+1. Delete local `staging` branch:
+    ```sh
+    git branch -D staging
+    ```
+1. Fetch remote to make sure the deleted is synched:
+    ```sh
+    git fetch -pPf
+    ```
+1. Checkout a new `staging` branch from `develop`:
+    ```sh
+    git checkout -b staging
+    ```
+1. Push `staging` to remote to build and deploy:
+    ```sh
+    git push origin staging
     ```
