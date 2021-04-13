@@ -111,7 +111,7 @@
             "layers": [
               {
                 "chartType": "x-range",
-                "colorScheme": "schemeTableau10",
+                "colorScheme": "schemePastel2",
                 "filter": { "resource": { "name": "conflicted" } },
                 "id": "layer4",
                 "opacity": 1.0,
@@ -160,6 +160,21 @@
                 "scaleDomain": [0, 200]
               }
             ]
+          },
+          {
+            "height": 100,
+            "id": "row7",
+            "layers": [
+              {
+                "chartType": "x-range",
+                "colorScheme": "schemeSet3",
+                "filter": { "resource": { "name": "producer" } },
+                "id": "layer7",
+                "type": "resource",
+                "yAxisId": "yAxis7"
+              }
+            ],
+            "yAxes": [{ "id": "yAxis7", "label": { "text": "producer" } }]
           }
         ],
         "verticalGuides": [

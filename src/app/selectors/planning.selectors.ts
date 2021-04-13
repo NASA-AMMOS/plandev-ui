@@ -317,6 +317,20 @@ export const getViewWithPoints = createSelector(
                             x: getUnixEpochTime(start) + x / 1000,
                           });
                         }
+                      } else if (schema.type === 'string') {
+                        const domainMap: StringTMap<string> = {};
+                        for (let i = 0; i < values.length; ++i) {
+                          const { x, y } = values[i];
+                          const text = y as string;
+                          points.push({
+                            id: `${layer.id}-resource-${name}-${i}`,
+                            label: { text },
+                            type: 'x-range',
+                            x: getUnixEpochTime(start) + x / 1000,
+                          });
+                          domainMap[text] = text;
+                        }
+                        domain = Object.values(domainMap);
                       } else if (schema.type === 'variant') {
                         domain = schema.variants.map(({ label }) => label);
                         for (let i = 0; i < values.length; ++i) {
