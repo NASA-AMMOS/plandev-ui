@@ -96,9 +96,9 @@
               {
                 "chartType": "x-range",
                 "colorScheme": "schemeTableau10",
-                "filter": { "resource": { "name": "flag" } },
+                "filter": { "resource": { "name": "flag$" } },
                 "id": "layer3",
-                "opacity": 1.0,
+                "opacity": 0.8,
                 "type": "resource",
                 "yAxisId": "yAxis3"
               }
@@ -114,7 +114,7 @@
                 "colorScheme": "schemePastel2",
                 "filter": { "resource": { "name": "conflicted" } },
                 "id": "layer4",
-                "opacity": 1.0,
+                "opacity": 0.8,
                 "type": "resource",
                 "yAxisId": "yAxis4"
               }
@@ -170,6 +170,7 @@
                 "colorScheme": "schemeSet3",
                 "filter": { "resource": { "name": "producer" } },
                 "id": "layer7",
+                "opacity": 0.8,
                 "type": "resource",
                 "yAxisId": "yAxis7"
               }
