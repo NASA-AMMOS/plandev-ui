@@ -55,95 +55,39 @@ import {
 })
 export class TimelineRowLayerActivityComponent
   implements AfterViewInit, OnChanges {
-  @Input()
-  activityDefaultColor = '#283593';
+  @Input() activityDefaultColor = '#283593';
+  @Input() activityHeight = 20;
+  @Input() activityRowPadding = 20;
+  @Input() activitySelectedColor = '#81D4FA';
+  @Input() color: string | undefined;
+  @Input() dragenter: DragEvent;
+  @Input() dragleave: DragEvent;
+  @Input() dragover: DragEvent;
+  @Input() drop: DragEvent;
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() id: string;
+  @Input() maxTimeRange: TimeRange;
+  @Input() mousedown: MouseEvent;
+  @Input() mousemove: MouseEvent;
+  @Input() mouseout: MouseEvent;
+  @Input() mouseup: MouseEvent;
+  @Input() overlay: SVGElement;
+  @Input() points: ActivityPoint[] | undefined;
+  @Input() rowId: string;
+  @Input() showChildren = true;
+  @Input() viewTimeRange: TimeRange;
+  @Input() xScaleView: ScaleTime<number, number>;
 
-  @Input()
-  activityHeight = 20;
-
-  @Input()
-  activityRowPadding = 20;
-
-  @Input()
-  activitySelectedColor = '#81D4FA';
-
-  @Input()
-  color: string | undefined;
-
-  @Input()
-  dragenter: DragEvent;
-
-  @Input()
-  dragleave: DragEvent;
-
-  @Input()
-  dragover: DragEvent;
-
-  @Input()
-  drop: DragEvent;
-
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  id: string;
-
-  @Input()
-  maxTimeRange: TimeRange;
-
-  @Input()
-  mousedown: MouseEvent;
-
-  @Input()
-  mousemove: MouseEvent;
-
-  @Input()
-  mouseout: MouseEvent;
-
-  @Input()
-  mouseup: MouseEvent;
-
-  @Input()
-  overlay: SVGElement;
-
-  @Input()
-  points: ActivityPoint[] | undefined;
-
-  @Input()
-  rowId: string;
-
-  @Input()
-  showChildren = true;
-
-  @Input()
-  viewTimeRange: TimeRange;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-
-  @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-
+  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
+  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
   @Output()
   mouseSelectPoints: EventEmitter<MouseSelectPoints> = new EventEmitter();
+  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
+  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
+  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
 
-  @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter();
-
-  @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-
-  @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
-
-  @ViewChild('canvas', { static: true })
-  canvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 
   ctx: CanvasRenderingContext2D;
   dpr: number = window.devicePixelRatio;

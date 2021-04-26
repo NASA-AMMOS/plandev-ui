@@ -44,35 +44,17 @@ import { ActivityInstanceFormParametersModule } from './activity-instance-form-p
 })
 export class ActivityInstanceFormComponent
   implements OnChanges, OnDestroy, OnInit {
-  @Input()
-  activityInstance: ActivityInstance | undefined;
+  @Input() activityInstance: ActivityInstance | undefined;
+  @Input() activityInstancesMap: StringTMap<ActivityInstance> | null;
+  @Input() activityTypes: ActivityType[] = [];
+  @Input() adaptationId: string;
+  @Input() selectedActivityType: ActivityType | null = null;
+  @Input() type: 'create' | 'update' = 'create';
 
-  @Input()
-  activityInstancesMap: StringTMap<ActivityInstance> | null;
-
-  @Input()
-  activityTypes: ActivityType[] = [];
-
-  @Input()
-  adaptationId: string;
-
-  @Input()
-  selectedActivityType: ActivityType | null = null;
-
-  @Input()
-  type: 'create' | 'update' = 'create';
-
-  @Output()
-  cancel: EventEmitter<void> = new EventEmitter();
-
-  @Output()
-  create: EventEmitter<CreateActivityInstance> = new EventEmitter();
-
-  @Output()
-  delete: EventEmitter<string> = new EventEmitter();
-
-  @Output()
-  update: EventEmitter<UpdateActivityInstance> = new EventEmitter();
+  @Output() cancel: EventEmitter<void> = new EventEmitter();
+  @Output() create: EventEmitter<CreateActivityInstance> = new EventEmitter();
+  @Output() delete: EventEmitter<string> = new EventEmitter();
+  @Output() update: EventEmitter<UpdateActivityInstance> = new EventEmitter();
 
   isChild: boolean;
   parameters: ActivityInstanceFormParameter[];

@@ -43,14 +43,9 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
   `,
 })
 export class ActivityInstanceFormParameterBaseInputComponent {
-  @Input()
-  label: 'Integer' | 'Real Number' | 'String' | 'Duration';
-
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
-
-  @Input()
-  type: 'number' | 'text' = 'text';
+  @Input() label: 'Integer' | 'Real Number' | 'String' | 'Duration';
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
+  @Input() type: 'number' | 'text' = 'text';
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

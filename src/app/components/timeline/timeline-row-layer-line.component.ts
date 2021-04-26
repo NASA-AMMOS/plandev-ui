@@ -56,50 +56,23 @@ import {
   `,
 })
 export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
-  @Input()
-  color: string | undefined;
+  @Input() color: string | undefined;
+  @Input() curveType = 'curveLinear';
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() id: string;
+  @Input() maxTimeRange: TimeRange;
+  @Input() mousemove: MouseEvent;
+  @Input() mouseout: MouseEvent;
+  @Input() points: LinePoint[] | undefined;
+  @Input() viewTimeRange: TimeRange;
+  @Input() xScaleView: ScaleTime<number, number>;
+  @Input() yAxes: Axis[] | undefined;
+  @Input() yAxisId: string;
 
-  @Input()
-  curveType = 'curveLinear';
+  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
 
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  id: string;
-
-  @Input()
-  maxTimeRange: TimeRange;
-
-  @Input()
-  mousemove: MouseEvent;
-
-  @Input()
-  mouseout: MouseEvent;
-
-  @Input()
-  points: LinePoint[] | undefined;
-
-  @Input()
-  viewTimeRange: TimeRange;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Input()
-  yAxes: Axis[] | undefined;
-
-  @Input()
-  yAxisId: string;
-
-  @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-
-  @ViewChild('canvas', { static: true })
-  canvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 
   ctx: CanvasRenderingContext2D;
   dpr: number = window.devicePixelRatio;

@@ -24,11 +24,10 @@ import {
   template: '',
 })
 export class TimelineSharedTooltipComponent implements OnChanges {
-  @Input()
-  mouseOverConstraintViolations: MouseOverConstraintViolations | undefined;
-
-  @Input()
-  mouseOverPoints: MouseOverPoints | undefined;
+  @Input() mouseOverConstraintViolations:
+    | MouseOverConstraintViolations
+    | undefined;
+  @Input() mouseOverPoints: MouseOverPoints | undefined;
 
   constraintViolations: ConstraintViolation[] = [];
   points: Point[] = [];

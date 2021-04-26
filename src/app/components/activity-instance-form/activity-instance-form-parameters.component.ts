@@ -65,8 +65,7 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
   `,
 })
 export class ActivityInstanceFormParametersComponent {
-  @Input()
-  parameters: ActivityInstanceFormParameter[] | undefined;
+  @Input() parameters: ActivityInstanceFormParameter[] | undefined;
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

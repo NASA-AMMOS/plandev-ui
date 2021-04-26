@@ -21,44 +21,21 @@ import { TimeRange } from '../../types';
   template: `<svg:g #g />`,
 })
 export class TimelineXAxisBrushComponent implements OnChanges {
-  @Input()
-  brushOverlayColor = '#E8EAF6';
+  @Input() brushOverlayColor = '#E8EAF6';
+  @Input() brushSelectionColor = '#7986cb';
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() handleColor = '#0D1667';
+  @Input() handleWidth = 2;
+  @Input() type: 'max' | 'view' = 'view';
+  @Input() viewTimeRange: TimeRange = { end: 0, start: 0 };
+  @Input() xScaleMax: ScaleTime<number, number>;
+  @Input() xScaleView: ScaleTime<number, number>;
+  @Input() yOffset = 0;
 
-  @Input()
-  brushSelectionColor = '#7986cb';
+  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  handleColor = '#0D1667';
-
-  @Input()
-  handleWidth = 2;
-
-  @Input()
-  type: 'max' | 'view' = 'view';
-
-  @Input()
-  viewTimeRange: TimeRange = { end: 0, start: 0 };
-
-  @Input()
-  xScaleMax: ScaleTime<number, number>;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Input()
-  yOffset = 0;
-
-  @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
-
-  @ViewChild('g', { static: true })
-  g: ElementRef<SVGGElement>;
+  @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
   brush: Selection<SVGGElement, unknown, null, undefined>;
 

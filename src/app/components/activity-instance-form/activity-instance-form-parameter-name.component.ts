@@ -40,8 +40,7 @@ import { ActivityInstanceFormParameter } from '../../types';
   `,
 })
 export class ActivityInstanceFormParameterNameComponent {
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
 }
 
 @NgModule({

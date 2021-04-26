@@ -26,26 +26,17 @@ type VerticalGuideSelection = {
   template: `<svg:g #g />`,
 })
 export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
-  @Input()
-  drawHeight: number;
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() verticalGuides: VerticalGuide[] | undefined;
+  @Input() viewTimeRange: TimeRange | undefined;
+  @Input() xScaleView: ScaleTime<number, number>;
 
-  @Input()
-  drawWidth: number;
+  @Output() collapsedVerticalGuides: EventEmitter<
+    VerticalGuide[]
+  > = new EventEmitter();
 
-  @Input()
-  verticalGuides: VerticalGuide[] | undefined;
-
-  @Input()
-  viewTimeRange: TimeRange | undefined;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Output()
-  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter();
-
-  @ViewChild('g', { static: true })
-  g: ElementRef<SVGGElement>;
+  @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
   ngOnChanges() {
     if (this.viewTimeRange) {

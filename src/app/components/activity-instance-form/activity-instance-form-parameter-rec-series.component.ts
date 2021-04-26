@@ -118,8 +118,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 })
 export class ActivityInstanceFormParameterRecSeriesComponent
   implements OnChanges {
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

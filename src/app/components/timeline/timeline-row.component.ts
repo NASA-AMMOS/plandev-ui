@@ -216,89 +216,40 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
   `,
 })
 export class TimelineRowComponent implements AfterViewInit, OnDestroy {
-  @Input()
-  autoAdjustHeight: boolean | undefined;
-
-  @Input()
-  constraintViolations: ConstraintViolation[];
-
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  horizontalGuides: HorizontalGuide[] | undefined;
-
-  @Input()
-  id: string;
-
-  @Input()
-  layers: Layer[];
-
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  marginRight: number;
-
-  @Input()
-  maxTimeRange: TimeRange;
-
-  @Input()
-  verticalGuides: VerticalGuide[];
-
-  @Input()
-  viewTimeRange: TimeRange | undefined;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Input()
-  xTicksView: XAxisTick[] = [];
-
-  @Input()
-  yAxes: Axis[] | undefined;
+  @Input() autoAdjustHeight: boolean | undefined;
+  @Input() constraintViolations: ConstraintViolation[];
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() horizontalGuides: HorizontalGuide[] | undefined;
+  @Input() id: string;
+  @Input() layers: Layer[];
+  @Input() marginLeft: number;
+  @Input() marginRight: number;
+  @Input() maxTimeRange: TimeRange;
+  @Input() verticalGuides: VerticalGuide[];
+  @Input() viewTimeRange: TimeRange | undefined;
+  @Input() xScaleView: ScaleTime<number, number>;
+  @Input() xTicksView: XAxisTick[] = [];
+  @Input() yAxes: Axis[] | undefined;
 
   @Output()
   createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-
-  @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-
+  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
   @Output()
   deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-
-  @Output()
-  deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
-
+  @Output() deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
   @Output()
   mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
-
-  @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-
-  @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter();
-
-  @Output()
-  selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
-
+  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
+  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
+  @Output() selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
   @Output()
   updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
+  @Output() updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
+  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
+  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
 
-  @Output()
-  updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
-
-  @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-
-  @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
-
-  @ViewChild('overlay', { static: true })
-  overlay: ElementRef<SVGElement>;
+  @ViewChild('overlay', { static: true }) overlay: ElementRef<SVGElement>;
 
   dragenter: DragEvent;
   dragenterListener: (dragenter: DragEvent) => void;

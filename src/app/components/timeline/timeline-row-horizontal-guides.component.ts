@@ -18,23 +18,13 @@ import { Axis, HorizontalGuide } from '../../types';
   template: `<svg:g #g />`,
 })
 export class TimelineRowHorizontalGuidesComponent implements OnChanges {
-  @Input()
-  drawHeight: number;
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() horizontalGuides: HorizontalGuide[] | undefined;
+  @Input() showGuideLabels = true;
+  @Input() yAxes: Axis[];
 
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  horizontalGuides: HorizontalGuide[] | undefined;
-
-  @Input()
-  showGuideLabels = true;
-
-  @Input()
-  yAxes: Axis[];
-
-  @ViewChild('g', { static: true })
-  g: ElementRef<SVGGElement>;
+  @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
   ngOnChanges() {
     this.draw();

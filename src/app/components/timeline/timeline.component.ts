@@ -120,62 +120,29 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
   `,
 })
 export class TimelineComponent implements OnChanges, AfterViewChecked {
-  @Input()
-  constraintViolations: ConstraintViolation[] = [];
-
-  @Input()
-  id: string;
-
-  @Input()
-  marginLeft = 100;
-
-  @Input()
-  marginRight = 40;
-
-  @Input()
-  maxTimeRange: TimeRange;
-
-  @Input()
-  rows: Row[] | null | undefined;
-
-  @Input()
-  verticalGuides: VerticalGuide[];
-
-  @Input()
-  viewTimeRange: TimeRange | undefined;
+  @Input() constraintViolations: ConstraintViolation[] = [];
+  @Input() id: string;
+  @Input() marginLeft = 100;
+  @Input() marginRight = 40;
+  @Input() maxTimeRange: TimeRange;
+  @Input() rows: Row[] | null | undefined;
+  @Input() verticalGuides: VerticalGuide[];
+  @Input() viewTimeRange: TimeRange | undefined;
 
   @Output()
   createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-
-  @Output()
-  createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-
+  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
   @Output()
   deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-
-  @Output()
-  deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
-
-  @Output()
-  savePoint: EventEmitter<SavePoint> = new EventEmitter();
-
-  @Output()
-  selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
-
+  @Output() deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
+  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
+  @Output() selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
   @Output()
   updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-
-  @Output()
-  updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
-
-  @Output()
-  updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-
-  @Output()
-  updateRow: EventEmitter<UpdateRow> = new EventEmitter();
-
-  @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
+  @Output() updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
+  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
+  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
+  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
   @ViewChild('rowContainer', { static: true })
   rowContainer: ElementRef<HTMLDivElement>;

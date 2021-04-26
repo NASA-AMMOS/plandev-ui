@@ -42,17 +42,10 @@ import { VerticalGuide } from '../../types';
   `,
 })
 export class TimelineRowVerticalGuidesComponent implements OnChanges {
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  verticalGuides: VerticalGuide[] | undefined;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
+  @Input() drawHeight: number;
+  @Input() marginLeft: number;
+  @Input() verticalGuides: VerticalGuide[] | undefined;
+  @Input() xScaleView: ScaleTime<number, number>;
 
   filteredVerticalGuides: VerticalGuide[];
 

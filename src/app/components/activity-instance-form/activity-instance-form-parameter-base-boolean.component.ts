@@ -31,8 +31,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
   `,
 })
 export class ActivityInstanceFormParameterBaseBooleanComponent {
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

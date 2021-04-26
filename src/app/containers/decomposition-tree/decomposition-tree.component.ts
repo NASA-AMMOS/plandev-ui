@@ -29,11 +29,8 @@ import {
   templateUrl: './decomposition-tree.component.html',
 })
 export class DecompositionTreeComponent implements OnChanges, OnDestroy {
-  @Input()
-  activityInstance: ActivityInstance | null = null;
-
-  @Input()
-  activityInstancesMap: StringTMap<ActivityInstance> | null = null;
+  @Input() activityInstance: ActivityInstance | null = null;
+  @Input() activityInstancesMap: StringTMap<ActivityInstance> | null = null;
 
   decompositionTreeState: DecompositionTreeState = { instance: {} };
   sortedChildIds: string[] = [];

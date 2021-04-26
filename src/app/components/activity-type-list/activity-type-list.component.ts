@@ -19,11 +19,9 @@ import { ActivityType } from '../../types';
   templateUrl: './activity-type-list.component.html',
 })
 export class ActivityTypeListComponent implements OnChanges {
-  @Input()
-  activityTypes: ActivityType[] = [];
+  @Input() activityTypes: ActivityType[] = [];
 
-  @Output()
-  selectActivityType: EventEmitter<ActivityType> = new EventEmitter();
+  @Output() selectActivityType: EventEmitter<ActivityType> = new EventEmitter();
 
   filteredActivityTypes: ActivityType[] = [];
   searchText = '';

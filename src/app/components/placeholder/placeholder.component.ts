@@ -25,11 +25,8 @@ import {
   template: '',
 })
 export class PlaceholderComponent implements OnChanges {
-  @Input()
-  color = '#000000';
-
-  @Input()
-  height = 0;
+  @Input() color = '#000000';
+  @Input() height = 0;
 
   constructor(private elRef: ElementRef) {}
 

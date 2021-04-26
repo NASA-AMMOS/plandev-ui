@@ -65,8 +65,7 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
   `,
 })
 export class ActivityInstanceFormParameterBaseComponent {
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

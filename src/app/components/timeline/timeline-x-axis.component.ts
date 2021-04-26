@@ -146,38 +146,20 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
   `,
 })
 export class TimelineXAxisComponent {
-  @Input()
-  constraintViolations: ConstraintViolation[];
+  @Input() constraintViolations: ConstraintViolation[];
+  @Input() drawHeight = 90;
+  @Input() drawWidth: number;
+  @Input() marginLeft: number;
+  @Input() verticalGuides: VerticalGuide[];
+  @Input() viewTimeRange: TimeRange | undefined;
+  @Input() xScaleMax: ScaleTime<number, number>;
+  @Input() xScaleView: ScaleTime<number, number>;
+  @Input() xTicksView: XAxisTick[] = [];
 
-  @Input()
-  drawHeight = 90;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  verticalGuides: VerticalGuide[];
-
-  @Input()
-  viewTimeRange: TimeRange | undefined;
-
-  @Input()
-  xScaleMax: ScaleTime<number, number>;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Input()
-  xTicksView: XAxisTick[] = [];
-
-  @Output()
-  collapsedVerticalGuides: EventEmitter<VerticalGuide[]> = new EventEmitter();
-
-  @Output()
-  updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
+  @Output() collapsedVerticalGuides: EventEmitter<
+    VerticalGuide[]
+  > = new EventEmitter();
+  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
 
   axisRowYOffset = 55;
   constraintViolationsRowYOffset = 20;

@@ -20,20 +20,12 @@ import { MaterialModule } from '../../material';
   templateUrl: './table.component.html',
 })
 export class TableComponent implements OnChanges {
-  @Input()
-  columns: string[] = [];
+  @Input() columns: string[] = [];
+  @Input() data: any[] = [];
+  @Input() selectedElement: any | null = null;
 
-  @Input()
-  data: any[] = [];
-
-  @Input()
-  selectedElement: any | null = null;
-
-  @Output()
-  deleteElement: EventEmitter<string> = new EventEmitter();
-
-  @Output()
-  selectElement: EventEmitter<any> = new EventEmitter();
+  @Output() deleteElement: EventEmitter<string> = new EventEmitter();
+  @Output() selectElement: EventEmitter<any> = new EventEmitter();
 
   columnsToDisplay: string[] = [...this.columns];
   onContextMenu = contextMenu;

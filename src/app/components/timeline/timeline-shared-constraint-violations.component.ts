@@ -30,32 +30,18 @@ import {
   template: `<svg:g #g />`,
 })
 export class TimelineSharedConstraintViolationsComponent implements OnChanges {
-  @Input()
-  constraintViolations: ConstraintViolation[];
-
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  mousemove: MouseEvent;
-
-  @Input()
-  mouseout: MouseEvent;
-
-  @Input()
-  viewTimeRange: TimeRange | undefined;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
+  @Input() constraintViolations: ConstraintViolation[];
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() mousemove: MouseEvent;
+  @Input() mouseout: MouseEvent;
+  @Input() viewTimeRange: TimeRange | undefined;
+  @Input() xScaleView: ScaleTime<number, number>;
 
   @Output()
   mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
 
-  @ViewChild('g', { static: true })
-  g: ElementRef<SVGGElement>;
+  @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
   ngOnChanges(changes: SimpleChanges) {
     let shouldDraw = false;

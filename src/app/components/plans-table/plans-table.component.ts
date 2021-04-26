@@ -17,14 +17,10 @@ import { Plan } from '../../types';
   templateUrl: './plans-table.component.html',
 })
 export class PlansTableComponent {
-  @Input()
-  plans: Plan[] = [];
+  @Input() plans: Plan[] = [];
 
-  @Output()
-  deletePlan: EventEmitter<string> = new EventEmitter();
-
-  @Output()
-  openPlan: EventEmitter<string> = new EventEmitter();
+  @Output() deletePlan: EventEmitter<string> = new EventEmitter();
+  @Output() openPlan: EventEmitter<string> = new EventEmitter();
 
   displayedColumns: string[] = [
     'name',

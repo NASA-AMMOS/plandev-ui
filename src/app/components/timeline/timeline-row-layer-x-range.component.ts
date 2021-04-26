@@ -61,47 +61,22 @@ import {
 })
 export class TimelineRowLayerXRangeComponent
   implements AfterViewInit, OnChanges {
-  @Input()
-  colorScheme: XRangeLayerColorScheme | undefined;
+  @Input() colorScheme: XRangeLayerColorScheme | undefined;
+  @Input() domain: string[] | undefined;
+  @Input() drawHeight: number;
+  @Input() drawWidth: number;
+  @Input() id: string;
+  @Input() maxTimeRange: TimeRange = { end: 0, start: 0 };
+  @Input() mousemove: MouseEvent;
+  @Input() mouseout: MouseEvent;
+  @Input() opacity: number | undefined;
+  @Input() points: XRangePoint[] | undefined;
+  @Input() viewTimeRange: TimeRange = { end: 0, start: 0 };
+  @Input() xScaleView: ScaleTime<number, number>;
 
-  @Input()
-  domain: string[] | undefined;
+  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
 
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  drawWidth: number;
-
-  @Input()
-  id: string;
-
-  @Input()
-  maxTimeRange: TimeRange = { end: 0, start: 0 };
-
-  @Input()
-  mousemove: MouseEvent;
-
-  @Input()
-  mouseout: MouseEvent;
-
-  @Input()
-  opacity: number | undefined;
-
-  @Input()
-  points: XRangePoint[] | undefined;
-
-  @Input()
-  viewTimeRange: TimeRange = { end: 0, start: 0 };
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Output()
-  mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-
-  @ViewChild('canvas', { static: true })
-  canvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 
   ctx: CanvasRenderingContext2D;
   dpr: number = window.devicePixelRatio;

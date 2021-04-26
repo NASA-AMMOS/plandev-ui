@@ -39,17 +39,10 @@ import { XAxisTick } from '../../types';
   `,
 })
 export class TimelineRowXAxisTicksComponent {
-  @Input()
-  drawHeight: number;
-
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  xScaleView: ScaleTime<number, number>;
-
-  @Input()
-  xTicksView: XAxisTick[] = [];
+  @Input() drawHeight: number;
+  @Input() marginLeft: number;
+  @Input() xScaleView: ScaleTime<number, number>;
+  @Input() xTicksView: XAxisTick[] = [];
 }
 
 @NgModule({

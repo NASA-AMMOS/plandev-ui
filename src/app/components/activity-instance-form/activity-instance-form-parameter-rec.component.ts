@@ -32,8 +32,7 @@ type StructComponent = ActivityInstanceFormParameterRecStructComponent;
 })
 export class ActivityInstanceFormParameterRecComponent
   implements OnChanges, OnDestroy {
-  @Input()
-  parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: ActivityInstanceFormParameter | undefined;
 
   @Output()
   parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();

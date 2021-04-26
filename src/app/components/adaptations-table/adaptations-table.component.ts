@@ -17,14 +17,10 @@ import { Adaptation } from '../../types';
   templateUrl: './adaptations-table.component.html',
 })
 export class AdaptationsTableComponent {
-  @Input()
-  adaptations: Adaptation[] = [];
+  @Input() adaptations: Adaptation[] = [];
 
-  @Output()
-  createPlan: EventEmitter<string> = new EventEmitter();
-
-  @Output()
-  deleteAdaptation: EventEmitter<string> = new EventEmitter();
+  @Output() createPlan: EventEmitter<string> = new EventEmitter();
+  @Output() deleteAdaptation: EventEmitter<string> = new EventEmitter();
 
   displayedColumns: string[] = ['id', 'name', 'version', 'mission', 'owner'];
   onContextMenu = contextMenu;

@@ -32,17 +32,11 @@ import { Axis } from '../../types';
   `,
 })
 export class TimelineRowYAxesComponent implements OnChanges {
-  @Input()
-  drawHeight: number;
+  @Input() drawHeight: number;
+  @Input() marginLeft: number;
+  @Input() yAxes: Axis[] | undefined;
 
-  @Input()
-  marginLeft: number;
-
-  @Input()
-  yAxes: Axis[] | undefined;
-
-  @ViewChild('g', { static: true })
-  g: ElementRef<SVGGElement>;
+  @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
   ngOnChanges() {
     this.draw();
