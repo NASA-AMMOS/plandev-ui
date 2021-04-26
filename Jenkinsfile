@@ -100,14 +100,14 @@ pipeline {
 
               # Install server dependencies, and build
               cd server
-              npm install
+              npm install --silent
               npm run build
               rm -rf node_modules
-              npm install --only=production
+              npm install --only=production --silent
               cd ..
 
               # Install front-end dependencies, build, and cloc
-              npm install
+              npm install --silent
               npm run build:prod
               npm run cloc
 
