@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -100,8 +100,7 @@ export class ActivityInstanceFormParameterRecStructComponent
   implements OnChanges {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   expanded = false;
   subParameters: ActivityInstanceFormParameter[];

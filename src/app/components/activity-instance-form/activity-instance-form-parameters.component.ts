@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -67,8 +67,7 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
 export class ActivityInstanceFormParametersComponent {
   @Input() parameters: ActivityInstanceFormParameter[] | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   trackByParameters(_: number, parameter: ActivityInstanceFormParameter) {
     return parameter.name;

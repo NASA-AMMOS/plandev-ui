@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -21,7 +21,7 @@ import { ActivityType } from '../../types';
 export class ActivityTypeListComponent implements OnChanges {
   @Input() activityTypes: ActivityType[] = [];
 
-  @Output() selectActivityType: EventEmitter<ActivityType> = new EventEmitter();
+  @Output() selectActivityType: E<ActivityType> = new E();
 
   filteredActivityTypes: ActivityType[] = [];
   searchText = '';

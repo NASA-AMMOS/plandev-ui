@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -43,8 +43,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 export class ActivityInstanceFormParameterBaseVariantComponent {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   onParameterChange(change: MatSelectChange) {
     const { value: newValue } = change;

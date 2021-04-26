@@ -4,7 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -22,7 +22,7 @@ import { json } from '@codemirror/lang-json';
 export class CodeMirrorComponent implements AfterViewInit, OnChanges {
   @Input() text: string;
 
-  @Output() textChanged: EventEmitter<JSON> = new EventEmitter();
+  @Output() textChanged: E<JSON> = new E();
 
   doc: string;
   editorView: EditorView;

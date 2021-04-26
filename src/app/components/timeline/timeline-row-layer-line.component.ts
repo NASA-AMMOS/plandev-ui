@@ -4,7 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -70,7 +70,7 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
   @Input() yAxes: Axis[] | undefined;
   @Input() yAxisId: string;
 
-  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
+  @Output() mouseOverPoints: E<MouseOverPoints> = new E();
 
   @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 

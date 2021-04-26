@@ -5,7 +5,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   HostListener,
   Input,
   NgModule,
@@ -129,24 +129,20 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input() verticalGuides: VerticalGuide[];
   @Input() viewTimeRange: TimeRange | undefined;
 
-  @Output()
-  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-  @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
-  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
-  @Output() selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
-  @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
-  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
-  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
+  @Output() createHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() createPoint: E<CreatePoint> = new E();
+  @Output() deleteHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() deletePoint: E<DeletePoint> = new E();
+  @Output() savePoint: E<SavePoint> = new E();
+  @Output() selectPoint: E<SelectPoint> = new E();
+  @Output() updateHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() updateLayer: E<LayerEvent> = new E();
+  @Output() updatePoint: E<UpdatePoint> = new E();
+  @Output() updateRow: E<UpdateRow> = new E();
+  @Output() updateViewTimeRange: E<TimeRange> = new E();
 
   @ViewChild('rowContainer', { static: true })
   rowContainer: ElementRef<HTMLDivElement>;
-
   @ViewChild('xAxisContainer', { static: true })
   xAxisContainer: ElementRef<HTMLDivElement>;
 

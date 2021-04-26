@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -33,8 +33,7 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
 export class ActivityInstanceFormParameterBaseBooleanComponent {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   onParameterChange(change: MatCheckboxChange) {
     const { checked: newValue } = change;

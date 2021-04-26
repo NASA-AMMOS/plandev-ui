@@ -5,7 +5,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnDestroy,
@@ -232,22 +232,19 @@ export class TimelineRowComponent implements AfterViewInit, OnDestroy {
   @Input() xTicksView: XAxisTick[] = [];
   @Input() yAxes: Axis[] | undefined;
 
+  @Output() createHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() createPoint: E<CreatePoint> = new E();
+  @Output() deleteHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() deletePoint: E<DeletePoint> = new E();
   @Output()
-  createHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-  @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() deletePoint: EventEmitter<DeletePoint> = new EventEmitter();
-  @Output()
-  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
-  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
-  @Output() selectPoint: EventEmitter<SelectPoint> = new EventEmitter();
-  @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuideEvent> = new EventEmitter();
-  @Output() updateLayer: EventEmitter<LayerEvent> = new EventEmitter();
-  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
+  mouseOverConstraintViolations: E<MouseOverConstraintViolations> = new E();
+  @Output() mouseOverPoints: E<MouseOverPoints> = new E();
+  @Output() savePoint: E<SavePoint> = new E();
+  @Output() selectPoint: E<SelectPoint> = new E();
+  @Output() updateHorizontalGuide: E<HorizontalGuideEvent> = new E();
+  @Output() updateLayer: E<LayerEvent> = new E();
+  @Output() updatePoint: E<UpdatePoint> = new E();
+  @Output() updateRow: E<UpdateRow> = new E();
 
   @ViewChild('overlay', { static: true }) overlay: ElementRef<SVGElement>;
 

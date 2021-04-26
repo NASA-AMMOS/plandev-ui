@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -19,8 +19,8 @@ import { Plan } from '../../types';
 export class PlansTableComponent {
   @Input() plans: Plan[] = [];
 
-  @Output() deletePlan: EventEmitter<string> = new EventEmitter();
-  @Output() openPlan: EventEmitter<string> = new EventEmitter();
+  @Output() deletePlan: E<string> = new E();
+  @Output() openPlan: E<string> = new E();
 
   displayedColumns: string[] = [
     'name',

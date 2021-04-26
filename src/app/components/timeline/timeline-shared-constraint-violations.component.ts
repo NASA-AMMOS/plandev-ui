@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -39,7 +39,7 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
   @Input() xScaleView: ScaleTime<number, number>;
 
   @Output()
-  mouseOverConstraintViolations: EventEmitter<MouseOverConstraintViolations> = new EventEmitter();
+  mouseOverConstraintViolations: E<MouseOverConstraintViolations> = new E();
 
   @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 

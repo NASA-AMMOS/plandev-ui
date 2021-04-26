@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -33,7 +33,7 @@ export class TimelineXAxisBrushComponent implements OnChanges {
   @Input() xScaleView: ScaleTime<number, number>;
   @Input() yOffset = 0;
 
-  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
+  @Output() updateViewTimeRange: E<TimeRange> = new E();
 
   @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 

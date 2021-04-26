@@ -4,7 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -79,13 +79,12 @@ export class TimelineRowLayerActivityComponent
   @Input() viewTimeRange: TimeRange;
   @Input() xScaleView: ScaleTime<number, number>;
 
-  @Output() createPoint: EventEmitter<CreatePoint> = new EventEmitter();
-  @Output() mouseOverPoints: EventEmitter<MouseOverPoints> = new EventEmitter();
-  @Output()
-  mouseSelectPoints: EventEmitter<MouseSelectPoints> = new EventEmitter();
-  @Output() savePoint: EventEmitter<SavePoint> = new EventEmitter();
-  @Output() updatePoint: EventEmitter<UpdatePoint> = new EventEmitter();
-  @Output() updateRow: EventEmitter<UpdateRow> = new EventEmitter();
+  @Output() createPoint: E<CreatePoint> = new E();
+  @Output() mouseOverPoints: E<MouseOverPoints> = new E();
+  @Output() mouseSelectPoints: E<MouseSelectPoints> = new E();
+  @Output() savePoint: E<SavePoint> = new E();
+  @Output() updatePoint: E<UpdatePoint> = new E();
+  @Output() updateRow: E<UpdateRow> = new E();
 
   @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 

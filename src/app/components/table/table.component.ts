@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -24,8 +24,8 @@ export class TableComponent implements OnChanges {
   @Input() data: any[] = [];
   @Input() selectedElement: any | null = null;
 
-  @Output() deleteElement: EventEmitter<string> = new EventEmitter();
-  @Output() selectElement: EventEmitter<any> = new EventEmitter();
+  @Output() deleteElement: E<string> = new E();
+  @Output() selectElement: E<any> = new E();
 
   columnsToDisplay: string[] = [...this.columns];
   onContextMenu = contextMenu;

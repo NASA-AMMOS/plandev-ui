@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -67,8 +67,7 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
 export class ActivityInstanceFormParameterBaseComponent {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 }
 
 @NgModule({

@@ -4,7 +4,7 @@ import {
   Component,
   ComponentFactoryResolver,
   ComponentRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -34,8 +34,7 @@ export class ActivityInstanceFormParameterRecComponent
   implements OnChanges, OnDestroy {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   component: ComponentRef<SeriesComponent | StructComponent> | null = null;
   subs = new SubSink();

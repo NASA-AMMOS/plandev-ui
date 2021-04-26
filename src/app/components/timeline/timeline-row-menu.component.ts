@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -120,12 +120,10 @@ export class TimelineRowMenuComponent {
   @Input() horizontalGuides: HorizontalGuide[] | undefined;
   @Input() layers: Layer[] | undefined;
 
-  @Output() createHorizontalGuide: EventEmitter<void> = new EventEmitter();
-  @Output()
-  deleteHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter();
-  @Output()
-  updateHorizontalGuide: EventEmitter<HorizontalGuide> = new EventEmitter();
-  @Output() updateLayer: EventEmitter<Layer> = new EventEmitter();
+  @Output() createHorizontalGuide: E<void> = new E();
+  @Output() deleteHorizontalGuide: E<HorizontalGuide> = new E();
+  @Output() updateHorizontalGuide: E<HorizontalGuide> = new E();
+  @Output() updateLayer: E<Layer> = new E();
 }
 
 @NgModule({

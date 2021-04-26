@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -51,10 +51,10 @@ export class ActivityInstanceFormComponent
   @Input() selectedActivityType: ActivityType | null = null;
   @Input() type: 'create' | 'update' = 'create';
 
-  @Output() cancel: EventEmitter<void> = new EventEmitter();
-  @Output() create: EventEmitter<CreateActivityInstance> = new EventEmitter();
-  @Output() delete: EventEmitter<string> = new EventEmitter();
-  @Output() update: EventEmitter<UpdateActivityInstance> = new EventEmitter();
+  @Output() cancel: E<void> = new E();
+  @Output() create: E<CreateActivityInstance> = new E();
+  @Output() delete: E<string> = new E();
+  @Output() update: E<UpdateActivityInstance> = new E();
 
   isChild: boolean;
   parameters: ActivityInstanceFormParameter[];

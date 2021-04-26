@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -19,8 +19,8 @@ import { Adaptation } from '../../types';
 export class AdaptationsTableComponent {
   @Input() adaptations: Adaptation[] = [];
 
-  @Output() createPlan: EventEmitter<string> = new EventEmitter();
-  @Output() deleteAdaptation: EventEmitter<string> = new EventEmitter();
+  @Output() createPlan: E<string> = new E();
+  @Output() deleteAdaptation: E<string> = new E();
 
   displayedColumns: string[] = ['id', 'name', 'version', 'mission', 'owner'];
   onContextMenu = contextMenu;

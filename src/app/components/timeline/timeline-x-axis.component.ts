@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -156,10 +156,8 @@ export class TimelineXAxisComponent {
   @Input() xScaleView: ScaleTime<number, number>;
   @Input() xTicksView: XAxisTick[] = [];
 
-  @Output() collapsedVerticalGuides: EventEmitter<
-    VerticalGuide[]
-  > = new EventEmitter();
-  @Output() updateViewTimeRange: EventEmitter<TimeRange> = new EventEmitter();
+  @Output() collapsedVerticalGuides: E<VerticalGuide[]> = new E();
+  @Output() updateViewTimeRange: E<TimeRange> = new E();
 
   axisRowYOffset = 55;
   constraintViolationsRowYOffset = 20;

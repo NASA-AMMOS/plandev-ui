@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   Output,
@@ -47,8 +47,7 @@ export class ActivityInstanceFormParameterBaseInputComponent {
   @Input() parameter: ActivityInstanceFormParameter | undefined;
   @Input() type: 'number' | 'text' = 'text';
 
-  @Output()
-  parameterChange: EventEmitter<ActivityInstanceFormParameterChange> = new EventEmitter();
+  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
 
   onParameterChange(event: Event) {
     const { value, valueAsNumber } = event.target as HTMLInputElement;

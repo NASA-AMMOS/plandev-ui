@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
+  EventEmitter as E,
   Input,
   NgModule,
   OnChanges,
@@ -32,9 +32,7 @@ export class TimelineXAxisVerticalGuidesComponent implements OnChanges {
   @Input() viewTimeRange: TimeRange | undefined;
   @Input() xScaleView: ScaleTime<number, number>;
 
-  @Output() collapsedVerticalGuides: EventEmitter<
-    VerticalGuide[]
-  > = new EventEmitter();
+  @Output() collapsedVerticalGuides: E<VerticalGuide[]> = new E();
 
   @ViewChild('g', { static: true }) g: ElementRef<SVGGElement>;
 
