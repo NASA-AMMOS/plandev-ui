@@ -136,7 +136,10 @@
     </div>
 
     <div *ngIf="drawer.constraintList.visible">
-      <div *ngIf="!adaptationConstraints || !adaptationConstraints.length">
+      <div
+        *ngIf="!adaptationConstraints || !adaptationConstraints.length"
+        class="p-1"
+      >
         No Adaptation Constraints Found
       </div>
       <div *ngIf="adaptationConstraints && adaptationConstraints.length">
@@ -151,7 +154,7 @@
     </div>
 
     <div *ngIf="drawer.constraintViolations.visible">
-      <div *ngIf="!constraintViolations.length">No Violations</div>
+      <div *ngIf="!constraintViolations.length" class="p-1">No Violations</div>
       <div *ngIf="constraintViolations">
         <ul>
           <li *ngFor="let violation of constraintViolations">
