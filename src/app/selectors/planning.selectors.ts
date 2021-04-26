@@ -9,7 +9,6 @@ import {
   Adaptation,
   Axis,
   ConstraintViolation,
-  ConstraintViolationListState,
   DecompositionTreeState,
   Layer,
   LineLayer,
@@ -133,12 +132,6 @@ export const getDecompositionTreeState = createSelector(
   getPlanningState,
   (state: PlanningState): DecompositionTreeState =>
     state.decompositionTreeState,
-);
-
-export const getConstraintViolationListState = createSelector(
-  getPlanningState,
-  (state: PlanningState): ConstraintViolationListState =>
-    state.constraintViolationListState,
 );
 
 export const getConstraintViolations = createSelector(

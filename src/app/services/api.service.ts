@@ -7,6 +7,7 @@ import { AERIE_USER } from '../constants';
 import {
   ActivityInstanceParameter,
   Adaptation,
+  Constraint,
   CreateActivityInstance,
   CreateActivityInstancesResponse,
   CreateAdaptation,
@@ -23,6 +24,7 @@ import {
   SimulationResponse,
   UpdateActivityInstance,
   UpdateActivityInstanceResponse,
+  UpdateConstraintsResponse,
   User,
   ValidationResponse,
   View,
@@ -194,6 +196,36 @@ export class ApiService {
             throw new Error(deleteAdaptation.message);
           }
           return deleteAdaptation;
+        }),
+      );
+  }
+
+  deleteAdaptationConstraints(
+    adaptationId: string,
+    constraintName: string,
+  ): Observable<UpdateConstraintsResponse> {
+    const body = {
+      query: gql.DELETE_ADAPTATION_CONSTRAINTS,
+      variables: {
+        adaptationId,
+        constraintName,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          deleteAdaptationConstraints: UpdateConstraintsResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
+      .pipe(
+        map(({ data: { deleteAdaptationConstraints } }) => {
+          if (!deleteAdaptationConstraints.success) {
+            throw new Error(deleteAdaptationConstraints.message);
+          }
+          return deleteAdaptationConstraints;
         }),
       );
   }
@@ -392,6 +424,36 @@ export class ApiService {
             throw new Error(updateActivityInstance.message);
           }
           return updateActivityInstance;
+        }),
+      );
+  }
+
+  updateAdaptationConstraints(
+    adaptationId: string,
+    constraints: Constraint[],
+  ): Observable<UpdateConstraintsResponse> {
+    const body = {
+      query: gql.UPDATE_ADAPTATION_CONSTRAINTS,
+      variables: {
+        adaptationId,
+        constraints,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          updateAdaptationConstraints: UpdateConstraintsResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
+      .pipe(
+        map(({ data: { updateAdaptationConstraints } }) => {
+          if (!updateAdaptationConstraints.success) {
+            throw new Error(updateAdaptationConstraints.message);
+          }
+          return updateAdaptationConstraints;
         }),
       );
   }

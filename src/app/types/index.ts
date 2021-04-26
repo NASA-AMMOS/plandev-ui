@@ -2,6 +2,7 @@ export * from './activity-instance';
 export * from './activity-type';
 export * from './adaptation';
 export * from './auth';
+export * from './constraints';
 export * from './plan';
 export * from './selection';
 export * from './simulation';

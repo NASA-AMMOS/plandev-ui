@@ -1,28 +1,6 @@
 import { ActivityInstance } from './activity-instance';
+import { ConstraintViolation } from './constraints';
 import { StringTMap } from './string-t-map';
-import { TimeRange } from './time-range';
-
-export interface Constraint {
-  category: string;
-  message: string;
-  name: string;
-}
-
-export interface ConstraintViolation {
-  associations: ConstraintViolationAssociations;
-  constraint: Constraint;
-  windows: TimeRange[];
-}
-
-export interface ConstraintViolationAssociations {
-  activityInstanceIds?: string[];
-  resourceIds?: string[];
-}
-
-export interface ConstraintViolationListState {
-  category: StringTMap<{ expanded: boolean; visible: boolean }>;
-  constraint: StringTMap<{ expanded: boolean; visible: boolean }>;
-}
 
 export interface DecompositionTreeState {
   instance: StringTMap<{ expanded: boolean }>;

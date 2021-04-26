@@ -1,5 +1,5 @@
 import { ActivityType } from './activity-type';
-import { ConstraintViolation } from './simulation';
+import { ConstraintViolation } from './constraints';
 import { StringTMap } from './string-t-map';
 
 export interface ActivityLayer extends Layer {

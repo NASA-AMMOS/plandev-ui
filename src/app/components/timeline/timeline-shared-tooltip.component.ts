@@ -158,14 +158,12 @@ export class TimelineSharedTooltipComponent implements OnChanges {
 
     this.constraintViolations.forEach(
       (constraintViolation: ConstraintViolation, i: number) => {
-        const { message, name } = constraintViolation.constraint;
+        const { name } = constraintViolation.constraint;
         const text = `
           <div>
             Constraint Violation
             <br>
             Name: ${name}
-            <br>
-            Message: ${message}
           </div>
         `;
         tooltipText = `${tooltipText} ${text}`;

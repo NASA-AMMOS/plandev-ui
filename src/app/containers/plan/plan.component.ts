@@ -19,6 +19,7 @@ import {
   ActivityInstanceFormModule,
   ActivityTypeListModule,
   CodeMirrorModule,
+  ConstraintEditorModule,
   HeaderModule,
   PlaceholderModule,
   TableModule,
@@ -34,7 +35,6 @@ import {
   getActivityInstancesMap,
   getActivityTypes,
   getAdaptationId,
-  getConstraintViolationListState,
   getConstraintViolations,
   getMaxTimeRange,
   getSelectedActivityInstance,
@@ -47,7 +47,6 @@ import {
   ActivityInstance,
   ActivityType,
   ConstraintViolation,
-  ConstraintViolationListState,
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
@@ -69,7 +68,6 @@ import {
   ViewSection,
   ViewSectionMenuItem,
 } from '../../types';
-import { ConstraintViolationListModule } from '../constraint-violation-list/constraint-violation-list.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,10 +84,18 @@ export class PlanComponent implements OnDestroy {
   activityTypes: ActivityType[] | null = null;
   adaptationId = '';
   constraintViolations: ConstraintViolation[] = [];
-  constraintViolationListState: ConstraintViolationListState;
   drawer = {
     activityDictionary: {
       visible: true,
+    },
+    constraintEditor: {
+      visible: false,
+    },
+    constraintList: {
+      visible: false,
+    },
+    constraintViolations: {
+      visible: false,
     },
     createActivityInstance: {
       visible: false,
@@ -100,17 +106,12 @@ export class PlanComponent implements OnDestroy {
     viewEditor: {
       visible: false,
     },
-    violations: {
-      visible: false,
-    },
   };
-  drawerVisible = true;
   maxTimeRange: TimeRange;
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
   simulationOutOfDate = false;
-  totalConstraintViolations = 0;
   user: User;
   view: View | null;
   viewText: string;
@@ -148,13 +149,6 @@ export class PlanComponent implements OnDestroy {
         .pipe(select(getConstraintViolations))
         .subscribe(constraintViolations => {
           this.constraintViolations = constraintViolations;
-          this.totalConstraintViolations = constraintViolations.length;
-          this.cdRef.markForCheck();
-        }),
-      this.store
-        .pipe(select(getConstraintViolationListState))
-        .subscribe(constraintViolationListState => {
-          this.constraintViolationListState = constraintViolationListState;
           this.cdRef.markForCheck();
         }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
@@ -214,11 +208,26 @@ export class PlanComponent implements OnDestroy {
     this.showDrawerType('activityDictionary');
   }
 
+  onConstraintList() {
+    this.showDrawerType('constraintList');
+    this.onResize();
+  }
+
+  onConstraintViolations() {
+    this.showDrawerType('constraintViolations');
+    this.onResize();
+  }
+
   onCreateActivityInstance(activityInstance: CreateActivityInstance): void {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(
       PlanningActions.createActivityInstance({ activityInstance, planId }),
     );
+  }
+
+  onCreateConstraint() {
+    this.showDrawerType('constraintEditor');
+    this.onResize();
   }
 
   onCreateHorizontalGuide(event: HorizontalGuideEvent) {
@@ -426,7 +435,6 @@ export class PlanComponent implements OnDestroy {
         this.drawer[content].visible = true;
       }
     });
-    this.drawerVisible = true;
   }
 
   trackByViewSections(index: number, viewSection: ViewSection): string {
@@ -445,7 +453,7 @@ export class PlanComponent implements OnDestroy {
     AngularSplitModule,
     ActivityInstanceFormModule,
     ActivityTypeListModule,
-    ConstraintViolationListModule,
+    ConstraintEditorModule,
     HeaderModule,
     PipesModule,
     PlaceholderModule,

@@ -80,6 +80,21 @@ export const DELETE_ADAPTATION = `
   }
 `;
 
+export const DELETE_ADAPTATION_CONSTRAINTS = `
+  mutation DeleteAdaptationConstraints(
+    $adaptationId: ID!
+    $constraintName: String!
+  ) {
+    deleteAdaptationConstraints(
+      id: $adaptationId
+      name: $constraintName
+    ) {
+      message
+      success
+    }
+  }
+`;
+
 export const DELETE_PLAN = `
   mutation DeletePlan($id: ID!) {
     deletePlan(id: $id) {
@@ -124,6 +139,10 @@ export const GET_PLAN_DETAIL = `
             name
             schema
           }
+        }
+        constraints {
+          definition
+          name
         }
       }
       adaptationId
@@ -207,6 +226,21 @@ export const UPDATE_ACTIVITY_INSTANCE = `
     updateActivityInstance(
       activityInstance: $activityInstance
       planId: $planId
+    ) {
+      message
+      success
+    }
+  }
+`;
+
+export const UPDATE_ADAPTATION_CONSTRAINTS = `
+  mutation UpdateAdaptationConstraints(
+    $adaptationId: ID!
+    $constraints: [ConstraintDefinitionInput!]!
+  ) {
+    updateAdaptationConstraints(
+      adaptationId: $adaptationId
+      constraints: $constraints
     ) {
       message
       success

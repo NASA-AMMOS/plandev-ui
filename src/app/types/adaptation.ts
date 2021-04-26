@@ -1,7 +1,9 @@
 import { ActivityType } from './activity-type';
+import { Constraint } from './constraints';
 
 export interface Adaptation {
   activityTypes?: ActivityType[];
+  constraints?: Constraint[];
   id: string;
   mission: string;
   name: string;

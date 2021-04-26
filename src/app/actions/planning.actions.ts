@@ -2,6 +2,7 @@ import { createAction, props } from '@ngrx/store';
 import {
   ActivityInstance,
   Adaptation,
+  Constraint,
   CreateActivityInstance,
   CreateAdaptation,
   CreatePlan,
@@ -73,6 +74,11 @@ export const deleteAdaptation = createAction(
 export const deleteAdaptationSuccess = createAction(
   '[planning] deleteAdaptationSuccess',
   props<{ id: string }>(),
+);
+
+export const deleteConstraint = createAction(
+  '[planning] deleteConstraint',
+  props<{ constraintName: string }>(),
 );
 
 export const deletePlan = createAction(
@@ -208,14 +214,19 @@ export const updateActivityInstanceSuccess = createAction(
   props<{ activityInstance: UpdateActivityInstance }>(),
 );
 
-export const updateConstraintViolationListState = createAction(
-  '[planning] updateConstraintViolationListState',
-  props<{
-    formType: 'category' | 'constraint';
-    formValue: string;
-    key: 'expanded' | 'visible';
-    value: boolean;
-  }>(),
+export const updateConstraint = createAction(
+  '[planning] updateConstraint',
+  props<{ constraint: Constraint }>(),
+);
+
+export const updateConstraintFailure = createAction(
+  '[planning] updateConstraintFailure',
+  props<{ errorMsg: string }>(),
+);
+
+export const updateConstraintSuccess = createAction(
+  '[planning] updateConstraintSuccess',
+  props<{ constraint: Constraint }>(),
 );
 
 export const updateDecompositionTreeState = createAction(

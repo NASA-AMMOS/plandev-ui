@@ -594,6 +594,48 @@ export class PlanningEffects {
     ),
   );
 
+  updateConstraint = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.updateConstraint),
+      withLatestFrom(this.store),
+      map(([action, state]) => ({ action, state })),
+      switchMap(({ action, state: { planning } }) => {
+        const { adaptationId } = planning.selectedPlan;
+        const { constraint } = action;
+        return concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService
+            .updateAdaptationConstraints(adaptationId, [constraint])
+            .pipe(
+              switchMap(() => [
+                ToastActions.showToast({
+                  message: 'Constraint updated',
+                  toastType: 'success',
+                }),
+                PlanningActions.updateConstraintSuccess({
+                  constraint,
+                }),
+              ]),
+              catchError((error: Error) => {
+                const errorMsg = error.message;
+                console.error(errorMsg);
+                return [
+                  ToastActions.showToast({
+                    message: 'Update constraint failed',
+                    toastType: 'error',
+                  }),
+                  PlanningActions.updateConstraintFailure({
+                    errorMsg,
+                  }),
+                ];
+              }),
+            ),
+          of(AppActions.setLoading({ loading: false })),
+        );
+      }),
+    ),
+  );
+
   verticalGuideOpenDialog = createEffect(() =>
     this.actions.pipe(
       ofType(PlanningActions.verticalGuideOpenDialog),

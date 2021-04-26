@@ -15,19 +15,27 @@
 
   <div class="right">
     <button
-      mat-raised-button
-      class="right-button"
-      [matBadge]="totalConstraintViolations"
-      [matBadgeHidden]="totalConstraintViolations === 0"
-      matBadgeColor="warn"
-      matBadgePosition="before"
-      matBadgeSize="small"
-      matTooltip="Violations"
-      [style.opacity]="totalConstraintViolations > 0 ? 1.0 : 0.5"
-      (click)="showDrawerType('violations')"
+      mat-icon-button
+      matTooltip="Constraints"
+      [matMenuTriggerFor]="constraintsMenu"
     >
-      Violations
+      <mat-icon svgIcon="integration_instructions"></mat-icon>
     </button>
+    <mat-menu #constraintsMenu="matMenu">
+      <button mat-menu-item (click)="onConstraintList()">
+        <mat-icon>menu</mat-icon>
+        <span>Constraint List</span>
+      </button>
+      <button mat-menu-item (click)="onCreateConstraint()">
+        <mat-icon>create</mat-icon>
+        <span>Create Constraint</span>
+      </button>
+      <button mat-menu-item (click)="onConstraintViolations()">
+        <mat-icon>warning</mat-icon>
+        <span>Constraint Violations</span>
+      </button>
+    </mat-menu>
+
     <button mat-icon-button matTooltip="Views" [matMenuTriggerFor]="viewMenu">
       <mat-icon>dashboard</mat-icon>
     </button>
@@ -53,6 +61,7 @@
         <span>Save View</span>
       </button>
     </mat-menu>
+
     <button
       mat-icon-button
       matTooltip="Activity Dictionary"
@@ -106,12 +115,7 @@
     </as-split>
   </as-split-area>
 
-  <as-split-area
-    maxSize="800"
-    minSize="350"
-    size="450"
-    [visible]="drawerVisible"
-  >
+  <as-split-area maxSize="800" minSize="350" size="450" [visible]="true">
     <div *ngIf="drawer.activityDictionary.visible">
       <aerie-header> Activity Dictionary </aerie-header>
       <div class="p-1">
@@ -122,6 +126,18 @@
           (selectActivityType)="onSelectActivityType($event)"
         ></activity-type-list>
       </div>
+    </div>
+
+    <div *ngIf="drawer.constraintEditor.visible">
+      <constraint-editor></constraint-editor>
+    </div>
+
+    <div *ngIf="drawer.constraintList.visible">
+      <div>Constraint List TODO</div>
+    </div>
+
+    <div *ngIf="drawer.constraintViolations.visible">
+      <div>Constraint Violations TODO</div>
     </div>
 
     <div *ngIf="drawer.createActivityInstance.visible">
@@ -160,14 +176,6 @@
       <ng-template #elseBlock>
         <mat-card>No Activity Instance Selected</mat-card>
       </ng-template>
-    </div>
-
-    <div *ngIf="drawer.violations.visible">
-      <constraint-violation-list
-        [activityInstances]="activityInstances"
-        [constraintViolations]="constraintViolations"
-        [constraintViolationListState]="constraintViolationListState"
-      ></constraint-violation-list>
     </div>
   </as-split-area>
 </as-split>

@@ -20,11 +20,9 @@ import { json } from '@codemirror/lang-json';
   template: ``,
 })
 export class CodeMirrorComponent implements AfterViewInit, OnChanges {
-  @Input()
-  text: string;
+  @Input() text: string;
 
-  @Output()
-  textChanged: EventEmitter<JSON> = new EventEmitter();
+  @Output() textChanged: EventEmitter<JSON> = new EventEmitter();
 
   doc: string;
   editorView: EditorView;
@@ -61,6 +59,7 @@ export class CodeMirrorComponent implements AfterViewInit, OnChanges {
       }
     });
     const theme = EditorView.theme({
+      '&.cm-editor': { height: '100%' },
       '&.cm-focused': { outline: '0px' },
     });
 

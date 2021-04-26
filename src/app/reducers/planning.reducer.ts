@@ -7,8 +7,8 @@ import {
   ActivityInstance,
   ActivityType,
   Adaptation,
+  Constraint,
   ConstraintViolation,
-  ConstraintViolationListState,
   DecompositionTreeState,
   HorizontalGuide,
   Plan,
@@ -24,7 +24,7 @@ export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
   adaptations: StringTMap<Adaptation> | null;
-  constraintViolationListState: ConstraintViolationListState;
+  adaptationConstraints: StringTMap<Constraint> | null;
   constraintViolations: ConstraintViolation[] | null;
   decompositionTreeState: DecompositionTreeState;
   lastActivityInstanceUpdate: number;
@@ -40,8 +40,8 @@ export interface PlanningState {
 export const initialState: PlanningState = {
   activityInstances: null,
   activityTypes: null,
+  adaptationConstraints: null,
   adaptations: null,
-  constraintViolationListState: { category: {}, constraint: {} },
   constraintViolations: null,
   decompositionTreeState: { instance: {} },
   lastActivityInstanceUpdate: 0,
@@ -126,7 +126,8 @@ export const reducer = createReducer(
   on(PlanningActions.getPlanDetailSuccess, (state, { plan }) => ({
     ...state,
     activityInstances: keyBy(plan.activityInstances, 'id'),
-    activityTypes: keyBy(plan.adaptation.activityTypes, 'name'),
+    activityTypes: keyBy(plan.adaptation?.activityTypes || [], 'name'),
+    adaptationConstraints: keyBy(plan.adaptation?.constraints || [], 'name'),
     selectedPlan: omit(plan, ['activityInstances', 'adaptation']),
     viewTimeRange: {
       end: getUnixEpochTime(plan.endTimestamp),
@@ -288,41 +289,6 @@ export const reducer = createReducer(
         activityInstances: {
           ...keyBy(activities, 'id'),
         },
-        constraintViolationListState: {
-          ...violations.reduce(
-            (
-              constraintViolationListState: ConstraintViolationListState,
-              violation,
-            ) => {
-              const { constraint } = violation;
-              const { category, name } = constraint;
-              if (
-                state.constraintViolationListState.category[category] ===
-                undefined
-              ) {
-                constraintViolationListState.category[category] = {
-                  expanded: true,
-                  visible: true,
-                };
-              }
-              if (
-                state.constraintViolationListState.constraint[name] ===
-                undefined
-              ) {
-                constraintViolationListState.constraint[name] = {
-                  expanded: false,
-                  visible: true,
-                };
-              }
-              return constraintViolationListState;
-            },
-            {
-              ...state.constraintViolationListState,
-              category: { ...state.constraintViolationListState.category },
-              constraint: { ...state.constraintViolationListState.constraint },
-            },
-          ),
-        },
         constraintViolations: violations.map(violation => ({
           ...violation,
           windows: violation.windows.map(({ end, start }) => {
@@ -402,21 +368,6 @@ export const reducer = createReducer(
         }
         return section;
       }),
-    },
-  })),
-  on(PlanningActions.updateConstraintViolationListState, (state, action) => ({
-    ...state,
-    constraintViolationListState: {
-      ...state.constraintViolationListState,
-      [action.formType]: {
-        ...state.constraintViolationListState[action.formType],
-        [action.formValue]: {
-          ...state.constraintViolationListState[action.formType][
-            action.formValue
-          ],
-          [action.key]: action.value,
-        },
-      },
     },
   })),
   on(PlanningActions.updateSelectedViewId, (state, { id }) => ({

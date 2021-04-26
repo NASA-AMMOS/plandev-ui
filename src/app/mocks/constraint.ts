@@ -7,8 +7,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: [],
     },
     constraint: {
-      category: 'warning',
-      message: 'Foo violation',
+      definition: '',
       name: 'constraint0',
     },
     windows: [
@@ -23,8 +22,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: [],
     },
     constraint: {
-      category: 'warning',
-      message: 'Fee violation',
+      definition: '',
       name: 'constraint1',
     },
     windows: [{ end: 1577839007058, start: 1577838621176 }],
@@ -35,8 +33,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: ['row1'],
     },
     constraint: {
-      category: 'warning',
-      message: 'Bar violation',
+      definition: '',
       name: 'constraint2',
     },
     windows: [{ end: 1577839007058, start: 1577838621176 }],
@@ -47,8 +44,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: ['row2'],
     },
     constraint: {
-      category: 'warning',
-      message: 'Baz violation',
+      definition: '',
       name: 'constraint3',
     },
     windows: [{ end: 1577838357647, start: 1577838277647 }],

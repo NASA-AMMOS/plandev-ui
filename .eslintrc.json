@@ -6,7 +6,7 @@
         "plugin:@angular-eslint/ng-cli-compat",
         "plugin:@angular-eslint/ng-cli-compat--formatting-add-on",
         "plugin:@angular-eslint/template/process-inline-templates",
-        "prettier/@typescript-eslint"
+        "prettier"
       ],
       "files": ["*.ts", "*.js"],
       "parserOptions": {
