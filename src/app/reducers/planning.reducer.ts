@@ -95,6 +95,10 @@ export const reducer = createReducer(
     ...state,
     adaptations: omit(state.adaptations, id),
   })),
+  on(PlanningActions.deleteConstraintSuccess, (state, { constraintName }) => ({
+    ...state,
+    adaptationConstraints: omit(state.adaptationConstraints, constraintName),
+  })),
   on(PlanningActions.deletePlanSuccess, (state, { id }) => ({
     ...state,
     plans: omit(state.plans, id),
@@ -330,6 +334,16 @@ export const reducer = createReducer(
       },
     },
     lastActivityInstanceUpdate: performance.now(),
+  })),
+  on(PlanningActions.updateConstraintSuccess, (state, { constraint }) => ({
+    ...state,
+    adaptationConstraints: {
+      ...state.adaptationConstraints,
+      [constraint.name]: {
+        ...state.adaptationConstraints[constraint.name],
+        ...constraint,
+      },
+    },
   })),
   on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
     ...state,

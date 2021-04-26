@@ -34,6 +34,7 @@ import {
   getActivityInstances,
   getActivityInstancesMap,
   getActivityTypes,
+  getAdaptationConstraints,
   getAdaptationId,
   getConstraintViolations,
   getMaxTimeRange,
@@ -46,6 +47,7 @@ import {
 import {
   ActivityInstance,
   ActivityType,
+  Constraint,
   ConstraintViolation,
   CreateActivityInstance,
   CreatePoint,
@@ -82,6 +84,7 @@ export class PlanComponent implements OnDestroy {
   activityInstances: ActivityInstance[] | null = null;
   activityInstancesMap: StringTMap<ActivityInstance> | null = null;
   activityTypes: ActivityType[] | null = null;
+  adaptationConstraints: Constraint[] | null = null;
   adaptationId = '';
   constraintViolations: ConstraintViolation[] = [];
   drawer = {
@@ -107,6 +110,7 @@ export class PlanComponent implements OnDestroy {
       visible: false,
     },
   };
+  editingConstraint: Constraint | null = null;
   maxTimeRange: TimeRange;
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
@@ -141,6 +145,12 @@ export class PlanComponent implements OnDestroy {
         this.activityTypes = activityTypes;
         this.cdRef.markForCheck();
       }),
+      this.store
+        .pipe(select(getAdaptationConstraints))
+        .subscribe(adaptationConstraints => {
+          this.adaptationConstraints = adaptationConstraints;
+          this.cdRef.markForCheck();
+        }),
       this.store.pipe(select(getAdaptationId)).subscribe(adaptationId => {
         this.adaptationId = adaptationId;
         this.cdRef.markForCheck();
@@ -226,6 +236,7 @@ export class PlanComponent implements OnDestroy {
   }
 
   onCreateConstraint() {
+    this.editingConstraint = null;
     this.showDrawerType('constraintEditor');
     this.onResize();
   }
@@ -264,6 +275,11 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  onDeleteConstraint(constraint: Constraint) {
+    const { name: constraintName } = constraint;
+    this.store.dispatch(PlanningActions.deleteConstraint({ constraintName }));
+  }
+
   onDeleteHorizontalGuide(event: HorizontalGuideEvent): void {
     const { guide, rowId } = event;
     this.store.dispatch(
@@ -293,6 +309,12 @@ export class PlanComponent implements OnDestroy {
     );
   }
 
+  onEditConstraint(constraint: Constraint) {
+    this.editingConstraint = constraint;
+    this.showDrawerType('constraintEditor');
+    this.onResize();
+  }
+
   onEditView() {
     this.showDrawerType('viewEditor');
     this.onResize();
@@ -308,6 +330,10 @@ export class PlanComponent implements OnDestroy {
 
   onSaveAsView(): void {
     this.store.dispatch(PlanningActions.openSaveAsViewDialog());
+  }
+
+  onSaveConstraintEditor(constraint: Constraint) {
+    this.store.dispatch(PlanningActions.updateConstraint({ constraint }));
   }
 
   onSavePoint(event: SavePoint): void {

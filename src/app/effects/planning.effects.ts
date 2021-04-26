@@ -258,6 +258,43 @@ export class PlanningEffects {
     ),
   );
 
+  deleteConstraint = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.deleteConstraint),
+      withLatestFrom(this.store),
+      map(([action, state]) => ({ action, state })),
+      switchMap(({ action, state: { planning } }) => {
+        const { adaptationId } = planning.selectedPlan;
+        const { constraintName } = action;
+        return concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService
+            .deleteAdaptationConstraints(adaptationId, [constraintName])
+            .pipe(
+              switchMap(() => [
+                ToastActions.showToast({
+                  message: 'Constraint deleted',
+                  toastType: 'success',
+                }),
+                PlanningActions.deleteConstraintSuccess({ constraintName }),
+              ]),
+              catchError((error: Error) => {
+                const errorMsg = error.message;
+                console.error(errorMsg);
+                return [
+                  ToastActions.showToast({
+                    message: 'Delete constraint failed',
+                    toastType: 'error',
+                  }),
+                ];
+              }),
+            ),
+          of(AppActions.setLoading({ loading: false })),
+        );
+      }),
+    ),
+  );
+
   deletePlan = createEffect(() =>
     this.actions.pipe(
       ofType(PlanningActions.deletePlan),
@@ -623,9 +660,6 @@ export class PlanningEffects {
                   ToastActions.showToast({
                     message: 'Update constraint failed',
                     toastType: 'error',
-                  }),
-                  PlanningActions.updateConstraintFailure({
-                    errorMsg,
                   }),
                 ];
               }),

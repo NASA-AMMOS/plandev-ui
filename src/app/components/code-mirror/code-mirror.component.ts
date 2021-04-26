@@ -23,6 +23,7 @@ export class CodeMirrorComponent implements AfterViewInit, OnChanges {
   @Input() text: string;
 
   @Output() textChanged: E<JSON> = new E();
+  @Output() textValid: E<boolean> = new E();
 
   doc: string;
   editorView: EditorView;
@@ -52,9 +53,10 @@ export class CodeMirrorComponent implements AfterViewInit, OnChanges {
         this.doc = doc;
         try {
           const parsedDoc = JSON.parse(this.doc);
+          this.textValid.emit(true);
           this.textChanged.emit(parsedDoc);
-        } catch ({ message }) {
-          console.log('Could not parse document: ', message);
+        } catch (error) {
+          this.textValid.emit(false);
         }
       }
     });

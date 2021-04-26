@@ -202,13 +202,13 @@ export class ApiService {
 
   deleteAdaptationConstraints(
     adaptationId: string,
-    constraintName: string,
+    names: string[],
   ): Observable<UpdateConstraintsResponse> {
     const body = {
       query: gql.DELETE_ADAPTATION_CONSTRAINTS,
       variables: {
         adaptationId,
-        constraintName,
+        names,
       },
     };
     const options = {

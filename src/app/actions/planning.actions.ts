@@ -81,6 +81,11 @@ export const deleteConstraint = createAction(
   props<{ constraintName: string }>(),
 );
 
+export const deleteConstraintSuccess = createAction(
+  '[planning] deleteConstraintSuccess',
+  props<{ constraintName: string }>(),
+);
+
 export const deletePlan = createAction(
   '[planning] deletePlan',
   props<{ id: string }>(),
@@ -217,11 +222,6 @@ export const updateActivityInstanceSuccess = createAction(
 export const updateConstraint = createAction(
   '[planning] updateConstraint',
   props<{ constraint: Constraint }>(),
-);
-
-export const updateConstraintFailure = createAction(
-  '[planning] updateConstraintFailure',
-  props<{ errorMsg: string }>(),
 );
 
 export const updateConstraintSuccess = createAction(

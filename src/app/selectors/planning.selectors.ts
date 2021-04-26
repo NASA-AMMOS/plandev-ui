@@ -8,6 +8,7 @@ import {
   ActivityType,
   Adaptation,
   Axis,
+  Constraint,
   ConstraintViolation,
   DecompositionTreeState,
   Layer,
@@ -126,6 +127,14 @@ export const getAdaptations = createSelector(
   getPlanningState,
   (state: PlanningState): Adaptation[] | null =>
     state.adaptations ? Object.values(state.adaptations) : null,
+);
+
+export const getAdaptationConstraints = createSelector(
+  getPlanningState,
+  (state: PlanningState): Constraint[] | null =>
+    state.adaptationConstraints
+      ? Object.values(state.adaptationConstraints)
+      : null,
 );
 
 export const getDecompositionTreeState = createSelector(

@@ -129,15 +129,41 @@
     </div>
 
     <div *ngIf="drawer.constraintEditor.visible">
-      <constraint-editor></constraint-editor>
+      <constraint-editor
+        [constraint]="editingConstraint"
+        (save)="onSaveConstraintEditor($event)"
+      ></constraint-editor>
     </div>
 
     <div *ngIf="drawer.constraintList.visible">
-      <div>Constraint List TODO</div>
+      <div *ngIf="!adaptationConstraints || !adaptationConstraints.length">
+        No Adaptation Constraints Found
+      </div>
+      <div *ngIf="adaptationConstraints && adaptationConstraints.length">
+        <ul>
+          <li *ngFor="let constraint of adaptationConstraints">
+            {{ constraint.name }}
+            <button (click)="onEditConstraint(constraint)">Edit</button>
+            <button (click)="onDeleteConstraint(constraint)">Delete</button>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <div *ngIf="drawer.constraintViolations.visible">
-      <div>Constraint Violations TODO</div>
+      <div *ngIf="!constraintViolations.length">No Violations</div>
+      <div *ngIf="constraintViolations">
+        <ul>
+          <li *ngFor="let violation of constraintViolations">
+            {{ violation.constraint.name }}
+            <ul>
+              <li *ngFor="let window of violation.windows">
+                ({{ window.start }}, {{ window.end }})
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <div *ngIf="drawer.createActivityInstance.visible">

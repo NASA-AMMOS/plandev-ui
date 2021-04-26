@@ -83,11 +83,11 @@ export const DELETE_ADAPTATION = `
 export const DELETE_ADAPTATION_CONSTRAINTS = `
   mutation DeleteAdaptationConstraints(
     $adaptationId: ID!
-    $constraintName: String!
+    $names: [String!]!
   ) {
     deleteAdaptationConstraints(
       id: $adaptationId
-      name: $constraintName
+      names: $names
     ) {
       message
       success
@@ -205,8 +205,6 @@ export const SIMULATE = `
           resourceIds
         }
         constraint {
-          category
-          message
           name
         }
         windows {
