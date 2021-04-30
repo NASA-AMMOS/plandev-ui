@@ -66,7 +66,6 @@ export class TimelineRowLayerXRangeComponent
   @Input() drawHeight: number;
   @Input() drawWidth: number;
   @Input() id: string;
-  @Input() maxTimeRange: TimeRange = { end: 0, start: 0 };
   @Input() mousemove: MouseEvent;
   @Input() mouseout: MouseEvent;
   @Input() opacity: number | undefined;

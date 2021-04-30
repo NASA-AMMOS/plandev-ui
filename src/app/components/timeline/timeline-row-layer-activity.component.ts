@@ -59,7 +59,6 @@ export class TimelineRowLayerActivityComponent
   @Input() activityHeight = 20;
   @Input() activityRowPadding = 20;
   @Input() activitySelectedColor = '#81D4FA';
-  @Input() color: string | undefined;
   @Input() dragenter: DragEvent;
   @Input() dragleave: DragEvent;
   @Input() dragover: DragEvent;
@@ -67,7 +66,6 @@ export class TimelineRowLayerActivityComponent
   @Input() drawHeight: number;
   @Input() drawWidth: number;
   @Input() id: string;
-  @Input() maxTimeRange: TimeRange;
   @Input() mousedown: MouseEvent;
   @Input() mousemove: MouseEvent;
   @Input() mouseout: MouseEvent;

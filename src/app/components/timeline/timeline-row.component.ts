@@ -123,7 +123,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
         <ng-container *ngFor="let layer of layers; trackBy: trackByLayers">
           <aerie-timeline-row-layer-activity
             *ngIf="layer.chartType === 'activity'"
-            [color]="layer.color"
             [dragenter]="dragenter"
             [dragleave]="dragleave"
             [dragover]="dragover"
@@ -131,7 +130,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
-            [maxTimeRange]="maxTimeRange"
             [mousedown]="mousedown"
             [mousemove]="mousemove"
             [mouseout]="mouseout"
@@ -155,7 +153,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
-            [maxTimeRange]="maxTimeRange"
             [mousemove]="mousemove"
             [mouseout]="mouseout"
             [points]="layer.points"
@@ -172,7 +169,6 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
             [id]="layer.id"
-            [maxTimeRange]="maxTimeRange"
             [mousemove]="mousemove"
             [mouseout]="mouseout"
             [opacity]="layer.opacity"

@@ -61,7 +61,6 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
   @Input() drawHeight: number;
   @Input() drawWidth: number;
   @Input() id: string;
-  @Input() maxTimeRange: TimeRange;
   @Input() mousemove: MouseEvent;
   @Input() mouseout: MouseEvent;
   @Input() points: LinePoint[] | undefined;
