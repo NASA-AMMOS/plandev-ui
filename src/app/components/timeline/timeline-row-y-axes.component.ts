@@ -27,7 +27,7 @@ import { Axis } from '../../types';
   ],
   template: `
     <svg>
-      <g #g [attr.transform]="'translate(' + marginLeft + ',' + -1 + ')'"></g>
+      <g #g [attr.transform]="'translate(' + marginLeft + ',' + 0 + ')'"></g>
     </svg>
   `,
 })

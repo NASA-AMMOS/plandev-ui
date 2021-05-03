@@ -15,7 +15,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
-import { scaleTime, ScaleTime } from 'd3-scale';
+import { ScaleTime } from 'd3-scale';
+import { getXScale } from '../../functions';
 import {
   ConstraintViolation,
   CreatePoint,
@@ -122,7 +123,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
 export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input() constraintViolations: ConstraintViolation[] = [];
   @Input() id: string;
-  @Input() marginLeft = 100;
+  @Input() marginLeft = 50;
   @Input() marginRight = 40;
   @Input() maxTimeRange: TimeRange;
   @Input() rows: Row[] | null | undefined;
@@ -208,12 +209,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
         new Date(this.viewTimeRange.end),
       ];
 
-      this.xScaleMax = scaleTime()
-        .domain(this.xDomainMax)
-        .range([0, this.drawWidth]);
-      this.xScaleView = scaleTime()
-        .domain(this.xDomainView)
-        .range([0, this.drawWidth]);
+      this.xScaleMax = getXScale(this.xDomainMax, this.drawWidth);
+      this.xScaleView = getXScale(this.xDomainView, this.drawWidth);
 
       this.xTicksView = this.xScaleView.ticks().map((date: Date) => {
         const doyTimestamp = getDoyTimestamp(date.getTime(), false);

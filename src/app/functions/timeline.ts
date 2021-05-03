@@ -1,6 +1,6 @@
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
-import type { ScaleLinear } from 'd3-scale';
-import { scaleLinear } from 'd3-scale';
+import { ScaleLinear, scaleLinear, scaleTime, ScaleTime } from 'd3-scale';
+import { CANVAS_PADDING } from '../constants';
 import type {
   ConstraintViolation,
   QuadtreePoint,
@@ -64,21 +64,22 @@ export function getConstraintViolationsWithinTime(
   return violations;
 }
 
-/**
- * @note We add a step to the min and max of the domain so points
- * at the min or max are not clipped against the canvas top and bottom borders.
- */
+export function getXScale(
+  domain: [Date, Date],
+  width: number,
+): ScaleTime<number, number, never> {
+  return scaleTime()
+    .domain(domain)
+    .range([CANVAS_PADDING, width - CANVAS_PADDING]);
+}
+
 export function getYScale(
   domain: number[],
-  drawHeight: number,
+  height: number,
 ): ScaleLinear<number, number> {
-  const scale = scaleLinear().domain(domain);
-  const [t0, t1] = scale.ticks();
-  const step = Math.abs(t1 - t0);
-  const [min, max] = domain;
   return scaleLinear()
-    .domain([min - step, max + step])
-    .range([drawHeight, 0]);
+    .domain(domain)
+    .range([height - CANVAS_PADDING, CANVAS_PADDING]);
 }
 
 /**

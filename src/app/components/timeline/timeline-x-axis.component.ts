@@ -74,19 +74,6 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
           "
         >
           <g
-            class="label"
-            [attr.transform]="'translate(' + labelsXOffset + ',' + 0 + ')'"
-          >
-            <text
-              fill="rgb(0, 0, 0)"
-              font-size="10"
-              text-anchor="middle"
-              dy="0.5em"
-            >
-              GUIDES
-            </text>
-          </g>
-          <g
             aerie-timeline-x-axis-vertical-guides
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
@@ -109,18 +96,6 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             (updateViewTimeRange)="updateViewTimeRange.emit($event)"
           ></g>
           <g fill="none" font-size="10" text-anchor="middle">
-            <g
-              class="label"
-              [attr.transform]="'translate(' + labelsXOffset + ',' + 0 + ')'"
-            >
-              <text fill="rgb(0, 0, 0)" dy="0.5em">YEAR-DAY</text>
-            </g>
-            <g
-              class="label"
-              [attr.transform]="'translate(' + labelsXOffset + ',' + 20 + ')'"
-            >
-              <text fill="rgb(0, 0, 0)" dy="0.5em">TIME</text>
-            </g>
             <ng-container *ngFor="let tick of xTicksView">
               <g
                 class="tick"
@@ -161,7 +136,6 @@ export class TimelineXAxisComponent {
 
   axisRowYOffset = 55;
   constraintViolationsRowYOffset = 20;
-  labelsXOffset = -60;
   verticalGuidesRowYOffset = 35;
 }
 
