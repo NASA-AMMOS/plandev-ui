@@ -1,68 +1,7 @@
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
 import { ScaleLinear, scaleLinear, scaleTime, ScaleTime } from 'd3-scale';
 import { CANVAS_PADDING } from '../constants';
-import type {
-  ConstraintViolation,
-  QuadtreePoint,
-  QuadtreeRect,
-  StringTMap,
-  TimeRange,
-} from '../types';
-
-/**
- * Clamp width to 1 if it is 0 or less.
- */
-export function clampWidth(width: number): number {
-  const floorWidth = Math.floor(width);
-  return floorWidth > 0 ? floorWidth : 1;
-}
-
-/**
- * Make sure the window is between the current view time range
- * so we don't draw out of bounds.
- */
-export function clampWindow(
-  window: TimeRange,
-  viewTimeRange: TimeRange,
-): TimeRange {
-  let start = window.start;
-  let end = window.end;
-
-  if (start < viewTimeRange.start) {
-    start = viewTimeRange.start;
-  }
-
-  if (end > viewTimeRange.end) {
-    end = viewTimeRange.end;
-  }
-
-  return { end, start };
-}
-
-export function getConstraintViolationsWithinTime(
-  constraintViolations: ConstraintViolation[] = [],
-  unixEpochTime: number,
-): ConstraintViolation[] {
-  const violations = [];
-
-  for (const constraintViolation of constraintViolations) {
-    const { windows } = constraintViolation;
-    let count = 0;
-
-    for (const window of windows) {
-      const { start, end } = window;
-      if (start <= unixEpochTime && unixEpochTime <= end) {
-        ++count;
-      }
-    }
-
-    if (count > 0) {
-      violations.push(constraintViolation);
-    }
-  }
-
-  return violations;
-}
+import type { QuadtreePoint, QuadtreeRect, StringTMap } from '../types';
 
 export function getXScale(
   domain: [Date, Date],

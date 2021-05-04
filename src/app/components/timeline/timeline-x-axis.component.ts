@@ -1,15 +1,21 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter as E,
   Input,
   NgModule,
+  OnDestroy,
   Output,
+  ViewChild,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
 import {
   ConstraintViolation,
+  MouseOverConstraintViolations,
   TimeRange,
   VerticalGuide,
   XAxisTick,
@@ -40,7 +46,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
   ],
   template: `
     <svg [attr.style]="'height:' + drawHeight + 'px;'">
-      <g [attr.transform]="'translate(' + marginLeft + ',' + 0 + ')'">
+      <g #overlay [attr.transform]="'translate(' + marginLeft + ',' + 0 + ')'">
         <g [attr.transform]="'translate(' + 0 + ',' + 0 + ')'">
           <g
             aerie-timeline-x-axis-brush
@@ -64,8 +70,13 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             [constraintViolations]="constraintViolations"
             [drawHeight]="drawHeight"
             [drawWidth]="drawWidth"
-            [viewTimeRange]="viewTimeRange"
+            [marginLeft]="marginLeft"
+            [mousemove]="mousemove"
+            [mouseout]="mouseout"
             [xScaleView]="xScaleView"
+            (mouseOverConstraintViolations)="
+              mouseOverConstraintViolations.emit($event)
+            "
           ></g>
         </g>
         <g
@@ -93,6 +104,9 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             [xScaleMax]="xScaleMax"
             [xScaleView]="xScaleView"
             [yOffset]="-6"
+            (mouseOverConstraintViolations)="
+              mouseOverConstraintViolations.emit($event)
+            "
             (updateViewTimeRange)="updateViewTimeRange.emit($event)"
           ></g>
           <g fill="none" font-size="10" text-anchor="middle">
@@ -120,7 +134,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
     </svg>
   `,
 })
-export class TimelineXAxisComponent {
+export class TimelineXAxisComponent implements AfterViewInit, OnDestroy {
   @Input() constraintViolations: ConstraintViolation[];
   @Input() drawHeight = 90;
   @Input() drawWidth: number;
@@ -132,11 +146,55 @@ export class TimelineXAxisComponent {
   @Input() xTicksView: XAxisTick[] = [];
 
   @Output() collapsedVerticalGuides: E<VerticalGuide[]> = new E();
+  @Output()
+  mouseOverConstraintViolations: E<MouseOverConstraintViolations> = new E();
   @Output() updateViewTimeRange: E<TimeRange> = new E();
+
+  @ViewChild('overlay', { static: true })
+  overlay: ElementRef<SVGGElement>;
+
+  mousemove: MouseEvent;
+  mousemoveListener: (mousemove: MouseEvent) => void;
+  mouseout: MouseEvent;
+  mouseoutListener: (mouseout: MouseEvent) => void;
 
   axisRowYOffset = 55;
   constraintViolationsRowYOffset = 20;
   verticalGuidesRowYOffset = 35;
+
+  constructor(private cdRef: ChangeDetectorRef) {}
+
+  ngAfterViewInit(): void {
+    this.initEventListeners();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyEventListeners();
+  }
+
+  initEventListeners() {
+    const overlay = this.overlay.nativeElement;
+
+    // mousemove.
+    this.mousemoveListener = (mousemove: MouseEvent) => {
+      this.mousemove = mousemove;
+      this.cdRef.detectChanges();
+    };
+    overlay.addEventListener('mousemove', this.mousemoveListener);
+
+    // mouseout.
+    this.mouseoutListener = (mouseout: MouseEvent) => {
+      this.mouseout = mouseout;
+      this.cdRef.detectChanges();
+    };
+    overlay.addEventListener('mouseout', this.mouseoutListener);
+  }
+
+  destroyEventListeners() {
+    const overlay = this.overlay.nativeElement;
+    overlay.removeEventListener('mousemove', this.mousemoveListener);
+    overlay.removeEventListener('mouseout', this.mouseoutListener);
+  }
 }
 
 @NgModule({

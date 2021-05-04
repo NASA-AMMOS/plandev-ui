@@ -161,7 +161,8 @@
             {{ violation.constraint.name }}
             <ul>
               <li *ngFor="let window of violation.windows">
-                ({{ window.start }}, {{ window.end }})
+                ({{ window.start | doyTimestamp }},
+                {{ window.end | doyTimestamp }})
               </li>
             </ul>
           </li>

@@ -18,11 +18,13 @@ import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { ScaleTime } from 'd3-scale';
 import { getXScale } from '../../functions';
 import {
+  ActivityLayer,
   ConstraintViolation,
   CreatePoint,
   DeletePoint,
   HorizontalGuideEvent,
   LayerEvent,
+  LineLayer,
   MouseOverConstraintViolations,
   MouseOverPoints,
   Row,
@@ -34,6 +36,7 @@ import {
   UpdateRow,
   VerticalGuide,
   XAxisTick,
+  XRangeLayer,
 } from '../../types';
 import { TimelineRowModule } from './timeline-row.component';
 import { TimelineSharedTooltipModule } from './timeline-shared-tooltip.component';
@@ -76,6 +79,9 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         [xScaleView]="xScaleView"
         [xTicksView]="xTicksView"
         (collapsedVerticalGuides)="onCollapsedVerticalGuides($event)"
+        (mouseOverConstraintViolations)="
+          onMouseOverConstraintViolations($event)
+        "
         (updateViewTimeRange)="updateViewTimeRange.emit($event)"
       ></aerie-timeline-x-axis>
     </div>
@@ -179,10 +185,9 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
       shouldDraw = true;
     }
 
-    if (changes.constraintViolations) {
-      // TODO.
-      this.constraintViolationByRowId = {};
-      this.xAxisConstraintViolations = [];
+    if (changes.constraintViolations || changes.rows) {
+      this.collectViolations();
+      shouldDraw = true;
     }
 
     if (shouldDraw) {
@@ -192,6 +197,86 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   ngAfterViewChecked() {
     this.setRowContainerMaxHeight();
+  }
+
+  collectViolations() {
+    if (this.constraintViolations.length) {
+      this.constraintViolationByRowId = {};
+      this.xAxisConstraintViolations = [];
+
+      const timelineActivityInstanceIds: StringTMap<StringTMap<string>> = {};
+      const timelineResourceIds: StringTMap<StringTMap<string>> = {};
+
+      // Collect all activity and resource ids in the timeline by row.
+      for (const row of this.rows) {
+        for (const layer of row.layers) {
+          if (layer.type === 'activity') {
+            const activityLayer = layer as ActivityLayer;
+            for (const point of activityLayer.points) {
+              timelineActivityInstanceIds[point.id] = {
+                ...timelineActivityInstanceIds[point.id],
+                [row.id]: row.id,
+              };
+            }
+          } else if (layer.type === 'resource') {
+            const resourceLayer = layer as LineLayer | XRangeLayer;
+            for (const point of resourceLayer.points) {
+              timelineResourceIds[point.id] = {
+                ...timelineResourceIds[point.id],
+                [row.id]: row.id,
+              };
+            }
+          }
+        }
+      }
+
+      // Assign violations to their proper row.
+      for (const violation of this.constraintViolations) {
+        const { associations } = violation;
+        const { activityInstanceIds, resourceIds } = associations;
+
+        if (!activityInstanceIds.length && !resourceIds.length) {
+          for (const { id: rowId } of this.rows) {
+            if (this.constraintViolationByRowId[rowId] === undefined) {
+              this.constraintViolationByRowId[rowId] = [violation];
+            } else {
+              this.constraintViolationByRowId[rowId].push(violation);
+            }
+          }
+          this.xAxisConstraintViolations.push(violation);
+        } else if (activityInstanceIds.length) {
+          for (const activityInstanceId of activityInstanceIds) {
+            if (timelineActivityInstanceIds[activityInstanceId]) {
+              const rowIds = Object.keys(
+                timelineActivityInstanceIds[activityInstanceId],
+              );
+              for (const rowId of rowIds) {
+                if (this.constraintViolationByRowId[rowId] === undefined) {
+                  this.constraintViolationByRowId[rowId] = [violation];
+                } else {
+                  this.constraintViolationByRowId[rowId].push(violation);
+                }
+              }
+              this.xAxisConstraintViolations.push(violation);
+            }
+          }
+        } else {
+          for (const resourceId of resourceIds) {
+            if (timelineResourceIds[resourceId]) {
+              const rowIds = Object.keys(timelineResourceIds[resourceId]);
+              for (const rowId of rowIds) {
+                if (this.constraintViolationByRowId[rowId] === undefined) {
+                  this.constraintViolationByRowId[rowId] = [violation];
+                } else {
+                  this.constraintViolationByRowId[rowId].push(violation);
+                }
+              }
+              this.xAxisConstraintViolations.push(violation);
+            }
+          }
+        }
+      }
+    }
   }
 
   draw() {

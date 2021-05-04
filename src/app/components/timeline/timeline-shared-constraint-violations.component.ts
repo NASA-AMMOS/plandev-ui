@@ -14,11 +14,6 @@ import {
 import { ScaleTime } from 'd3-scale';
 import { select } from 'd3-selection';
 import {
-  clampWidth,
-  clampWindow,
-  getConstraintViolationsWithinTime,
-} from '../../functions';
-import {
   ConstraintViolation,
   MouseOverConstraintViolations,
   TimeRange,
@@ -33,9 +28,9 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
   @Input() constraintViolations: ConstraintViolation[];
   @Input() drawHeight: number;
   @Input() drawWidth: number;
+  @Input() marginLeft: number;
   @Input() mousemove: MouseEvent;
   @Input() mouseout: MouseEvent;
-  @Input() viewTimeRange: TimeRange | undefined;
   @Input() xScaleView: ScaleTime<number, number>;
 
   @Output()
@@ -50,7 +45,6 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
       changes.constraintViolations ||
       changes.drawHeight ||
       changes.drawWidth ||
-      changes.viewTimeRange ||
       changes.xScaleView
     ) {
       shouldDraw = true;
@@ -69,6 +63,17 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
     }
   }
 
+  clampWindow(window: TimeRange) {
+    const { end, start } = window;
+    const xStart = this.xScaleView(start);
+    const xEnd = this.xScaleView(end);
+    const clampedStart = xStart < 0 ? 0 : xStart;
+    const clampedEnd = xEnd > this.drawWidth ? this.drawWidth : xEnd;
+    const width = clampedEnd - clampedStart;
+    const clampedWidth = width <= 0 ? 5 : width;
+    return { start: clampedStart, width: clampedWidth };
+  }
+
   draw() {
     const { nativeElement } = this.g;
     const g = select(nativeElement);
@@ -82,17 +87,14 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
       const group = g.append('g').attr('class', constraintViolationClass);
 
       for (const window of windows) {
-        const { end, start } = clampWindow(window, this.viewTimeRange);
-        const xStart = this.xScaleView(start);
-        const xEnd = this.xScaleView(end);
-        const width = clampWidth(xEnd - xStart);
+        const { start, width } = this.clampWindow(window);
         group
           .append('rect')
           .attr('fill', '#B00020')
           .attr('fill-opacity', 0.15)
           .attr('height', this.drawHeight)
           .attr('width', width)
-          .attr('x', xStart)
+          .attr('x', start)
           .attr('y', 0);
       }
     }
@@ -100,12 +102,27 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
 
   onMousemove(e: MouseEvent | undefined): void {
     if (e) {
-      const { offsetX } = e;
-      const unixEpochTime = this.xScaleView.invert(offsetX).getTime();
-      const constraintViolations = getConstraintViolationsWithinTime(
-        this.constraintViolations,
-        unixEpochTime,
-      );
+      const { offsetX: x } = e;
+      const offsetX = this.marginLeft ? x - this.marginLeft : x;
+      const constraintViolations = [];
+
+      for (const constraintViolation of this.constraintViolations || []) {
+        const { windows } = constraintViolation;
+        let count = 0;
+
+        for (const window of windows) {
+          const { start, width } = this.clampWindow(window);
+          const end = start + width;
+          if (start <= offsetX && offsetX <= end) {
+            ++count;
+          }
+        }
+
+        if (count > 0) {
+          constraintViolations.push(constraintViolation);
+        }
+      }
+
       this.mouseOverConstraintViolations.emit({ constraintViolations, e });
     }
   }
