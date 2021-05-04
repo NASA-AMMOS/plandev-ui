@@ -97,6 +97,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
           [drawWidth]="drawWidth"
           [mousemove]="mousemove"
           [mouseout]="mouseout"
+          [viewTimeRange]="viewTimeRange"
           [xScaleView]="xScaleView"
           (mouseOverConstraintViolations)="
             mouseOverConstraintViolations.emit($event)

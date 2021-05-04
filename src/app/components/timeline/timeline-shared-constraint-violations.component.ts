@@ -31,6 +31,7 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
   @Input() marginLeft: number;
   @Input() mousemove: MouseEvent;
   @Input() mouseout: MouseEvent;
+  @Input() viewTimeRange: TimeRange;
   @Input() xScaleView: ScaleTime<number, number>;
 
   @Output()
@@ -45,6 +46,7 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
       changes.constraintViolations ||
       changes.drawHeight ||
       changes.drawWidth ||
+      changes.viewTimeRange ||
       changes.xScaleView
     ) {
       shouldDraw = true;
@@ -84,18 +86,29 @@ export class TimelineSharedConstraintViolationsComponent implements OnChanges {
 
     for (const constraintViolation of constraintViolations) {
       const { windows } = constraintViolation;
-      const group = g.append('g').attr('class', constraintViolationClass);
+      const filteredWindows = windows.filter(({ start, end }) => {
+        if (this.viewTimeRange) {
+          return (
+            start <= this.viewTimeRange.end && end >= this.viewTimeRange.start
+          );
+        }
+        return false;
+      });
 
-      for (const window of windows) {
-        const { start, width } = this.clampWindow(window);
-        group
-          .append('rect')
-          .attr('fill', '#B00020')
-          .attr('fill-opacity', 0.15)
-          .attr('height', this.drawHeight)
-          .attr('width', width)
-          .attr('x', start)
-          .attr('y', 0);
+      if (filteredWindows.length) {
+        const group = g.append('g').attr('class', constraintViolationClass);
+
+        for (const window of filteredWindows) {
+          const { start, width } = this.clampWindow(window);
+          group
+            .append('rect')
+            .attr('fill', '#B00020')
+            .attr('fill-opacity', 0.15)
+            .attr('height', this.drawHeight)
+            .attr('width', width)
+            .attr('x', start)
+            .attr('y', 0);
+        }
       }
     }
   }

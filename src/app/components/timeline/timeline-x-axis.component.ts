@@ -70,6 +70,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             [marginLeft]="marginLeft"
             [mousemove]="mousemove"
             [mouseout]="mouseout"
+            [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
             (mouseOverConstraintViolations)="
               mouseOverConstraintViolations.emit($event)
