@@ -8,6 +8,7 @@ import {
   EventEmitter as E,
   Input,
   NgModule,
+  OnChanges,
   OnDestroy,
   Output,
   ViewChild,
@@ -60,11 +61,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             (updateViewTimeRange)="updateViewTimeRange.emit($event)"
           ></g>
         </g>
-        <g
-          [attr.transform]="
-            'translate(' + 0 + ',' + constraintViolationsRowYOffset + ')'
-          "
-        >
+        <g [attr.transform]="'translate(' + 0 + ',' + violationsOffset + ')'">
           <g
             aerie-timeline-shared-constraint-violations
             [constraintViolations]="constraintViolations"
@@ -80,9 +77,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
           ></g>
         </g>
         <g
-          [attr.transform]="
-            'translate(' + 0 + ',' + verticalGuidesRowYOffset + ')'
-          "
+          [attr.transform]="'translate(' + 0 + ',' + verticalGuidesOffset + ')'"
         >
           <g
             aerie-timeline-x-axis-vertical-guides
@@ -94,7 +89,7 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
             (collapsedVerticalGuides)="collapsedVerticalGuides.emit($event)"
           ></g>
         </g>
-        <g [attr.transform]="'translate(' + 0 + ',' + axisRowYOffset + ')'">
+        <g [attr.transform]="'translate(' + 0 + ',' + axisOffset + ')'">
           <g
             aerie-timeline-x-axis-brush
             [drawHeight]="30"
@@ -134,9 +129,9 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
     </svg>
   `,
 })
-export class TimelineXAxisComponent implements AfterViewInit, OnDestroy {
+export class TimelineXAxisComponent
+  implements AfterViewInit, OnChanges, OnDestroy {
   @Input() constraintViolations: ConstraintViolation[];
-  @Input() drawHeight = 90;
   @Input() drawWidth: number;
   @Input() marginLeft: number;
   @Input() verticalGuides: VerticalGuide[];
@@ -158,11 +153,25 @@ export class TimelineXAxisComponent implements AfterViewInit, OnDestroy {
   mouseout: MouseEvent;
   mouseoutListener: (mouseout: MouseEvent) => void;
 
-  axisRowYOffset = 55;
-  constraintViolationsRowYOffset = 20;
-  verticalGuidesRowYOffset = 35;
+  axisOffset = 55;
+  drawHeight = 90;
+  verticalGuidesOffset = 35;
+  violationsOffset = 20;
 
   constructor(private cdRef: ChangeDetectorRef) {}
+
+  ngOnChanges() {
+    // Set spacing based on existence of vertical guides.
+    if (this.verticalGuides.length) {
+      this.axisOffset = 55;
+      this.drawHeight = 90;
+      this.verticalGuidesOffset = 35;
+    } else {
+      this.axisOffset = 35;
+      this.drawHeight = 70;
+      this.verticalGuidesOffset = 0;
+    }
+  }
 
   ngAfterViewInit(): void {
     this.initEventListeners();
