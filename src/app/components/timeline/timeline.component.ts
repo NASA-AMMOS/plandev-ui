@@ -235,6 +235,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
         const { associations } = violation;
         const { activityInstanceIds, resourceIds } = associations;
 
+        // If a violation does not happen to have an activity or resource association,
+        // just draw it on every row.
         if (!activityInstanceIds.length && !resourceIds.length) {
           for (const { id: rowId } of this.rows) {
             if (this.constraintViolationByRowId[rowId] === undefined) {
@@ -244,7 +246,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
             }
           }
           this.xAxisConstraintViolations.push(violation);
-        } else if (activityInstanceIds.length) {
+        } else {
+          // Violation with activity instance associations.
           for (const activityInstanceId of activityInstanceIds) {
             if (timelineActivityInstanceIds[activityInstanceId]) {
               const rowIds = Object.keys(
@@ -260,7 +263,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
               this.xAxisConstraintViolations.push(violation);
             }
           }
-        } else {
+
+          // Violation with resource associations.
           for (const resourceId of resourceIds) {
             if (timelineResourceIds[resourceId]) {
               const rowIds = Object.keys(timelineResourceIds[resourceId]);
