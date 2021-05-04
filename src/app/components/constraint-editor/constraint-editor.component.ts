@@ -22,36 +22,116 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'constraint-editor',
-  styles: [``],
+  styles: [
+    `
+      :host {
+        display: grid;
+        grid-template-rows: 1fr auto;
+        min-height: 100%;
+      }
+
+      button {
+        color: #ffffff;
+        background: #0d1667;
+        line-height: 24px;
+        width: 176px;
+      }
+
+      footer {
+        align-items: center;
+        box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
+        display: flex;
+        grid-row-end: 3;
+        grid-row-start: 2;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      mat-expansion-panel {
+        border-radius: 0px;
+      }
+
+      mat-expansion-panel-header {
+        border-radius: 0px;
+        box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+          0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+          0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+        font-family: Roboto;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: normal;
+      }
+
+      .expansion-panel-body-metadata,
+      .expansion-panel-body-editor {
+        padding-top: 10px;
+      }
+
+      .expansion-panel-metadata {
+        margin-bottom: 20px;
+      }
+
+      .expansion-panel-body-editor {
+        height: 60vh;
+      }
+    `,
+  ],
   template: `
-    <form class="p-1" [formGroup]="form">
-      <div class="pb-3">
-        <button
-          type="button"
-          mat-raised-button
-          (click)="onSave()"
-          [disabled]="!definitionValid || form.invalid"
+    <div class="container">
+      <mat-expansion-panel class="expansion-panel-metadata" expanded="true">
+        <mat-expansion-panel-header
+          collapsedHeight="40px"
+          expandedHeight="40px"
         >
-          Save
-        </button>
-      </div>
-      <mat-form-field appearance="outline" class="w-100">
-        <mat-label>Name</mat-label>
-        <input
-          autocomplete="off"
-          formControlName="name"
-          matInput
-          type="text"
-          [required]="true"
-        />
-        <mat-error> A constraint name is required </mat-error>
-      </mat-form-field>
-    </form>
-    <code-mirror
-      [text]="text"
-      (textChanged)="onTextChanged($event)"
-      (textValid)="definitionValid = $event"
-    ></code-mirror>
+          <mat-panel-title>Metadata</mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="expansion-panel-body-metadata">
+          <form class="p-1" [formGroup]="form">
+            <div class="pb-3"></div>
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Name</mat-label>
+              <input
+                autocomplete="off"
+                formControlName="name"
+                matInput
+                type="text"
+                [required]="true"
+              />
+              <mat-error> A constraint name is required </mat-error>
+            </mat-form-field>
+          </form>
+        </div>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel expanded="true">
+        <mat-expansion-panel-header
+          collapsedHeight="40px"
+          expandedHeight="40px"
+        >
+          <mat-panel-title>JSON Definition Editor</mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="expansion-panel-body-editor">
+          <code-mirror
+            class="code-mirror"
+            [text]="text"
+            (textChanged)="onTextChanged($event)"
+            (textValid)="definitionValid = $event"
+          ></code-mirror>
+        </div>
+      </mat-expansion-panel>
+    </div>
+    <footer>
+      <button
+        type="button"
+        mat-raised-button
+        (click)="onSave()"
+        [disabled]="!definitionValid || form.invalid"
+      >
+        Save
+      </button>
+    </footer>
   `,
 })
 export class ConstraintEditorComponent implements OnChanges {
