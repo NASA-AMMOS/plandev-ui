@@ -109,9 +109,7 @@ import { Constraint } from '../../types';
           <div *ngIf="adaptationConstraints && adaptationConstraints.length">
             <mat-list>
               <mat-divider></mat-divider>
-              <mat-list-item
-                *ngFor="let constraint of adaptationConstraints; let i = index"
-              >
+              <mat-list-item *ngFor="let constraint of adaptationConstraints">
                 <div class="constraint w-100">
                   <div class="left">
                     {{ constraint.name }}
@@ -158,9 +156,7 @@ import { Constraint } from '../../types';
           <div *ngIf="planConstraints && planConstraints.length">
             <mat-divider></mat-divider>
             <mat-list>
-              <mat-list-item
-                *ngFor="let constraint of planConstraints; let i = index"
-              >
+              <mat-list-item *ngFor="let constraint of planConstraints">
                 <div class="constraint w-100">
                   <div class="left">
                     {{ constraint.name }}

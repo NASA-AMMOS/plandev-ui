@@ -26,6 +26,7 @@ import {
   TableModule,
   TimelineModule,
   ToolbarModule,
+  ViolationListModule,
 } from '../../components';
 import { AERIE_USER } from '../../constants';
 import { getViewText } from '../../functions';
@@ -490,6 +491,7 @@ export class PlanComponent implements OnDestroy {
     TableModule,
     TimelineModule,
     ToolbarModule,
+    ViolationListModule,
   ],
 })
 export class PlanModule {}

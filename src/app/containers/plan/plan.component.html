@@ -152,20 +152,8 @@
     </div>
 
     <div *ngIf="drawer.constraintViolations.visible">
-      <div *ngIf="!constraintViolations.length" class="p-1">No Violations</div>
-      <div *ngIf="constraintViolations">
-        <ul>
-          <li *ngFor="let violation of constraintViolations">
-            {{ violation.constraint.name }}
-            <ul>
-              <li *ngFor="let window of violation.windows">
-                ({{ window.start | doyTimestamp }},
-                {{ window.end | doyTimestamp }})
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
+      <aerie-header>Constraint Violations</aerie-header>
+      <violation-list [violations]="constraintViolations"></violation-list>
     </div>
 
     <div *ngIf="drawer.createActivityInstance.visible">
