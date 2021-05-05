@@ -57,6 +57,11 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
         border-radius: 0px;
       }
 
+      mat-expansion-panel,
+      mat-expansion-panel * {
+        transition: none !important;
+      }
+
       mat-expansion-panel-header {
         border-radius: 0px;
         box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
