@@ -33,6 +33,13 @@ import { Constraint } from '../../types';
         display: flex;
       }
 
+      .create-button {
+        color: #ffffff;
+        background: #0d1667;
+        line-height: 24px;
+        width: 176px;
+      }
+
       .left {
         align-items: center;
         display: flex;
@@ -42,6 +49,15 @@ import { Constraint } from '../../types';
       .right {
         align-items: center;
         justify-content: flex-end;
+      }
+
+      footer {
+        align-items: center;
+        box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
+        display: flex;
+        flex-shrink: 0;
+        justify-content: center;
+        padding: 20px;
       }
 
       mat-expansion-panel {
@@ -168,12 +184,24 @@ import { Constraint } from '../../types';
         </div>
       </mat-expansion-panel>
     </div>
+
+    <footer>
+      <button
+        class="create-button"
+        type="button"
+        mat-raised-button
+        (click)="create.emit()"
+      >
+        Create New Constraint
+      </button>
+    </footer>
   `,
 })
 export class ConstraintListComponent {
   @Input() adaptationConstraints: Constraint[] = [];
   @Input() planConstraints: Constraint[] = [];
 
+  @Output() create: E<void> = new E();
   @Output() delete: E<Constraint> = new E();
   @Output() edit: E<Constraint> = new E();
 }

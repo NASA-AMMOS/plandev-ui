@@ -15,29 +15,36 @@
 
   <div class="right">
     <button
-      mat-icon-button
-      matTooltip="Constraints"
-      [matMenuTriggerFor]="constraintsMenu"
+      mat-raised-button
+      class="right-button"
+      [matBadge]="constraintViolations.length"
+      [matBadgeHidden]="constraintViolations.length === 0"
+      matBadgeColor="warn"
+      matBadgePosition="before"
+      matBadgeSize="small"
+      matTooltip="Violations"
+      [style.opacity]="constraintViolations.length > 0 ? 1.0 : 0.5"
+      (click)="onConstraintViolations()"
     >
-      <mat-icon svgIcon="integration_instructions"></mat-icon>
+      Violations
     </button>
-    <mat-menu #constraintsMenu="matMenu">
-      <button mat-menu-item (click)="onConstraintList()">
-        <mat-icon>menu</mat-icon>
-        <span>Constraint List</span>
-      </button>
-      <button mat-menu-item (click)="onCreateConstraint()">
-        <mat-icon>create</mat-icon>
-        <span>Create Constraint</span>
-      </button>
-      <button mat-menu-item (click)="onConstraintViolations()">
-        <mat-icon>warning</mat-icon>
-        <span>Constraint Violations</span>
-      </button>
-    </mat-menu>
 
-    <button mat-icon-button matTooltip="Views" [matMenuTriggerFor]="viewMenu">
-      <mat-icon>dashboard</mat-icon>
+    <button
+      mat-raised-button
+      class="right-button"
+      matTooltip="Constraints"
+      (click)="onConstraintList()"
+    >
+      Constraints
+    </button>
+
+    <button
+      mat-raised-button
+      class="right-button"
+      matTooltip="Views"
+      [matMenuTriggerFor]="viewMenu"
+    >
+      Views
     </button>
     <mat-menu #viewMenu="matMenu">
       <button mat-menu-item (click)="onEditView()">
@@ -138,6 +145,7 @@
     <div *ngIf="drawer.constraintList.visible">
       <constraint-list
         [adaptationConstraints]="adaptationConstraints"
+        (create)="onCreateConstraint()"
         (delete)="onDeleteConstraint($event)"
         (edit)="onEditConstraint($event)"
       ></constraint-list>

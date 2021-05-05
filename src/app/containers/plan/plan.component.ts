@@ -225,8 +225,10 @@ export class PlanComponent implements OnDestroy {
   }
 
   onConstraintViolations() {
-    this.showDrawerType('constraintViolations');
-    this.onResize();
+    if (this.constraintViolations && this.constraintViolations.length) {
+      this.showDrawerType('constraintViolations');
+      this.onResize();
+    }
   }
 
   onCreateActivityInstance(activityInstance: CreateActivityInstance): void {

@@ -80,12 +80,6 @@ export class AppComponent implements OnDestroy {
         'assets/icons/graphql.svg',
       ),
     );
-    this.matIconRegistry.addSvgIcon(
-      'integration_instructions',
-      this.domSanitizer.bypassSecurityTrustResourceUrl(
-        'assets/icons/integration_instructions.svg',
-      ),
-    );
   }
 
   ngOnDestroy(): void {
