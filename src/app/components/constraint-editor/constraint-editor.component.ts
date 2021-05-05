@@ -25,9 +25,16 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
   styles: [
     `
       :host {
-        display: grid;
-        grid-template-rows: 1fr auto;
-        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        height: 100%;
+        width: 100%;
+      }
+
+      .container {
+        flex-grow: 1;
+        overflow: auto;
       }
 
       button {
@@ -41,8 +48,7 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
         align-items: center;
         box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
         display: flex;
-        grid-row-end: 3;
-        grid-row-start: 2;
+        flex-shrink: 0;
         justify-content: center;
         padding: 20px;
       }
@@ -72,7 +78,7 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
       }
 
       .expansion-panel-body-editor {
-        height: 60vh;
+        height: 55vh;
       }
     `,
   ],
@@ -83,12 +89,19 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
           collapsedHeight="40px"
           expandedHeight="40px"
         >
-          <mat-panel-title>Metadata</mat-panel-title>
+          <mat-panel-title>Constraint Metadata</mat-panel-title>
         </mat-expansion-panel-header>
 
         <div class="expansion-panel-body-metadata">
           <form class="p-1" [formGroup]="form">
-            <div class="pb-3"></div>
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Type</mat-label>
+              <mat-select formControlName="type" [required]="true">
+                <mat-option value="Adaptation">Adaptation</mat-option>
+                <mat-option value="Plan">Plan</mat-option>
+              </mat-select>
+            </mat-form-field>
+
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Name</mat-label>
               <input
@@ -122,6 +135,7 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
         </div>
       </mat-expansion-panel>
     </div>
+
     <footer>
       <button
         type="button"
@@ -147,13 +161,14 @@ export class ConstraintEditorComponent implements OnChanges {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       name: ['', [Validators.required]],
+      type: ['Adaptation', [Validators.required]],
     });
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.constraint) {
       if (this.constraint) {
-        this.form.setValue({ name: this.constraint.name });
+        this.form.setValue({ name: this.constraint.name, type: 'Adaptation' });
         this.text = JSON.stringify(
           JSON.parse(this.constraint.definition),
           null,
@@ -162,7 +177,7 @@ export class ConstraintEditorComponent implements OnChanges {
         this.definition = this.text;
         this.definitionValid = true;
       } else {
-        this.form.setValue({ name: '' });
+        this.form.setValue({ name: '', type: 'Adaptation' });
         this.text = '';
       }
     }
