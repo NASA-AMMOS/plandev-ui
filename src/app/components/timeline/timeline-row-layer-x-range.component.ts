@@ -163,7 +163,7 @@ export class TimelineRowLayerXRangeComponent
       this.ctx.resetTransform();
       this.ctx.scale(this.dpr, this.dpr);
       this.ctx.clearRect(0, 0, this.drawWidth, this.drawHeight);
-      this.ctx.globalAlpha = this.opacity || 1.0;
+      this.ctx.globalAlpha = this.opacity || 0.8;
 
       this.quadtree = quadtree<QuadtreeRect>()
         .x(p => p.x)
