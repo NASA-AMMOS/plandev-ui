@@ -95,8 +95,8 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
         <div class="expansion-panel-body-metadata">
           <form class="p-1" [formGroup]="form">
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Type</mat-label>
-              <mat-select formControlName="type" [required]="true">
+              <mat-label>Association</mat-label>
+              <mat-select formControlName="association" [required]="true">
                 <mat-option value="Adaptation">Adaptation</mat-option>
                 <mat-option value="Plan">Plan</mat-option>
               </mat-select>
@@ -122,7 +122,7 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
           collapsedHeight="40px"
           expandedHeight="40px"
         >
-          <mat-panel-title>JSON Definition Editor</mat-panel-title>
+          <mat-panel-title>Constraint Definition</mat-panel-title>
         </mat-expansion-panel-header>
 
         <div class="expansion-panel-body-editor">
@@ -160,15 +160,18 @@ export class ConstraintEditorComponent implements OnChanges {
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
+      association: ['Adaptation', [Validators.required]],
       name: ['', [Validators.required]],
-      type: ['Adaptation', [Validators.required]],
     });
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.constraint) {
       if (this.constraint) {
-        this.form.setValue({ name: this.constraint.name, type: 'Adaptation' });
+        this.form.setValue({
+          association: 'Adaptation',
+          name: this.constraint.name,
+        });
         this.text = JSON.stringify(
           JSON.parse(this.constraint.definition),
           null,
@@ -177,7 +180,7 @@ export class ConstraintEditorComponent implements OnChanges {
         this.definition = this.text;
         this.definitionValid = true;
       } else {
-        this.form.setValue({ name: '', type: 'Adaptation' });
+        this.form.setValue({ association: 'Adaptation', name: '' });
         this.text = '';
       }
     }

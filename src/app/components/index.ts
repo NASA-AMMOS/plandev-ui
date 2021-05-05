@@ -5,6 +5,7 @@ export * from './adaptations-table/adaptations-table.component';
 export * from './code-mirror/code-mirror.component';
 export * from './confirm-dialog/confirm-dialog.component';
 export * from './constraint-editor/constraint-editor.component';
+export * from './constraint-list/constraint-list.component';
 export * from './header/header.component';
 export * from './horizontal-guide-dialog/horizontal-guide-dialog.component';
 export * from './load-view-dialog/load-view-dialog.component';

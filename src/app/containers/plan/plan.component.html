@@ -136,21 +136,11 @@
     </div>
 
     <div *ngIf="drawer.constraintList.visible">
-      <div
-        *ngIf="!adaptationConstraints || !adaptationConstraints.length"
-        class="p-1"
-      >
-        No Adaptation Constraints Found
-      </div>
-      <div *ngIf="adaptationConstraints && adaptationConstraints.length">
-        <ul>
-          <li *ngFor="let constraint of adaptationConstraints">
-            {{ constraint.name }}
-            <button (click)="onEditConstraint(constraint)">Edit</button>
-            <button (click)="onDeleteConstraint(constraint)">Delete</button>
-          </li>
-        </ul>
-      </div>
+      <constraint-list
+        [adaptationConstraints]="adaptationConstraints"
+        (delete)="onDeleteConstraint($event)"
+        (edit)="onEditConstraint($event)"
+      ></constraint-list>
     </div>
 
     <div *ngIf="drawer.constraintViolations.visible">
