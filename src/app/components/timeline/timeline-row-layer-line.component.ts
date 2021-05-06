@@ -193,13 +193,13 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
         2.0, // TODO.
         this.visiblePointsById,
       );
-      this.mouseOverPoints.emit({ e, points });
+      this.mouseOverPoints.emit({ e, layerId: this.id, points });
     }
   }
 
   onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      this.mouseOverPoints.emit({ e, points: [] });
+      this.mouseOverPoints.emit({ e, layerId: this.id, points: [] });
     }
   }
 }

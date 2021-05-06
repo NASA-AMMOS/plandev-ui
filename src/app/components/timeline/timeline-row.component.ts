@@ -25,8 +25,10 @@ import {
   MouseOverConstraintViolations,
   MouseOverPoints,
   MouseSelectPoints,
+  Point,
   SavePoint,
   SelectPoint,
+  StringTMap,
   TimeRange,
   UpdatePoint,
   UpdateRow,
@@ -86,7 +88,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
         class="overlay-container"
         [ngStyle]="{
           height: drawHeight + 'px',
-          transform: 'translate(' + marginLeft + 'px ,' + marginTop + 'px)',
+          transform: 'translate(' + marginLeft + 'px ,' + 0 + 'px)',
           width: drawWidth + 'px'
         }"
       >
@@ -116,7 +118,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
         class="row-container"
         [ngStyle]="{
           height: drawHeight + 'px',
-          transform: 'translate(' + marginLeft + 'px ,' + marginTop + 'px)',
+          transform: 'translate(' + marginLeft + 'px ,' + 0 + 'px)',
           width: drawWidth + 'px'
         }"
       >
@@ -139,7 +141,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [rowId]="id"
             [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
-            (mouseOverPoints)="mouseOverPoints.emit($event)"
+            (mouseOverPoints)="onMouseOverPoints($event)"
             (mouseSelectPoints)="onMouseSelectPoints($event)"
             (createPoint)="createPoint.emit($event)"
             (savePoint)="savePoint.emit($event)"
@@ -160,7 +162,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [xScaleView]="xScaleView"
             [yAxes]="yAxes"
             [yAxisId]="layer.yAxisId"
-            (mouseOverPoints)="mouseOverPoints.emit($event)"
+            (mouseOverPoints)="onMouseOverPoints($event)"
           ></aerie-timeline-row-layer-line>
           <aerie-timeline-row-layer-x-range
             *ngIf="layer.chartType === 'x-range'"
@@ -175,7 +177,7 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
             [points]="layer.points"
             [viewTimeRange]="viewTimeRange"
             [xScaleView]="xScaleView"
-            (mouseOverPoints)="mouseOverPoints.emit($event)"
+            (mouseOverPoints)="onMouseOverPoints($event)"
           ></aerie-timeline-row-layer-x-range>
         </ng-container>
       </div>
@@ -261,7 +263,7 @@ export class TimelineRowComponent implements AfterViewInit, OnDestroy {
   mouseup: MouseEvent;
   mouseupListener: (mouseout: MouseEvent) => void;
 
-  marginTop = 0;
+  mouseOverPointsByLayer: StringTMap<Point[]> = {};
 
   constructor(private cdRef: ChangeDetectorRef) {}
 
@@ -364,6 +366,12 @@ export class TimelineRowComponent implements AfterViewInit, OnDestroy {
       rowId: this.id,
     };
     this.deleteHorizontalGuide.emit(event);
+  }
+
+  onMouseOverPoints(event: MouseOverPoints) {
+    this.mouseOverPointsByLayer[event.layerId] = event.points;
+    const points = Object.values(this.mouseOverPointsByLayer).flat();
+    this.mouseOverPoints.emit({ ...event, points });
   }
 
   onMouseSelectPoints(event: MouseSelectPoints) {

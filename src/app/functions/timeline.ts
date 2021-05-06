@@ -65,7 +65,7 @@ export function searchQuadtreeRect<T>(
   maxH: number,
   maxW: number,
   map: StringTMap<T>,
-): { points: T[]; pointsById: StringTMap<T> } {
+): T[] {
   const points: T[] = [];
 
   if (quadtree) {
@@ -82,16 +82,7 @@ export function searchQuadtreeRect<T>(
     });
   }
 
-  return {
-    points,
-    pointsById: points.reduce(
-      (pointsById: StringTMap<T>, point: T & { id: string }) => {
-        pointsById[point.id] = point;
-        return map;
-      },
-      {},
-    ),
-  };
+  return points;
 }
 
 /**

@@ -1,6 +1,5 @@
 import { ActivityType } from './activity-type';
 import { ConstraintViolation } from './constraints';
-import { StringTMap } from './string-t-map';
 
 export interface ActivityLayer extends Layer {
   points?: ActivityPoint[];
@@ -102,14 +101,13 @@ export interface MouseOverConstraintViolations {
 
 export interface MouseOverPoints {
   e: MouseEvent;
+  layerId: string;
   points: Point[];
-  pointsById?: StringTMap<Point>;
 }
 
 export interface MouseSelectPoints {
   e: MouseEvent;
   points: Point[];
-  pointsById?: StringTMap<Point>;
 }
 
 export interface Point {

@@ -269,7 +269,7 @@ export class TimelineRowLayerXRangeComponent
   onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
-      const { points, pointsById } = searchQuadtreeRect<XRangePoint>(
+      const points = searchQuadtreeRect<XRangePoint>(
         this.quadtree,
         x,
         y,
@@ -277,13 +277,13 @@ export class TimelineRowLayerXRangeComponent
         this.maxXWidth,
         this.visiblePointsById,
       );
-      this.mouseOverPoints.emit({ e, points, pointsById });
+      this.mouseOverPoints.emit({ e, layerId: this.id, points });
     }
   }
 
   onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      this.mouseOverPoints.emit({ e, points: [] });
+      this.mouseOverPoints.emit({ e, layerId: this.id, points: [] });
     }
   }
 

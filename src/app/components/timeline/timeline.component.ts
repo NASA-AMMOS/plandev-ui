@@ -323,6 +323,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
 
   onMouseOverPoints(event: MouseOverPoints) {
     this.mouseOverPoints = event;
+    this.cdRef.detectChanges();
   }
 
   setRowContainerMaxHeight() {

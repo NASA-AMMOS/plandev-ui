@@ -243,7 +243,7 @@ export class TimelineRowLayerActivityComponent
   onMousedown(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX, offsetY } = e;
-      const { points, pointsById } = searchQuadtreeRect<ActivityPoint>(
+      const points = searchQuadtreeRect<ActivityPoint>(
         this.quadtree,
         offsetX,
         offsetY,
@@ -251,7 +251,7 @@ export class TimelineRowLayerActivityComponent
         this.maxActivityWidth,
         this.visiblePointsById,
       );
-      this.mouseSelectPoints.emit({ e, points, pointsById });
+      this.mouseSelectPoints.emit({ e, points });
       this.dragActivityStart(points, offsetX);
     }
   }
@@ -259,7 +259,7 @@ export class TimelineRowLayerActivityComponent
   onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX, offsetY } = e;
-      const { points, pointsById } = searchQuadtreeRect<ActivityPoint>(
+      const points = searchQuadtreeRect<ActivityPoint>(
         this.quadtree,
         offsetX,
         offsetY,
@@ -267,14 +267,18 @@ export class TimelineRowLayerActivityComponent
         this.maxActivityWidth,
         this.visiblePointsById,
       );
-      this.mouseOverPoints.emit({ e, points, pointsById });
+      this.mouseOverPoints.emit({ e, layerId: this.id, points });
       this.dragActivity(offsetX);
     }
   }
 
   onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      this.mouseOverPoints.emit({ e, points: [], pointsById: {} });
+      this.mouseOverPoints.emit({
+        e,
+        layerId: this.id,
+        points: [],
+      });
     }
   }
 
