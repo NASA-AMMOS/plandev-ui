@@ -2,57 +2,53 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter as E,
   Input,
   NgModule,
+  Output,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
 import { PipesModule } from '../../pipes';
-import { ConstraintViolation } from '../../types';
+import { ConstraintViolation, TimeRange } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'violation-list',
   styles: [
     `
-      mat-icon {
-        color: rgba(0, 0, 0, 0.6);
+      mat-card {
+        margin: 5px;
       }
 
-      .violation {
-        display: flex;
-      }
-
-      .left {
-        align-items: center;
-        display: flex;
-        flex-grow: 1;
-      }
-
-      .right {
-        align-items: center;
-        justify-content: flex-end;
+      .window {
+        cursor: pointer;
+        margin-right: 10px;
+        text-decoration: underline;
+        text-indent: 20px;
       }
     `,
   ],
   template: `
-    <div *ngIf="violations && violations.length">
-      <mat-divider></mat-divider>
-      <mat-list>
-        <mat-list-item *ngFor="let violation of violations">
-          <div class="violation w-100">
-            <div class="left">
-              {{ violation.constraint.name }}
-            </div>
-            <div class="right"></div>
-          </div>
-          <mat-divider></mat-divider>
-        </mat-list-item>
-      </mat-list>
-    </div>
+    <mat-card *ngFor="let violation of violations">
+      <div>
+        {{ violation.constraint.name }}
+      </div>
+
+      <div
+        *ngFor="let window of violation.windows"
+        class="ellipsis window"
+        (click)="selectWindow.emit(window)"
+      >
+        {{ window.start | doyTimestamp }} - {{ window.end | doyTimestamp }}
+      </div>
+    </mat-card>
   `,
 })
 export class ViolationListComponent {
   @Input() violations: ConstraintViolation[] = [];
+
+  @Output()
+  selectWindow: E<TimeRange> = new E();
 }
 
 @NgModule({
