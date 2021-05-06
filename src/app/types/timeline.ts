@@ -156,6 +156,8 @@ export interface SelectPoint {
 
 export interface Timeline {
   id: string;
+  marginLeft: number;
+  marginRight: number;
   rows: Row[];
   verticalGuides: VerticalGuide[];
 }

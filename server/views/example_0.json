@@ -15,6 +15,8 @@
       "size": 30,
       "timeline": {
         "id": "timeline0",
+        "marginLeft": 110,
+        "marginRight": 30,
         "rows": [
           {
             "autoAdjustHeight": true,
@@ -60,6 +62,8 @@
       "size": 50,
       "timeline": {
         "id": "timeline1",
+        "marginLeft": 110,
+        "marginRight": 30,
         "rows": [
           {
             "height": 100,
@@ -71,23 +75,28 @@
                 "id": "layer1",
                 "type": "resource",
                 "yAxisId": "yAxis1"
-              }
-            ],
-            "yAxes": [{ "id": "yAxis1", "label": { "text": "peel" } }]
-          },
-          {
-            "height": 100,
-            "id": "row2",
-            "layers": [
+              },
               {
                 "chartType": "line",
+                "color": "#ffcd69",
                 "filter": { "resource": { "name": "fruit" } },
                 "id": "layer2",
                 "type": "resource",
                 "yAxisId": "yAxis2"
               }
             ],
-            "yAxes": [{ "id": "yAxis2", "label": { "text": "fruit" } }]
+            "yAxes": [
+              {
+                "id": "yAxis1",
+                "label": { "text": "peel" },
+                "scaleDomain": [0, 4]
+              },
+              {
+                "id": "yAxis2",
+                "label": { "text": "fruit" },
+                "scaleDomain": [-10, 4]
+              }
+            ]
           },
           {
             "height": 100,

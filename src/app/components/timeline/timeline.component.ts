@@ -129,8 +129,8 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
 export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Input() constraintViolations: ConstraintViolation[] = [];
   @Input() id: string;
-  @Input() marginLeft = 50;
-  @Input() marginRight = 40;
+  @Input() marginLeft: number | undefined;
+  @Input() marginRight: number | undefined;
   @Input() maxTimeRange: TimeRange;
   @Input() rows: Row[] | null | undefined;
   @Input() verticalGuides: VerticalGuide[];
@@ -182,6 +182,9 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
       changes.rows ||
       changes.viewTimeRange
     ) {
+      // Set margin defaults if they do not exist.
+      this.marginLeft = this.marginLeft !== undefined ? this.marginLeft : 50;
+      this.marginRight = this.marginRight !== undefined ? this.marginRight : 40;
       shouldDraw = true;
     }
 

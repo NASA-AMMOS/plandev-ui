@@ -21,6 +21,8 @@ export const view: View = {
       size: 35,
       timeline: {
         id: 'timeline0',
+        marginLeft: 30,
+        marginRight: 30,
         rows: [
           {
             height: 200,
@@ -72,6 +74,8 @@ export const view: View = {
       size: 35,
       timeline: {
         id: 'timeline1',
+        marginLeft: 30,
+        marginRight: 30,
         rows: [
           {
             height: 100,
