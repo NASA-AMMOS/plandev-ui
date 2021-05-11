@@ -9,7 +9,6 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import capitalize from 'lodash-es/capitalize';
 import { MaterialModule } from '../../material';
 import {
   ActivityInstanceFormParameter,
@@ -141,7 +140,7 @@ export class ActivityInstanceFormParameterRecStructComponent
         error: null,
         key,
         loading: false,
-        name: capitalize(key),
+        name: key,
         schema: this.parameter.schema.items[key],
         value: value ? value[key] || null : null,
       };
