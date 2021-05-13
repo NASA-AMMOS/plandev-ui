@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": ["zone.js/dist/zone-error"],
+            "allowedCommonJsDependencies": ["ajv", "zone.js/dist/zone-error"],
             "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.ts",

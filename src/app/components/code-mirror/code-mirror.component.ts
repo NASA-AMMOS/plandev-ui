@@ -56,6 +56,7 @@ export class CodeMirrorComponent implements AfterViewInit, OnChanges {
           this.textValid.emit(true);
           this.textChanged.emit(parsedDoc);
         } catch (error) {
+          console.log('Editor: Input is not valid JSON.');
           this.textValid.emit(false);
         }
       }

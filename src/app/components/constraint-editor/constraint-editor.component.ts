@@ -6,6 +6,7 @@ import {
   Input,
   NgModule,
   OnChanges,
+  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
@@ -15,6 +16,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import Ajv, { ValidateFunction } from 'ajv';
 import { MaterialModule } from '../../material';
 import { Constraint } from '../../types';
 import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
@@ -75,7 +77,7 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
 
       .expansion-panel-body-metadata,
       .expansion-panel-body-editor {
-        padding-top: 10px;
+        margin-top: 10px;
       }
 
       .expansion-panel-metadata {
@@ -84,6 +86,10 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
 
       .expansion-panel-body-editor {
         height: 55vh;
+      }
+
+      .schema-error {
+        border: 1px solid #ff5454;
       }
     `,
   ],
@@ -130,7 +136,12 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
           <mat-panel-title>Constraint Definition</mat-panel-title>
         </mat-expansion-panel-header>
 
-        <div class="expansion-panel-body-editor">
+        <div
+          class="expansion-panel-body-editor"
+          [ngClass]="{
+            'schema-error': !definitionValid
+          }"
+        >
           <code-mirror
             class="code-mirror"
             [text]="text"
@@ -153,14 +164,16 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
     </footer>
   `,
 })
-export class ConstraintEditorComponent implements OnChanges {
+export class ConstraintEditorComponent implements OnInit, OnChanges {
   @Input() constraint: Constraint | null = null;
 
   @Output() save: E<Constraint> = new E();
 
+  ajv: Ajv;
   definition = '';
   definitionValid = false;
   form: FormGroup;
+  validateSchema: ValidateFunction<any>;
   text = '';
 
   constructor(private fb: FormBuilder) {
@@ -170,9 +183,18 @@ export class ConstraintEditorComponent implements OnChanges {
     });
   }
 
+  async ngOnInit() {
+    this.ajv = new Ajv();
+    this.ajv.addKeyword('$anchor');
+    const response = await fetch('assets/schemas/merlin-constraint.json');
+    const merlinConstraintSchema = await response.json();
+    this.validateSchema = this.ajv.compile<any>(merlinConstraintSchema);
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes.constraint) {
       if (this.constraint) {
+        // Update.
         this.form.setValue({
           association: 'Adaptation',
           name: this.constraint.name,
@@ -185,6 +207,7 @@ export class ConstraintEditorComponent implements OnChanges {
         this.definition = this.text;
         this.definitionValid = true;
       } else {
+        // New.
         this.form.setValue({ association: 'Adaptation', name: '' });
         this.text = '';
       }
@@ -203,6 +226,12 @@ export class ConstraintEditorComponent implements OnChanges {
   }
 
   onTextChanged(json: JSON) {
+    const valid = this.validateSchema(json);
+    if (!valid) {
+      console.log('Editor: Input is not a valid Merlin constraint.');
+      console.log(this.validateSchema.errors);
+    }
+    this.definitionValid = valid;
     this.definition = JSON.stringify(json);
   }
 }
