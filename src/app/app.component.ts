@@ -96,10 +96,7 @@ export class AppComponent implements OnDestroy {
 
   onOpenEditor(): void {
     const user: User = JSON.parse(localStorage.getItem(AERIE_USER));
-    open(
-      `${this.aerieUiServerUrl}/editor?ssoToken=${user.ssoToken}`,
-      '_newtab',
-    );
+    open(`${this.aerieUiServerUrl}/editor?username=${user.name}`, '_newtab');
   }
 }
 

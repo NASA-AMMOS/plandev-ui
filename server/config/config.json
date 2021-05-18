@@ -4,7 +4,7 @@
     "enabled": true
   },
   "editor": {
-    "shared": "http://100.64.92.85:8080"
+    "shared": "http://127.0.0.1:8080"
   },
   "environments": {
     "docker": {

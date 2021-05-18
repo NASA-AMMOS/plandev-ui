@@ -46,10 +46,9 @@ async function main() {
 
   app.get('/editor', async (req, res) => {
     const { query } = req;
-    const ssoToken = (query?.ssoToken as string) || '';
-    const { userId = '' } = await camApi.user(ssoToken);
-    const editorUrl = editor[userId] || editor.shared || '';
-    res.redirect(`${editorUrl}?ssoToken=${ssoToken}`);
+    const username = (query?.username as string) || '';
+    const editorUrl = editor[username] || editor.shared || '';
+    res.redirect(`${editorUrl}`);
   });
 
   app.get('/health', (_, res) => {
