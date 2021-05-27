@@ -264,33 +264,66 @@ export class PlanningEffects {
       withLatestFrom(this.store),
       map(([action, state]) => ({ action, state })),
       switchMap(({ action, state: { planning } }) => {
-        const { adaptationId } = planning.selectedPlan;
-        const { constraintName } = action;
-        return concat(
-          of(AppActions.setLoading({ loading: true })),
-          this.apiService
-            .deleteAdaptationConstraints(adaptationId, [constraintName])
-            .pipe(
-              switchMap(() => [
-                ToastActions.showToast({
-                  message: 'Constraint deleted',
-                  toastType: 'success',
-                }),
-                PlanningActions.deleteConstraintSuccess({ constraintName }),
-              ]),
-              catchError((error: Error) => {
-                const errorMsg = error.message;
-                console.error(errorMsg);
-                return [
+        const { adaptationId, id: planId } = planning.selectedPlan;
+        const { constraint } = action;
+
+        if (constraint.association === 'adaptation') {
+          return concat(
+            of(AppActions.setLoading({ loading: true })),
+            this.apiService
+              .deleteAdaptationConstraints(adaptationId, [constraint.name])
+              .pipe(
+                switchMap(() => [
                   ToastActions.showToast({
-                    message: 'Delete constraint failed',
-                    toastType: 'error',
+                    message: 'Adaptation constraint deleted',
+                    toastType: 'success',
                   }),
-                ];
-              }),
-            ),
-          of(AppActions.setLoading({ loading: false })),
-        );
+                  PlanningActions.deleteConstraintSuccess({ constraint }),
+                ]),
+                catchError((error: Error) => {
+                  const errorMsg = error.message;
+                  console.error(errorMsg);
+                  return [
+                    ToastActions.showToast({
+                      message: 'Delete adaptation constraint failed',
+                      toastType: 'error',
+                    }),
+                  ];
+                }),
+              ),
+            of(AppActions.setLoading({ loading: false })),
+          );
+        }
+
+        if (constraint.association === 'plan') {
+          return concat(
+            of(AppActions.setLoading({ loading: true })),
+            this.apiService
+              .deletePlanConstraints(planId, [constraint.name])
+              .pipe(
+                switchMap(() => [
+                  ToastActions.showToast({
+                    message: 'Plan constraint deleted',
+                    toastType: 'success',
+                  }),
+                  PlanningActions.deleteConstraintSuccess({ constraint }),
+                ]),
+                catchError((error: Error) => {
+                  const errorMsg = error.message;
+                  console.error(errorMsg);
+                  return [
+                    ToastActions.showToast({
+                      message: 'Delete plan constraint failed',
+                      toastType: 'error',
+                    }),
+                  ];
+                }),
+              ),
+            of(AppActions.setLoading({ loading: false })),
+          );
+        }
+
+        return [];
       }),
     ),
   );
@@ -637,16 +670,46 @@ export class PlanningEffects {
       withLatestFrom(this.store),
       map(([action, state]) => ({ action, state })),
       switchMap(({ action, state: { planning } }) => {
-        const { adaptationId } = planning.selectedPlan;
+        const { adaptationId, id: planId } = planning.selectedPlan;
         const { constraint } = action;
-        return concat(
-          of(AppActions.setLoading({ loading: true })),
-          this.apiService
-            .updateAdaptationConstraints(adaptationId, [constraint])
-            .pipe(
+
+        if (constraint.association === 'adaptation') {
+          return concat(
+            of(AppActions.setLoading({ loading: true })),
+            this.apiService
+              .updateAdaptationConstraints(adaptationId, [constraint])
+              .pipe(
+                switchMap(() => [
+                  ToastActions.showToast({
+                    message: 'Adaptation constraint updated',
+                    toastType: 'success',
+                  }),
+                  PlanningActions.updateConstraintSuccess({
+                    constraint,
+                  }),
+                ]),
+                catchError((error: Error) => {
+                  const errorMsg = error.message;
+                  console.error(errorMsg);
+                  return [
+                    ToastActions.showToast({
+                      message: 'Update adaptation constraint failed',
+                      toastType: 'error',
+                    }),
+                  ];
+                }),
+              ),
+            of(AppActions.setLoading({ loading: false })),
+          );
+        }
+
+        if (constraint.association === 'plan') {
+          return concat(
+            of(AppActions.setLoading({ loading: true })),
+            this.apiService.updatePlanConstraints(planId, [constraint]).pipe(
               switchMap(() => [
                 ToastActions.showToast({
-                  message: 'Constraint updated',
+                  message: 'Plan constraint updated',
                   toastType: 'success',
                 }),
                 PlanningActions.updateConstraintSuccess({
@@ -658,14 +721,17 @@ export class PlanningEffects {
                 console.error(errorMsg);
                 return [
                   ToastActions.showToast({
-                    message: 'Update constraint failed',
+                    message: 'Update plan constraint failed',
                     toastType: 'error',
                   }),
                 ];
               }),
             ),
-          of(AppActions.setLoading({ loading: false })),
-        );
+            of(AppActions.setLoading({ loading: false })),
+          );
+        }
+
+        return [];
       }),
     ),
   );

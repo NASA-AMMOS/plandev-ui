@@ -78,12 +78,12 @@ export const deleteAdaptationSuccess = createAction(
 
 export const deleteConstraint = createAction(
   '[planning] deleteConstraint',
-  props<{ constraintName: string }>(),
+  props<{ constraint: Constraint }>(),
 );
 
 export const deleteConstraintSuccess = createAction(
   '[planning] deleteConstraintSuccess',
-  props<{ constraintName: string }>(),
+  props<{ constraint: Constraint }>(),
 );
 
 export const deletePlan = createAction(

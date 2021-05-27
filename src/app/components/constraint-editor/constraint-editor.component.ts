@@ -108,8 +108,8 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
             <mat-form-field appearance="outline" class="w-100">
               <mat-label>Association</mat-label>
               <mat-select formControlName="association" [required]="true">
-                <mat-option value="Adaptation">Adaptation</mat-option>
-                <mat-option value="Plan">Plan</mat-option>
+                <mat-option value="adaptation">Adaptation</mat-option>
+                <mat-option value="plan">Plan</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -171,14 +171,14 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
 
   ajv: Ajv;
   definition = '';
-  definitionValid = false;
+  definitionValid = true;
   form: FormGroup;
   validateSchema: ValidateFunction<any>;
   text = '';
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      association: ['Adaptation', [Validators.required]],
+      association: ['adaptation', [Validators.required]],
       name: ['', [Validators.required]],
     });
   }
@@ -196,7 +196,7 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
       if (this.constraint) {
         // Update.
         this.form.setValue({
-          association: 'Adaptation',
+          association: this.constraint.association,
           name: this.constraint.name,
         });
         this.text = JSON.stringify(
@@ -208,7 +208,7 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
         this.definitionValid = true;
       } else {
         // New.
-        this.form.setValue({ association: 'Adaptation', name: '' });
+        this.form.setValue({ association: 'adaptation', name: '' });
         this.text = '';
       }
     }
@@ -216,8 +216,9 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
 
   onSave() {
     if (this.form.valid && this.definition !== '') {
-      const { name } = this.form.value;
+      const { association, name } = this.form.value;
       const constraint: Constraint = {
+        association,
         definition: this.definition,
         name,
       };

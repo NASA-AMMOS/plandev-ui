@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import omit from 'lodash-es/omit';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -230,6 +231,36 @@ export class ApiService {
       );
   }
 
+  deletePlanConstraints(
+    planId: string,
+    names: string[],
+  ): Observable<UpdateConstraintsResponse> {
+    const body = {
+      query: gql.DELETE_PLAN_CONSTRAINTS,
+      variables: {
+        names,
+        planId,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          deletePlanConstraints: UpdateConstraintsResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
+      .pipe(
+        map(({ data: { deletePlanConstraints } }) => {
+          if (!deletePlanConstraints.success) {
+            throw new Error(deletePlanConstraints.message);
+          }
+          return deletePlanConstraints;
+        }),
+      );
+  }
+
   deletePlan(id: string): Observable<DeletePlanResponse> {
     const body = {
       query: gql.DELETE_PLAN,
@@ -436,7 +467,9 @@ export class ApiService {
       query: gql.UPDATE_ADAPTATION_CONSTRAINTS,
       variables: {
         adaptationId,
-        constraints,
+        constraints: constraints.map(constraint =>
+          omit(constraint, 'association'),
+        ),
       },
     };
     const options = {
@@ -454,6 +487,38 @@ export class ApiService {
             throw new Error(updateAdaptationConstraints.message);
           }
           return updateAdaptationConstraints;
+        }),
+      );
+  }
+
+  updatePlanConstraints(
+    planId: string,
+    constraints: Constraint[],
+  ): Observable<UpdateConstraintsResponse> {
+    const body = {
+      query: gql.UPDATE_PLAN_CONSTRAINTS,
+      variables: {
+        constraints: constraints.map(constraint =>
+          omit(constraint, 'association'),
+        ),
+        planId,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          updatePlanConstraints: UpdateConstraintsResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
+      .pipe(
+        map(({ data: { updatePlanConstraints } }) => {
+          if (!updatePlanConstraints.success) {
+            throw new Error(updatePlanConstraints.message);
+          }
+          return updatePlanConstraints;
         }),
       );
   }

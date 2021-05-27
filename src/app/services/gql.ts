@@ -95,6 +95,21 @@ export const DELETE_ADAPTATION_CONSTRAINTS = `
   }
 `;
 
+export const DELETE_PLAN_CONSTRAINTS = `
+  mutation DeletePlanConstraints(
+    $planId: ID!
+    $names: [String!]!
+  ) {
+    deletePlanConstraints(
+      id: $planId
+      names: $names
+    ) {
+      message
+      success
+    }
+  }
+`;
+
 export const DELETE_PLAN = `
   mutation DeletePlan($id: ID!) {
     deletePlan(id: $id) {
@@ -146,6 +161,10 @@ export const GET_PLAN_DETAIL = `
         }
       }
       adaptationId
+      constraints {
+        definition
+        name
+      }
       endTimestamp
       id
       name
@@ -238,6 +257,21 @@ export const UPDATE_ADAPTATION_CONSTRAINTS = `
   ) {
     updateAdaptationConstraints(
       adaptationId: $adaptationId
+      constraints: $constraints
+    ) {
+      message
+      success
+    }
+  }
+`;
+
+export const UPDATE_PLAN_CONSTRAINTS = `
+  mutation UpdatePlanConstraints(
+    $planId: ID!
+    $constraints: [ConstraintDefinitionInput!]!
+  ) {
+    updatePlanConstraints(
+      planId: $planId
       constraints: $constraints
     ) {
       message

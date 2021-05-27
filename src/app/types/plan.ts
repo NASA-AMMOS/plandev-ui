@@ -1,5 +1,6 @@
 import { ActivityInstance } from './activity-instance';
 import { Adaptation } from './adaptation';
+import { Constraint } from './constraints';
 
 export interface CreatePlan {
   adaptationId: string;
@@ -31,6 +32,7 @@ export interface PlanDetail {
   activityInstances: ActivityInstance[];
   adaptation: Adaptation;
   adaptationId: string;
+  constraints: Constraint[];
   endTimestamp: string;
   id: string;
   name: string;

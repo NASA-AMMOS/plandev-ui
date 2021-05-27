@@ -1,6 +1,9 @@
 import { TimeRange } from './time-range';
 
+export type ConstraintAssociation = 'adaptation' | 'plan';
+
 export interface Constraint {
+  association: ConstraintAssociation;
   definition: string;
   name: string;
 }

@@ -7,6 +7,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: [],
     },
     constraint: {
+      association: 'adaptation',
       definition: '',
       name: 'constraint0',
     },
@@ -22,6 +23,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: [],
     },
     constraint: {
+      association: 'adaptation',
       definition: '',
       name: 'constraint1',
     },
@@ -33,6 +35,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: ['row1'],
     },
     constraint: {
+      association: 'adaptation',
       definition: '',
       name: 'constraint2',
     },
@@ -44,6 +47,7 @@ export const violations: ConstraintViolation[] = [
       resourceIds: ['row2'],
     },
     constraint: {
+      association: 'adaptation',
       definition: '',
       name: 'constraint3',
     },

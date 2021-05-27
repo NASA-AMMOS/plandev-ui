@@ -145,6 +145,7 @@
     <div *ngIf="drawer.constraintList.visible">
       <constraint-list
         [adaptationConstraints]="adaptationConstraints"
+        [planConstraints]="planConstraints"
         (create)="onCreateConstraint()"
         (delete)="onDeleteConstraint($event)"
         (edit)="onEditConstraint($event)"

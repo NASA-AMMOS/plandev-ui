@@ -258,6 +258,7 @@ describe('planning reducer', () => {
         activityInstances: keyBy(activityInstances, 'id'),
         activityTypes: keyBy(activityTypes, 'name'),
         adaptationConstraints: {},
+        planConstraints: {},
         selectedPlan: omit(planDetail, ['activityInstances', 'adaptation']),
         viewTimeRange: {
           end: getUnixEpochTime(planDetail.endTimestamp),

@@ -40,6 +40,7 @@ import {
   getAdaptationId,
   getConstraintViolations,
   getMaxTimeRange,
+  getPlanConstraints,
   getSelectedActivityInstance,
   getSelectedPlan,
   getSimulationOutOfDate,
@@ -114,6 +115,7 @@ export class PlanComponent implements OnDestroy {
   };
   editingConstraint: Constraint | null = null;
   maxTimeRange: TimeRange;
+  planConstraints: Constraint[] | null = null;
   plan: Plan | null = null;
   selectedActivityInstance: ActivityInstance | null = null;
   selectedActivityType: ActivityType | null = null;
@@ -165,6 +167,10 @@ export class PlanComponent implements OnDestroy {
         }),
       this.store.pipe(select(getMaxTimeRange)).subscribe(maxTimeRange => {
         this.maxTimeRange = maxTimeRange;
+        this.cdRef.markForCheck();
+      }),
+      this.store.pipe(select(getPlanConstraints)).subscribe(planConstraints => {
+        this.planConstraints = planConstraints;
         this.cdRef.markForCheck();
       }),
       this.store.pipe(select(getViewWithPoints)).subscribe(view => {
@@ -280,8 +286,7 @@ export class PlanComponent implements OnDestroy {
   }
 
   onDeleteConstraint(constraint: Constraint) {
-    const { name: constraintName } = constraint;
-    this.store.dispatch(PlanningActions.deleteConstraint({ constraintName }));
+    this.store.dispatch(PlanningActions.deleteConstraint({ constraint }));
   }
 
   onDeleteHorizontalGuide(event: HorizontalGuideEvent): void {

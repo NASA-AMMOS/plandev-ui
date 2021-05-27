@@ -29,6 +29,7 @@ export interface PlanningState {
   decompositionTreeState: DecompositionTreeState;
   lastActivityInstanceUpdate: number;
   lastSimulationTime: number;
+  planConstraints: StringTMap<Constraint> | null;
   plans: StringTMap<Plan> | null;
   selectedActivityInstanceId: string | null;
   selectedPlan: Plan | null;
@@ -46,6 +47,7 @@ export const initialState: PlanningState = {
   decompositionTreeState: { instance: {} },
   lastActivityInstanceUpdate: 0,
   lastSimulationTime: 0,
+  planConstraints: null,
   plans: null,
   selectedActivityInstanceId: null,
   selectedPlan: null,
@@ -95,10 +97,24 @@ export const reducer = createReducer(
     ...state,
     adaptations: omit(state.adaptations, id),
   })),
-  on(PlanningActions.deleteConstraintSuccess, (state, { constraintName }) => ({
-    ...state,
-    adaptationConstraints: omit(state.adaptationConstraints, constraintName),
-  })),
+  on(PlanningActions.deleteConstraintSuccess, (state, { constraint }) => {
+    if (constraint.association === 'adaptation') {
+      return {
+        ...state,
+        adaptationConstraints: omit(
+          state.adaptationConstraints,
+          constraint.name,
+        ),
+      };
+    }
+    if (constraint.association === 'plan') {
+      return {
+        ...state,
+        planConstraints: omit(state.planConstraints, constraint.name),
+      };
+    }
+    return state;
+  }),
   on(PlanningActions.deletePlanSuccess, (state, { id }) => ({
     ...state,
     plans: omit(state.plans, id),
@@ -131,7 +147,20 @@ export const reducer = createReducer(
     ...state,
     activityInstances: keyBy(plan.activityInstances, 'id'),
     activityTypes: keyBy(plan.adaptation?.activityTypes || [], 'name'),
-    adaptationConstraints: keyBy(plan.adaptation?.constraints || [], 'name'),
+    adaptationConstraints: keyBy(
+      (plan.adaptation?.constraints || []).map(constraint => ({
+        ...constraint,
+        association: 'adaptation',
+      })),
+      'name',
+    ),
+    planConstraints: keyBy(
+      (plan.constraints || []).map(constraint => ({
+        ...constraint,
+        association: 'plan',
+      })),
+      'name',
+    ),
     selectedPlan: omit(plan, ['activityInstances', 'adaptation']),
     viewTimeRange: {
       end: getUnixEpochTime(plan.endTimestamp),
@@ -335,16 +364,35 @@ export const reducer = createReducer(
     },
     lastActivityInstanceUpdate: performance.now(),
   })),
-  on(PlanningActions.updateConstraintSuccess, (state, { constraint }) => ({
-    ...state,
-    adaptationConstraints: {
-      ...state.adaptationConstraints,
-      [constraint.name]: {
-        ...state.adaptationConstraints[constraint.name],
-        ...constraint,
-      },
-    },
-  })),
+  on(PlanningActions.updateConstraintSuccess, (state, { constraint }) => {
+    if (constraint.association === 'adaptation') {
+      return {
+        ...state,
+        adaptationConstraints: {
+          ...state.adaptationConstraints,
+          [constraint.name]: {
+            ...state.adaptationConstraints[constraint.name],
+            ...constraint,
+          },
+        },
+      };
+    }
+
+    if (constraint.association === 'plan') {
+      return {
+        ...state,
+        planConstraints: {
+          ...state.planConstraints,
+          [constraint.name]: {
+            ...state.planConstraints[constraint.name],
+            ...constraint,
+          },
+        },
+      };
+    }
+
+    return state;
+  }),
   on(PlanningActions.updateDecompositionTreeState, (state, action) => ({
     ...state,
     decompositionTreeState: {

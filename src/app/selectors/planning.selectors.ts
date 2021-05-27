@@ -137,6 +137,12 @@ export const getAdaptationConstraints = createSelector(
       : null,
 );
 
+export const getPlanConstraints = createSelector(
+  getPlanningState,
+  (state: PlanningState): Constraint[] | null =>
+    state.planConstraints ? Object.values(state.planConstraints) : null,
+);
+
 export const getDecompositionTreeState = createSelector(
   getPlanningState,
   (state: PlanningState): DecompositionTreeState =>
