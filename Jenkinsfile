@@ -90,7 +90,7 @@ pipeline {
                 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
               fi
               [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
-              nvm install v12.14.1
+              nvm install v14.17.0
 
               # Setup NPM to fetch from Artifactory
               npm config set @gov.nasa.jpl.aerie:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
