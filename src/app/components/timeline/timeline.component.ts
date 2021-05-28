@@ -224,8 +224,8 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
           } else if (layer.type === 'resource') {
             const resourceLayer = layer as LineLayer | XRangeLayer;
             for (const point of resourceLayer.points) {
-              timelineResourceIds[point.id] = {
-                ...timelineResourceIds[point.id],
+              timelineResourceIds[point.name] = {
+                ...timelineResourceIds[point.name],
                 [row.id]: row.id,
               };
             }

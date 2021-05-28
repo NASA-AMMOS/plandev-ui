@@ -113,6 +113,7 @@ export interface MouseSelectPoints {
 export interface Point {
   color?: string;
   id: string;
+  name: string;
   selected?: boolean;
   type: 'activity' | 'line' | 'x-range';
   x: number;

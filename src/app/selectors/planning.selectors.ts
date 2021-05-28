@@ -48,6 +48,7 @@ function activityInstanceToPoint(
       label: {
         text: activityInstance.type,
       },
+      name: activityInstance.id,
       parent: activityInstance?.parent || null,
       selected: selectedActivityInstanceId === activityInstance.id,
       type: 'activity',
@@ -256,6 +257,7 @@ export const getViewWithPoints = createSelector(
                           const y = yBoolean ? 1 : 0;
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
+                            name,
                             type: 'line',
                             x: getUnixEpochTime(start) + x / 1000,
                             y,
@@ -273,6 +275,7 @@ export const getViewWithPoints = createSelector(
                           const y = value.y as number;
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
+                            name,
                             type: 'line',
                             x: getUnixEpochTime(start) + x / 1000,
                             y,
@@ -321,6 +324,7 @@ export const getViewWithPoints = createSelector(
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
                             label: { text },
+                            name,
                             type: 'x-range',
                             x: getUnixEpochTime(start) + x / 1000,
                           });
@@ -333,6 +337,7 @@ export const getViewWithPoints = createSelector(
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
                             label: { text },
+                            name,
                             type: 'x-range',
                             x: getUnixEpochTime(start) + x / 1000,
                           });
@@ -347,6 +352,7 @@ export const getViewWithPoints = createSelector(
                           points.push({
                             id: `${layer.id}-resource-${name}-${i}`,
                             label: { text },
+                            name,
                             type: 'x-range',
                             x: getUnixEpochTime(start) + x / 1000,
                           });
