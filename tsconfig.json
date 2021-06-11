@@ -1,5 +1,6 @@
 {
   "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true
   },
@@ -7,17 +8,17 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
+    "forceConsistentCasingInFileNames": true,
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "module": "esnext",
+    "module": "es2020",
     "moduleResolution": "node",
     "noUnusedLocals": true,
-    "target": "es2015",
-    "typeRoots": ["node_modules/@types"],
-    "lib": ["es2019", "dom"]
+    "target": "es2020",
+    "lib": ["es2020", "dom"]
   }
 }

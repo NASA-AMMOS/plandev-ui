@@ -108,7 +108,7 @@ pipeline {
 
               # Install front-end dependencies, build, and cloc
               npm install --silent
-              npm run build:prod
+              npm run build
               npm run cloc
 
               # Build Docker image
