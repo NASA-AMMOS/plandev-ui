@@ -157,13 +157,17 @@ export const GET_PLAN_DETAIL = `
         }
         constraints {
           definition
+          description
           name
+          summary
         }
       }
       adaptationId
       constraints {
         definition
+        description
         name
+        summary
       }
       endTimestamp
       id

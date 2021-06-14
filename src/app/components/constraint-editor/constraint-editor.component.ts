@@ -124,6 +124,26 @@ import { CodeMirrorModule } from '../code-mirror/code-mirror.component';
               />
               <mat-error> A constraint name is required </mat-error>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Description</mat-label>
+              <input
+                autocomplete="off"
+                formControlName="description"
+                matInput
+                type="text"
+              />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Summary</mat-label>
+              <input
+                autocomplete="off"
+                formControlName="summary"
+                matInput
+                type="text"
+              />
+            </mat-form-field>
           </form>
         </div>
       </mat-expansion-panel>
@@ -179,7 +199,9 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       association: ['adaptation', [Validators.required]],
+      description: [''],
       name: ['', [Validators.required]],
+      summary: [''],
     });
   }
 
@@ -197,7 +219,9 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
         // Update.
         this.form.setValue({
           association: this.constraint.association,
+          description: this.constraint.description,
           name: this.constraint.name,
+          summary: this.constraint.summary,
         });
         this.text = JSON.stringify(
           JSON.parse(this.constraint.definition),
@@ -216,11 +240,13 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
 
   onSave() {
     if (this.form.valid && this.definition !== '') {
-      const { association, name } = this.form.value;
+      const { association, description, name, summary } = this.form.value;
       const constraint: Constraint = {
         association,
         definition: this.definition,
+        description,
         name,
+        summary,
       };
       this.save.emit(constraint);
     }

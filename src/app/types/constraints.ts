@@ -5,7 +5,9 @@ export type ConstraintAssociation = 'adaptation' | 'plan';
 export interface Constraint {
   association: ConstraintAssociation;
   definition: string;
+  description: string;
   name: string;
+  summary: string;
 }
 
 export interface ConstraintViolation {

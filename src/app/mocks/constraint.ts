@@ -9,7 +9,9 @@ export const violations: ConstraintViolation[] = [
     constraint: {
       association: 'adaptation',
       definition: '',
+      description: '',
       name: 'constraint0',
+      summary: '',
     },
     windows: [
       { end: 1577838419190, start: 1577837323538 },
@@ -25,7 +27,9 @@ export const violations: ConstraintViolation[] = [
     constraint: {
       association: 'adaptation',
       definition: '',
+      description: '',
       name: 'constraint1',
+      summary: '',
     },
     windows: [{ end: 1577839007058, start: 1577838621176 }],
   },
@@ -37,7 +41,9 @@ export const violations: ConstraintViolation[] = [
     constraint: {
       association: 'adaptation',
       definition: '',
+      description: '',
       name: 'constraint2',
+      summary: '',
     },
     windows: [{ end: 1577839007058, start: 1577838621176 }],
   },
@@ -49,7 +55,9 @@ export const violations: ConstraintViolation[] = [
     constraint: {
       association: 'adaptation',
       definition: '',
+      description: '',
       name: 'constraint3',
+      summary: '',
     },
     windows: [{ end: 1577838357647, start: 1577838277647 }],
   },
