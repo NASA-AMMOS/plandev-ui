@@ -203,10 +203,10 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   }
 
   collectViolations() {
-    if (this.constraintViolations.length) {
-      this.constraintViolationByRowId = {};
-      this.xAxisConstraintViolations = [];
+    this.constraintViolationByRowId = {};
+    this.xAxisConstraintViolations = [];
 
+    if (this.constraintViolations.length) {
       const timelineActivityInstanceIds: StringTMap<StringTMap<string>> = {};
       const timelineResourceIds: StringTMap<StringTMap<string>> = {};
 
