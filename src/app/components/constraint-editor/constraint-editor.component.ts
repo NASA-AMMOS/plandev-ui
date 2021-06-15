@@ -232,7 +232,12 @@ export class ConstraintEditorComponent implements OnInit, OnChanges {
         this.definitionValid = true;
       } else {
         // New.
-        this.form.setValue({ association: 'adaptation', name: '' });
+        this.form.setValue({
+          association: 'adaptation',
+          description: '',
+          name: '',
+          summary: '',
+        });
         this.text = '';
       }
     }
