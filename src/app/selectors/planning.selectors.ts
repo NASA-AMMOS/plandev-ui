@@ -81,9 +81,8 @@ function activityInstanceToPoint(
   return null;
 }
 
-export const getPlanningState = createFeatureSelector<PlanningState>(
-  'planning',
-);
+export const getPlanningState =
+  createFeatureSelector<PlanningState>('planning');
 
 export const getActivityInstancesMap = createSelector(
   getPlanningState,
