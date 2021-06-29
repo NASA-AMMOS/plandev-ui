@@ -131,7 +131,8 @@ import { TimelineXAxisVerticalGuidesModule } from './timeline-x-axis-vertical-gu
   `,
 })
 export class TimelineXAxisComponent
-  implements AfterViewInit, OnChanges, OnDestroy {
+  implements AfterViewInit, OnChanges, OnDestroy
+{
   @Input() constraintViolations: ConstraintViolation[];
   @Input() drawWidth: number;
   @Input() marginLeft: number;

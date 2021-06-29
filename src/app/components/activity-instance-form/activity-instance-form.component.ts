@@ -43,7 +43,8 @@ import { ActivityInstanceFormParametersModule } from './activity-instance-form-p
   templateUrl: './activity-instance-form.component.html',
 })
 export class ActivityInstanceFormComponent
-  implements OnChanges, OnDestroy, OnInit {
+  implements OnChanges, OnDestroy, OnInit
+{
   @Input() activityInstance: ActivityInstance | undefined;
   @Input() activityInstancesMap: StringTMap<ActivityInstance> | null;
   @Input() activityTypes: ActivityType[] = [];

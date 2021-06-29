@@ -28,9 +28,8 @@ export class NotFoundComponent implements OnInit {
   xkcdUrl = '';
 
   ngOnInit() {
-    const { id, name } = this.comics[
-      Math.floor(Math.random() * this.comics.length)
-    ];
+    const { id, name } =
+      this.comics[Math.floor(Math.random() * this.comics.length)];
     this.comicImg = `assets/comics/${name}.png`;
     this.xkcdUrl = `https://xkcd.com/${id}/`;
   }

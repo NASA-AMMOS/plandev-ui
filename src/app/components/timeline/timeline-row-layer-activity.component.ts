@@ -54,7 +54,8 @@ import {
   `,
 })
 export class TimelineRowLayerActivityComponent
-  implements AfterViewInit, OnChanges {
+  implements AfterViewInit, OnChanges
+{
   @Input() activityDefaultColor = '#283593';
   @Input() activityHeight = 20;
   @Input() activityRowPadding = 20;

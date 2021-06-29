@@ -60,7 +60,8 @@ import {
   `,
 })
 export class TimelineRowLayerXRangeComponent
-  implements AfterViewInit, OnChanges {
+  implements AfterViewInit, OnChanges
+{
   @Input() colorScheme: XRangeLayerColorScheme | undefined;
   @Input() domain: string[] | undefined;
   @Input() drawHeight: number;
@@ -287,9 +288,11 @@ export class TimelineRowLayerXRangeComponent
     }
   }
 
-  setLabelContext(
-    point: XRangePoint,
-  ): { labelText: string; textHeight: number; textWidth: number } {
+  setLabelContext(point: XRangePoint): {
+    labelText: string;
+    textHeight: number;
+    textWidth: number;
+  } {
     const fontSize = point.label?.fontSize || 10;
     const fontFace = point.label?.fontFace || 'Helvetica Neue';
     this.ctx.fillStyle = point.label?.color || '#000000';
