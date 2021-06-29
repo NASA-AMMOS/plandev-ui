@@ -546,9 +546,23 @@ export class PlanningEffects {
         return concat(
           of(AppActions.setLoading({ loading: true })),
           this.apiService.simulate(adaptationId, action.planId).pipe(
-            switchMap(simulationResponse => [
-              PlanningActions.runSimulationSuccess({ simulationResponse }),
-            ]),
+            switchMap(simulationResponse => {
+              if (simulationResponse.status === 'complete') {
+                return [
+                  PlanningActions.runSimulationSuccess({ simulationResponse }),
+                ];
+              } else if (simulationResponse.status === 'incomplete') {
+                return [
+                  PlanningActions.runSimulation({ planId: action.planId }),
+                ];
+              } else {
+                return [
+                  PlanningActions.runSimulationFailure({
+                    errorMsg: simulationResponse.message,
+                  }),
+                ];
+              }
+            }),
             catchError((error: Error) => {
               console.log(error.message);
               return [

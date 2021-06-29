@@ -64,6 +64,7 @@ export const simulationResponse: SimulationResponse = {
       ],
     },
   ],
+  status: 'complete',
   success: true,
   violations: [],
 };

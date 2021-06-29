@@ -198,7 +198,7 @@ export const GET_PLANS_AND_ADAPTATIONS = `
 
 export const SIMULATE = `
   query Simulate($adaptationId: String!, $planId: String!) {
-    simulate(adaptationId: $adaptationId, planId: $planId) {
+    simulate(adaptationId: $adaptationId, planId: $planId, nonblocking: true) {
       activities {
         children
         duration
@@ -221,6 +221,7 @@ export const SIMULATE = `
           y
         }
       }
+      status
       success
       violations {
         associations {

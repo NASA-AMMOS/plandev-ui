@@ -10,6 +10,7 @@ export interface SimulationResponse {
   activities: ActivityInstance[];
   message?: string;
   results?: SimulationResult[];
+  status: 'complete' | 'failed' | 'incomplete';
   success: boolean;
   violations?: ConstraintViolation[];
 }
