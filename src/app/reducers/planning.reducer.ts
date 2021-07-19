@@ -352,6 +352,26 @@ export const reducer = createReducer(
     ...state,
     view,
   })),
+  on(PlanningActions.sortRows, (state, action) => {
+    return {
+      ...state,
+      view: {
+        ...state.view,
+        sections: state.view.sections.map(section => {
+          if (section.timeline && action.sortedRows[section.timeline.id]) {
+            return {
+              ...section,
+              timeline: {
+                ...section.timeline,
+                rows: action.sortedRows[section.timeline.id],
+              },
+            };
+          }
+          return section;
+        }),
+      },
+    };
+  }),
   on(PlanningActions.updateActivityInstanceSuccess, (state, action) => ({
     ...state,
     activityInstances: {

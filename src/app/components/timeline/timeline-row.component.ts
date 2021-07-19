@@ -13,6 +13,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ScaleTime } from 'd3-scale';
+import { MaterialModule } from '../../material';
 import {
   Axis,
   ConstraintViolation,
@@ -50,6 +51,10 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
   selector: 'aerie-timeline-row',
   styles: [
     `
+      :host {
+        display: block;
+      }
+
       .container {
         background: white;
         border-bottom: 1px solid lightgrey;
@@ -57,6 +62,18 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
         position: relative;
         width: 100%;
         z-index: 0;
+      }
+
+      .container > .drag-handle {
+        color: #c7c7c7;
+        cursor: move;
+        display: none;
+        position: absolute;
+        z-index: 10;
+      }
+
+      .container:hover > .drag-handle {
+        display: block;
       }
 
       .axis-container,
@@ -83,6 +100,14 @@ import { TimelineSharedConstraintViolationsModule } from './timeline-shared-cons
   ],
   template: `
     <div class="container" [attr.style]="'height:' + drawHeight + 'px;'">
+      <div
+        class="drag-handle"
+        (mousedown)="$event.stopPropagation()"
+        (touchstart)="$event.stopPropagation()"
+      >
+        <mat-icon>drag_handle</mat-icon>
+      </div>
+
       <svg
         #overlay
         class="overlay-container"
@@ -416,6 +441,7 @@ export class TimelineRowComponent implements AfterViewInit, OnDestroy {
   exports: [TimelineRowComponent],
   imports: [
     CommonModule,
+    MaterialModule,
     TimelineRowHorizontalGuidesModule,
     TimelineRowLayerActivityModule,
     TimelineRowLayerLineModule,

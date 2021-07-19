@@ -14,6 +14,7 @@ import { StoreRouterConnectingModule } from '@ngrx/router-store';
 import { select, Store, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { AngularSplitModule } from 'angular-split';
+import { SortablejsModule } from 'ngx-sortablejs';
 import { ToastrModule } from 'ngx-toastr';
 import { environment } from 'src/environments/environment';
 import { SubSink } from 'subsink';
@@ -115,6 +116,7 @@ export class AppComponent implements OnDestroy {
       preventDuplicates: true,
       resetTimeoutOnDuplicate: true,
     }),
+    SortablejsModule.forRoot({}),
     StoreModule.forRoot(ROOT_REDUCERS, {
       metaReducers,
       runtimeChecks: {

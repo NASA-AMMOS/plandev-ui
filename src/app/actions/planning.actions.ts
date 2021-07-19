@@ -14,6 +14,7 @@ import {
   PlanDetail,
   Row,
   SimulationResponse,
+  StringTMap,
   TimeRange,
   UpdateActivityInstance,
   VerticalGuide,
@@ -199,6 +200,11 @@ export const setSelectedActivityInstanceId = createAction(
 export const setView = createAction(
   '[planning] setView',
   props<{ view: View }>(),
+);
+
+export const sortRows = createAction(
+  '[planning] sortRows',
+  props<{ sortedRows: StringTMap<Row[]> }>(),
 );
 
 export const updateActivityInstance = createAction(

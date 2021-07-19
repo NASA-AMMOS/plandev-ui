@@ -10,12 +10,15 @@ import {
   Input,
   NgModule,
   OnChanges,
+  OnInit,
   Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { getDoyTimestamp } from '@gov.nasa.jpl.aerie/time';
 import { ScaleTime } from 'd3-scale';
+import { SortablejsModule } from 'ngx-sortablejs';
+import { Options as SortableJsOptions } from 'sortablejs';
 import { getXScale } from '../../functions';
 import {
   ActivityLayer,
@@ -57,6 +60,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         max-height: var(--max-height, 600px);
         overflow-x: hidden;
         overflow-y: scroll;
+        position: relative;
       }
 
       .x-axis-container {
@@ -85,7 +89,12 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
         (updateViewTimeRange)="updateViewTimeRange.emit($event)"
       ></aerie-timeline-x-axis>
     </div>
-    <div #rowContainer class="row-container">
+    <div
+      #rowContainer
+      class="row-container"
+      [sortablejs]="rows"
+      [sortablejsOptions]="sortablejsOptions"
+    >
       <aerie-timeline-row
         *ngFor="let row of rows; trackBy: trackByRows"
         [autoAdjustHeight]="row.autoAdjustHeight"
@@ -126,7 +135,7 @@ import { TimelineXAxisModule } from './timeline-x-axis.component';
     ></aerie-timeline-shared-tooltip>
   `,
 })
-export class TimelineComponent implements OnChanges, AfterViewChecked {
+export class TimelineComponent implements OnInit, OnChanges, AfterViewChecked {
   @Input() constraintViolations: ConstraintViolation[] = [];
   @Input() id: string;
   @Input() marginLeft: number | undefined;
@@ -142,6 +151,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   @Output() deletePoint: E<DeletePoint> = new E();
   @Output() savePoint: E<SavePoint> = new E();
   @Output() selectPoint: E<SelectPoint> = new E();
+  @Output() sortRows: E<StringTMap<Row[]>> = new E();
   @Output() updateHorizontalGuide: E<HorizontalGuideEvent> = new E();
   @Output() updateLayer: E<LayerEvent> = new E();
   @Output() updatePoint: E<UpdatePoint> = new E();
@@ -158,6 +168,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   drawWidth: number;
   mouseOverConstraintViolations: MouseOverConstraintViolations;
   mouseOverPoints: MouseOverPoints;
+  sortablejsOptions: SortableJsOptions;
   xAxisConstraintViolations: ConstraintViolation[] = [];
   xDomainMax: [Date, Date];
   xDomainView: [Date, Date];
@@ -170,6 +181,22 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   @HostListener('window:resize', ['$event.target'])
   onWindowResize() {
     this.draw();
+  }
+
+  ngOnInit() {
+    this.sortablejsOptions = {
+      animation: 0,
+      delay: 0,
+      group: 'bands',
+      handle: '.drag-handle',
+      onAdd: this.onSort.bind(this),
+      onEnd: this.onSort.bind(this),
+      onRemove: this.onSort.bind(this),
+      scroll: true,
+      scrollSensitivity: 30,
+      scrollSpeed: 10,
+      sort: true,
+    };
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -326,6 +353,10 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
     this.cdRef.detectChanges();
   }
 
+  onSort() {
+    this.sortRows.emit({ [this.id]: this.rows });
+  }
+
   setRowContainerMaxHeight() {
     const cssStyle = getComputedStyle(document.documentElement);
     const toolbarHeightProperty = cssStyle.getPropertyValue('--toolbar-height');
@@ -350,6 +381,7 @@ export class TimelineComponent implements OnChanges, AfterViewChecked {
   exports: [TimelineComponent],
   imports: [
     CommonModule,
+    SortablejsModule,
     TimelineRowModule,
     TimelineSharedTooltipModule,
     TimelineXAxisModule,

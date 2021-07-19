@@ -391,6 +391,10 @@ export class PlanComponent implements OnDestroy {
     this.store.dispatch(PlanningActions.runSimulation({ planId }));
   }
 
+  onSortRows(sortedRows: StringTMap<Row[]>): void {
+    this.store.dispatch(PlanningActions.sortRows({ sortedRows }));
+  }
+
   onViewTextChanged(view: View): void {
     this.store.dispatch(
       PlanningActions.updateView({
