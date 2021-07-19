@@ -7,9 +7,7 @@ export function getXScale(
   domain: [Date, Date],
   width: number,
 ): ScaleTime<number, number, never> {
-  return scaleTime()
-    .domain(domain)
-    .range([CANVAS_PADDING, width - CANVAS_PADDING]);
+  return scaleTime().domain(domain).range([0, width]);
 }
 
 export function getYScale(
