@@ -190,9 +190,9 @@ export class TimelineRowLayerXRangeComponent
         }
         i = j - 1; // Minus since the loop auto increments i at the end of the block.
 
-        const xStart = this.clamp(Math.floor(this.xScaleView(point.x)));
+        const xStart = this.clamp(this.xScaleView(point.x));
         const xEnd = nextPoint
-          ? this.clamp(Math.floor(this.xScaleView(nextPoint.x)))
+          ? this.clamp(this.xScaleView(nextPoint.x))
           : this.drawWidth;
         const xWidth = xEnd - xStart;
         const y = 0;

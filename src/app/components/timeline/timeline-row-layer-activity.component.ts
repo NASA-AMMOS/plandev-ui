@@ -317,8 +317,8 @@ export class TimelineRowLayerActivityComponent
         ) {
           let largestXEnd = Number.MIN_SAFE_INTEGER;
           let largestY = Number.MIN_SAFE_INTEGER;
-          const x = Math.floor(this.xScaleView(point.x));
-          const end = Math.floor(this.xScaleView(point.x + point.duration));
+          const x = this.xScaleView(point.x);
+          const end = this.xScaleView(point.x + point.duration);
           const { textWidth } = this.setLabelContext(point);
           const xEnd = end + textWidth;
           let y = this.rowHeight;
@@ -408,8 +408,8 @@ export class TimelineRowLayerActivityComponent
       let y = parentY;
 
       for (const point of parent.children) {
-        const x = Math.floor(this.xScaleView(point.x));
-        const end = Math.floor(this.xScaleView(point.x + point.duration));
+        const x = this.xScaleView(point.x);
+        const end = this.xScaleView(point.x + point.duration);
         const { textWidth } = this.setLabelContext(point);
         const xEnd = end + textWidth;
         y = y + this.rowHeight;

@@ -153,8 +153,8 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
       this.ctx.strokeStyle = this.color || '#283593';
 
       const line = d3Line<LinePoint>()
-        .x(d => Math.floor(this.xScaleView(d.x)))
-        .y(d => Math.floor(yScale(d.y)))
+        .x(d => this.xScaleView(d.x))
+        .y(d => yScale(d.y))
         .curve(this.curve());
       this.ctx.beginPath();
       line.context(this.ctx)(points);
@@ -169,8 +169,8 @@ export class TimelineRowLayerLineComponent implements AfterViewInit, OnChanges {
           point.x >= this.viewTimeRange.start &&
           point.x <= this.viewTimeRange.end
         ) {
-          const x = Math.floor(this.xScaleView(point.x));
-          const y = Math.floor(yScale(point.y));
+          const x = this.xScaleView(point.x);
+          const y = yScale(point.y);
           this.quadtree.add({ id, x, y });
           this.visiblePointsById[id] = point;
 
