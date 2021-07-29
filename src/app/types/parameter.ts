@@ -16,4 +16,5 @@ export type FormParameter = {
 export type FormParameterChange = {
   newValue: any;
   parameter: FormParameter;
+  shouldValidate: boolean;
 };

@@ -137,6 +137,7 @@ export class ParameterRecSeriesComponent implements OnChanges {
     const change = {
       newValue,
       parameter: this.parameter,
+      shouldValidate: true,
     };
     this.parameterChange.emit(change);
   }
@@ -147,6 +148,7 @@ export class ParameterRecSeriesComponent implements OnChanges {
     const newChange = {
       newValue,
       parameter: this.parameter,
+      shouldValidate: true,
     };
     this.parameterChange.emit(newChange);
   }

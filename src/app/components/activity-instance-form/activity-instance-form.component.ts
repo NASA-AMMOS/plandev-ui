@@ -205,22 +205,24 @@ export class ActivityInstanceFormComponent
   }
 
   async validateParameterValue(change: FormParameterChange) {
-    const { newValue, parameter } = change;
-    const { value: activityTypeName } = this.typeControl;
-    this.setParameter(change, { error: null, loading: true });
-    const { errors, success } = await this.apiService
-      .validateParameters(activityTypeName, this.adaptationId, [
-        { name: parameter.name, value: newValue },
-      ])
-      .pipe(first())
-      .toPromise();
-    if (success) {
-      this.setParameter(change, { error: null, loading: false });
-    } else {
-      const [error] = errors;
-      this.setParameter(change, { error, loading: false });
+    if (change.shouldValidate) {
+      const { newValue, parameter } = change;
+      const { value: activityTypeName } = this.typeControl;
+      this.setParameter(change, { error: null, loading: true });
+      const { errors, success } = await this.apiService
+        .validateParameters(activityTypeName, this.adaptationId, [
+          { name: parameter.name, value: newValue },
+        ])
+        .pipe(first())
+        .toPromise();
+      if (success) {
+        this.setParameter(change, { error: null, loading: false });
+      } else {
+        const [error] = errors;
+        this.setParameter(change, { error, loading: false });
+      }
+      this.cdRef.markForCheck();
     }
-    this.cdRef.markForCheck();
   }
 }
 

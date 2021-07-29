@@ -57,7 +57,11 @@ export class ParameterBaseInputComponent {
         newValue = 0;
       }
     }
-    this.parameterChange.emit({ newValue, parameter: this.parameter });
+    this.parameterChange.emit({
+      newValue,
+      parameter: this.parameter,
+      shouldValidate: true,
+    });
   }
 }
 

@@ -34,7 +34,11 @@ export class ParameterBaseBooleanComponent {
 
   onParameterChange(change: MatCheckboxChange) {
     const { checked: newValue } = change;
-    this.parameterChange.emit({ newValue, parameter: this.parameter });
+    this.parameterChange.emit({
+      newValue,
+      parameter: this.parameter,
+      shouldValidate: true,
+    });
   }
 }
 

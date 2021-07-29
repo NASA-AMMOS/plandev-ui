@@ -114,6 +114,7 @@ export class ParameterRecStructComponent implements OnChanges {
     const newChange = {
       newValue,
       parameter: this.parameter,
+      shouldValidate: true,
     };
     this.parameterChange.emit(newChange);
   }
