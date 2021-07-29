@@ -9,17 +9,14 @@ import {
 } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { MaterialModule } from '../../material';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { activityInstanceFormParameterStyles } from './shared-styles';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterNameModule } from './parameter-name.component';
+import { parameterStyles } from './parameter-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-base-variant',
-  styles: [activityInstanceFormParameterStyles],
+  styles: [parameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
     <div class="field">
@@ -40,10 +37,10 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterBaseVariantComponent {
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+export class ParameterBaseVariantComponent {
+  @Input() parameter: FormParameter | undefined;
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 
   onParameterChange(change: MatSelectChange) {
     const { value: newValue } = change;
@@ -52,12 +49,8 @@ export class ActivityInstanceFormParameterBaseVariantComponent {
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterBaseVariantComponent],
-  exports: [ActivityInstanceFormParameterBaseVariantComponent],
-  imports: [
-    CommonModule,
-    MaterialModule,
-    ActivityInstanceFormParameterNameModule,
-  ],
+  declarations: [ParameterBaseVariantComponent],
+  exports: [ParameterBaseVariantComponent],
+  imports: [CommonModule, MaterialModule, ParameterNameModule],
 })
-export class ActivityInstanceFormParameterBaseVariantModule {}
+export class ParameterBaseVariantModule {}

@@ -8,12 +8,9 @@ import {
   Output,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
-import { ActivityInstanceFormParameterRecModule } from './activity-instance-form-parameter-rec.component';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterBaseModule } from './parameter-base.component';
+import { ParameterRecModule } from './parameter-rec.component';
 
 /**
  * @see https://wiki.jpl.nasa.gov/pages/viewpage.action?spaceKey=MPSA&title=Merlin+ValueSchema+Definitions
@@ -64,24 +61,24 @@ import { ActivityInstanceFormParameterRecModule } from './activity-instance-form
     </ng-container>
   `,
 })
-export class ActivityInstanceFormParametersComponent {
-  @Input() parameters: ActivityInstanceFormParameter[] | undefined;
+export class ParametersComponent {
+  @Input() parameters: FormParameter[] | undefined;
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 
-  trackByParameters(_: number, parameter: ActivityInstanceFormParameter) {
+  trackByParameters(_: number, parameter: FormParameter) {
     return parameter.name;
   }
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParametersComponent],
-  exports: [ActivityInstanceFormParametersComponent],
+  declarations: [ParametersComponent],
+  exports: [ParametersComponent],
   imports: [
     CommonModule,
     MaterialModule,
-    ActivityInstanceFormParameterBaseModule,
-    ActivityInstanceFormParameterRecModule,
+    ParameterBaseModule,
+    ParameterRecModule,
   ],
 })
-export class ActivityInstanceFormParametersModule {}
+export class ParametersModule {}

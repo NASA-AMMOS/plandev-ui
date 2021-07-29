@@ -6,7 +6,6 @@ import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AERIE_USER } from '../constants';
 import {
-  ActivityInstanceParameter,
   Adaptation,
   Constraint,
   CreateActivityInstance,
@@ -20,6 +19,7 @@ import {
   DeletePlanResponse,
   LoginResponse,
   LogoutResponse,
+  Parameter,
   Plan,
   PlanDetail,
   SimulationResponse,
@@ -526,7 +526,7 @@ export class ApiService {
   validateParameters(
     activityTypeName: string,
     adaptationId: string,
-    parameters: ActivityInstanceParameter[],
+    parameters: Parameter[],
   ): Observable<ValidationResponse> {
     const body = {
       query: gql.VALIDATE_PARAMETERS,

@@ -26,15 +26,15 @@ import { MaterialModule } from '../../material';
 import { ApiService } from '../../services';
 import {
   ActivityInstance,
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
   ActivityType,
   CreateActivityInstance,
+  FormParameter,
+  FormParameterChange,
   StringTMap,
   UpdateActivityInstance,
 } from '../../types';
 import { HeaderModule } from '../header/header.component';
-import { ActivityInstanceFormParametersModule } from './activity-instance-form-parameters.component';
+import { ParametersModule } from '../parameters/parameters.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +58,7 @@ export class ActivityInstanceFormComponent
   @Output() update: E<UpdateActivityInstance> = new E();
 
   isChild: boolean;
-  parameters: ActivityInstanceFormParameter[];
+  parameters: FormParameter[];
   parametersExpanded = false;
   valid: boolean;
 
@@ -128,7 +128,7 @@ export class ActivityInstanceFormComponent
    * If there is a corresponding activity instance parameter available, then use it's value.
    * Otherwise use the activity type default value, or a null value.
    */
-  getParameters(activityTypeName: string): ActivityInstanceFormParameter[] {
+  getParameters(activityTypeName: string): FormParameter[] {
     const activityType = this.activityTypes.find(
       ({ name }) => name === activityTypeName,
     );
@@ -149,7 +149,7 @@ export class ActivityInstanceFormComponent
         }
       }
 
-      const parameter: ActivityInstanceFormParameter = {
+      const parameter: FormParameter = {
         error: null,
         loading: false,
         name: activityTypeParameter.name,
@@ -163,7 +163,7 @@ export class ActivityInstanceFormComponent
     return parameters;
   }
 
-  async onParameterChange(change: ActivityInstanceFormParameterChange) {
+  async onParameterChange(change: FormParameterChange) {
     await this.validateParameterValue(change);
   }
 
@@ -191,10 +191,7 @@ export class ActivityInstanceFormComponent
     }
   }
 
-  setParameter(
-    change: ActivityInstanceFormParameterChange,
-    update: Partial<ActivityInstanceFormParameter>,
-  ) {
+  setParameter(change: FormParameterChange, update: Partial<FormParameter>) {
     this.parameters = this.parameters.map(parameter => {
       if (parameter.name === change.parameter.name) {
         return {
@@ -207,7 +204,7 @@ export class ActivityInstanceFormComponent
     });
   }
 
-  async validateParameterValue(change: ActivityInstanceFormParameterChange) {
+  async validateParameterValue(change: FormParameterChange) {
     const { newValue, parameter } = change;
     const { value: activityTypeName } = this.typeControl;
     this.setParameter(change, { error: null, loading: true });
@@ -235,7 +232,7 @@ export class ActivityInstanceFormComponent
     FormsModule,
     MaterialModule,
     ReactiveFormsModule,
-    ActivityInstanceFormParametersModule,
+    ParametersModule,
     DecompositionTreeModule,
     HeaderModule,
   ],

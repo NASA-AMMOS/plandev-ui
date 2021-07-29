@@ -15,27 +15,22 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { SubSink } from 'subsink';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterRecSeriesComponent } from './activity-instance-form-parameter-rec-series.component';
-import { ActivityInstanceFormParameterRecStructComponent } from './activity-instance-form-parameter-rec-struct.component';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterRecSeriesComponent } from './parameter-rec-series.component';
+import { ParameterRecStructComponent } from './parameter-rec-struct.component';
 
-type SeriesComponent = ActivityInstanceFormParameterRecSeriesComponent;
-type StructComponent = ActivityInstanceFormParameterRecStructComponent;
+type SeriesComponent = ParameterRecSeriesComponent;
+type StructComponent = ParameterRecStructComponent;
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-rec',
   template: ``,
 })
-export class ActivityInstanceFormParameterRecComponent
-  implements OnChanges, OnDestroy
-{
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+export class ParameterRecComponent implements OnChanges, OnDestroy {
+  @Input() parameter: FormParameter | undefined;
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 
   component: ComponentRef<SeriesComponent | StructComponent> | null = null;
   subs = new SubSink();
@@ -60,16 +55,12 @@ export class ActivityInstanceFormParameterRecComponent
   }
 
   async loadSeries() {
-    const module = await import(
-      `./activity-instance-form-parameter-rec-series.component`
-    );
+    const module = await import(`./parameter-rec-series.component`);
     return module;
   }
 
   async loadStruct() {
-    const module = await import(
-      `./activity-instance-form-parameter-rec-struct.component`
-    );
+    const module = await import(`./parameter-rec-struct.component`);
     return module;
   }
 
@@ -79,12 +70,12 @@ export class ActivityInstanceFormParameterRecComponent
 
       if (this.parameter.schema.type === 'series') {
         const module = await this.loadSeries();
-        const { ActivityInstanceFormParameterRecSeriesComponent: cmp } = module;
+        const { ParameterRecSeriesComponent: cmp } = module;
         const factory = this.cfr.resolveComponentFactory<SeriesComponent>(cmp);
         this.component = this.vcr.createComponent<SeriesComponent>(factory);
       } else if (this.parameter.schema.type === 'struct') {
         const module = await this.loadStruct();
-        const { ActivityInstanceFormParameterRecStructComponent: cmp } = module;
+        const { ParameterRecStructComponent: cmp } = module;
         const factory = this.cfr.resolveComponentFactory<StructComponent>(cmp);
         this.component = this.vcr.createComponent<StructComponent>(factory);
       }
@@ -92,7 +83,7 @@ export class ActivityInstanceFormParameterRecComponent
       if (this.component && this.component.instance) {
         this.subs.add(
           this.component.instance.parameterChange.subscribe(
-            (change: ActivityInstanceFormParameterChange) => {
+            (change: FormParameterChange) => {
               this.parameterChange.emit(change);
             },
           ),
@@ -111,7 +102,7 @@ export class ActivityInstanceFormParameterRecComponent
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterRecComponent],
-  exports: [ActivityInstanceFormParameterRecComponent],
+  declarations: [ParameterRecComponent],
+  exports: [ParameterRecComponent],
 })
-export class ActivityInstanceFormParameterRecModule {}
+export class ParameterRecModule {}

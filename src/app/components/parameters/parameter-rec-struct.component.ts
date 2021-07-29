@@ -10,20 +10,17 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterBaseModule } from './activity-instance-form-parameter-base.component';
-import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { ActivityInstanceFormParameterRecModule } from './activity-instance-form-parameter-rec.component';
-import { activityInstanceFormParameterStyles } from './shared-styles';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterBaseModule } from './parameter-base.component';
+import { ParameterNameModule } from './parameter-name.component';
+import { ParameterRecModule } from './parameter-rec.component';
+import { parameterStyles } from './parameter-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-rec-struct',
   styles: [
-    activityInstanceFormParameterStyles,
+    parameterStyles,
     `
       :host {
         display: block;
@@ -95,15 +92,13 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </ul>
   `,
 })
-export class ActivityInstanceFormParameterRecStructComponent
-  implements OnChanges
-{
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+export class ParameterRecStructComponent implements OnChanges {
+  @Input() parameter: FormParameter | undefined;
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 
   expanded = false;
-  subParameters: ActivityInstanceFormParameter[];
+  subParameters: FormParameter[];
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.parameter) {
@@ -111,7 +106,7 @@ export class ActivityInstanceFormParameterRecStructComponent
     }
   }
 
-  onParameterChange(change: ActivityInstanceFormParameterChange) {
+  onParameterChange(change: FormParameterChange) {
     const newValue = {
       ...this.parameter.value,
       [change.parameter.key]: change.newValue,
@@ -127,7 +122,7 @@ export class ActivityInstanceFormParameterRecStructComponent
     this.expanded = !this.expanded;
   }
 
-  trackBySubParameters(_: number, parameter: ActivityInstanceFormParameter) {
+  trackBySubParameters(_: number, parameter: FormParameter) {
     return parameter.name;
   }
 
@@ -137,7 +132,7 @@ export class ActivityInstanceFormParameterRecStructComponent
     const { value } = this.parameter;
     const structKeys = Object.keys(keys).sort();
     for (const key of structKeys) {
-      const subParameter: ActivityInstanceFormParameter = {
+      const subParameter: FormParameter = {
         error: null,
         key,
         loading: false,
@@ -151,14 +146,14 @@ export class ActivityInstanceFormParameterRecStructComponent
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterRecStructComponent],
-  exports: [ActivityInstanceFormParameterRecStructComponent],
+  declarations: [ParameterRecStructComponent],
+  exports: [ParameterRecStructComponent],
   imports: [
     CommonModule,
     MaterialModule,
-    ActivityInstanceFormParameterBaseModule,
-    ActivityInstanceFormParameterNameModule,
-    ActivityInstanceFormParameterRecModule,
+    ParameterBaseModule,
+    ParameterNameModule,
+    ParameterRecModule,
   ],
 })
-export class ActivityInstanceFormParameterRecStructModule {}
+export class ParameterRecStructModule {}

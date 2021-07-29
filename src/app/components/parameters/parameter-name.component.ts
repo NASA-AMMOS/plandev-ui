@@ -6,7 +6,7 @@ import {
   NgModule,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import { ActivityInstanceFormParameter } from '../../types';
+import { FormParameter } from '../../types';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,13 +39,13 @@ import { ActivityInstanceFormParameter } from '../../types';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterNameComponent {
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+export class ParameterNameComponent {
+  @Input() parameter: FormParameter | undefined;
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterNameComponent],
-  exports: [ActivityInstanceFormParameterNameComponent],
+  declarations: [ParameterNameComponent],
+  exports: [ParameterNameComponent],
   imports: [CommonModule, MaterialModule],
 })
-export class ActivityInstanceFormParameterNameModule {}
+export class ParameterNameModule {}

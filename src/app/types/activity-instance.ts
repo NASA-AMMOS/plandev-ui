@@ -1,35 +1,17 @@
+import { Parameter } from './parameter';
+
 export interface ActivityInstance {
   children: string[];
   duration: number;
   id: string;
-  parameters: ActivityInstanceParameter[];
+  parameters: Parameter[];
   parent: string | null;
   startTimestamp: string;
   type: string;
 }
 
-export interface ActivityInstanceFormParameter {
-  error: string | null;
-  index?: number;
-  key?: string;
-  loading: boolean;
-  name: string;
-  schema: any;
-  value: any;
-}
-
-export interface ActivityInstanceFormParameterChange {
-  newValue: any;
-  parameter: ActivityInstanceFormParameter;
-}
-
-export interface ActivityInstanceParameter {
-  name: string;
-  value: any;
-}
-
 export interface CreateActivityInstance {
-  parameters: ActivityInstanceParameter[];
+  parameters: Parameter[];
   startTimestamp: string;
   type: string;
 }

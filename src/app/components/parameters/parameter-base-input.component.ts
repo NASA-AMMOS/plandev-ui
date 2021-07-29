@@ -8,17 +8,14 @@ import {
   Output,
 } from '@angular/core';
 import { MaterialModule } from '../../material';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterNameModule } from './activity-instance-form-parameter-name.component';
-import { activityInstanceFormParameterStyles } from './shared-styles';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterNameModule } from './parameter-name.component';
+import { parameterStyles } from './parameter-styles';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'parameter-base-input',
-  styles: [activityInstanceFormParameterStyles],
+  styles: [parameterStyles],
   template: `
     <parameter-name [parameter]="parameter"></parameter-name>
     <div class="field">
@@ -42,12 +39,12 @@ import { activityInstanceFormParameterStyles } from './shared-styles';
     </div>
   `,
 })
-export class ActivityInstanceFormParameterBaseInputComponent {
+export class ParameterBaseInputComponent {
   @Input() label: 'Integer' | 'Real Number' | 'String' | 'Duration';
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+  @Input() parameter: FormParameter | undefined;
   @Input() type: 'number' | 'text' = 'text';
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 
   onParameterChange(event: Event) {
     const { value, valueAsNumber } = event.target as HTMLInputElement;
@@ -65,12 +62,8 @@ export class ActivityInstanceFormParameterBaseInputComponent {
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterBaseInputComponent],
-  exports: [ActivityInstanceFormParameterBaseInputComponent],
-  imports: [
-    CommonModule,
-    MaterialModule,
-    ActivityInstanceFormParameterNameModule,
-  ],
+  declarations: [ParameterBaseInputComponent],
+  exports: [ParameterBaseInputComponent],
+  imports: [CommonModule, MaterialModule, ParameterNameModule],
 })
-export class ActivityInstanceFormParameterBaseInputModule {}
+export class ParameterBaseInputModule {}

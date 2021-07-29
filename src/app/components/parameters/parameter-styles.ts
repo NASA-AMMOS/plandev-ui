@@ -1,4 +1,4 @@
-export const activityInstanceFormParameterStyles = `
+export const parameterStyles = `
   :host {
     display: grid;
     grid-template-columns: 30% 70%;

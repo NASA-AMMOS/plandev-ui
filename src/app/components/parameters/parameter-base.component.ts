@@ -7,13 +7,10 @@ import {
   NgModule,
   Output,
 } from '@angular/core';
-import {
-  ActivityInstanceFormParameter,
-  ActivityInstanceFormParameterChange,
-} from '../../types';
-import { ActivityInstanceFormParameterBaseBooleanModule } from './activity-instance-form-parameter-base-boolean.component';
-import { ActivityInstanceFormParameterBaseInputModule } from './activity-instance-form-parameter-base-input.component';
-import { ActivityInstanceFormParameterBaseVariantModule } from './activity-instance-form-parameter-base-variant.component';
+import { FormParameter, FormParameterChange } from '../../types';
+import { ParameterBaseBooleanModule } from './parameter-base-boolean.component';
+import { ParameterBaseInputModule } from './parameter-base-input.component';
+import { ParameterBaseVariantModule } from './parameter-base-variant.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,20 +61,20 @@ import { ActivityInstanceFormParameterBaseVariantModule } from './activity-insta
     ></parameter-base-variant>
   `,
 })
-export class ActivityInstanceFormParameterBaseComponent {
-  @Input() parameter: ActivityInstanceFormParameter | undefined;
+export class ParameterBaseComponent {
+  @Input() parameter: FormParameter | undefined;
 
-  @Output() parameterChange: E<ActivityInstanceFormParameterChange> = new E();
+  @Output() parameterChange: E<FormParameterChange> = new E();
 }
 
 @NgModule({
-  declarations: [ActivityInstanceFormParameterBaseComponent],
-  exports: [ActivityInstanceFormParameterBaseComponent],
+  declarations: [ParameterBaseComponent],
+  exports: [ParameterBaseComponent],
   imports: [
     CommonModule,
-    ActivityInstanceFormParameterBaseBooleanModule,
-    ActivityInstanceFormParameterBaseInputModule,
-    ActivityInstanceFormParameterBaseVariantModule,
+    ParameterBaseBooleanModule,
+    ParameterBaseInputModule,
+    ParameterBaseVariantModule,
   ],
 })
-export class ActivityInstanceFormParameterBaseModule {}
+export class ParameterBaseModule {}
