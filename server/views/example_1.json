@@ -16,6 +16,8 @@
       "size": 60,
       "timeline": {
         "id": "timeline0",
+        "marginLeft": 50,
+        "marginRight": 20,
         "rows": [
           {
             "autoAdjustHeight": false,
