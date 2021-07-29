@@ -17,6 +17,15 @@
     <button
       mat-raised-button
       class="right-button"
+      matTooltip="Simulation Configuration"
+      (click)="onSimulationConfiguration()"
+    >
+      Sim Config
+    </button>
+
+    <button
+      mat-raised-button
+      class="right-button"
       [matBadge]="constraintViolations.length"
       [matBadgeHidden]="constraintViolations.length === 0"
       matBadgeColor="warn"
@@ -196,6 +205,11 @@
       <ng-template #elseBlock>
         <mat-card>No Activity Instance Selected</mat-card>
       </ng-template>
+    </div>
+
+    <div *ngIf="drawer.simulationConfiguration.visible">
+      <aerie-header>Simulation Configuration</aerie-header>
+      <div></div>
     </div>
   </as-split-area>
 </as-split>

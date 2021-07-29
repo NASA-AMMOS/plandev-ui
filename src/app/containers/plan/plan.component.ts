@@ -109,6 +109,9 @@ export class PlanComponent implements OnDestroy {
     selectedActivityInstance: {
       visible: false,
     },
+    simulationConfiguration: {
+      visible: false,
+    },
     viewEditor: {
       visible: false,
     },
@@ -389,6 +392,10 @@ export class PlanComponent implements OnDestroy {
   onSimulate() {
     const { id: planId } = this.route.snapshot.params;
     this.store.dispatch(PlanningActions.runSimulation({ planId }));
+  }
+
+  onSimulationConfiguration() {
+    this.showDrawerType('simulationConfiguration');
   }
 
   onSortRows(sortedRows: StringTMap<Row[]>): void {
