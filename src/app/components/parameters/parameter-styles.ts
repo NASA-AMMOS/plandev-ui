@@ -6,6 +6,7 @@ export const parameterStyles = `
   }
 
   .field {
+    align-items: center;
     display: flex;
     width: 100%;
   }

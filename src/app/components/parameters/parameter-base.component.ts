@@ -10,6 +10,7 @@ import {
 import { FormParameter, FormParameterChange } from '../../types';
 import { ParameterBaseBooleanModule } from './parameter-base-boolean.component';
 import { ParameterBaseInputModule } from './parameter-base-input.component';
+import { ParameterBasePathModule } from './parameter-base-path.component';
 import { ParameterBaseVariantModule } from './parameter-base-variant.component';
 
 @Component({
@@ -37,6 +38,12 @@ import { ParameterBaseVariantModule } from './parameter-base-variant.component';
       [parameter]="parameter"
       (parameterChange)="parameterChange.emit($event)"
     ></parameter-base-input>
+
+    <parameter-base-path
+      *ngIf="parameter.schema.type === 'path'"
+      [parameter]="parameter"
+      (parameterChange)="parameterChange.emit($event)"
+    ></parameter-base-path>
 
     <parameter-base-input
       *ngIf="parameter.schema.type === 'real'"
@@ -74,6 +81,7 @@ export class ParameterBaseComponent {
     CommonModule,
     ParameterBaseBooleanModule,
     ParameterBaseInputModule,
+    ParameterBasePathModule,
     ParameterBaseVariantModule,
   ],
 })
