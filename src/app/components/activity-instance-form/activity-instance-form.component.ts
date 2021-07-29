@@ -222,6 +222,8 @@ export class ActivityInstanceFormComponent
         this.setParameter(change, { error, loading: false });
       }
       this.cdRef.markForCheck();
+    } else {
+      this.setParameter(change, { error: null, loading: false });
     }
   }
 }
