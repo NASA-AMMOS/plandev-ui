@@ -39,12 +39,14 @@ export const CREATE_ADAPTATION = `
 export const CREATE_PLAN = `
   mutation CreatePlan(
     $adaptationId: String!
+    $configuration: ConfigurationValue
     $endTimestamp: String!
     $name: String!
     $startTimestamp: String!
   ) {
     createPlan(
       adaptationId: $adaptationId
+      configuration: $configuration
       endTimestamp: $endTimestamp
       name: $name
       startTimestamp: $startTimestamp

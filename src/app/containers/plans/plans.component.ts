@@ -44,6 +44,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
 
   adaptations: Adaptation[] | null = null;
   createPlanForm: FormGroup;
+  invalidConfigJson: string | null = null;
   plans: Plan[] | null = null;
   selectedAdaptationId = '';
 
@@ -66,6 +67,7 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
 
     this.createPlanForm = this.fb.group({
       adaptationId: [this.selectedAdaptationId, Validators.required],
+      configuration: null,
       endTimestamp: ['', [Validators.required, doyTimestampValidator]],
       name: ['', Validators.required],
       startTimestamp: ['', [Validators.required, doyTimestampValidator]],
@@ -93,8 +95,42 @@ export class PlansComponent implements AfterViewInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  async fileToJSON(file: File) {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.onload = _ => {
+        try {
+          const json = JSON.parse(fileReader.result as string);
+          resolve(json);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      fileReader.onerror = error => reject(error);
+      fileReader.readAsText(file);
+    });
+  }
+
   onDeletePlan(id: string) {
     this.store.dispatch(PlanningActions.deletePlan({ id }));
+  }
+
+  async onFileChange(event: Event) {
+    this.invalidConfigJson = null;
+    const input = event.target as HTMLInputElement;
+    if (input.files.length) {
+      try {
+        const file = input.files.item(0);
+        const configuration = await this.fileToJSON(file);
+        this.createPlanForm.patchValue({
+          configuration,
+        });
+      } catch (error) {
+        console.error(error);
+        this.invalidConfigJson = error.message;
+        this.cdRef.markForCheck();
+      }
+    }
   }
 
   onOpenPlan(id: string) {

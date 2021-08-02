@@ -128,6 +128,7 @@ export class ApiService {
       query: gql.CREATE_PLAN,
       variables: {
         adaptationId: plan.adaptationId,
+        configuration: plan.configuration,
         endTimestamp: plan.endTimestamp,
         name: plan.name,
         startTimestamp: plan.startTimestamp,

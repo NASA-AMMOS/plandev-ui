@@ -111,8 +111,21 @@
               </mat-error>
             </mat-form-field>
 
+            <div class="pb-4">
+              <div class="mb-2">
+                <mat-label>Simulation Configuration</mat-label>
+              </div>
+              <input
+                [required]="true"
+                type="file"
+                (change)="onFileChange($event)"
+              />
+              <div class="alert alert-danger mt-2" *ngIf="invalidConfigJson">
+                File upload failed. Is your config JSON in the correct format?
+              </div>
+            </div>
+
             <button
-              class="mr-2"
               mat-raised-button
               color="accent"
               [disabled]="!createPlanForm.valid"

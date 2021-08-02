@@ -4,6 +4,7 @@ import { Constraint } from './constraints';
 
 export interface CreatePlan {
   adaptationId: string;
+  configuration: string | null;
   endTimestamp: string;
   name: string;
   startTimestamp: string;
