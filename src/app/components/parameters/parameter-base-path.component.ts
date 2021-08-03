@@ -57,6 +57,7 @@ export class ParameterBasePathComponent implements OnChanges {
       const file = input.files.item(0);
       this.fileName = file.name;
       this.parameterChange.emit({
+        file,
         newValue: this.fileName,
         parameter: this.parameter,
         shouldValidate: false,

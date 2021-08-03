@@ -17,7 +17,7 @@ import { ParameterRecModule } from './parameter-rec.component';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  selector: 'activity-instance-form-parameters',
+  selector: 'form-parameters',
   styles: [
     `
       .error {

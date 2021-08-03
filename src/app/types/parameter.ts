@@ -11,6 +11,7 @@ export interface ParameterSchema {
 
 export type FormParameter = {
   error: string | null;
+  file?: File;
   index?: number;
   key?: string;
   loading: boolean;
@@ -20,6 +21,7 @@ export type FormParameter = {
 };
 
 export type FormParameterChange = {
+  file?: File;
   newValue: any;
   parameter: FormParameter;
   shouldValidate: boolean;

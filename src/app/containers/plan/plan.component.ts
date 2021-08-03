@@ -28,6 +28,7 @@ import {
   ToolbarModule,
   ViolationListModule,
 } from '../../components';
+import { SimConfigFormModule } from '../../components/sim-config-form/sim-config-form.component';
 import { AERIE_USER } from '../../constants';
 import { getViewText } from '../../functions';
 import { MaterialModule } from '../../material';
@@ -38,6 +39,8 @@ import {
   getActivityTypes,
   getAdaptationConstraints,
   getAdaptationId,
+  getConfigParams,
+  getConfigParamSchemas,
   getConstraintViolations,
   getMaxTimeRange,
   getPlanConstraints,
@@ -55,8 +58,11 @@ import {
   CreateActivityInstance,
   CreatePoint,
   DeletePoint,
+  FormParameter,
   HorizontalGuideEvent,
   LayerEvent,
+  Parameter,
+  ParameterSchema,
   Plan,
   Row,
   SavePoint,
@@ -89,6 +95,8 @@ export class PlanComponent implements OnDestroy {
   activityTypes: ActivityType[] | null = null;
   adaptationConstraints: Constraint[] | null = null;
   adaptationId = '';
+  configParamSchemas: ParameterSchema[] = [];
+  configParams: Parameter[] = [];
   constraintViolations: ConstraintViolation[] = [];
   drawer = {
     activityDictionary: {
@@ -160,6 +168,16 @@ export class PlanComponent implements OnDestroy {
         }),
       this.store.pipe(select(getAdaptationId)).subscribe(adaptationId => {
         this.adaptationId = adaptationId;
+        this.cdRef.markForCheck();
+      }),
+      this.store
+        .pipe(select(getConfigParamSchemas))
+        .subscribe(configParamSchemas => {
+          this.configParamSchemas = configParamSchemas;
+          this.cdRef.markForCheck();
+        }),
+      this.store.pipe(select(getConfigParams)).subscribe(configParams => {
+        this.configParams = configParams;
         this.cdRef.markForCheck();
       }),
       this.store
@@ -440,6 +458,13 @@ export class PlanComponent implements OnDestroy {
     }
   }
 
+  onUpdatePlanConfiguration(formParameters: FormParameter[]): void {
+    const { id: planId } = this.route.snapshot.params;
+    this.store.dispatch(
+      PlanningActions.updatePlanConfiguration({ formParameters, planId }),
+    );
+  }
+
   onUpdateRow(event: UpdateRow): void {
     const { rowId, update } = event;
     this.store.dispatch(PlanningActions.updateRow({ rowId, update }));
@@ -504,6 +529,7 @@ export class PlanComponent implements OnDestroy {
     HeaderModule,
     PipesModule,
     PlaceholderModule,
+    SimConfigFormModule,
     TableModule,
     TimelineModule,
     ToolbarModule,

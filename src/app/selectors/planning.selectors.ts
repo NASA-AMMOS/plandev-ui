@@ -14,6 +14,8 @@ import {
   Layer,
   LineLayer,
   LinePoint,
+  Parameter,
+  ParameterSchema,
   Plan,
   Row,
   SimulationResult,
@@ -147,6 +149,16 @@ export const getDecompositionTreeState = createSelector(
   getPlanningState,
   (state: PlanningState): DecompositionTreeState =>
     state.decompositionTreeState,
+);
+
+export const getConfigParamSchemas = createSelector(
+  getPlanningState,
+  (state: PlanningState): ParameterSchema[] => state.configParamSchemas || [],
+);
+
+export const getConfigParams = createSelector(
+  getPlanningState,
+  (state: PlanningState): Parameter[] => state.configParams || [],
 );
 
 export const getConstraintViolations = createSelector(

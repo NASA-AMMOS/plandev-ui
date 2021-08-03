@@ -209,7 +209,11 @@
 
     <div *ngIf="drawer.simulationConfiguration.visible">
       <aerie-header>Simulation Configuration</aerie-header>
-      <div></div>
+      <sim-config-form
+        [configParamSchemas]="configParamSchemas"
+        [configParams]="configParams"
+        (update)="onUpdatePlanConfiguration($event)"
+      ></sim-config-form>
     </div>
   </as-split-area>
 </as-split>

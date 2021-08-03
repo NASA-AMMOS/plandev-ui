@@ -284,6 +284,21 @@ export const UPDATE_ADAPTATION_CONSTRAINTS = `
   }
 `;
 
+export const UPDATE_PLAN_CONFIGURATION = `
+  mutation UpdatePlanConfiguration(
+    $planId: ID!
+    $configuration: ConfigurationValue
+  ) {
+    updatePlanConfiguration(
+      planId: $planId
+      configuration: $configuration
+    ) {
+      message
+      success
+    }
+  }
+`;
+
 export const UPDATE_PLAN_CONSTRAINTS = `
   mutation UpdatePlanConstraints(
     $planId: ID!

@@ -72,10 +72,10 @@
       </mat-expansion-panel-header>
 
       <div class="expansion-panel-body" *ngIf="parametersExpanded">
-        <activity-instance-form-parameters
+        <form-parameters
           [parameters]="parameters"
           (parameterChange)="onParameterChange($event)"
-        ></activity-instance-form-parameters>
+        ></form-parameters>
       </div>
     </mat-expansion-panel>
   </div>

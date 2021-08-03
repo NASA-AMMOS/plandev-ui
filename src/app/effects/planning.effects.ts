@@ -750,6 +750,45 @@ export class PlanningEffects {
     ),
   );
 
+  updatePlanConfiguration = createEffect(() =>
+    this.actions.pipe(
+      ofType(PlanningActions.updatePlanConfiguration),
+      switchMap(({ formParameters, planId }) => {
+        const { configuration, files } = formParameters.reduce(
+          (acc, formParameter) => {
+            acc.configuration[formParameter.name] = formParameter.value;
+            if (formParameter.file) {
+              acc.files.push(formParameter.file);
+            }
+            return acc;
+          },
+          { configuration: {}, files: [] },
+        );
+        return concat(
+          of(AppActions.setLoading({ loading: true })),
+          this.apiService.updatePlanConfiguration(planId, configuration).pipe(
+            switchMap(() => [
+              ToastActions.showToast({
+                message: 'Plan configuration updated',
+                toastType: 'success',
+              }),
+            ]),
+            catchError((error: Error) => {
+              console.error(error.message);
+              return [
+                ToastActions.showToast({
+                  message: 'Update plan configuration failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          ),
+          of(AppActions.setLoading({ loading: false })),
+        );
+      }),
+    ),
+  );
+
   verticalGuideOpenDialog = createEffect(() =>
     this.actions.pipe(
       ofType(PlanningActions.verticalGuideOpenDialog),

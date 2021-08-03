@@ -26,6 +26,7 @@ import {
   UpdateActivityInstance,
   UpdateActivityInstanceResponse,
   UpdateConstraintsResponse,
+  UpdatePlanConfigurationResponse,
   User,
   ValidationResponse,
   View,
@@ -488,6 +489,36 @@ export class ApiService {
             throw new Error(updateAdaptationConstraints.message);
           }
           return updateAdaptationConstraints;
+        }),
+      );
+  }
+
+  updatePlanConfiguration(
+    planId: string,
+    configuration: any,
+  ): Observable<UpdatePlanConfigurationResponse> {
+    const body = {
+      query: gql.UPDATE_PLAN_CONFIGURATION,
+      variables: {
+        configuration,
+        planId,
+      },
+    };
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+    return this.http
+      .post<{
+        data: {
+          updatePlanConfiguration: UpdatePlanConfigurationResponse;
+        };
+      }>(aerieApolloServerUrl, body, options)
+      .pipe(
+        map(({ data: { updatePlanConfiguration } }) => {
+          if (!updatePlanConfiguration.success) {
+            throw new Error(updatePlanConfiguration.message);
+          }
+          return updatePlanConfiguration;
         }),
       );
   }

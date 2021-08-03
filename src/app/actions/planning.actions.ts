@@ -6,6 +6,7 @@ import {
   CreateActivityInstance,
   CreateAdaptation,
   CreatePlan,
+  FormParameter,
   HorizontalGuide,
   HorizontalGuideEvent,
   Layer,
@@ -223,6 +224,11 @@ export const updateActivityInstanceFailure = createAction(
 export const updateActivityInstanceSuccess = createAction(
   '[planning] updateActivityInstanceSuccess',
   props<{ activityInstance: UpdateActivityInstance }>(),
+);
+
+export const updatePlanConfiguration = createAction(
+  '[planning] updatePlanConfiguration',
+  props<{ formParameters: FormParameter[]; planId: string }>(),
 );
 
 export const updateConstraint = createAction(

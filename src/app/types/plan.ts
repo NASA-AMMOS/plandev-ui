@@ -41,3 +41,8 @@ export interface PlanDetail {
   name: string;
   startTimestamp: string;
 }
+
+export interface UpdatePlanConfigurationResponse {
+  message: string;
+  success: boolean;
+}
