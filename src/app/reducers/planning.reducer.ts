@@ -161,7 +161,7 @@ export const reducer = createReducer(
       'name',
     ),
     configParamSchemas: plan.adaptation?.configurationSchema.parameters ?? [],
-    configParams: plan?.configuration.parameters ?? [],
+    configParams: plan?.configuration?.parameters ?? [],
     planConstraints: keyBy(
       (plan.constraints || []).map(constraint => ({
         ...constraint,
