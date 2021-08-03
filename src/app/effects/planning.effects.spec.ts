@@ -169,7 +169,7 @@ describe('planning effects', () => {
     it('succeeds', () => {
       testScheduler.run(({ hot, expectObservable }) => {
         const action = PlanningActions.createPlan({
-          plan,
+          plan: { ...plan, configuration: null },
         });
         actions = hot('-a', { a: action });
         expectObservable(effects.createPlan).toBe('-(bcde)', {
@@ -195,7 +195,7 @@ describe('planning effects', () => {
     it('fails', () => {
       testScheduler.run(({ cold, hot, expectObservable }) => {
         const action = PlanningActions.createPlan({
-          plan,
+          plan: { ...plan, configuration: null },
         });
         const errorMsg = 'Create plan failed';
         actions = hot('-a', { a: action });

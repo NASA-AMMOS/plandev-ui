@@ -1,9 +1,18 @@
 import { ActivityInstance } from './activity-instance';
 import { ConstraintViolation } from './constraints';
+import { Parameter, ParameterSchema } from './parameter';
 import { StringTMap } from './string-t-map';
 
 export interface DecompositionTreeState {
   instance: StringTMap<{ expanded: boolean }>;
+}
+
+export interface SimulationConfiguration {
+  parameters: Parameter[];
+}
+
+export interface SimulationConfigurationSchema {
+  parameters: ParameterSchema[];
 }
 
 export interface SimulationResponse {

@@ -3,6 +3,12 @@ export type Parameter = {
   value: any;
 };
 
+export interface ParameterSchema {
+  default: any;
+  name: string;
+  schema: any;
+}
+
 export type FormParameter = {
   error: string | null;
   index?: number;

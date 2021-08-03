@@ -157,6 +157,12 @@ export const GET_PLAN_DETAIL = `
             schema
           }
         }
+        configurationSchema {
+          parameters {
+            name
+            schema
+          }
+        }
         constraints {
           definition
           description
@@ -165,6 +171,12 @@ export const GET_PLAN_DETAIL = `
         }
       }
       adaptationId
+      configuration {
+        parameters {
+          name
+          value
+        }
+      }
       constraints {
         definition
         description

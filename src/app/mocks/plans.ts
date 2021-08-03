@@ -22,6 +22,7 @@ export const planDetail: PlanDetail = {
     activityTypes,
   },
   adaptationId: plan.adaptationId,
+  configuration: { parameters: [] },
   constraints: [],
   endTimestamp: plan.endTimestamp,
   id: plan.id,

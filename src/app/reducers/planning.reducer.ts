@@ -11,6 +11,8 @@ import {
   ConstraintViolation,
   DecompositionTreeState,
   HorizontalGuide,
+  Parameter,
+  ParameterSchema,
   Plan,
   Row,
   SimulationResult,
@@ -23,8 +25,10 @@ import {
 export interface PlanningState {
   activityInstances: StringTMap<ActivityInstance> | null;
   activityTypes: StringTMap<ActivityType> | null;
-  adaptations: StringTMap<Adaptation> | null;
   adaptationConstraints: StringTMap<Constraint> | null;
+  adaptations: StringTMap<Adaptation> | null;
+  configParamSchemas: ParameterSchema[];
+  configParams: Parameter[];
   constraintViolations: ConstraintViolation[] | null;
   decompositionTreeState: DecompositionTreeState;
   lastActivityInstanceUpdate: number;
@@ -43,6 +47,8 @@ export const initialState: PlanningState = {
   activityTypes: null,
   adaptationConstraints: null,
   adaptations: null,
+  configParamSchemas: [],
+  configParams: [],
   constraintViolations: null,
   decompositionTreeState: { instance: {} },
   lastActivityInstanceUpdate: 0,
@@ -154,6 +160,8 @@ export const reducer = createReducer(
       })),
       'name',
     ),
+    configParamSchemas: plan.adaptation?.configurationSchema.parameters ?? [],
+    configParams: plan?.configuration.parameters ?? [],
     planConstraints: keyBy(
       (plan.constraints || []).map(constraint => ({
         ...constraint,
