@@ -13,7 +13,7 @@ export class ToastEffects {
         mergeMap(action => {
           this.toastr[action.toastType](action.message, '', {
             positionClass: 'toast-bottom-right',
-            timeOut: 2000,
+            timeOut: 4000,
           });
           return [];
         }),

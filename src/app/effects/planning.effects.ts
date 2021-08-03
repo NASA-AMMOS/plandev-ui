@@ -135,6 +135,10 @@ export class PlanningEffects {
               console.error(error.message);
               return [
                 ToastActions.showToast({
+                  message: 'Does the adaptation require a config?',
+                  toastType: 'error',
+                }),
+                ToastActions.showToast({
                   message: 'Create plan failed',
                   toastType: 'error',
                 }),

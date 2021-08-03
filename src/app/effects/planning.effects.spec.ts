@@ -197,18 +197,23 @@ describe('planning effects', () => {
         const action = PlanningActions.createPlan({
           plan: { ...plan, configuration: null },
         });
-        const errorMsg = 'Create plan failed';
+        const errorMsg0 = 'Create plan failed';
+        const errorMsg1 = 'Does the adaptation require a config?';
         actions = hot('-a', { a: action });
         spyOn(apiService, 'createPlan').and.returnValue(
-          cold('#|', null, new Error(errorMsg)),
+          cold('#|', null, new Error(errorMsg0)),
         );
-        expectObservable(effects.createPlan).toBe('-(bcd)', {
+        expectObservable(effects.createPlan).toBe('-(bcde)', {
           b: AppActions.setLoading({ loading: true }),
           c: ToastActions.showToast({
-            message: errorMsg,
+            message: errorMsg1,
             toastType: 'error',
           }),
-          d: AppActions.setLoading({ loading: false }),
+          d: ToastActions.showToast({
+            message: errorMsg0,
+            toastType: 'error',
+          }),
+          e: AppActions.setLoading({ loading: false }),
         });
       });
     });
