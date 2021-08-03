@@ -314,6 +314,19 @@ export const UPDATE_PLAN_CONSTRAINTS = `
   }
 `;
 
+export const UPLOAD_FILE = `
+  mutation UploadFile(
+    $file: Upload!
+  ) {
+    uploadFile(
+      file: $file
+    ) {
+      message
+      success
+    }
+  }
+`;
+
 export const VALIDATE_PARAMETERS = `
   query ValidateParameters(
     $activityTypeName: String!

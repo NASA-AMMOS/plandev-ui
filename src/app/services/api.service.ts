@@ -27,6 +27,7 @@ import {
   UpdateActivityInstanceResponse,
   UpdateConstraintsResponse,
   UpdatePlanConfigurationResponse,
+  UploadFileResponse,
   User,
   ValidationResponse,
   View,
@@ -551,6 +552,43 @@ export class ApiService {
             throw new Error(updatePlanConstraints.message);
           }
           return updatePlanConstraints;
+        }),
+      );
+  }
+
+  uploadFile(file: File): Observable<UploadFileResponse> {
+    const fileMap = {
+      file: ['variables.file'],
+    };
+    const operations = {
+      query: gql.UPLOAD_FILE,
+      variables: {
+        file: null,
+      },
+    };
+
+    // Form append order matters here!
+    const body = new FormData();
+    body.append('operations', JSON.stringify(operations));
+    body.append('map', JSON.stringify(fileMap));
+    body.append('file', file, file.name);
+
+    const options = {
+      headers: { authorization: getAuthorization() },
+    };
+
+    return this.http
+      .post<{ data: { uploadFile: UploadFileResponse } }>(
+        aerieApolloServerUrl,
+        body,
+        options,
+      )
+      .pipe(
+        map(({ data: { uploadFile } }) => {
+          if (!uploadFile.success) {
+            throw new Error(uploadFile.message);
+          }
+          return uploadFile;
         }),
       );
   }

@@ -3,6 +3,7 @@ export * from './activity-type';
 export * from './adaptation';
 export * from './auth';
 export * from './constraints';
+export * from './file';
 export * from './parameter';
 export * from './plan';
 export * from './selection';

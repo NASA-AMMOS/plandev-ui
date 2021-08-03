@@ -764,7 +764,8 @@ export class PlanningEffects {
           },
           { configuration: {}, files: [] },
         );
-        return concat(
+
+        const actions = [
           of(AppActions.setLoading({ loading: true })),
           this.apiService.updatePlanConfiguration(planId, configuration).pipe(
             switchMap(() => [
@@ -783,8 +784,32 @@ export class PlanningEffects {
               ];
             }),
           ),
-          of(AppActions.setLoading({ loading: false })),
-        );
+        ];
+
+        for (const file of files) {
+          const uploadFile = this.apiService.uploadFile(file).pipe(
+            switchMap(() => [
+              ToastActions.showToast({
+                message: 'File uploaded',
+                toastType: 'success',
+              }),
+            ]),
+            catchError((error: Error) => {
+              console.error(error.message);
+              return [
+                ToastActions.showToast({
+                  message: 'Upload file failed',
+                  toastType: 'error',
+                }),
+              ];
+            }),
+          );
+          actions.push(uploadFile);
+        }
+
+        actions.push(of(AppActions.setLoading({ loading: false })));
+
+        return concat(...actions);
       }),
     ),
   );
