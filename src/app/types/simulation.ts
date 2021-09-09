@@ -11,7 +11,7 @@ export interface SimulationConfiguration {
   parameters: Parameter[];
 }
 
-export interface SimulationConfigurationSchema {
+export interface SimulationModelParameters {
   parameters: ParameterSchema[];
 }
 

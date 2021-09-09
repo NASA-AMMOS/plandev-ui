@@ -20,7 +20,7 @@ export const planDetail: PlanDetail = {
   adaptation: {
     ...adaptation,
     activityTypes,
-    configurationSchema: {
+    modelParameters: {
       parameters: [],
     },
   },

@@ -1,13 +1,13 @@
 import { ActivityType } from './activity-type';
 import { Constraint } from './constraints';
-import { SimulationConfigurationSchema } from './simulation';
+import { SimulationModelParameters } from './simulation';
 
 export interface Adaptation {
   activityTypes?: ActivityType[];
   constraints?: Constraint[];
-  configurationSchema?: SimulationConfigurationSchema;
   id: string;
   mission: string;
+  modelParameters?: SimulationModelParameters;
   name: string;
   owner: string;
   version: string;

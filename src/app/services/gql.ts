@@ -157,17 +157,17 @@ export const GET_PLAN_DETAIL = `
             schema
           }
         }
-        configurationSchema {
-          parameters {
-            name
-            schema
-          }
-        }
         constraints {
           definition
           description
           name
           summary
+        }
+        modelParameters {
+          parameters {
+            name
+            schema
+          }
         }
       }
       adaptationId

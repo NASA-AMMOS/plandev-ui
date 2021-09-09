@@ -160,7 +160,7 @@ export const reducer = createReducer(
       })),
       'name',
     ),
-    configParamSchemas: plan.adaptation?.configurationSchema.parameters ?? [],
+    configParamSchemas: plan.adaptation?.modelParameters.parameters ?? [],
     configParams: plan?.configuration?.parameters ?? [],
     planConstraints: keyBy(
       (plan.constraints || []).map(constraint => ({
