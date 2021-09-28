@@ -146,7 +146,8 @@
               {
                 "id": "yAxis5",
                 "label": { "text": "conflicted" },
-                "tickCount": 1
+                "tickCount": 1,
+                "scaleDomain": [0, 1]
               }
             ]
           },
