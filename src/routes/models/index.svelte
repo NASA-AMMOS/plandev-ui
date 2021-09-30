@@ -52,6 +52,7 @@
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
+  import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
   type Model = {
@@ -68,6 +69,8 @@
   let files: FileList;
   let name = '';
   let version = '';
+
+  $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
 
   async function createModel() {
     createButtonText = 'Creating...';
@@ -204,7 +207,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each models as model}
+              {#each sortedModels as model}
                 <tr>
                   <td class="actions">
                     <button

@@ -57,7 +57,11 @@
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { onMount } from 'svelte';
-  import { parseJsonFile, removeQueryParam } from '../../utilities/generic';
+  import {
+    compare,
+    parseJsonFile,
+    removeQueryParam,
+  } from '../../utilities/generic';
   import { required, timestamp } from '../../utilities/validators';
 
   type Model = {
@@ -93,6 +97,8 @@
     modelId === '' ||
     !nameSubmittable ||
     !startTimestampSubmittable;
+  $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
+  $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
     const queryModelId = $appPage.query.get('modelId');
@@ -188,10 +194,10 @@
         return modelArguments;
       } catch (e) {
         console.log(e);
-        return null;
+        return {};
       }
     }
-    return null;
+    return {};
   }
 </script>
 
@@ -208,7 +214,7 @@
           <Label for="model">Models</Label>
           <Select bind:value={modelId} name="model" required>
             <option value="" />
-            {#each models as model}
+            {#each sortedModels as model}
               <option value={model.id}>
                 {model.name}
               </option>
@@ -250,7 +256,7 @@
 
         <Field>
           <Label for="file">Simulation Configuration</Label>
-          <input class="w-100" name="file" required type="file" bind:files />
+          <input class="w-100" name="file" type="file" bind:files />
         </Field>
 
         <Field>
@@ -275,7 +281,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each plans as plan}
+              {#each sortedPlans as plan}
                 <tr>
                   <td class="actions">
                     <button
