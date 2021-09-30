@@ -28,6 +28,7 @@ pipeline {
     AWS_DEFAULT_REGION = 'us-gov-west-1'
     AWS_ECR = "448117317272.dkr.ecr.us-gov-west-1.amazonaws.com"
     AWS_SECRET_ACCESS_KEY = credentials('aerie-aws-secret-access-key')
+    MODE = "${GIT_BRANCH}"
     DOCKER_TAG = "${getDockerCompatibleTag(ARTIFACT_TAG)}"
     DOCKER_TAG_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/aerie/aerie-ui:${DOCKER_TAG}"
     DOCKER_TAG_AWS = "${AWS_ECR}/aerie/ui:${DOCKER_TAG}"

@@ -7,7 +7,6 @@ This document describes how to set up your development environment to build and 
 - [Getting the Sources](#getting-the-sources)
 - [Configuring NPM](#configuring-npm)
 - [Installing NPM Modules](#installing-npm-modules)
-- [Create Local Environment](#create-local-environment)
 - [Start Development Server](#start-development-server)
 - [Building](#building)
 - [Before You Commit](#before-you-commit)
@@ -55,25 +54,6 @@ Next, install the JavaScript modules needed to build aerie-ui:
 
 ```shell
 npm install
-```
-
-## Create Local Environment
-
-```shell
-touch ***REMOVED***.local
-```
-
-Add the following local environment variables to `***REMOVED***.local`:
-
-```bash
-VITE_CAM_API_URL="https://atb-ocio-12b.jpl.nasa.gov:8443/cam-api"
-VITE_CAM_ENABLED=true
-VITE_GATEWAY_APOLLO_URL="http://localhost:27184"
-VITE_POSTGRES_DATABASE="aerie"
-VITE_POSTGRES_HOST="localhost"
-VITE_POSTGRES_PASSWORD="aerie"
-VITE_POSTGRES_PORT=5432
-VITE_POSTGRES_USER="aerie"
 ```
 
 ## Start Development Server

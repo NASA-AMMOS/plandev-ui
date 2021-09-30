@@ -14,6 +14,7 @@ const config = {
     }),
     target: '#svelte',
     vite: {
+      mode: process***REMOVED***.MODE || 'develop',
       server: {
         fs: {
           strict: false,

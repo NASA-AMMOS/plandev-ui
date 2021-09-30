@@ -1,5 +1,4 @@
 .DS_Store
-***REMOVED***.local
 build
 node_modules
 /.svelte-kit
