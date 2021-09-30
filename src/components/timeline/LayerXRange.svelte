@@ -1,0 +1,322 @@
+<script lang="ts">
+  import type { Quadtree } from 'd3-quadtree';
+  import { quadtree as d3Quadtree } from 'd3-quadtree';
+  import type { ScaleTime } from 'd3-scale';
+  import { scaleOrdinal } from 'd3-scale';
+  import {
+    schemeAccent,
+    schemeCategory10,
+    schemeDark2,
+    schemePaired,
+    schemePastel1,
+    schemePastel2,
+    schemeSet1,
+    schemeSet2,
+    schemeSet3,
+    schemeTableau10,
+  } from 'd3-scale-chromatic';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { clamp } from '../../utilities/generic';
+  import { getUnixEpochTime } from '../../utilities/time';
+  import { searchQuadtreeRect } from '../../utilities/timeline';
+  import type {
+    QuadtreeRect,
+    Resource,
+    ResourceLayerFilter,
+    StringTMap,
+    XRangeLayerColorScheme,
+    XRangePoint,
+  } from '../../types';
+
+  const dispatch = createEventDispatcher();
+
+  export let colorScheme: XRangeLayerColorScheme | null = null;
+  export let drawHeight: number = 0;
+  export let drawWidth: number = 0;
+  export let filter: ResourceLayerFilter | undefined;
+  export let id: string = '';
+  export let mousemove: MouseEvent | undefined;
+  export let mouseout: MouseEvent | undefined;
+  export let opacity: number = 0.8;
+  export let resources: Resource[] = [];
+  export let xScaleView: ScaleTime<number, number> | null = null;
+
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D;
+  let domain: string[] = [];
+  let dpr: number = 1;
+  let maxXWidth: number;
+  let mounted: boolean = false;
+  let points: XRangePoint[] = [];
+  let quadtree: Quadtree<QuadtreeRect>;
+  let visiblePointsById: StringTMap<XRangePoint> = {};
+
+  $: canvasHeightDpr = drawHeight * dpr;
+  $: canvasWidthDpr = drawWidth * dpr;
+  $: if (
+    drawHeight &&
+    drawWidth &&
+    (colorScheme !== undefined || colorScheme !== null) &&
+    mounted &&
+    (opacity !== undefined || opacity !== null) &&
+    points &&
+    xScaleView
+  ) {
+    draw();
+  }
+  $: onMousemove(mousemove);
+  $: onMouseout(mouseout);
+  $: points = resourcesToXRangePoints(resources);
+
+  onMount(() => {
+    if (canvas) {
+      ctx = canvas.getContext('2d');
+      dpr = window.devicePixelRatio;
+    }
+    mounted = true;
+  });
+
+  async function draw(): Promise<void> {
+    if (ctx) {
+      await tick();
+
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, drawWidth, drawHeight);
+      ctx.globalAlpha = opacity;
+
+      quadtree = d3Quadtree<QuadtreeRect>()
+        .x(p => p.x)
+        .y(p => p.y)
+        .extent([
+          [0, 0],
+          [drawWidth, drawHeight],
+        ]);
+      visiblePointsById = {};
+
+      maxXWidth = Number.MIN_SAFE_INTEGER;
+      const colorScale = getColorScale();
+
+      for (let i = 0; i < points.length; ++i) {
+        const point = points[i];
+
+        // Scan to the next point with a different label than the current point.
+        let j = i + 1;
+        let nextPoint = points[j];
+        while (nextPoint && nextPoint.label.text === point.label.text) {
+          j = j + 1;
+          nextPoint = points[j];
+        }
+        i = j - 1; // Minus since the loop auto increments i at the end of the block.
+
+        const xStart = clamp(xScaleView(point.x), 0, drawWidth);
+        const xEnd = nextPoint
+          ? clamp(xScaleView(nextPoint.x), 0, drawWidth)
+          : drawWidth;
+        const xWidth = xEnd - xStart;
+        const y = 0;
+
+        if (xWidth > 0) {
+          const { id } = point;
+          visiblePointsById[id] = point;
+
+          const labelText = getLabelText(point);
+          ctx.fillStyle = colorScale(labelText);
+          const rect = new Path2D();
+          rect.rect(xStart, y, xWidth, drawHeight);
+          ctx.fill(rect);
+
+          quadtree.add({
+            height: drawHeight,
+            id,
+            width: xWidth,
+            x: xStart,
+            y,
+          });
+
+          if (xWidth > maxXWidth) {
+            maxXWidth = xWidth;
+          }
+
+          const { textHeight, textWidth } = setLabelContext(point);
+          if (textWidth < xWidth) {
+            ctx.fillText(
+              labelText,
+              xStart + xWidth / 2 - textWidth / 2,
+              drawHeight / 2 + textHeight / 2,
+              textWidth,
+            );
+          } else {
+            const extraLabelPadding = 10;
+            let newLabelText = labelText;
+            let newTextWidth = textWidth;
+
+            // Remove characters from label until it is small enough to fit in x-range point.
+            while (
+              newTextWidth > 0 &&
+              newTextWidth > xWidth - extraLabelPadding
+            ) {
+              newLabelText = newLabelText.slice(0, -1);
+              const textMeasurement = measureText(newLabelText);
+              newTextWidth = textMeasurement.textWidth;
+            }
+
+            ctx.fillText(
+              `${newLabelText}...`,
+              xStart + xWidth / 2 - newTextWidth / 2,
+              drawHeight / 2 + textHeight / 2,
+              newTextWidth,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  function getColorScale() {
+    switch (colorScheme) {
+      case 'schemeAccent':
+        return scaleOrdinal(schemeAccent).domain(domain);
+      case 'schemeCategory10':
+        return scaleOrdinal(schemeCategory10).domain(domain);
+      case 'schemeDark2':
+        return scaleOrdinal(schemeDark2).domain(domain);
+      case 'schemePaired':
+        return scaleOrdinal(schemePaired).domain(domain);
+      case 'schemePastel1':
+        return scaleOrdinal(schemePastel1).domain(domain);
+      case 'schemePastel2':
+        return scaleOrdinal(schemePastel2).domain(domain);
+      case 'schemeSet1':
+        return scaleOrdinal(schemeSet1).domain(domain);
+      case 'schemeSet2':
+        return scaleOrdinal(schemeSet2).domain(domain);
+      case 'schemeSet3':
+        return scaleOrdinal(schemeSet3).domain(domain);
+      case 'schemeTableau10':
+        return scaleOrdinal(schemeTableau10).domain(domain);
+      default:
+        return scaleOrdinal(schemeTableau10).domain(domain);
+    }
+  }
+
+  function getLabelText(point: XRangePoint) {
+    return point.label?.text || '';
+  }
+
+  function measureText(text: string) {
+    const textMetrics = ctx.measureText(text);
+    const textHeight =
+      textMetrics.actualBoundingBoxAscent +
+      textMetrics.actualBoundingBoxDescent;
+    const textWidth = textMetrics.width;
+    return { textHeight, textWidth };
+  }
+
+  function onMousemove(e: MouseEvent | undefined): void {
+    if (e) {
+      const { offsetX: x, offsetY: y } = e;
+      const points = searchQuadtreeRect<XRangePoint>(
+        quadtree,
+        x,
+        y,
+        drawHeight,
+        maxXWidth,
+        visiblePointsById,
+      );
+      dispatch('mouseOverPoints', { e, layerId: id, points });
+    }
+  }
+
+  function onMouseout(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('mouseOverPoints', { e, layerId: id, points: [] });
+    }
+  }
+
+  function resourcesToXRangePoints(resources: Resource[]): XRangePoint[] {
+    const points: XRangePoint[] = [];
+
+    for (const resource of resources) {
+      const { name, schema, start, values } = resource;
+      const r = new RegExp(filter?.name);
+      const includeResource = r.test(name);
+
+      if (includeResource) {
+        if (schema.type === 'boolean') {
+          domain = ['TRUE', 'FALSE'];
+          for (let i = 0; i < values.length; ++i) {
+            const { x, y } = values[i];
+            const text = y ? 'TRUE' : 'FALSE';
+            points.push({
+              id: `${id}-resource-${name}-${i}`,
+              label: { text },
+              name,
+              type: 'x-range',
+              x: getUnixEpochTime(start) + x / 1000,
+            });
+          }
+        } else if (schema.type === 'string') {
+          const domainMap: StringTMap<string> = {};
+          for (let i = 0; i < values.length; ++i) {
+            const { x, y } = values[i];
+            const text = y as string;
+            points.push({
+              id: `${id}-resource-${name}-${i}`,
+              label: { text },
+              name,
+              type: 'x-range',
+              x: getUnixEpochTime(start) + x / 1000,
+            });
+            domainMap[text] = text;
+          }
+          domain = Object.values(domainMap);
+        } else if (schema.type === 'variant') {
+          domain = schema.variants.map(({ label }) => label);
+          for (let i = 0; i < values.length; ++i) {
+            const { x, y } = values[i];
+            const text = y as string;
+            points.push({
+              id: `${id}-resource-${name}-${i}`,
+              label: { text },
+              name,
+              type: 'x-range',
+              x: getUnixEpochTime(start) + x / 1000,
+            });
+          }
+        }
+      }
+    }
+
+    return points;
+  }
+
+  function setLabelContext(point: XRangePoint): {
+    labelText: string;
+    textHeight: number;
+    textWidth: number;
+  } {
+    const fontSize = point.label?.fontSize || 10;
+    const fontFace = point.label?.fontFace || 'Helvetica Neue';
+    ctx.fillStyle = point.label?.color || '#000000';
+    ctx.font = `${fontSize}px ${fontFace}`;
+    const labelText = getLabelText(point);
+    const { textHeight, textWidth } = measureText(labelText);
+    return { labelText, textHeight, textWidth };
+  }
+</script>
+
+<canvas
+  bind:this={canvas}
+  height={canvasHeightDpr}
+  {id}
+  style="height: {drawHeight}px; width: {drawWidth}px;"
+  width={canvasWidthDpr}
+/>
+
+<style>
+  canvas {
+    position: absolute;
+    z-index: -1;
+  }
+</style>

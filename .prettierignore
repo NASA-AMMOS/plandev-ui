@@ -1,2 +1,4 @@
-*.md
-src/test.ts
+.svelte-kit/**
+static/**
+build/**
+node_modules/**

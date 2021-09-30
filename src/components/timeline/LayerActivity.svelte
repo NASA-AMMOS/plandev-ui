@@ -1,0 +1,472 @@
+<script lang="ts">
+  import type { Quadtree } from 'd3-quadtree';
+  import { quadtree as d3Quadtree } from 'd3-quadtree';
+  import type { ScaleTime } from 'd3-scale';
+  import { select } from 'd3-selection';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import type {
+    Activity,
+    ActivityLayerFilter,
+    ActivityPoint,
+    DropActivity,
+    QuadtreeRect,
+    StringTMap,
+    TimeRange,
+    UpdateActivity,
+  } from '../../types';
+  import { compare } from '../../utilities/generic';
+  import { getDoyTimestamp, getUnixEpochTime } from '../../utilities/time';
+  import { searchQuadtreeRect } from '../../utilities/timeline';
+
+  const dispatch = createEventDispatcher();
+
+  export let activities: Activity[] = [];
+  export let activitiesMap: StringTMap<Activity> = {};
+  export let activityColor: string = '#283593';
+  export let activityHeight: number = 20;
+  export let activityRowPadding: number = 20;
+  export let activitySelectedColor: string = '#81D4FA';
+  export let dragenter: DragEvent | undefined;
+  export let dragleave: DragEvent | undefined;
+  export let dragover: DragEvent | undefined;
+  export let drop: DragEvent | undefined;
+  export let drawHeight: number = 0;
+  export let drawWidth: number = 0;
+  export let filter: ActivityLayerFilter | undefined;
+  export let id: string = '';
+  export let mousedown: MouseEvent | undefined;
+  export let mousemove: MouseEvent | undefined;
+  export let mouseout: MouseEvent | undefined;
+  export let mouseup: MouseEvent | undefined;
+  export let overlaySvg: SVGElement;
+  export let selectedActivity: Activity | null = null;
+  export let showChildren: boolean = true;
+  export let viewTimeRange: TimeRange | null = null;
+  export let xScaleView: ScaleTime<number, number> | null = null;
+
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D;
+  let dpr: number = 1;
+  let dragOffsetX: number | null = null;
+  let dragPoint: ActivityPoint | null = null;
+  let maxActivityWidth: number;
+  let mounted: boolean = false;
+  let quadtree: Quadtree<QuadtreeRect>;
+  let visiblePointsById: StringTMap<ActivityPoint> = {};
+
+  $: canvasHeightDpr = drawHeight * dpr;
+  $: canvasWidthDpr = drawWidth * dpr;
+  $: if (
+    drawHeight &&
+    drawWidth &&
+    mounted &&
+    sortedActivities &&
+    viewTimeRange &&
+    xScaleView
+  ) {
+    draw();
+  }
+  $: if (selectedActivity) {
+    draw();
+  }
+  $: onDragenter(dragenter);
+  $: onDragleave(dragleave);
+  $: onDragover(dragover);
+  $: onDrop(drop);
+  $: onMousedown(mousedown);
+  $: onMousemove(mousemove);
+  $: onMouseout(mouseout);
+  $: onMouseup(mouseup);
+  $: overlaySvgSelection = select(overlaySvg);
+  $: rowHeight = activityHeight + activityRowPadding;
+  $: sortedActivities = activities.sort(sortActivities).map(activity => ({
+    ...activity,
+    children: activity.children
+      ? activity.children.sort(sortChildActivities(activitiesMap))
+      : null,
+  }));
+
+  onMount(() => {
+    if (canvas) {
+      ctx = canvas.getContext('2d');
+      dpr = window.devicePixelRatio;
+    }
+    mounted = true;
+  });
+
+  /**
+   * Converts an Activity to an ActivityPoint.
+   */
+  function activityToPoint(activity: Activity): ActivityPoint {
+    const point: ActivityPoint = {
+      duration: activity?.duration / 1000 || 0, // µs -> ms
+      id: activity.id,
+      label: {
+        text: activity.type,
+      },
+      name: activity.id,
+      parent: activity?.parent || null,
+      selected: selectedActivity?.id === activity.id,
+      type: 'activity',
+      x: getUnixEpochTime(activity.startTimestamp),
+    };
+    return point;
+  }
+
+  /**
+   * @note We only allow dragging parent activities.
+   */
+  function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
+    if (points.length) {
+      const [point] = points;
+      if (point.parent === null) {
+        dragOffsetX = offsetX - xScaleView(point.x);
+        dragPoint = point;
+      }
+    }
+  }
+
+  function dragActivity(offsetX: number): void {
+    if (dragOffsetX && dragPoint) {
+      const x = offsetX - dragOffsetX;
+      const unixEpochTime = xScaleView.invert(x).getTime();
+      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      if (unixEpochTime !== dragPoint.x) {
+        const detail: UpdateActivity = {
+          id: dragPoint.id,
+          startTimestamp,
+        };
+        dispatch('dragActivity', detail);
+      }
+    }
+  }
+
+  function dragActivityEnd(offsetX: number): void {
+    if (dragOffsetX && dragPoint) {
+      const x = offsetX - dragOffsetX;
+      const unixEpochTime = xScaleView.invert(x).getTime();
+      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      if (unixEpochTime !== dragPoint.x) {
+        const detail: UpdateActivity = {
+          id: dragPoint.id,
+          startTimestamp,
+        };
+        dispatch('dragActivityEnd', detail);
+      }
+      dragOffsetX = null;
+      dragPoint = null;
+    }
+  }
+
+  function onDragenter(e: DragEvent | undefined): void {
+    if (e) {
+      const { offsetX } = e;
+      overlaySvgSelection
+        .append('line')
+        .attr('class', 'activity-drag-guide')
+        .attr('x1', offsetX)
+        .attr('y1', 0)
+        .attr('x2', offsetX)
+        .attr('y2', drawHeight)
+        .attr('stroke', 'black')
+        .style('pointer-events', 'none');
+    }
+  }
+
+  function onDragleave(e: DragEvent | undefined): void {
+    if (e) {
+      overlaySvgSelection.select('.activity-drag-guide').remove();
+    }
+  }
+
+  function onDragover(e: DragEvent | undefined): void {
+    if (e) {
+      const { offsetX } = e;
+      overlaySvgSelection
+        .select('.activity-drag-guide')
+        .attr('x1', offsetX)
+        .attr('x2', offsetX);
+    }
+  }
+
+  function onDrop(e: DragEvent | undefined): void {
+    if (e) {
+      const { offsetX } = e;
+      overlaySvgSelection.select('.activity-drag-guide').remove();
+      const unixEpochTime = xScaleView.invert(offsetX).getTime();
+      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      const activityTypeName = e.dataTransfer.getData('activityTypeName');
+      const detail: DropActivity = { activityTypeName, startTimestamp };
+      dispatch('dropActivity', detail);
+    }
+  }
+
+  function onMousedown(e: MouseEvent | undefined): void {
+    if (e) {
+      const { offsetX, offsetY } = e;
+      const points = searchQuadtreeRect<ActivityPoint>(
+        quadtree,
+        offsetX,
+        offsetY,
+        activityHeight,
+        maxActivityWidth,
+        visiblePointsById,
+      );
+      dispatch('mouseDownPoints', { e, layerId: id, points });
+      dragActivityStart(points, offsetX);
+    }
+  }
+
+  function onMousemove(e: MouseEvent | undefined): void {
+    if (e) {
+      const { offsetX, offsetY } = e;
+      const points = searchQuadtreeRect<ActivityPoint>(
+        quadtree,
+        offsetX,
+        offsetY,
+        activityHeight,
+        maxActivityWidth,
+        visiblePointsById,
+      );
+      dispatch('mouseOverPoints', { e, layerId: id, points });
+      dragActivity(offsetX);
+    }
+  }
+
+  function onMouseout(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('mouseOverPoints', { e, layerId: id, points: [] });
+    }
+  }
+
+  function onMouseup(e: MouseEvent | undefined): void {
+    if (e) {
+      const { offsetX } = e;
+      dragActivityEnd(offsetX);
+    }
+  }
+
+  /**
+   * Draws activity points to the canvas context.
+   * @note Points must be sorted in time ascending order before calling this function.
+   */
+  async function draw(): Promise<void> {
+    if (ctx) {
+      await tick();
+
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, drawWidth, drawHeight);
+
+      quadtree = d3Quadtree<QuadtreeRect>()
+        .x(p => p.x)
+        .y(p => p.y)
+        .extent([
+          [0, 0],
+          [drawWidth, drawHeight],
+        ]);
+      visiblePointsById = {};
+
+      maxActivityWidth = Number.MIN_SAFE_INTEGER;
+      let maxY = Number.MIN_SAFE_INTEGER;
+      const coords = [];
+
+      for (const activity of sortedActivities) {
+        const point: ActivityPoint = activityToPoint(activity);
+        const r = new RegExp(filter?.type);
+        const includeActivity = r.test(activity.type);
+        const isParentActivity = !activity.parent;
+
+        if (
+          isParentActivity &&
+          includeActivity &&
+          point.x + point.duration >= viewTimeRange.start &&
+          point.x <= viewTimeRange.end
+        ) {
+          let largestXEnd = Number.MIN_SAFE_INTEGER;
+          let largestY = Number.MIN_SAFE_INTEGER;
+          const x = xScaleView(point.x);
+          const end = xScaleView(point.x + point.duration);
+          const { textWidth } = setLabelContext(point);
+          const xEnd = end + textWidth;
+          let y = rowHeight;
+
+          for (const coord of coords) {
+            if (x <= coord.xEnd) {
+              y = coord.y + rowHeight;
+            }
+          }
+
+          drawActivity(point, x, y, end);
+
+          if (xEnd > largestXEnd) {
+            largestXEnd = xEnd;
+          }
+          if (y > largestY) {
+            largestY = y;
+          }
+
+          const childCoords = drawChildren(activity, y);
+
+          if (childCoords) {
+            if (childCoords.xEnd > largestXEnd) {
+              largestXEnd = childCoords.xEnd;
+            }
+            if (childCoords.y > largestY) {
+              largestY = childCoords.y;
+            }
+          }
+
+          coords.push({ xEnd: largestXEnd, y: largestY });
+
+          if (largestY > maxY) {
+            maxY = largestY;
+          }
+        }
+      }
+
+      const newHeight = maxY + rowHeight;
+      if (newHeight > 0 && drawHeight !== newHeight) {
+        dispatch('updateRowHeight', { newHeight });
+      }
+    }
+  }
+
+  function drawActivity(
+    point: ActivityPoint,
+    x: number,
+    y: number,
+    end: number,
+  ) {
+    const { id } = point;
+    const activityWidth = Math.max(5.0, end - x);
+    const rect = new Path2D();
+    rect.rect(x, y, activityWidth, activityHeight);
+
+    quadtree.add({
+      height: activityHeight,
+      id,
+      width: activityWidth,
+      x,
+      y,
+    });
+    visiblePointsById[id] = point;
+
+    if (activityWidth > maxActivityWidth) {
+      maxActivityWidth = activityWidth;
+    }
+
+    const selected = point?.selected || false;
+    if (selected) {
+      ctx.fillStyle = activitySelectedColor;
+    } else {
+      ctx.fillStyle = point?.color || activityColor;
+    }
+
+    ctx.fill(rect);
+    const hideLabel = point.label?.hidden || false;
+    if (!hideLabel) {
+      const { labelText, textMetrics } = setLabelContext(point);
+      ctx.fillText(labelText, x, y, textMetrics.width);
+    }
+  }
+
+  function drawChildren(parent: Activity, parentY: number) {
+    if (showChildren && parent?.children?.length) {
+      let largestXEnd = Number.MIN_SAFE_INTEGER;
+      let largestY = Number.MIN_SAFE_INTEGER;
+      let y = parentY;
+
+      for (const childId of parent.children) {
+        const childActivity = activitiesMap[childId];
+
+        if (childActivity) {
+          const point = activityToPoint(childActivity);
+          const x = xScaleView(point.x);
+          const end = xScaleView(point.x + point.duration);
+          const { textWidth } = setLabelContext(point);
+          const xEnd = end + textWidth;
+          y = y + rowHeight;
+
+          drawActivity(point, x, y, end);
+
+          if (xEnd > largestXEnd) {
+            largestXEnd = xEnd;
+          }
+          if (y > largestY) {
+            largestY = y;
+          }
+
+          const childCoords = drawChildren(childActivity, y);
+
+          if (childCoords) {
+            if (childCoords.xEnd > largestXEnd) {
+              largestXEnd = childCoords.xEnd;
+            }
+            if (childCoords.y > largestY) {
+              largestY = childCoords.y;
+            }
+          }
+        }
+      }
+
+      return { xEnd: largestXEnd, y: largestY };
+    }
+
+    return null;
+  }
+
+  function setLabelContext(point: ActivityPoint) {
+    const fontSize = point.label?.fontSize || 12;
+    const fontFace = point.label?.fontFace || 'Helvetica Neue';
+    ctx.fillStyle = point.label?.color || '#000000';
+    ctx.font = `${fontSize}px ${fontFace}`;
+    ctx.textAlign = point.label?.align || 'start';
+    ctx.textBaseline = point.label?.baseline || 'alphabetic';
+    const labelText = point.label?.text || '';
+    const textMetrics = ctx.measureText(labelText);
+    const textWidth = textMetrics.width;
+    const textHeight =
+      textMetrics.actualBoundingBoxAscent +
+      textMetrics.actualBoundingBoxDescent;
+    return { labelText, textHeight, textMetrics, textWidth };
+  }
+
+  function sortChildActivities(
+    activitiesMap: StringTMap<Activity>,
+  ): (aId: string, bId: string) => number {
+    return (aId: string, bId: string): number => {
+      const a = activitiesMap[aId];
+      const b = activitiesMap[bId];
+
+      if (a && b) {
+        const aStartTime = getUnixEpochTime(a.startTimestamp);
+        const bStartTime = getUnixEpochTime(b.startTimestamp);
+        return compare(aStartTime, bStartTime);
+      }
+
+      return 0;
+    };
+  }
+
+  function sortActivities(a: Activity, b: Activity): number {
+    const aStartTime = getUnixEpochTime(a.startTimestamp);
+    const bStartTime = getUnixEpochTime(b.startTimestamp);
+    return compare(aStartTime, bStartTime);
+  }
+</script>
+
+<canvas
+  bind:this={canvas}
+  height={canvasHeightDpr}
+  {id}
+  style="height: {drawHeight}px; width: {drawWidth}px;"
+  width={canvasWidthDpr}
+/>
+
+<style>
+  canvas {
+    position: absolute;
+    z-index: -1;
+  }
+</style>

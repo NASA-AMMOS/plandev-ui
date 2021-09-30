@@ -1,0 +1,80 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+  import type { ActivityType } from '../../types';
+  import Field from '../form/Field.svelte';
+  import InputText from '../form/InputText.svelte';
+  import Label from '../form/Label.svelte';
+  import ListItem from '../ui/ListItem.svelte';
+  import { compare } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
+
+  const dispatch = createEventDispatcher();
+
+  export let activityTypes: ActivityType[] = [];
+
+  let searchText: string = '';
+
+  $: filteredActivityTypes = activityTypes.filter(({ name }) =>
+    name.toLowerCase().includes(searchText.toLowerCase()),
+  );
+  $: sortedActivityTypes = filteredActivityTypes.sort((a, b) =>
+    compare(a.name, b.name),
+  );
+
+  function createActivity(activityType: ActivityType): void {
+    dispatch('createActivity', activityType);
+  }
+
+  function onDragEnd(): void {
+    document.getElementById('list-item-drag-image').remove();
+  }
+
+  function onDragStart(event: DragEvent, activityType: ActivityType): void {
+    const dragImage = document.createElement('div');
+    const text = document.createTextNode(activityType.name);
+    dragImage.appendChild(text);
+    dragImage.id = 'list-item-drag-image';
+    dragImage.style.padding = '10px';
+    dragImage.style.color = 'rgba(0, 0, 0, 0.8)';
+    document.body.appendChild(dragImage);
+    event.dataTransfer.setDragImage(dragImage, 0, 0);
+    event.dataTransfer.setData('activityTypeName', activityType.name);
+  }
+</script>
+
+<div class="p-1">
+  <Field class="w-100 m-0 p-0 pb-1">
+    <Label for="search">Find an Activity Type</Label>
+    <InputText bind:value={searchText} name="search">
+      <span slot="prefix">
+        <i class="bi bi-search" />
+      </span>
+    </InputText>
+  </Field>
+
+  {#if sortedActivityTypes.length}
+    {#each sortedActivityTypes as activityType}
+      <ListItem
+        draggable
+        style="cursor: move;"
+        on:dragend={onDragEnd}
+        on:dragstart={e => onDragStart(e.detail, activityType)}
+      >
+        {activityType.name}
+        <span slot="suffix">
+          <button
+            class="button-icon"
+            on:click={() => createActivity(activityType)}
+            use:tooltip={{ content: 'Create Activity', placement: 'left' }}
+          >
+            <i class="bi bi-plus" />
+          </button>
+        </span>
+      </ListItem>
+    {/each}
+  {:else}
+    <ListItem>No Activity Types Found</ListItem>
+  {/if}
+</div>

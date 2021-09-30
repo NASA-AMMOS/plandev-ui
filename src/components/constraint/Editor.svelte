@@ -1,0 +1,133 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import { createEventDispatcher, onMount } from 'svelte';
+  import Ajv from 'ajv';
+  import type { ValidateFunction } from 'ajv';
+  import Field from '../form/Field.svelte';
+  import InputText from '../form/InputText.svelte';
+  import Label from '../form/Label.svelte';
+  import Select from '../form/Select.svelte';
+  import Card from '../ui/Card.svelte';
+  import CodeMirrorJsonEditor from '../ui/CodeMirrorJsonEditor.svelte';
+  import AlertError from '../ui/AlertError.svelte';
+  import Panel from '../ui/Panel.svelte';
+  import type { Constraint } from '../../types';
+
+  const dispatch = createEventDispatcher();
+
+  export let constraint: Constraint | null = null;
+  export let constraintType: string | null = null;
+
+  let ajv: Ajv;
+  let definition: string = '';
+  let definitionError: string | null = null;
+  let description: string = '';
+  let name: string = '';
+  let summary: string = '';
+  let type: string = 'model';
+  let validateSchema: ValidateFunction<any>;
+
+  $: valid = definition !== '' && !definitionError && name !== '';
+
+  onMount(async () => {
+    if (constraint && constraintType) {
+      definition = JSON.stringify(JSON.parse(constraint.definition), null, 2);
+      description = constraint.description;
+      name = constraint.name;
+      summary = constraint.summary;
+      type = constraintType;
+    } else {
+      definition = '';
+      description = '';
+      name = '';
+      summary = '';
+      type = 'model';
+    }
+    await initAjv();
+  });
+
+  async function initAjv() {
+    ajv = new Ajv();
+    ajv.addKeyword('$anchor');
+    const response = await fetch('/schemas/constraint.json');
+    const constraintSchema = await response.json();
+    validateSchema = ajv.compile<any>(constraintSchema);
+  }
+
+  function onTextChanged(event: CustomEvent<string>) {
+    const { detail: json } = event;
+    try {
+      const parsedJson = JSON.parse(json);
+      definition = json;
+      definitionError = null;
+      if (validateSchema) {
+        const schemaValid = validateSchema(parsedJson);
+        if (!schemaValid) {
+          console.log(validateSchema.errors);
+          definitionError = 'Input is not a valid constraint';
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      definitionError = e.message;
+    }
+  }
+
+  function save() {
+    const savingConstraint: Constraint = {
+      definition,
+      description,
+      name,
+      summary,
+    };
+    dispatch('save', { constraint: savingConstraint, type });
+  }
+</script>
+
+<Panel>
+  <span slot="header"> Constraint Editor </span>
+  <span slot="body">
+    <details open>
+      <summary class="p-2">Constraint Metadata</summary>
+      <Card class="m-2">
+        <Field>
+          <Label for="type">Type</Label>
+          <Select bind:value={type} name="type">
+            <option value="model">Model</option>
+            <option value="plan">Plan</option>
+          </Select>
+        </Field>
+
+        <Field>
+          <Label for="name">Name</Label>
+          <InputText bind:value={name} name="name" required />
+        </Field>
+
+        <Field>
+          <Label for="description">Description</Label>
+          <InputText bind:value={description} name="description" />
+        </Field>
+
+        <Field>
+          <Label for="summary">Summary</Label>
+          <InputText bind:value={summary} name="summary" />
+        </Field>
+      </Card>
+    </details>
+
+    <details open class="h-100">
+      <summary class="p-2">Constraint Definition</summary>
+      <AlertError
+        class="mb-3 ms-2 me-2"
+        message={definitionError}
+        visible={definitionError !== null}
+      />
+      <CodeMirrorJsonEditor text={definition} on:textChanged={onTextChanged} />
+    </details>
+  </span>
+
+  <span slot="footer">
+    <button class="button" disabled={!valid} on:click={save}>Save</button>
+  </span>
+</Panel>

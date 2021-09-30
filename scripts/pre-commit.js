@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 function exec(cmd) {
   try {
@@ -6,7 +6,7 @@ function exec(cmd) {
     console.log(stdout);
   } catch ({ stdout }) {
     const error = stdout.toString();
-    console.error(error);
+    console.log(error);
     throw new Error(error);
   }
 }
@@ -14,7 +14,7 @@ function exec(cmd) {
 function main() {
   exec('npm run format');
   exec('npm run lint');
-  exec('npm test');
+  exec('npm run check');
 }
 
 main();

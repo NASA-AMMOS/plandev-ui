@@ -1,0 +1,4 @@
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'tippy.js/dist/tippy.css';
+@import './tippy-error.css';
+@import 'toastify-js/src/toastify.css';

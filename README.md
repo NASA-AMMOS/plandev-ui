@@ -2,12 +2,12 @@
 
 # aerie-ui
 
-This is the UI application and reusable UI components for [Aerie](https://github.jpl.nasa.gov/MPS/aerie).
+This is the UI application and reusable UI components for [Aerie](https://github.jpl.nasa.gov/Aerie/aerie).
 
 ## Want to help?
 
 Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
-guidelines for [contributing][contributing]. If you are a developer you can get started quickly by reading the [developer documentation][dev-doc].
+guidelines for [contributing][contributing]. If you are a developer you can get started quickly by reading the [developer documentation][dev].
 
-[contributing]: ./CONTRIBUTING.md
-[dev-doc]: ./docs/DEVELOPER.md
+[contributing]: ./docs/CONTRIBUTING.md
+[dev]: ./docs/DEVELOPER.md

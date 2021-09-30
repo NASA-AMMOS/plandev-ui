@@ -17,32 +17,29 @@ These commands pull the [release-0.9.0](https://artifactory.jpl.nasa.gov/artifac
 
 ```bash
 docker login artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie
-docker run --name aerie-ui -d -p 80:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0 npm run start:develop
+docker run --name aerie-ui -d -p 80:3000 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
 ```
 
 Goto [http://localhost](http://localhost)
 
 ## Docker Local
 
-First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the aerie-ui, build a Docker image, and start a container using the built image. 
+First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the aerie-ui, build a Docker image, and start a container using the built image.
 
 ```bash
 cd aerie-ui
 npm install
-cd server
-npm install
-cd ..
-npm run build:prod
+npm run build
 docker build -t aerie-ui .
-docker run --name aerie-ui -d -p 80:80 aerie-ui
+docker run --name aerie-ui -d -p 3000:3000 aerie-ui
 ```
 
-Goto [http://localhost](http://localhost)
+Goto [http://localhost:3000](http://localhost:3000)
 
 ## Docker Volumes
 
 To start a container with custom configuration or UI views, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
 
 ```bash
-docker run --name aerie-ui -d -p 80:80 -v /path/to/custom/config:/app/config -v /path/to/custom/views:/app/views artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
+docker run --name aerie-ui -d -p 80:3000 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
 ```

@@ -1,8 +1,0 @@
-*
-
-!server/config
-!server/dist
-!server/node_modules
-!server/package.json
-!server/public
-!server/views

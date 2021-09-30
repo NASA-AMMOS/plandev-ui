@@ -1,24 +1,19 @@
 {
-  "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
-    "fullTemplateTypeCheck": true,
-    "strictInjectionParameters": true
-  },
-  "compileOnSave": false,
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
+    "allowJs": true,
+    "baseUrl": ".",
+    "checkJs": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist/out-tsc",
-    "sourceMap": true,
-    "declaration": false,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "module": "es2020",
+    "importsNotUsedAsValues": "error",
+    "isolatedModules": true,
+    "lib": ["es2020"],
     "moduleResolution": "node",
-    "noUnusedLocals": true,
-    "target": "es2020",
-    "lib": ["es2020", "dom"]
-  }
+    "module": "es2020",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "target": "es2019"
+  },
+  "include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.ts", "src/**/*.svelte"]
 }
