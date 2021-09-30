@@ -17,7 +17,7 @@ These commands pull the [release-0.9.0](https://artifactory.jpl.nasa.gov/artifac
 
 ```bash
 docker login artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie
-docker run --name aerie-ui -d -p 80:3000 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
+docker run --name aerie-ui -d -p 80:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
 ```
 
 Goto [http://localhost](http://localhost)
@@ -31,15 +31,15 @@ cd aerie-ui
 npm install
 npm run build
 docker build -t aerie-ui .
-docker run --name aerie-ui -d -p 3000:3000 aerie-ui
+docker run --name aerie-ui -d -p 80:80 aerie-ui
 ```
 
-Goto [http://localhost:3000](http://localhost:3000)
+Goto [http://localhost](http://localhost)
 
 ## Docker Volumes
 
 To start a container with custom configuration or UI views, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
 
 ```bash
-docker run --name aerie-ui -d -p 80:3000 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
+docker run --name aerie-ui -d -p 80:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.9.0
 ```
