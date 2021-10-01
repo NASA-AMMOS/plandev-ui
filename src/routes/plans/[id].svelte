@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
-  import type {
+  import {
     Activity,
     ActivityType,
     Constraint,
@@ -11,6 +11,7 @@
     ParameterSchema,
     Resource,
     Row,
+    SimulationStatus,
     TimeRange,
     UpdateActivity,
     View,
@@ -75,6 +76,7 @@
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
   import SimulationConfiguration from '../../components/ui/SimulationConfiguration.svelte';
+  import SimulationStatusBadge from '../../components/ui/SimulationStatusBadge.svelte';
   import Split from '../../components/ui/Split.svelte';
   import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
@@ -115,6 +117,7 @@
     modelParameters,
     updateModelArguments,
   } from './_stores/models';
+  import { simulationStatus } from './_stores/simulation';
   import {
     view,
     viewSectionIds,
@@ -179,12 +182,8 @@
     );
     if (success) {
       selectActivity(id);
+      simulationStatus.update(SimulationStatus.Dirty);
     }
-  }
-
-  function onCreateConstraint() {
-    setSelectedConstraint(null, null);
-    constraintEditorPanel.show();
   }
 
   function onDeleteActivity(event: CustomEvent<{ id: string }>) {
@@ -193,6 +192,7 @@
     const { detail } = event;
     const { id: activityId } = detail;
     activitiesMap.delete(activityId, planId, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onDeleteConstraint(
@@ -207,6 +207,7 @@
       initialPlan.id,
       authorization,
     );
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onDropActivity(event: CustomEvent<DropActivity>) {
@@ -220,6 +221,7 @@
       type,
     };
     activitiesMap.create(newActivity, planId, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onEditConstraint(
@@ -269,6 +271,7 @@
       initialPlan.id,
       authorization,
     );
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   async function onSaveView() {
@@ -293,6 +296,7 @@
     const { id: planId } = initialPlan;
     const { detail: activity } = event;
     activitiesMap.update(activity, planId, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onUpdateModelArguments(
@@ -306,6 +310,7 @@
     const { ssoToken: authorization } = $appSession.user;
     const { id: planId } = initialPlan;
     updateModelArguments(planId, newModelArguments, newFiles, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onUpdateRowHeight(
@@ -336,6 +341,7 @@
     const { id, startTimestamp } = detail;
     $activitiesMap[id].children = [];
     $activitiesMap[id].startTimestamp = startTimestamp;
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
@@ -356,6 +362,7 @@
     const { ssoToken: authorization } = $appSession.user;
     const { modelId, id: planId } = initialPlan;
     let tries = 0;
+    simulationStatus.update(SimulationStatus.Executing);
 
     do {
       const result = await reqSimulate(planId, modelId, authorization);
@@ -368,13 +375,19 @@
         } = result;
         $activitiesMap = keyBy(activities);
         $violations = offsetViolationWindows(constraintViolations, startTime);
+        simulationStatus.update(SimulationStatus.Complete);
         resources = results;
-        break;
+        return;
+      } else if (result.status === 'failed') {
+        simulationStatus.update(SimulationStatus.Failed);
+        return;
       }
 
       await sleep();
       ++tries;
     } while (tries < 10); // Trying a max of 10 times.
+
+    simulationStatus.update(SimulationStatus.Incomplete);
   }
 
   function selectActivity(id: string): void {
@@ -387,8 +400,9 @@
 
 <Grid rows="32px auto">
   <TopBar>
-    <div>
+    <div class="header-left">
       Plan: {initialPlan.name}
+      <SimulationStatusBadge simulationStatus={$simulationStatus} />
     </div>
     <div>
       <button
@@ -427,7 +441,10 @@
         <i class="bi bi-code" />
         <ConstraintMenu
           bind:this={constraintMenu}
-          on:constraintCreate={onCreateConstraint}
+          on:constraintCreate={() => {
+            setSelectedConstraint(null, null);
+            constraintEditorPanel.show();
+          }}
           on:constraintList={() => constraintListPanel.show()}
           on:constraintViolations={() => constraintViolationsPanel.show()}
         />
@@ -589,6 +606,12 @@
     font-size: 1.4rem;
     margin-left: 0.5rem;
     position: relative;
+  }
+
+  .header-left {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5rem;
   }
 
   #right-panel {
