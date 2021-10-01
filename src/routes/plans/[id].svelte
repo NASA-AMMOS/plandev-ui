@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
-  import {
+  import type {
     Activity,
     ActivityType,
     Constraint,
@@ -11,7 +11,6 @@
     ParameterSchema,
     Resource,
     Row,
-    SimulationStatus,
     TimeRange,
     UpdateActivity,
     View,
@@ -84,6 +83,7 @@
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
+  import { SimulationStatus } from '../../types';
   import {
     activityDictionaryPanel,
     constraintEditorPanel,
