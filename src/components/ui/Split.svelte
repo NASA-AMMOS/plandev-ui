@@ -7,6 +7,7 @@
   export let direction: 'horizontal' | 'vertical' = 'vertical';
   export let id: string = '';
   export let ids: string[] = [];
+  export let initialized: boolean = false;
   export let minSize: number = 0;
   export let sizes: number[] = [];
 
@@ -19,9 +20,7 @@
     mounted = true;
   });
 
-  async function setSplit() {
-    await tick();
-
+  function setSplit() {
     if (split) {
       split.destroy();
     }
@@ -40,6 +39,8 @@
       onDragEnd: newSizes => dispatch('dragEnd', { newSizes }),
       sizes,
     });
+
+    initialized = true;
   }
 </script>
 

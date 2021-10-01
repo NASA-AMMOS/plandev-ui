@@ -135,6 +135,7 @@
   export let initialView: View | null;
 
   let constraintMenu: ConstraintMenu;
+  let horizontalSplitInitialized: boolean = false;
   let loadViewModal: LoadViewModal;
   let resources: Resource[] = [];
   let saveAsViewModal: SaveAsViewModal;
@@ -467,6 +468,7 @@
     </div>
   </TopBar>
   <Split
+    bind:initialized={horizontalSplitInitialized}
     direction="horizontal"
     ids={['#sections', '#right-panel']}
     sizes={[75, 25]}
@@ -479,7 +481,7 @@
     >
       {#each $view.sections as section, i (section.id)}
         <div class="section" id={section.id}>
-          {#if section.table}
+          {#if section.table && horizontalSplitInitialized}
             <Table
               columns={section.table.columns}
               data={$activities}
@@ -487,7 +489,7 @@
               on:select={event => selectActivity(event.detail.id)}
             />
           {/if}
-          {#if section.timeline}
+          {#if section.timeline && horizontalSplitInitialized}
             <Timeline
               activities={$activities}
               activitiesMap={$activitiesMap}
