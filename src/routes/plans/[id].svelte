@@ -63,7 +63,7 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { session as appSession } from '$app/stores';
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
@@ -164,6 +164,10 @@
     if ($view) {
       setQueryParam('viewId', $view.id);
     }
+  });
+
+  onDestroy(() => {
+    simulationStatus.update(SimulationStatus.Clean);
   });
 
   async function onCreateActivity(event: CustomEvent<ActivityType>) {
