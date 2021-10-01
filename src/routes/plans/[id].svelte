@@ -72,10 +72,10 @@
   import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
   import ConstraintMenu from '../../components/menus/Constraint.svelte';
   import ViewMenu from '../../components/menus/View.svelte';
+  import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
+  import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
-  import SimulationConfiguration from '../../components/ui/SimulationConfiguration.svelte';
-  import SimulationStatusBadge from '../../components/ui/SimulationStatusBadge.svelte';
   import Split from '../../components/ui/Split.svelte';
   import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';

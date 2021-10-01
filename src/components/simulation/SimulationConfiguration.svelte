@@ -8,8 +8,8 @@
     ParameterSchema,
   } from '../../types';
   import Parameters from '../parameters/Parameters.svelte';
-  import Card from './Card.svelte';
-  import Panel from './Panel.svelte';
+  import Card from '../ui/Card.svelte';
+  import Panel from '../ui/Panel.svelte';
 
   const dispatch = createEventDispatcher();
 
