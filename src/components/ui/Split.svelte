@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import Split from 'split.js';
 
   const dispatch = createEventDispatcher();
