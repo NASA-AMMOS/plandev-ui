@@ -212,6 +212,7 @@
                   <td class="actions">
                     <button
                       class="button-icon"
+                      data-cy="create-plan-{model.name}"
                       on:click={() => goto(`plans?modelId=${model.id}`)}
                       use:tooltip={{
                         content: 'Create Plan',
@@ -222,6 +223,7 @@
                     </button>
                     <button
                       class="button-icon"
+                      data-cy="delete-model-{model.name}"
                       on:click|stopPropagation={() =>
                         confirmDeleteModel.modal.show({ model })}
                       use:tooltip={{
