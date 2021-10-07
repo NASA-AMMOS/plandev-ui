@@ -4,7 +4,8 @@
   import type {
     Activity,
     ConstraintViolation,
-    MouseOverPoints,
+    MouseDown,
+    MouseOver,
     MouseOverViolations,
     Resource,
     Row,
@@ -35,7 +36,7 @@
   export let viewTimeRange: TimeRange | null = null;
 
   let clientWidth: number = 0;
-  let mouseOverPoints: MouseOverPoints;
+  let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
   let rowsDiv: HTMLDivElement;
@@ -79,6 +80,11 @@
       rowDragMoveDisabled = true;
     }
     dispatch('updateRows', { rows, timelineId: id });
+  }
+
+  function onMouseDown(event: CustomEvent<MouseDown>) {
+    const { detail } = event;
+    dispatch('mouseDown', { ...detail, timelineId: id });
   }
 
   function onMouseDownRowMove(event: Event) {
@@ -160,9 +166,9 @@
         on:dragActivity
         on:dragActivityEnd
         on:dropActivity
-        on:mouseDownPoints
+        on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
-        on:mouseOverPoints={e => (mouseOverPoints = e.detail)}
+        on:mouseOver={e => (mouseOver = e.detail)}
         on:mouseOverViolations={e => (mouseOverViolations = e.detail)}
         on:updateRowHeight={onUpdateRowHeight}
       />
@@ -170,7 +176,7 @@
   </div>
 
   <!-- Timeline Tooltip. -->
-  <Tooltip {mouseOverPoints} {mouseOverViolations} />
+  <Tooltip {mouseOver} {mouseOverViolations} />
 </div>
 
 <style>

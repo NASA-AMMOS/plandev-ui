@@ -77,13 +77,15 @@ export interface LinePoint extends Point {
   y: number;
 }
 
-export interface MouseDownPoints {
+export interface MouseDown {
   e: MouseEvent;
   layerId: string;
   points: Point[];
+  rowId: string;
+  timelineId: string;
 }
 
-export interface MouseOverPoints {
+export interface MouseOver {
   e: MouseEvent;
   layerId: string;
   points: Point[];

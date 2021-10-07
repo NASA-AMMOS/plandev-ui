@@ -23,6 +23,7 @@
   export let filter: ResourceLayerFilter | undefined;
   export let id: string = '';
   export let lineColor: string | undefined;
+  export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let resources: Resource[] = [];
@@ -51,6 +52,7 @@
   ) {
     draw();
   }
+  $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToLinePoints(resources);
@@ -116,6 +118,12 @@
     }
   }
 
+  function onMousedown(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('mouseDown', { e, layerId: id, points: [] });
+    }
+  }
+
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
@@ -126,13 +134,13 @@
         2.0, // TODO.
         visiblePointsById,
       );
-      dispatch('mouseOverPoints', { e, layerId: id, points });
+      dispatch('mouseOver', { e, layerId: id, points });
     }
   }
 
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('mouseOverPoints', { e, layerId: id, points: [] });
+      dispatch('mouseOver', { e, layerId: id, points: [] });
     }
   }
 

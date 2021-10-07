@@ -1,20 +1,9 @@
 import type { Timeline } from './timeline';
 
-export type ViewSectionMenuItemAction = 'link' | 'restore' | 'simulate';
-
 export interface ViewMeta {
   owner: string;
   timeCreated: number;
   timeUpdated: number;
-}
-
-export interface ViewSectionMenuItem {
-  action: ViewSectionMenuItemAction;
-  data?: {
-    url?: string;
-  };
-  icon: string;
-  title: string;
 }
 
 export interface ViewSection {
@@ -22,7 +11,6 @@ export interface ViewSection {
   iframe?: {
     src: string;
   };
-  menu?: ViewSectionMenuItem[];
   size: number;
   table?: {
     columns: string[];

@@ -35,6 +35,7 @@
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
   export let id: string = '';
+  export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let opacity: number = 0.8;
@@ -64,6 +65,7 @@
   ) {
     draw();
   }
+  $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
@@ -213,6 +215,12 @@
     return { textHeight, textWidth };
   }
 
+  function onMousedown(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('mouseDown', { e, layerId: id, points: [] });
+    }
+  }
+
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
@@ -224,13 +232,13 @@
         maxXWidth,
         visiblePointsById,
       );
-      dispatch('mouseOverPoints', { e, layerId: id, points });
+      dispatch('mouseOver', { e, layerId: id, points });
     }
   }
 
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('mouseOverPoints', { e, layerId: id, points: [] });
+      dispatch('mouseOver', { e, layerId: id, points: [] });
     }
   }
 

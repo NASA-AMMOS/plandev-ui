@@ -4,23 +4,23 @@
     ActivityPoint,
     ConstraintViolation,
     LinePoint,
-    MouseOverPoints,
+    MouseOver,
     MouseOverViolations,
     Point,
     XRangePoint,
   } from '../../types';
   import { getDoyTimestamp } from '../../utilities/time';
 
-  export let mouseOverPoints: MouseOverPoints;
+  export let mouseOver: MouseOver;
   export let mouseOverViolations: MouseOverViolations;
 
   let points: Point[] = [];
   let violations: ConstraintViolation[] = [];
 
-  $: onMouseOverPoints(mouseOverPoints);
+  $: onMouseOver(mouseOver);
   $: onMouseOverViolations(mouseOverViolations);
 
-  function onMouseOverPoints(event: MouseOverPoints | undefined) {
+  function onMouseOver(event: MouseOver | undefined) {
     if (event) {
       points = event.points;
       show(event.e);

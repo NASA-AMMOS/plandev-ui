@@ -5,7 +5,7 @@
     ActivityType,
     Constraint,
     DropActivity,
-    MouseDownPoints,
+    MouseDown,
     NewActivity,
     Parameter,
     ParameterSchema,
@@ -74,6 +74,7 @@
   import ViewMenu from '../../components/menus/View.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
+  import TimelineForm from '../../components/timeline/TimelineForm.svelte';
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
   import Split from '../../components/ui/Split.svelte';
@@ -90,6 +91,7 @@
     constraintListPanel,
     constraintViolationsPanel,
     selectedActivityPanel,
+    selectedTimelinePanel,
     simulationConfigurationPanel,
     viewEditorPanel,
   } from './_stores/panels';
@@ -119,6 +121,7 @@
   } from './_stores/models';
   import { simulationStatus } from './_stores/simulation';
   import {
+    setSelectedTimeline,
     view,
     viewSectionIds,
     viewSectionSizes,
@@ -248,14 +251,19 @@
     }
   }
 
-  function onMouseDownPoints(event: CustomEvent<MouseDownPoints>) {
+  function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
     const { points } = detail;
+
     if (points.length) {
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
         selectActivity(point.id);
       }
+    } else {
+      const { timelineId, rowId, layerId } = detail;
+      setSelectedTimeline(timelineId, rowId, layerId);
+      selectedTimelinePanel.show();
     }
   }
 
@@ -528,7 +536,7 @@
               on:dragActivity={onUpdateStartTimestamp}
               on:dragActivityEnd={onUpdateActivity}
               on:dropActivity={onDropActivity}
-              on:mouseDownPoints={onMouseDownPoints}
+              on:mouseDown={onMouseDown}
               on:resetViewTimeRange={onResetViewTimeRange}
               on:updateRowHeight={onUpdateRowHeight}
               on:updateRows={onUpdateRows}
@@ -576,6 +584,8 @@
         {:else}
           <Card class="p-1 m-1">No Activity Selected</Card>
         {/if}
+      {:else if $selectedTimelinePanel.visible}
+        <TimelineForm />
       {:else if $simulationConfigurationPanel.visible}
         <SimulationConfiguration
           modelArgumentsMap={$modelArgumentsMap}

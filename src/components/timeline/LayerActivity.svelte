@@ -212,7 +212,7 @@
         maxActivityWidth,
         visiblePointsById,
       );
-      dispatch('mouseDownPoints', { e, layerId: id, points });
+      dispatch('mouseDown', { e, layerId: id, points });
       dragActivityStart(points, offsetX);
     }
   }
@@ -228,14 +228,14 @@
         maxActivityWidth,
         visiblePointsById,
       );
-      dispatch('mouseOverPoints', { e, layerId: id, points });
+      dispatch('mouseOver', { e, layerId: id, points });
       dragActivity(offsetX);
     }
   }
 
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('mouseOverPoints', { e, layerId: id, points: [] });
+      dispatch('mouseOver', { e, layerId: id, points: [] });
     }
   }
 

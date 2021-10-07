@@ -7,8 +7,8 @@
     ConstraintViolation,
     HorizontalGuide,
     Layer,
-    MouseDownPoints,
-    MouseOverPoints,
+    MouseDown,
+    MouseOver,
     Point,
     Resource,
     StringTMap,
@@ -60,18 +60,18 @@
   let mouseOverPointsByLayer: StringTMap<Point[]> = {};
   let overlaySvg: SVGElement;
 
-  function onMouseDownPoints(event: CustomEvent<MouseDownPoints>) {
+  function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
     mouseDownPointsByLayer[detail.layerId] = detail.points;
     const points = Object.values(mouseDownPointsByLayer).flat();
-    dispatch('mouseDownPoints', { ...detail, points });
+    dispatch('mouseDown', { ...detail, points, rowId: id });
   }
 
-  function onMouseOverPoints(event: CustomEvent<MouseOverPoints>) {
+  function onMouseOver(event: CustomEvent<MouseOver>) {
     const { detail } = event;
     mouseOverPointsByLayer[detail.layerId] = detail.points;
     const points = Object.values(mouseOverPointsByLayer).flat();
-    dispatch('mouseOverPoints', { ...detail, points });
+    dispatch('mouseOver', { ...detail, points });
   }
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number }>) {
@@ -164,8 +164,8 @@
             on:dragActivity
             on:dragActivityEnd
             on:dropActivity
-            on:mouseDownPoints={onMouseDownPoints}
-            on:mouseOverPoints={onMouseOverPoints}
+            on:mouseDown={onMouseDown}
+            on:mouseOver={onMouseOver}
             on:updateRowHeight={e => {
               if (autoAdjustHeight) {
                 onUpdateRowHeight(e);
@@ -180,13 +180,15 @@
             {drawWidth}
             filter={layer.filter.resource}
             lineColor={layer.color}
+            {mousedown}
             {mousemove}
             {mouseout}
             {resources}
             {viewTimeRange}
             {xScaleView}
             {yAxes}
-            on:mouseOverPoints={onMouseOverPoints}
+            on:mouseDown={onMouseDown}
+            on:mouseOver={onMouseOver}
           />
         {/if}
         {#if layer.chartType === 'x-range'}
@@ -195,11 +197,13 @@
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
+            {mousedown}
             {mousemove}
             {mouseout}
             {resources}
             {xScaleView}
-            on:mouseOverPoints={onMouseOverPoints}
+            on:mouseDown={onMouseDown}
+            on:mouseOver={onMouseOver}
           />
         {/if}
       {/each}

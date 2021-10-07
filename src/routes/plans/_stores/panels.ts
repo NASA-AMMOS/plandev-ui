@@ -17,6 +17,7 @@ function hideAll(): boolean {
   constraintListPanel.hide();
   constraintViolationsPanel.hide();
   selectedActivityPanel.hide();
+  selectedTimelinePanel.hide();
   simulationConfigurationPanel.hide();
   viewEditorPanel.hide();
   return true;
@@ -29,5 +30,6 @@ export const constraintEditorPanel = createPanel(false);
 export const constraintListPanel = createPanel(false);
 export const constraintViolationsPanel = createPanel(false);
 export const selectedActivityPanel = createPanel(false);
+export const selectedTimelinePanel = createPanel(false);
 export const simulationConfigurationPanel = createPanel(false);
 export const viewEditorPanel = createPanel(false);

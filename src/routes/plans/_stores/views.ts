@@ -1,8 +1,10 @@
-import type { Subscriber, Unsubscriber } from 'svelte/store';
+import type { Subscriber, Unsubscriber, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import type { Row, View } from '../../../types';
 import { reqUpdateView } from '../../../utilities/requests';
+
+/* Types. */
 
 type ViewStore = {
   set: (this: void, value: any) => void;
@@ -16,6 +18,8 @@ type ViewStore = {
   updateRows(rows: Row[], timelineId: string): void;
   updateSizes(newSizes: number[]): void;
 };
+
+/* Stores. */
 
 export const view: ViewStore = (() => {
   const { set, subscribe, update: updateStore } = writable(null);
@@ -80,3 +84,69 @@ export const viewSectionSizes = derived(view, $view =>
 export const viewText = derived(view, $view =>
   $view ? JSON.stringify($view, null, 2) : '',
 );
+
+export const selectedTimelineId: Writable<string | null> = writable(null);
+
+export const selectedTimeline = derived(
+  [view, selectedTimelineId],
+  ([$view, $selectedTimelineId]) => {
+    if ($view && $selectedTimelineId) {
+      for (const section of $view.sections) {
+        if (section.timeline && section.timeline.id === $selectedTimelineId) {
+          return section.timeline;
+        }
+      }
+    }
+    return null;
+  },
+);
+
+export const selectedRowId: Writable<string | null> = writable(null);
+
+export const selectedRow = derived(
+  [selectedTimeline, selectedRowId],
+  ([$selectedTimeline, $selectedRowId]) => {
+    if ($selectedTimeline) {
+      for (const row of $selectedTimeline.rows) {
+        if (row.id === $selectedRowId) {
+          return row;
+        }
+      }
+    }
+    return null;
+  },
+);
+
+export const selectedLayerId: Writable<string | null> = writable(null);
+
+export const selectedLayer = derived(
+  [selectedRow, selectedLayerId],
+  ([$selectedRow, $selectedLayerId]) => {
+    if ($selectedRow) {
+      for (const layer of $selectedRow.layers) {
+        if (layer.id === $selectedLayerId) {
+          return layer;
+        }
+      }
+    }
+    return null;
+  },
+);
+
+/* Utility Functions. */
+
+export function setSelectedTimeline(
+  timelineId: string,
+  rowId: string,
+  layerId: string,
+): void {
+  selectedTimelineId.set(timelineId);
+  selectedRowId.set(rowId);
+  selectedLayerId.set(layerId);
+}
+
+export function unsetSelectedTimeline(): void {
+  selectedTimelineId.set(null);
+  selectedRowId.set(null);
+  selectedLayerId.set(null);
+}
