@@ -9,7 +9,7 @@
   export let disabled: boolean = false;
   export let formParameters: FormParameter[] = [];
 
-  let labelColumnWidth: number = 150;
+  let labelColumnWidth: number = 250;
   let level: number = 0;
   let levelPadding: number = 20;
 

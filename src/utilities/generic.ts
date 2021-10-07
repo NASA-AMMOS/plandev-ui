@@ -106,7 +106,7 @@ export function slotChildCount(div: HTMLDivElement | undefined): number {
     if (slotDiv) {
       const childNodes = Array.from(slotDiv.childNodes);
       const { length } = childNodes.filter(
-        ({ nodeName }) => nodeName !== '#text',
+        ({ nodeName }) => nodeName !== '#comment' && nodeName !== '#text',
       );
 
       return length;

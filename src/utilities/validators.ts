@@ -13,8 +13,13 @@ export function validate<T>(
   return null;
 }
 
-export function required(value: string | number): ValidationResult {
-  if (value === '' || isNaN(value as number)) return 'Field is required';
+export function required(value: number | string): ValidationResult {
+  if (
+    (typeof value === 'number' && isNaN(value as number)) ||
+    (typeof value === 'string' && value === '')
+  ) {
+    return 'Field is required';
+  }
   return null;
 }
 
