@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { ScaleTime } from 'd3-scale';

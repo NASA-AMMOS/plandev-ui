@@ -86,21 +86,11 @@
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
   import { SimulationStatus } from '../../types';
   import {
-    activityDictionaryPanel,
-    constraintEditorPanel,
-    constraintListPanel,
-    constraintViolationsPanel,
-    selectedActivityPanel,
-    selectedTimelinePanel,
-    simulationConfigurationPanel,
-    viewEditorPanel,
-  } from './_stores/panels';
-  import {
     activities,
     activitiesMap,
     selectedActivityId,
     selectedActivity,
-  } from './_stores/activities';
+  } from '../../stores/activities';
   import {
     deleteConstraint,
     modelConstraints,
@@ -112,21 +102,31 @@
     setSelectedConstraint,
     violations,
     updateConstraint,
-  } from './_stores/constraints';
+  } from '../../stores/constraints';
   import {
     modelArgumentsMap,
     modelParametersMap,
     modelParameters,
     updateModelArguments,
-  } from './_stores/models';
-  import { simulationStatus } from './_stores/simulation';
+  } from '../../stores/models';
+  import {
+    activityDictionaryPanel,
+    constraintEditorPanel,
+    constraintListPanel,
+    constraintViolationsPanel,
+    selectedActivityPanel,
+    selectedTimelinePanel,
+    simulationConfigurationPanel,
+    viewEditorPanel,
+  } from '../../stores/panels';
+  import { simulationStatus } from '../../stores/simulation';
   import {
     setSelectedTimeline,
     view,
     viewSectionIds,
     viewSectionSizes,
     viewText,
-  } from './_stores/views';
+  } from '../../stores/views';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import {
     reqGetPlan,
@@ -293,7 +293,7 @@
   function onSectionsDragEnd(event: CustomEvent<{ newSizes: number[] }>) {
     const { detail } = event;
     const { newSizes } = detail;
-    view.updateSizes(newSizes);
+    view.updateSectionSizes(newSizes);
   }
 
   function onSetView(event: CustomEvent<{ view: View }>) {
@@ -334,7 +334,7 @@
   ) {
     const { detail } = event;
     const { newHeight, rowId, timelineId } = detail;
-    view.updateRowHeight(newHeight, rowId, timelineId);
+    view.updateRow(timelineId, rowId, 'height', newHeight);
   }
 
   function onUpdateRows(
@@ -345,7 +345,7 @@
   ) {
     const { detail } = event;
     const { rows, timelineId } = detail;
-    view.updateRows(rows, timelineId);
+    view.updateTimeline(timelineId, 'rows', rows);
   }
 
   function onUpdateStartTimestamp(event: CustomEvent<UpdateActivity>) {

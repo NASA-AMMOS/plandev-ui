@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import { select } from 'd3-selection';
   import type { Axis, HorizontalGuide } from '../../types';

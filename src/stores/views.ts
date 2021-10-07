@@ -1,8 +1,8 @@
 import type { Subscriber, Unsubscriber, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { Row, View } from '../../../types';
-import { reqUpdateView } from '../../../utilities/requests';
+import type { View } from '../types';
+import { reqUpdateView } from '../utilities/requests';
 
 /* Types. */
 
@@ -14,9 +14,9 @@ type ViewStore = {
     invalidate?: any,
   ) => Unsubscriber;
   update(currentView: View): Promise<void>;
-  updateRowHeight(newHeight: number, rowId: string, timelineId: string): void;
-  updateRows(rows: Row[], timelineId: string): void;
-  updateSizes(newSizes: number[]): void;
+  updateRow(timelineId: string, rowId: string, prop: string, value: any): void;
+  updateSectionSizes(newSizes: number[]): void;
+  updateTimeline(timelineId: string, prop: string, value: any): void;
 };
 
 /* Stores. */
@@ -38,36 +38,63 @@ export const view: ViewStore = (() => {
         }).showToast();
       }
     },
-    updateRowHeight(newHeight: number, rowId: string, timelineId: string) {
-      updateStore(view => {
-        for (const section of view.sections) {
-          if (section?.timeline && section.timeline.id === timelineId) {
-            for (const row of section.timeline.rows) {
-              if (row.id === rowId) {
-                row.height = newHeight;
-              }
+    updateRow(timelineId: string, rowId: string, prop: string, value: any) {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        [prop]: value,
+                      };
+                    }
+                    return row;
+                  }),
+                },
+              };
             }
-          }
-        }
-        return view;
+            return section;
+          }),
+        };
       });
     },
-    updateRows(rows: Row[], timelineId: string) {
-      updateStore(view => {
-        for (const section of view.sections) {
-          if (section?.timeline && section.timeline.id === timelineId) {
-            section.timeline.rows = rows;
-          }
-        }
-        return view;
+    updateSectionSizes(newSizes: number[]) {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map((section, i) => {
+            return {
+              ...section,
+              size: newSizes[i],
+            };
+          }),
+        };
       });
     },
-    updateSizes(newSizes: number[]) {
-      updateStore(view => {
-        for (let i = 0; i < newSizes.length; ++i) {
-          view.sections[i].size = newSizes[i];
-        }
-        return view;
+    updateTimeline(timelineId: string, prop: string, value: any) {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  [prop]: value,
+                },
+              };
+            }
+            return section;
+          }),
+        };
       });
     },
   };

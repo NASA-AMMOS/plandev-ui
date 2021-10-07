@@ -6,12 +6,9 @@ import type {
   ParameterMap,
   ParameterSchema,
   ParameterSchemaMap,
-} from '../../../types';
-import { keyBy } from '../../../utilities/generic';
-import {
-  reqUpdateModelArguments,
-  reqUploadFiles,
-} from '../../../utilities/requests';
+} from '../types';
+import { keyBy } from '../utilities/generic';
+import { reqUpdateModelArguments, reqUploadFiles } from '../utilities/requests';
 
 /* Stores. */
 

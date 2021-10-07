@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import { axisLeft as d3AxisLeft } from 'd3-axis';
   import { select } from 'd3-selection';

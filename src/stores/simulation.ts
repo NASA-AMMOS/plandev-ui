@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { SimulationStatus } from '../../../types';
+import { SimulationStatus } from '../types';
 
 export const simulationStatus = (() => {
   const {

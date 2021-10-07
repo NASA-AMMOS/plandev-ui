@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';

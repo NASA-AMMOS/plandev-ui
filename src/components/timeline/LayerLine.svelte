@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Quadtree } from 'd3-quadtree';

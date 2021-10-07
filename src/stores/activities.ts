@@ -1,12 +1,12 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { Activity, NewActivity, UpdateActivity } from '../../../types';
+import type { Activity, NewActivity, UpdateActivity } from '../types';
 import {
   reqCreateActivity,
   reqDeleteActivity,
   reqUpdateActivity,
-} from '../../../utilities/requests';
+} from '../utilities/requests';
 
 /**
  * Main store for activity management.

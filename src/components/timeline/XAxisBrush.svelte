@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
   import type { D3BrushEvent } from 'd3-brush';
   import { brushX } from 'd3-brush';

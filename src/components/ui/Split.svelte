@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
   import Split from 'split.js';
 
   const dispatch = createEventDispatcher();
@@ -20,7 +20,13 @@
     mounted = true;
   });
 
-  function setSplit() {
+  /**
+   * @note We tick before calling Split to make sure the slotted children exist.
+   * Othersize Split will error if the ids given to it are not yet in the DOM.
+   */
+  async function setSplit() {
+    await tick();
+
     if (split) {
       split.destroy();
     }

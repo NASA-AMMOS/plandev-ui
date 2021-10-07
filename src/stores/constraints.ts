@@ -1,15 +1,11 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type {
-  Constraint,
-  ConstraintViolation,
-  StringTMap,
-} from '../../../types';
+import type { Constraint, ConstraintViolation, StringTMap } from '../types';
 import {
   reqDeleteConstraint,
   reqUpdateConstraint,
-} from '../../../utilities/requests';
+} from '../utilities/requests';
 
 /* Stores. */
 
