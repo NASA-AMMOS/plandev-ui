@@ -97,6 +97,7 @@
     modelId === '' ||
     !nameSubmittable ||
     !startTimestampSubmittable;
+  $: selectedModelName = models.find(model => model.id === modelId)?.name || '';
   $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
@@ -212,7 +213,12 @@
 
         <Field>
           <Label for="model">Models</Label>
-          <Select bind:value={modelId} name="model" required>
+          <Select
+            bind:value={modelId}
+            name="model"
+            required
+            selected={selectedModelName}
+          >
             <option value="" />
             {#each sortedModels as model}
               <option value={model.id}>

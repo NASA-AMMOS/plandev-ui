@@ -11,6 +11,7 @@
   export let invalid: boolean = false;
   export let name: string = '';
   export let required: boolean = false;
+  export let selected: string = '';
   export let value: string = '';
 
   let className: string = '';
@@ -21,6 +22,7 @@
   bind:value
   class="select {className}"
   class:error={invalid}
+  data-selected={selected}
   {disabled}
   {name}
   {required}
