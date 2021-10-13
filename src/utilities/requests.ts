@@ -723,10 +723,8 @@ export async function reqUpdateSimulationArguments(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
-    const { updateModelArguments } = data;
-    return updateModelArguments;
+    await fetch(HASURA_URL, options);
+    return { success: true };
   } catch (e) {
     console.log(e);
     const { message } = e;
