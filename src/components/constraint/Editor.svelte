@@ -12,12 +12,13 @@
   import CodeMirrorJsonEditor from '../ui/CodeMirrorJsonEditor.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import Panel from '../ui/Panel.svelte';
-  import type { Constraint } from '../../types';
+  import type { Constraint, CreateConstraint } from '../../types';
 
   const dispatch = createEventDispatcher();
 
   export let constraint: Constraint | null = null;
-  export let constraintType: string | null = null;
+  export let modelId: number;
+  export let planId: number;
 
   let ajv: Ajv;
   let definition: string = '';
@@ -31,12 +32,12 @@
   $: valid = definition !== '' && !definitionError && name !== '';
 
   onMount(async () => {
-    if (constraint && constraintType) {
+    if (constraint) {
       definition = JSON.stringify(JSON.parse(constraint.definition), null, 2);
       description = constraint.description;
       name = constraint.name;
       summary = constraint.summary;
-      type = constraintType;
+      type = constraint.modelId ? 'model' : 'plan';
     } else {
       definition = '';
       description = '';
@@ -75,13 +76,31 @@
   }
 
   function save() {
-    const savingConstraint: Constraint = {
-      definition,
-      description,
-      name,
-      summary,
-    };
-    dispatch('save', { constraint: savingConstraint, type });
+    const useModelId = type === 'model' ? modelId : null;
+    const usePlanId = type === 'plan' ? planId : null;
+
+    if (constraint) {
+      const updatedConstraint: Constraint = {
+        definition,
+        description,
+        id: constraint.id,
+        modelId: useModelId,
+        name,
+        planId: usePlanId,
+        summary,
+      };
+      dispatch('update', updatedConstraint);
+    } else {
+      const newConstraint: CreateConstraint = {
+        definition,
+        description,
+        modelId: useModelId,
+        name,
+        planId: usePlanId,
+        summary,
+      };
+      dispatch('create', newConstraint);
+    }
   }
 </script>
 

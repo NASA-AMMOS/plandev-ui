@@ -1,38 +1,19 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
   import type {
-    Activity,
     ActivityType,
+    ArgumentsMap,
     Constraint,
+    CreateConstraint,
     DropActivity,
     MouseDown,
     NewActivity,
-    Parameter,
-    ParameterSchema,
     Resource,
     Row,
     TimeRange,
     UpdateActivity,
     View,
   } from '../../types';
-
-  type Model = {
-    activityTypes: ActivityType[];
-    modelParameters: { parameters: ParameterSchema[] };
-    constraints: Constraint[];
-  };
-
-  type Plan = {
-    activities: Activity[];
-    constraints: Constraint[];
-    endTimestamp: string;
-    id: string;
-    model: Model;
-    modelArguments: { parameters: Parameter[] };
-    modelId: string;
-    name: string;
-    startTimestamp: string;
-  };
 
   export async function load({
     fetch,
@@ -47,10 +28,11 @@
     }
 
     const { params, query } = page;
-    const { id: planId } = params;
+    const { id } = params;
     const { ssoToken: authorization } = session.user;
+    const planId = parseFloat(id);
 
-    const initialPlan = await reqGetPlan<Plan>(fetch, planId, authorization);
+    const initialPlan = await reqGetPlan(fetch, planId, authorization);
     const initialView = await reqGetView(fetch, query);
 
     return {
@@ -94,21 +76,12 @@
   import {
     deleteConstraint,
     modelConstraints,
-    modelConstraintsMap,
     planConstraints,
-    planConstraintsMap,
     selectedConstraint,
-    selectedConstraintType,
-    setSelectedConstraint,
     violations,
+    createConstraint,
     updateConstraint,
   } from '../../stores/constraints';
-  import {
-    modelArgumentsMap,
-    modelParametersMap,
-    modelParameters,
-    updateModelArguments,
-  } from '../../stores/models';
   import {
     activityDictionaryPanel,
     constraintEditorPanel,
@@ -119,7 +92,13 @@
     simulationConfigurationPanel,
     viewEditorPanel,
   } from '../../stores/panels';
-  import { simulationStatus } from '../../stores/simulation';
+  import {
+    modelParametersMap,
+    selectedSimulationId,
+    simulationArgumentsMap,
+    simulationStatus,
+    updateSimulationArguments,
+  } from '../../stores/simulation';
   import {
     setSelectedTimeline,
     view,
@@ -129,6 +108,7 @@
   } from '../../stores/views';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import {
+    Plan,
     reqGetPlan,
     reqGetView,
     reqSimulate,
@@ -148,20 +128,22 @@
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
-    const { activities, constraints, model, modelArguments } = initialPlan;
+    const { activities, constraints, model, simulations } = initialPlan;
+    const [simulation] = simulations;
     $activitiesMap = keyBy(activities);
-    $modelArgumentsMap = keyBy(modelArguments.parameters, 'name');
-    $modelConstraintsMap = keyBy(model.constraints, 'name');
-    $modelParametersMap = keyBy(model.modelParameters.parameters, 'name');
-    $planConstraintsMap = keyBy(constraints, 'name');
+    $modelConstraints = model.constraints;
+    $modelParametersMap = model.parameters.parameters;
+    $planConstraints = constraints;
+    $selectedSimulationId = simulation.id;
+    $simulationArgumentsMap = simulation.arguments;
   }
   $: if (initialView) {
     $view = initialView;
   }
-  $: endTime = getUnixEpochTime(initialPlan.endTimestamp);
-  $: maxTimeRange = { end: endTime, start: startTime };
-  $: startTime = getUnixEpochTime(initialPlan.startTimestamp);
-  $: viewTimeRange = { end: endTime, start: startTime };
+  $: endTimeMs = getUnixEpochTime(initialPlan.endTime);
+  $: maxTimeRange = { end: endTimeMs, start: startTimeMs };
+  $: startTimeMs = getUnixEpochTime(initialPlan.startTime);
+  $: viewTimeRange = { end: endTimeMs, start: startTimeMs };
 
   onMount(() => {
     if ($view) {
@@ -171,20 +153,22 @@
 
   onDestroy(() => {
     simulationStatus.update(SimulationStatus.Clean);
+    $violations = [];
   });
 
   async function onCreateActivity(event: CustomEvent<ActivityType>) {
     const { ssoToken: authorization } = $appSession.user;
     const { detail: activityType } = event;
-    const { id: planId, startTimestamp } = initialPlan;
+    const { id: planId, startTime } = initialPlan;
     const newActivity: NewActivity = {
-      parameters: [],
-      startTimestamp,
+      arguments: {},
+      startTime,
       type: activityType.name,
     };
     const { id, success } = await activitiesMap.create(
       newActivity,
       planId,
+      startTime,
       authorization,
     );
     if (success) {
@@ -193,27 +177,24 @@
     }
   }
 
-  function onDeleteActivity(event: CustomEvent<{ id: string }>) {
+  async function onCreateConstraint(event: CustomEvent<CreateConstraint>) {
     const { ssoToken: authorization } = $appSession.user;
-    const { id: planId } = initialPlan;
-    const { detail } = event;
-    const { id: activityId } = detail;
-    activitiesMap.delete(activityId, planId, authorization);
+    const { detail: newConstraint } = event;
+    await createConstraint(newConstraint, authorization);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  function onDeleteConstraint(
-    event: CustomEvent<{ constraint: Constraint; type: string }>,
-  ) {
+  function onDeleteActivity(event: CustomEvent<number>) {
     const { ssoToken: authorization } = $appSession.user;
-    const { detail } = event;
-    deleteConstraint(
-      detail.constraint,
-      detail.type,
-      initialPlan.modelId,
-      initialPlan.id,
-      authorization,
-    );
+    const { detail: activityId } = event;
+    activitiesMap.delete(activityId, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
+  }
+
+  async function onDeleteConstraint(event: CustomEvent<number>) {
+    const { ssoToken: authorization } = $appSession.user;
+    const { detail: constraintId } = event;
+    await deleteConstraint(constraintId, authorization);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -221,21 +202,24 @@
     const { ssoToken: authorization } = $appSession.user;
     const { id: planId } = initialPlan;
     const { detail } = event;
-    const { activityTypeName: type, startTimestamp } = detail;
+    const { activityTypeName: type, startTime } = detail;
     const newActivity: NewActivity = {
-      parameters: [],
-      startTimestamp,
+      arguments: {},
+      startTime,
       type,
     };
-    activitiesMap.create(newActivity, planId, authorization);
+    activitiesMap.create(
+      newActivity,
+      planId,
+      initialPlan.startTime,
+      authorization,
+    );
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  function onEditConstraint(
-    event: CustomEvent<{ constraint: Constraint; type: string }>,
-  ) {
-    const { detail } = event;
-    setSelectedConstraint(detail.constraint, detail.type);
+  function onEditConstraint(event: CustomEvent<Constraint>) {
+    const { detail: constraint } = event;
+    $selectedConstraint = constraint;
     constraintEditorPanel.show();
   }
 
@@ -271,21 +255,6 @@
     viewTimeRange = maxTimeRange;
   }
 
-  function onSaveConstraint(
-    event: CustomEvent<{ constraint: Constraint; type: string }>,
-  ) {
-    const { ssoToken: authorization } = $appSession.user;
-    const { detail } = event;
-    updateConstraint(
-      detail.constraint,
-      detail.type,
-      initialPlan.modelId,
-      initialPlan.id,
-      authorization,
-    );
-    simulationStatus.update(SimulationStatus.Dirty);
-  }
-
   async function onSaveView() {
     view.update($view);
   }
@@ -305,23 +274,34 @@
 
   function onUpdateActivity(event: CustomEvent<UpdateActivity>) {
     const { ssoToken: authorization } = $appSession.user;
-    const { id: planId } = initialPlan;
+    const { startTime } = initialPlan;
     const { detail: activity } = event;
-    activitiesMap.update(activity, planId, authorization);
+    activitiesMap.update(activity, startTime, authorization);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  function onUpdateModelArguments(
+  async function onUpdateConstraint(event: CustomEvent<Constraint>) {
+    const { ssoToken: authorization } = $appSession.user;
+    const { detail: updatedConstraint } = event;
+    await updateConstraint(updatedConstraint, authorization);
+    simulationStatus.update(SimulationStatus.Dirty);
+  }
+
+  function onUpdateSimulationArguments(
     event: CustomEvent<{
+      newArgumentsMap: ArgumentsMap;
       newFiles: File[];
-      newModelArguments: Parameter[];
     }>,
   ) {
     const { detail } = event;
-    const { newFiles, newModelArguments } = detail;
+    const { newArgumentsMap, newFiles } = detail;
     const { ssoToken: authorization } = $appSession.user;
-    const { id: planId } = initialPlan;
-    updateModelArguments(planId, newModelArguments, newFiles, authorization);
+    updateSimulationArguments(
+      $selectedSimulationId,
+      newArgumentsMap,
+      newFiles,
+      authorization,
+    );
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -348,11 +328,11 @@
     view.updateTimeline(timelineId, 'rows', rows);
   }
 
-  function onUpdateStartTimestamp(event: CustomEvent<UpdateActivity>) {
+  function onUpdateStartTime(event: CustomEvent<UpdateActivity>) {
     const { detail } = event;
-    const { id, startTimestamp } = detail;
+    const { id, startTime } = detail;
     $activitiesMap[id].children = [];
-    $activitiesMap[id].startTimestamp = startTimestamp;
+    $activitiesMap[id].startTime = startTime;
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -372,25 +352,25 @@
 
   async function runSimulation() {
     const { ssoToken: authorization } = $appSession.user;
-    const { modelId, id: planId } = initialPlan;
+    const { model, id: planId } = initialPlan;
     let tries = 0;
     simulationStatus.update(SimulationStatus.Executing);
 
     do {
-      const result = await reqSimulate(planId, modelId, authorization);
+      const {
+        activitiesMap: newActivitiesMap,
+        constraintViolations,
+        status,
+        resources: newResources,
+      } = await reqSimulate(model.id, planId, authorization);
 
-      if (result.status === 'complete') {
-        const {
-          activities,
-          results,
-          violations: constraintViolations,
-        } = result;
-        $activitiesMap = keyBy(activities);
-        $violations = offsetViolationWindows(constraintViolations, startTime);
+      if (status === 'complete') {
+        $activitiesMap = newActivitiesMap;
+        $violations = offsetViolationWindows(constraintViolations, startTimeMs);
         simulationStatus.update(SimulationStatus.Complete);
-        resources = results;
+        resources = newResources;
         return;
-      } else if (result.status === 'failed') {
+      } else if (status === 'failed') {
         simulationStatus.update(SimulationStatus.Failed);
         return;
       }
@@ -454,7 +434,7 @@
         <ConstraintMenu
           bind:this={constraintMenu}
           on:constraintCreate={() => {
-            setSelectedConstraint(null, null);
+            $selectedConstraint = null;
             constraintEditorPanel.show();
           }}
           on:constraintList={() => constraintListPanel.show()}
@@ -533,7 +513,7 @@
               selectedActivity={$selectedActivity}
               verticalGuides={section.timeline.verticalGuides}
               {viewTimeRange}
-              on:dragActivity={onUpdateStartTimestamp}
+              on:dragActivity={onUpdateStartTime}
               on:dragActivityEnd={onUpdateActivity}
               on:dropActivity={onDropActivity}
               on:mouseDown={onMouseDown}
@@ -555,8 +535,10 @@
       {:else if $constraintEditorPanel.visible}
         <ConstraintEditor
           constraint={$selectedConstraint}
-          constraintType={$selectedConstraintType}
-          on:save={onSaveConstraint}
+          modelId={initialPlan.model.id}
+          planId={initialPlan.id}
+          on:create={onCreateConstraint}
+          on:update={onUpdateConstraint}
         />
       {:else if $constraintListPanel.visible}
         <ConstraintList
@@ -575,10 +557,11 @@
           <ActivityForm
             activitiesMap={$activitiesMap}
             activityTypes={initialPlan.model.activityTypes}
-            modelId={initialPlan.modelId}
+            argumentsMap={$selectedActivity.arguments}
+            modelId={initialPlan.model.id}
             {...$selectedActivity}
-            on:updateStartTimestamp={onUpdateActivity}
-            on:updateParameter={onUpdateActivity}
+            on:updateArguments={onUpdateActivity}
+            on:updateStartTime={onUpdateActivity}
             on:delete={onDeleteActivity}
           />
         {:else}
@@ -588,9 +571,9 @@
         <TimelineForm />
       {:else if $simulationConfigurationPanel.visible}
         <SimulationConfiguration
-          modelArgumentsMap={$modelArgumentsMap}
-          modelParameters={$modelParameters}
-          on:updateModelArguments={onUpdateModelArguments}
+          argumentsMap={$simulationArgumentsMap}
+          parametersMap={$modelParametersMap}
+          on:updateArguments={onUpdateSimulationArguments}
         />
       {:else if $viewEditorPanel.visible}
         <CodeMirrorJsonEditor

@@ -1,5 +1,4 @@
 export * from './activity';
-export * from './activity-type';
 export * from './constraint';
 export * from './d3';
 export * from './parameter';

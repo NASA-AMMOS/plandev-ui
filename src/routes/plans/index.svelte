@@ -1,7 +1,5 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
-  import { GATEWAY_APOLLO_URL } from '../../env';
-  import { CREATE_PLAN, DELETE_PLAN, GET_PLANS_AND_MODELS } from '../../gql';
 
   export async function load({
     fetch,
@@ -14,32 +12,18 @@
       };
     }
 
-    try {
-      const { ssoToken: authorization } = session.user;
-      const options = {
-        body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
-        headers: { 'Content-Type': 'application/json', authorization },
-        method: 'POST',
-      };
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { models = [], plans = [] } = data;
+    const { ssoToken: authorization } = session.user;
+    const { models = [], plans = [] } = await reqGetPlansAndModels(
+      fetch,
+      authorization,
+    );
 
-      return {
-        props: {
-          models,
-          plans,
-        },
-      };
-    } catch (e) {
-      console.log(e);
-      return {
-        props: {
-          models: [],
-          plans: [],
-        },
-      };
-    }
+    return {
+      props: {
+        models,
+        plans,
+      },
+    };
   }
 </script>
 
@@ -59,52 +43,46 @@
   import { onMount } from 'svelte';
   import {
     compare,
-    parseJsonFile,
+    parseJsonFileList,
     removeQueryParam,
   } from '../../utilities/generic';
   import { required, timestamp } from '../../utilities/validators';
+  import {
+    CreatePlan,
+    CreatePlanModel,
+    reqCreatePlan,
+    reqDeletePlanAndSimulations,
+    reqGetPlansAndModels,
+  } from '../../utilities/requests';
+  import type { ArgumentsMap } from '../../types';
 
-  type Model = {
-    id: string;
-    name: string;
-  };
-
-  type Plan = {
-    endTimestamp: string;
-    id: string;
-    modelId: string;
-    name: string;
-    startTimestamp: string;
-  };
-
-  export let models: Model[] = [];
-  export let plans: Plan[] = [];
+  export let models: CreatePlanModel[] = [];
+  export let plans: CreatePlan[] = [];
 
   let confirmDeletePlan: ConfirmModal | null = null;
   let createButtonText = 'Create';
-  let endTimestamp = '';
-  let endTimestampSubmittable = false;
+  let endTime = '';
+  let endTimeSubmittable = false;
   let error: string | null = null;
   let files: FileList;
-  let modelId: string = '';
+  let modelId: number;
   let name = '';
   let nameSubmittable = false;
-  let startTimestamp = '';
-  let startTimestampSubmittable = false;
+  let startTime = '';
+  let startTimeSubmittable = false;
 
   $: createButtonDisabeld =
-    !endTimestampSubmittable ||
-    modelId === '' ||
+    !endTimeSubmittable ||
+    modelId === undefined ||
     !nameSubmittable ||
-    !startTimestampSubmittable;
-  $: selectedModelName = models.find(model => model.id === modelId)?.name || '';
+    !startTimeSubmittable;
   $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
     const queryModelId = $appPage.query.get('modelId');
     if (queryModelId) {
-      modelId = queryModelId;
+      modelId = parseFloat(queryModelId);
       removeQueryParam('modelId');
     }
   });
@@ -114,45 +92,20 @@
     error = null;
 
     const { ssoToken: authorization } = $appSession.user;
-    const modelArguments = await getModelArguments();
-    const body = {
-      query: CREATE_PLAN,
-      variables: {
-        endTimestamp,
-        modelArguments,
-        modelId,
-        name,
-        startTimestamp,
-      },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
-      method: 'POST',
-    };
+    const simulationArguments = await parseJsonFileList<ArgumentsMap>(files);
+    const newPlan = await reqCreatePlan(
+      endTime,
+      modelId,
+      name,
+      startTime,
+      simulationArguments,
+      authorization,
+    );
 
-    try {
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { createPlan } = data;
-      const { id, message, success } = createPlan;
-
-      if (success) {
-        const newPlan = {
-          endTimestamp,
-          id,
-          modelId,
-          name,
-          startTimestamp,
-        };
-        plans = [...plans, newPlan];
-      } else {
-        console.log(message);
-        error = message;
-      }
-    } catch (e) {
-      console.log(e);
-      error = e.message;
+    if (newPlan) {
+      plans = [...plans, newPlan];
+    } else {
+      error = 'Create plan failed.';
     }
 
     createButtonText = 'Create';
@@ -162,43 +115,13 @@
     const { plan } = confirmDeletePlan.modal.context;
     const { id } = plan;
     const { ssoToken: authorization } = $appSession.user;
-    const body = { query: DELETE_PLAN, variables: { id } };
-    const options = {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
-      method: 'POST',
-    };
+    const { success } = await reqDeletePlanAndSimulations(id, authorization);
 
     confirmDeletePlan.modal.hide();
 
-    try {
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { deletePlan } = data;
-      const { message, success } = deletePlan;
-
-      if (success) {
-        plans = plans.filter(plan => plan.id !== id);
-      } else {
-        console.log(message);
-      }
-    } catch (e) {
-      console.log(e);
+    if (success) {
+      plans = plans.filter(plan => plan.id !== id);
     }
-  }
-
-  async function getModelArguments() {
-    if (files && files.length) {
-      try {
-        const file = files.item(0);
-        const modelArguments = await parseJsonFile(file);
-        return modelArguments;
-      } catch (e) {
-        console.log(e);
-        return {};
-      }
-    }
-    return {};
   }
 </script>
 
@@ -213,12 +136,7 @@
 
         <Field>
           <Label for="model">Models</Label>
-          <Select
-            bind:value={modelId}
-            name="model"
-            required
-            selected={selectedModelName}
-          >
+          <Select bind:value={modelId} name="model" required>
             <option value="" />
             {#each sortedModels as model}
               <option value={model.id}>
@@ -239,25 +157,25 @@
         </FieldInputText>
 
         <FieldInputText
-          bind:submittable={startTimestampSubmittable}
-          bind:value={startTimestamp}
-          name="startTimestamp"
+          bind:submittable={startTimeSubmittable}
+          bind:value={startTime}
+          name="start-time"
           placeholder="YYYY-DDDThh:mm:ss"
           required
           validators={[required, timestamp]}
         >
-          Start Timestamp
+          Start Time
         </FieldInputText>
 
         <FieldInputText
-          bind:submittable={endTimestampSubmittable}
-          bind:value={endTimestamp}
-          name="endTimestamp"
+          bind:submittable={endTimeSubmittable}
+          bind:value={endTime}
+          name="end-time"
           placeholder="YYYY-DDDThh:mm:ss"
           required
           validators={[required, timestamp]}
         >
-          End Timestamp
+          End Time
         </FieldInputText>
 
         <Field>
@@ -316,8 +234,8 @@
                   <td>{plan.name}</td>
                   <td>{plan.id}</td>
                   <td>{plan.modelId}</td>
-                  <td>{plan.startTimestamp}</td>
-                  <td>{plan.endTimestamp}</td>
+                  <td>{plan.startTime}</td>
+                  <td>{plan.endTime}</td>
                 </tr>
               {/each}
             </tbody>

@@ -15,17 +15,20 @@ import {
 export const activitiesMap = (() => {
   const { set, subscribe, update: updateStore } = writable({});
   return {
-    async create(activity: NewActivity, planId: string, token: string) {
-      const { ids, success } = await reqCreateActivity(activity, planId, token);
-      if (success) {
-        const [id] = ids;
-        const newActivity: Activity = {
-          ...activity,
-          children: [],
-          duration: 0,
-          id,
-          parent: null,
-        };
+    async create(
+      activity: NewActivity,
+      planId: number,
+      planStartTime: string,
+      token: string,
+    ) {
+      const newActivity = await reqCreateActivity(
+        activity,
+        planId,
+        planStartTime,
+        token,
+      );
+      if (newActivity) {
+        const { id } = newActivity;
         updateStore(activitiesMap => {
           activitiesMap[id] = newActivity;
           return activitiesMap;
@@ -49,11 +52,11 @@ export const activitiesMap = (() => {
         return { id: null, success: false };
       }
     },
-    async delete(activityId: string, planId: string, token: string) {
-      const { success } = await reqDeleteActivity(activityId, planId, token);
+    async delete(id: number, token: string) {
+      const { success } = await reqDeleteActivity(id, token);
       if (success) {
         updateStore(activitiesMap => {
-          delete activitiesMap[activityId];
+          delete activitiesMap[id];
           return activitiesMap;
         });
         Toastify({
@@ -75,14 +78,22 @@ export const activitiesMap = (() => {
     },
     set,
     subscribe,
-    async update(activity: UpdateActivity, planId: string, token: string) {
-      const { success } = await reqUpdateActivity(activity, planId, token);
-      if (success) {
+    async update(
+      activity: UpdateActivity,
+      planStartTime: string,
+      token: string,
+    ) {
+      const updatedActivity = await reqUpdateActivity(
+        activity,
+        planStartTime,
+        token,
+      );
+      if (updatedActivity) {
         updateStore(activitiesMap => ({
           ...activitiesMap,
-          [activity.id]: {
-            ...activitiesMap[activity.id],
-            ...activity,
+          [updatedActivity.id]: {
+            ...activitiesMap[updatedActivity.id],
+            ...updatedActivity,
           },
         }));
         Toastify({

@@ -16,13 +16,13 @@
   let confirmDeleteModel: ConfirmModal | null = null;
 
   function deleteConstraint() {
-    const { constraint, type } = confirmDeleteModel.modal.context;
+    const { constraint } = confirmDeleteModel.modal.context;
     confirmDeleteModel.modal.hide();
-    dispatch('delete', { constraint, type });
+    dispatch('delete', constraint.id);
   }
 
-  function editConstraint(constraint: Constraint, type: string) {
-    dispatch('edit', { constraint, type });
+  function editConstraint(constraint: Constraint) {
+    dispatch('edit', constraint);
   }
 </script>
 
@@ -39,8 +39,7 @@
               <span slot="suffix">
                 <button
                   class="button-icon"
-                  on:click|stopPropagation={() =>
-                    editConstraint(constraint, 'model')}
+                  on:click|stopPropagation={() => editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -81,8 +80,7 @@
               <span slot="suffix">
                 <button
                   class="button-icon"
-                  on:click|stopPropagation={() =>
-                    editConstraint(constraint, 'plan')}
+                  on:click|stopPropagation={() => editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',

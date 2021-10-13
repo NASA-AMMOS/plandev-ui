@@ -1,3 +1,5 @@
+import parse from 'postgres-interval';
+
 /**
  * Get the day-of-year for a given date.
  * @example getDoy(new Date('1/3/2019')) -> 3
@@ -11,15 +13,11 @@ export function getDoy(date: Date): number {
 }
 
 /**
- * Get a day-of-year timestamp from a given unix epoch time in milliseconds.
- * @example getDoyTimestamp(1577779200000) -> 2019-365T08:00:00.000
+ * Get a day-of-year timestamp from a given JavaScript Date object.
+ * @example getDoyTime(new Date(1577779200000)) -> 2019-365T08:00:00.000
  * @note inverse of getUnixEpochTime
  */
-export function getDoyTimestamp(
-  unixEpochTime: number,
-  includeMsecs = true,
-): string {
-  const date = new Date(unixEpochTime);
+export function getDoyTime(date: Date, includeMsecs = true): string {
   const year = date.getUTCFullYear();
   const doy = getDoy(date).toString().padStart(3, '0');
   const hours = date.getUTCHours().toString().padStart(2, '0');
@@ -37,26 +35,43 @@ export function getDoyTimestamp(
 }
 
 /**
- * Get a duration in milliseconds of a range of DOY timestamp values.
- * Returns 0 if startDoyTimestamp > endDoyTimestamp.
- * @example getDuration('2020-001T00:00:00', '2021-001T00:00:00') -> 31622400000
+ * Get a day-of-year timestamp from a given JavaScript Date object, and
+ * a duration in Postgres Interval format.
  */
-export function getDuration(
-  startDoyTimestamp: string,
-  endDoyTimestamp: string,
-): number {
-  const start = getUnixEpochTime(startDoyTimestamp);
-  const end = getUnixEpochTime(endDoyTimestamp);
-  if (start <= end) {
-    return end - start;
-  }
-  return 0;
+export function getDoyTimeFromDuration(
+  startDate: Date,
+  duration: string,
+  includeMsecs = true,
+): string {
+  const interval = parse(duration);
+  const { hours, milliseconds, minutes, seconds } = interval;
+  const endDate = new Date(startDate.getTime());
+  endDate.setUTCHours(endDate.getUTCHours() + hours);
+  endDate.setUTCMinutes(endDate.getUTCMinutes() + minutes);
+  endDate.setUTCSeconds(endDate.getUTCSeconds() + seconds);
+  endDate.setUTCMilliseconds(endDate.getUTCMilliseconds() + milliseconds);
+  return getDoyTime(endDate, includeMsecs);
+}
+
+/**
+ * Returns a Postgres Interval over the specified range of DOY strings.
+ */
+export function getIntervalFromDoyRange(
+  startTime: string,
+  endTime: string,
+): string {
+  const startTimeMs = getUnixEpochTime(startTime);
+  const endTimeMs = getUnixEpochTime(endTime);
+  const differenceMs = endTimeMs - startTimeMs;
+  const seconds = Math.floor(differenceMs / 1000);
+  const milliseconds = differenceMs % 1000;
+  return `${seconds} seconds ${milliseconds} milliseconds`;
 }
 
 /**
  * Get a unix epoch time in milliseconds given a day-of-year timestamp.
  * @example getUnixEpochTime('2019-365T08:00:00.000') -> 1577779200000
- * @note inverse of getDoyTimestamp
+ * @note inverse of getDoyTime
  */
 export function getUnixEpochTime(doyTimestamp: string): number {
   const re = /(\d{4})-(\d{3})T(\d{2}):(\d{2}):(\d{2})\.?(\d{3})?/;

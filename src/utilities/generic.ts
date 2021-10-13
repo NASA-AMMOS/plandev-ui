@@ -32,12 +32,12 @@ export function keyBy<T>(list: T[], key = 'id'): StringTMap<T> {
 /**
  * Parses a File object into JSON. If the parse fails we reject with an error.
  */
-export function parseJsonFile(file: File): Promise<any> {
+export function parseJsonFile<T>(file: File): Promise<T> {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
     fileReader.onload = () => {
       try {
-        const json = JSON.parse(fileReader.result as string);
+        const json: T = JSON.parse(fileReader.result as string);
         resolve(json);
       } catch (error) {
         reject(error);
@@ -46,6 +46,26 @@ export function parseJsonFile(file: File): Promise<any> {
     fileReader.onerror = error => reject(error);
     fileReader.readAsText(file);
   });
+}
+
+/**
+ * Parses a file indexed in a FileList as JSON and returns the result.
+ */
+export async function parseJsonFileList<T>(
+  files: FileList,
+  index: number = 0,
+): Promise<T> {
+  if (files && files.length) {
+    try {
+      const file = files.item(index);
+      const json = await parseJsonFile<T>(file);
+      return json;
+    } catch (e) {
+      console.log(e);
+      return {} as T;
+    }
+  }
+  return {} as T;
 }
 
 /**

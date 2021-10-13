@@ -2,64 +2,61 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type {
-    FormParameter,
-    ParameterMap,
-    ParameterSchema,
-  } from '../../types';
+  import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types';
   import Parameters from '../parameters/Parameters.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
 
   const dispatch = createEventDispatcher();
 
-  export let modelArgumentsMap: ParameterMap;
-  export let modelParameters: ParameterSchema[];
+  export let argumentsMap: ArgumentsMap;
+  export let parametersMap: ParametersMap;
 
-  $: formParameters = getFormParameters(modelParameters, modelArgumentsMap);
+  $: formParameters = getFormParameters(parametersMap, argumentsMap);
 
   function getFormParameters(
-    modelParameters: ParameterSchema[],
-    modelArgumentsMap: ParameterMap,
+    parametersMap: ParametersMap,
+    argumentsMap: ArgumentsMap,
   ): FormParameter[] {
-    const formParameters = modelParameters.map(({ name, schema }) => {
-      let value = null;
+    const formParameters = Object.entries(parametersMap).map(
+      ([name, schema]) => {
+        const argValue = argumentsMap[name];
+        let value = null;
 
-      const parameter = modelArgumentsMap[name];
+        if (argValue) {
+          value = argValue;
+        } else if (schema.type === 'boolean') {
+          value = false;
+        } else if (schema.type === 'duration') {
+          value = 0;
+        } else if (schema.type === 'int') {
+          value = 0;
+        } else if (schema.type === 'path') {
+          value = '/etc/os-release';
+        } else if (schema.type === 'real') {
+          value = 0;
+        } else if (schema.type === 'series') {
+          value = [];
+        } else if (schema.type === 'string') {
+          value = '';
+        } else if (schema.type === 'struct') {
+          value = {};
+        } else if (schema.type === 'variant') {
+          value = '';
+        }
 
-      if (parameter) {
-        value = parameter.value;
-      } else if (schema.type === 'boolean') {
-        value = false;
-      } else if (schema.type === 'duration') {
-        value = 0;
-      } else if (schema.type === 'int') {
-        value = 0;
-      } else if (schema.type === 'path') {
-        value = '/etc/os-release';
-      } else if (schema.type === 'real') {
-        value = 0;
-      } else if (schema.type === 'series') {
-        value = [];
-      } else if (schema.type === 'string') {
-        value = '';
-      } else if (schema.type === 'struct') {
-        value = {};
-      } else if (schema.type === 'variant') {
-        value = '';
-      }
+        const formParameter: FormParameter = {
+          error: null,
+          loading: false,
+          name,
+          schema,
+          validate: false,
+          value,
+        };
 
-      const formParameter: FormParameter = {
-        error: null,
-        loading: false,
-        name,
-        schema,
-        validate: false,
-        value,
-      };
-
-      return formParameter;
-    });
+        return formParameter;
+      },
+    );
 
     return formParameters;
   }
@@ -68,15 +65,16 @@
     const { detail: formParameter } = event;
     updateFormParemter({ ...formParameter });
 
-    const { newFiles, newModelArguments } = formParameters.reduce(
-      ({ newFiles, newModelArguments }, { file, name, value }) => {
-        newModelArguments.push({ name, value });
+    const { newArgumentsMap, newFiles } = formParameters.reduce(
+      ({ newArgumentsMap, newFiles }, { file, name, value }) => {
+        newArgumentsMap[name] = value;
         if (file) newFiles.push(file);
-        return { newFiles, newModelArguments };
+        return { newArgumentsMap, newFiles };
       },
-      { newFiles: [], newModelArguments: [] },
+      { newArgumentsMap: {}, newFiles: [] },
     );
-    dispatch('updateModelArguments', { newFiles, newModelArguments });
+
+    dispatch('updateArguments', { newArgumentsMap, newFiles });
   }
 
   function updateFormParemter(newParameter: FormParameter) {

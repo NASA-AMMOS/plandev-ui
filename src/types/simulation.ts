@@ -1,13 +1,8 @@
-import type { Activity } from './activity';
-import type { ConstraintViolation } from './constraint';
+import type { ArgumentsMap } from '.';
 
-export type SimulationResponse = {
-  activities?: Activity[];
-  message?: string;
-  results?: Resource[];
-  status: 'complete' | 'failed' | 'incomplete';
-  success: boolean;
-  violations?: ConstraintViolation[];
+export type Simulation = {
+  arguments: ArgumentsMap;
+  id: number;
 };
 
 export enum SimulationStatus {
@@ -23,8 +18,13 @@ export enum SimulationStatus {
 export type Resource = {
   name: string;
   schema: any;
-  start: string;
+  startTime: string;
   values: ResourceValue[];
+};
+
+export type ResourceType = {
+  name: string;
+  schema: { type: string } & any;
 };
 
 export type ResourceValue = {

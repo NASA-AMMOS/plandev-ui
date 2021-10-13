@@ -11,7 +11,7 @@
     Point,
     XRangePoint,
   } from '../../types';
-  import { getDoyTimestamp } from '../../utilities/time';
+  import { getDoyTime } from '../../utilities/time';
 
   export let mouseOver: MouseOver;
   export let mouseOverViolations: MouseOverViolations;
@@ -106,7 +106,7 @@
         <br>
         Activity Type: ${labelText}
         <br>
-        Start: ${getDoyTimestamp(x)}
+        Start: ${getDoyTime(new Date(x))}
       </div>
     `;
   }
@@ -117,7 +117,7 @@
       <div>
         Id: ${id}
         <br>
-        Time: ${getDoyTimestamp(x)}
+        Time: ${getDoyTime(new Date(x))}
         <br>
         Value: ${y}
       </div>
@@ -181,7 +181,7 @@
       <div>
         Id: ${id}
         <br>
-        Start: ${getDoyTimestamp(x)}
+        Start: ${getDoyTime(new Date(x))}
         <br>
         Value: ${point.label.text}
       </div>

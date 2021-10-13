@@ -1,7 +1,5 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
-  import { GATEWAY_APOLLO_URL } from '../../env';
-  import { CREATE_MODEL, DELETE_MODEL, GET_MODELS } from '../../gql';
 
   export async function load({
     fetch,
@@ -14,30 +12,14 @@
       };
     }
 
-    try {
-      const { ssoToken: authorization } = session.user;
-      const options = {
-        body: JSON.stringify({ query: GET_MODELS }),
-        headers: { 'Content-Type': 'application/json', authorization },
-        method: 'POST',
-      };
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { models = [] } = data;
+    const { ssoToken: authorization } = session.user;
+    const models = await reqGetModels(fetch, authorization);
 
-      return {
-        props: {
-          models,
-        },
-      };
-    } catch (e) {
-      console.log(e);
-      return {
-        props: {
-          models: [],
-        },
-      };
-    }
+    return {
+      props: {
+        models,
+      },
+    };
   }
 </script>
 
@@ -54,14 +36,14 @@
   import TopBar from '../../components/ui/TopBar.svelte';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
+  import {
+    CreateModel,
+    reqCreateModel,
+    reqDeleteModel,
+    reqGetModels,
+  } from '../../utilities/requests';
 
-  type Model = {
-    id: string;
-    name: string;
-    version: string;
-  };
-
-  export let models: Model[] = [];
+  export let models: CreateModel[] = [];
 
   let confirmDeleteModel: ConfirmModal | null = null;
   let createButtonText = 'Create';
@@ -77,48 +59,13 @@
     error = null;
 
     const { ssoToken: authorization } = $appSession.user;
-    const fileMap = {
-      file: ['variables.file'],
-    };
-    const operations = {
-      query: CREATE_MODEL,
-      variables: {
-        file: null,
-        mission: '',
-        name,
-        owner: '',
-        version,
-      },
-    };
-
-    // Form append order matters here!
-    const body = new FormData();
     const file = files[0];
-    body.append('operations', JSON.stringify(operations));
-    body.append('map', JSON.stringify(fileMap));
-    body.append('file', file, file.name);
+    const newModel = await reqCreateModel(name, version, file, authorization);
 
-    const options = {
-      body,
-      headers: { authorization },
-      method: 'POST',
-    };
-
-    try {
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { createModel } = data;
-      const { id, message, success } = createModel;
-
-      if (success) {
-        models = [...models, { id, name, version }];
-      } else {
-        console.log(message);
-        error = message;
-      }
-    } catch (e) {
-      console.log(e);
-      error = e.message;
+    if (newModel) {
+      models = [...models, newModel];
+    } else {
+      error = 'Create model failed.';
     }
 
     createButtonText = 'Create';
@@ -126,30 +73,14 @@
 
   async function deleteModel() {
     const { model } = confirmDeleteModel.modal.context;
-    const { id } = model;
+    const { id, jarId } = model;
     const { ssoToken: authorization } = $appSession.user;
-    const body = { query: DELETE_MODEL, variables: { id } };
-    const options = {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
-      method: 'POST',
-    };
+    const { success } = await reqDeleteModel(id, jarId, authorization);
 
     confirmDeleteModel.modal.hide();
 
-    try {
-      const response = await fetch(GATEWAY_APOLLO_URL, options);
-      const { data } = await response.json();
-      const { deleteModel } = data;
-      const { message, success } = deleteModel;
-
-      if (success) {
-        models = models.filter(model => model.id !== id);
-      } else {
-        console.log(message);
-      }
-    } catch (e) {
-      console.log(e);
+    if (success) {
+      models = models.filter(model => model.id !== id);
     }
   }
 </script>

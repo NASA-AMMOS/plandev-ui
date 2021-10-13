@@ -248,7 +248,7 @@
     const points: XRangePoint[] = [];
 
     for (const resource of resources) {
-      const { name, schema, start, values } = resource;
+      const { name, schema, startTime, values } = resource;
       const r = new RegExp(filter?.name);
       const includeResource = r.test(name);
 
@@ -263,7 +263,7 @@
               label: { text },
               name,
               type: 'x-range',
-              x: getUnixEpochTime(start) + x / 1000,
+              x: getUnixEpochTime(startTime) + x / 1000,
             });
           }
         } else if (schema.type === 'string') {
@@ -276,7 +276,7 @@
               label: { text },
               name,
               type: 'x-range',
-              x: getUnixEpochTime(start) + x / 1000,
+              x: getUnixEpochTime(startTime) + x / 1000,
             });
             domainMap[text] = text;
           }
@@ -291,7 +291,7 @@
               label: { text },
               name,
               type: 'x-range',
-              x: getUnixEpochTime(start) + x / 1000,
+              x: getUnixEpochTime(startTime) + x / 1000,
             });
           }
         }

@@ -1,18 +1,25 @@
-import type { Parameter } from './parameter';
+import type { ArgumentsMap, ParametersMap } from '.';
+
+export type ActivityType = {
+  name: string;
+  parameters: ParametersMap;
+};
 
 export type Activity = {
+  arguments: ArgumentsMap;
   children: string[] | null;
   duration: number | null;
   id: string;
-  parameters: Parameter[];
   parent: string | null;
-  startTimestamp: string;
+  startTime: string;
   type: string;
 };
 
+export type ActivitiesMap = { [id: string]: Activity };
+
 export type NewActivity = {
-  parameters: Parameter[];
-  startTimestamp: string;
+  arguments: ArgumentsMap;
+  startTime: string;
   type: string;
 };
 

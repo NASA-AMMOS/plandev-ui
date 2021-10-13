@@ -2,7 +2,7 @@
   import { goto, prefetch } from '$app/navigation';
   import { page, session } from '$app/stores';
   import AboutModal from '../modals/About.svelte';
-  import { GATEWAY_APOLLO_URL } from '../../env';
+  import { GATEWAY_URL } from '../../env';
   import { tooltip } from '../../utilities/tooltip';
 
   type NavItem = {
@@ -25,12 +25,6 @@
       name: 'Models',
       path: '/models',
     },
-    // {
-    //   iconClass: 'bi bi-code-slash',
-    //   iconFontSize: 16,
-    //   name: 'Editor',
-    //   path: null,
-    // },
     {
       iconClass: 'ai ai-graphql',
       iconFontSize: 25,
@@ -61,7 +55,7 @@
     } else if (name === 'About' && about) {
       about.modal.toggle();
     } else if (name === 'GraphQL') {
-      open(GATEWAY_APOLLO_URL, '_newtab');
+      open(`${GATEWAY_URL}/playground`, '_newtab');
     } else if (name === 'Logout') {
       await fetch('/auth/logout', { method: 'POST' });
       $session.user = null; // Triggers redirect.

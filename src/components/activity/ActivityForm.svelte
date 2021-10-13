@@ -6,8 +6,8 @@
   import type {
     Activity,
     ActivityType,
+    ArgumentsMap,
     FormParameter,
-    Parameter,
     StringTMap,
   } from '../../types';
   import Field from '../form/Field.svelte';
@@ -17,7 +17,7 @@
   import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { reqValidateParameters } from '../../utilities/requests';
+  import { reqValidateArguments } from '../../utilities/requests';
   import Card from '../ui/Card.svelte';
   import FieldInputText from '../form/FieldInputText.svelte';
   import { required, timestamp } from '../../utilities/validators';
@@ -26,45 +26,58 @@
 
   export let activitiesMap: StringTMap<Activity> = {};
   export let activityTypes: ActivityType[] = [];
+  export let argumentsMap: ArgumentsMap = {};
   export let children: string[] | null = null;
   export let duration: number | null;
-  export let id: string = '';
-  export let modelId: string = '';
-  export let parameters: Parameter[] = [];
+  export let id: number | undefined;
+  export let modelId: number | undefined;
   export let parent: string | null = null;
-  export let startTimestamp: string = '';
+  export let startTime: string = '';
   export let type: string = '';
 
   let confirmDeleteActivityModal: ConfirmModal | null = null;
 
   $: activityType = activityTypes.find(({ name }) => name === type);
-  $: formParameters = getFormParameters(activityType, parameters);
+  $: formParameters = getFormParameters(activityType, argumentsMap);
   $: hasChildren = children ? children.length > 0 : false;
   $: isChild = parent !== null;
   $: parentId = isChild ? parent : 'None (Root Activity)';
 
   function getFormParameters(
     activityType: ActivityType,
-    parameters: Parameter[],
+    argumentsMap: ArgumentsMap,
   ): FormParameter[] {
-    return activityType.parameters.map(activityTypeParameter => {
-      let value = activityTypeParameter.default;
+    return Object.entries(activityType.parameters).map(([name, schema]) => {
+      const argValue = argumentsMap[name];
+      let value = null;
 
-      const activityParameter = parameters.find(
-        parameter => parameter.name === activityTypeParameter.name,
-      );
-      if (activityParameter) {
-        const paramValue = activityParameter.value;
-        if (paramValue !== null && paramValue !== undefined) {
-          value = paramValue;
-        }
+      if (argValue) {
+        value = argValue;
+      } else if (schema.type === 'boolean') {
+        value = false;
+      } else if (schema.type === 'duration') {
+        value = 0;
+      } else if (schema.type === 'int') {
+        value = 0;
+      } else if (schema.type === 'path') {
+        value = '/etc/os-release';
+      } else if (schema.type === 'real') {
+        value = 0;
+      } else if (schema.type === 'series') {
+        value = [];
+      } else if (schema.type === 'string') {
+        value = '';
+      } else if (schema.type === 'struct') {
+        value = {};
+      } else if (schema.type === 'variant') {
+        value = '';
       }
 
       const formParameter: FormParameter = {
         error: null,
         loading: false,
-        name: activityTypeParameter.name,
-        schema: activityTypeParameter.schema,
+        name,
+        schema,
         validate: true,
         value,
       };
@@ -73,22 +86,10 @@
     });
   }
 
-  function getParameters(formParameter: FormParameter): Parameter[] {
-    const newParameters = [...parameters];
-    const newParameter = {
-      name: formParameter.name,
-      value: formParameter.value,
-    };
-    const index = newParameters.findIndex(
-      ({ name }) => name === formParameter.name,
-    );
-
-    if (index > -1) {
-      newParameters[index] = newParameter;
-      return newParameters;
-    } else {
-      return [...newParameters, newParameter];
-    }
+  function getArguments(formParameter: FormParameter): ArgumentsMap {
+    const { name, value } = formParameter;
+    const newArgument = { [name]: value };
+    return { ...argumentsMap, ...newArgument };
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
@@ -97,17 +98,17 @@
     updateFormParemter({ ...formParameter, loading: true });
     const { ssoToken: authorization } = $appSession.user;
     const { name, value } = formParameter;
-    const { errors, success } = await reqValidateParameters(
+    const { errors, success } = await reqValidateArguments(
       type,
       modelId,
-      [{ name, value }],
+      { [name]: value },
       authorization,
     );
 
     if (success) {
       updateFormParemter({ ...formParameter, error: null, loading: false });
-      const parameters = getParameters(formParameter);
-      dispatch('updateParameter', { id, parameters });
+      const newArguments = getArguments(formParameter);
+      dispatch('updateArguments', { arguments: newArguments, id });
     } else {
       updateFormParemter({
         ...formParameter,
@@ -119,7 +120,7 @@
 
   function onDelete() {
     confirmDeleteActivityModal.modal.hide();
-    dispatch('delete', { id });
+    dispatch('delete', id);
   }
 
   function updateFormParemter(newParameter: FormParameter) {
@@ -173,13 +174,13 @@
     {/if}
 
     <FieldInputText
-      bind:value={startTimestamp}
+      bind:value={startTime}
       disabled={isChild}
-      name="start-timestamp"
+      name="start-time"
       validators={[required, timestamp]}
-      on:change={() => dispatch('updateStartTimestamp', { id, startTimestamp })}
+      on:change={() => dispatch('updateStartTime', { id, startTime })}
     >
-      Start Timestamp
+      Start Time
     </FieldInputText>
 
     <Field>

@@ -1,5 +1,20 @@
+import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
+import Toastify from 'toastify-js';
+import type { ArgumentsMap, ParametersMap } from '../types';
 import { SimulationStatus } from '../types';
+import {
+  reqUpdateSimulationArguments,
+  reqUploadFiles,
+} from '../utilities/requests';
+
+/* Stores. */
+
+export const modelParametersMap: Writable<ParametersMap> = writable({});
+
+export const selectedSimulationId: Writable<number | null> = writable(null);
+
+export const simulationArgumentsMap: Writable<ArgumentsMap> = writable({});
 
 export const simulationStatus = (() => {
   const {
@@ -27,3 +42,38 @@ export const simulationStatus = (() => {
     },
   };
 })();
+
+/* Utility Functions. */
+
+export async function updateSimulationArguments(
+  simulationId: number,
+  argumentsMap: ArgumentsMap,
+  newFiles: File[],
+  authorization: string,
+): Promise<void> {
+  try {
+    await reqUpdateSimulationArguments(
+      simulationId,
+      argumentsMap,
+      authorization,
+    );
+    await reqUploadFiles(newFiles, authorization);
+    simulationArgumentsMap.set(argumentsMap);
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Arguments Updated Successfully',
+    }).showToast();
+  } catch (e) {
+    console.log(e);
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Arguments Update Failed',
+    }).showToast();
+  }
+}

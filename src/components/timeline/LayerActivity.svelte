@@ -17,7 +17,7 @@
     UpdateActivity,
   } from '../../types';
   import { compare } from '../../utilities/generic';
-  import { getDoyTimestamp, getUnixEpochTime } from '../../utilities/time';
+  import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
   const dispatch = createEventDispatcher();
@@ -110,7 +110,7 @@
       parent: activity?.parent || null,
       selected: selectedActivity?.id === activity.id,
       type: 'activity',
-      x: getUnixEpochTime(activity.startTimestamp),
+      x: getUnixEpochTime(activity.startTime),
     };
     return point;
   }
@@ -132,11 +132,11 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
         const detail: UpdateActivity = {
           id: dragPoint.id,
-          startTimestamp,
+          startTime,
         };
         dispatch('dragActivity', detail);
       }
@@ -147,11 +147,11 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
         const detail: UpdateActivity = {
           id: dragPoint.id,
-          startTimestamp,
+          startTime,
         };
         dispatch('dragActivityEnd', detail);
       }
@@ -196,9 +196,9 @@
       const { offsetX } = e;
       overlaySvgSelection.select('.activity-drag-guide').remove();
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
-      const startTimestamp = getDoyTimestamp(unixEpochTime);
+      const startTime = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      const detail: DropActivity = { activityTypeName, startTimestamp };
+      const detail: DropActivity = { activityTypeName, startTime };
       dispatch('dropActivity', detail);
     }
   }
@@ -442,8 +442,8 @@
       const b = activitiesMap[bId];
 
       if (a && b) {
-        const aStartTime = getUnixEpochTime(a.startTimestamp);
-        const bStartTime = getUnixEpochTime(b.startTimestamp);
+        const aStartTime = getUnixEpochTime(a.startTime);
+        const bStartTime = getUnixEpochTime(b.startTime);
         return compare(aStartTime, bStartTime);
       }
 
@@ -452,8 +452,8 @@
   }
 
   function sortActivities(a: Activity, b: Activity): number {
-    const aStartTime = getUnixEpochTime(a.startTimestamp);
-    const bStartTime = getUnixEpochTime(b.startTimestamp);
+    const aStartTime = getUnixEpochTime(a.startTime);
+    const bStartTime = getUnixEpochTime(b.startTime);
     return compare(aStartTime, bStartTime);
   }
 </script>

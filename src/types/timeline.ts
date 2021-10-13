@@ -23,7 +23,7 @@ export interface Axis {
 
 export interface DropActivity {
   activityTypeName: string;
-  startTimestamp: string;
+  startTime: string;
 }
 
 export interface HorizontalGuide {

@@ -51,6 +51,7 @@
     "eslint-plugin-svelte3": "^3.2.1",
     "nanoid": "^3.1.29",
     "pg": "^8.7.1",
+    "postgres-interval": "^4.0.0",
     "prettier": "^2.4.1",
     "prettier-plugin-svelte": "^2.4.0",
     "split.js": "^1.6.4",

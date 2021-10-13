@@ -1,5 +1,3 @@
-import type { StringTMap } from '.';
-
 export type FormParameter = {
   error: string | null;
   file?: File;
@@ -12,20 +10,11 @@ export type FormParameter = {
   value: any;
 };
 
-export type Parameter = {
-  name: string;
-  value: any;
-};
+export type Argument = any;
+export type ArgumentsMap = { [name: string]: Argument };
 
-export type ParameterMap = StringTMap<Parameter>;
-
-export type ParameterSchema = {
-  default: any;
-  name: string;
-  schema: any;
-};
-
-export type ParameterSchemaMap = StringTMap<ParameterSchema>;
+export type Parameter = { type: string } & any;
+export type ParametersMap = { [name: string]: Parameter };
 
 export type ParameterValidationResponse = {
   errors: string[] | null;

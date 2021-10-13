@@ -15,7 +15,7 @@
     TimeRange,
     VerticalGuide,
   } from '../../types';
-  import { getDoyTimestamp } from '../../utilities/time';
+  import { getDoyTime } from '../../utilities/time';
   import { getXScale } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
@@ -54,7 +54,7 @@
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
   $: xTicksView = xScaleView.ticks().map((date: Date) => {
-    const doyTimestamp = getDoyTimestamp(date.getTime(), false);
+    const doyTimestamp = getDoyTime(date, false);
     const [yearDay, time] = doyTimestamp.split('T');
     return { date, time, yearDay };
   });

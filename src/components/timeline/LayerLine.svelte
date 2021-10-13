@@ -150,7 +150,7 @@
     const points: LinePoint[] = [];
 
     for (const resource of resources) {
-      const { name, schema, start, values } = resource;
+      const { name, schema, startTime, values } = resource;
       const r = new RegExp(filter?.name);
       const includeResource = r.test(name);
 
@@ -164,7 +164,7 @@
               id: `${id}-resource-${name}-${i}`,
               name,
               type: 'line',
-              x: getUnixEpochTime(start) + x / 1000,
+              x: getUnixEpochTime(startTime) + x / 1000,
               y,
             });
           }
@@ -177,7 +177,7 @@
               id: `${id}-resource-${name}-${i}`,
               name,
               type: 'line',
-              x: getUnixEpochTime(start) + x / 1000,
+              x: getUnixEpochTime(startTime) + x / 1000,
               y,
             });
           }

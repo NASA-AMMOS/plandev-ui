@@ -1,17 +1,22 @@
-import { GATEWAY_APOLLO_URL } from '../env';
+import { GATEWAY_URL, HASURA_URL } from '../env';
 import {
-  CREATE_ACTIVITIES,
+  CREATE_ACTIVITY,
+  CREATE_CONSTRAINT,
+  CREATE_MODEL,
+  CREATE_PLAN,
+  CREATE_SIMULATION,
   DELETE_ACTIVITY,
-  DELETE_MODEL_CONSTRAINTS,
-  DELETE_PLAN_CONSTRAINTS,
+  DELETE_CONSTRAINT,
+  DELETE_MODEL,
+  DELETE_PLAN_AND_SIMULATIONS,
+  GET_MODELS,
   GET_PLAN,
+  GET_PLANS_AND_MODELS,
   SIMULATE,
   UPDATE_ACTIVITY,
-  UPDATE_MODEL_ARGUMENTS,
-  UPDATE_MODEL_CONSTRAINTS,
-  UPDATE_PLAN_CONSTRAINTS,
-  UPLOAD_FILE,
-  VALIDATE_PARAMETERS,
+  UPDATE_CONSTRAINT,
+  UPDATE_SIMULATION_ARGUMENTS,
+  VALIDATE_ARGUMENTS,
 } from '../gql';
 import type { ViewPostResponseBody } from '../routes/views';
 import type {
@@ -19,51 +24,268 @@ import type {
   ViewIdPutResponseBody,
 } from '../routes/views/[id]';
 import type {
+  ActivitiesMap,
+  Activity,
+  ActivityType,
+  ArgumentsMap,
   Constraint,
+  ConstraintViolation,
+  CreateConstraint,
   Fetch,
   NewActivity,
-  Parameter,
+  ParametersMap,
   ParameterValidationResponse,
-  SimulationResponse,
+  Resource,
+  ResourceValue,
+  Simulation,
   UpdateActivity,
   View,
 } from '../types';
+import {
+  getDoyTime,
+  getDoyTimeFromDuration,
+  getIntervalFromDoyRange,
+} from './time';
 
-type CreateActivityResponse = {
+/* Types. */
+
+export type CreateActivityResponse = {
   ids: string[];
   message: string;
   success: boolean;
 };
 
-type GenericResponse = {
-  message: string;
+export type CreateModel = {
+  id: number;
+  jarId: number;
+  name: string;
+  version: string;
+};
+
+export type CreatePlan = {
+  endTime: string;
+  id: number;
+  modelId: number;
+  name: string;
+  startTime: string;
+};
+
+export type CreatePlanModel = {
+  id: number;
+  name: string;
+};
+
+export type GenericResponse = {
+  message?: string;
   success: boolean;
 };
 
+export type Model = {
+  activityTypes: ActivityType[];
+  constraints: Constraint[];
+  id: number;
+  parameters: { parameters: ParametersMap };
+};
+
+export type Plan = {
+  activities: Activity[];
+  constraints: Constraint[];
+  duration: string;
+  endTime: string;
+  id: number;
+  model: Model;
+  name: string;
+  simulations: Simulation[];
+  startTime: string;
+};
+
+/* Functions. */
+
 export async function reqCreateActivity(
-  activity: NewActivity,
-  planId: string,
+  newActivity: NewActivity,
+  planId: number,
+  planStartTime: string,
   authorization: string,
-): Promise<CreateActivityResponse> {
+): Promise<Activity | null> {
   try {
-    const activities = [activity];
+    const start_offset = getIntervalFromDoyRange(
+      planStartTime,
+      newActivity.startTime,
+    );
+    const activityInput = {
+      arguments: newActivity.arguments,
+      plan_id: planId,
+      start_offset,
+      type: newActivity.type,
+    };
     const body = {
-      query: CREATE_ACTIVITIES,
-      variables: { activities, planId },
+      query: CREATE_ACTIVITY,
+      variables: { activity: activityInput },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
+    const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
-    const { createActivities } = data;
-    return createActivities;
+    const { createActivity } = data;
+    const { id } = createActivity;
+    const activity: Activity = {
+      ...newActivity,
+      children: [],
+      duration: 0,
+      id,
+      parent: null,
+    };
+    return activity;
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { ids: [], message, success: false };
+    return null;
+  }
+}
+
+export async function reqCreateConstraint(
+  newConstraint: CreateConstraint,
+  authorization: string,
+): Promise<Constraint | null> {
+  try {
+    const constraintInput = {
+      definition: newConstraint.definition,
+      description: newConstraint.description,
+      model_id: newConstraint.modelId,
+      name: newConstraint.name,
+      plan_id: newConstraint.planId,
+      summary: newConstraint.summary,
+    };
+    const body = {
+      query: CREATE_CONSTRAINT,
+      variables: { constraint: constraintInput },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
+    const { data } = await response.json();
+    const { createConstraint } = data;
+    const { id } = createConstraint;
+    const constraint: Constraint = {
+      ...newConstraint,
+      id,
+    };
+    return constraint;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+}
+
+export async function reqCreateModel(
+  name: string,
+  version: string,
+  file: File,
+  authorization: string,
+): Promise<CreateModel | null> {
+  try {
+    const jarId = await reqUploadFile(file, authorization);
+    const model = {
+      jar_id: jarId,
+      mission: '',
+      name,
+      version,
+    };
+    const body = {
+      query: CREATE_MODEL,
+      variables: { model },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
+    const { data } = await response.json();
+    const { createModel } = data;
+    const { id } = createModel;
+    const newModel: CreateModel = {
+      id,
+      jarId,
+      name,
+      version,
+    };
+    return newModel;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+}
+
+export async function reqCreatePlan(
+  endTime: string,
+  modelId: number,
+  name: string,
+  startTime: string,
+  simulationArguments: ArgumentsMap,
+  authorization: string,
+): Promise<CreatePlan | null> {
+  try {
+    const plan = {
+      duration: getIntervalFromDoyRange(startTime, endTime),
+      model_id: modelId,
+      name,
+      start_time: startTime,
+    };
+    const body = {
+      query: CREATE_PLAN,
+      variables: { plan },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
+    const { data } = await response.json();
+    const { createPlan } = data;
+    const { id } = createPlan;
+    const newPlan: CreatePlan = {
+      endTime,
+      id,
+      modelId,
+      name,
+      startTime,
+    };
+
+    await reqCreateSimulation(id, simulationArguments, authorization);
+
+    return newPlan;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+}
+
+export async function reqCreateSimulation(
+  plan_id: string,
+  simulationArguments: ArgumentsMap,
+  authorization: string,
+): Promise<void> {
+  try {
+    const simulation = { arguments: simulationArguments, plan_id };
+    const body = {
+      query: CREATE_SIMULATION,
+      variables: { simulation },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    await fetch(HASURA_URL, options);
+  } catch (e) {
+    console.log(e);
   }
 }
 
@@ -86,59 +308,102 @@ export async function reqCreateView(
 }
 
 export async function reqDeleteActivity(
-  activityId: string,
-  planId: string,
+  id: number,
   authorization: string,
 ): Promise<GenericResponse> {
   try {
     const body = {
       query: DELETE_ACTIVITY,
-      variables: { activityId, planId },
+      variables: { id },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
-    const { data } = await response.json();
-    const { deleteActivity } = data;
-    return deleteActivity;
+    await fetch(HASURA_URL, options);
+    return { success: true };
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { message, success: false };
+    return { success: false };
   }
 }
 
 export async function reqDeleteConstraint(
-  constraint: Constraint,
-  type: string,
-  modelId: string,
-  planId: string,
+  id: number,
   authorization: string,
 ): Promise<GenericResponse> {
   try {
-    const id = type === 'plan' ? planId : modelId;
-    const query =
-      type === 'plan' ? DELETE_PLAN_CONSTRAINTS : DELETE_MODEL_CONSTRAINTS;
     const body = {
-      query,
-      variables: { id, names: [constraint.name] },
+      query: DELETE_CONSTRAINT,
+      variables: { id },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
-    const { data } = await response.json();
-    const { deleteConstraints } = data;
-    return deleteConstraints;
+    await fetch(HASURA_URL, options);
+    return { success: true };
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { message, success: false };
+    return { success: false };
+  }
+}
+
+export async function reqDeleteFile(
+  id: number,
+  authorization: string,
+): Promise<void> {
+  const options = {
+    headers: { 'x-cam-sso-token': authorization },
+    method: 'DELETE',
+  };
+  const response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
+  const { success } = await response.json();
+
+  if (!success) {
+    throw new Error('Delete file failed');
+  }
+}
+
+export async function reqDeleteModel(
+  id: number,
+  jar_id: number,
+  authorization: string,
+): Promise<GenericResponse> {
+  try {
+    await reqDeleteFile(jar_id, authorization);
+    const body = { query: DELETE_MODEL, variables: { id } };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    await fetch(HASURA_URL, options);
+    return { success: true };
+  } catch (e) {
+    console.log(e);
+    return { success: false };
+  }
+}
+
+export async function reqDeletePlanAndSimulations(
+  id: number,
+  authorization: string,
+): Promise<GenericResponse> {
+  try {
+    const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    await fetch(HASURA_URL, options);
+    return { success: true };
+  } catch (e) {
+    console.log(e);
+    return { success: false };
   }
 }
 
@@ -155,11 +420,61 @@ export async function reqDeleteView(
   }
 }
 
-export async function reqGetPlan<T>(
+export async function reqGetModels(
   fetch: Fetch,
-  id: string,
   authorization: string,
-): Promise<T | null> {
+): Promise<CreateModel[]> {
+  try {
+    const options = {
+      body: JSON.stringify({ query: GET_MODELS }),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
+    const { data } = await response.json();
+    const { models = [] } = data;
+    return models;
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
+}
+
+export async function reqGetPlansAndModels(
+  fetch: Fetch,
+  authorization: string,
+): Promise<{ models: CreatePlanModel[]; plans: CreatePlan[] }> {
+  try {
+    const options = {
+      body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
+    const { data } = await response.json();
+    const { models, plans } = data;
+    return {
+      models,
+      plans: plans.map((plan: any) => {
+        const startTime = new Date(plan.startTime);
+        return {
+          ...plan,
+          endTime: getDoyTimeFromDuration(startTime, plan.duration),
+          startTime: getDoyTime(startTime),
+        };
+      }),
+    };
+  } catch (e) {
+    console.log(e);
+    return { models: [], plans: [] };
+  }
+}
+
+export async function reqGetPlan(
+  fetch: Fetch,
+  id: number,
+  authorization: string,
+): Promise<Plan | null> {
   try {
     const body = { query: GET_PLAN, variables: { id } };
     const options = {
@@ -167,10 +482,24 @@ export async function reqGetPlan<T>(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
+    const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
     const { plan } = data;
-    return plan;
+    const startTime = new Date(plan.startTime);
+    return {
+      ...plan,
+      activities: plan.activities.map((activity: any) => ({
+        arguments: activity.arguments,
+        children: [],
+        duration: 0,
+        id: activity.id,
+        parent: null,
+        startTime: getDoyTimeFromDuration(startTime, activity.startOffset),
+        type: activity.type,
+      })),
+      endTime: getDoyTimeFromDuration(startTime, plan.duration),
+      startTime: getDoyTime(startTime),
+    };
   } catch (e) {
     console.log(e);
     return null;
@@ -204,110 +533,200 @@ export async function reqGetViews(): Promise<View[] | null> {
 }
 
 export async function reqSimulate(
-  planId: string,
-  modelId: string,
+  modelId: number,
+  planId: number,
   authorization: string,
-): Promise<SimulationResponse> {
+): Promise<{
+  activitiesMap?: ActivitiesMap;
+  constraintViolations?: ConstraintViolation[];
+  resources?: Resource[];
+  status: 'complete' | 'failed' | 'incomplete';
+}> {
+  type ResourceType = {
+    name: string;
+    schema: { type: string } & any;
+  };
+
+  type SimulateResponse = {
+    results?: {
+      activities: {
+        [id: string]: {
+          children: string[];
+          duration: number;
+          parameters: ArgumentsMap;
+          parent: string | null;
+          startTimestamp: string;
+          type: string;
+        };
+      };
+      constraints: any;
+      resources: { [name: string]: ResourceValue[] };
+      start: string;
+    };
+    status: 'complete' | 'failed' | 'incomplete';
+  };
+
   try {
-    const body = { query: SIMULATE, variables: { modelId, planId } };
+    const body = {
+      query: SIMULATE,
+      variables: { modelId, planId: `${planId}` },
+    };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
+    const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
-    const { simulate } = data;
-    return simulate;
+
+    const resourceTypes: ResourceType[] = data.resourceTypes;
+    const { results, status }: SimulateResponse = data.simulate;
+
+    if (status === 'complete') {
+      const activitiesMap: ActivitiesMap = Object.keys(
+        results.activities,
+      ).reduce((activitiesMap: ActivitiesMap, id: string) => {
+        const activity = results.activities[id];
+        activitiesMap[id] = {
+          arguments: activity.parameters,
+          children: activity.children,
+          duration: activity.duration,
+          id,
+          parent: activity.parent,
+          startTime: activity.startTimestamp,
+          type: activity.type,
+        };
+        return activitiesMap;
+      }, {});
+
+      const resourceTypesMap = resourceTypes.reduce(
+        (map: { [name: string]: any }, { name, schema }) => {
+          map[name] = schema;
+          return map;
+        },
+        {},
+      );
+
+      const resources: Resource[] = Object.entries(results.resources).map(
+        ([name, values]) => ({
+          name,
+          schema: resourceTypesMap[name] || { type: 'unknown' },
+          startTime: results.start,
+          values,
+        }),
+      );
+
+      const constraintViolations = Object.entries(results.constraints).flatMap(
+        ([name, violations]: [string, any]) =>
+          violations.map((violation: any) => ({
+            associations: violation.associations,
+            constraint: {
+              name,
+            },
+            windows: violation.windows,
+          })),
+      );
+
+      return { activitiesMap, constraintViolations, resources, status };
+    } else {
+      return { status };
+    }
   } catch (e) {
     console.log(e);
-    return { status: 'failed', success: false };
+    return { status: 'failed' };
   }
 }
 
 export async function reqUpdateActivity(
   activity: UpdateActivity,
-  planId: string,
+  planStartTime: string,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<UpdateActivity | null> {
+  type UpdateActivityInput = {
+    arguments?: ArgumentsMap;
+    start_offset?: string;
+  };
+
+  const activityInput: UpdateActivityInput = {};
+
+  if (activity.arguments) {
+    activityInput.arguments = activity.arguments;
+  }
+
+  if (activity.startTime) {
+    activityInput.start_offset = getIntervalFromDoyRange(
+      planStartTime,
+      activity.startTime,
+    );
+  }
+
   try {
     const body = {
       query: UPDATE_ACTIVITY,
-      variables: { activity, planId },
+      variables: { activity: activityInput, id: activity.id },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
-    const { data } = await response.json();
-    const { updateActivity } = data;
-    return updateActivity;
+    await fetch(HASURA_URL, options);
+    return activity;
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { message, success: false };
-  }
-}
-
-export async function reqUpdateModelArguments(
-  planId: string,
-  modelArguments: Parameter[],
-  authorization: string,
-): Promise<GenericResponse> {
-  try {
-    const modelArgumentsMap = modelArguments.reduce(
-      (modelArgumentsMap, { name, value }) => {
-        modelArgumentsMap[name] = value;
-        return modelArgumentsMap;
-      },
-      {},
-    );
-    const body = {
-      query: UPDATE_MODEL_ARGUMENTS,
-      variables: { modelArguments: modelArgumentsMap, planId },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
-      method: 'POST',
-    };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
-    const { data } = await response.json();
-    const { updateModelArguments } = data;
-    return updateModelArguments;
-  } catch (e) {
-    console.log(e);
-    const { message } = e;
-    return { message, success: false };
+    return null;
   }
 }
 
 export async function reqUpdateConstraint(
-  constraint: Constraint,
-  type: string,
-  modelId: string,
-  planId: string,
+  updatedConstraint: Constraint,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<Constraint> {
   try {
-    const id = type === 'plan' ? planId : modelId;
-    const query =
-      type === 'plan' ? UPDATE_PLAN_CONSTRAINTS : UPDATE_MODEL_CONSTRAINTS;
+    const constraintInput = {
+      definition: updatedConstraint.definition,
+      description: updatedConstraint.description,
+      model_id: updatedConstraint.modelId,
+      name: updatedConstraint.name,
+      plan_id: updatedConstraint.planId,
+      summary: updatedConstraint.summary,
+    };
     const body = {
-      query,
-      variables: { constraints: [constraint], id },
+      query: UPDATE_CONSTRAINT,
+      variables: { constraint: constraintInput, id: updatedConstraint.id },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
+    await fetch(HASURA_URL, options);
+    return updatedConstraint;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+}
+
+export async function reqUpdateSimulationArguments(
+  simulationId: number,
+  argumentsMap: ArgumentsMap,
+  authorization: string,
+): Promise<GenericResponse> {
+  try {
+    const body = {
+      query: UPDATE_SIMULATION_ARGUMENTS,
+      variables: { arguments: argumentsMap, simulationId },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', authorization },
+      method: 'POST',
+    };
+    const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
-    const { updateConstraints } = data;
-    return updateConstraints;
+    const { updateModelArguments } = data;
+    return updateModelArguments;
   } catch (e) {
     console.log(e);
     const { message } = e;
@@ -335,38 +754,23 @@ export async function reqUpdateView(
 export async function reqUploadFile(
   file: File,
   authorization: string,
-): Promise<GenericResponse> {
-  try {
-    const fileMap = {
-      file: ['variables.file'],
-    };
-    const operations = {
-      query: UPLOAD_FILE,
-      variables: {
-        file: null,
-      },
-    };
+): Promise<number | null> {
+  const body = new FormData();
+  body.append('file', file, file.name);
 
-    // Form append order matters here!
-    const body = new FormData();
-    body.append('operations', JSON.stringify(operations));
-    body.append('map', JSON.stringify(fileMap));
-    body.append('file', file, file.name);
+  const options = {
+    body,
+    headers: { 'x-cam-sso-token': authorization },
+    method: 'POST',
+  };
+  const response = await fetch(`${GATEWAY_URL}/file`, options);
+  const { id = null } = await response.json();
 
-    const options = {
-      body,
-      headers: { authorization },
-      method: 'POST',
-    };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
-    const { data } = await response.json();
-    const { uploadFile } = data;
-    return uploadFile;
-  } catch (e) {
-    console.log(e);
-    const { message } = e;
-    return { message, success: false };
+  if (id === null) {
+    throw new Error('Upload file failed');
   }
+
+  return id;
 }
 
 export async function reqUploadFiles(
@@ -385,26 +789,26 @@ export async function reqUploadFiles(
   }
 }
 
-export async function reqValidateParameters(
+export async function reqValidateArguments(
   activityTypeName: string,
-  modelId: string,
-  parameters: Parameter[],
+  modelId: number,
+  argumentsMap: ArgumentsMap,
   authorization: string,
 ): Promise<ParameterValidationResponse> {
   try {
     const body = {
-      query: VALIDATE_PARAMETERS,
-      variables: { activityTypeName, modelId, parameters },
+      query: VALIDATE_ARGUMENTS,
+      variables: { activityTypeName, arguments: argumentsMap, modelId },
     };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(GATEWAY_APOLLO_URL, options);
+    const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
-    const { validateParameters } = data;
-    return validateParameters;
+    const { validateArguments } = data;
+    return validateArguments;
   } catch (e) {
     console.log(e);
     const { message } = e;

@@ -1,61 +1,77 @@
-import type { Readable, Writable } from 'svelte/store';
-import { derived, writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
+import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { Constraint, ConstraintViolation, StringTMap } from '../types';
+import type {
+  Constraint,
+  ConstraintViolation,
+  CreateConstraint,
+} from '../types';
 import {
+  reqCreateConstraint,
   reqDeleteConstraint,
   reqUpdateConstraint,
 } from '../utilities/requests';
 
 /* Stores. */
 
-type ConstraintsMap = StringTMap<Constraint>;
-
-export const modelConstraintsMap: Writable<ConstraintsMap> = writable({});
-export const modelConstraints = derived(
-  modelConstraintsMap,
-  $modelConstraintsMap => Object.values($modelConstraintsMap),
-) as Readable<Constraint[]>;
-
-export const planConstraintsMap: Writable<ConstraintsMap> = writable({});
-export const planConstraints = derived(
-  planConstraintsMap,
-  $planConstraintsMap => Object.values($planConstraintsMap),
-) as Readable<Constraint[]>;
-
+export const modelConstraints: Writable<Constraint[]> = writable([]);
+export const planConstraints: Writable<Constraint[]> = writable([]);
 export const selectedConstraint: Writable<Constraint | null> = writable(null);
-export const selectedConstraintType: Writable<string | null> = writable(null);
-
 export const violations: Writable<ConstraintViolation[]> = writable([]);
 
 /* Utility Functions. */
 
-export async function deleteConstraint(
-  constraint: Constraint,
-  type: string,
-  modelId: string,
-  planId: string,
+export async function createConstraint(
+  constraint: CreateConstraint,
   authorization: string,
 ): Promise<void> {
-  const { success } = await reqDeleteConstraint(
-    constraint,
-    type,
-    modelId,
-    planId,
-    authorization,
-  );
-  if (success) {
-    if (type === 'model') {
-      modelConstraintsMap.update(constraintsMap => {
-        delete constraintsMap[constraint.name];
-        return constraintsMap;
+  const newConstraint = await reqCreateConstraint(constraint, authorization);
+
+  if (newConstraint) {
+    if (newConstraint.modelId) {
+      modelConstraints.update(constraints => {
+        constraints = [...constraints, newConstraint];
+        return constraints;
       });
-    } else if (type === 'plan') {
-      planConstraintsMap.update(constraintsMap => {
-        delete constraintsMap[constraint.name];
-        return constraintsMap;
+    } else if (newConstraint.planId) {
+      planConstraints.update(constraints => {
+        constraints = [...constraints, newConstraint];
+        return constraints;
       });
     }
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Constraint Created Successfully',
+    }).showToast();
+  } else {
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Constraint Creation Failed',
+    }).showToast();
+  }
+}
+
+export async function deleteConstraint(
+  id: number,
+  authorization: string,
+): Promise<void> {
+  const { success } = await reqDeleteConstraint(id, authorization);
+
+  if (success) {
+    modelConstraints.update(constraints => {
+      return constraints.filter(constraint => constraint.id !== id);
+    });
+
+    planConstraints.update(constraints => {
+      return constraints.filter(constraint => constraint.id !== id);
+    });
+
     Toastify({
       backgroundColor: '#2da44e',
       duration: 3000,
@@ -74,45 +90,36 @@ export async function deleteConstraint(
   }
 }
 
-export function setSelectedConstraint(
-  constraint: Constraint | null,
-  type: string | null = null,
-): void {
-  selectedConstraint.set(constraint);
-  selectedConstraintType.set(type);
-}
-
 export async function updateConstraint(
   constraint: Constraint,
-  type: string,
-  modelId: string,
-  planId: string,
   authorization: string,
 ): Promise<void> {
-  const { success } = await reqUpdateConstraint(
+  const updatedConstraint = await reqUpdateConstraint(
     constraint,
-    type,
-    modelId,
-    planId,
     authorization,
   );
-  if (success) {
-    if (type === 'model') {
-      modelConstraintsMap.update(constraintsMap => ({
-        ...constraintsMap,
-        [constraint.name]: {
-          ...constraintsMap[constraint.name],
-          ...constraint,
-        },
-      }));
-    } else if (type === 'plan') {
-      planConstraintsMap.update(constraintsMap => ({
-        ...constraintsMap,
-        [constraint.name]: {
-          ...constraintsMap[constraint.name],
-          ...constraint,
-        },
-      }));
+
+  if (updatedConstraint) {
+    if (updatedConstraint.modelId) {
+      modelConstraints.update(constraints => {
+        constraints = constraints.map(constraint => {
+          if (constraint.id === updatedConstraint.id) {
+            return { ...updatedConstraint };
+          }
+          return constraint;
+        });
+        return constraints;
+      });
+    } else if (updatedConstraint.planId) {
+      planConstraints.update(constraints => {
+        constraints = constraints.map(constraint => {
+          if (constraint.id === updatedConstraint.id) {
+            return { ...updatedConstraint };
+          }
+          return constraint;
+        });
+        return constraints;
+      });
     }
     Toastify({
       backgroundColor: '#2da44e',
