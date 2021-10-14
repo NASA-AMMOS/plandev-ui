@@ -18,6 +18,7 @@
   import { required } from '../../utilities/validators';
   import Label from '../form/Label.svelte';
   import Select from '../form/Select.svelte';
+  import LayerXRangeForm from './LayerXRangeForm.svelte';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -159,6 +160,8 @@
               <option value="x-range"> X-Range </option>
             </Select>
           </Field>
+
+          <LayerXRangeForm />
 
           <Field>
             <button

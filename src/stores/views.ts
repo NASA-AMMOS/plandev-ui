@@ -17,6 +17,13 @@ type ViewStore = {
     invalidate?: any,
   ) => Unsubscriber;
   update(currentView: View): Promise<void>;
+  updateLayer(
+    timelineId: string,
+    rowId: string,
+    layerId: string,
+    prop: string,
+    value: any,
+  ): void;
   updateRow(timelineId: string, rowId: string, prop: string, value: any): void;
   updateSectionSizes(newSizes: number[]): void;
   updateTimeline(timelineId: string, prop: string, value: any): void;
@@ -101,6 +108,47 @@ export const view: ViewStore = (() => {
           text: 'View Updated Successfully',
         }).showToast();
       }
+    },
+    updateLayer(
+      timelineId: string,
+      rowId: string,
+      layerId: string,
+      prop: string,
+      value: any,
+    ) {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        layers: row.layers.map(layer => {
+                          if (layer.id === layerId) {
+                            return {
+                              ...layer,
+                              [prop]: value,
+                            };
+                          }
+                          return layer;
+                        }),
+                      };
+                    }
+                    return row;
+                  }),
+                },
+              };
+            }
+            return section;
+          }),
+        };
+      });
     },
     updateRow(timelineId: string, rowId: string, prop: string, value: any) {
       updateStore((view: View): View => {
