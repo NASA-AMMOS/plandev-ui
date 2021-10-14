@@ -21,6 +21,10 @@
   import Card from '../ui/Card.svelte';
   import FieldInputText from '../form/FieldInputText.svelte';
   import { required, timestamp } from '../../utilities/validators';
+  import {
+    getFormParameters,
+    updateFormParameter,
+  } from '../../utilities/parameters';
 
   const dispatch = createEventDispatcher();
 
@@ -38,53 +42,10 @@
   let confirmDeleteActivityModal: ConfirmModal | null = null;
 
   $: activityType = activityTypes.find(({ name }) => name === type);
-  $: formParameters = getFormParameters(activityType, argumentsMap);
+  $: formParameters = getFormParameters(activityType.parameters, argumentsMap);
   $: hasChildren = children ? children.length > 0 : false;
   $: isChild = parent !== null;
   $: parentId = isChild ? parent : 'None (Root Activity)';
-
-  function getFormParameters(
-    activityType: ActivityType,
-    argumentsMap: ArgumentsMap,
-  ): FormParameter[] {
-    return Object.entries(activityType.parameters).map(([name, schema]) => {
-      const argValue = argumentsMap[name];
-      let value = null;
-
-      if (argValue) {
-        value = argValue;
-      } else if (schema.type === 'boolean') {
-        value = false;
-      } else if (schema.type === 'duration') {
-        value = 0;
-      } else if (schema.type === 'int') {
-        value = 0;
-      } else if (schema.type === 'path') {
-        value = '/etc/os-release';
-      } else if (schema.type === 'real') {
-        value = 0;
-      } else if (schema.type === 'series') {
-        value = [];
-      } else if (schema.type === 'string') {
-        value = '';
-      } else if (schema.type === 'struct') {
-        value = {};
-      } else if (schema.type === 'variant') {
-        value = '';
-      }
-
-      const formParameter: FormParameter = {
-        error: null,
-        loading: false,
-        name,
-        schema,
-        validate: true,
-        value,
-      };
-
-      return formParameter;
-    });
-  }
 
   function getArguments(formParameter: FormParameter): ArgumentsMap {
     const { name, value } = formParameter;
@@ -95,7 +56,10 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
 
-    updateFormParemter({ ...formParameter, loading: true });
+    formParameters = updateFormParameter(formParameters, formParameter, {
+      loading: true,
+    });
+
     const { ssoToken: authorization } = $appSession.user;
     const { name, value } = formParameter;
     const { errors, success } = await reqValidateArguments(
@@ -106,12 +70,14 @@
     );
 
     if (success) {
-      updateFormParemter({ ...formParameter, error: null, loading: false });
+      formParameters = updateFormParameter(formParameters, formParameter, {
+        error: null,
+        loading: false,
+      });
       const newArguments = getArguments(formParameter);
       dispatch('updateArguments', { arguments: newArguments, id });
     } else {
-      updateFormParemter({
-        ...formParameter,
+      formParameters = updateFormParameter(formParameters, formParameter, {
         error: errors[0],
         loading: false,
       });
@@ -121,15 +87,6 @@
   function onDelete() {
     confirmDeleteActivityModal.modal.hide();
     dispatch('delete', id);
-  }
-
-  function updateFormParemter(newParameter: FormParameter) {
-    formParameters = formParameters.map(parameter => {
-      if (newParameter.name === parameter.name) {
-        return newParameter;
-      }
-      return parameter;
-    });
   }
 </script>
 

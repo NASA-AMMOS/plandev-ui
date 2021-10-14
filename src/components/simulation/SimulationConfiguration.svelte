@@ -3,6 +3,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types';
+  import {
+    getFormParameters,
+    updateFormParameter,
+  } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -14,56 +18,9 @@
 
   $: formParameters = getFormParameters(parametersMap, argumentsMap);
 
-  function getFormParameters(
-    parametersMap: ParametersMap,
-    argumentsMap: ArgumentsMap,
-  ): FormParameter[] {
-    const formParameters = Object.entries(parametersMap).map(
-      ([name, schema]) => {
-        const argValue = argumentsMap[name];
-        let value = null;
-
-        if (argValue) {
-          value = argValue;
-        } else if (schema.type === 'boolean') {
-          value = false;
-        } else if (schema.type === 'duration') {
-          value = 0;
-        } else if (schema.type === 'int') {
-          value = 0;
-        } else if (schema.type === 'path') {
-          value = '/etc/os-release';
-        } else if (schema.type === 'real') {
-          value = 0;
-        } else if (schema.type === 'series') {
-          value = [];
-        } else if (schema.type === 'string') {
-          value = '';
-        } else if (schema.type === 'struct') {
-          value = {};
-        } else if (schema.type === 'variant') {
-          value = '';
-        }
-
-        const formParameter: FormParameter = {
-          error: null,
-          loading: false,
-          name,
-          schema,
-          validate: false,
-          value,
-        };
-
-        return formParameter;
-      },
-    );
-
-    return formParameters;
-  }
-
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    updateFormParemter({ ...formParameter });
+    formParameters = updateFormParameter(formParameters, formParameter);
 
     const { newArgumentsMap, newFiles } = formParameters.reduce(
       ({ newArgumentsMap, newFiles }, { file, name, value }) => {
@@ -75,15 +32,6 @@
     );
 
     dispatch('updateArguments', { newArgumentsMap, newFiles });
-  }
-
-  function updateFormParemter(newParameter: FormParameter) {
-    formParameters = formParameters.map(parameter => {
-      if (newParameter.name === parameter.name) {
-        return newParameter;
-      }
-      return parameter;
-    });
   }
 </script>
 
