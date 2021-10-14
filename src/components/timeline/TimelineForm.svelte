@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import Field from '../form/Field.svelte';
+  import ConfirmModal from '../modals/Confirm.svelte';
   import Panel from '../ui/Panel.svelte';
   import {
     selectedLayerId,
@@ -18,6 +19,14 @@
   import Label from '../form/Label.svelte';
   import Select from '../form/Select.svelte';
 
+  let confirmDeleteRowModal: ConfirmModal | null = null;
+
+  function deleteRow() {
+    confirmDeleteRowModal.modal.hide();
+    view.deleteRow($selectedTimelineId, $selectedRowId);
+    $selectedRowId = null;
+  }
+
   function updateRow(prop: string, value: any) {
     view.updateRow($selectedTimelineId, $selectedRowId, prop, value);
   }
@@ -27,7 +36,7 @@
   }
 </script>
 
-<Panel hideHeader hideFooter>
+<Panel hideHeader>
   <span slot="body">
     <Field>
       <details open>
@@ -125,4 +134,21 @@
       </details>
     </Field>
   </span>
+
+  <span slot="footer">
+    <button
+      class="button secondary"
+      on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
+    >
+      Delete Row
+    </button>
+  </span>
 </Panel>
+
+<ConfirmModal
+  bind:this={confirmDeleteRowModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this row?"
+  title="Delete Row"
+  on:confirm={deleteRow}
+/>

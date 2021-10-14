@@ -7,6 +7,7 @@ import { reqUpdateView } from '../utilities/requests';
 /* Types. */
 
 type ViewStore = {
+  deleteRow(timelineId: string, rowId: string): void;
   set: (this: void, value: any) => void;
   subscribe: (
     this: void,
@@ -24,6 +25,25 @@ type ViewStore = {
 export const view: ViewStore = (() => {
   const { set, subscribe, update: updateStore } = writable(null);
   return {
+    deleteRow(timelineId: string, rowId: string): void {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.filter(row => row.id !== rowId),
+                },
+              };
+            }
+            return section;
+          }),
+        };
+      });
+    },
     set,
     subscribe,
     async update(currentView: View) {
