@@ -22,7 +22,6 @@
   let confirmDeleteRowModal: ConfirmModal | null = null;
 
   function deleteRow() {
-    confirmDeleteRowModal.modal.hide();
     view.deleteRow($selectedTimelineId, $selectedRowId);
     $selectedRowId = null;
   }

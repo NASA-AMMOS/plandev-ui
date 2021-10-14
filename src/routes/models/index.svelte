@@ -71,13 +71,11 @@
     createButtonText = 'Create';
   }
 
-  async function deleteModel() {
-    const { model } = confirmDeleteModel.modal.context;
+  async function deleteModel(event: CustomEvent<CreateModel>) {
+    const { detail: model } = event;
     const { id, jarId } = model;
     const { ssoToken: authorization } = $appSession.user;
     const success = await reqDeleteModel(id, jarId, authorization);
-
-    confirmDeleteModel.modal.hide();
 
     if (success) {
       models = models.filter(model => model.id !== id);
@@ -156,7 +154,7 @@
                       class="button-icon"
                       data-cy="delete-model-{model.name}"
                       on:click|stopPropagation={() =>
-                        confirmDeleteModel.modal.show({ model })}
+                        confirmDeleteModel.modal.show(model)}
                       use:tooltip={{
                         content: 'Delete Model',
                         placement: 'bottom',

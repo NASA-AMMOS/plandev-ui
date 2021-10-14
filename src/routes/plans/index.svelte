@@ -111,13 +111,11 @@
     createButtonText = 'Create';
   }
 
-  async function deletePlan() {
-    const { plan } = confirmDeletePlan.modal.context;
+  async function deletePlan(event: CustomEvent<CreatePlan>) {
+    const { detail: plan } = event;
     const { id } = plan;
     const { ssoToken: authorization } = $appSession.user;
     const success = await reqDeletePlanAndSimulations(id, authorization);
-
-    confirmDeletePlan.modal.hide();
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
@@ -222,7 +220,7 @@
                     <button
                       class="button-icon"
                       on:click|stopPropagation={() =>
-                        confirmDeletePlan.modal.show({ plan })}
+                        confirmDeletePlan.modal.show(plan)}
                       use:tooltip={{
                         content: 'Delete Plan',
                         placement: 'bottom',

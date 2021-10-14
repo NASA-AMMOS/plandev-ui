@@ -14,11 +14,17 @@
   export let title: string = 'Confirm';
   export let width: number = 350;
 
+  function onConfirm() {
+    dispatch('confirm', { ...modal.context });
+    modal.hide();
+  }
+
   function onKeydown(event: KeyboardEvent) {
     const { key } = event;
     if (key === 'Enter' && modal.shown) {
       event.preventDefault();
-      dispatch('confirm');
+      dispatch('confirm', { ...modal.context });
+      modal.hide();
     }
   }
 </script>
@@ -40,7 +46,7 @@
     <button class="button secondary" on:click|stopPropagation={modal.hide}>
       {cancelText}
     </button>
-    <button class="button" on:click={() => dispatch('confirm')}>
+    <button class="button" on:click={onConfirm}>
       {confirmText}
     </button>
   </div>

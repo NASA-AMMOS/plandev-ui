@@ -85,7 +85,6 @@
   }
 
   function onDelete() {
-    confirmDeleteActivityModal.modal.hide();
     dispatch('delete', id);
   }
 </script>

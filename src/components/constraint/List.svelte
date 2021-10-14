@@ -15,9 +15,8 @@
 
   let confirmDeleteModel: ConfirmModal | null = null;
 
-  function deleteConstraint() {
-    const { constraint } = confirmDeleteModel.modal.context;
-    confirmDeleteModel.modal.hide();
+  function deleteConstraint(event: CustomEvent<Constraint>) {
+    const { detail: constraint } = event;
     dispatch('delete', constraint.id);
   }
 
@@ -50,10 +49,7 @@
                 <button
                   class="button-icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteModel.modal.show({
-                      constraint,
-                      type: 'model',
-                    })}
+                    confirmDeleteModel.modal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -91,10 +87,7 @@
                 <button
                   class="button-icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteModel.modal.show({
-                      constraint,
-                      type: 'plan',
-                    })}
+                    confirmDeleteModel.modal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
