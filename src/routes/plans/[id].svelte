@@ -4,10 +4,10 @@
     ActivityType,
     ArgumentsMap,
     Constraint,
+    CreateActivity,
     CreateConstraint,
     DropActivity,
     MouseDown,
-    NewActivity,
     Resource,
     Row,
     TimeRange,
@@ -160,13 +160,13 @@
     const { ssoToken: authorization } = $appSession.user;
     const { detail: activityType } = event;
     const { id: planId, startTime } = initialPlan;
-    const newActivity: NewActivity = {
+    const activity: CreateActivity = {
       arguments: {},
       startTime,
       type: activityType.name,
     };
     const { id, success } = await activitiesMap.create(
-      newActivity,
+      activity,
       planId,
       startTime,
       authorization,
@@ -203,13 +203,13 @@
     const { id: planId } = initialPlan;
     const { detail } = event;
     const { activityTypeName: type, startTime } = detail;
-    const newActivity: NewActivity = {
+    const activity: CreateActivity = {
       arguments: {},
       startTime,
       type,
     };
     activitiesMap.create(
-      newActivity,
+      activity,
       planId,
       initialPlan.startTime,
       authorization,

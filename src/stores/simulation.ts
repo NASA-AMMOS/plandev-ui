@@ -11,9 +11,7 @@ import {
 /* Stores. */
 
 export const modelParametersMap: Writable<ParametersMap> = writable({});
-
 export const selectedSimulationId: Writable<number | null> = writable(null);
-
 export const simulationArgumentsMap: Writable<ArgumentsMap> = writable({});
 
 export const simulationStatus = (() => {

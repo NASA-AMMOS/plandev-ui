@@ -30,9 +30,9 @@ import type {
   ArgumentsMap,
   Constraint,
   ConstraintViolation,
+  CreateActivity,
   CreateConstraint,
   Fetch,
-  NewActivity,
   ParametersMap,
   ParameterValidationResponse,
   Resource,
@@ -75,11 +75,6 @@ export type CreatePlanModel = {
   name: string;
 };
 
-export type GenericResponse = {
-  message?: string;
-  success: boolean;
-};
-
 export type Model = {
   activityTypes: ActivityType[];
   constraints: Constraint[];
@@ -99,10 +94,39 @@ export type Plan = {
   startTime: string;
 };
 
+export type ResourceType = {
+  name: string;
+  schema: { type: string } & any;
+};
+
+export type SimulateResponse = {
+  results?: {
+    activities: {
+      [id: string]: {
+        children: string[];
+        duration: number;
+        parameters: ArgumentsMap;
+        parent: string | null;
+        startTimestamp: string;
+        type: string;
+      };
+    };
+    constraints: { [name: string]: any[] };
+    resources: { [name: string]: ResourceValue[] };
+    start: string;
+  };
+  status: 'complete' | 'failed' | 'incomplete';
+};
+
+export type UpdateActivityInput = {
+  arguments?: ArgumentsMap;
+  start_offset?: string;
+};
+
 /* Functions. */
 
 export async function reqCreateActivity(
-  newActivity: NewActivity,
+  newActivity: CreateActivity,
   planId: number,
   planStartTime: string,
   authorization: string,
@@ -189,16 +213,16 @@ export async function reqCreateModel(
   authorization: string,
 ): Promise<CreateModel | null> {
   try {
-    const jarId = await reqUploadFile(file, authorization);
-    const model = {
-      jar_id: jarId,
+    const jar_id = await reqUploadFile(file, authorization);
+    const modelInput = {
+      jar_id,
       mission: '',
       name,
       version,
     };
     const body = {
       query: CREATE_MODEL,
-      variables: { model },
+      variables: { model: modelInput },
     };
     const options = {
       body: JSON.stringify(body),
@@ -209,13 +233,13 @@ export async function reqCreateModel(
     const { data } = await response.json();
     const { createModel } = data;
     const { id } = createModel;
-    const newModel: CreateModel = {
+    const model: CreateModel = {
       id,
-      jarId,
+      jarId: jar_id,
       name,
       version,
     };
-    return newModel;
+    return model;
   } catch (e) {
     console.log(e);
     return null;
@@ -231,7 +255,7 @@ export async function reqCreatePlan(
   authorization: string,
 ): Promise<CreatePlan | null> {
   try {
-    const plan = {
+    const planInput = {
       duration: getIntervalFromDoyRange(startTime, endTime),
       model_id: modelId,
       name,
@@ -239,7 +263,7 @@ export async function reqCreatePlan(
     };
     const body = {
       query: CREATE_PLAN,
-      variables: { plan },
+      variables: { plan: planInput },
     };
     const options = {
       body: JSON.stringify(body),
@@ -250,7 +274,7 @@ export async function reqCreatePlan(
     const { data } = await response.json();
     const { createPlan } = data;
     const { id } = createPlan;
-    const newPlan: CreatePlan = {
+    const plan: CreatePlan = {
       endTime,
       id,
       modelId,
@@ -260,7 +284,7 @@ export async function reqCreatePlan(
 
     await reqCreateSimulation(id, simulationArguments, authorization);
 
-    return newPlan;
+    return plan;
   } catch (e) {
     console.log(e);
     return null;
@@ -271,12 +295,12 @@ export async function reqCreateSimulation(
   plan_id: string,
   simulationArguments: ArgumentsMap,
   authorization: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    const simulation = { arguments: simulationArguments, plan_id };
+    const simulationInput = { arguments: simulationArguments, plan_id };
     const body = {
       query: CREATE_SIMULATION,
-      variables: { simulation },
+      variables: { simulation: simulationInput },
     };
     const options = {
       body: JSON.stringify(body),
@@ -284,8 +308,10 @@ export async function reqCreateSimulation(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
+    return true;
   } catch (e) {
     console.log(e);
+    return false;
   }
 }
 
@@ -310,7 +336,7 @@ export async function reqCreateView(
 export async function reqDeleteActivity(
   id: number,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     const body = {
       query: DELETE_ACTIVITY,
@@ -322,17 +348,17 @@ export async function reqDeleteActivity(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
-    return { success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    return { success: false };
+    return false;
   }
 }
 
 export async function reqDeleteConstraint(
   id: number,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     const body = {
       query: DELETE_CONSTRAINT,
@@ -344,10 +370,10 @@ export async function reqDeleteConstraint(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
-    return { success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    return { success: false };
+    return false;
   }
 }
 
@@ -371,7 +397,7 @@ export async function reqDeleteModel(
   id: number,
   jar_id: number,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     await reqDeleteFile(jar_id, authorization);
     const body = { query: DELETE_MODEL, variables: { id } };
@@ -381,17 +407,17 @@ export async function reqDeleteModel(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
-    return { success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    return { success: false };
+    return false;
   }
 }
 
 export async function reqDeletePlanAndSimulations(
   id: number,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
     const options = {
@@ -400,10 +426,10 @@ export async function reqDeletePlanAndSimulations(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
-    return { success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    return { success: false };
+    return false;
   }
 }
 
@@ -542,30 +568,6 @@ export async function reqSimulate(
   resources?: Resource[];
   status: 'complete' | 'failed' | 'incomplete';
 }> {
-  type ResourceType = {
-    name: string;
-    schema: { type: string } & any;
-  };
-
-  type SimulateResponse = {
-    results?: {
-      activities: {
-        [id: string]: {
-          children: string[];
-          duration: number;
-          parameters: ArgumentsMap;
-          parent: string | null;
-          startTimestamp: string;
-          type: string;
-        };
-      };
-      constraints: any;
-      resources: { [name: string]: ResourceValue[] };
-      start: string;
-    };
-    status: 'complete' | 'failed' | 'incomplete';
-  };
-
   try {
     const body = {
       query: SIMULATE,
@@ -616,15 +618,16 @@ export async function reqSimulate(
         }),
       );
 
-      const constraintViolations = Object.entries(results.constraints).flatMap(
-        ([name, violations]: [string, any]) =>
-          violations.map((violation: any) => ({
-            associations: violation.associations,
-            constraint: {
-              name,
-            },
-            windows: violation.windows,
-          })),
+      const constraintViolations: ConstraintViolation[] = Object.entries(
+        results.constraints,
+      ).flatMap(([name, violations]: [string, any]) =>
+        violations.map((violation: any) => ({
+          associations: violation.associations,
+          constraint: {
+            name,
+          },
+          windows: violation.windows,
+        })),
       );
 
       return { activitiesMap, constraintViolations, resources, status };
@@ -642,11 +645,6 @@ export async function reqUpdateActivity(
   planStartTime: string,
   authorization: string,
 ): Promise<UpdateActivity | null> {
-  type UpdateActivityInput = {
-    arguments?: ArgumentsMap;
-    start_offset?: string;
-  };
-
   const activityInput: UpdateActivityInput = {};
 
   if (activity.arguments) {
@@ -712,7 +710,7 @@ export async function reqUpdateSimulationArguments(
   simulationId: number,
   argumentsMap: ArgumentsMap,
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     const body = {
       query: UPDATE_SIMULATION_ARGUMENTS,
@@ -724,11 +722,10 @@ export async function reqUpdateSimulationArguments(
       method: 'POST',
     };
     await fetch(HASURA_URL, options);
-    return { success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { message, success: false };
+    return false;
   }
 }
 
@@ -774,16 +771,15 @@ export async function reqUploadFile(
 export async function reqUploadFiles(
   files: File[],
   authorization: string,
-): Promise<GenericResponse> {
+): Promise<boolean> {
   try {
     for (const file of files) {
       await reqUploadFile(file, authorization);
     }
-    return { message: 'Files uploaded successfully', success: true };
+    return true;
   } catch (e) {
     console.log(e);
-    const { message } = e;
-    return { message, success: false };
+    return false;
   }
 }
 

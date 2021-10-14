@@ -61,7 +61,7 @@ export async function deleteConstraint(
   id: number,
   authorization: string,
 ): Promise<void> {
-  const { success } = await reqDeleteConstraint(id, authorization);
+  const success = await reqDeleteConstraint(id, authorization);
 
   if (success) {
     modelConstraints.update(constraints => {

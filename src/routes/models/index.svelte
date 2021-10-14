@@ -75,7 +75,7 @@
     const { model } = confirmDeleteModel.modal.context;
     const { id, jarId } = model;
     const { ssoToken: authorization } = $appSession.user;
-    const { success } = await reqDeleteModel(id, jarId, authorization);
+    const success = await reqDeleteModel(id, jarId, authorization);
 
     confirmDeleteModel.modal.hide();
 

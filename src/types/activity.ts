@@ -17,10 +17,6 @@ export type Activity = {
 
 export type ActivitiesMap = { [id: string]: Activity };
 
-export type NewActivity = {
-  arguments: ArgumentsMap;
-  startTime: string;
-  type: string;
-};
+export type CreateActivity = Pick<Activity, 'arguments' | 'startTime' | 'type'>;
 
 export type UpdateActivity = { id: string } & Partial<Activity>;

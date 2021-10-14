@@ -115,7 +115,7 @@
     const { plan } = confirmDeletePlan.modal.context;
     const { id } = plan;
     const { ssoToken: authorization } = $appSession.user;
-    const { success } = await reqDeletePlanAndSimulations(id, authorization);
+    const success = await reqDeletePlanAndSimulations(id, authorization);
 
     confirmDeletePlan.modal.hide();
 
