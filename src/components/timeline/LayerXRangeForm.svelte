@@ -41,9 +41,10 @@
   <Field>
     <Label for="color-scheme">Color Scheme</Label>
     <Select
-      bind:value={layer.colorScheme}
       name="color-scheme"
-      on:change={() => updateLayer('colorScheme', layer.colorScheme)}
+      value={layer.colorScheme}
+      on:change={({ detail: colorScheme }) =>
+        updateLayer('colorScheme', colorScheme)}
     >
       {#each colorSchemes as colorScheme}
         <option value={colorScheme.value}>

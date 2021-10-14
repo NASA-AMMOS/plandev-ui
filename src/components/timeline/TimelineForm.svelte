@@ -39,6 +39,16 @@
     $selectedTimelineId = null;
   }
 
+  function updateLayer(prop: string, value: any) {
+    view.updateLayer(
+      $selectedTimelineId,
+      $selectedRowId,
+      $selectedLayerId,
+      prop,
+      value,
+    );
+  }
+
   function updateRow(prop: string, value: any) {
     view.updateRow($selectedTimelineId, $selectedRowId, prop, value);
   }
@@ -154,7 +164,12 @@
 
           <Field>
             <Label for="layer-type">Chart Type</Label>
-            <Select name="layer-type" value={$selectedLayer.chartType}>
+            <Select
+              name="layer-type"
+              value={$selectedLayer.chartType}
+              on:change={({ detail: chartType }) =>
+                updateLayer('chartType', chartType)}
+            >
               <option value="activity"> Activity </option>
               <option value="line"> Line </option>
               <option value="x-range"> X-Range </option>
