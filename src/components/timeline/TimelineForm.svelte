@@ -36,7 +36,7 @@
   }
 </script>
 
-<Panel hideHeader>
+<Panel hideHeader hideFooter>
   <span slot="body">
     <Field>
       <details open>
@@ -102,6 +102,16 @@
               {/each}
             </Select>
           </Field>
+
+          <Field>
+            <button
+              class="button secondary w-100"
+              on:click|stopPropagation={() =>
+                confirmDeleteRowModal.modal.show()}
+            >
+              Delete Row
+            </button>
+          </Field>
         {:else}
           <Card class="p-1">No row selected</Card>
         {/if}
@@ -133,15 +143,6 @@
         {/if}
       </details>
     </Field>
-  </span>
-
-  <span slot="footer">
-    <button
-      class="button secondary"
-      on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
-    >
-      Delete Row
-    </button>
   </span>
 </Panel>
 
