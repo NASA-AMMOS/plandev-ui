@@ -19,11 +19,23 @@
   import Label from '../form/Label.svelte';
   import Select from '../form/Select.svelte';
 
-  let confirmDeleteRowModal: ConfirmModal | null = null;
+  let confirmDeleteLayerModal: ConfirmModal;
+  let confirmDeleteRowModal: ConfirmModal;
+  let confirmDeleteTimelineModal: ConfirmModal;
+
+  function deleteLayer() {
+    view.deleteLayer($selectedTimelineId, $selectedRowId, $selectedLayerId);
+    $selectedLayerId = null;
+  }
 
   function deleteRow() {
     view.deleteRow($selectedTimelineId, $selectedRowId);
     $selectedRowId = null;
+  }
+
+  function deleteTimeline() {
+    view.deleteTimeline($selectedTimelineId);
+    $selectedTimelineId = null;
   }
 
   function updateRow(prop: string, value: any) {
@@ -70,6 +82,16 @@
                 </option>
               {/each}
             </Select>
+          </Field>
+
+          <Field>
+            <button
+              class="button secondary w-100"
+              on:click|stopPropagation={() =>
+                confirmDeleteTimelineModal.modal.show()}
+            >
+              Delete Timeline
+            </button>
           </Field>
         {:else}
           <Card class="p-1">No timeline selected</Card>
@@ -137,6 +159,16 @@
               <option value="x-range"> X-Range </option>
             </Select>
           </Field>
+
+          <Field>
+            <button
+              class="button secondary w-100"
+              on:click|stopPropagation={() =>
+                confirmDeleteLayerModal.modal.show()}
+            >
+              Delete Layer
+            </button>
+          </Field>
         {:else}
           <Card class="p-1">No layer selected</Card>
         {/if}
@@ -146,9 +178,25 @@
 </Panel>
 
 <ConfirmModal
+  bind:this={confirmDeleteLayerModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this layer?"
+  title="Delete Layer"
+  on:confirm={deleteLayer}
+/>
+
+<ConfirmModal
   bind:this={confirmDeleteRowModal}
   confirmText="Delete"
   message="Are you sure you want to delete this row?"
   title="Delete Row"
   on:confirm={deleteRow}
+/>
+
+<ConfirmModal
+  bind:this={confirmDeleteTimelineModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this timeline?"
+  title="Delete Timeline"
+  on:confirm={deleteTimeline}
 />

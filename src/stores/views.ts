@@ -7,7 +7,9 @@ import { reqUpdateView } from '../utilities/requests';
 /* Types. */
 
 type ViewStore = {
+  deleteLayer(timelineId: string, rowId: string, layerId: string): void;
   deleteRow(timelineId: string, rowId: string): void;
+  deleteTimeline(timelineId: string): void;
   set: (this: void, value: any) => void;
   subscribe: (
     this: void,
@@ -25,6 +27,35 @@ type ViewStore = {
 export const view: ViewStore = (() => {
   const { set, subscribe, update: updateStore } = writable(null);
   return {
+    deleteLayer(timelineId: string, rowId: string, layerId: string): void {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        layers: row.layers.filter(
+                          layer => layer.id !== layerId,
+                        ),
+                      };
+                    }
+                    return row;
+                  }),
+                },
+              };
+            }
+            return section;
+          }),
+        };
+      });
+    },
     deleteRow(timelineId: string, rowId: string): void {
       updateStore((view: View): View => {
         return {
@@ -40,6 +71,19 @@ export const view: ViewStore = (() => {
               };
             }
             return section;
+          }),
+        };
+      });
+    },
+    deleteTimeline(timelineId: string): void {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.filter(section => {
+            if (section.timeline) {
+              return section.timeline.id !== timelineId;
+            }
+            return true;
           }),
         };
       });
