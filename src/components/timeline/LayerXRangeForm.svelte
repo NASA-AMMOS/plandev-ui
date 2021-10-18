@@ -7,6 +7,7 @@
     view,
   } from '../../stores/views';
   import Field from '../form/Field.svelte';
+  import InputText from '../form/InputText.svelte';
   import Label from '../form/Label.svelte';
   import Select from '../form/Select.svelte';
   import type { XRangeLayer } from '../../types';
@@ -52,5 +53,15 @@
         </option>
       {/each}
     </Select>
+  </Field>
+
+  <Field>
+    <Label for="opacity">Opacity</Label>
+    <InputText
+      name="opacity"
+      type="number"
+      value={layer.opacity}
+      on:change={({ detail: opacity }) => updateLayer('opacity', opacity)}
+    />
   </Field>
 {/if}
