@@ -14,8 +14,6 @@
   export let brushSelectionColor: string = '#7986cb';
   export let drawHeight: number = 20;
   export let drawWidth: number = 0;
-  export let handleColor: string = '#0D1667';
-  export let handleWidth: number = 2;
   export let type: 'max' | 'view' = 'view';
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleMax: ScaleTime<number, number> | null = null;
@@ -63,14 +61,14 @@
           [0, yOffset],
           [drawWidth, drawHeight],
         ])
-        .on('start', (event: D3BrushEvent<number[]>) => {
-          styleBrush(event);
+        .on('start', () => {
+          styleBrush();
         })
-        .on('brush', (event: D3BrushEvent<number[]>) => {
-          styleBrush(event);
+        .on('brush', () => {
+          styleBrush();
         })
         .on('end', (event: D3BrushEvent<number[]>) => {
-          styleBrush(event);
+          styleBrush();
           brushEnd(event);
         });
 
@@ -88,36 +86,11 @@
     }
   }
 
-  function styleBrush(event: D3BrushEvent<number[]>) {
+  function styleBrush() {
     if (type === 'max') {
-      const selection = event.selection as number[];
       brush.select('.overlay').attr('fill', brushOverlayColor);
       brush.select('.selection').attr('fill', brushSelectionColor);
-      brush
-        .selectAll('.handle--custom')
-        .data([{ type: 'w' }, { type: 'e' }])
-        .join(enter =>
-          enter
-            .append('rect')
-            .attr('class', 'handle--custom')
-            .attr('fill', handleColor)
-            .attr('width', handleWidth)
-            .attr('height', drawHeight - yOffset)
-            .attr('y', yOffset)
-            .attr('cursor', 'ew-resize'),
-        )
-        .attr(
-          'transform',
-          selection === null
-            ? null
-            : ({ type }, i: number) => {
-                if (type === 'w') {
-                  return `translate(${selection[i]}, 0)`;
-                } else {
-                  return `translate(${selection[i] - handleWidth}, 0)`;
-                }
-              },
-        );
+      brush.selectAll('.handle').remove();
     }
   }
 </script>
