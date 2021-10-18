@@ -490,15 +490,20 @@
     >
       {#each $view.sections as section, i (section.id)}
         <div class="section" id={section.id}>
-          {#if section.table && horizontalSplitInitialized}
+          {#if section.iframe && horizontalSplitInitialized}
+            <iframe
+              allow="fullscreen"
+              src={section.iframe.src}
+              title="iframe-{section.id}"
+            />
+          {:else if section.table && horizontalSplitInitialized}
             <Table
               columns={section.table.columns}
               data={$activities}
               selectedId={$selectedActivityId}
               on:select={event => selectActivity(event.detail.id)}
             />
-          {/if}
-          {#if section.timeline && horizontalSplitInitialized}
+          {:else if section.timeline && horizontalSplitInitialized}
             <Timeline
               activities={$activities}
               activitiesMap={$activitiesMap}
