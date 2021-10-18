@@ -33,7 +33,6 @@
         loading: false,
         name: key,
         schema: schema.items[key],
-        validate: false,
         value: value ? value[key] || null : null,
       };
       subFormParameters.push(subFormParameter);

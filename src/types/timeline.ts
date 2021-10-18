@@ -58,7 +58,6 @@ export interface Layer {
     resource?: ResourceLayerFilter;
   };
   id: string;
-  type: 'activity' | 'resource';
   yAxisId?: string;
 }
 

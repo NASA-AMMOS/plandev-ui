@@ -25,7 +25,7 @@
   {name}
   {required}
   style={styleName}
-  on:change={e => dispatch('change', value)}
+  on:change={() => dispatch('change', value)}
 >
   <slot />
 </select>

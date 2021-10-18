@@ -155,14 +155,6 @@
         <summary>Layer</summary>
         {#if $selectedLayer !== null}
           <Field>
-            <Label for="layer-type">Layer Type</Label>
-            <Select name="layer-type" value={$selectedLayer.type}>
-              <option value="activity"> Activity </option>
-              <option value="resource"> Resource </option>
-            </Select>
-          </Field>
-
-          <Field>
             <Label for="layer-type">Chart Type</Label>
             <Select
               name="layer-type"

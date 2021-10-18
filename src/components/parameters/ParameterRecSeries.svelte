@@ -40,7 +40,6 @@
         loading: false,
         name: `[${i}]`,
         schema: schema.items,
-        validate: false,
         value: subFormParameterValue,
       };
 
