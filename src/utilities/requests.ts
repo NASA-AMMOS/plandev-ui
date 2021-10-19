@@ -131,6 +131,8 @@ export async function reqCreateActivity(
   planStartTime: string,
   authorization: string,
 ): Promise<Activity | null> {
+  let response: Response;
+  let json: any;
   try {
     const start_offset = getIntervalFromDoyRange(
       planStartTime,
@@ -151,8 +153,9 @@ export async function reqCreateActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { createActivity } = data;
     const { id } = createActivity;
     const activity: Activity = {
@@ -165,6 +168,8 @@ export async function reqCreateActivity(
     return activity;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -173,6 +178,8 @@ export async function reqCreateConstraint(
   newConstraint: CreateConstraint,
   authorization: string,
 ): Promise<Constraint | null> {
+  let response: Response;
+  let json: any;
   try {
     const constraintInput = {
       definition: newConstraint.definition,
@@ -191,8 +198,9 @@ export async function reqCreateConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { createConstraint } = data;
     const { id } = createConstraint;
     const constraint: Constraint = {
@@ -202,6 +210,8 @@ export async function reqCreateConstraint(
     return constraint;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -212,6 +222,8 @@ export async function reqCreateModel(
   file: File,
   authorization: string,
 ): Promise<CreateModel | null> {
+  let response: Response;
+  let json: any;
   try {
     const jar_id = await reqUploadFile(file, authorization);
     const modelInput = {
@@ -229,8 +241,9 @@ export async function reqCreateModel(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { createModel } = data;
     const { id } = createModel;
     const model: CreateModel = {
@@ -242,6 +255,8 @@ export async function reqCreateModel(
     return model;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -254,6 +269,8 @@ export async function reqCreatePlan(
   simulationArguments: ArgumentsMap,
   authorization: string,
 ): Promise<CreatePlan | null> {
+  let response: Response;
+  let json: any;
   try {
     const planInput = {
       duration: getIntervalFromDoyRange(startTime, endTime),
@@ -270,8 +287,9 @@ export async function reqCreatePlan(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { createPlan } = data;
     const { id } = createPlan;
     const plan: CreatePlan = {
@@ -287,6 +305,8 @@ export async function reqCreatePlan(
     return plan;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -296,6 +316,8 @@ export async function reqCreateSimulation(
   simulationArguments: ArgumentsMap,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
     const simulationInput = { arguments: simulationArguments, plan_id };
     const body = {
@@ -307,10 +329,13 @@ export async function reqCreateSimulation(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -319,16 +344,20 @@ export async function reqCreateView(
   name: string,
   view: View,
 ): Promise<ViewPostResponseBody> {
+  let response: Response;
+  let json: ViewPostResponseBody;
   try {
-    const response = await fetch(`/views`, {
+    response = await fetch(`/views`, {
       body: JSON.stringify({ name, view }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     });
-    const responseJson = (await response.json()) as ViewPostResponseBody;
-    return responseJson;
+    json = await response.json();
+    return json;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return { message: e.message, success: false, view: null };
   }
 }
@@ -337,6 +366,8 @@ export async function reqDeleteActivity(
   id: number,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: DELETE_ACTIVITY,
@@ -347,10 +378,13 @@ export async function reqDeleteActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -359,6 +393,8 @@ export async function reqDeleteConstraint(
   id: number,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: DELETE_CONSTRAINT,
@@ -369,10 +405,13 @@ export async function reqDeleteConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -380,36 +419,47 @@ export async function reqDeleteConstraint(
 export async function reqDeleteFile(
   id: number,
   authorization: string,
-): Promise<void> {
-  const options = {
-    headers: { 'x-cam-sso-token': authorization },
-    method: 'DELETE',
-  };
-  const response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
-  const { success } = await response.json();
-
-  if (!success) {
-    throw new Error('Delete file failed');
+): Promise<boolean> {
+  let response: Response;
+  let json: any;
+  try {
+    const options = {
+      headers: { 'x-cam-sso-token': authorization },
+      method: 'DELETE',
+    };
+    response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
+    json = await response.json();
+    return true;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return false;
   }
 }
 
 export async function reqDeleteModel(
   id: number,
-  jar_id: number,
+  jarId: number,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
-    await reqDeleteFile(jar_id, authorization);
+    await reqDeleteFile(jarId, authorization);
     const body = { query: DELETE_MODEL, variables: { id } };
     const options = {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -418,6 +468,8 @@ export async function reqDeletePlanAndSimulations(
   id: number,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
     const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
     const options = {
@@ -425,10 +477,13 @@ export async function reqDeletePlanAndSimulations(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -436,12 +491,16 @@ export async function reqDeletePlanAndSimulations(
 export async function reqDeleteView(
   id: string,
 ): Promise<ViewIdDelResponseBody> {
+  let response: Response;
+  let json: ViewIdDelResponseBody;
   try {
-    const response = await fetch(`/views/${id}`, { method: 'DELETE' });
-    const responseJson = (await response.json()) as ViewIdDelResponseBody;
-    return responseJson;
+    response = await fetch(`/views/${id}`, { method: 'DELETE' });
+    json = await response.json();
+    return json;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return { message: e.message, success: false };
   }
 }
@@ -450,18 +509,23 @@ export async function reqGetModels(
   fetch: Fetch,
   authorization: string,
 ): Promise<CreateModel[]> {
+  let response: Response;
+  let json: any;
   try {
     const options = {
       body: JSON.stringify({ query: GET_MODELS }),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { models = [] } = data;
     return models;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return [];
   }
 }
@@ -470,14 +534,17 @@ export async function reqGetPlansAndModels(
   fetch: Fetch,
   authorization: string,
 ): Promise<{ models: CreatePlanModel[]; plans: CreatePlan[] }> {
+  let response: Response;
+  let json: any;
   try {
     const options = {
       body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { models, plans } = data;
     return {
       models,
@@ -492,6 +559,8 @@ export async function reqGetPlansAndModels(
     };
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return { models: [], plans: [] };
   }
 }
@@ -501,6 +570,8 @@ export async function reqGetPlan(
   id: number,
   authorization: string,
 ): Promise<Plan | null> {
+  let response: Response;
+  let json: any;
   try {
     const body = { query: GET_PLAN, variables: { id } };
     const options = {
@@ -508,8 +579,9 @@ export async function reqGetPlan(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { plan } = data;
     const startTime = new Date(plan.startTime);
     return {
@@ -528,6 +600,8 @@ export async function reqGetPlan(
     };
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -536,24 +610,34 @@ export async function reqGetView(
   fetch: Fetch,
   query: URLSearchParams,
 ): Promise<View | null> {
+  let response: Response;
+  let json: any;
   try {
     const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
-    const response = await fetch(`/views/${viewId}`);
-    const { view } = await response.json();
+    response = await fetch(`/views/${viewId}`);
+    json = await response.json();
+    const { view } = json;
     return view;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
 
 export async function reqGetViews(): Promise<View[] | null> {
+  let response: Response;
+  let json: any;
   try {
-    const response = await fetch(`/views`);
-    const { views } = await response.json();
+    response = await fetch(`/views`);
+    json = await response.json();
+    const { views } = json;
     return views;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -568,6 +652,8 @@ export async function reqSimulate(
   resources?: Resource[];
   status: 'complete' | 'failed' | 'incomplete';
 }> {
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: SIMULATE,
@@ -578,8 +664,9 @@ export async function reqSimulate(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
 
     const resourceTypes: ResourceType[] = data.resourceTypes;
     const { results, status }: SimulateResponse = data.simulate;
@@ -636,6 +723,8 @@ export async function reqSimulate(
     }
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return { status: 'failed' };
   }
 }
@@ -658,6 +747,8 @@ export async function reqUpdateActivity(
     );
   }
 
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: UPDATE_ACTIVITY,
@@ -668,10 +759,13 @@ export async function reqUpdateActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return activity;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -680,6 +774,8 @@ export async function reqUpdateConstraint(
   updatedConstraint: Constraint,
   authorization: string,
 ): Promise<Constraint> {
+  let response: Response;
+  let json: any;
   try {
     const constraintInput = {
       definition: updatedConstraint.definition,
@@ -698,10 +794,13 @@ export async function reqUpdateConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return updatedConstraint;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return null;
   }
 }
@@ -711,6 +810,8 @@ export async function reqUpdateSimulationArguments(
   argumentsMap: ArgumentsMap,
   authorization: string,
 ): Promise<boolean> {
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: UPDATE_SIMULATION_ARGUMENTS,
@@ -721,10 +822,13 @@ export async function reqUpdateSimulationArguments(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    await fetch(HASURA_URL, options);
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
     return true;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return false;
   }
 }
@@ -732,16 +836,20 @@ export async function reqUpdateSimulationArguments(
 export async function reqUpdateView(
   view: View,
 ): Promise<ViewIdPutResponseBody> {
+  let response: Response;
+  let json: ViewIdPutResponseBody;
   try {
-    const response = await fetch(`/views/${view.id}`, {
+    response = await fetch(`/views/${view.id}`, {
       body: JSON.stringify({ view }),
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
     });
-    const responseJson = (await response.json()) as ViewIdPutResponseBody;
-    return responseJson;
+    json = await response.json();
+    return json;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     return { message: e.message, success: false };
   }
 }
@@ -750,22 +858,28 @@ export async function reqUploadFile(
   file: File,
   authorization: string,
 ): Promise<number | null> {
-  const body = new FormData();
-  body.append('file', file, file.name);
+  let response: Response;
+  let json: any;
+  try {
+    const body = new FormData();
+    body.append('file', file, file.name);
 
-  const options = {
-    body,
-    headers: { 'x-cam-sso-token': authorization },
-    method: 'POST',
-  };
-  const response = await fetch(`${GATEWAY_URL}/file`, options);
-  const { id = null } = await response.json();
+    const options = {
+      body,
+      headers: { 'x-cam-sso-token': authorization },
+      method: 'POST',
+    };
+    response = await fetch(`${GATEWAY_URL}/file`, options);
+    json = await response.json();
+    const { id } = json;
 
-  if (id === null) {
-    throw new Error('Upload file failed');
+    return id;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return null;
   }
-
-  return id;
 }
 
 export async function reqUploadFiles(
@@ -789,6 +903,8 @@ export async function reqValidateActivityArguments(
   argumentsMap: ArgumentsMap,
   authorization: string,
 ): Promise<ParameterValidationResponse> {
+  let response: Response;
+  let json: any;
   try {
     const body = {
       query: VALIDATE_ACTIVITY_ARGUMENTS,
@@ -799,12 +915,15 @@ export async function reqValidateActivityArguments(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
-    const response = await fetch(HASURA_URL, options);
-    const { data } = await response.json();
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    const { data } = json;
     const { validateActivityArguments } = data;
     return validateActivityArguments;
   } catch (e) {
     console.log(e);
+    console.log(response);
+    console.log(json);
     const { message } = e;
     return { errors: [message], success: false };
   }
