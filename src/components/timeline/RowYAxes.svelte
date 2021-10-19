@@ -28,15 +28,15 @@
 
         const axisG = gSelection.append('g').attr('class', axisClass);
         axisG.selectAll('*').remove();
-        const domain = axis?.scaleDomain || [];
+        const domain = axis.scaleDomain;
         const scale = getYScale(domain, drawHeight);
 
-        const color = axis?.color || 'black';
-        const labelColor = axis?.label?.color || 'black';
-        const labelFontFace = axis?.label?.fontFace || 'Helvetica Neue';
-        const labelFontSize = axis?.label?.fontSize || 12;
-        const labelText = axis?.label?.text || '';
-        const tickCount = axis?.tickCount || 5;
+        const color = axis.color;
+        const labelColor = axis.label?.color || 'black';
+        const labelFontFace = axis.label?.fontFace || 'Helvetica Neue';
+        const labelFontSize = axis.label?.fontSize || 12;
+        const labelText = axis.label.text;
+        const tickCount = axis.tickCount;
 
         const axisLeft = d3AxisLeft(scale).ticks(tickCount).tickSizeOuter(0);
         const axisMargin = 20;

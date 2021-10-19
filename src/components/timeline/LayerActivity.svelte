@@ -24,7 +24,7 @@
 
   export let activities: Activity[] = [];
   export let activitiesMap: StringTMap<Activity> = {};
-  export let activityColor: string = '#283593';
+  export let activityColor: string = '';
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
   export let activitySelectedColor: string = '#81D4FA';
@@ -59,6 +59,8 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: if (
+    activityColor &&
+    activityHeight &&
     drawHeight &&
     drawWidth &&
     mounted &&
@@ -358,11 +360,10 @@
       maxActivityWidth = activityWidth;
     }
 
-    const selected = point?.selected || false;
-    if (selected) {
+    if (point.selected) {
       ctx.fillStyle = activitySelectedColor;
     } else {
-      ctx.fillStyle = point?.color || activityColor;
+      ctx.fillStyle = activityColor;
     }
 
     ctx.fill(rect);

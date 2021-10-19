@@ -4,6 +4,7 @@ export interface ViewMeta {
   owner: string;
   timeCreated: number;
   timeUpdated: number;
+  version: string;
 }
 
 export interface ViewSection {
@@ -17,7 +18,6 @@ export interface ViewSection {
     type: 'activity';
   };
   timeline?: Timeline;
-  title: string;
   type: 'iframe' | 'table' | 'timeline';
 }
 

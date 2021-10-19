@@ -24,7 +24,7 @@
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
   export let id: string = '';
-  export let lineColor: string | undefined;
+  export let lineColor: string = '';
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
@@ -46,7 +46,7 @@
   $: if (
     drawHeight &&
     drawWidth &&
-    (lineColor !== undefined || lineColor !== null) &&
+    lineColor &&
     mounted &&
     points &&
     viewTimeRange &&
@@ -88,7 +88,7 @@
         ]);
       visiblePointsById = {};
 
-      const fill = lineColor || '#283593';
+      const fill = lineColor;
       ctx.fillStyle = fill;
       ctx.lineWidth = 1;
       ctx.strokeStyle = fill;
@@ -112,7 +112,7 @@
           visiblePointsById[id] = point;
 
           const circle = new Path2D();
-          const radius = point.radius || 2.0;
+          const radius = point.radius;
           circle.arc(x, y, radius, 0, 2 * Math.PI);
           ctx.fill(circle);
         }
@@ -163,6 +163,8 @@
             points.push({
               id: `${id}-resource-${name}-${i}`,
               name,
+              radius: 2.0,
+              selected: false,
               type: 'line',
               x: getUnixEpochTime(startTime) + x / 1000,
               y,
@@ -176,6 +178,8 @@
             points.push({
               id: `${id}-resource-${name}-${i}`,
               name,
+              radius: 2.0,
+              selected: false,
               type: 'line',
               x: getUnixEpochTime(startTime) + x / 1000,
               y,

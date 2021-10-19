@@ -32,7 +32,7 @@
 
   const dispatch = createEventDispatcher();
 
-  export let colorScheme: XRangeLayerColorScheme | null = null;
+  export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
@@ -59,9 +59,9 @@
   $: if (
     drawHeight &&
     drawWidth &&
-    (colorScheme !== undefined || colorScheme !== null) &&
+    colorScheme &&
     mounted &&
-    (opacity !== undefined || opacity !== null) &&
+    opacity !== undefined &&
     points &&
     xScaleView
   ) {
@@ -124,7 +124,7 @@
           const { id } = point;
           visiblePointsById[id] = point;
 
-          const labelText = getLabelText(point);
+          const labelText = point.label.text;
           ctx.fillStyle = colorScale(labelText);
           const rect = new Path2D();
           rect.rect(xStart, y, xWidth, drawHeight);
@@ -204,10 +204,6 @@
     }
   }
 
-  function getLabelText(point: XRangePoint) {
-    return point.label?.text || '';
-  }
-
   function measureText(text: string) {
     const textMetrics = ctx.measureText(text);
     const textHeight =
@@ -262,6 +258,7 @@
               id: `${id}-resource-${name}-${i}`,
               label: { text },
               name,
+              selected: false,
               type: 'x-range',
               x: getUnixEpochTime(startTime) + x / 1000,
             });
@@ -275,6 +272,7 @@
               id: `${id}-resource-${name}-${i}`,
               label: { text },
               name,
+              selected: false,
               type: 'x-range',
               x: getUnixEpochTime(startTime) + x / 1000,
             });
@@ -290,6 +288,7 @@
               id: `${id}-resource-${name}-${i}`,
               label: { text },
               name,
+              selected: false,
               type: 'x-range',
               x: getUnixEpochTime(startTime) + x / 1000,
             });
@@ -310,7 +309,7 @@
     const fontFace = point.label?.fontFace || 'Helvetica Neue';
     ctx.fillStyle = point.label?.color || '#000000';
     ctx.font = `${fontSize}px ${fontFace}`;
-    const labelText = getLabelText(point);
+    const labelText = point.label.text;
     const { textHeight, textWidth } = measureText(labelText);
     return { labelText, textHeight, textWidth };
   }

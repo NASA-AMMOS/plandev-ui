@@ -181,7 +181,6 @@
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
-            lineColor={layer.color}
             {mousedown}
             {mousemove}
             {mouseout}

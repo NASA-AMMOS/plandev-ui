@@ -1,9 +1,10 @@
 export interface ActivityLayer extends Layer {
-  points?: ActivityPoint[];
+  activityColor: string;
+  activityHeight: number;
 }
 
 export interface ActivityLayerFilter {
-  type?: string;
+  type: string;
 }
 
 export interface ActivityPoint extends Point {
@@ -14,11 +15,11 @@ export interface ActivityPoint extends Point {
 }
 
 export interface Axis {
+  color: string;
   id: string;
-  color?: string;
-  label?: Label;
-  scaleDomain?: number[];
-  tickCount?: number;
+  label: Label;
+  scaleDomain: number[];
+  tickCount: number;
 }
 
 export interface DropActivity {
@@ -33,13 +34,6 @@ export interface HorizontalGuide {
   yAxisId: string;
 }
 
-export interface HorizontalGuideEvent {
-  guide?: HorizontalGuide;
-  mode: 'create' | 'delete' | 'edit';
-  rowId: string;
-  yAxes?: Axis[];
-}
-
 export interface Label {
   align?: CanvasTextAlign;
   baseline?: CanvasTextBaseline;
@@ -52,27 +46,20 @@ export interface Label {
 
 export interface Layer {
   chartType: 'activity' | 'line' | 'x-range';
-  color?: string;
-  filter?: {
+  filter: {
     activity?: ActivityLayerFilter;
     resource?: ResourceLayerFilter;
   };
   id: string;
-  yAxisId?: string;
-}
-
-export interface LayerEvent {
-  layer?: Layer;
-  mode: 'create' | 'edit';
-  rowId: string;
+  yAxisId: string | null;
 }
 
 export interface LineLayer extends Layer {
-  points?: LinePoint[];
+  lineColor: string;
 }
 
 export interface LinePoint extends Point {
-  radius?: number;
+  radius: number;
   y: number;
 }
 
@@ -91,10 +78,9 @@ export interface MouseOver {
 }
 
 export interface Point {
-  color?: string;
   id: string;
   name: string;
-  selected?: boolean;
+  selected: boolean;
   type: 'activity' | 'line' | 'x-range';
   x: number;
 }
@@ -114,16 +100,16 @@ export interface QuadtreeRect {
 }
 
 export interface ResourceLayerFilter {
-  name?: string;
+  name: string;
 }
 
 export interface Row {
-  autoAdjustHeight?: boolean;
-  height?: number;
-  horizontalGuides?: HorizontalGuide[];
+  autoAdjustHeight: boolean;
+  height: number;
+  horizontalGuides: HorizontalGuide[];
   id: string;
   layers: Layer[];
-  yAxes?: Axis[];
+  yAxes: Axis[];
 }
 
 export interface Timeline {
@@ -138,12 +124,6 @@ export interface VerticalGuide {
   id: string;
   label: Label;
   timestamp: string;
-}
-
-export interface VerticalGuideEvent {
-  guide?: VerticalGuide;
-  mode: 'create' | 'delete' | 'edit';
-  timelineId: string;
 }
 
 export interface XAxisTick {
@@ -168,12 +148,10 @@ export type XRangeLayerColorScheme =
   | 'schemeTableau10';
 
 export interface XRangeLayer extends Layer {
-  colorScheme?: XRangeLayerColorScheme;
-  domain?: string[];
-  opacity?: number;
-  points?: XRangePoint[];
+  colorScheme: XRangeLayerColorScheme;
+  opacity: number;
 }
 
 export interface XRangePoint extends Point {
-  label?: Label;
+  label: Label;
 }
