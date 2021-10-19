@@ -157,6 +157,7 @@ export async function reqCreateActivity(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { createActivity } = data;
@@ -205,6 +206,7 @@ export async function reqCreateConstraint(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { createConstraint } = data;
@@ -251,6 +253,7 @@ export async function reqCreateModel(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { createModel } = data;
@@ -300,6 +303,7 @@ export async function reqCreatePlan(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { createPlan } = data;
@@ -345,6 +349,7 @@ export async function reqCreateSimulation(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -398,6 +403,7 @@ export async function reqDeleteActivity(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -428,6 +434,7 @@ export async function reqDeleteConstraint(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -482,6 +489,7 @@ export async function reqDeleteModel(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -509,6 +517,7 @@ export async function reqDeletePlanAndSimulations(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -553,6 +562,7 @@ export async function reqGetModels(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { models = [] } = data;
@@ -581,6 +591,7 @@ export async function reqGetPlansAndModels(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { models, plans } = data;
@@ -621,6 +632,7 @@ export async function reqGetPlan(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { plan } = data;
@@ -715,6 +727,7 @@ export async function reqSimulate(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const resourceTypes: ResourceType[] = data.resourceTypes;
@@ -812,6 +825,7 @@ export async function reqUpdateActivity(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return activity;
   } catch (e) {
@@ -850,6 +864,7 @@ export async function reqUpdateConstraint(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return updatedConstraint;
   } catch (e) {
@@ -881,6 +896,7 @@ export async function reqUpdateSimulationArguments(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     return true;
   } catch (e) {
@@ -979,6 +995,7 @@ export async function reqValidateActivityArguments(
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
     const { validateActivityArguments } = data;
