@@ -153,8 +153,11 @@ export async function reqCreateActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { createActivity } = data;
     const { id } = createActivity;
@@ -198,8 +201,11 @@ export async function reqCreateConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { createConstraint } = data;
     const { id } = createConstraint;
@@ -241,8 +247,11 @@ export async function reqCreateModel(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { createModel } = data;
     const { id } = createModel;
@@ -287,8 +296,11 @@ export async function reqCreatePlan(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { createPlan } = data;
     const { id } = createPlan;
@@ -329,8 +341,11 @@ export async function reqCreateSimulation(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -353,6 +368,7 @@ export async function reqCreateView(
       method: 'POST',
     });
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
     return json;
   } catch (e) {
     console.log(e);
@@ -378,8 +394,11 @@ export async function reqDeleteActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -405,8 +424,11 @@ export async function reqDeleteConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -427,8 +449,11 @@ export async function reqDeleteFile(
       headers: { 'x-cam-sso-token': authorization },
       method: 'DELETE',
     };
+
     response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -453,8 +478,11 @@ export async function reqDeleteModel(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -477,8 +505,11 @@ export async function reqDeletePlanAndSimulations(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -496,6 +527,7 @@ export async function reqDeleteView(
   try {
     response = await fetch(`/views/${id}`, { method: 'DELETE' });
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
     return json;
   } catch (e) {
     console.log(e);
@@ -517,8 +549,11 @@ export async function reqGetModels(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { models = [] } = data;
     return models;
@@ -542,8 +577,11 @@ export async function reqGetPlansAndModels(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { models, plans } = data;
     return {
@@ -579,11 +617,15 @@ export async function reqGetPlan(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { plan } = data;
     const startTime = new Date(plan.startTime);
+
     return {
       ...plan,
       activities: plan.activities.map((activity: any) => ({
@@ -614,8 +656,11 @@ export async function reqGetView(
   let json: any;
   try {
     const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
+
     response = await fetch(`/views/${viewId}`);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { view } = json;
     return view;
   } catch (e) {
@@ -632,6 +677,8 @@ export async function reqGetViews(): Promise<View[] | null> {
   try {
     response = await fetch(`/views`);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { views } = json;
     return views;
   } catch (e) {
@@ -664,10 +711,12 @@ export async function reqSimulate(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
-    const { data } = json;
+    if (!response.ok) throw new Error(response.statusText);
 
+    const { data } = json;
     const resourceTypes: ResourceType[] = data.resourceTypes;
     const { results, status }: SimulateResponse = data.simulate;
 
@@ -759,8 +808,11 @@ export async function reqUpdateActivity(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return activity;
   } catch (e) {
     console.log(e);
@@ -794,8 +846,11 @@ export async function reqUpdateConstraint(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return updatedConstraint;
   } catch (e) {
     console.log(e);
@@ -822,8 +877,11 @@ export async function reqUpdateSimulationArguments(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     return true;
   } catch (e) {
     console.log(e);
@@ -845,6 +903,7 @@ export async function reqUpdateView(
       method: 'PUT',
     });
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
     return json;
   } catch (e) {
     console.log(e);
@@ -863,16 +922,17 @@ export async function reqUploadFile(
   try {
     const body = new FormData();
     body.append('file', file, file.name);
-
     const options = {
       body,
       headers: { 'x-cam-sso-token': authorization },
       method: 'POST',
     };
+
     response = await fetch(`${GATEWAY_URL}/file`, options);
     json = await response.json();
-    const { id } = json;
+    if (!response.ok) throw new Error(response.statusText);
 
+    const { id } = json;
     return id;
   } catch (e) {
     console.log(e);
@@ -915,8 +975,11 @@ export async function reqValidateActivityArguments(
       headers: { 'Content-Type': 'application/json', authorization },
       method: 'POST',
     };
+
     response = await fetch(HASURA_URL, options);
     json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
     const { data } = json;
     const { validateActivityArguments } = data;
     return validateActivityArguments;
