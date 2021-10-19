@@ -38,7 +38,7 @@
   }
 </script>
 
-{#if $selectedLayer.chartType === 'x-range'}
+{#if $selectedLayer && $selectedLayer.chartType === 'x-range'}
   <Field>
     <Label for="color-scheme">Color Scheme</Label>
     <Select
