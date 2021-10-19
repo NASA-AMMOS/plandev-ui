@@ -194,9 +194,9 @@ export const UPDATE_SIMULATION_ARGUMENTS = `
   }
 `;
 
-export const VALIDATE_ARGUMENTS = `
-  query ValidateArguments($arguments: ActivityArguments!, $activityTypeName: String!, $modelId: ID!) {
-    validateArguments: validateActivityArguments(
+export const VALIDATE_ACTIVITY_ARGUMENTS = `
+  query ValidateActivityArguments($arguments: ActivityArguments!, $activityTypeName: String!, $modelId: ID!) {
+    validateActivityArguments(
       activityArguments: $arguments,
       activityTypeName: $activityTypeName,
       missionModelId: $modelId

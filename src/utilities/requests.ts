@@ -2,7 +2,7 @@ import { GATEWAY_URL, HASURA_URL } from '../env';
 import type { ViewPostResponseBody } from '../routes/views';
 import type {
   ViewIdDelResponseBody,
-  ViewIdPutResponseBody
+  ViewIdPutResponseBody,
 } from '../routes/views/[id]';
 import type {
   ActivitiesMap,
@@ -20,7 +20,7 @@ import type {
   ResourceValue,
   Simulation,
   UpdateActivity,
-  View
+  View,
 } from '../types';
 import {
   CREATE_ACTIVITY,
@@ -39,12 +39,12 @@ import {
   UPDATE_ACTIVITY,
   UPDATE_CONSTRAINT,
   UPDATE_SIMULATION_ARGUMENTS,
-  VALIDATE_ARGUMENTS
+  VALIDATE_ACTIVITY_ARGUMENTS,
 } from './gql';
 import {
   getDoyTime,
   getDoyTimeFromDuration,
-  getIntervalFromDoyRange
+  getIntervalFromDoyRange,
 } from './time';
 
 /* Types. */
@@ -783,7 +783,7 @@ export async function reqUploadFiles(
   }
 }
 
-export async function reqValidateArguments(
+export async function reqValidateActivityArguments(
   activityTypeName: string,
   modelId: number,
   argumentsMap: ArgumentsMap,
@@ -791,7 +791,7 @@ export async function reqValidateArguments(
 ): Promise<ParameterValidationResponse> {
   try {
     const body = {
-      query: VALIDATE_ARGUMENTS,
+      query: VALIDATE_ACTIVITY_ARGUMENTS,
       variables: { activityTypeName, arguments: argumentsMap, modelId },
     };
     const options = {
@@ -801,8 +801,8 @@ export async function reqValidateArguments(
     };
     const response = await fetch(HASURA_URL, options);
     const { data } = await response.json();
-    const { validateArguments } = data;
-    return validateArguments;
+    const { validateActivityArguments } = data;
+    return validateActivityArguments;
   } catch (e) {
     console.log(e);
     const { message } = e;

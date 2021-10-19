@@ -17,7 +17,7 @@
   import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { reqValidateArguments } from '../../utilities/requests';
+  import { reqValidateActivityArguments } from '../../utilities/requests';
   import Card from '../ui/Card.svelte';
   import FieldInputText from '../form/FieldInputText.svelte';
   import { required, timestamp } from '../../utilities/validators';
@@ -62,7 +62,7 @@
 
     const { ssoToken: authorization } = $appSession.user;
     const { name, value } = formParameter;
-    const { errors, success } = await reqValidateArguments(
+    const { errors, success } = await reqValidateActivityArguments(
       type,
       modelId,
       { [name]: value },
