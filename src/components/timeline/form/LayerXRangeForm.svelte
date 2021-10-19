@@ -1,18 +1,14 @@
 <script lang="ts">
-  import {
-    selectedLayerId,
-    selectedLayer,
-    selectedRowId,
-    selectedTimelineId,
-    view,
-  } from '../../../stores/views';
+  import { createEventDispatcher } from 'svelte';
   import Field from '../../form/Field.svelte';
   import InputText from '../../form/InputText.svelte';
   import Label from '../../form/Label.svelte';
   import Select from '../../form/Select.svelte';
   import type { XRangeLayer } from '../../../types';
 
-  $: layer = $selectedLayer as XRangeLayer;
+  const dispatch = createEventDispatcher();
+
+  export let layer: XRangeLayer | null;
 
   let colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },
@@ -26,26 +22,16 @@
     { name: 'Set 3', value: 'schemeSet3' },
     { name: 'Tableau 10', value: 'schemeTableau10' },
   ];
-
-  function updateLayer(prop: string, value: any) {
-    view.updateLayer(
-      $selectedTimelineId,
-      $selectedRowId,
-      $selectedLayerId,
-      prop,
-      value,
-    );
-  }
 </script>
 
-{#if $selectedLayer && $selectedLayer.chartType === 'x-range'}
+{#if layer && layer.chartType === 'x-range'}
   <Field>
     <Label for="color-scheme">Color Scheme</Label>
     <Select
       name="color-scheme"
       value={layer.colorScheme}
-      on:change={({ detail: colorScheme }) =>
-        updateLayer('colorScheme', colorScheme)}
+      on:change={({ detail: value }) =>
+        dispatch('updateLayer', { prop: 'colorScheme', value })}
     >
       {#each colorSchemes as colorScheme}
         <option value={colorScheme.value}>
@@ -61,7 +47,8 @@
       name="opacity"
       type="number"
       value={layer.opacity}
-      on:change={({ detail: opacity }) => updateLayer('opacity', opacity)}
+      on:change={({ detail: value }) =>
+        dispatch('updateLayer', { prop: 'opacity', value })}
     />
   </Field>
 {/if}

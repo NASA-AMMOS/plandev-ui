@@ -168,7 +168,13 @@
             </Select>
           </Field>
 
-          <LayerXRangeForm />
+          <LayerXRangeForm
+            layer={$selectedLayer}
+            on:updateLayer={({ detail }) => {
+              const { prop, value } = detail;
+              updateLayer(prop, value);
+            }}
+          />
 
           <Field>
             <button
