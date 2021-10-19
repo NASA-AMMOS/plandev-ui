@@ -51,7 +51,12 @@ export async function post(
 
   const id = Db.uniqueId();
   const now = Date.now();
-  const meta = { owner: userId, timeCreated: now, timeUpdated: now };
+  const meta = {
+    owner: userId,
+    timeCreated: now,
+    timeUpdated: now,
+    version: '0.10.0',
+  };
   const view = { ...newView, id, meta, name };
   const viewStr = JSON.stringify({ ...newView, id, meta, name });
 
