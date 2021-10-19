@@ -1,9 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Field from '../form/Field.svelte';
-  import ConfirmModal from '../modals/Confirm.svelte';
-  import Panel from '../ui/Panel.svelte';
+  import LayerXRangeForm from './LayerXRangeForm.svelte';
+  import Field from '../../form/Field.svelte';
+  import FieldInputText from '../../form/FieldInputText.svelte';
+  import Label from '../../form/Label.svelte';
+  import Select from '../../form/Select.svelte';
+  import ConfirmModal from '../../modals/Confirm.svelte';
+  import Card from '../../ui/Card.svelte';
+  import Panel from '../../ui/Panel.svelte';
   import {
     selectedLayerId,
     selectedLayer,
@@ -12,13 +17,8 @@
     selectedTimelineId,
     selectedTimeline,
     view,
-  } from '../../stores/views';
-  import Card from '../ui/Card.svelte';
-  import FieldInputText from '../form/FieldInputText.svelte';
-  import { required } from '../../utilities/validators';
-  import Label from '../form/Label.svelte';
-  import Select from '../form/Select.svelte';
-  import LayerXRangeForm from './LayerXRangeForm.svelte';
+  } from '../../../stores/views';
+  import { required } from '../../../utilities/validators';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;

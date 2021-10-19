@@ -56,7 +56,7 @@
   import ViewMenu from '../../components/menus/View.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
-  import TimelineForm from '../../components/timeline/TimelineForm.svelte';
+  import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
   import Split from '../../components/ui/Split.svelte';

@@ -5,12 +5,12 @@
     selectedRowId,
     selectedTimelineId,
     view,
-  } from '../../stores/views';
-  import Field from '../form/Field.svelte';
-  import InputText from '../form/InputText.svelte';
-  import Label from '../form/Label.svelte';
-  import Select from '../form/Select.svelte';
-  import type { XRangeLayer } from '../../types';
+  } from '../../../stores/views';
+  import Field from '../../form/Field.svelte';
+  import InputText from '../../form/InputText.svelte';
+  import Label from '../../form/Label.svelte';
+  import Select from '../../form/Select.svelte';
+  import type { XRangeLayer } from '../../../types';
 
   $: layer = $selectedLayer as XRangeLayer;
 
