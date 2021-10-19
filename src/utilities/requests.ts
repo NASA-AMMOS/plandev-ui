@@ -1,27 +1,8 @@
 import { GATEWAY_URL, HASURA_URL } from '../env';
-import {
-  CREATE_ACTIVITY,
-  CREATE_CONSTRAINT,
-  CREATE_MODEL,
-  CREATE_PLAN,
-  CREATE_SIMULATION,
-  DELETE_ACTIVITY,
-  DELETE_CONSTRAINT,
-  DELETE_MODEL,
-  DELETE_PLAN_AND_SIMULATIONS,
-  GET_MODELS,
-  GET_PLAN,
-  GET_PLANS_AND_MODELS,
-  SIMULATE,
-  UPDATE_ACTIVITY,
-  UPDATE_CONSTRAINT,
-  UPDATE_SIMULATION_ARGUMENTS,
-  VALIDATE_ARGUMENTS,
-} from '../gql';
 import type { ViewPostResponseBody } from '../routes/views';
 import type {
   ViewIdDelResponseBody,
-  ViewIdPutResponseBody,
+  ViewIdPutResponseBody
 } from '../routes/views/[id]';
 import type {
   ActivitiesMap,
@@ -39,12 +20,31 @@ import type {
   ResourceValue,
   Simulation,
   UpdateActivity,
-  View,
+  View
 } from '../types';
+import {
+  CREATE_ACTIVITY,
+  CREATE_CONSTRAINT,
+  CREATE_MODEL,
+  CREATE_PLAN,
+  CREATE_SIMULATION,
+  DELETE_ACTIVITY,
+  DELETE_CONSTRAINT,
+  DELETE_MODEL,
+  DELETE_PLAN_AND_SIMULATIONS,
+  GET_MODELS,
+  GET_PLAN,
+  GET_PLANS_AND_MODELS,
+  SIMULATE,
+  UPDATE_ACTIVITY,
+  UPDATE_CONSTRAINT,
+  UPDATE_SIMULATION_ARGUMENTS,
+  VALIDATE_ARGUMENTS
+} from './gql';
 import {
   getDoyTime,
   getDoyTimeFromDuration,
-  getIntervalFromDoyRange,
+  getIntervalFromDoyRange
 } from './time';
 
 /* Types. */
