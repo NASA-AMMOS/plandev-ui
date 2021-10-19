@@ -4,6 +4,7 @@
   import InputText from '../../form/InputText.svelte';
   import Label from '../../form/Label.svelte';
   import Select from '../../form/Select.svelte';
+  import Grid from '../../ui/Grid.svelte';
   import type { Layer, XRangeLayer } from '../../../types';
 
   const dispatch = createEventDispatcher();
@@ -27,30 +28,32 @@
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'x-range'}
-  <Field>
-    <Label for="color-scheme">Color Scheme</Label>
-    <Select
-      name="color-scheme"
-      value={lineLayer.colorScheme}
-      on:change={({ detail: value }) =>
-        dispatch('updateLayer', { prop: 'colorScheme', value })}
-    >
-      {#each colorSchemes as colorScheme}
-        <option value={colorScheme.value}>
-          {colorScheme.name}
-        </option>
-      {/each}
-    </Select>
-  </Field>
+  <Grid columns="50% 50%">
+    <Field>
+      <Label for="color-scheme">Color Scheme</Label>
+      <Select
+        name="color-scheme"
+        value={lineLayer.colorScheme}
+        on:change={({ detail: value }) =>
+          dispatch('updateLayer', { prop: 'colorScheme', value })}
+      >
+        {#each colorSchemes as colorScheme}
+          <option value={colorScheme.value}>
+            {colorScheme.name}
+          </option>
+        {/each}
+      </Select>
+    </Field>
 
-  <Field>
-    <Label for="opacity">Opacity</Label>
-    <InputText
-      name="opacity"
-      type="number"
-      value={lineLayer.opacity}
-      on:change={({ detail: value }) =>
-        dispatch('updateLayer', { prop: 'opacity', value })}
-    />
-  </Field>
+    <Field>
+      <Label for="opacity">Opacity</Label>
+      <InputText
+        name="opacity"
+        type="number"
+        value={lineLayer.opacity}
+        on:change={({ detail: value }) =>
+          dispatch('updateLayer', { prop: 'opacity', value })}
+      />
+    </Field>
+  </Grid>
 {/if}

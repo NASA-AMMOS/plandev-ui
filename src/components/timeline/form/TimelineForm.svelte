@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import Field from '../../form/Field.svelte';
   import FieldInputText from '../../form/FieldInputText.svelte';
@@ -8,6 +9,7 @@
   import Select from '../../form/Select.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Card from '../../ui/Card.svelte';
+  import Grid from '../../ui/Grid.svelte';
   import Panel from '../../ui/Panel.svelte';
   import {
     selectedLayerId,
@@ -19,7 +21,6 @@
     view,
   } from '../../../stores/views';
   import { required } from '../../../utilities/validators';
-  import LayerLineForm from './LayerLineForm.svelte';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -71,25 +72,27 @@
       <details open>
         <summary>Timeline</summary>
         {#if $selectedTimeline !== null}
-          <FieldInputText
-            name="timeline-margin-left"
-            type="number"
-            value={$selectedTimeline.marginLeft}
-            validators={[required]}
-            on:change={e => updateTimeline('marginLeft', e.detail)}
-          >
-            Margin Left
-          </FieldInputText>
+          <Grid columns="50% 50%">
+            <FieldInputText
+              name="timeline-margin-left"
+              type="number"
+              value={$selectedTimeline.marginLeft}
+              validators={[required]}
+              on:change={e => updateTimeline('marginLeft', e.detail)}
+            >
+              Margin Left
+            </FieldInputText>
 
-          <FieldInputText
-            name="timeline-margin-right"
-            type="number"
-            value={$selectedTimeline.marginRight}
-            validators={[required]}
-            on:change={e => updateTimeline('marginRight', e.detail)}
-          >
-            Margin Right
-          </FieldInputText>
+            <FieldInputText
+              name="timeline-margin-right"
+              type="number"
+              value={$selectedTimeline.marginRight}
+              validators={[required]}
+              on:change={e => updateTimeline('marginRight', e.detail)}
+            >
+              Margin Right
+            </FieldInputText>
+          </Grid>
 
           <Field>
             <Label for="rows">Rows</Label>
