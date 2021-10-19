@@ -4,13 +4,11 @@
   import InputText from '../../form/InputText.svelte';
   import Label from '../../form/Label.svelte';
   import Select from '../../form/Select.svelte';
-  import type { XRangeLayer } from '../../../types';
+  import type { Layer, XRangeLayer } from '../../../types';
 
   const dispatch = createEventDispatcher();
 
-  export let layer: XRangeLayer | null;
-
-  let colorSchemes = [
+  const colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },
     { name: 'Category 10', value: 'schemeCategory10' },
     { name: 'Dark 2', value: 'schemeDark2' },
@@ -22,14 +20,18 @@
     { name: 'Set 3', value: 'schemeSet3' },
     { name: 'Tableau 10', value: 'schemeTableau10' },
   ];
+
+  export let layer: Layer | null;
+
+  $: lineLayer = layer as XRangeLayer;
 </script>
 
-{#if layer && layer.chartType === 'x-range'}
+{#if lineLayer && lineLayer.chartType === 'x-range'}
   <Field>
     <Label for="color-scheme">Color Scheme</Label>
     <Select
       name="color-scheme"
-      value={layer.colorScheme}
+      value={lineLayer.colorScheme}
       on:change={({ detail: value }) =>
         dispatch('updateLayer', { prop: 'colorScheme', value })}
     >
@@ -46,7 +48,7 @@
     <InputText
       name="opacity"
       type="number"
-      value={layer.opacity}
+      value={lineLayer.opacity}
       on:change={({ detail: value }) =>
         dispatch('updateLayer', { prop: 'opacity', value })}
     />

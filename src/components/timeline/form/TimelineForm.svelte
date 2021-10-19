@@ -19,6 +19,7 @@
     view,
   } from '../../../stores/views';
   import { required } from '../../../utilities/validators';
+  import LayerLineForm from './LayerLineForm.svelte';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -37,6 +38,12 @@
   function deleteTimeline() {
     view.deleteTimeline($selectedTimelineId);
     $selectedTimelineId = null;
+  }
+
+  function onUpdateLayer(event: CustomEvent<{ prop: string; value: string }>) {
+    const { detail } = event;
+    const { prop, value } = detail;
+    updateLayer(prop, value);
   }
 
   function updateLayer(prop: string, value: any) {
@@ -168,12 +175,14 @@
             </Select>
           </Field>
 
+          <LayerLineForm
+            layer={$selectedLayer}
+            on:updateLayer={onUpdateLayer}
+          />
+
           <LayerXRangeForm
             layer={$selectedLayer}
-            on:updateLayer={({ detail }) => {
-              const { prop, value } = detail;
-              updateLayer(prop, value);
-            }}
+            on:updateLayer={onUpdateLayer}
           />
 
           <Field>
