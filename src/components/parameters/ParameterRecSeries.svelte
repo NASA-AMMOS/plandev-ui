@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter } from '../../types';
+  import { getArgument } from '../../utilities/parameters';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
@@ -26,23 +27,14 @@
     const { schema, value = [] } = formParameter;
 
     for (let i = 0; i < indices; ++i) {
-      let subFormParameterValue = null;
-
-      if (value[i] !== null && value[i] !== undefined) {
-        subFormParameterValue = value[i];
-      } else if (value[i - 1] !== null && value[i - 1] !== undefined) {
-        subFormParameterValue = value[i - 1];
-      }
-
       const subFormParameter: FormParameter = {
         error: null,
         index: i,
         loading: false,
         name: `[${i}]`,
         schema: schema.items,
-        value: subFormParameterValue,
+        value: getArgument(value[i], schema.type),
       };
-
       subFormParameters.push(subFormParameter);
     }
 

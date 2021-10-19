@@ -1,34 +1,43 @@
-import type { ArgumentsMap, FormParameter, ParametersMap } from '../types';
+import type {
+  Argument,
+  ArgumentsMap,
+  FormParameter,
+  ParametersMap,
+} from '../types';
+
+export function getArgument(value: Argument, type: string): any {
+  if (value !== null && value !== undefined) {
+    return value;
+  } else if (type === 'boolean') {
+    return false;
+  } else if (type === 'duration') {
+    return 0;
+  } else if (type === 'int') {
+    return 0;
+  } else if (type === 'path') {
+    return '/etc/os-release';
+  } else if (type === 'real') {
+    return 0;
+  } else if (type === 'series') {
+    return [];
+  } else if (type === 'string') {
+    return '';
+  } else if (type === 'struct') {
+    return {};
+  } else if (type === 'variant') {
+    return '';
+  } else {
+    return null;
+  }
+}
 
 export function getFormParameters(
   parametersMap: ParametersMap,
   argumentsMap: ArgumentsMap,
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, schema]) => {
-    const argValue = argumentsMap[name];
-    let value = null;
-
-    if (argValue) {
-      value = argValue;
-    } else if (schema.type === 'boolean') {
-      value = false;
-    } else if (schema.type === 'duration') {
-      value = 0;
-    } else if (schema.type === 'int') {
-      value = 0;
-    } else if (schema.type === 'path') {
-      value = '/etc/os-release';
-    } else if (schema.type === 'real') {
-      value = 0;
-    } else if (schema.type === 'series') {
-      value = [];
-    } else if (schema.type === 'string') {
-      value = '';
-    } else if (schema.type === 'struct') {
-      value = {};
-    } else if (schema.type === 'variant') {
-      value = '';
-    }
+    const arg: Argument = argumentsMap[name];
+    const value = getArgument(arg, schema.type);
 
     const formParameter: FormParameter = {
       error: null,

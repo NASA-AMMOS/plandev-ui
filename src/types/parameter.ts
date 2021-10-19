@@ -6,7 +6,7 @@ export type FormParameter = {
   loading: boolean;
   name: string;
   schema: any;
-  value: any;
+  value: Argument;
 };
 
 export type Argument = any;
