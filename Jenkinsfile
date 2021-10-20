@@ -124,7 +124,6 @@ pipeline {
         always {
           sh "docker rmi ${DOCKER_TAG_ARTIFACTORY} || true"
           sh "docker rmi ${DOCKER_TAG_AWS} || true"
-          sh "docker image prune -f || true"
           sh "docker logout || true"
         }
         cleanup {
