@@ -398,7 +398,7 @@
     </div>
     <div>
       <button
-        class="button-icon header-button"
+        class="st-button-icon header-button"
         on:click={runSimulation}
         use:tooltip={{
           content: 'Run Simulation',
@@ -409,7 +409,7 @@
       </button>
 
       <button
-        class="button-icon header-button"
+        class="st-button-icon header-button"
         on:click={() => simulationConfigurationPanel.show()}
         use:tooltip={{
           content: 'Simulation Configuration',
@@ -420,7 +420,7 @@
       </button>
 
       <button
-        class="button-icon header-button"
+        class="st-button-icon header-button"
         on:click|stopPropagation={() => {
           viewMenu.menu.hide();
           constraintMenu.menu.toggle();
@@ -443,7 +443,7 @@
       </button>
 
       <button
-        class="button-icon header-button"
+        class="st-button-icon header-button"
         on:click|stopPropagation={() => {
           constraintMenu.menu.hide();
           viewMenu.menu.toggle();
@@ -465,14 +465,14 @@
       </button>
 
       <button
-        class="button-icon header-button"
+        class="st-button-icon header-button"
         on:click={() => activityDictionaryPanel.show()}
         use:tooltip={{
           content: 'Activity Dictionary',
           placement: 'bottom',
         }}
       >
-        <i class="ai ai-activity_dictionary" />
+        <i class="si si-activity_dictionary" />
       </button>
     </div>
   </TopBar>
@@ -604,7 +604,7 @@
 
 <style>
   .header-button {
-    color: var(--primary-inverse-text-color);
+    color: var(--st-primary-inverse-text-color);
     font-size: 1.4rem;
     margin-left: 0.5rem;
     position: relative;

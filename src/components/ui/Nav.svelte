@@ -26,7 +26,7 @@
       path: '/models',
     },
     {
-      iconClass: 'ai ai-graphql',
+      iconClass: 'si si-graphql',
       iconFontSize: 25,
       name: 'GraphQL',
       path: null,
@@ -105,6 +105,6 @@
   }
 
   .nav-item:hover {
-    background-color: var(--gray-20);
+    background-color: var(--st-gray-20);
   }
 </style>

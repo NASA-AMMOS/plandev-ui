@@ -92,7 +92,7 @@
 
     <Field>
       <button
-        class="button"
+        class="st-button"
         disabled={password === '' || username === ''}
         type="submit"
       >
@@ -104,7 +104,7 @@
 
 <style>
   form {
-    background-color: var(--primary-background-color);
+    background-color: var(--st-primary-background-color);
     border-radius: 4px;
     box-shadow: 0 2px 1px -1px #0003, 0 1px 1px 0 #00000024,
       0 1px 3px 0 #0000001f;

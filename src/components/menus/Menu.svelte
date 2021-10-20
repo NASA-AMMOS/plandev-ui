@@ -49,7 +49,7 @@
     border-radius: 4px;
     box-shadow: 0 2px 4px -1px #0003, 0 4px 5px 0 #00000024,
       0 1px 10px 0 #0000001f;
-    color: var(--primary-text-color);
+    color: var(--st-primary-text-color);
     font-size: 1rem;
     min-height: 64px;
     min-width: 150px;
@@ -79,12 +79,12 @@
   }
 
   .menu :global(.menu-item:hover) {
-    background: var(--gray-20);
+    background: var(--st-gray-20);
     border-radius: 4px;
   }
 
   .menu :global(.menu-item.disabled) {
-    color: var(--gray-40);
+    color: var(--st-gray-40);
     cursor: not-allowed;
   }
 </style>

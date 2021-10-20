@@ -249,7 +249,7 @@
   }
 
   .row-hover-menu {
-    color: var(--gray-50);
+    color: var(--st-gray-50);
     font-size: 1.2rem;
     display: none;
     position: absolute;

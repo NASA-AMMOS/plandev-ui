@@ -114,7 +114,7 @@
 
         <Field>
           <button
-            class="button"
+            class="st-button"
             disabled={!files || name === '' || version === ''}
             type="submit"
           >
@@ -140,7 +140,7 @@
                 <tr>
                   <td class="actions">
                     <button
-                      class="button-icon"
+                      class="st-button-icon"
                       data-cy="create-plan-{model.name}"
                       on:click={() => goto(`plans?modelId=${model.id}`)}
                       use:tooltip={{
@@ -151,7 +151,7 @@
                       <i class="bi bi-calendar-plus" />
                     </button>
                     <button
-                      class="button-icon"
+                      class="st-button-icon"
                       data-cy="delete-model-{model.name}"
                       on:click|stopPropagation={() =>
                         confirmDeleteModel.modal.show(model)}

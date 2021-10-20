@@ -33,7 +33,7 @@
   }
 
   .parameter-rec-error > div {
-    color: var(--red);
+    color: var(--st-red);
     display: table-cell;
     overflow: hidden;
     text-overflow: ellipsis;

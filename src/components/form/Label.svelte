@@ -17,6 +17,6 @@
 
 <style>
   label.error {
-    color: var(--red);
+    color: var(--st-red);
   }
 </style>

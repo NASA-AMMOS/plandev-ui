@@ -39,7 +39,7 @@
 
 <style>
   div {
-    background-color: var(--gray-20);
+    background-color: var(--st-gray-20);
     cursor: row-resize;
     height: 3px;
     opacity: 0.5;

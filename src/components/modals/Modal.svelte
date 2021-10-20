@@ -70,7 +70,7 @@
   }
 
   .modal {
-    background-color: var(--gray-10);
+    background-color: var(--st-gray-10);
     border-radius: 4px;
     box-shadow: 0px 4px 32px rgba(0, 0, 0, 0.24);
     display: flex;
@@ -90,8 +90,8 @@
   .modal > :global(.header),
   .modal > :global(.footer) {
     align-items: center;
-    background-color: var(--gray-20);
-    color: var(--gray-100);
+    background-color: var(--st-gray-20);
+    color: var(--st-gray-100);
     display: flex;
     height: 40px;
     padding: 1rem;

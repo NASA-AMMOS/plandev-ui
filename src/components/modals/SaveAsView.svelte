@@ -47,7 +47,7 @@
 <Modal bind:this={modal} height={150} width={200} on:show={onShow}>
   <div class="header">
     <div class="title">Save As View</div>
-    <button class="button-icon" on:click|stopPropagation={modal.hide}>
+    <button class="st-button-icon" on:click|stopPropagation={modal.hide}>
       <i class="bi bi-x" />
     </button>
   </div>
@@ -67,7 +67,7 @@
   <div class="footer">
     <button
       bind:this={buttonElement}
-      class="button"
+      class="st-button"
       disabled={name === ''}
       type="button"
       on:click={onSaveAsView}

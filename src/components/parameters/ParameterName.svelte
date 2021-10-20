@@ -24,7 +24,7 @@
   }
 
   .name {
-    color: var(--gray-80);
+    color: var(--st-gray-80);
     cursor: pointer;
     font-style: normal;
     overflow: hidden;
@@ -33,6 +33,6 @@
   }
 
   .name.error {
-    color: var(--red);
+    color: var(--st-red);
   }
 </style>

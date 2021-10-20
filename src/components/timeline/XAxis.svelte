@@ -120,13 +120,13 @@
 
   .reset-view-time-range-icon {
     cursor: pointer;
-    fill: var(--gray-50);
+    fill: var(--st-gray-50);
     font-family: bootstrap-icons;
     font-size: 12px;
     pointer-events: all;
   }
 
   .reset-view-time-range-icon:hover {
-    fill: var(--gray-70);
+    fill: var(--st-gray-70);
   }
 </style>

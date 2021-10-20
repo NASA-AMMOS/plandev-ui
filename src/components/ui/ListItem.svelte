@@ -30,7 +30,7 @@
 <style>
   .list-item {
     align-items: center;
-    border: 1px solid var(--gray-30);
+    border: 1px solid var(--st-gray-30);
     border-radius: 4px;
     display: flex;
     font-size: 0.8rem;

@@ -168,7 +168,7 @@
 
   <span slot="footer">
     <button
-      class="button secondary"
+      class="st-button secondary"
       disabled={isChild}
       on:click|stopPropagation={() => confirmDeleteActivityModal.modal.show()}
     >

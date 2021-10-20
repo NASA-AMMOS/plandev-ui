@@ -65,7 +65,7 @@
         {activityType.name}
         <span slot="suffix">
           <button
-            class="button-icon"
+            class="st-button-icon"
             on:click={() => createActivity(activityType)}
             use:tooltip={{ content: 'Create Activity', placement: 'left' }}
           >

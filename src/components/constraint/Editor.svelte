@@ -147,6 +147,6 @@
   </span>
 
   <span slot="footer">
-    <button class="button" disabled={!valid} on:click={save}>Save</button>
+    <button class="st-button" disabled={!valid} on:click={save}>Save</button>
   </span>
 </Panel>

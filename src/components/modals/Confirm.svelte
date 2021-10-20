@@ -34,7 +34,7 @@
 <Modal bind:this={modal} {height} {width}>
   <div class="header">
     <div class="title">{title}</div>
-    <button class="button-icon" on:click|stopPropagation={modal.hide}>
+    <button class="st-button-icon" on:click|stopPropagation={modal.hide}>
       <i class="bi bi-x" />
     </button>
   </div>
@@ -43,10 +43,10 @@
     <div>This action cannot be undone.</div>
   </div>
   <div class="footer">
-    <button class="button secondary" on:click|stopPropagation={modal.hide}>
+    <button class="st-button secondary" on:click|stopPropagation={modal.hide}>
       {cancelText}
     </button>
-    <button class="button" on:click={onConfirm}>
+    <button class="st-button" on:click={onConfirm}>
       {confirmText}
     </button>
   </div>

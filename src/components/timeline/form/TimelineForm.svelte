@@ -107,7 +107,7 @@
 
           <Field>
             <button
-              class="button secondary w-100"
+              class="st-button secondary w-100"
               on:click|stopPropagation={() =>
                 confirmDeleteTimelineModal.modal.show()}
             >
@@ -147,7 +147,7 @@
 
           <Field>
             <button
-              class="button secondary w-100"
+              class="st-button secondary w-100"
               on:click|stopPropagation={() =>
                 confirmDeleteRowModal.modal.show()}
             >
@@ -190,7 +190,7 @@
 
           <Field>
             <button
-              class="button secondary w-100"
+              class="st-button secondary w-100"
               on:click|stopPropagation={() =>
                 confirmDeleteLayerModal.modal.show()}
             >
