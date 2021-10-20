@@ -58,6 +58,7 @@ pipeline {
               sh '''
                 # Setup NPM to fetch from Artifactory
                 npm config set @gov.nasa.jpl.aerie:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
+                npm config set @gov.nasa.jpl.stellar:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
                 npm config set email=$NPM_EMAIL
                 npm config set always-auth=true
                 npm config set _auth=$NPM_PASSWORD
