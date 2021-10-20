@@ -1,5 +1,16 @@
 import { writable } from 'svelte/store';
 
+/** Stores. */
+
+export const activityDictionaryPanel = createPanel(true);
+export const constraintEditorPanel = createPanel(false);
+export const constraintListPanel = createPanel(false);
+export const constraintViolationsPanel = createPanel(false);
+export const selectedActivityPanel = createPanel(false);
+export const selectedTimelinePanel = createPanel(false);
+export const simulationConfigurationPanel = createPanel(false);
+export const viewEditorPanel = createPanel(false);
+
 /** Utility Functions. */
 
 function createPanel(visible = false) {
@@ -22,14 +33,3 @@ function hideAll(): boolean {
   viewEditorPanel.hide();
   return true;
 }
-
-/** Stores. */
-
-export const activityDictionaryPanel = createPanel(true);
-export const constraintEditorPanel = createPanel(false);
-export const constraintListPanel = createPanel(false);
-export const constraintViolationsPanel = createPanel(false);
-export const selectedActivityPanel = createPanel(false);
-export const selectedTimelinePanel = createPanel(false);
-export const simulationConfigurationPanel = createPanel(false);
-export const viewEditorPanel = createPanel(false);
