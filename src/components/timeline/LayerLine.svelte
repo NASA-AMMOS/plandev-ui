@@ -25,9 +25,11 @@
   export let filter: ResourceLayerFilter | undefined;
   export let id: string = '';
   export let lineColor: string = '';
+  export let lineWidth: number = 1;
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
+  export let pointRadius: number = 2;
   export let resources: Resource[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -47,6 +49,7 @@
     drawHeight &&
     drawWidth &&
     lineColor &&
+    lineWidth &&
     mounted &&
     points &&
     viewTimeRange &&
@@ -57,7 +60,7 @@
   $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
-  $: points = resourcesToLinePoints(resources);
+  $: points = resourcesToLinePoints(resources, pointRadius);
 
   onMount(() => {
     if (canvas) {
@@ -90,7 +93,7 @@
 
       const fill = lineColor;
       ctx.fillStyle = fill;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = lineWidth;
       ctx.strokeStyle = fill;
 
       const line = d3Line<LinePoint>()
@@ -103,7 +106,7 @@
       ctx.closePath();
 
       for (const point of points) {
-        const { id } = point;
+        const { id, radius } = point;
 
         if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
           const x = xScaleView(point.x);
@@ -112,7 +115,6 @@
           visiblePointsById[id] = point;
 
           const circle = new Path2D();
-          const radius = point.radius;
           circle.arc(x, y, radius, 0, 2 * Math.PI);
           ctx.fill(circle);
         }
@@ -133,7 +135,7 @@
         quadtree,
         x,
         y,
-        2.0, // TODO.
+        pointRadius,
         visiblePointsById,
       );
       dispatch('mouseOver', { e, layerId: id, points });
@@ -146,7 +148,10 @@
     }
   }
 
-  function resourcesToLinePoints(resources: Resource[]): LinePoint[] {
+  function resourcesToLinePoints(
+    resources: Resource[],
+    radius: number,
+  ): LinePoint[] {
     const points: LinePoint[] = [];
 
     for (const resource of resources) {
@@ -163,7 +168,7 @@
             points.push({
               id: `${id}-resource-${name}-${i}`,
               name,
-              radius: 2.0,
+              radius,
               selected: false,
               type: 'line',
               x: getUnixEpochTime(startTime) + x / 1000,
@@ -178,7 +183,7 @@
             points.push({
               id: `${id}-resource-${name}-${i}`,
               name,
-              radius: 2.0,
+              radius,
               selected: false,
               type: 'line',
               x: getUnixEpochTime(startTime) + x / 1000,

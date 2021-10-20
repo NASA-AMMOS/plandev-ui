@@ -56,6 +56,8 @@ export interface Layer {
 
 export interface LineLayer extends Layer {
   lineColor: string;
+  lineWidth: number;
+  pointRadius: number;
 }
 
 export interface LinePoint extends Point {

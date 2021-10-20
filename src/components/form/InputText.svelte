@@ -57,6 +57,7 @@
     {required}
     style="padding-left: {inputPaddingLeft}px; padding-right: {inputPaddingRight}px;"
     on:change={onChange}
+    on:input
     on:keyup
     use:setType
   />
