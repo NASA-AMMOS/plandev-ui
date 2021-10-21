@@ -34,7 +34,6 @@
   import Field from '../../components/form/Field.svelte';
   import FieldInputText from '../../components/form/FieldInputText.svelte';
   import Label from '../../components/form/Label.svelte';
-  import Select from '../../components/form/Select.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Card from '../../components/ui/Card.svelte';
   import Grid from '../../components/ui/Grid.svelte';
@@ -134,14 +133,14 @@
 
         <Field>
           <Label for="model">Models</Label>
-          <Select bind:value={modelId} name="model" required>
+          <select bind:value={modelId} class="st-select w-100" name="model">
             <option value="" />
             {#each sortedModels as model}
               <option value={model.id}>
                 {model.name}
               </option>
             {/each}
-          </Select>
+          </select>
         </Field>
 
         <FieldInputText

@@ -5,7 +5,6 @@
   import type { FormParameter } from '../../types';
   import ParameterBaseError from './ParameterBaseError.svelte';
   import ParameterName from './ParameterName.svelte';
-  import Select from '../form/Select.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -23,10 +22,11 @@
 
 <div class="parameter-base-variant" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
-  <Select
+  <select
     bind:value={formParameter.value}
+    class="st-select w-100"
+    class:error={formParameter.error !== null}
     {disabled}
-    invalid={formParameter.error !== null}
     on:change={() => dispatch('change', formParameter)}
   >
     {#each variants as variant}
@@ -34,7 +34,7 @@
         {variant.label}
       </option>
     {/each}
-  </Select>
+  </select>
 </div>
 
 <ParameterBaseError {columns} {formParameter} />

@@ -6,6 +6,7 @@
 @import '@gov.nasa.jpl.stellar/stellar/css/variables.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/button.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/input.css';
+@import '@gov.nasa.jpl.stellar/stellar/css/select.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/utilities.css';
 @import 'tippy.js/dist/tippy.css';
 @import './tippy-error.css';

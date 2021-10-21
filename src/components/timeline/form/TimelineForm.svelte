@@ -5,7 +5,6 @@
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import Field from '../../form/Field.svelte';
   import Label from '../../form/Label.svelte';
-  import Select from '../../form/Select.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Card from '../../ui/Card.svelte';
   import Grid from '../../ui/Grid.svelte';
@@ -19,7 +18,7 @@
     selectedTimeline,
     view,
   } from '../../../stores/views';
-  import { getInputValue } from '../../../utilities/generic';
+  import { getTargetValue } from '../../../utilities/generic';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -40,13 +39,14 @@
     $selectedTimelineId = null;
   }
 
-  function onUpdateLayer(event: CustomEvent<{ prop: string; value: string }>) {
+  function onUpdateLayer(event: CustomEvent<{ e: Event; prop: string }>) {
     const { detail } = event;
-    const { prop, value } = detail;
-    updateLayer(prop, value);
+    const { e, prop } = detail;
+    updateLayer(e, prop);
   }
 
-  function updateLayer(prop: string, value: any) {
+  function updateLayer(event: Event, prop: string) {
+    const value = getTargetValue(event);
     view.updateLayer(
       $selectedTimelineId,
       $selectedRowId,
@@ -57,12 +57,12 @@
   }
 
   function updateRow(event: Event, prop: string) {
-    const value = getInputValue(event);
+    const value = getTargetValue(event);
     view.updateRow($selectedTimelineId, $selectedRowId, prop, value);
   }
 
   function updateTimeline(event: Event, prop: string) {
-    const value = getInputValue(event);
+    const value = getTargetValue(event);
     view.updateTimeline($selectedTimelineId, prop, value);
   }
 </script>
@@ -99,13 +99,17 @@
 
           <Field>
             <Label for="rows">Rows</Label>
-            <Select bind:value={$selectedRowId} name="rows">
+            <select
+              bind:value={$selectedRowId}
+              class="st-select w-100"
+              name="rows"
+            >
               {#each $selectedTimeline.rows as row}
                 <option value={row.id}>
                   {row.id}
                 </option>
               {/each}
-            </Select>
+            </select>
           </Field>
 
           <Field>
@@ -140,13 +144,17 @@
 
           <Field>
             <Label for="layers">Layers</Label>
-            <Select bind:value={$selectedLayerId} name="layers">
+            <select
+              bind:value={$selectedLayerId}
+              class="st-select w-100"
+              name="layers"
+            >
               {#each $selectedRow.layers as layer}
                 <option value={layer.id}>
                   {layer.id}
                 </option>
               {/each}
-            </Select>
+            </select>
           </Field>
 
           <Field>
@@ -170,16 +178,16 @@
         {#if $selectedLayer !== null}
           <Field>
             <Label for="layer-type">Chart Type</Label>
-            <Select
+            <select
+              class="st-select w-100"
               name="layer-type"
               value={$selectedLayer.chartType}
-              on:change={({ detail: chartType }) =>
-                updateLayer('chartType', chartType)}
+              on:change={e => updateLayer(e, 'chartType')}
             >
               <option value="activity"> Activity </option>
               <option value="line"> Line </option>
               <option value="x-range"> X-Range </option>
-            </Select>
+            </select>
           </Field>
 
           <LayerLineForm

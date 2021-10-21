@@ -7,7 +7,6 @@
   import Field from '../form/Field.svelte';
   import InputText from '../form/InputText.svelte';
   import Label from '../form/Label.svelte';
-  import Select from '../form/Select.svelte';
   import Card from '../ui/Card.svelte';
   import CodeMirrorJsonEditor from '../ui/CodeMirrorJsonEditor.svelte';
   import AlertError from '../ui/AlertError.svelte';
@@ -112,10 +111,10 @@
       <Card class="m-2">
         <Field>
           <Label for="type">Type</Label>
-          <Select bind:value={type} name="type">
+          <select bind:value={type} class="st-select w-100" name="type">
             <option value="model">Model</option>
             <option value="plan">Plan</option>
-          </Select>
+          </select>
         </Field>
 
         <Field>

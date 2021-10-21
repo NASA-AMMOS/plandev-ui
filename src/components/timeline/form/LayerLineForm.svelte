@@ -4,18 +4,12 @@
   import Label from '../../form/Label.svelte';
   import type { Layer, LineLayer } from '../../../types';
   import Grid from '../../ui/Grid.svelte';
-  import { getInputValue } from '../../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
   export let layer: Layer | null;
 
   $: lineLayer = layer as LineLayer | null;
-
-  function onInput(event: Event, prop: string) {
-    const value = getInputValue(event);
-    dispatch('updateLayer', { prop, value });
-  }
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'line'}
@@ -27,7 +21,7 @@
         name="line-color"
         type="color"
         value={lineLayer.lineColor}
-        on:input={e => onInput(e, 'lineColor')}
+        on:input={e => dispatch('updateLayer', { e, prop: 'lineColor' })}
       />
     </Field>
     <Field>
@@ -37,7 +31,7 @@
         name="line-width"
         type="number"
         value={lineLayer.lineWidth}
-        on:input={e => onInput(e, 'lineWidth')}
+        on:input={e => dispatch('updateLayer', { e, prop: 'lineWidth' })}
       />
     </Field>
     <Field>
@@ -47,7 +41,7 @@
         name="point-radius"
         type="number"
         value={lineLayer.pointRadius}
-        on:input={e => onInput(e, 'pointRadius')}
+        on:input={e => dispatch('updateLayer', { e, prop: 'pointRadius' })}
       />
     </Field>
   </Grid>

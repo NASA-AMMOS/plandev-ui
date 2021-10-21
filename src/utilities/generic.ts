@@ -20,17 +20,21 @@ export function clamp(num: number, min: number, max: number): number {
 }
 
 /**
- * Returns value from an HTMLInputElement Event target.
+ * Returns a target value based on an Event.
  */
-export function getInputValue(event: Event): number | string {
+export function getTargetValue(event: Event): number | string {
   const { target: eventTarget } = event;
-  const target = eventTarget as HTMLInputElement;
-  const { type, value, valueAsNumber } = target;
+  const target = eventTarget as HTMLElement & { value: any };
 
-  if (type === 'number') {
-    return valueAsNumber;
+  if (target.tagName === 'INPUT') {
+    const input = target as HTMLInputElement;
+    const { type, value, valueAsNumber } = input;
+    return type === 'number' ? valueAsNumber : value;
+  } else if (target.tagName === 'SELECT') {
+    const select = target as HTMLSelectElement;
+    return select.value;
   } else {
-    return value;
+    return target.value ?? '';
   }
 }
 

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { getInputValue, slotChildCount } from '../../utilities/generic';
+  import { getTargetValue, slotChildCount } from '../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
@@ -29,7 +29,7 @@
   $: suffixCount = slotChildCount(suffixDiv);
 
   function onChange(event: Event) {
-    value = getInputValue(event);
+    value = getTargetValue(event);
     dispatch('change', value);
   }
 
