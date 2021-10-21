@@ -4,7 +4,6 @@
   import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import Field from '../../form/Field.svelte';
-  import FieldInputText from '../../form/FieldInputText.svelte';
   import Label from '../../form/Label.svelte';
   import Select from '../../form/Select.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
@@ -20,7 +19,7 @@
     selectedTimeline,
     view,
   } from '../../../stores/views';
-  import { required } from '../../../utilities/validators';
+  import { getInputValue } from '../../../utilities/generic';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -57,11 +56,13 @@
     );
   }
 
-  function updateRow(prop: string, value: any) {
+  function updateRow(event: Event, prop: string) {
+    const value = getInputValue(event);
     view.updateRow($selectedTimelineId, $selectedRowId, prop, value);
   }
 
-  function updateTimeline(prop: string, value: any) {
+  function updateTimeline(event: Event, prop: string) {
+    const value = getInputValue(event);
     view.updateTimeline($selectedTimelineId, prop, value);
   }
 </script>
@@ -73,25 +74,27 @@
         <summary>Timeline</summary>
         {#if $selectedTimeline !== null}
           <Grid columns="50% 50%">
-            <FieldInputText
-              name="timeline-margin-left"
-              type="number"
-              value={$selectedTimeline.marginLeft}
-              validators={[required]}
-              on:change={e => updateTimeline('marginLeft', e.detail)}
-            >
-              Margin Left
-            </FieldInputText>
+            <Field>
+              <Label for="margin-left">Margin Left</Label>
+              <input
+                class="st-input w-100"
+                name="margin-left"
+                type="number"
+                value={$selectedTimeline.marginLeft}
+                on:input={e => updateTimeline(e, 'marginLeft')}
+              />
+            </Field>
 
-            <FieldInputText
-              name="timeline-margin-right"
-              type="number"
-              value={$selectedTimeline.marginRight}
-              validators={[required]}
-              on:change={e => updateTimeline('marginRight', e.detail)}
-            >
-              Margin Right
-            </FieldInputText>
+            <Field>
+              <Label for="margin-right">Margin Right</Label>
+              <input
+                class="st-input w-100"
+                name="margin-right"
+                type="number"
+                value={$selectedTimeline.marginRight}
+                on:input={e => updateTimeline(e, 'marginRight')}
+              />
+            </Field>
           </Grid>
 
           <Field>
@@ -124,15 +127,16 @@
       <details open>
         <summary>Row</summary>
         {#if $selectedRow !== null}
-          <FieldInputText
-            name="timeline-row-height"
-            type="number"
-            value={$selectedRow.height}
-            validators={[required]}
-            on:change={e => updateRow('height', e.detail)}
-          >
-            Height
-          </FieldInputText>
+          <Field>
+            <Label for="row-height">Height</Label>
+            <input
+              class="st-input w-100"
+              name="row-height"
+              type="number"
+              value={$selectedRow.height}
+              on:input={e => updateRow(e, 'height')}
+            />
+          </Field>
 
           <Field>
             <Label for="layers">Layers</Label>

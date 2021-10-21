@@ -20,6 +20,21 @@ export function clamp(num: number, min: number, max: number): number {
 }
 
 /**
+ * Returns value from an HTMLInputElement Event target.
+ */
+export function getInputValue(event: Event): number | string {
+  const { target: eventTarget } = event;
+  const target = eventTarget as HTMLInputElement;
+  const { type, value, valueAsNumber } = target;
+
+  if (type === 'number') {
+    return valueAsNumber;
+  } else {
+    return value;
+  }
+}
+
+/**
  * Converts a list to a map keyed by 'id' (or alternate key).
  */
 export function keyBy<T>(list: T[], key = 'id'): StringTMap<T> {

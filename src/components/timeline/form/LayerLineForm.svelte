@@ -4,7 +4,7 @@
   import Label from '../../form/Label.svelte';
   import type { Layer, LineLayer } from '../../../types';
   import Grid from '../../ui/Grid.svelte';
-  import InputText from '../../form/InputText.svelte';
+  import { getInputValue } from '../../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
@@ -13,9 +13,7 @@
   $: lineLayer = layer as LineLayer | null;
 
   function onInput(event: Event, prop: string) {
-    const { target: eventTarget } = event;
-    const target = eventTarget as HTMLInputElement;
-    const { value } = target;
+    const value = getInputValue(event);
     dispatch('updateLayer', { prop, value });
   }
 </script>
@@ -34,7 +32,8 @@
     </Field>
     <Field>
       <Label for="line-width">Line Width</Label>
-      <InputText
+      <input
+        class="st-input w-100"
         name="line-width"
         type="number"
         value={lineLayer.lineWidth}
@@ -43,7 +42,8 @@
     </Field>
     <Field>
       <Label for="point-radius">Point Radius</Label>
-      <InputText
+      <input
+        class="st-input w-100"
         name="point-radius"
         type="number"
         value={lineLayer.pointRadius}

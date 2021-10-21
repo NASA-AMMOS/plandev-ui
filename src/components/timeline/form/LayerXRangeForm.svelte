@@ -1,11 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import Field from '../../form/Field.svelte';
-  import InputText from '../../form/InputText.svelte';
   import Label from '../../form/Label.svelte';
   import Select from '../../form/Select.svelte';
   import Grid from '../../ui/Grid.svelte';
   import type { Layer, XRangeLayer } from '../../../types';
+  import { getInputValue } from '../../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
@@ -25,6 +25,11 @@
   export let layer: Layer | null;
 
   $: lineLayer = layer as XRangeLayer;
+
+  function onInput(event: Event, prop: string) {
+    const value = getInputValue(event);
+    dispatch('updateLayer', { prop, value });
+  }
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'x-range'}
@@ -47,12 +52,12 @@
 
     <Field>
       <Label for="opacity">Opacity</Label>
-      <InputText
+      <input
+        class="st-input w-100"
         name="opacity"
         type="number"
         value={lineLayer.opacity}
-        on:change={({ detail: value }) =>
-          dispatch('updateLayer', { prop: 'opacity', value })}
+        on:input={e => onInput(e, 'opacity')}
       />
     </Field>
   </Grid>

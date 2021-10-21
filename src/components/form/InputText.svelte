@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { slotChildCount } from '../../utilities/generic';
+  import { getInputValue, slotChildCount } from '../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
@@ -29,11 +29,8 @@
   $: suffixCount = slotChildCount(suffixDiv);
 
   function onChange(event: Event) {
-    const { target: eventTarget } = event;
-    const target = eventTarget as HTMLInputElement;
-    const newValue = type === 'number' ? target.valueAsNumber : target.value;
-    value = newValue;
-    dispatch('change', newValue);
+    value = getInputValue(event);
+    dispatch('change', value);
   }
 
   function setType(element: HTMLInputElement) {
@@ -58,7 +55,6 @@
     {required}
     style="padding-left: {inputPaddingLeft}px; padding-right: {inputPaddingRight}px;"
     on:change={onChange}
-    on:input
     on:keyup
     use:setType
   />
