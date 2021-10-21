@@ -18,7 +18,7 @@
     selectedTimeline,
     view,
   } from '../../../stores/views';
-  import { getTargetValue } from '../../../utilities/generic';
+  import { getTarget } from '../../../utilities/generic';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -39,31 +39,28 @@
     $selectedTimelineId = null;
   }
 
-  function onUpdateLayer(event: CustomEvent<{ e: Event; prop: string }>) {
-    const { detail } = event;
-    const { e, prop } = detail;
-    updateLayer(e, prop);
-  }
-
-  function updateLayer(event: Event, prop: string) {
-    const value = getTargetValue(event);
+  function updateLayer(event: Event) {
+    event.stopPropagation();
+    const { name, value } = getTarget(event);
     view.updateLayer(
       $selectedTimelineId,
       $selectedRowId,
       $selectedLayerId,
-      prop,
+      name,
       value,
     );
   }
 
-  function updateRow(event: Event, prop: string) {
-    const value = getTargetValue(event);
-    view.updateRow($selectedTimelineId, $selectedRowId, prop, value);
+  function updateRow(event: Event) {
+    event.stopPropagation();
+    const { name, value } = getTarget(event);
+    view.updateRow($selectedTimelineId, $selectedRowId, name, value);
   }
 
-  function updateTimeline(event: Event, prop: string) {
-    const value = getTargetValue(event);
-    view.updateTimeline($selectedTimelineId, prop, value);
+  function updateTimeline(event: Event) {
+    event.stopPropagation();
+    const { name, value } = getTarget(event);
+    view.updateTimeline($selectedTimelineId, name, value);
   }
 </script>
 
@@ -75,24 +72,24 @@
         {#if $selectedTimeline !== null}
           <Grid columns="50% 50%">
             <Field>
-              <Label for="margin-left">Margin Left</Label>
+              <Label for="marginLeft">Margin Left</Label>
               <input
                 class="st-input w-100"
-                name="margin-left"
+                name="marginLeft"
                 type="number"
                 value={$selectedTimeline.marginLeft}
-                on:input={e => updateTimeline(e, 'marginLeft')}
+                on:input={updateTimeline}
               />
             </Field>
 
             <Field>
-              <Label for="margin-right">Margin Right</Label>
+              <Label for="marginRight">Margin Right</Label>
               <input
                 class="st-input w-100"
-                name="margin-right"
+                name="marginRight"
                 type="number"
                 value={$selectedTimeline.marginRight}
-                on:input={e => updateTimeline(e, 'marginRight')}
+                on:input={updateTimeline}
               />
             </Field>
           </Grid>
@@ -132,13 +129,13 @@
         <summary>Row</summary>
         {#if $selectedRow !== null}
           <Field>
-            <Label for="row-height">Height</Label>
+            <Label for="height">Height</Label>
             <input
               class="st-input w-100"
-              name="row-height"
+              name="height"
               type="number"
               value={$selectedRow.height}
-              on:input={e => updateRow(e, 'height')}
+              on:input={updateRow}
             />
           </Field>
 
@@ -177,12 +174,12 @@
         <summary>Layer</summary>
         {#if $selectedLayer !== null}
           <Field>
-            <Label for="layer-type">Chart Type</Label>
+            <Label for="chartType">Chart Type</Label>
             <select
               class="st-select w-100"
-              name="layer-type"
+              name="chartType"
               value={$selectedLayer.chartType}
-              on:change={e => updateLayer(e, 'chartType')}
+              on:change={updateLayer}
             >
               <option value="activity"> Activity </option>
               <option value="line"> Line </option>
@@ -190,14 +187,12 @@
             </select>
           </Field>
 
-          <LayerLineForm
-            layer={$selectedLayer}
-            on:updateLayer={onUpdateLayer}
-          />
+          <LayerLineForm layer={$selectedLayer} on:input={updateLayer} />
 
           <LayerXRangeForm
             layer={$selectedLayer}
-            on:updateLayer={onUpdateLayer}
+            on:change={updateLayer}
+            on:input={updateLayer}
           />
 
           <Field>

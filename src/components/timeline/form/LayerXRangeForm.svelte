@@ -1,11 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Field from '../../form/Field.svelte';
   import Label from '../../form/Label.svelte';
   import Grid from '../../ui/Grid.svelte';
   import type { Layer, XRangeLayer } from '../../../types';
-
-  const dispatch = createEventDispatcher();
 
   const colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },
@@ -28,12 +25,12 @@
 {#if lineLayer && lineLayer.chartType === 'x-range'}
   <Grid columns="50% 50%">
     <Field>
-      <Label for="color-scheme">Color Scheme</Label>
+      <Label for="colorScheme">Color Scheme</Label>
       <select
         class="st-select w-100"
-        name="color-scheme"
+        name="colorScheme"
         value={lineLayer.colorScheme}
-        on:change={e => dispatch('updateLayer', { e, prop: 'colorScheme' })}
+        on:change
       >
         {#each colorSchemes as colorScheme}
           <option value={colorScheme.value}>
@@ -50,7 +47,7 @@
         name="opacity"
         type="number"
         value={lineLayer.opacity}
-        on:input={e => dispatch('updateLayer', { e, prop: 'opacity' })}
+        on:input
       />
     </Field>
   </Grid>

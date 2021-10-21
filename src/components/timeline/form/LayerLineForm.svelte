@@ -1,11 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Field from '../../form/Field.svelte';
   import Label from '../../form/Label.svelte';
   import type { Layer, LineLayer } from '../../../types';
   import Grid from '../../ui/Grid.svelte';
-
-  const dispatch = createEventDispatcher();
 
   export let layer: Layer | null;
 
@@ -15,33 +12,33 @@
 {#if lineLayer && lineLayer.chartType === 'line'}
   <Grid columns="33% 33% 33%">
     <Field>
-      <Label for="line-color">Line Color</Label>
+      <Label for="lineColor">Line Color</Label>
       <input
         class="w-100"
-        name="line-color"
+        name="lineColor"
         type="color"
         value={lineLayer.lineColor}
-        on:input={e => dispatch('updateLayer', { e, prop: 'lineColor' })}
+        on:input
       />
     </Field>
     <Field>
-      <Label for="line-width">Line Width</Label>
+      <Label for="lineWidth">Line Width</Label>
       <input
         class="st-input w-100"
-        name="line-width"
+        name="lineWidth"
         type="number"
         value={lineLayer.lineWidth}
-        on:input={e => dispatch('updateLayer', { e, prop: 'lineWidth' })}
+        on:input
       />
     </Field>
     <Field>
-      <Label for="point-radius">Point Radius</Label>
+      <Label for="pointRadius">Point Radius</Label>
       <input
         class="st-input w-100"
-        name="point-radius"
+        name="pointRadius"
         type="number"
         value={lineLayer.pointRadius}
-        on:input={e => dispatch('updateLayer', { e, prop: 'pointRadius' })}
+        on:input
       />
     </Field>
   </Grid>

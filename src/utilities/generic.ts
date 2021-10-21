@@ -20,21 +20,23 @@ export function clamp(num: number, min: number, max: number): number {
 }
 
 /**
- * Returns a target value based on an Event.
+ * Returns a target based on an Event.
  */
-export function getTargetValue(event: Event): number | string {
+export function getTarget(event: Event) {
   const { target: eventTarget } = event;
-  const target = eventTarget as HTMLElement & { value: any };
+  const target = eventTarget as HTMLElement;
 
   if (target.tagName === 'INPUT') {
     const input = target as HTMLInputElement;
-    const { type, value, valueAsNumber } = input;
-    return type === 'number' ? valueAsNumber : value;
+    const { name, type, value, valueAsNumber } = input;
+    return { name, value: type === 'number' ? valueAsNumber : value };
   } else if (target.tagName === 'SELECT') {
     const select = target as HTMLSelectElement;
-    return select.value;
+    const { name, value } = select;
+    return { name, value };
   } else {
-    return target.value ?? '';
+    console.log('getTarget called with unknown tag');
+    return { name: 'unknown', value: 'unknown' };
   }
 }
 
