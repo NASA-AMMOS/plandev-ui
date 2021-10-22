@@ -18,8 +18,8 @@ export interface Axis {
   color: string;
   id: string;
   label: Label;
-  scaleDomain: number[];
-  tickCount: number;
+  scaleDomain: (number | null)[];
+  tickCount: number | null;
 }
 
 export interface DropActivity {
@@ -71,6 +71,7 @@ export interface MouseDown {
   points: Point[];
   rowId: string;
   timelineId: string;
+  yAxisId: string | null;
 }
 
 export interface MouseOver {

@@ -245,8 +245,8 @@
         selectActivity(point.id);
       }
     } else {
-      const { timelineId, rowId, layerId } = detail;
-      setSelectedTimeline(timelineId, rowId, layerId);
+      const { timelineId, rowId, layerId, yAxisId } = detail;
+      setSelectedTimeline(timelineId, rowId, layerId, yAxisId);
       selectedTimelinePanel.show();
     }
   }

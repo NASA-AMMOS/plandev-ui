@@ -27,6 +27,13 @@ type ViewStore = {
   updateRow(timelineId: string, rowId: string, prop: string, value: any): void;
   updateSectionSizes(newSizes: number[]): void;
   updateTimeline(timelineId: string, prop: string, value: any): void;
+  updateYAxis(
+    timelineId: string,
+    rowId: string,
+    yAxisId: string,
+    prop: string,
+    value: any,
+  ): void;
 };
 
 /* Stores. */
@@ -209,6 +216,47 @@ export const view: ViewStore = (() => {
         };
       });
     },
+    updateYAxis(
+      timelineId: string,
+      rowId: string,
+      yAxisId: string,
+      prop: string,
+      value: any,
+    ) {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        yAxes: row.yAxes.map(yAxis => {
+                          if (yAxis.id === yAxisId) {
+                            return {
+                              ...yAxis,
+                              [prop]: value,
+                            };
+                          }
+                          return yAxis;
+                        }),
+                      };
+                    }
+                    return row;
+                  }),
+                },
+              };
+            }
+            return section;
+          }),
+        };
+      });
+    },
   };
 })();
 
@@ -256,6 +304,22 @@ export const selectedRow = derived(
   },
 );
 
+export const selectedYAxisId: Writable<string | null> = writable(null);
+
+export const selectedYAxis = derived(
+  [selectedRow, selectedYAxisId],
+  ([$selectedRow, $selectedYAxisId]) => {
+    if ($selectedRow) {
+      for (const yAxis of $selectedRow.yAxes) {
+        if (yAxis.id === $selectedYAxisId) {
+          return yAxis;
+        }
+      }
+    }
+    return null;
+  },
+);
+
 export const selectedLayerId: Writable<string | null> = writable(null);
 
 export const selectedLayer = derived(
@@ -278,9 +342,11 @@ export function setSelectedTimeline(
   timelineId: string,
   rowId: string,
   layerId: string,
+  yAxisId: string | null,
 ): void {
   selectedTimelineId.set(timelineId);
   selectedRowId.set(rowId);
+  selectedYAxisId.set(yAxisId);
   selectedLayerId.set(layerId);
 }
 

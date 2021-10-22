@@ -53,7 +53,9 @@
     mounted &&
     points &&
     viewTimeRange &&
-    xScaleView
+    xScaleView &&
+    yAxes &&
+    yAxisId
   ) {
     draw();
   }

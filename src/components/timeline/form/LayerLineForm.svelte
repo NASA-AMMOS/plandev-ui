@@ -10,6 +10,17 @@
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'line'}
+  <Field>
+    <Label for="yAxisId">Y-Axis Id</Label>
+    <input
+      class="st-input w-100"
+      name="yAxisId"
+      type="text"
+      value={lineLayer.yAxisId}
+      on:input
+    />
+  </Field>
+
   <Grid columns="33% 33% 33%">
     <Field>
       <Label for="lineColor">Line Color</Label>

@@ -43,7 +43,7 @@
         const startPosition = -(totalWidth + axisMargin * i);
         axisG.attr('transform', `translate(${startPosition}, 0)`);
         axisG.style('color', color);
-        if (domain.length) {
+        if (domain.length === 2) {
           axisG.call(axisLeft);
         }
 

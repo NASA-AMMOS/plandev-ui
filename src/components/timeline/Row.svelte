@@ -66,7 +66,8 @@
     const { detail } = event;
     mouseDownPointsByLayer[detail.layerId] = detail.points;
     const points = Object.values(mouseDownPointsByLayer).flat();
-    dispatch('mouseDown', { ...detail, points, rowId: id });
+    const yAxisId = yAxes[0]?.id || null;
+    dispatch('mouseDown', { ...detail, points, rowId: id, yAxisId });
   }
 
   function onMouseOver(event: CustomEvent<MouseOver>) {

@@ -16,9 +16,12 @@
     selectedRow,
     selectedTimelineId,
     selectedTimeline,
+    selectedYAxisId,
+    selectedYAxis,
     view,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
+  import YAxisForm from './YAxisForm.svelte';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -62,6 +65,21 @@
     const { name, value } = getTarget(event);
     view.updateTimeline($selectedTimelineId, name, value);
   }
+
+  function updateYAxis(event: CustomEvent<{ prop: string; value: any }>) {
+    const { detail } = event;
+    const { prop, value } = detail;
+    view.updateYAxis(
+      $selectedTimelineId,
+      $selectedRowId,
+      $selectedYAxisId,
+      prop,
+      value,
+    );
+    if (prop === 'id') {
+      $selectedYAxisId = value as string;
+    }
+  }
 </script>
 
 <Panel hideHeader hideFooter>
@@ -70,7 +88,7 @@
       <details open>
         <summary>Timeline</summary>
         {#if $selectedTimeline !== null}
-          <Grid columns="50% 50%">
+          <Grid columns="33% 33% 33%">
             <Field>
               <Label for="marginLeft">Margin Left</Label>
               <input
@@ -92,22 +110,22 @@
                 on:input={updateTimeline}
               />
             </Field>
-          </Grid>
 
-          <Field>
-            <Label for="rows">Rows</Label>
-            <select
-              bind:value={$selectedRowId}
-              class="st-select w-100"
-              name="rows"
-            >
-              {#each $selectedTimeline.rows as row}
-                <option value={row.id}>
-                  {row.id}
-                </option>
-              {/each}
-            </select>
-          </Field>
+            <Field>
+              <Label for="rows">Rows</Label>
+              <select
+                bind:value={$selectedRowId}
+                class="st-select w-100"
+                name="rows"
+              >
+                {#each $selectedTimeline.rows as row}
+                  <option value={row.id}>
+                    {row.id}
+                  </option>
+                {/each}
+              </select>
+            </Field>
+          </Grid>
 
           <Field>
             <button
@@ -119,7 +137,9 @@
             </button>
           </Field>
         {:else}
-          <Card class="p-1">No timeline selected</Card>
+          <Field>
+            <Card class="p-1">No timeline selected</Card>
+          </Field>
         {/if}
       </details>
     </Field>
@@ -128,31 +148,52 @@
       <details open>
         <summary>Row</summary>
         {#if $selectedRow !== null}
-          <Field>
-            <Label for="height">Height</Label>
-            <input
-              class="st-input w-100"
-              name="height"
-              type="number"
-              value={$selectedRow.height}
-              on:input={updateRow}
-            />
-          </Field>
+          <Grid columns="33% 33% 33%">
+            <Field>
+              <Label for="height">Height</Label>
+              <input
+                class="st-input w-100"
+                name="height"
+                type="number"
+                value={$selectedRow.height}
+                on:input={updateRow}
+              />
+            </Field>
 
-          <Field>
-            <Label for="layers">Layers</Label>
-            <select
-              bind:value={$selectedLayerId}
-              class="st-select w-100"
-              name="layers"
-            >
-              {#each $selectedRow.layers as layer}
-                <option value={layer.id}>
-                  {layer.id}
-                </option>
-              {/each}
-            </select>
-          </Field>
+            <Field>
+              <Label for="yAxes">Y-Axes</Label>
+              {#if $selectedRow.yAxes.length}
+                <select
+                  bind:value={$selectedYAxisId}
+                  class="st-select w-100"
+                  name="yAxes"
+                >
+                  {#each $selectedRow.yAxes as yAxis}
+                    <option value={yAxis.id}>
+                      {yAxis.id}
+                    </option>
+                  {/each}
+                </select>
+              {:else}
+                <input class="st-input w-100" disabled value="Empty" />
+              {/if}
+            </Field>
+
+            <Field>
+              <Label for="layers">Layers</Label>
+              <select
+                bind:value={$selectedLayerId}
+                class="st-select w-100"
+                name="layers"
+              >
+                {#each $selectedRow.layers as layer}
+                  <option value={layer.id}>
+                    {layer.id}
+                  </option>
+                {/each}
+              </select>
+            </Field>
+          </Grid>
 
           <Field>
             <button
@@ -164,7 +205,22 @@
             </button>
           </Field>
         {:else}
-          <Card class="p-1">No row selected</Card>
+          <Field>
+            <Card class="p-1">No row selected</Card>
+          </Field>
+        {/if}
+      </details>
+    </Field>
+
+    <Field>
+      <details open>
+        <summary>Y-Axis</summary>
+        {#if $selectedYAxis !== null}
+          <YAxisForm axis={$selectedYAxis} on:update={updateYAxis} />
+        {:else}
+          <Field>
+            <Card class="p-1">No y-axis selected</Card>
+          </Field>
         {/if}
       </details>
     </Field>
@@ -205,7 +261,9 @@
             </button>
           </Field>
         {:else}
-          <Card class="p-1">No layer selected</Card>
+          <Field>
+            <Card class="p-1">No layer selected</Card>
+          </Field>
         {/if}
       </details>
     </Field>
