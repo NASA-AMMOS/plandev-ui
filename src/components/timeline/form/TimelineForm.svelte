@@ -23,7 +23,7 @@
   import { getTarget } from '../../../utilities/generic';
   import YAxisForm from './YAxisForm.svelte';
   import Details from '../../ui/Details.svelte';
-import { tooltip } from '../../../utilities/tooltip';
+  import { tooltip } from '../../../utilities/tooltip';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -94,7 +94,7 @@ import { tooltip } from '../../../utilities/tooltip';
             class="st-button-icon"
             on:click|stopPropagation={() =>
               confirmDeleteTimelineModal.modal.show()}
-            use:tooltip={{ content: 'Delete Timeline', placement: 'left'  }}
+            use:tooltip={{ content: 'Delete Timeline', placement: 'left' }}
           >
             <i class="bi bi-trash" />
           </button>
@@ -153,7 +153,7 @@ import { tooltip } from '../../../utilities/tooltip';
           <button
             class="st-button-icon"
             on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
-            use:tooltip={{ content: 'Delete Row', placement: 'left'  }}
+            use:tooltip={{ content: 'Delete Row', placement: 'left' }}
           >
             <i class="bi bi-trash" />
           </button>
@@ -233,7 +233,7 @@ import { tooltip } from '../../../utilities/tooltip';
             class="st-button-icon"
             on:click|stopPropagation={() =>
               confirmDeleteLayerModal.modal.show()}
-            use:tooltip={{ content: 'Delete Layer', placement: 'left'  }}
+            use:tooltip={{ content: 'Delete Layer', placement: 'left' }}
           >
             <i class="bi bi-trash" />
           </button>

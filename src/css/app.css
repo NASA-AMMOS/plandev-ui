@@ -1,17 +1,18 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'tippy.js/dist/tippy.css';
+@import 'toastify-js/src/toastify.css';
+
 @import '@gov.nasa.jpl.stellar/icons/font/stellar-icons.css';
 @import '@gov.nasa.jpl.stellar/stellar/font/inter/inter.css';
-@import '@gov.nasa.jpl.stellar/stellar/css/reset.css';
-@import '@gov.nasa.jpl.stellar/stellar/css/color.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/variables.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/button.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/input.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/input-group.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/select.css';
-@import '@gov.nasa.jpl.stellar/stellar/css/utilities.css';
-@import 'tippy.js/dist/tippy.css';
+
+@import './reset.css';
+@import './utilities.css';
 @import './tippy-error.css';
-@import 'toastify-js/src/toastify.css';
 
 html,
 body,
