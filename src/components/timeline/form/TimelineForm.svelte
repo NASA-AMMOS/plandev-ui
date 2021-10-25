@@ -89,14 +89,16 @@ import { tooltip } from '../../../utilities/tooltip';
     <Details class="p-1">
       <span slot="summary-left"> Timeline </span>
       <span slot="summary-right">
-        <button
-          class="st-button-icon"
-          on:click|stopPropagation={() =>
-            confirmDeleteTimelineModal.modal.show()}
-          use:tooltip={{ content: 'Delete Timeline', placement: 'left'  }}
-        >
-          <i class="bi bi-trash" />
-        </button>
+        {#if $selectedTimeline !== null}
+          <button
+            class="st-button-icon"
+            on:click|stopPropagation={() =>
+              confirmDeleteTimelineModal.modal.show()}
+            use:tooltip={{ content: 'Delete Timeline', placement: 'left'  }}
+          >
+            <i class="bi bi-trash" />
+          </button>
+        {/if}
       </span>
       {#if $selectedTimeline !== null}
         <Grid columns="33% 33% 33%">
@@ -147,13 +149,15 @@ import { tooltip } from '../../../utilities/tooltip';
     <Details class="p-1">
       <span slot="summary-left"> Row </span>
       <span slot="summary-right">
-        <button
-          class="st-button-icon"
-          on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
-          use:tooltip={{ content: 'Delete Row', placement: 'left'  }}
-        >
-          <i class="bi bi-trash" />
-        </button>
+        {#if $selectedRow !== null}
+          <button
+            class="st-button-icon"
+            on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
+            use:tooltip={{ content: 'Delete Row', placement: 'left'  }}
+          >
+            <i class="bi bi-trash" />
+          </button>
+        {/if}
       </span>
       {#if $selectedRow !== null}
         <Grid columns="33% 33% 33%">
@@ -224,14 +228,16 @@ import { tooltip } from '../../../utilities/tooltip';
     <Details class="p-1">
       <span slot="summary-left"> Layer </span>
       <span slot="summary-right">
-        <button
-          class="st-button-icon"
-          on:click|stopPropagation={() =>
-            confirmDeleteLayerModal.modal.show()}
-          use:tooltip={{ content: 'Delete Layer', placement: 'left'  }}
-        >
-          <i class="bi bi-trash" />
-        </button>
+        {#if $selectedLayer !== null}
+          <button
+            class="st-button-icon"
+            on:click|stopPropagation={() =>
+              confirmDeleteLayerModal.modal.show()}
+            use:tooltip={{ content: 'Delete Layer', placement: 'left'  }}
+          >
+            <i class="bi bi-trash" />
+          </button>
+        {/if}
       </span>
       {#if $selectedLayer !== null}
         <Field>
