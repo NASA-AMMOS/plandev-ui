@@ -22,6 +22,8 @@
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import YAxisForm from './YAxisForm.svelte';
+  import Details from '../../ui/Details.svelte';
+import { tooltip } from '../../../utilities/tooltip';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -84,189 +86,181 @@
 
 <Panel hideHeader hideFooter>
   <span slot="body">
-    <Field>
-      <details open>
-        <summary>Timeline</summary>
-        {#if $selectedTimeline !== null}
-          <Grid columns="33% 33% 33%">
-            <Field>
-              <Label for="marginLeft">Margin Left</Label>
-              <input
-                class="st-input w-100"
-                name="marginLeft"
-                type="number"
-                value={$selectedTimeline.marginLeft}
-                on:input={updateTimeline}
-              />
-            </Field>
-
-            <Field>
-              <Label for="marginRight">Margin Right</Label>
-              <input
-                class="st-input w-100"
-                name="marginRight"
-                type="number"
-                value={$selectedTimeline.marginRight}
-                on:input={updateTimeline}
-              />
-            </Field>
-
-            <Field>
-              <Label for="rows">Rows</Label>
-              <select
-                bind:value={$selectedRowId}
-                class="st-select w-100"
-                name="rows"
-              >
-                {#each $selectedTimeline.rows as row}
-                  <option value={row.id}>
-                    {row.id}
-                  </option>
-                {/each}
-              </select>
-            </Field>
-          </Grid>
-
+    <Details class="p-1">
+      <span slot="summary-left"> Timeline </span>
+      <span slot="summary-right">
+        <button
+          class="st-button-icon"
+          on:click|stopPropagation={() =>
+            confirmDeleteTimelineModal.modal.show()}
+          use:tooltip={{ content: 'Delete Timeline', placement: 'left'  }}
+        >
+          <i class="bi bi-trash" />
+        </button>
+      </span>
+      {#if $selectedTimeline !== null}
+        <Grid columns="33% 33% 33%">
           <Field>
-            <button
-              class="st-button secondary w-100"
-              on:click|stopPropagation={() =>
-                confirmDeleteTimelineModal.modal.show()}
-            >
-              Delete Timeline
-            </button>
+            <Label for="marginLeft">Margin Left</Label>
+            <input
+              class="st-input w-100"
+              name="marginLeft"
+              type="number"
+              value={$selectedTimeline.marginLeft}
+              on:input={updateTimeline}
+            />
           </Field>
-        {:else}
+
           <Field>
-            <Card class="p-1">No timeline selected</Card>
+            <Label for="marginRight">Margin Right</Label>
+            <input
+              class="st-input w-100"
+              name="marginRight"
+              type="number"
+              value={$selectedTimeline.marginRight}
+              on:input={updateTimeline}
+            />
           </Field>
-        {/if}
-      </details>
-    </Field>
-
-    <Field>
-      <details open>
-        <summary>Row</summary>
-        {#if $selectedRow !== null}
-          <Grid columns="33% 33% 33%">
-            <Field>
-              <Label for="height">Height</Label>
-              <input
-                class="st-input w-100"
-                name="height"
-                type="number"
-                value={$selectedRow.height}
-                on:input={updateRow}
-              />
-            </Field>
-
-            <Field>
-              <Label for="yAxes">Y-Axes</Label>
-              {#if $selectedRow.yAxes.length}
-                <select
-                  bind:value={$selectedYAxisId}
-                  class="st-select w-100"
-                  name="yAxes"
-                >
-                  {#each $selectedRow.yAxes as yAxis}
-                    <option value={yAxis.id}>
-                      {yAxis.id}
-                    </option>
-                  {/each}
-                </select>
-              {:else}
-                <input class="st-input w-100" disabled value="Empty" />
-              {/if}
-            </Field>
-
-            <Field>
-              <Label for="layers">Layers</Label>
-              <select
-                bind:value={$selectedLayerId}
-                class="st-select w-100"
-                name="layers"
-              >
-                {#each $selectedRow.layers as layer}
-                  <option value={layer.id}>
-                    {layer.id}
-                  </option>
-                {/each}
-              </select>
-            </Field>
-          </Grid>
 
           <Field>
-            <button
-              class="st-button secondary w-100"
-              on:click|stopPropagation={() =>
-                confirmDeleteRowModal.modal.show()}
-            >
-              Delete Row
-            </button>
-          </Field>
-        {:else}
-          <Field>
-            <Card class="p-1">No row selected</Card>
-          </Field>
-        {/if}
-      </details>
-    </Field>
-
-    <Field>
-      <details open>
-        <summary>Y-Axis</summary>
-        {#if $selectedYAxis !== null}
-          <YAxisForm axis={$selectedYAxis} on:update={updateYAxis} />
-        {:else}
-          <Field>
-            <Card class="p-1">No y-axis selected</Card>
-          </Field>
-        {/if}
-      </details>
-    </Field>
-
-    <Field>
-      <details open>
-        <summary>Layer</summary>
-        {#if $selectedLayer !== null}
-          <Field>
-            <Label for="chartType">Chart Type</Label>
+            <Label for="rows">Rows</Label>
             <select
+              bind:value={$selectedRowId}
               class="st-select w-100"
-              name="chartType"
-              value={$selectedLayer.chartType}
-              on:change={updateLayer}
+              name="rows"
             >
-              <option value="activity"> Activity </option>
-              <option value="line"> Line </option>
-              <option value="x-range"> X-Range </option>
+              {#each $selectedTimeline.rows as row}
+                <option value={row.id}>
+                  {row.id}
+                </option>
+              {/each}
             </select>
           </Field>
+        </Grid>
+      {:else}
+        <Field>
+          <Card class="p-1">No timeline selected</Card>
+        </Field>
+      {/if}
+    </Details>
 
-          <LayerLineForm layer={$selectedLayer} on:input={updateLayer} />
-
-          <LayerXRangeForm
-            layer={$selectedLayer}
-            on:change={updateLayer}
-            on:input={updateLayer}
-          />
+    <Details class="p-1">
+      <span slot="summary-left"> Row </span>
+      <span slot="summary-right">
+        <button
+          class="st-button-icon"
+          on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
+          use:tooltip={{ content: 'Delete Row', placement: 'left'  }}
+        >
+          <i class="bi bi-trash" />
+        </button>
+      </span>
+      {#if $selectedRow !== null}
+        <Grid columns="33% 33% 33%">
+          <Field>
+            <Label for="height">Height</Label>
+            <input
+              class="st-input w-100"
+              name="height"
+              type="number"
+              value={$selectedRow.height}
+              on:input={updateRow}
+            />
+          </Field>
 
           <Field>
-            <button
-              class="st-button secondary w-100"
-              on:click|stopPropagation={() =>
-                confirmDeleteLayerModal.modal.show()}
+            <Label for="yAxes">Y-Axes</Label>
+            {#if $selectedRow.yAxes.length}
+              <select
+                bind:value={$selectedYAxisId}
+                class="st-select w-100"
+                name="yAxes"
+              >
+                {#each $selectedRow.yAxes as yAxis}
+                  <option value={yAxis.id}>
+                    {yAxis.id}
+                  </option>
+                {/each}
+              </select>
+            {:else}
+              <input class="st-input w-100" disabled value="Empty" />
+            {/if}
+          </Field>
+
+          <Field>
+            <Label for="layers">Layers</Label>
+            <select
+              bind:value={$selectedLayerId}
+              class="st-select w-100"
+              name="layers"
             >
-              Delete Layer
-            </button>
+              {#each $selectedRow.layers as layer}
+                <option value={layer.id}>
+                  {layer.id}
+                </option>
+              {/each}
+            </select>
           </Field>
-        {:else}
-          <Field>
-            <Card class="p-1">No layer selected</Card>
-          </Field>
-        {/if}
-      </details>
-    </Field>
+        </Grid>
+      {:else}
+        <Field>
+          <Card class="p-1">No row selected</Card>
+        </Field>
+      {/if}
+    </Details>
+
+    <Details class="p-1">
+      <span slot="summary-left"> Y-Axis </span>
+      <span slot="summary-right" />
+      {#if $selectedYAxis !== null}
+        <YAxisForm axis={$selectedYAxis} on:update={updateYAxis} />
+      {:else}
+        <Field>
+          <Card class="p-1">No y-axis selected</Card>
+        </Field>
+      {/if}
+    </Details>
+
+    <Details class="p-1">
+      <span slot="summary-left"> Layer </span>
+      <span slot="summary-right">
+        <button
+          class="st-button-icon"
+          on:click|stopPropagation={() =>
+            confirmDeleteLayerModal.modal.show()}
+          use:tooltip={{ content: 'Delete Layer', placement: 'left'  }}
+        >
+          <i class="bi bi-trash" />
+        </button>
+      </span>
+      {#if $selectedLayer !== null}
+        <Field>
+          <Label for="chartType">Chart Type</Label>
+          <select
+            class="st-select w-100"
+            name="chartType"
+            value={$selectedLayer.chartType}
+            on:change={updateLayer}
+          >
+            <option value="activity"> Activity </option>
+            <option value="line"> Line </option>
+            <option value="x-range"> X-Range </option>
+          </select>
+        </Field>
+
+        <LayerLineForm layer={$selectedLayer} on:input={updateLayer} />
+
+        <LayerXRangeForm
+          layer={$selectedLayer}
+          on:change={updateLayer}
+          on:input={updateLayer}
+        />
+      {:else}
+        <Field>
+          <Card class="p-1">No layer selected</Card>
+        </Field>
+      {/if}
+    </Details>
   </span>
 </Panel>
 
