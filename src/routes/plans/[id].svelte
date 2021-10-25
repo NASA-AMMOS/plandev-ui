@@ -493,6 +493,7 @@
           {#if section.iframe && horizontalSplitInitialized}
             <iframe
               allow="fullscreen"
+              class="h-100 w-100 border-0"
               src={section.iframe.src}
               title="iframe-{section.id}"
             />
