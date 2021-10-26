@@ -5,7 +5,6 @@
   import Ajv from 'ajv';
   import type { ValidateFunction } from 'ajv';
   import Field from '../form/Field.svelte';
-  import InputText from '../form/InputText.svelte';
   import Label from '../form/Label.svelte';
   import Card from '../ui/Card.svelte';
   import CodeMirrorJsonEditor from '../ui/CodeMirrorJsonEditor.svelte';
@@ -119,17 +118,33 @@
 
         <Field>
           <Label for="name">Name</Label>
-          <InputText bind:value={name} name="name" required />
+          <input
+            bind:value={name}
+            autocomplete="off"
+            class="st-input w-100"
+            name="name"
+            required
+          />
         </Field>
 
         <Field>
           <Label for="description">Description</Label>
-          <InputText bind:value={description} name="description" />
+          <input
+            bind:value={description}
+            autocomplete="off"
+            class="st-input w-100"
+            name="description"
+          />
         </Field>
 
         <Field>
           <Label for="summary">Summary</Label>
-          <InputText bind:value={summary} name="summary" />
+          <input
+            bind:value={summary}
+            autocomplete="off"
+            class="st-input w-100"
+            name="summary"
+          />
         </Field>
       </Card>
     </details>

@@ -3,7 +3,6 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte';
   import Modal from './Modal.svelte';
-  import InputText from '../form/InputText.svelte';
   import Field from '../form/Field.svelte';
   import Label from '../form/Label.svelte';
   import { reqCreateView } from '../../utilities/requests';
@@ -54,11 +53,14 @@
   <div class="content">
     <Field>
       <Label for="name">Name</Label>
-      <InputText
-        bind:input={nameElement}
+      <input
+        bind:this={nameElement}
         bind:value={name}
+        autocomplete="off"
+        class="st-input w-100"
         name="name"
         required
+        type="text"
         on:keyup={onKeyUp}
       />
     </Field>

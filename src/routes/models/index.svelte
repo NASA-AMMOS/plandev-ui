@@ -27,7 +27,6 @@
   import { session as appSession } from '$app/stores';
   import { goto } from '$app/navigation';
   import Field from '../../components/form/Field.svelte';
-  import InputText from '../../components/form/InputText.svelte';
   import Label from '../../components/form/Label.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -94,16 +93,24 @@
 
         <Field>
           <Label for="name">Name</Label>
-          <InputText bind:value={name} name="name" required={true} />
+          <input
+            bind:value={name}
+            autocomplete="off"
+            class="st-input w-100"
+            name="name"
+            required
+          />
         </Field>
 
         <Field>
           <Label for="version">Version</Label>
-          <InputText
+          <input
             bind:value={version}
+            autocomplete="off"
+            class="st-input w-100"
             name="version"
             placeholder="0.0.0"
-            required={true}
+            required
           />
         </Field>
 

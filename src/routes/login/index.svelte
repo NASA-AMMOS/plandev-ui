@@ -16,7 +16,6 @@
   import { session } from '$app/stores';
   import { onMount } from 'svelte';
   import Field from '../../components/form/Field.svelte';
-  import InputText from '../../components/form/InputText.svelte';
   import Label from '../../components/form/Label.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import type { LoginPostResponseBody } from '../auth/login';
@@ -72,18 +71,23 @@
 
     <Field>
       <Label for="username">Username</Label>
-      <InputText
-        bind:input={usernameInput}
+      <input
+        autocomplete="off"
+        bind:this={usernameInput}
         bind:value={username}
+        class="st-input w-100"
         name="username"
         required
+        type="text"
       />
     </Field>
 
     <Field>
       <Label for="password">Password</Label>
-      <InputText
+      <input
+        autocomplete="off"
         bind:value={password}
+        class="st-input w-100"
         name="password"
         required
         type="password"
