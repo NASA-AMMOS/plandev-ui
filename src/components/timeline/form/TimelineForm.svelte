@@ -126,17 +126,21 @@
 
           <Field>
             <Label for="rows">Rows</Label>
-            <select
-              bind:value={$selectedRowId}
-              class="st-select w-100"
-              name="rows"
-            >
-              {#each $selectedTimeline.rows as row}
-                <option value={row.id}>
-                  {row.id}
-                </option>
-              {/each}
-            </select>
+            {#if $selectedTimeline.rows.length}
+              <select
+                bind:value={$selectedRowId}
+                class="st-select w-100"
+                name="rows"
+              >
+                {#each $selectedTimeline.rows as row}
+                  <option value={row.id}>
+                    {row.id}
+                  </option>
+                {/each}
+              </select>
+            {:else}
+              <input class="st-input w-100" disabled value="Empty" />
+            {/if}
           </Field>
         </Grid>
       {:else}
@@ -193,17 +197,21 @@
 
           <Field>
             <Label for="layers">Layers</Label>
-            <select
-              bind:value={$selectedLayerId}
-              class="st-select w-100"
-              name="layers"
-            >
-              {#each $selectedRow.layers as layer}
-                <option value={layer.id}>
-                  {layer.id}
-                </option>
-              {/each}
-            </select>
+            {#if $selectedRow.layers.length}
+              <select
+                bind:value={$selectedLayerId}
+                class="st-select w-100"
+                name="layers"
+              >
+                {#each $selectedRow.layers as layer}
+                  <option value={layer.id}>
+                    {layer.id}
+                  </option>
+                {/each}
+              </select>
+            {:else}
+              <input class="st-input w-100" disabled value="Empty" />
+            {/if}
           </Field>
         </Grid>
       {:else}
