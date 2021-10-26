@@ -133,6 +133,7 @@
               <select
                 bind:value={$selectedRowId}
                 class="st-select w-100"
+                disabled={$selectedTimeline.rows.length === 1}
                 name="rows"
               >
                 {#each $selectedTimeline.rows as row}
@@ -185,6 +186,7 @@
               <select
                 bind:value={$selectedYAxisId}
                 class="st-select w-100"
+                disabled={$selectedRow.yAxes.length === 1}
                 name="yAxes"
               >
                 {#each $selectedRow.yAxes as yAxis}
@@ -204,6 +206,7 @@
               <select
                 bind:value={$selectedLayerId}
                 class="st-select w-100"
+                disabled={$selectedRow.layers.length === 1}
                 name="layers"
               >
                 {#each $selectedRow.layers as layer}
