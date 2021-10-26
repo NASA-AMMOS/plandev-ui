@@ -138,7 +138,7 @@
             <tbody>
               {#each sortedModels as model}
                 <tr>
-                  <td class="actions">
+                  <td class="actions fs-6">
                     <button
                       class="st-button-icon"
                       data-cy="create-plan-{model.name}"

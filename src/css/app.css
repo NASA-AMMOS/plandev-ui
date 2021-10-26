@@ -6,8 +6,8 @@
 @import '@gov.nasa.jpl.stellar/stellar/font/inter/inter.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/variables.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/button.css';
+@import '@gov.nasa.jpl.stellar/stellar/css/fieldset.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/input.css';
-@import '@gov.nasa.jpl.stellar/stellar/css/input-group.css';
 @import '@gov.nasa.jpl.stellar/stellar/css/select.css';
 
 @import './reset.css';

@@ -208,7 +208,7 @@
             <tbody>
               {#each sortedPlans as plan}
                 <tr>
-                  <td class="actions">
+                  <td class="actions fs-6">
                     <button
                       class="st-button-icon"
                       on:click={() => goto(`plans/${plan.id}`)}
