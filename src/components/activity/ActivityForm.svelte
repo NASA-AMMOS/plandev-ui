@@ -25,6 +25,7 @@
     getFormParameters,
     updateFormParameter,
   } from '../../utilities/parameters';
+  import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher();
 
@@ -89,7 +90,19 @@
   }
 </script>
 
-<Panel hideHeader>
+<Panel hideFooter>
+  <span slot="header">Selected Activity</span>
+  <span slot="header-right">
+    <button
+      class="st-button-icon"
+      disabled={isChild}
+      on:click|stopPropagation={() => confirmDeleteActivityModal.modal.show()}
+      use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
+    >
+      <i class="bi bi-trash" />
+    </button>
+  </span>
+
   <span slot="body">
     <Field>
       <Label for="id">Activity ID</Label>
@@ -164,16 +177,6 @@
         </div>
       </details>
     </Field>
-  </span>
-
-  <span slot="footer">
-    <button
-      class="st-button secondary"
-      disabled={isChild}
-      on:click|stopPropagation={() => confirmDeleteActivityModal.modal.show()}
-    >
-      Delete
-    </button>
   </span>
 </Panel>
 

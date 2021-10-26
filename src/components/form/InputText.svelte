@@ -83,12 +83,12 @@
   /* Slotted Icons. */
 
   .input-text :global(i) {
-    color: var(--st-fieldset-icon-color);
+    color: var(--st-input-icon-color);
     font-size: 14px;
   }
 
   .input-text.disabled :global(i) {
-    color: var(--st-fieldset-icon-disabled-color);
+    color: var(--st-input-icon-disabled-color);
     cursor: not-allowed;
   }
 

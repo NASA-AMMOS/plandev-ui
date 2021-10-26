@@ -86,7 +86,7 @@
 
 <Panel hideHeader hideFooter>
   <span slot="body">
-    <Details class="p-1">
+    <Details class="pb-3">
       <span slot="summary-left"> Timeline </span>
       <span slot="summary-right">
         {#if $selectedTimeline !== null}
@@ -146,7 +146,7 @@
       {/if}
     </Details>
 
-    <Details class="p-1">
+    <Details class="pb-3">
       <span slot="summary-left"> Row </span>
       <span slot="summary-right">
         {#if $selectedRow !== null}
@@ -213,7 +213,7 @@
       {/if}
     </Details>
 
-    <Details class="p-1">
+    <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
       <span slot="summary-right" />
       {#if $selectedYAxis !== null}
@@ -225,7 +225,7 @@
       {/if}
     </Details>
 
-    <Details class="p-1">
+    <Details>
       <span slot="summary-left"> Layer </span>
       <span slot="summary-right">
         {#if $selectedLayer !== null}

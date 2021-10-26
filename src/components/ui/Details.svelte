@@ -7,27 +7,25 @@
   let styleName: string = '';
 </script>
 
-<div
-  class="summary {className}"
-  style={styleName}
-  on:click|stopPropagation={() => (open = !open)}
->
-  <span>
-    {#if !open}
-      <i class="bi bi-caret-right-fill" />
-    {:else}
-      <i class="bi bi-caret-down-fill" />
-    {/if}
-    <slot name="summary-left" />
-  </span>
-  <span>
-    <slot name="summary-right" />
-  </span>
-</div>
+<div class={className} style={styleName}>
+  <div class="summary p-1" on:click|stopPropagation={() => (open = !open)}>
+    <span>
+      {#if !open}
+        <i class="bi bi-caret-right-fill" />
+      {:else}
+        <i class="bi bi-caret-down-fill" />
+      {/if}
+      <slot name="summary-left" />
+    </span>
+    <span>
+      <slot name="summary-right" />
+    </span>
+  </div>
 
-{#if open}
-  <slot />
-{/if}
+  {#if open}
+    <slot />
+  {/if}
+</div>
 
 <style>
   .summary {

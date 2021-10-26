@@ -7,6 +7,7 @@
   {#if !hideHeader}
     <div class="header p-1 mb-1">
       <slot name="header" />
+      <slot name="header-right" />
     </div>
   {/if}
   <div class="body">
@@ -29,8 +30,11 @@
   }
 
   .panel > .header {
+    align-items: center;
     box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
+    display: flex;
     font-size: 0.8rem;
+    justify-content: space-between;
   }
 
   .panel > .body {
