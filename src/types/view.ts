@@ -8,7 +8,7 @@ export interface ViewMeta {
 }
 
 export interface ViewSection {
-  id: string;
+  id: number;
   iframe?: {
     src: string;
   };

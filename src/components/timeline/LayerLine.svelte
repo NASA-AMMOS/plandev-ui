@@ -23,7 +23,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
-  export let id: string = '';
+  export let id: number;
   export let lineColor: string = '';
   export let lineWidth: number = 1;
   export let mousedown: MouseEvent | undefined;
@@ -34,7 +34,7 @@
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yAxes: Axis[] = [];
-  export let yAxisId: string = '';
+  export let yAxisId: number | null = null;
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -55,7 +55,7 @@
     viewTimeRange &&
     xScaleView &&
     yAxes &&
-    yAxisId
+    yAxisId !== undefined
   ) {
     draw();
   }
@@ -203,7 +203,7 @@
 <canvas
   bind:this={canvas}
   height={canvasHeightDpr}
-  {id}
+  id={`layer-line-${id}`}
   style="height: {drawHeight}px; width: {drawWidth}px;"
   width={canvasWidthDpr}
 />

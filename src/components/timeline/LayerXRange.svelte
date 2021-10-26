@@ -36,7 +36,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
-  export let id: string = '';
+  export let id: number;
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
@@ -318,7 +318,7 @@
 <canvas
   bind:this={canvas}
   height={canvasHeightDpr}
-  {id}
+  id={`layer-x-range-${id}`}
   style="height: {drawHeight}px; width: {drawWidth}px;"
   width={canvasWidthDpr}
 />

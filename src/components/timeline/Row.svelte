@@ -38,7 +38,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let horizontalGuides: HorizontalGuide[] = [];
-  export let id: string = '';
+  export let id: number;
   export let layers: Layer[] = [];
   export let marginLeft: number = 50;
   export let resources: Resource[] = [];
@@ -66,7 +66,7 @@
     const { detail } = event;
     mouseDownPointsByLayer[detail.layerId] = detail.points;
     const points = Object.values(mouseDownPointsByLayer).flat();
-    const yAxisId = yAxes[0]?.id || null;
+    const yAxisId = yAxes[0]?.id ?? null;
     dispatch('mouseDown', { ...detail, points, rowId: id, yAxisId });
   }
 
@@ -84,7 +84,7 @@
 </script>
 
 <div>
-  <div class="row" {id} style="height: {drawHeight}px;">
+  <div class="row" id={`row-${id}`} style="height: {drawHeight}px;">
     <!-- Hover Menu. -->
     <div class="row-hover-menu">
       <RowDragHandleMove disabled={rowDragMoveDisabled} on:mouseDownRowMove />

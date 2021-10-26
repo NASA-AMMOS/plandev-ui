@@ -1,15 +1,18 @@
 import type { Subscriber, Unsubscriber, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { View } from '../types';
+import type { Axis, View } from '../types';
+import { compare } from '../utilities/generic';
 import { reqUpdateView } from '../utilities/requests';
 
 /* Types. */
 
 type ViewStore = {
-  deleteLayer(timelineId: string, rowId: string, layerId: string): void;
-  deleteRow(timelineId: string, rowId: string): void;
-  deleteTimeline(timelineId: string): void;
+  createYAxis(timelineId: number, rowId: number): void;
+  deleteLayer(timelineId: number, rowId: number, layerId: number): void;
+  deleteRow(timelineId: number, rowId: number): void;
+  deleteTimeline(timelineId: number): void;
+  deleteYAxis(timelineId: number, rowId: number, yAxisId: number): void;
   set: (this: void, value: any) => void;
   subscribe: (
     this: void,
@@ -18,19 +21,19 @@ type ViewStore = {
   ) => Unsubscriber;
   update(currentView: View): Promise<void>;
   updateLayer(
-    timelineId: string,
-    rowId: string,
-    layerId: string,
+    timelineId: number,
+    rowId: number,
+    layerId: number,
     prop: string,
     value: any,
   ): void;
-  updateRow(timelineId: string, rowId: string, prop: string, value: any): void;
+  updateRow(timelineId: number, rowId: number, prop: string, value: any): void;
   updateSectionSizes(newSizes: number[]): void;
-  updateTimeline(timelineId: string, prop: string, value: any): void;
+  updateTimeline(timelineId: number, prop: string, value: any): void;
   updateYAxis(
-    timelineId: string,
-    rowId: string,
-    yAxisId: string,
+    timelineId: number,
+    rowId: number,
+    yAxisId: number,
     prop: string,
     value: any,
   ): void;
@@ -41,7 +44,7 @@ type ViewStore = {
 export const view: ViewStore = (() => {
   const { set, subscribe, update: updateStore } = writable(null);
   return {
-    deleteLayer(timelineId: string, rowId: string, layerId: string): void {
+    createYAxis(timelineId: number, rowId: number): void {
       updateStore((view: View): View => {
         return {
           ...view,
@@ -53,11 +56,21 @@ export const view: ViewStore = (() => {
                   ...section.timeline,
                   rows: section.timeline.rows.map(row => {
                     if (row.id === rowId) {
+                      const { yAxes } = row;
+                      const [yAxis] = yAxes.sort((a, b) =>
+                        compare(a.id, b.id, false),
+                      );
+                      const newYAxis: Axis = {
+                        color: '#000000',
+                        id: yAxis !== undefined ? yAxis.id + 1 : 0,
+                        label: { text: '' },
+                        scaleDomain: [],
+                        tickCount: 0,
+                      };
+                      selectedYAxisId.set(newYAxis.id);
                       return {
                         ...row,
-                        layers: row.layers.filter(
-                          layer => layer.id !== layerId,
-                        ),
+                        yAxes: [...yAxes, newYAxis],
                       };
                     }
                     return row;
@@ -70,7 +83,7 @@ export const view: ViewStore = (() => {
         };
       });
     },
-    deleteRow(timelineId: string, rowId: string): void {
+    deleteLayer(timelineId: number, rowId: number, layerId: number): void {
       updateStore((view: View): View => {
         return {
           ...view,
@@ -80,7 +93,19 @@ export const view: ViewStore = (() => {
                 ...section,
                 timeline: {
                   ...section.timeline,
-                  rows: section.timeline.rows.filter(row => row.id !== rowId),
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      const layers = row.layers.filter(
+                        layer => layer.id !== layerId,
+                      );
+                      if (layers.length) selectedLayerId.set(layers[0].id);
+                      return {
+                        ...row,
+                        layers,
+                      };
+                    }
+                    return row;
+                  }),
                 },
               };
             }
@@ -89,15 +114,70 @@ export const view: ViewStore = (() => {
         };
       });
     },
-    deleteTimeline(timelineId: string): void {
+    deleteRow(timelineId: number, rowId: number): void {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              const rows = section.timeline.rows.filter(
+                row => row.id !== rowId,
+              );
+              if (rows.length) selectedRowId.set(rows[0].id);
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows,
+                },
+              };
+            }
+            return section;
+          }),
+        };
+      });
+    },
+    deleteTimeline(timelineId: number): void {
       updateStore((view: View): View => {
         return {
           ...view,
           sections: view.sections.filter(section => {
-            if (section.timeline) {
-              return section.timeline.id !== timelineId;
+            if (section.timeline && section.timeline.id === timelineId) {
+              selectedTimelineId.set(null);
+              return false;
             }
             return true;
+          }),
+        };
+      });
+    },
+    deleteYAxis(timelineId: number, rowId: number, yAxisId: number): void {
+      updateStore((view: View): View => {
+        return {
+          ...view,
+          sections: view.sections.map(section => {
+            if (section.timeline && section.timeline.id === timelineId) {
+              return {
+                ...section,
+                timeline: {
+                  ...section.timeline,
+                  rows: section.timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      const yAxes = row.yAxes.filter(
+                        yAxis => yAxis.id !== yAxisId,
+                      );
+                      if (yAxes.length) selectedYAxisId.set(yAxes[0].id);
+                      return {
+                        ...row,
+                        yAxes,
+                      };
+                    }
+                    return row;
+                  }),
+                },
+              };
+            }
+            return section;
           }),
         };
       });
@@ -117,9 +197,9 @@ export const view: ViewStore = (() => {
       }
     },
     updateLayer(
-      timelineId: string,
-      rowId: string,
-      layerId: string,
+      timelineId: number,
+      rowId: number,
+      layerId: number,
       prop: string,
       value: any,
     ) {
@@ -157,7 +237,7 @@ export const view: ViewStore = (() => {
         };
       });
     },
-    updateRow(timelineId: string, rowId: string, prop: string, value: any) {
+    updateRow(timelineId: number, rowId: number, prop: string, value: any) {
       updateStore((view: View): View => {
         return {
           ...view,
@@ -197,7 +277,7 @@ export const view: ViewStore = (() => {
         };
       });
     },
-    updateTimeline(timelineId: string, prop: string, value: any) {
+    updateTimeline(timelineId: number, prop: string, value: any) {
       updateStore((view: View): View => {
         return {
           ...view,
@@ -217,9 +297,9 @@ export const view: ViewStore = (() => {
       });
     },
     updateYAxis(
-      timelineId: string,
-      rowId: string,
-      yAxisId: string,
+      timelineId: number,
+      rowId: number,
+      yAxisId: number,
       prop: string,
       value: any,
     ) {
@@ -238,6 +318,7 @@ export const view: ViewStore = (() => {
                         ...row,
                         yAxes: row.yAxes.map(yAxis => {
                           if (yAxis.id === yAxisId) {
+                            if (prop === 'id') selectedYAxisId.set(value);
                             return {
                               ...yAxis,
                               [prop]: value,
@@ -261,7 +342,7 @@ export const view: ViewStore = (() => {
 })();
 
 export const viewSectionIds = derived(view, $view =>
-  $view ? $view.sections.map(({ id }) => `#${id}`) : [],
+  $view ? $view.sections.map(({ id }) => `#section-${id}`) : [],
 );
 
 export const viewSectionSizes = derived(view, $view =>
@@ -272,12 +353,12 @@ export const viewText = derived(view, $view =>
   $view ? JSON.stringify($view, null, 2) : '',
 );
 
-export const selectedTimelineId: Writable<string | null> = writable(null);
+export const selectedTimelineId: Writable<number | null> = writable(null);
 
 export const selectedTimeline = derived(
   [view, selectedTimelineId],
   ([$view, $selectedTimelineId]) => {
-    if ($view && $selectedTimelineId) {
+    if ($view !== null && $selectedTimelineId !== null) {
       for (const section of $view.sections) {
         if (section.timeline && section.timeline.id === $selectedTimelineId) {
           return section.timeline;
@@ -288,12 +369,12 @@ export const selectedTimeline = derived(
   },
 );
 
-export const selectedRowId: Writable<string | null> = writable(null);
+export const selectedRowId: Writable<number | null> = writable(null);
 
 export const selectedRow = derived(
   [selectedTimeline, selectedRowId],
   ([$selectedTimeline, $selectedRowId]) => {
-    if ($selectedTimeline) {
+    if ($selectedTimeline !== null) {
       for (const row of $selectedTimeline.rows) {
         if (row.id === $selectedRowId) {
           return row;
@@ -304,12 +385,12 @@ export const selectedRow = derived(
   },
 );
 
-export const selectedYAxisId: Writable<string | null> = writable(null);
+export const selectedYAxisId: Writable<number | null> = writable(null);
 
 export const selectedYAxis = derived(
   [selectedRow, selectedYAxisId],
   ([$selectedRow, $selectedYAxisId]) => {
-    if ($selectedRow) {
+    if ($selectedRow !== null) {
       for (const yAxis of $selectedRow.yAxes) {
         if (yAxis.id === $selectedYAxisId) {
           return yAxis;
@@ -320,12 +401,12 @@ export const selectedYAxis = derived(
   },
 );
 
-export const selectedLayerId: Writable<string | null> = writable(null);
+export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedLayer = derived(
   [selectedRow, selectedLayerId],
   ([$selectedRow, $selectedLayerId]) => {
-    if ($selectedRow) {
+    if ($selectedRow !== null) {
       for (const layer of $selectedRow.layers) {
         if (layer.id === $selectedLayerId) {
           return layer;
@@ -339,10 +420,10 @@ export const selectedLayer = derived(
 /* Utility Functions. */
 
 export function setSelectedTimeline(
-  timelineId: string,
-  rowId: string,
-  layerId: string,
-  yAxisId: string | null,
+  timelineId: number,
+  rowId: number,
+  layerId: number,
+  yAxisId: number | null,
 ): void {
   selectedTimelineId.set(timelineId);
   selectedRowId.set(rowId);
@@ -353,5 +434,6 @@ export function setSelectedTimeline(
 export function unsetSelectedTimeline(): void {
   selectedTimelineId.set(null);
   selectedRowId.set(null);
+  selectedYAxisId.set(null);
   selectedLayerId.set(null);
 }

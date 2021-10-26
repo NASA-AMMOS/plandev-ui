@@ -16,7 +16,7 @@ export interface ActivityPoint extends Point {
 
 export interface Axis {
   color: string;
-  id: string;
+  id: number;
   label: Label;
   scaleDomain: (number | null)[];
   tickCount: number | null;
@@ -28,10 +28,10 @@ export interface DropActivity {
 }
 
 export interface HorizontalGuide {
-  id: string;
+  id: number;
   label: Label;
   y: number;
-  yAxisId: string;
+  yAxisId: number;
 }
 
 export interface Label {
@@ -50,8 +50,8 @@ export interface Layer {
     activity?: ActivityLayerFilter;
     resource?: ResourceLayerFilter;
   };
-  id: string;
-  yAxisId: string | null;
+  id: number;
+  yAxisId: number | null;
 }
 
 export interface LineLayer extends Layer {
@@ -67,16 +67,16 @@ export interface LinePoint extends Point {
 
 export interface MouseDown {
   e: MouseEvent;
-  layerId: string;
+  layerId: number;
   points: Point[];
-  rowId: string;
-  timelineId: string;
-  yAxisId: string | null;
+  rowId: number;
+  timelineId: number;
+  yAxisId: number | null;
 }
 
 export interface MouseOver {
   e: MouseEvent;
-  layerId: string;
+  layerId: number;
   points: Point[];
 }
 
@@ -110,13 +110,13 @@ export interface Row {
   autoAdjustHeight: boolean;
   height: number;
   horizontalGuides: HorizontalGuide[];
-  id: string;
+  id: number;
   layers: Layer[];
   yAxes: Axis[];
 }
 
 export interface Timeline {
-  id: string;
+  id: number;
   marginLeft: number;
   marginRight: number;
   rows: Row[];
@@ -124,7 +124,7 @@ export interface Timeline {
 }
 
 export interface VerticalGuide {
-  id: string;
+  id: number;
   label: Label;
   timestamp: string;
 }

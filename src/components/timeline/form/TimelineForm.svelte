@@ -28,20 +28,26 @@
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
   let confirmDeleteTimelineModal: ConfirmModal;
+  let confirmDeleteYAxisModal: ConfirmModal;
+
+  function createYAxis() {
+    view.createYAxis($selectedTimelineId, $selectedRowId);
+  }
 
   function deleteLayer() {
     view.deleteLayer($selectedTimelineId, $selectedRowId, $selectedLayerId);
-    $selectedLayerId = null;
   }
 
   function deleteRow() {
     view.deleteRow($selectedTimelineId, $selectedRowId);
-    $selectedRowId = null;
   }
 
   function deleteTimeline() {
     view.deleteTimeline($selectedTimelineId);
-    $selectedTimelineId = null;
+  }
+
+  function deleteYAxis() {
+    view.deleteYAxis($selectedTimelineId, $selectedRowId, $selectedYAxisId);
   }
 
   function updateLayer(event: Event) {
@@ -78,9 +84,6 @@
       prop,
       value,
     );
-    if (prop === 'id') {
-      $selectedYAxisId = value as string;
-    }
   }
 </script>
 
@@ -223,9 +226,33 @@
 
     <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
-      <span slot="summary-right" />
+      <span slot="summary-right">
+        <Grid gap="5px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
+          <button
+            class="st-button-icon"
+            on:click|stopPropagation={createYAxis}
+            use:tooltip={{ content: 'Create Y-Axis', placement: 'left' }}
+          >
+            <i class="bi bi-plus fs-6" />
+          </button>
+          {#if $selectedYAxis !== null}
+            <button
+              class="st-button-icon"
+              on:click|stopPropagation={() =>
+                confirmDeleteYAxisModal.modal.show()}
+              use:tooltip={{ content: 'Delete Y-Axis', placement: 'left' }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          {/if}
+        </Grid>
+      </span>
       {#if $selectedYAxis !== null}
-        <YAxisForm axis={$selectedYAxis} on:update={updateYAxis} />
+        <YAxisForm
+          axes={$selectedRow.yAxes}
+          axis={$selectedYAxis}
+          on:update={updateYAxis}
+        />
       {:else}
         <Field>
           <Card class="p-1">No y-axis selected</Card>
@@ -300,4 +327,12 @@
   message="Are you sure you want to delete this timeline?"
   title="Delete Timeline"
   on:confirm={deleteTimeline}
+/>
+
+<ConfirmModal
+  bind:this={confirmDeleteYAxisModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this y-axis?"
+  title="Delete Y-Axis"
+  on:confirm={deleteYAxis}
 />

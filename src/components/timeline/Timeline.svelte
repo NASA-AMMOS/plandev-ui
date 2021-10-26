@@ -27,7 +27,7 @@
   export let activitiesMap: StringTMap<Activity> = {};
   export let constraintViolations: ConstraintViolation[] = [];
   export let containerSize: number;
-  export let id: string = '';
+  export let id: number;
   export let marginLeft: number = 20;
   export let marginRight: number = 20;
   export let maxTimeRange: TimeRange | null = null;
@@ -116,7 +116,12 @@
   }
 </script>
 
-<div bind:this={timelineDiv} bind:clientWidth class="timeline" {id}>
+<div
+  bind:this={timelineDiv}
+  bind:clientWidth
+  class="timeline"
+  id={`timeline-${id}`}
+>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
       {constraintViolations}

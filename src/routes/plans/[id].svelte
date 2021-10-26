@@ -308,8 +308,8 @@
   function onUpdateRowHeight(
     event: CustomEvent<{
       newHeight: number;
-      rowId: string;
-      timelineId: string;
+      rowId: number;
+      timelineId: number;
     }>,
   ) {
     const { detail } = event;
@@ -320,7 +320,7 @@
   function onUpdateRows(
     event: CustomEvent<{
       rows: Row[];
-      timelineId: string;
+      timelineId: number;
     }>,
   ) {
     const { detail } = event;
@@ -489,7 +489,7 @@
       on:dragEnd={onSectionsDragEnd}
     >
       {#each $view.sections as section, i (section.id)}
-        <div class="section" id={section.id}>
+        <div class="section" id={`section-${section.id}`}>
           {#if section.iframe && horizontalSplitInitialized}
             <iframe
               allow="fullscreen"

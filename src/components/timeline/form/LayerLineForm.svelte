@@ -15,7 +15,7 @@
     <input
       class="st-input w-100"
       name="yAxisId"
-      type="text"
+      type="number"
       value={lineLayer.yAxisId}
       on:input
     />

@@ -5,14 +5,40 @@
   import Grid from '../../ui/Grid.svelte';
   import type { Axis, Label as AxisLabel } from '../../../types';
   import { getTarget } from '../../../utilities/generic';
+  import Error from '../../form/Error.svelte';
 
   const dispatch = createEventDispatcher();
 
+  export let axes: Axis[] = [];
   export let axis: Axis;
+
+  let idError: string | null = null;
+
+  $: axesIdsMap = axes.reduce((ids: { [id: number]: number }, axis) => {
+    ids[axis.id] = axis.id;
+    return ids;
+  }, {});
 
   function updateAxis(event: Event) {
     const { name: prop, value } = getTarget(event);
     dispatch('update', { prop, value });
+  }
+
+  function updateId(event: Event) {
+    const { value } = getTarget(event);
+
+    if (!isNaN(value as number)) {
+      if (value === axis.id) {
+        idError = null;
+      } else if (value === axesIdsMap[value]) {
+        idError = `Y-Axis with id=${value} already exists`;
+      } else {
+        dispatch('update', { prop: 'id', value });
+        idError = null;
+      }
+    } else {
+      idError = 'Field is required';
+    }
   }
 
   function updateLabel(event: Event) {
@@ -46,14 +72,16 @@
 
 <Grid columns="33% 33% 33%">
   <Field>
-    <Label for="id">Id</Label>
+    <Label for="id" invalid={idError !== null}>Id</Label>
     <input
       class="st-input w-100"
+      class:error={idError !== null}
       name="id"
-      type="text"
+      type="number"
       value={axis.id}
-      on:input|stopPropagation={updateAxis}
+      on:input|stopPropagation={updateId}
     />
+    <Error error={idError} invalid={idError !== null} />
   </Field>
   <Field>
     <Label for="label">Label Text</Label>
