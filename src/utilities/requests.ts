@@ -1,9 +1,10 @@
-import { GATEWAY_URL, HASURA_URL } from '../env';
+import { get } from 'svelte/store';
 import type { ViewPostResponseBody } from '../routes/views';
 import type {
   ViewIdDelResponseBody,
   ViewIdPutResponseBody,
 } from '../routes/views/[id]';
+import { config } from '../stores/config';
 import type {
   ActivitiesMap,
   Activity,
@@ -22,6 +23,7 @@ import type {
   UpdateActivity,
   View,
 } from '../types';
+import { defaultConfig } from './config';
 import {
   CREATE_ACTIVITY,
   CREATE_CONSTRAINT,
@@ -154,6 +156,7 @@ export async function reqCreateActivity(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -203,6 +206,7 @@ export async function reqCreateConstraint(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -250,6 +254,7 @@ export async function reqCreateModel(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -300,6 +305,7 @@ export async function reqCreatePlan(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -346,6 +352,7 @@ export async function reqCreateSimulation(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -400,6 +407,7 @@ export async function reqDeleteActivity(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -431,6 +439,7 @@ export async function reqDeleteConstraint(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -457,6 +466,7 @@ export async function reqDeleteFile(
       method: 'DELETE',
     };
 
+    const { GATEWAY_URL } = get(config);
     response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -486,6 +496,7 @@ export async function reqDeleteModel(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -514,6 +525,7 @@ export async function reqDeletePlanAndSimulations(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -559,6 +571,7 @@ export async function reqGetModels(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -588,6 +601,7 @@ export async function reqGetPlansAndModels(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -629,6 +643,7 @@ export async function reqGetPlan(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -701,6 +716,22 @@ export async function reqGetViews(): Promise<View[] | null> {
   }
 }
 
+export async function reqSetConfig(fetch: Fetch): Promise<void> {
+  let response: Response;
+  let json: any;
+  try {
+    response = await fetch('/config');
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+    config.set(json);
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    config.set(defaultConfig);
+  }
+}
+
 export async function reqSimulate(
   modelId: number,
   planId: number,
@@ -724,6 +755,7 @@ export async function reqSimulate(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -822,6 +854,7 @@ export async function reqUpdateActivity(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -861,6 +894,7 @@ export async function reqUpdateConstraint(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -893,6 +927,7 @@ export async function reqUpdateSimulationArguments(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -944,6 +979,7 @@ export async function reqUploadFile(
       method: 'POST',
     };
 
+    const { GATEWAY_URL } = get(config);
     response = await fetch(`${GATEWAY_URL}/file`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -992,6 +1028,7 @@ export async function reqValidateActivityArguments(
       method: 'POST',
     };
 
+    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);

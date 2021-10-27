@@ -2,7 +2,8 @@ import type { CamApiOptions, LoginResponse } from '@gov.nasa.jpl.aerie/cam';
 import { CamApi } from '@gov.nasa.jpl.aerie/cam';
 import type { Request } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import { CAM_API_URL, CAM_ENABLED } from '../../env';
+import { get } from 'svelte/store';
+import { config } from '../../stores/config';
 import type { User } from '../../types';
 
 export type LoginPostRequestBody = { password: string; username: string };
@@ -20,6 +21,7 @@ export type LoginPostResponse = {
 export async function post(
   req: Request<Record<string, any>, LoginPostRequestBody>,
 ): Promise<LoginPostResponse> {
+  const { CAM_API_URL, CAM_ENABLED } = get(config);
   const camOptions: CamApiOptions = {
     apiUrl: CAM_API_URL,
     enabled: CAM_ENABLED,

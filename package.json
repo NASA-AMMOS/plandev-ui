@@ -8,7 +8,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "cloc": "cloc src",
-    "dev": "npm run version && MODE=development svelte-kit dev",
+    "dev": "npm run version && svelte-kit dev",
     "format": "prettier --write --plugin-search-dir=. .",
     "lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
     "pre-commit": "node ./scripts/pre-commit.js",

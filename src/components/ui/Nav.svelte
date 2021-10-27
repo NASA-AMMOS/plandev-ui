@@ -2,8 +2,8 @@
   import { goto, prefetch } from '$app/navigation';
   import { page, session } from '$app/stores';
   import AboutModal from '../modals/About.svelte';
-  import { GATEWAY_URL } from '../../env';
   import { tooltip } from '../../utilities/tooltip';
+  import { config } from '../../stores/config';
 
   type NavItem = {
     iconClass: string;
@@ -55,7 +55,7 @@
     } else if (name === 'About' && about) {
       about.modal.toggle();
     } else if (name === 'GraphQL') {
-      open(`${GATEWAY_URL}/playground`, '_newtab');
+      open(`${$config.GATEWAY_URL}/playground`, '_newtab');
     } else if (name === 'Logout') {
       await fetch('/auth/logout', { method: 'POST' });
       $session.user = null; // Triggers redirect.

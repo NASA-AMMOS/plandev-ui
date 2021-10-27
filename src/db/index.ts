@@ -1,13 +1,8 @@
 import { customAlphabet } from 'nanoid';
 import type { Pool } from 'pg';
 import pg from 'pg';
-import {
-  POSTGRES_DATABASE,
-  POSTGRES_HOST,
-  POSTGRES_PASSWORD,
-  POSTGRES_PORT,
-  POSTGRES_USER,
-} from '../env';
+import { get } from 'svelte/store';
+import { config } from '../stores/config';
 
 const { Pool: CreatePool } = pg;
 
@@ -23,6 +18,13 @@ export class Db {
 
   static async init(): Promise<void> {
     try {
+      const {
+        POSTGRES_DATABASE,
+        POSTGRES_HOST,
+        POSTGRES_PASSWORD,
+        POSTGRES_PORT,
+        POSTGRES_USER,
+      } = get(config);
       const postgresConfig = {
         database: POSTGRES_DATABASE,
         host: POSTGRES_HOST,
