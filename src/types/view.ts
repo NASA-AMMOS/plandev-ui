@@ -1,13 +1,17 @@
 import type { Timeline } from './timeline';
 
-export interface ViewMeta {
+export type ViewMeta = {
   owner: string;
   timeCreated: number;
   timeUpdated: number;
   version: string;
-}
+};
 
-export interface ViewSection {
+export type ViewPlan = {
+  sections: ViewPlanSection[];
+};
+
+export interface ViewPlanSection {
   id: number;
   iframe?: {
     src: string;
@@ -25,5 +29,5 @@ export interface View {
   id: string;
   meta: ViewMeta;
   name: string;
-  sections: ViewSection[];
+  plan: ViewPlan;
 }

@@ -488,7 +488,7 @@
       sizes={$viewSectionSizes}
       on:dragEnd={onSectionsDragEnd}
     >
-      {#each $view.sections as section, i (section.id)}
+      {#each $view.plan.sections as section, i (section.id)}
         <div class="section" id={`section-${section.id}`}>
           {#if section.iframe && horizontalSplitInitialized}
             <iframe

@@ -48,38 +48,41 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      const { yAxes } = row;
-                      const [yAxis] = yAxes.sort((a, b) =>
-                        compare(a.id, b.id, false),
-                      );
-                      const newYAxis: Axis = {
-                        color: '#000000',
-                        id: yAxis !== undefined ? yAxis.id + 1 : 0,
-                        label: { text: '' },
-                        scaleDomain: [],
-                        tickCount: 0,
-                      };
-                      selectedYAxisId.set(newYAxis.id);
-                      return {
-                        ...row,
-                        yAxes: [...yAxes, newYAxis],
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        const { yAxes } = row;
+                        const [yAxis] = yAxes.sort((a, b) =>
+                          compare(a.id, b.id, false),
+                        );
+                        const newYAxis: Axis = {
+                          color: '#000000',
+                          id: yAxis !== undefined ? yAxis.id + 1 : 0,
+                          label: { text: '' },
+                          scaleDomain: [],
+                          tickCount: 0,
+                        };
+                        selectedYAxisId.set(newYAxis.id);
+                        return {
+                          ...row,
+                          yAxes: [...yAxes, newYAxis],
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -87,30 +90,33 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      const layers = row.layers.filter(
-                        layer => layer.id !== layerId,
-                      );
-                      if (layers.length) selectedLayerId.set(layers[0].id);
-                      return {
-                        ...row,
-                        layers,
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        const layers = row.layers.filter(
+                          layer => layer.id !== layerId,
+                        );
+                        if (layers.length) selectedLayerId.set(layers[0].id);
+                        return {
+                          ...row,
+                          layers,
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -118,22 +124,25 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              const rows = section.timeline.rows.filter(
-                row => row.id !== rowId,
-              );
-              if (rows.length) selectedRowId.set(rows[0].id);
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows,
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                const rows = section.timeline.rows.filter(
+                  row => row.id !== rowId,
+                );
+                if (rows.length) selectedRowId.set(rows[0].id);
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows,
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -141,13 +150,16 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.filter(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              selectedTimelineId.set(null);
-              return false;
-            }
-            return true;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.filter(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                selectedTimelineId.set(null);
+                return false;
+              }
+              return true;
+            }),
+          },
         };
       });
     },
@@ -155,30 +167,33 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      const yAxes = row.yAxes.filter(
-                        yAxis => yAxis.id !== yAxisId,
-                      );
-                      if (yAxes.length) selectedYAxisId.set(yAxes[0].id);
-                      return {
-                        ...row,
-                        yAxes,
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        const yAxes = row.yAxes.filter(
+                          yAxis => yAxis.id !== yAxisId,
+                        );
+                        if (yAxes.length) selectedYAxisId.set(yAxes[0].id);
+                        return {
+                          ...row,
+                          yAxes,
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -206,34 +221,37 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      return {
-                        ...row,
-                        layers: row.layers.map(layer => {
-                          if (layer.id === layerId) {
-                            return {
-                              ...layer,
-                              [prop]: value,
-                            };
-                          }
-                          return layer;
-                        }),
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        return {
+                          ...row,
+                          layers: row.layers.map(layer => {
+                            if (layer.id === layerId) {
+                              return {
+                                ...layer,
+                                [prop]: value,
+                              };
+                            }
+                            return layer;
+                          }),
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -241,26 +259,29 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      return {
-                        ...row,
-                        [prop]: value,
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        return {
+                          ...row,
+                          [prop]: value,
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -268,12 +289,15 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map((section, i) => {
-            return {
-              ...section,
-              size: newSizes[i],
-            };
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map((section, i) => {
+              return {
+                ...section,
+                size: newSizes[i],
+              };
+            }),
+          },
         };
       });
     },
@@ -281,18 +305,21 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  [prop]: value,
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    [prop]: value,
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -306,35 +333,38 @@ export const view: ViewStore = (() => {
       updateStore((view: View): View => {
         return {
           ...view,
-          sections: view.sections.map(section => {
-            if (section.timeline && section.timeline.id === timelineId) {
-              return {
-                ...section,
-                timeline: {
-                  ...section.timeline,
-                  rows: section.timeline.rows.map(row => {
-                    if (row.id === rowId) {
-                      return {
-                        ...row,
-                        yAxes: row.yAxes.map(yAxis => {
-                          if (yAxis.id === yAxisId) {
-                            if (prop === 'id') selectedYAxisId.set(value);
-                            return {
-                              ...yAxis,
-                              [prop]: value,
-                            };
-                          }
-                          return yAxis;
-                        }),
-                      };
-                    }
-                    return row;
-                  }),
-                },
-              };
-            }
-            return section;
-          }),
+          plan: {
+            ...view.plan,
+            sections: view.plan.sections.map(section => {
+              if (section.timeline && section.timeline.id === timelineId) {
+                return {
+                  ...section,
+                  timeline: {
+                    ...section.timeline,
+                    rows: section.timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        return {
+                          ...row,
+                          yAxes: row.yAxes.map(yAxis => {
+                            if (yAxis.id === yAxisId) {
+                              if (prop === 'id') selectedYAxisId.set(value);
+                              return {
+                                ...yAxis,
+                                [prop]: value,
+                              };
+                            }
+                            return yAxis;
+                          }),
+                        };
+                      }
+                      return row;
+                    }),
+                  },
+                };
+              }
+              return section;
+            }),
+          },
         };
       });
     },
@@ -342,11 +372,11 @@ export const view: ViewStore = (() => {
 })();
 
 export const viewSectionIds = derived(view, $view =>
-  $view ? $view.sections.map(({ id }) => `#section-${id}`) : [],
+  $view ? $view.plan.sections.map(({ id }) => `#section-${id}`) : [],
 );
 
 export const viewSectionSizes = derived(view, $view =>
-  $view ? $view.sections.map(({ size }) => size) : [],
+  $view ? $view.plan.sections.map(({ size }) => size) : [],
 );
 
 export const viewText = derived(view, $view =>
@@ -359,7 +389,7 @@ export const selectedTimeline = derived(
   [view, selectedTimelineId],
   ([$view, $selectedTimelineId]) => {
     if ($view !== null && $selectedTimelineId !== null) {
-      for (const section of $view.sections) {
+      for (const section of $view.plan.sections) {
         if (section.timeline && section.timeline.id === $selectedTimelineId) {
           return section.timeline;
         }
