@@ -19,13 +19,11 @@ export const activitiesMap = (() => {
       activity: CreateActivity,
       planId: number,
       planStartTime: string,
-      authorization: string,
     ) {
       const newActivity = await reqCreateActivity(
         activity,
         planId,
         planStartTime,
-        authorization,
       );
       if (newActivity) {
         const { id } = newActivity;
@@ -52,8 +50,8 @@ export const activitiesMap = (() => {
         return { id: null, success: false };
       }
     },
-    async delete(id: number, authorization: string) {
-      const success = await reqDeleteActivity(id, authorization);
+    async delete(id: number) {
+      const success = await reqDeleteActivity(id);
       if (success) {
         updateStore(activitiesMap => {
           delete activitiesMap[id];
@@ -78,16 +76,8 @@ export const activitiesMap = (() => {
     },
     set,
     subscribe,
-    async update(
-      activity: UpdateActivity,
-      planStartTime: string,
-      authorization: string,
-    ) {
-      const updatedActivity = await reqUpdateActivity(
-        activity,
-        planStartTime,
-        authorization,
-      );
+    async update(activity: UpdateActivity, planStartTime: string) {
+      const updatedActivity = await reqUpdateActivity(activity, planStartTime);
       if (updatedActivity) {
         updateStore(activitiesMap => ({
           ...activitiesMap,

@@ -29,10 +29,9 @@
 
     const { params, query } = page;
     const { id } = params;
-    const { ssoToken: authorization } = session.user;
     const planId = parseFloat(id);
 
-    const initialPlan = await reqGetPlan(fetch, planId, authorization);
+    const initialPlan = await reqGetPlan(fetch, planId);
     const initialView = await reqGetView(fetch, query);
 
     return {
@@ -46,7 +45,6 @@
 
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { session as appSession } from '$app/stores';
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
@@ -157,7 +155,6 @@
   });
 
   async function onCreateActivity(event: CustomEvent<ActivityType>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { detail: activityType } = event;
     const { id: planId, startTime } = initialPlan;
     const activity: CreateActivity = {
@@ -169,7 +166,6 @@
       activity,
       planId,
       startTime,
-      authorization,
     );
     if (success) {
       selectActivity(id);
@@ -178,28 +174,24 @@
   }
 
   async function onCreateConstraint(event: CustomEvent<CreateConstraint>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { detail: newConstraint } = event;
-    await createConstraint(newConstraint, authorization);
+    await createConstraint(newConstraint);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onDeleteActivity(event: CustomEvent<number>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { detail: activityId } = event;
-    activitiesMap.delete(activityId, authorization);
+    activitiesMap.delete(activityId);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
   async function onDeleteConstraint(event: CustomEvent<number>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { detail: constraintId } = event;
-    await deleteConstraint(constraintId, authorization);
+    await deleteConstraint(constraintId);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
   function onDropActivity(event: CustomEvent<DropActivity>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { id: planId } = initialPlan;
     const { detail } = event;
     const { activityTypeName: type, startTime } = detail;
@@ -208,12 +200,7 @@
       startTime,
       type,
     };
-    activitiesMap.create(
-      activity,
-      planId,
-      initialPlan.startTime,
-      authorization,
-    );
+    activitiesMap.create(activity, planId, initialPlan.startTime);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -273,17 +260,15 @@
   }
 
   function onUpdateActivity(event: CustomEvent<UpdateActivity>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { startTime } = initialPlan;
     const { detail: activity } = event;
-    activitiesMap.update(activity, startTime, authorization);
+    activitiesMap.update(activity, startTime);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
   async function onUpdateConstraint(event: CustomEvent<Constraint>) {
-    const { ssoToken: authorization } = $appSession.user;
     const { detail: updatedConstraint } = event;
-    await updateConstraint(updatedConstraint, authorization);
+    await updateConstraint(updatedConstraint);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -295,13 +280,7 @@
   ) {
     const { detail } = event;
     const { newArgumentsMap, newFiles } = detail;
-    const { ssoToken: authorization } = $appSession.user;
-    updateSimulationArguments(
-      $selectedSimulationId,
-      newArgumentsMap,
-      newFiles,
-      authorization,
-    );
+    updateSimulationArguments($selectedSimulationId, newArgumentsMap, newFiles);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -351,7 +330,6 @@
   }
 
   async function runSimulation() {
-    const { ssoToken: authorization } = $appSession.user;
     const { model, id: planId } = initialPlan;
     let tries = 0;
     simulationStatus.update(SimulationStatus.Executing);
@@ -362,7 +340,7 @@
         constraintViolations,
         status,
         resources: newResources,
-      } = await reqSimulate(model.id, planId, authorization);
+      } = await reqSimulate(model.id, planId);
 
       if (status === 'complete') {
         $activitiesMap = newActivitiesMap;

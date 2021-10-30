@@ -12,8 +12,7 @@
       };
     }
 
-    const { ssoToken: authorization } = session.user;
-    const models = await reqGetModels(fetch, authorization);
+    const models = await reqGetModels(fetch);
 
     return {
       props: {
@@ -24,7 +23,6 @@
 </script>
 
 <script lang="ts">
-  import { session as appSession } from '$app/stores';
   import { goto } from '$app/navigation';
   import Field from '../../components/form/Field.svelte';
   import Label from '../../components/form/Label.svelte';
@@ -57,9 +55,8 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const { ssoToken: authorization } = $appSession.user;
     const file = files[0];
-    const newModel = await reqCreateModel(name, version, file, authorization);
+    const newModel = await reqCreateModel(name, version, file);
 
     if (newModel) {
       models = [...models, newModel];
@@ -73,8 +70,7 @@
   async function deleteModel(event: CustomEvent<CreateModel>) {
     const { detail: model } = event;
     const { id, jarId } = model;
-    const { ssoToken: authorization } = $appSession.user;
-    const success = await reqDeleteModel(id, jarId, authorization);
+    const success = await reqDeleteModel(id, jarId);
 
     if (success) {
       models = models.filter(model => model.id !== id);

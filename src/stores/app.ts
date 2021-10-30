@@ -1,8 +1,7 @@
-import type { Config } from '../types/config';
+import { writable } from 'svelte/store';
+import type { Env, User } from '../types';
 
-export const defaultConfig: Config = {
-  CAM_API_URL: 'https://atb-ocio-12b.jpl.nasa.gov:8443/cam-api',
-  CAM_ENABLED: true,
+export const defaultEnv: Env = {
   GATEWAY_URL: 'http://localhost:9000',
   HASURA_URL: 'http://localhost:8080/v1/graphql',
   POSTGRES_DATABASE: 'aerie',
@@ -11,3 +10,6 @@ export const defaultConfig: Config = {
   POSTGRES_PORT: 5432,
   POSTGRES_USER: 'aerie',
 };
+
+export const env = writable<Env>(defaultEnv);
+export const user = writable<User | null>(null);

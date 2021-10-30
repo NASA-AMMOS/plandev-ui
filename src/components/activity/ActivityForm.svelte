@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { session as appSession } from '$app/stores';
   import type {
     Activity,
     ActivityType,
@@ -61,13 +60,11 @@
       loading: true,
     });
 
-    const { ssoToken: authorization } = $appSession.user;
     const { name, value } = formParameter;
     const { errors, success } = await reqValidateActivityArguments(
       type,
       modelId,
       { [name]: value },
-      authorization,
     );
 
     if (success) {

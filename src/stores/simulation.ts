@@ -47,15 +47,10 @@ export async function updateSimulationArguments(
   simulationId: number,
   argumentsMap: ArgumentsMap,
   newFiles: File[],
-  authorization: string,
 ): Promise<void> {
   try {
-    await reqUpdateSimulationArguments(
-      simulationId,
-      argumentsMap,
-      authorization,
-    );
-    await reqUploadFiles(newFiles, authorization);
+    await reqUpdateSimulationArguments(simulationId, argumentsMap);
+    await reqUploadFiles(newFiles);
     simulationArgumentsMap.set(argumentsMap);
     Toastify({
       backgroundColor: '#2da44e',

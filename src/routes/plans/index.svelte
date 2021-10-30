@@ -12,11 +12,7 @@
       };
     }
 
-    const { ssoToken: authorization } = session.user;
-    const { models = [], plans = [] } = await reqGetPlansAndModels(
-      fetch,
-      authorization,
-    );
+    const { models = [], plans = [] } = await reqGetPlansAndModels(fetch);
 
     return {
       props: {
@@ -29,7 +25,7 @@
 
 <script lang="ts">
   import { goto, prefetch } from '$app/navigation';
-  import { page as appPage, session as appSession } from '$app/stores';
+  import { page } from '$app/stores';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import Field from '../../components/form/Field.svelte';
   import FieldInputText from '../../components/form/FieldInputText.svelte';
@@ -79,7 +75,7 @@
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
-    const queryModelId = $appPage.query.get('modelId');
+    const queryModelId = $page.query.get('modelId');
     if (queryModelId) {
       modelId = parseFloat(queryModelId);
       removeQueryParam('modelId');
@@ -90,7 +86,6 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const { ssoToken: authorization } = $appSession.user;
     const simulationArguments = await parseJsonFileList<ArgumentsMap>(files);
     const newPlan = await reqCreatePlan(
       endTime,
@@ -98,7 +93,6 @@
       name,
       startTime,
       simulationArguments,
-      authorization,
     );
 
     if (newPlan) {
@@ -113,8 +107,7 @@
   async function deletePlan(event: CustomEvent<CreatePlan>) {
     const { detail: plan } = event;
     const { id } = plan;
-    const { ssoToken: authorization } = $appSession.user;
-    const success = await reqDeletePlanAndSimulations(id, authorization);
+    const success = await reqDeletePlanAndSimulations(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);

@@ -3,7 +3,7 @@
   import { page, session } from '$app/stores';
   import AboutModal from '../modals/About.svelte';
   import { tooltip } from '../../utilities/tooltip';
-  import { config } from '../../stores/config';
+  import { env } from '../../stores/app';
 
   type NavItem = {
     iconClass: string;
@@ -55,7 +55,7 @@
     } else if (name === 'About' && about) {
       about.modal.toggle();
     } else if (name === 'GraphQL') {
-      open(`${$config.GATEWAY_URL}/playground`, '_newtab');
+      open(`${$env.GATEWAY_URL}/playground`, '_newtab');
     } else if (name === 'Logout') {
       await fetch('/auth/logout', { method: 'POST' });
       $session.user = null; // Triggers redirect.

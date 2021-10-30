@@ -2,7 +2,7 @@ import { customAlphabet } from 'nanoid';
 import type { Pool } from 'pg';
 import pg from 'pg';
 import { get } from 'svelte/store';
-import { config } from '../stores/config';
+import { env } from '../stores/app';
 
 const { Pool: CreatePool } = pg;
 
@@ -24,7 +24,7 @@ export class Db {
         POSTGRES_PASSWORD,
         POSTGRES_PORT,
         POSTGRES_USER,
-      } = get(config);
+      } = get(env);
       const postgresConfig = {
         database: POSTGRES_DATABASE,
         host: POSTGRES_HOST,

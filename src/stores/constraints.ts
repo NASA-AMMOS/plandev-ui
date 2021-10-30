@@ -23,9 +23,8 @@ export const violations: Writable<ConstraintViolation[]> = writable([]);
 
 export async function createConstraint(
   constraint: CreateConstraint,
-  authorization: string,
 ): Promise<void> {
-  const newConstraint = await reqCreateConstraint(constraint, authorization);
+  const newConstraint = await reqCreateConstraint(constraint);
 
   if (newConstraint) {
     if (newConstraint.modelId) {
@@ -57,11 +56,8 @@ export async function createConstraint(
   }
 }
 
-export async function deleteConstraint(
-  id: number,
-  authorization: string,
-): Promise<void> {
-  const success = await reqDeleteConstraint(id, authorization);
+export async function deleteConstraint(id: number): Promise<void> {
+  const success = await reqDeleteConstraint(id);
 
   if (success) {
     modelConstraints.update(constraints => {
@@ -90,14 +86,8 @@ export async function deleteConstraint(
   }
 }
 
-export async function updateConstraint(
-  constraint: Constraint,
-  authorization: string,
-): Promise<void> {
-  const updatedConstraint = await reqUpdateConstraint(
-    constraint,
-    authorization,
-  );
+export async function updateConstraint(constraint: Constraint): Promise<void> {
+  const updatedConstraint = await reqUpdateConstraint(constraint);
 
   if (updatedConstraint) {
     if (updatedConstraint.modelId) {

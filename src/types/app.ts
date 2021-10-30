@@ -1,6 +1,4 @@
-export type Config = {
-  CAM_API_URL: string;
-  CAM_ENABLED: boolean;
+export type Env = {
   GATEWAY_URL: string;
   HASURA_URL: string;
   POSTGRES_DATABASE: string;
@@ -8,4 +6,13 @@ export type Config = {
   POSTGRES_PASSWORD: string;
   POSTGRES_PORT: number;
   POSTGRES_USER: string;
+};
+
+export type Session = {
+  user: User;
+};
+
+export type User = {
+  ssoToken: string;
+  userId: string;
 };

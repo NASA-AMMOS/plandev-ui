@@ -4,7 +4,7 @@ import type {
   ViewIdDelResponseBody,
   ViewIdPutResponseBody,
 } from '../routes/views/[id]';
-import { config } from '../stores/config';
+import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
 import type {
   ActivitiesMap,
   Activity,
@@ -14,16 +14,18 @@ import type {
   ConstraintViolation,
   CreateActivity,
   CreateConstraint,
+  Env,
   Fetch,
   ParametersMap,
   ParameterValidationResponse,
   Resource,
   ResourceValue,
+  Session,
   Simulation,
   UpdateActivity,
+  User,
   View,
 } from '../types';
-import { defaultConfig } from './config';
 import {
   CREATE_ACTIVITY,
   CREATE_CONSTRAINT,
@@ -76,6 +78,17 @@ export type CreatePlanModel = {
   id: number;
   name: string;
 };
+
+export type LoginResponse = {
+  message: string;
+  ssoToken: string | null;
+  success: boolean;
+};
+
+export interface LogoutResponse {
+  message: string;
+  success: boolean;
+}
 
 export type Model = {
   activityTypes: ActivityType[];
@@ -131,11 +144,13 @@ export async function reqCreateActivity(
   newActivity: CreateActivity,
   planId: number,
   planStartTime: string,
-  authorization: string,
 ): Promise<Activity | null> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const start_offset = getIntervalFromDoyRange(
       planStartTime,
       newActivity.startTime,
@@ -152,11 +167,13 @@ export async function reqCreateActivity(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -183,11 +200,13 @@ export async function reqCreateActivity(
 
 export async function reqCreateConstraint(
   newConstraint: CreateConstraint,
-  authorization: string,
 ): Promise<Constraint | null> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const constraintInput = {
       definition: newConstraint.definition,
       description: newConstraint.description,
@@ -202,11 +221,13 @@ export async function reqCreateConstraint(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -232,12 +253,14 @@ export async function reqCreateModel(
   name: string,
   version: string,
   file: File,
-  authorization: string,
 ): Promise<CreateModel | null> {
   let response: Response;
   let json: any;
   try {
-    const jar_id = await reqUploadFile(file, authorization);
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
+    const jar_id = await reqUploadFile(file);
     const modelInput = {
       jar_id,
       mission: '',
@@ -250,11 +273,13 @@ export async function reqCreateModel(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -284,11 +309,13 @@ export async function reqCreatePlan(
   name: string,
   startTime: string,
   simulationArguments: ArgumentsMap,
-  authorization: string,
 ): Promise<CreatePlan | null> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const planInput = {
       duration: getIntervalFromDoyRange(startTime, endTime),
       model_id: modelId,
@@ -301,11 +328,13 @@ export async function reqCreatePlan(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -322,7 +351,7 @@ export async function reqCreatePlan(
       startTime,
     };
 
-    await reqCreateSimulation(id, simulationArguments, authorization);
+    await reqCreateSimulation(id, simulationArguments);
 
     return plan;
   } catch (e) {
@@ -336,11 +365,13 @@ export async function reqCreatePlan(
 export async function reqCreateSimulation(
   plan_id: string,
   simulationArguments: ArgumentsMap,
-  authorization: string,
 ): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const simulationInput = { arguments: simulationArguments, plan_id };
     const body = {
       query: CREATE_SIMULATION,
@@ -348,11 +379,13 @@ export async function reqCreateSimulation(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -390,24 +423,26 @@ export async function reqCreateView(
   }
 }
 
-export async function reqDeleteActivity(
-  id: number,
-  authorization: string,
-): Promise<boolean> {
+export async function reqDeleteActivity(id: number): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: DELETE_ACTIVITY,
       variables: { id },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -422,24 +457,26 @@ export async function reqDeleteActivity(
   }
 }
 
-export async function reqDeleteConstraint(
-  id: number,
-  authorization: string,
-): Promise<boolean> {
+export async function reqDeleteConstraint(id: number): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: DELETE_CONSTRAINT,
       variables: { id },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -454,19 +491,20 @@ export async function reqDeleteConstraint(
   }
 }
 
-export async function reqDeleteFile(
-  id: number,
-  authorization: string,
-): Promise<boolean> {
+export async function reqDeleteFile(id: number): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
     const options = {
-      headers: { 'x-cam-sso-token': authorization },
+      headers: {
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'DELETE',
     };
 
-    const { GATEWAY_URL } = get(config);
     response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -483,20 +521,24 @@ export async function reqDeleteFile(
 export async function reqDeleteModel(
   id: number,
   jarId: number,
-  authorization: string,
 ): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
-    await reqDeleteFile(jarId, authorization);
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
+    await reqDeleteFile(jarId);
     const body = { query: DELETE_MODEL, variables: { id } };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -513,19 +555,23 @@ export async function reqDeleteModel(
 
 export async function reqDeletePlanAndSimulations(
   id: number,
-  authorization: string,
 ): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -558,20 +604,22 @@ export async function reqDeleteView(
   }
 }
 
-export async function reqGetModels(
-  fetch: Fetch,
-  authorization: string,
-): Promise<CreateModel[]> {
+export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const options = {
       body: JSON.stringify({ query: GET_MODELS }),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -590,18 +638,22 @@ export async function reqGetModels(
 
 export async function reqGetPlansAndModels(
   fetch: Fetch,
-  authorization: string,
 ): Promise<{ models: CreatePlanModel[]; plans: CreatePlan[] }> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const options = {
       body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -631,19 +683,23 @@ export async function reqGetPlansAndModels(
 export async function reqGetPlan(
   fetch: Fetch,
   id: number,
-  authorization: string,
 ): Promise<Plan | null> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = { query: GET_PLAN, variables: { id } };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -716,26 +772,90 @@ export async function reqGetViews(): Promise<View[] | null> {
   }
 }
 
-export async function reqSetConfig(fetch: Fetch): Promise<void> {
+export async function reqLogin(
+  username: string,
+  password: string,
+): Promise<LoginResponse> {
   let response: Response;
   let json: any;
   try {
-    response = await fetch('/config');
+    const { GATEWAY_URL } = get<Env>(envStore);
+    const body = JSON.stringify({ password, username });
+    const options = {
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/cam/login`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
-    config.set(json);
+
+    return json;
   } catch (e) {
     console.log(e);
     console.log(response);
     console.log(json);
-    config.set(defaultConfig);
+    return {
+      message: 'An unexpected error occurred',
+      ssoToken: null,
+      success: false,
+    };
+  }
+}
+
+export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
+  let response: Response;
+  let json: any;
+  try {
+    const { GATEWAY_URL } = get<Env>(envStore);
+    const options = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': ssoToken,
+      },
+      method: 'DELETE',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/cam/logout`, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return json;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return { message: 'An unexpected error occurred', success: false };
+  }
+}
+
+export async function reqSetAppStores(
+  fetch: Fetch,
+  session: Session,
+): Promise<void> {
+  let response: Response;
+  let json: any;
+  try {
+    response = await fetch('/env');
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+    envStore.set(json);
+    userStore.set(session?.user || null);
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    envStore.set(defaultEnv);
+    userStore.set(session?.user || null);
   }
 }
 
 export async function reqSimulate(
   modelId: number,
   planId: number,
-  authorization: string,
 ): Promise<{
   activitiesMap?: ActivitiesMap;
   constraintViolations?: ConstraintViolation[];
@@ -745,17 +865,22 @@ export async function reqSimulate(
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: SIMULATE,
       variables: { modelId, planId: `${planId}` },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -826,7 +951,6 @@ export async function reqSimulate(
 export async function reqUpdateActivity(
   activity: UpdateActivity,
   planStartTime: string,
-  authorization: string,
 ): Promise<UpdateActivity | null> {
   const activityInput: UpdateActivityInput = {};
 
@@ -844,17 +968,22 @@ export async function reqUpdateActivity(
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: UPDATE_ACTIVITY,
       variables: { activity: activityInput, id: activity.id },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -871,11 +1000,13 @@ export async function reqUpdateActivity(
 
 export async function reqUpdateConstraint(
   updatedConstraint: Constraint,
-  authorization: string,
 ): Promise<Constraint> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const constraintInput = {
       definition: updatedConstraint.definition,
       description: updatedConstraint.description,
@@ -890,11 +1021,13 @@ export async function reqUpdateConstraint(
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -912,22 +1045,26 @@ export async function reqUpdateConstraint(
 export async function reqUpdateSimulationArguments(
   simulationId: number,
   argumentsMap: ArgumentsMap,
-  authorization: string,
 ): Promise<boolean> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: UPDATE_SIMULATION_ARGUMENTS,
       variables: { arguments: argumentsMap, simulationId },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -964,22 +1101,23 @@ export async function reqUpdateView(
   }
 }
 
-export async function reqUploadFile(
-  file: File,
-  authorization: string,
-): Promise<number | null> {
+export async function reqUploadFile(file: File): Promise<number | null> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
     const body = new FormData();
     body.append('file', file, file.name);
     const options = {
       body,
-      headers: { 'x-cam-sso-token': authorization },
+      headers: {
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { GATEWAY_URL } = get(config);
     response = await fetch(`${GATEWAY_URL}/file`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
@@ -994,13 +1132,10 @@ export async function reqUploadFile(
   }
 }
 
-export async function reqUploadFiles(
-  files: File[],
-  authorization: string,
-): Promise<boolean> {
+export async function reqUploadFiles(files: File[]): Promise<boolean> {
   try {
     for (const file of files) {
-      await reqUploadFile(file, authorization);
+      await reqUploadFile(file);
     }
     return true;
   } catch (e) {
@@ -1013,22 +1148,26 @@ export async function reqValidateActivityArguments(
   activityTypeName: string,
   modelId: number,
   argumentsMap: ArgumentsMap,
-  authorization: string,
 ): Promise<ParameterValidationResponse> {
   let response: Response;
   let json: any;
   try {
+    const user = get<User | null>(userStore);
+    const { HASURA_URL } = get<Env>(envStore);
+
     const body = {
       query: VALIDATE_ACTIVITY_ARGUMENTS,
       variables: { activityTypeName, arguments: argumentsMap, modelId },
     };
     const options = {
       body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json', authorization },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cam-sso-token': user?.ssoToken,
+      },
       method: 'POST',
     };
 
-    const { HASURA_URL } = get(config);
     response = await fetch(HASURA_URL, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);

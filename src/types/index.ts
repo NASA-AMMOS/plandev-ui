@@ -1,4 +1,5 @@
 export * from './activity';
+export * from './app';
 export * from './constraint';
 export * from './d3';
 export * from './parameter';
@@ -7,5 +8,4 @@ export * from './string-t-map';
 export * from './svelte-kit';
 export * from './time-range';
 export * from './timeline';
-export * from './user';
 export * from './view';

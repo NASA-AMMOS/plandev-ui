@@ -1,35 +1,31 @@
-import type { CamApiOptions, LogoutResponse } from '@gov.nasa.jpl.aerie/cam';
-import { CamApi } from '@gov.nasa.jpl.aerie/cam';
 import type { Request } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import { get } from 'svelte/store';
-import { config } from '../../stores/config';
+import { LogoutResponse, reqLogout } from '../../utilities/requests';
+
+/* Types. */
 
 export type LogoutPostResponseBody = {
   message: string;
   success: boolean;
 };
+
 export type LogoutPostResponse = {
   body?: LogoutPostResponseBody;
   headers?: ResponseHeaders;
   status?: number;
 };
 
+/* Endpoints. */
+
 export async function post(
   req: Request<Record<string, any>, unknown>,
 ): Promise<LogoutPostResponse> {
-  const { CAM_API_URL, CAM_ENABLED } = get(config);
-  const camOptions: CamApiOptions = {
-    apiUrl: CAM_API_URL,
-    enabled: CAM_ENABLED,
-  };
-  const camApi = new CamApi(camOptions);
   const { locals } = req;
   const { user } = locals;
   const { ssoToken = '' } = user;
 
   try {
-    const logoutResponse: LogoutResponse = await camApi.logout(ssoToken);
+    const logoutResponse: LogoutResponse = await reqLogout(ssoToken);
     const { message, success } = logoutResponse;
 
     if (success) {
