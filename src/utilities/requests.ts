@@ -169,7 +169,7 @@ export async function reqCreateActivity(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -223,7 +223,7 @@ export async function reqCreateConstraint(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -275,7 +275,7 @@ export async function reqCreateModel(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -330,7 +330,7 @@ export async function reqCreatePlan(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -381,7 +381,7 @@ export async function reqCreateSimulation(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -438,7 +438,7 @@ export async function reqDeleteActivity(id: number): Promise<boolean> {
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -472,7 +472,7 @@ export async function reqDeleteConstraint(id: number): Promise<boolean> {
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -500,7 +500,7 @@ export async function reqDeleteFile(id: number): Promise<boolean> {
 
     const options = {
       headers: {
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'DELETE',
     };
@@ -534,7 +534,7 @@ export async function reqDeleteModel(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -567,7 +567,7 @@ export async function reqDeletePlanAndSimulations(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -615,7 +615,7 @@ export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
       body: JSON.stringify({ query: GET_MODELS }),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -649,7 +649,7 @@ export async function reqGetPlansAndModels(
       body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -695,7 +695,7 @@ export async function reqGetPlan(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -789,7 +789,7 @@ export async function reqLogin(
       method: 'POST',
     };
 
-    response = await fetch(`${GATEWAY_URL}/cam/login`, options);
+    response = await fetch(`${GATEWAY_URL}/auth/login`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
 
@@ -814,12 +814,12 @@ export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
     const options = {
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': ssoToken,
+        'x-auth-sso-token': ssoToken,
       },
       method: 'DELETE',
     };
 
-    response = await fetch(`${GATEWAY_URL}/cam/logout`, options);
+    response = await fetch(`${GATEWAY_URL}/auth/logout`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
 
@@ -876,7 +876,7 @@ export async function reqSimulate(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -979,7 +979,7 @@ export async function reqUpdateActivity(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -1023,7 +1023,7 @@ export async function reqUpdateConstraint(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -1060,7 +1060,7 @@ export async function reqUpdateSimulationArguments(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -1113,7 +1113,7 @@ export async function reqUploadFile(file: File): Promise<number | null> {
     const options = {
       body,
       headers: {
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
@@ -1163,7 +1163,7 @@ export async function reqValidateActivityArguments(
       body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json',
-        'x-cam-sso-token': user?.ssoToken,
+        'x-auth-sso-token': user?.ssoToken,
       },
       method: 'POST',
     };
