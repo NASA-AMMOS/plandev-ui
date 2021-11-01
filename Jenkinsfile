@@ -62,6 +62,8 @@ pipeline {
                 npm config set always-auth=true
                 npm config set _auth=$NPM_PASSWORD
 
+                cat .npmrc
+
                 # Install dependencies, build, and cloc
                 npm ci
                 npm run build
