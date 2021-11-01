@@ -63,7 +63,7 @@ pipeline {
                 npm config set _auth=$NPM_PASSWORD
 
                 # Install dependencies, build, and cloc
-                npm install
+                npm ci
                 npm run build
                 npm run cloc
 
