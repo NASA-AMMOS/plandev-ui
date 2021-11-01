@@ -56,8 +56,9 @@ pipeline {
               )
             ]) {
               sh '''
-                # Upgrade NPM
-                npm install npm -g
+                # Downgrade NPM
+                # https://github.com/npm/cli/issues/2008
+                npm install npm@6.14.15 -g
 
                 # Setup NPM to fetch from Artifactory
                 npm config set @gov.nasa.jpl.stellar:registry=https://artifactory.jpl.nasa.gov/artifactory/api/npm/npm-release-virtual/
