@@ -32,6 +32,12 @@
       path: null,
     },
     {
+      iconClass: 'bi bi-diagram-3',
+      iconFontSize: 16,
+      name: 'Gateway',
+      path: null,
+    },
+    {
       iconClass: 'bi bi-box-arrow-right',
       iconFontSize: 16,
       name: 'Logout',
@@ -54,6 +60,8 @@
       goto(path);
     } else if (name === 'About' && about) {
       about.modal.toggle();
+    } else if (name === 'Gateway') {
+      open(`${$env.GATEWAY_URL}`, '_newtab');
     } else if (name === 'GraphQL') {
       open(`${$env.GATEWAY_URL}/playground`, '_newtab');
     } else if (name === 'Logout') {

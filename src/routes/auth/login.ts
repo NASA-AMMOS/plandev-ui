@@ -1,7 +1,6 @@
 import type { Request } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import type { User } from '../../types';
-import type { LoginResponse } from '../../utilities/requests';
+import type { LoginResponse, User } from '../../types';
 import { reqLogin } from '../../utilities/requests';
 
 /* Types. */

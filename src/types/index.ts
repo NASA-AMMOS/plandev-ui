@@ -1,5 +1,6 @@
 export * from './activity';
 export * from './app';
+export * from './auth';
 export * from './constraint';
 export * from './d3';
 export * from './parameter';

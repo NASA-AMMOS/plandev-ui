@@ -1,6 +1,7 @@
 import type { Request } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import { LogoutResponse, reqLogout } from '../../utilities/requests';
+import type { LogoutResponse } from '../../types';
+import { reqLogout } from '../../utilities/requests';
 
 /* Types. */
 

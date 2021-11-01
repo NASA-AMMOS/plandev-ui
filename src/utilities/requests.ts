@@ -16,6 +16,8 @@ import type {
   CreateConstraint,
   Env,
   Fetch,
+  LoginResponse,
+  LogoutResponse,
   ParametersMap,
   ParameterValidationResponse,
   Resource,
@@ -78,17 +80,6 @@ export type CreatePlanModel = {
   id: number;
   name: string;
 };
-
-export type LoginResponse = {
-  message: string;
-  ssoToken: string | null;
-  success: boolean;
-};
-
-export interface LogoutResponse {
-  message: string;
-  success: boolean;
-}
 
 export type Model = {
   activityTypes: ActivityType[];
@@ -802,6 +793,7 @@ export async function reqLogin(
       message: 'An unexpected error occurred',
       ssoToken: null,
       success: false,
+      username: null,
     };
   }
 }
