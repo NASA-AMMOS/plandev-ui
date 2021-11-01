@@ -1,5 +1,28 @@
 import type { Timeline } from './timeline';
 
+export type CreateViewResponse = {
+  message: string;
+  success: boolean;
+  view: View | null;
+};
+
+export type DeleteViewResponse = {
+  message: string;
+  nextView: View | null;
+  success: boolean;
+};
+
+export type GetViewResponse = {
+  message: string;
+  success: boolean;
+  view: View | null;
+};
+
+export type UpdateViewResponse = {
+  message: string;
+  success: boolean;
+};
+
 export type ViewMeta = {
   owner: string;
   timeCreated: number;

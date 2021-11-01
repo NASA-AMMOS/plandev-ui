@@ -19,7 +19,7 @@
   }
 
   function onSaveView() {
-    if (currentView?.meta?.owner === $appSession.user.userId) {
+    if (currentView?.meta?.owner === $appSession.user.id) {
       onMenuItemClick('saveView');
     }
   }
@@ -40,7 +40,7 @@
   </div>
   <div
     class="menu-item"
-    class:disabled={currentView?.meta?.owner !== $appSession.user.userId}
+    class:disabled={currentView?.meta?.owner !== $appSession.user.id}
     on:click={onSaveView}
   >
     <i class="bi bi-save-fill" />

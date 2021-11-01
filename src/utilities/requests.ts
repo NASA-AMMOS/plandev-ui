@@ -1,9 +1,4 @@
 import { get } from 'svelte/store';
-import type { ViewPostResponseBody } from '../routes/views';
-import type {
-  ViewIdDelResponseBody,
-  ViewIdPutResponseBody,
-} from '../routes/views/[id]';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
 import type {
   ActivitiesMap,
@@ -14,8 +9,11 @@ import type {
   ConstraintViolation,
   CreateActivity,
   CreateConstraint,
+  CreateViewResponse,
+  DeleteViewResponse,
   Env,
   Fetch,
+  GetViewResponse,
   LoginResponse,
   LogoutResponse,
   ParametersMap,
@@ -25,6 +23,7 @@ import type {
   Session,
   Simulation,
   UpdateActivity,
+  UpdateViewResponse,
   User,
   View,
 } from '../types';
@@ -394,23 +393,36 @@ export async function reqCreateSimulation(
 export async function reqCreateView(
   name: string,
   view: View,
-): Promise<ViewPostResponseBody> {
+): Promise<CreateViewResponse> {
   let response: Response;
-  let json: ViewPostResponseBody;
+  let json: CreateViewResponse;
   try {
-    response = await fetch(`/views`, {
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
+    const options = {
       body: JSON.stringify({ name, view }),
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
       method: 'POST',
-    });
+    };
+
+    response = await fetch(`${GATEWAY_URL}/view`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+
     return json;
   } catch (e) {
     console.log(e);
     console.log(response);
     console.log(json);
-    return { message: e.message, success: false, view: null };
+    return {
+      message: 'An unexpected error occurred',
+      success: false,
+      view: null,
+    };
   }
 }
 
@@ -577,21 +589,35 @@ export async function reqDeletePlanAndSimulations(
   }
 }
 
-export async function reqDeleteView(
-  id: string,
-): Promise<ViewIdDelResponseBody> {
+export async function reqDeleteView(id: string): Promise<DeleteViewResponse> {
   let response: Response;
-  let json: ViewIdDelResponseBody;
+  let json: DeleteViewResponse;
   try {
-    response = await fetch(`/views/${id}`, { method: 'DELETE' });
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
+    const options = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'DELETE',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/view/${id}`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+
     return json;
   } catch (e) {
     console.log(e);
     console.log(response);
     console.log(json);
-    return { message: e.message, success: false };
+    return {
+      message: 'An unexpected error occurred',
+      nextView: null,
+      success: false,
+    };
   }
 }
 
@@ -727,11 +753,21 @@ export async function reqGetView(
   query: URLSearchParams,
 ): Promise<View | null> {
   let response: Response;
-  let json: any;
+  let json: GetViewResponse;
   try {
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
     const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
 
-    response = await fetch(`/views/${viewId}`);
+    const options = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'GET',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/view/${viewId}`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
 
@@ -747,14 +783,24 @@ export async function reqGetView(
 
 export async function reqGetViews(): Promise<View[] | null> {
   let response: Response;
-  let json: any;
+  let json: View[];
   try {
-    response = await fetch(`/views`);
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
+    const options = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'GET',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/views`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
 
-    const { views } = json;
-    return views;
+    return json;
   } catch (e) {
     console.log(e);
     console.log(response);
@@ -1071,25 +1117,35 @@ export async function reqUpdateSimulationArguments(
   }
 }
 
-export async function reqUpdateView(
-  view: View,
-): Promise<ViewIdPutResponseBody> {
+export async function reqUpdateView(view: View): Promise<UpdateViewResponse> {
   let response: Response;
-  let json: ViewIdPutResponseBody;
+  let json: UpdateViewResponse;
   try {
-    response = await fetch(`/views/${view.id}`, {
+    const user = get<User | null>(userStore);
+    const { GATEWAY_URL } = get<Env>(envStore);
+
+    const options = {
       body: JSON.stringify({ view }),
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
       method: 'PUT',
-    });
+    };
+
+    response = await fetch(`${GATEWAY_URL}/view/${view.id}`, options);
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
+
     return json;
   } catch (e) {
     console.log(e);
     console.log(response);
     console.log(json);
-    return { message: e.message, success: false };
+    return {
+      message: 'An unexpected error occurred',
+      success: false,
+    };
   }
 }
 

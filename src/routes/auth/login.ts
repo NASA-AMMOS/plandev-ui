@@ -32,10 +32,10 @@ export async function post(
 
   try {
     const loginResponse: LoginResponse = await reqLogin(username, password);
-    const { message, ssoToken, success } = loginResponse;
+    const { message, ssoToken, success, username: id } = loginResponse;
 
     if (success) {
-      const user: User = { ssoToken, userId: username };
+      const user: User = { id, ssoToken };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
 

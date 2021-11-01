@@ -1,11 +1,6 @@
 export type Env = {
   GATEWAY_URL: string;
   HASURA_URL: string;
-  POSTGRES_DATABASE: string;
-  POSTGRES_HOST: string;
-  POSTGRES_PASSWORD: string;
-  POSTGRES_PORT: number;
-  POSTGRES_USER: string;
 };
 
 export type Session = {
@@ -13,6 +8,6 @@ export type Session = {
 };
 
 export type User = {
+  id: string;
   ssoToken: string;
-  userId: string;
 };

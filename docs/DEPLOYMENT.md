@@ -6,7 +6,7 @@ This document describes how to deploy aerie-ui via Docker. All of these instruct
 
 The deployment of Aerie UI depends on two other containers on the same Docker network in order to work properly.
 
-1. Apollo (API gateway server)
+1. Gateway
 2. Postgres
 
 See the Aerie [docker-compose.yml](https://github.jpl.nasa.gov/Aerie/aerie/blob/develop/scripts/docker-compose-aerie/docker-compose.yml) file for examples on how to deploy these required containers.
