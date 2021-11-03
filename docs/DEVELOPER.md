@@ -25,11 +25,11 @@ following products on your development machine:
 
 - [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com)); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
 
-- [Node.js](http://nodejs.org), (version specified in the engines field of [`package.json`](../package.json)) which is used to run a development web server, run tests, and generate distributable files. If you're on OSX you can use [brew](https://brew.sh/):
+- [Node.js LTS](http://nodejs.org) which is used to run a development web server, and generate distributable files. If you're on OSX you can use [brew](https://brew.sh/):
 
-```shell
-brew install node
-```
+  ```shell
+  brew install node
+  ```
 
 ## Getting the Sources
 
