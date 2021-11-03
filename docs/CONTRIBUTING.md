@@ -83,7 +83,7 @@ After your pull request is merged, you can safely delete your branch and pull th
 
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
-- We use [Prettier][prettier] and [ESLint](./.eslintrc.cjs) to keep code formatted.
+- We use [Prettier][prettier] and [ESLint](../eslintrc.cjs) to keep code formatted.
   ```shell
   npm run format
   npm run lint
