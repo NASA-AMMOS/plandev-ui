@@ -4,12 +4,7 @@ This document describes how to deploy aerie-ui via Docker. All of these instruct
 
 ## Dependencies
 
-The deployment of Aerie UI depends on two other containers on the same Docker network in order to work properly.
-
-1. Gateway
-2. Postgres
-
-See the Aerie [docker-compose.yml](https://github.jpl.nasa.gov/Aerie/aerie/blob/develop/scripts/docker-compose-aerie/docker-compose.yml) file for examples on how to deploy these required containers.
+The deployment of Aerie UI depends on other Aerie containers on the same Docker network in order to work properly. See the Aerie [docker-compose.yml](https://github.jpl.nasa.gov/Aerie/aerie/blob/develop/scripts/docker-compose-aerie/docker-compose.yml) file for examples on how to deploy these required containers.
 
 ## Docker Artifactory
 
