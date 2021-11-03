@@ -41,7 +41,6 @@
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
-  let rowsDiv: HTMLDivElement;
   let rowsMaxHeight: number = 600;
   let timelineDiv: HTMLDivElement;
   let xAxisDiv: HTMLDivElement;
@@ -139,7 +138,6 @@
     />
   </div>
   <div
-    bind:this={rowsDiv}
     class="rows"
     style="max-height: {rowsMaxHeight}px"
     on:consider={handleDndConsiderRows}

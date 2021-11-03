@@ -1,6 +1,7 @@
 import type { Timeline } from './timeline';
 
 export type CreateViewResponse = {
+  errors: any[] | null;
   message: string;
   success: boolean;
   view: View | null;
@@ -19,6 +20,7 @@ export type GetViewResponse = {
 };
 
 export type UpdateViewResponse = {
+  errors: any[] | null;
   message: string;
   success: boolean;
 };

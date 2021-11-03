@@ -2,12 +2,13 @@ import type { Subscriber, Unsubscriber, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import type { Axis, View } from '../types';
-import { compare } from '../utilities/generic';
-import { reqUpdateView } from '../utilities/requests';
+import { compare, setQueryParam } from '../utilities/generic';
+import { reqCreateView, reqUpdateView } from '../utilities/requests';
 
 /* Types. */
 
 type ViewStore = {
+  create(view: View): Promise<void>;
   createYAxis(timelineId: number, rowId: number): void;
   deleteLayer(timelineId: number, rowId: number, layerId: number): void;
   deleteRow(timelineId: number, rowId: number): void;
@@ -44,6 +45,36 @@ type ViewStore = {
 export const view: ViewStore = (() => {
   const { set, subscribe, update: updateStore } = writable(null);
   return {
+    async create(currentView: View): Promise<void> {
+      const {
+        errors,
+        message,
+        success,
+        view: newView,
+      } = await reqCreateView(currentView);
+
+      if (success) {
+        Toastify({
+          backgroundColor: '#2da44e',
+          duration: 3000,
+          gravity: 'bottom',
+          position: 'left',
+          text: 'View Created Successfully',
+        }).showToast();
+        setQueryParam('viewId', newView.id);
+        updateStore(() => newView);
+      } else {
+        console.log(errors);
+        console.log(message);
+        Toastify({
+          backgroundColor: '#a32a2a',
+          duration: 3000,
+          gravity: 'bottom',
+          position: 'left',
+          text: 'View Create Failed',
+        }).showToast();
+      }
+    },
     createYAxis(timelineId: number, rowId: number): void {
       updateStore((view: View): View => {
         return {
@@ -200,7 +231,8 @@ export const view: ViewStore = (() => {
     set,
     subscribe,
     async update(currentView: View) {
-      const { success } = await reqUpdateView(currentView);
+      const { errors, message, success } = await reqUpdateView(currentView);
+
       if (success) {
         Toastify({
           backgroundColor: '#2da44e',
@@ -208,6 +240,16 @@ export const view: ViewStore = (() => {
           gravity: 'bottom',
           position: 'left',
           text: 'View Updated Successfully',
+        }).showToast();
+      } else {
+        console.log(errors);
+        console.log(message);
+        Toastify({
+          backgroundColor: '#a32a2a',
+          duration: 3000,
+          gravity: 'bottom',
+          position: 'left',
+          text: 'View Update Failed',
         }).showToast();
       }
     },

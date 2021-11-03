@@ -390,10 +390,7 @@ export async function reqCreateSimulation(
   }
 }
 
-export async function reqCreateView(
-  name: string,
-  view: View,
-): Promise<CreateViewResponse> {
+export async function reqCreateView(view: View): Promise<CreateViewResponse> {
   let response: Response;
   let json: CreateViewResponse;
   try {
@@ -401,7 +398,7 @@ export async function reqCreateView(
     const { GATEWAY_URL } = get<Env>(envStore);
 
     const options = {
-      body: JSON.stringify({ name, view }),
+      body: JSON.stringify({ view }),
       headers: {
         'Content-Type': 'application/json',
         'x-auth-sso-token': user?.ssoToken,
@@ -419,6 +416,7 @@ export async function reqCreateView(
     console.log(response);
     console.log(json);
     return {
+      errors: null,
       message: 'An unexpected error occurred',
       success: false,
       view: null,
@@ -1143,6 +1141,7 @@ export async function reqUpdateView(view: View): Promise<UpdateViewResponse> {
     console.log(response);
     console.log(json);
     return {
+      errors: null,
       message: 'An unexpected error occurred',
       success: false,
     };

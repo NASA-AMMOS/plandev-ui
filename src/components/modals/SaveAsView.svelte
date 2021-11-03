@@ -5,12 +5,9 @@
   import Modal from './Modal.svelte';
   import Field from '../form/Field.svelte';
   import Label from '../form/Label.svelte';
-  import { reqCreateView } from '../../utilities/requests';
-  import type { View } from '../../types';
 
   const dispatch = createEventDispatcher();
 
-  export let currentView: View;
   export let modal: Modal | null = null;
 
   let buttonElement: HTMLButtonElement;
@@ -25,14 +22,8 @@
   }
 
   async function onSaveAsView() {
-    const { message, success, view } = await reqCreateView(name, currentView);
-
-    if (success) {
-      dispatch('setView', { view });
-      modal.hide();
-    } else {
-      console.log(message);
-    }
+    modal.hide();
+    dispatch('createView', name);
   }
 
   async function onShow() {

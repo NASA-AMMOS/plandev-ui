@@ -179,6 +179,12 @@
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
+  function onCreateView(event: CustomEvent<string>) {
+    const { detail: name } = event;
+    const newView = { ...$view, name };
+    view.create(newView);
+  }
+
   function onDeleteActivity(event: CustomEvent<number>) {
     const { detail: activityId } = event;
     activitiesMap.delete(activityId);
@@ -575,11 +581,7 @@
   on:setView={onSetView}
 />
 
-<SaveAsViewModal
-  bind:this={saveAsViewModal}
-  currentView={$view}
-  on:setView={onSetView}
-/>
+<SaveAsViewModal bind:this={saveAsViewModal} on:createView={onCreateView} />
 
 <style>
   .header-button {
