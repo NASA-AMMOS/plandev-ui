@@ -61,9 +61,9 @@
     } else if (name === 'About' && about) {
       about.modal.toggle();
     } else if (name === 'Gateway') {
-      open(`${$env.GATEWAY_URL}`, '_newtab');
+      open(`${$env.GATEWAY_CLIENT_URL}`, '_newtab');
     } else if (name === 'GraphQL') {
-      open(`${$env.GATEWAY_URL}/playground`, '_newtab');
+      open(`${$env.GATEWAY_CLIENT_URL}/playground`, '_newtab');
     } else if (name === 'Logout') {
       await fetch('/auth/logout', { method: 'POST' });
       $session.user = null; // Triggers redirect.

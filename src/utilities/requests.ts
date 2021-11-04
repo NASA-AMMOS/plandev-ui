@@ -1,3 +1,4 @@
+import { browser } from '$app/env';
 import { get } from 'svelte/store';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
 import type {
@@ -128,7 +129,27 @@ export type UpdateActivityInput = {
   start_offset?: string;
 };
 
-/* Functions. */
+/* Helpers. */
+
+function gatewayUrl() {
+  const { GATEWAY_CLIENT_URL, GATEWAY_SERVER_URL } = get<Env>(envStore);
+  if (browser) {
+    return GATEWAY_CLIENT_URL;
+  } else {
+    return GATEWAY_SERVER_URL;
+  }
+}
+
+function hasuraUrl() {
+  const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
+  if (browser) {
+    return HASURA_CLIENT_URL;
+  } else {
+    return HASURA_SERVER_URL;
+  }
+}
+
+/* Requests. */
 
 export async function reqCreateActivity(
   newActivity: CreateActivity,
@@ -139,7 +160,7 @@ export async function reqCreateActivity(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const start_offset = getIntervalFromDoyRange(
       planStartTime,
@@ -195,7 +216,7 @@ export async function reqCreateConstraint(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const constraintInput = {
       definition: newConstraint.definition,
@@ -248,7 +269,7 @@ export async function reqCreateModel(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const jar_id = await reqUploadFile(file);
     const modelInput = {
@@ -304,7 +325,7 @@ export async function reqCreatePlan(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const planInput = {
       duration: getIntervalFromDoyRange(startTime, endTime),
@@ -360,7 +381,7 @@ export async function reqCreateSimulation(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const simulationInput = { arguments: simulationArguments, plan_id };
     const body = {
@@ -395,7 +416,7 @@ export async function reqCreateView(view: View): Promise<CreateViewResponse> {
   let json: CreateViewResponse;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const options = {
       body: JSON.stringify({ view }),
@@ -429,7 +450,7 @@ export async function reqDeleteActivity(id: number): Promise<boolean> {
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: DELETE_ACTIVITY,
@@ -463,7 +484,7 @@ export async function reqDeleteConstraint(id: number): Promise<boolean> {
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: DELETE_CONSTRAINT,
@@ -497,7 +518,7 @@ export async function reqDeleteFile(id: number): Promise<boolean> {
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const options = {
       headers: {
@@ -527,7 +548,7 @@ export async function reqDeleteModel(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     await reqDeleteFile(jarId);
     const body = { query: DELETE_MODEL, variables: { id } };
@@ -561,7 +582,7 @@ export async function reqDeletePlanAndSimulations(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
     const options = {
@@ -592,7 +613,7 @@ export async function reqDeleteView(id: string): Promise<DeleteViewResponse> {
   let json: DeleteViewResponse;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const options = {
       headers: {
@@ -624,7 +645,7 @@ export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const options = {
       body: JSON.stringify({ query: GET_MODELS }),
@@ -658,7 +679,7 @@ export async function reqGetPlansAndModels(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const options = {
       body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
@@ -703,7 +724,7 @@ export async function reqGetPlan(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = { query: GET_PLAN, variables: { id } };
     const options = {
@@ -754,7 +775,7 @@ export async function reqGetView(
   let json: GetViewResponse;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
     const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
 
     const options = {
@@ -784,7 +805,7 @@ export async function reqGetViews(): Promise<View[] | null> {
   let json: View[];
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const options = {
       headers: {
@@ -814,7 +835,7 @@ export async function reqLogin(
   let response: Response;
   let json: any;
   try {
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
     const body = JSON.stringify({ password, username });
     const options = {
       body,
@@ -846,7 +867,7 @@ export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
   let response: Response;
   let json: any;
   try {
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
     const options = {
       headers: {
         'Content-Type': 'application/json',
@@ -902,7 +923,7 @@ export async function reqSimulate(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: SIMULATE,
@@ -1005,7 +1026,7 @@ export async function reqUpdateActivity(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: UPDATE_ACTIVITY,
@@ -1041,7 +1062,7 @@ export async function reqUpdateConstraint(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const constraintInput = {
       definition: updatedConstraint.definition,
@@ -1086,7 +1107,7 @@ export async function reqUpdateSimulationArguments(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: UPDATE_SIMULATION_ARGUMENTS,
@@ -1120,7 +1141,7 @@ export async function reqUpdateView(view: View): Promise<UpdateViewResponse> {
   let json: UpdateViewResponse;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const options = {
       body: JSON.stringify({ view }),
@@ -1153,7 +1174,7 @@ export async function reqUploadFile(file: File): Promise<number | null> {
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { GATEWAY_URL } = get<Env>(envStore);
+    const GATEWAY_URL = gatewayUrl();
 
     const body = new FormData();
     body.append('file', file, file.name);
@@ -1200,7 +1221,7 @@ export async function reqValidateActivityArguments(
   let json: any;
   try {
     const user = get<User | null>(userStore);
-    const { HASURA_URL } = get<Env>(envStore);
+    const HASURA_URL = hasuraUrl();
 
     const body = {
       query: VALIDATE_ACTIVITY_ARGUMENTS,

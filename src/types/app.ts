@@ -1,6 +1,8 @@
 export type Env = {
-  GATEWAY_URL: string;
-  HASURA_URL: string;
+  GATEWAY_CLIENT_URL: string;
+  GATEWAY_SERVER_URL: string;
+  HASURA_CLIENT_URL: string;
+  HASURA_SERVER_URL: string;
 };
 
 export type Session = {
