@@ -104,7 +104,7 @@
         {/if}
       </span>
       {#if $selectedTimeline !== null}
-        <Grid columns="33% 33% 33%">
+        <Grid columns="50% 50%">
           <Field>
             <Label for="marginLeft">Margin Left</Label>
             <input
@@ -146,6 +146,25 @@
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
           </Field>
+
+          <Field>
+            <Label for="verticalGuides">Vertical Guides</Label>
+            {#if $selectedTimeline.verticalGuides.length}
+              <select
+                class="st-select w-100"
+                disabled={$selectedTimeline.verticalGuides.length === 1}
+                name="verticalGuides"
+              >
+                {#each $selectedTimeline.verticalGuides as verticalGuide}
+                  <option value={verticalGuide.id}>
+                    {verticalGuide.id}
+                  </option>
+                {/each}
+              </select>
+            {:else}
+              <input class="st-input w-100" disabled value="Empty" />
+            {/if}
+          </Field>
         </Grid>
       {:else}
         <Field>
@@ -168,7 +187,7 @@
         {/if}
       </span>
       {#if $selectedRow !== null}
-        <Grid columns="33% 33% 33%">
+        <Grid columns="50% 50%">
           <Field>
             <Label for="height">Height</Label>
             <input
@@ -178,6 +197,25 @@
               value={$selectedRow.height}
               on:input={updateRow}
             />
+          </Field>
+
+          <Field>
+            <Label for="horizontalGuides">Horizontal Guides</Label>
+            {#if $selectedRow.horizontalGuides.length}
+              <select
+                class="st-select w-100"
+                disabled={$selectedRow.horizontalGuides.length === 1}
+                name="horizontalGuides"
+              >
+                {#each $selectedRow.horizontalGuides as horizontalGuide}
+                  <option value={horizontalGuide.id}>
+                    {horizontalGuide.id}
+                  </option>
+                {/each}
+              </select>
+            {:else}
+              <input class="st-input w-100" disabled value="Empty" />
+            {/if}
           </Field>
 
           <Field>
