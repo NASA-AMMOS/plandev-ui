@@ -230,7 +230,7 @@
     <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
       <span slot="summary-right">
-        <Grid gap="5px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
+        <Grid gap="3px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
           <button
             class="st-button-icon"
             on:click|stopPropagation={createYAxis}
