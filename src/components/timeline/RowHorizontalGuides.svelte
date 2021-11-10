@@ -53,7 +53,7 @@
 
           const labelVisibility = 'visible';
           const labelColor = guide?.label?.color || color;
-          const labelFontFace = guide?.label?.fontFace || 'Helvetica Neue';
+          const labelFontFace = guide?.label?.fontFace || 'sans-serif';
           const labelFontSize = guide?.label?.fontSize || 12;
           const labelText = guide?.label?.text || '';
           lineGroup

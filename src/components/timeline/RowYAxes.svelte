@@ -33,7 +33,7 @@
 
         const color = axis.color;
         const labelColor = axis.label?.color || 'black';
-        const labelFontFace = axis.label?.fontFace || 'Helvetica Neue';
+        const labelFontFace = axis.label?.fontFace || 'sans-serif';
         const labelFontSize = axis.label?.fontSize || 12;
         const labelText = axis.label.text;
         const tickCount = axis.tickCount;
