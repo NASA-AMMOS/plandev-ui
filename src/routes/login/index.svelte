@@ -96,7 +96,7 @@
 
     <Field>
       <button
-        class="st-button"
+        class="st-button w-100"
         disabled={password === '' || username === ''}
         type="submit"
       >
