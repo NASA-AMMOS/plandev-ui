@@ -35,20 +35,22 @@ export function getFormParameters(
   parametersMap: ParametersMap,
   argumentsMap: ArgumentsMap,
 ): FormParameter[] {
-  const formParameters = Object.entries(parametersMap).map(([name, schema]) => {
-    const arg: Argument = argumentsMap[name];
-    const value = getArgument(arg, schema.type);
+  const formParameters = Object.entries(parametersMap).map(
+    ([name, { schema }]) => {
+      const arg: Argument = argumentsMap[name];
+      const value = getArgument(arg, schema.type);
 
-    const formParameter: FormParameter = {
-      error: null,
-      loading: false,
-      name,
-      schema,
-      value,
-    };
+      const formParameter: FormParameter = {
+        error: null,
+        loading: false,
+        name,
+        schema,
+        value,
+      };
 
-    return formParameter;
-  });
+      return formParameter;
+    },
+  );
 
   return formParameters;
 }

@@ -12,7 +12,8 @@ export type FormParameter = {
 export type Argument = any;
 export type ArgumentsMap = { [name: string]: Argument };
 
-export type Parameter = { type: string } & any;
+export type ParameterSchema = { type: string } & any;
+export type Parameter = { order: number; schema: ParameterSchema };
 export type ParametersMap = { [name: string]: Parameter };
 
 export type ParameterValidationResponse = {
