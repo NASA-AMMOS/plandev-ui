@@ -1252,3 +1252,32 @@ export async function reqValidateActivityArguments(
     return { errors: [message], success: false };
   }
 }
+
+export async function reqValidateConstraint(body: string) {
+  let response: Response;
+  let json: any;
+  try {
+    const GATEWAY_URL = gatewayUrl();
+    const options = {
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/constraint/validate`, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return json;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return {
+      errors: ['An unexpected error occurred'],
+      valid: false,
+    };
+  }
+}

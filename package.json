@@ -40,7 +40,6 @@
     "@types/toastify-js": "^1.9.2",
     "@typescript-eslint/eslint-plugin": "^5.3.1",
     "@typescript-eslint/parser": "^5.3.1",
-    "ajv": "^8.7.1",
     "bootstrap-icons": "^1.7.0",
     "cloc": "^2.8.0",
     "cookie": "^0.4.1",

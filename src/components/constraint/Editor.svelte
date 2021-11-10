@@ -2,8 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import Ajv from 'ajv';
-  import type { ValidateFunction } from 'ajv';
   import Field from '../form/Field.svelte';
   import Label from '../form/Label.svelte';
   import Card from '../ui/Card.svelte';
@@ -11,6 +9,7 @@
   import AlertError from '../ui/AlertError.svelte';
   import Panel from '../ui/Panel.svelte';
   import type { Constraint, CreateConstraint } from '../../types';
+  import { reqValidateConstraint } from '../../utilities/requests';
 
   const dispatch = createEventDispatcher();
 
@@ -18,14 +17,13 @@
   export let modelId: number;
   export let planId: number;
 
-  let ajv: Ajv;
+  let debounce: NodeJS.Timeout;
   let definition: string = '';
   let definitionError: string | null = null;
   let description: string = '';
   let name: string = '';
   let summary: string = '';
   let type: string = 'model';
-  let validateSchema: ValidateFunction<any>;
 
   $: valid = definition !== '' && !definitionError && name !== '';
 
@@ -43,30 +41,21 @@
       summary = '';
       type = 'model';
     }
-    await initAjv();
   });
 
-  async function initAjv() {
-    ajv = new Ajv();
-    ajv.addKeyword('$anchor');
-    const response = await fetch('/schemas/constraint.json');
-    const constraintSchema = await response.json();
-    validateSchema = ajv.compile<any>(constraintSchema);
-  }
-
-  function onTextChanged(event: CustomEvent<string>) {
+  async function onTextChanged(event: CustomEvent<string>) {
     const { detail: json } = event;
     try {
-      const parsedJson = JSON.parse(json);
       definition = json;
       definitionError = null;
-      if (validateSchema) {
-        const schemaValid = validateSchema(parsedJson);
-        if (!schemaValid) {
-          console.log(validateSchema.errors);
+
+      clearTimeout(debounce);
+      debounce = setTimeout(async () => {
+        const { valid } = await reqValidateConstraint(json);
+        if (!valid) {
           definitionError = 'Input is not a valid constraint';
         }
-      }
+      }, 200);
     } catch (e) {
       console.log(e);
       definitionError = e.message;
