@@ -153,7 +153,7 @@ export const GET_PLANS_AND_MODELS = `
 
 export const SIMULATE = `
   query Simulate($modelId: ID!, $planId: Int!) {
-    resourceTypes(adaptationId: $modelId) {
+    resourceTypes(missionModelId: $modelId) {
       name
       schema
     }
