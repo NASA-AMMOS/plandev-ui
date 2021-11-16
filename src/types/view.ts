@@ -51,7 +51,7 @@ export interface ViewPlanSection {
 }
 
 export interface View {
-  id: string;
+  id: number;
   meta: ViewMeta;
   name: string;
   plan: ViewPlan;

@@ -61,7 +61,7 @@ export const view: ViewStore = (() => {
           position: 'left',
           text: 'View Created Successfully',
         }).showToast();
-        setQueryParam('viewId', newView.id);
+        setQueryParam('viewId', `${newView.id}`);
         updateStore(() => newView);
       } else {
         console.log(errors);
