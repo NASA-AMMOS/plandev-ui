@@ -4,6 +4,7 @@ import type { Env } from '../../types';
 export async function get(): Promise<{ body: Env }> {
   const { env } = process;
 
+  const AUTH_TYPE = env['AUTH_TYPE'] ?? defaultEnv.AUTH_TYPE;
   const GATEWAY_CLIENT_URL =
     env['GATEWAY_CLIENT_URL'] ?? defaultEnv.GATEWAY_CLIENT_URL;
   const GATEWAY_SERVER_URL =
@@ -15,6 +16,7 @@ export async function get(): Promise<{ body: Env }> {
 
   return {
     body: {
+      AUTH_TYPE,
       GATEWAY_CLIENT_URL,
       GATEWAY_SERVER_URL,
       HASURA_CLIENT_URL,

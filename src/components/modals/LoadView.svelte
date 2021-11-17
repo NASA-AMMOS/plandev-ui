@@ -32,7 +32,7 @@
     }
   }
 
-  async function onLoadView(viewId: string) {
+  async function onLoadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
     const view = await reqGetView(fetch, query);
 

@@ -609,7 +609,7 @@ export async function reqDeletePlanAndSimulations(
   }
 }
 
-export async function reqDeleteView(id: string): Promise<DeleteViewResponse> {
+export async function reqDeleteView(id: number): Promise<DeleteViewResponse> {
   let response: Response;
   let json: DeleteViewResponse;
   try {

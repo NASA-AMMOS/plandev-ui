@@ -145,7 +145,7 @@
 
   onMount(() => {
     if ($view) {
-      setQueryParam('viewId', $view.id);
+      setQueryParam('viewId', `${$view.id}`);
     }
   });
 
@@ -262,7 +262,7 @@
     const { detail } = event;
     const { view: newView } = detail;
     $view = newView;
-    setQueryParam('viewId', newView.id);
+    setQueryParam('viewId', `${newView.id}`);
   }
 
   function onUpdateActivity(event: CustomEvent<UpdateActivity>) {

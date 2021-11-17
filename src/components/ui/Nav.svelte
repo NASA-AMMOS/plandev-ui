@@ -54,6 +54,13 @@
 
   let about: AboutModal | null = null;
 
+  $: filteredNavItems = navItems.filter(item => {
+    if (item.name === 'Logout' && $env.AUTH_TYPE === 'none') {
+      return false;
+    }
+    return true;
+  });
+
   async function onClickNavItem(item: NavItem) {
     const { name, path } = item;
     if (path) {
@@ -73,9 +80,9 @@
 
 <div
   class="nav"
-  style="grid-template-rows: repeat({navItems.length}, {width}px)"
+  style="grid-template-rows: repeat({filteredNavItems.length}, {width}px)"
 >
-  {#each navItems as item}
+  {#each filteredNavItems as item}
     <div
       class="nav-item"
       class:active={$page.path.includes(item.path)}

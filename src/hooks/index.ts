@@ -2,7 +2,9 @@ import type { Request } from '@sveltejs/kit';
 import type { MaybePromise } from '@sveltejs/kit/types/helper';
 import type { ServerRequest, ServerResponse } from '@sveltejs/kit/types/hooks';
 import { parse } from 'cookie';
-import type { User } from '../types';
+import { get } from 'svelte/store';
+import { env as envStore } from '../stores/app';
+import type { Env, User } from '../types';
 import { reqSession } from '../utilities/requests';
 
 type HandleInput = {
@@ -20,23 +22,29 @@ export async function handle({
   request,
   resolve,
 }: HandleInput): Promise<ServerResponse> {
-  const cookies = parse(request.headers.cookie || '');
-  const { user: userCookie = null } = cookies;
+  const { AUTH_TYPE } = get<Env>(envStore);
 
-  if (userCookie) {
-    const userBuffer = Buffer.from(userCookie, 'base64');
-    const userStr = userBuffer.toString('utf-8');
-    const user: User = JSON.parse(userStr);
+  if (AUTH_TYPE === 'none') {
+    request.locals.user = { id: 'unknown', ssoToken: 'unknown' };
+  } else {
+    const cookies = parse(request.headers.cookie || '');
+    const { user: userCookie = null } = cookies;
 
-    const { success } = await reqSession(user.ssoToken);
+    if (userCookie) {
+      const userBuffer = Buffer.from(userCookie, 'base64');
+      const userStr = userBuffer.toString('utf-8');
+      const user: User = JSON.parse(userStr);
 
-    if (success) {
-      request.locals.user = user;
+      const { success } = await reqSession(user.ssoToken);
+
+      if (success) {
+        request.locals.user = user;
+      } else {
+        request.locals.user = null;
+      }
     } else {
       request.locals.user = null;
     }
-  } else {
-    request.locals.user = null;
   }
 
   return await resolve(request);
