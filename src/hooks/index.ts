@@ -3,6 +3,7 @@ import type { MaybePromise } from '@sveltejs/kit/types/helper';
 import type { ServerRequest, ServerResponse } from '@sveltejs/kit/types/hooks';
 import { parse } from 'cookie';
 import type { User } from '../types';
+import { reqSession } from '../utilities/requests';
 
 type HandleInput = {
   request: ServerRequest<Record<string, any>>;
@@ -26,7 +27,14 @@ export async function handle({
     const userBuffer = Buffer.from(userCookie, 'base64');
     const userStr = userBuffer.toString('utf-8');
     const user: User = JSON.parse(userStr);
-    request.locals.user = user;
+
+    const { success } = await reqSession(user.ssoToken);
+
+    if (success) {
+      request.locals.user = user;
+    } else {
+      request.locals.user = null;
+    }
   } else {
     request.locals.user = null;
   }

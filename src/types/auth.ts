@@ -9,3 +9,8 @@ export type LogoutResponse = {
   message: string;
   success: boolean;
 };
+
+export type SessionResponse = {
+  message: string;
+  success: boolean;
+};

@@ -22,6 +22,7 @@ import type {
   Resource,
   ResourceValue,
   Session,
+  SessionResponse,
   Simulation,
   UpdateActivity,
   UpdateViewResponse,
@@ -886,6 +887,35 @@ export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
     console.log(response);
     console.log(json);
     return { message: 'An unexpected error occurred', success: false };
+  }
+}
+
+export async function reqSession(ssoToken: string): Promise<SessionResponse> {
+  let response: Response;
+  let json: any;
+  try {
+    const GATEWAY_URL = gatewayUrl();
+    const options = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': ssoToken,
+      },
+      method: 'GET',
+    };
+
+    response = await fetch(`${GATEWAY_URL}/auth/session`, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return json;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return {
+      message: 'An unexpected error occurred',
+      success: false,
+    };
   }
 }
 
