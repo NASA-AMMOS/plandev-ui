@@ -8,7 +8,6 @@
     CreateConstraint,
     DropActivity,
     MouseDown,
-    Resource,
     Row,
     TimeRange,
     UpdateActivity,
@@ -64,12 +63,14 @@
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
-  import { SimulationStatus } from '../../types';
   import {
     activities,
     activitiesMap,
     selectedActivityId,
     selectedActivity,
+    createActivity,
+    deleteActivity,
+    updateActivity,
   } from '../../stores/activities';
   import {
     deleteConstraint,
@@ -90,15 +91,22 @@
     simulationConfigurationPanel,
     viewEditorPanel,
   } from '../../stores/panels';
+  import { resources } from '../../stores/resources';
   import {
     modelParametersMap,
     selectedSimulationId,
     simulationArgumentsMap,
+    SimulationStatus,
     simulationStatus,
     updateSimulationArguments,
   } from '../../stores/simulation';
   import {
+    createView,
     setSelectedTimeline,
+    updateRow,
+    updateSectionSizes,
+    updateTimeline,
+    updateView,
     view,
     viewSectionIds,
     viewSectionSizes,
@@ -121,7 +129,6 @@
   let constraintMenu: ConstraintMenu;
   let horizontalSplitInitialized: boolean = false;
   let loadViewModal: LoadViewModal;
-  let resources: Resource[] = [];
   let saveAsViewModal: SaveAsViewModal;
   let viewMenu: ViewMenu;
 
@@ -162,11 +169,7 @@
       startTime,
       type: activityType.name,
     };
-    const { id, success } = await activitiesMap.create(
-      activity,
-      planId,
-      startTime,
-    );
+    const { id, success } = await createActivity(activity, planId, startTime);
     if (success) {
       selectActivity(id);
       simulationStatus.update(SimulationStatus.Dirty);
@@ -182,12 +185,12 @@
   function onCreateView(event: CustomEvent<string>) {
     const { detail: name } = event;
     const newView = { ...$view, name };
-    view.create(newView);
+    createView(newView);
   }
 
   function onDeleteActivity(event: CustomEvent<number>) {
     const { detail: activityId } = event;
-    activitiesMap.delete(activityId);
+    deleteActivity(activityId);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -206,7 +209,7 @@
       startTime,
       type,
     };
-    activitiesMap.create(activity, planId, initialPlan.startTime);
+    createActivity(activity, planId, initialPlan.startTime);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -249,13 +252,13 @@
   }
 
   async function onSaveView() {
-    view.update($view);
+    updateView($view);
   }
 
   function onSectionsDragEnd(event: CustomEvent<{ newSizes: number[] }>) {
     const { detail } = event;
     const { newSizes } = detail;
-    view.updateSectionSizes(newSizes);
+    updateSectionSizes(newSizes);
   }
 
   function onSetView(event: CustomEvent<{ view: View }>) {
@@ -268,7 +271,7 @@
   function onUpdateActivity(event: CustomEvent<UpdateActivity>) {
     const { startTime } = initialPlan;
     const { detail: activity } = event;
-    activitiesMap.update(activity, startTime);
+    updateActivity(activity, startTime);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -299,7 +302,7 @@
   ) {
     const { detail } = event;
     const { newHeight, rowId, timelineId } = detail;
-    view.updateRow(timelineId, rowId, 'height', newHeight);
+    updateRow('height', newHeight, timelineId, rowId);
   }
 
   function onUpdateRows(
@@ -310,7 +313,7 @@
   ) {
     const { detail } = event;
     const { rows, timelineId } = detail;
-    view.updateTimeline(timelineId, 'rows', rows);
+    updateTimeline('rows', rows, timelineId);
   }
 
   function onUpdateStartTime(event: CustomEvent<UpdateActivity>) {
@@ -350,9 +353,9 @@
 
       if (status === 'complete') {
         $activitiesMap = newActivitiesMap;
+        $resources = newResources;
         $violations = offsetViolationWindows(constraintViolations, startTimeMs);
         simulationStatus.update(SimulationStatus.Complete);
-        resources = newResources;
         return;
       } else if (status === 'failed') {
         simulationStatus.update(SimulationStatus.Failed);
@@ -366,7 +369,7 @@
     simulationStatus.update(SimulationStatus.Incomplete);
   }
 
-  function selectActivity(id: string): void {
+  function selectActivity(id: number): void {
     $selectedActivityId = id;
     selectedActivityPanel.show();
   }
@@ -498,7 +501,7 @@
               marginLeft={section.timeline.marginLeft ?? 50}
               marginRight={section.timeline.marginRight ?? 20}
               {maxTimeRange}
-              {resources}
+              resources={$resources}
               rows={section.timeline.rows}
               selectedActivity={$selectedActivity}
               verticalGuides={section.timeline.verticalGuides}

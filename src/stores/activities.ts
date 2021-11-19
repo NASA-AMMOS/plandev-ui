@@ -1,110 +1,24 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { Activity, CreateActivity, UpdateActivity } from '../types';
+import type {
+  ActivitiesMap,
+  Activity,
+  CreateActivity,
+  UpdateActivity,
+} from '../types';
 import {
   reqCreateActivity,
   reqDeleteActivity,
   reqUpdateActivity,
 } from '../utilities/requests';
 
+/* Stores. */
+
 /**
- * Main store for activity management.
- * Contains a map of all activities and keeps them in sync with the database.
+ * Main store for activities.
  */
-export const activitiesMap = (() => {
-  const { set, subscribe, update: updateStore } = writable({});
-  return {
-    async create(
-      activity: CreateActivity,
-      planId: number,
-      planStartTime: string,
-    ) {
-      const newActivity = await reqCreateActivity(
-        activity,
-        planId,
-        planStartTime,
-      );
-      if (newActivity) {
-        const { id } = newActivity;
-        updateStore(activitiesMap => {
-          activitiesMap[id] = newActivity;
-          return activitiesMap;
-        });
-        Toastify({
-          backgroundColor: '#2da44e',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Created Successfully',
-        }).showToast();
-        return { id, success: true };
-      } else {
-        Toastify({
-          backgroundColor: '#a32a2a',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Create Failed',
-        }).showToast();
-        return { id: null, success: false };
-      }
-    },
-    async delete(id: number) {
-      const success = await reqDeleteActivity(id);
-      if (success) {
-        updateStore(activitiesMap => {
-          delete activitiesMap[id];
-          return activitiesMap;
-        });
-        Toastify({
-          backgroundColor: '#2da44e',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Deleted Successfully',
-        }).showToast();
-      } else {
-        Toastify({
-          backgroundColor: '#a32a2a',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Delete Failed',
-        }).showToast();
-      }
-    },
-    set,
-    subscribe,
-    async update(activity: UpdateActivity, planStartTime: string) {
-      const updatedActivity = await reqUpdateActivity(activity, planStartTime);
-      if (updatedActivity) {
-        updateStore(activitiesMap => ({
-          ...activitiesMap,
-          [updatedActivity.id]: {
-            ...activitiesMap[updatedActivity.id],
-            ...updatedActivity,
-          },
-        }));
-        Toastify({
-          backgroundColor: '#2da44e',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Updated Successfully',
-        }).showToast();
-      } else {
-        Toastify({
-          backgroundColor: '#a32a2a',
-          duration: 3000,
-          gravity: 'bottom',
-          position: 'left',
-          text: 'Activity Update Failed',
-        }).showToast();
-      }
-    },
-  };
-})();
+export const activitiesMap: Writable<ActivitiesMap> = writable({});
 
 /**
  * Derived store that converts the activities map into a list of activities.
@@ -116,7 +30,7 @@ export const activities = derived(activitiesMap, $activitiesMap =>
 /**
  * Store that tracks the currently selected activity ID.
  */
-export const selectedActivityId: Writable<string | null> = writable(null);
+export const selectedActivityId: Writable<number | null> = writable(null);
 
 /**
  * Derived store that returns either the selected activity or null if no activity is selected.
@@ -126,3 +40,93 @@ export const selectedActivity = derived(
   ([$activitiesMap, $selectedActivityId]) =>
     $activitiesMap[$selectedActivityId] || null,
 );
+
+/* Utility Functions. */
+
+export async function createActivity(
+  activity: CreateActivity,
+  planId: number,
+  planStartTime: string,
+) {
+  const newActivity = await reqCreateActivity(activity, planId, planStartTime);
+  if (newActivity) {
+    const { id } = newActivity;
+    activitiesMap.update(activities => {
+      activities[id] = newActivity;
+      return activities;
+    });
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Created Successfully',
+    }).showToast();
+    return { id, success: true };
+  } else {
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Create Failed',
+    }).showToast();
+    return { id: null, success: false };
+  }
+}
+
+export async function deleteActivity(id: number) {
+  const success = await reqDeleteActivity(id);
+  if (success) {
+    activitiesMap.update(activities => {
+      delete activities[id];
+      return activities;
+    });
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Deleted Successfully',
+    }).showToast();
+  } else {
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Delete Failed',
+    }).showToast();
+  }
+}
+
+export async function updateActivity(
+  activity: UpdateActivity,
+  planStartTime: string,
+) {
+  const updatedActivity = await reqUpdateActivity(activity, planStartTime);
+  if (updatedActivity) {
+    activitiesMap.update(activities => ({
+      ...activities,
+      [updatedActivity.id]: {
+        ...activities[updatedActivity.id],
+        ...updatedActivity,
+      },
+    }));
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Updated Successfully',
+    }).showToast();
+  } else {
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Activity Update Failed',
+    }).showToast();
+  }
+}

@@ -2,11 +2,22 @@ import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import type { ArgumentsMap, ParametersMap } from '../types';
-import { SimulationStatus } from '../types';
 import {
   reqUpdateSimulationArguments,
   reqUploadFiles,
 } from '../utilities/requests';
+
+/* Data. */
+
+export enum SimulationStatus {
+  Clean = 'Clean',
+  Complete = 'Complete',
+  Dirty = 'Dirty',
+  Executing = 'Executing',
+  Failed = 'Failed',
+  Incomplete = 'Incomplete',
+  Unknown = 'Unknown',
+}
 
 /* Stores. */
 

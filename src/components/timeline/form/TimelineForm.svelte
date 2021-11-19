@@ -10,15 +10,22 @@
   import Grid from '../../ui/Grid.svelte';
   import Panel from '../../ui/Panel.svelte';
   import {
+    createYAxis,
     selectedLayerId,
     selectedLayer,
     selectedRowId,
     selectedRow,
-    selectedTimelineId,
     selectedTimeline,
     selectedYAxisId,
     selectedYAxis,
-    view,
+    updateLayer,
+    updateRow,
+    updateTimeline,
+    updateYAxis,
+    deleteLayer,
+    deleteRow,
+    deleteTimeline,
+    deleteYAxis,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import YAxisForm from './YAxisForm.svelte';
@@ -30,60 +37,28 @@
   let confirmDeleteTimelineModal: ConfirmModal;
   let confirmDeleteYAxisModal: ConfirmModal;
 
-  function createYAxis() {
-    view.createYAxis($selectedTimelineId, $selectedRowId);
-  }
-
-  function deleteLayer() {
-    view.deleteLayer($selectedTimelineId, $selectedRowId, $selectedLayerId);
-  }
-
-  function deleteRow() {
-    view.deleteRow($selectedTimelineId, $selectedRowId);
-  }
-
-  function deleteTimeline() {
-    view.deleteTimeline($selectedTimelineId);
-  }
-
-  function deleteYAxis() {
-    view.deleteYAxis($selectedTimelineId, $selectedRowId, $selectedYAxisId);
-  }
-
-  function updateLayer(event: Event) {
+  function updateLayerEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    view.updateLayer(
-      $selectedTimelineId,
-      $selectedRowId,
-      $selectedLayerId,
-      name,
-      value,
-    );
+    updateLayer(name, value);
   }
 
-  function updateRow(event: Event) {
+  function updateRowEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    view.updateRow($selectedTimelineId, $selectedRowId, name, value);
+    updateRow(name, value);
   }
 
-  function updateTimeline(event: Event) {
+  function updateTimelineEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    view.updateTimeline($selectedTimelineId, name, value);
+    updateTimeline(name, value);
   }
 
-  function updateYAxis(event: CustomEvent<{ prop: string; value: any }>) {
+  function updateYAxisEvent(event: CustomEvent<{ prop: string; value: any }>) {
     const { detail } = event;
     const { prop, value } = detail;
-    view.updateYAxis(
-      $selectedTimelineId,
-      $selectedRowId,
-      $selectedYAxisId,
-      prop,
-      value,
-    );
+    updateYAxis(prop, value);
   }
 </script>
 
@@ -112,7 +87,7 @@
               name="marginLeft"
               type="number"
               value={$selectedTimeline.marginLeft}
-              on:input={updateTimeline}
+              on:input={updateTimelineEvent}
             />
           </Field>
 
@@ -123,7 +98,7 @@
               name="marginRight"
               type="number"
               value={$selectedTimeline.marginRight}
-              on:input={updateTimeline}
+              on:input={updateTimelineEvent}
             />
           </Field>
 
@@ -195,7 +170,7 @@
               name="height"
               type="number"
               value={$selectedRow.height}
-              on:input={updateRow}
+              on:input={updateRowEvent}
             />
           </Field>
 
@@ -292,7 +267,7 @@
         <YAxisForm
           axes={$selectedRow.yAxes}
           axis={$selectedYAxis}
-          on:update={updateYAxis}
+          on:update={updateYAxisEvent}
         />
       {:else}
         <Field>
@@ -322,7 +297,7 @@
             class="st-select w-100"
             name="chartType"
             value={$selectedLayer.chartType}
-            on:change={updateLayer}
+            on:change={updateLayerEvent}
           >
             <option value="activity"> Activity </option>
             <option value="line"> Line </option>
@@ -330,12 +305,12 @@
           </select>
         </Field>
 
-        <LayerLineForm layer={$selectedLayer} on:input={updateLayer} />
+        <LayerLineForm layer={$selectedLayer} on:input={updateLayerEvent} />
 
         <LayerXRangeForm
           layer={$selectedLayer}
-          on:change={updateLayer}
-          on:input={updateLayer}
+          on:change={updateLayerEvent}
+          on:input={updateLayerEvent}
         />
       {:else}
         <Field>

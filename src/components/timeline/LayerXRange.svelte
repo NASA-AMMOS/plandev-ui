@@ -242,6 +242,7 @@
 
   function resourcesToXRangePoints(resources: Resource[]): XRangePoint[] {
     const points: XRangePoint[] = [];
+    let id = 0;
 
     for (const resource of resources) {
       const { name, schema, startTime, values } = resource;
@@ -255,7 +256,7 @@
             const { x, y } = values[i];
             const text = y ? 'TRUE' : 'FALSE';
             points.push({
-              id: `${id}-resource-${name}-${i}`,
+              id: id++,
               label: { text },
               name,
               selected: false,
@@ -269,7 +270,7 @@
             const { x, y } = values[i];
             const text = y as string;
             points.push({
-              id: `${id}-resource-${name}-${i}`,
+              id: id++,
               label: { text },
               name,
               selected: false,
@@ -285,7 +286,7 @@
             const { x, y } = values[i];
             const text = y as string;
             points.push({
-              id: `${id}-resource-${name}-${i}`,
+              id: id++,
               label: { text },
               name,
               selected: false,

@@ -5,16 +5,6 @@ export type Simulation = {
   id: number;
 };
 
-export enum SimulationStatus {
-  Clean = 'Clean',
-  Complete = 'Complete',
-  Dirty = 'Dirty',
-  Executing = 'Executing',
-  Failed = 'Failed',
-  Incomplete = 'Incomplete',
-  Unknown = 'Unknown',
-}
-
 export type Resource = {
   name: string;
   schema: any;

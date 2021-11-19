@@ -155,6 +155,7 @@
     radius: number,
   ): LinePoint[] {
     const points: LinePoint[] = [];
+    let id = 0;
 
     for (const resource of resources) {
       const { name, schema, startTime, values } = resource;
@@ -168,7 +169,7 @@
             const { x, y: yBoolean } = value;
             const y = yBoolean ? 1 : 0;
             points.push({
-              id: `${id}-resource-${name}-${i}`,
+              id: id++,
               name,
               radius,
               selected: false,
@@ -183,7 +184,7 @@
             const { x } = value;
             const y = value.y as number;
             points.push({
-              id: `${id}-resource-${name}-${i}`,
+              id: id++,
               name,
               radius,
               selected: false,

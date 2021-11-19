@@ -7,7 +7,7 @@
   export let columns: string[] = [];
   export let data: any[] = [];
   export let sortKey: string = 'type';
-  export let selectedId: string = '';
+  export let selectedId: number | null = null;
 
   $: sortedData = [...data].sort((a, b) => compare(a[sortKey], b[sortKey]));
 

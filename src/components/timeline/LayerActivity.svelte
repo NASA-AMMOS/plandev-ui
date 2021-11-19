@@ -108,7 +108,7 @@
       label: {
         text: activity.type,
       },
-      name: activity.id,
+      name: `${activity.id}`,
       parent: activity?.parent || null,
       selected: selectedActivity?.id === activity.id,
       type: 'activity',

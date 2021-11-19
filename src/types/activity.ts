@@ -9,14 +9,14 @@ export type Activity = {
   arguments: ArgumentsMap;
   children: string[] | null;
   duration: number | null;
-  id: string;
+  id: number;
   parent: string | null;
   startTime: string;
   type: string;
 };
 
-export type ActivitiesMap = { [id: string]: Activity };
+export type ActivitiesMap = { [id: number]: Activity };
 
 export type CreateActivity = Pick<Activity, 'arguments' | 'startTime' | 'type'>;
 
-export type UpdateActivity = { id: string } & Partial<Activity>;
+export type UpdateActivity = { id: number } & Partial<Activity>;

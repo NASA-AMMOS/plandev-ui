@@ -81,7 +81,7 @@ export interface MouseOver {
 }
 
 export interface Point {
-  id: string;
+  id: number;
   name: string;
   selected: boolean;
   type: 'activity' | 'line' | 'x-range';
@@ -89,14 +89,14 @@ export interface Point {
 }
 
 export interface QuadtreePoint {
-  id: string;
+  id: number;
   x: number;
   y: number;
 }
 
 export interface QuadtreeRect {
   height: number;
-  id: string;
+  id: number;
   width: number;
   x: number;
   y: number;

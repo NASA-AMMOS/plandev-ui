@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SimulationStatus } from '../../types/simulation';
+  import { SimulationStatus } from '../../stores/simulation';
 
   export let simulationStatus: SimulationStatus = SimulationStatus.Clean;
 

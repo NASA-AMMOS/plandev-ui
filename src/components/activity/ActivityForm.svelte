@@ -3,11 +3,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type {
-    Activity,
+    ActivitiesMap,
     ActivityType,
     ArgumentsMap,
     FormParameter,
-    StringTMap,
   } from '../../types';
   import Field from '../form/Field.svelte';
   import InputText from '../form/InputText.svelte';
@@ -28,7 +27,7 @@
 
   const dispatch = createEventDispatcher();
 
-  export let activitiesMap: StringTMap<Activity> = {};
+  export let activitiesMap: ActivitiesMap = {};
   export let activityTypes: ActivityType[] = [];
   export let argumentsMap: ArgumentsMap = {};
   export let children: string[] | null = null;
