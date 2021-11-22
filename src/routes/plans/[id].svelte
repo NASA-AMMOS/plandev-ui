@@ -157,7 +157,9 @@
   });
 
   onDestroy(() => {
+    activityDictionaryPanel.show();
     simulationStatus.update(SimulationStatus.Clean);
+    $selectedActivityId = null;
     $violations = [];
   });
 
