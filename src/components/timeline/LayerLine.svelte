@@ -178,7 +178,13 @@
               y,
             });
           }
-        } else if (schema.type === 'int' || schema.type === 'real') {
+        } else if (
+          schema.type === 'int' ||
+          schema.type === 'real' ||
+          (schema.type === 'struct' &&
+            schema?.items?.rate?.type === 'real' &&
+            schema?.items?.initial?.type === 'real')
+        ) {
           for (let i = 0; i < values.length; ++i) {
             const value = values[i];
             const { x } = value;
