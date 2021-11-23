@@ -5,7 +5,9 @@ import type {
   ParametersMap,
 } from '../types';
 
-export function getArgument(value: Argument, type: string): any {
+export function getArgument(value: Argument, schema: any): any {
+  const type = schema.type;
+
   if (value !== null && value !== undefined) {
     return value;
   } else if (type === 'boolean') {
@@ -23,7 +25,14 @@ export function getArgument(value: Argument, type: string): any {
   } else if (type === 'string') {
     return '';
   } else if (type === 'struct') {
-    return {};
+    const struct = Object.entries(schema.items).reduce(
+      (struct, [key, subSchema]) => ({
+        ...struct,
+        [key]: getArgument(null, subSchema),
+      }),
+      {},
+    );
+    return struct;
   } else if (type === 'variant') {
     return '';
   } else {
@@ -38,7 +47,7 @@ export function getFormParameters(
   const formParameters = Object.entries(parametersMap).map(
     ([name, { schema }]) => {
       const arg: Argument = argumentsMap[name];
-      const value = getArgument(arg, schema.type);
+      const value = getArgument(arg, schema);
 
       const formParameter: FormParameter = {
         error: null,
