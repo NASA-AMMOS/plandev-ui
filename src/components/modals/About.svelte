@@ -41,10 +41,7 @@
     </button>
   </div>
   <div class="content">
-    <div>
-      Copyright {new Date().getFullYear()}, by the California Institute of
-      Technology.
-    </div>
+    <div>Copyright 2021, by the California Institute of Technology.</div>
     <div>ALL RIGHTS RESERVED.</div>
     <div>
       United States Government sponsorship acknowledged. Any commercial use must
