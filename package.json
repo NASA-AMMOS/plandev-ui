@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.jpl.nasa.gov/Aerie/aerie-ui.git"
+    "url": "https://github.com/NASA-AMMOS/aerie-ui.git"
   },
   "scripts": {
     "build": "rm -rf build && svelte-kit build",
