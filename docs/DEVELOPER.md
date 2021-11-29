@@ -40,7 +40,7 @@ Clone the aerie-ui repository:
 1. [Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the [aerie-ui repository](https://github.com/NASA-AMMOS/aerie-ui).
 
 ```shell
-git clone git@github.jpl.nasa.gov:Aerie/aerie-ui.git
+git clone https://github.com/NASA-AMMOS/aerie-ui.git
 cd aerie-ui
 ```
 
