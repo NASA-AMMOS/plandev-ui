@@ -121,7 +121,7 @@ fix: need to depend on latest rxjs and zone.js
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
 
-([more samples](https://github.jpl.nasa.gov/Aerie/aerie-ui/commits/develop))
+([more samples](https://github.com/NASA-AMMOS/aerie-ui/commits/develop))
 
 ### Revert
 
@@ -155,8 +155,8 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 
 **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
 
-[github]: https://github.jpl.nasa.gov/Aerie/aerie-ui
-[github-pulls]: https://github.jpl.nasa.gov/Aerie/aerie-ui/pulls
+[github]: https://github.com/NASA-AMMOS/aerie-ui
+[github-pulls]: https://github.com/NASA-AMMOS/aerie-ui/pulls
 [prettier]: https://prettier.io/
 [rebase]: https://dev.to/maxwell_dev/the-git-rebase-introduction-i-wish-id-had
 [slack]: https://app.slack.com/client/T024LMMEZ/C0163E42UBF

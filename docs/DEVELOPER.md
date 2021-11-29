@@ -37,7 +37,7 @@ following products on your development machine:
 Clone the aerie-ui repository:
 
 1. Login to your JPL GitHub account
-1. [Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the [aerie-ui repository](https://github.jpl.nasa.gov/MPS/aerie-ui).
+1. [Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the [aerie-ui repository](https://github.com/NASA-AMMOS/aerie-ui).
 
 ```shell
 git clone git@github.jpl.nasa.gov:Aerie/aerie-ui.git
