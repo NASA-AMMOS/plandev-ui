@@ -1,8 +1,6 @@
-[![Build Status](https://cae-jenkins2.jpl.nasa.gov/buildStatus/icon?job=MPSA/SEQ/normal_builds/aerie-ui/develop)](https://cae-jenkins2.jpl.nasa.gov/job/MPSA/job/SEQ/job/normal_builds/job/aerie-ui/job/develop)
-
 # aerie-ui
 
-This is the UI application and reusable UI components for [Aerie](https://github.jpl.nasa.gov/Aerie/aerie).
+This is the UI application and reusable UI components for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
 ## Want to help?
 
