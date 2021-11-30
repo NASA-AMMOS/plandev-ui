@@ -17,7 +17,7 @@ pipeline {
   }
   environment {
     ARTIFACTORY_URL = "artifactory.jpl.nasa.gov:${getArtifactoryPort()}"
-    DOCKER_UI_ARTIFACTOY = "${ARTIFACTORY_URL}/gov/nasa/jpl/aerie/aerie-ui:${GIT_BRANCH}"
+    DOCKER_UI_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/aerie/aerie-ui:${GIT_BRANCH}"
   }
   stages {
     stage('Docker') {
