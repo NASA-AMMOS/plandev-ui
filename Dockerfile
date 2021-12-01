@@ -1,4 +1,5 @@
-FROM artifactory.jpl.nasa.gov:17001/node:lts-alpine
+ARG NODE_LTS_IMAGE
+FROM ${NODE_LTS_IMAGE}
 COPY ./build /app
 COPY package.json /app
 ENV NODE_TLS_REJECT_UNAUTHORIZED "0"

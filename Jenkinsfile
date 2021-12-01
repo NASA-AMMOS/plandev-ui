@@ -18,6 +18,7 @@ pipeline {
   environment {
     ARTIFACTORY_URL = "artifactory.jpl.nasa.gov:${getArtifactoryPort()}"
     DOCKER_UI_ARTIFACTORY = "${ARTIFACTORY_URL}/gov/nasa/jpl/aerie/aerie-ui:${GIT_BRANCH}"
+    NODE_LTS_IMAGE = "artifactory.jpl.nasa.gov:17001/node:lts-alpine"
   }
   stages {
     stage('Docker') {
@@ -58,7 +59,7 @@ pipeline {
                 npm run cloc
 
                 # Build Docker image
-                docker build -t ${DOCKER_UI_ARTIFACTORY} --rm .
+                docker build -t ${DOCKER_UI_ARTIFACTORY} --build-arg NODE_LTS_IMAGE=${NODE_LTS_IMAGE} --rm .
               '''
             }
           }
@@ -76,7 +77,7 @@ pipeline {
               )
             ]) {
               sh '''
-                echo "${DOCKER_LOGIN_PASSWORD}" | docker login -u ${DOCKER_LOGIN_USERNAME} ${ARTIFACTORY_URL} --password-stdin
+                echo ${DOCKER_LOGIN_PASSWORD} | docker login -u ${DOCKER_LOGIN_USERNAME} ${ARTIFACTORY_URL} --password-stdin
                 docker push ${DOCKER_UI_ARTIFACTORY}
                 docker logout ${ARTIFACTORY_URL}
               '''
