@@ -151,12 +151,17 @@ export const GET_PLANS_AND_MODELS = `
   }
 `;
 
-export const SIMULATE = `
-  query Simulate($modelId: ID!, $planId: Int!) {
+export const RESOURCE_TYPES = `
+  query ResourceTypes($modelId: ID!) {
     resourceTypes(missionModelId: $modelId) {
       name
       schema
     }
+  }
+`;
+
+export const SIMULATE = `
+  query Simulate($planId: Int!) {
     simulate(planId: $planId) {
       status
       results

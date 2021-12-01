@@ -42,6 +42,7 @@ import {
   GET_MODELS,
   GET_PLAN,
   GET_PLANS_AND_MODELS,
+  RESOURCE_TYPES,
   SIMULATE,
   UPDATE_ACTIVITY,
   UPDATE_CONSTRAINT,
@@ -890,6 +891,45 @@ export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
   }
 }
 
+export async function reqResourceTypes(
+  modelId: number,
+): Promise<ResourceType[]> {
+  let response: Response;
+  let json: any;
+  try {
+    const user = get<User | null>(userStore);
+    const HASURA_URL = hasuraUrl();
+
+    const body = {
+      query: RESOURCE_TYPES,
+      variables: { modelId },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
+
+    const { data } = json;
+    const resourceTypes: ResourceType[] = data.resourceTypes;
+
+    return resourceTypes;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return [];
+  }
+}
+
 export async function reqSession(ssoToken: string): Promise<SessionResponse> {
   let response: Response;
   let json: any;
@@ -957,7 +997,7 @@ export async function reqSimulate(
 
     const body = {
       query: SIMULATE,
-      variables: { modelId, planId: `${planId}` },
+      variables: { planId: `${planId}` },
     };
     const options = {
       body: JSON.stringify(body),
@@ -974,10 +1014,10 @@ export async function reqSimulate(
     if (json.errors) throw new Error(json.errors[0].message);
 
     const { data } = json;
-    const resourceTypes: ResourceType[] = data.resourceTypes;
     const { results, status }: SimulateResponse = data.simulate;
 
     if (status === 'complete') {
+      // Activities.
       const activitiesMap: ActivitiesMap = Object.keys(
         results.activities,
       ).reduce((activitiesMap: ActivitiesMap, id: string) => {
@@ -994,6 +1034,8 @@ export async function reqSimulate(
         return activitiesMap;
       }, {});
 
+      // Resources.
+      const resourceTypes: ResourceType[] = await reqResourceTypes(modelId);
       const resourceTypesMap = resourceTypes.reduce(
         (map: { [name: string]: any }, { name, schema }) => {
           map[name] = schema;
@@ -1001,7 +1043,6 @@ export async function reqSimulate(
         },
         {},
       );
-
       const resources: Resource[] = Object.entries(results.resources).map(
         ([name, values]) => ({
           name,
@@ -1011,6 +1052,7 @@ export async function reqSimulate(
         }),
       );
 
+      // Constraint Violations.
       const constraintViolations: ConstraintViolation[] = Object.entries(
         results.constraints,
       ).flatMap(([name, violations]: [string, any]) =>
