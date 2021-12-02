@@ -90,7 +90,7 @@
   <span slot="header">Selected Activity</span>
   <span slot="header-right">
     <button
-      class="st-button-icon"
+      class="st-button icon"
       disabled={isChild}
       on:click|stopPropagation={() => confirmDeleteActivityModal.modal.show()}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
@@ -187,5 +187,9 @@
 <style>
   details {
     cursor: pointer;
+  }
+
+  .icon {
+    font-size: 0.8rem;
   }
 </style>

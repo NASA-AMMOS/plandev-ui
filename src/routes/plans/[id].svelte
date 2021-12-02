@@ -387,7 +387,7 @@
     </div>
     <div>
       <button
-        class="st-button-icon header-button"
+        class="st-button icon header-button"
         on:click={runSimulation}
         use:tooltip={{
           content: 'Run Simulation',
@@ -398,7 +398,7 @@
       </button>
 
       <button
-        class="st-button-icon header-button"
+        class="st-button icon header-button"
         on:click={() => simulationConfigurationPanel.show()}
         use:tooltip={{
           content: 'Simulation Configuration',
@@ -409,7 +409,7 @@
       </button>
 
       <button
-        class="st-button-icon header-button"
+        class="st-button icon header-button"
         on:click|stopPropagation={() => {
           viewMenu.menu.hide();
           constraintMenu.menu.toggle();
@@ -432,7 +432,7 @@
       </button>
 
       <button
-        class="st-button-icon header-button"
+        class="st-button icon header-button"
         on:click|stopPropagation={() => {
           constraintMenu.menu.hide();
           viewMenu.menu.toggle();
@@ -454,7 +454,7 @@
       </button>
 
       <button
-        class="st-button-icon header-button"
+        class="st-button icon header-button"
         on:click={() => activityDictionaryPanel.show()}
         use:tooltip={{
           content: 'Activity Dictionary',
@@ -590,10 +590,15 @@
 
 <style>
   .header-button {
-    color: var(--st-primary-inverse-text-color);
+    color: var(--st-gray-20);
     font-size: 1.4rem;
     margin-left: 0.5rem;
     position: relative;
+  }
+
+  .header-button:hover {
+    background-color: transparent;
+    color: var(--st-white);
   }
 
   .header-left {

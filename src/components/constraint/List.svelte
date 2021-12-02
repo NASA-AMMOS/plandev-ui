@@ -37,7 +37,7 @@
               {constraint.name}
               <span slot="suffix">
                 <button
-                  class="st-button-icon"
+                  class="st-button icon"
                   on:click|stopPropagation={() => editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
@@ -47,7 +47,7 @@
                   <i class="bi bi-pencil" />
                 </button>
                 <button
-                  class="st-button-icon"
+                  class="st-button icon"
                   on:click|stopPropagation={() =>
                     confirmDeleteModel.modal.show(constraint)}
                   use:tooltip={{
@@ -75,7 +75,7 @@
               {constraint.name}
               <span slot="suffix">
                 <button
-                  class="st-button-icon"
+                  class="st-button icon"
                   on:click|stopPropagation={() => editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
@@ -85,7 +85,7 @@
                   <i class="bi bi-pencil" />
                 </button>
                 <button
-                  class="st-button-icon"
+                  class="st-button icon"
                   on:click|stopPropagation={() =>
                     confirmDeleteModel.modal.show(constraint)}
                   use:tooltip={{

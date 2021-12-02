@@ -175,7 +175,7 @@
 
         <Field>
           <button
-            class="st-button"
+            class="st-button create-button"
             disabled={createButtonDisabeld}
             type="submit"
           >
@@ -201,9 +201,9 @@
             <tbody>
               {#each sortedPlans as plan}
                 <tr>
-                  <td class="actions fs-6">
+                  <td class="actions">
                     <button
-                      class="st-button-icon"
+                      class="st-button icon fs-6"
                       on:click={() => goto(`plans/${plan.id}`)}
                       on:pointerenter={() => prefetch(`plans/${plan.id}`)}
                       use:tooltip={{
@@ -214,7 +214,7 @@
                       <i class="bi bi-box-arrow-in-up-right" />
                     </button>
                     <button
-                      class="st-button-icon"
+                      class="st-button icon fs-6"
                       on:click|stopPropagation={() =>
                         confirmDeletePlan.modal.show(plan)}
                       use:tooltip={{
@@ -255,7 +255,11 @@
     align-items: center;
     display: grid;
     gap: 12px;
-    grid-template-columns: 12px 12px;
+    grid-template-columns: 16px 16px;
     justify-content: center;
+  }
+
+  .create-button {
+    width: 100px;
   }
 </style>

@@ -117,7 +117,7 @@
 
         <Field>
           <button
-            class="st-button"
+            class="st-button create-button"
             disabled={!files || name === '' || version === ''}
             type="submit"
           >
@@ -141,9 +141,9 @@
             <tbody>
               {#each sortedModels as model}
                 <tr>
-                  <td class="actions fs-6">
+                  <td class="actions">
                     <button
-                      class="st-button-icon"
+                      class="st-button icon fs-6"
                       data-cy="create-plan-{model.name}"
                       on:click={() => goto(`plans?modelId=${model.id}`)}
                       use:tooltip={{
@@ -154,7 +154,7 @@
                       <i class="bi bi-calendar-plus" />
                     </button>
                     <button
-                      class="st-button-icon"
+                      class="st-button icon fs-6"
                       data-cy="delete-model-{model.name}"
                       on:click|stopPropagation={() =>
                         confirmDeleteModel.modal.show(model)}
@@ -194,7 +194,11 @@
     align-items: center;
     display: grid;
     gap: 12px;
-    grid-template-columns: 12px 12px;
+    grid-template-columns: 16px 16px;
     justify-content: center;
+  }
+
+  .create-button {
+    width: 100px;
   }
 </style>

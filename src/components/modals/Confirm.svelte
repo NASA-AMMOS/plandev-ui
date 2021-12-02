@@ -34,7 +34,7 @@
 <Modal bind:this={modal} {height} {width}>
   <div class="header">
     <div class="title">{title}</div>
-    <button class="st-button-icon" on:click|stopPropagation={modal.hide}>
+    <button class="st-button icon fs-6" on:click|stopPropagation={modal.hide}>
       <i class="bi bi-x" />
     </button>
   </div>

@@ -56,7 +56,7 @@
 <Modal bind:this={modal} height={400} width={600} on:show={onShow}>
   <div class="header">
     <div class="title">Load View</div>
-    <button class="st-button-icon" on:click|stopPropagation={modal.hide}>
+    <button class="st-button icon fs-6" on:click|stopPropagation={modal.hide}>
       <i class="bi bi-x" />
     </button>
   </div>
@@ -77,7 +77,7 @@
             <tr>
               <td class="actions">
                 <button
-                  class="st-button-icon"
+                  class="st-button icon fs-6"
                   on:click={() => onLoadView(view.id)}
                   use:tooltip={{
                     content: 'Load View',
@@ -88,7 +88,7 @@
                 </button>
                 {#if view.meta.owner !== 'system'}
                   <button
-                    class="st-button-icon"
+                    class="st-button icon fs-6"
                     on:click={() => onDeleteView(view)}
                     use:tooltip={{
                       content: 'Delete View',

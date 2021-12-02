@@ -1,6 +1,8 @@
+![ci](https://github.com/NASA-AMMOS/aerie-ui/actions/workflows/ci.yml/badge.svg)
+
 # aerie-ui
 
-This is the UI application and reusable UI components for [Aerie](https://github.com/NASA-AMMOS/aerie).
+The client UI application and reusable UI components for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
 ## Want to help?
 

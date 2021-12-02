@@ -68,6 +68,7 @@
   .menu :global(.menu-item) {
     display: grid;
     font-size: 0.8rem;
+    font-weight: 300;
     gap: 0.5rem;
     grid-template-columns: 1rem auto;
     justify-content: flex-start;

@@ -83,7 +83,7 @@
   <div class="series-right">
     <Grid gap="3px" columns="auto auto">
       <button
-        class="st-button-icon"
+        class="st-button icon"
         disabled={subFormParameters?.length === 0}
         on:click|stopPropagation={valueRemove}
         use:tooltip={{ content: 'Remove Value', placement: 'left' }}
@@ -91,7 +91,7 @@
         <i class="bi bi-dash fs-6" />
       </button>
       <button
-        class="st-button-icon"
+        class="st-button icon"
         on:click|stopPropagation={valueAdd}
         use:tooltip={{ content: 'Add Value', placement: 'left' }}
       >

@@ -44,6 +44,5 @@
 
   .list-item > .suffix > :global(span) {
     display: flex;
-    gap: 0.5rem;
   }
 </style>

@@ -37,7 +37,7 @@
 <Modal bind:this={modal} height={150} width={200} on:show={onShow}>
   <div class="header">
     <div class="title">Save As View</div>
-    <button class="st-button-icon" on:click|stopPropagation={modal.hide}>
+    <button class="st-button icon fs-6" on:click|stopPropagation={modal.hide}>
       <i class="bi bi-x" />
     </button>
   </div>

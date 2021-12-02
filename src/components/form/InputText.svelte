@@ -88,7 +88,7 @@
   }
 
   .input-text.disabled :global(i) {
-    color: var(--st-input-icon-disabled-color);
+    color: var(--st-gray-30);
     cursor: not-allowed;
   }
 
