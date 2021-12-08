@@ -162,7 +162,15 @@
   onDestroy(() => {
     activityDictionaryPanel.show();
     simulationStatus.update(SimulationStatus.Clean);
+    $activitiesMap = {};
+    $modelConstraints = [];
+    $modelParametersMap = {};
+    $planConstraints = [];
+    $resources = [];
+    $schedulingStatus = SchedulingStatus.Clean;
     $selectedActivityId = null;
+    $selectedSimulationId = null;
+    $simulationArgumentsMap = {};
     $violations = [];
   });
 
