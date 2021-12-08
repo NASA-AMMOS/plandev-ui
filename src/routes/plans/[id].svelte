@@ -51,6 +51,7 @@
   import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
   import ConstraintMenu from '../../components/menus/Constraint.svelte';
   import ViewMenu from '../../components/menus/View.svelte';
+  import SchedulingStatusBadge from '../../components/scheduling/SchedulingStatusBadge.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
@@ -92,6 +93,7 @@
     viewEditorPanel,
   } from '../../stores/panels';
   import { resources } from '../../stores/resources';
+  import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
     selectedSimulationId,
@@ -117,6 +119,7 @@
     Plan,
     reqGetPlan,
     reqGetView,
+    reqSchedule,
     reqSimulate,
   } from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -340,6 +343,24 @@
     }
   }
 
+  async function runScheduling() {
+    $schedulingStatus = SchedulingStatus.Executing;
+    const { id: planId } = initialPlan;
+    const response = await reqSchedule(planId);
+
+    if (response.status === 'complete') {
+      simulationStatus.update(SimulationStatus.Dirty);
+      $schedulingStatus = SchedulingStatus.Complete;
+    } else {
+      console.log(response);
+      if (response.status === 'failed') {
+        $schedulingStatus = SchedulingStatus.Failed;
+      } else {
+        $schedulingStatus = SchedulingStatus.Unknown;
+      }
+    }
+  }
+
   async function runSimulation() {
     const { model, id: planId } = initialPlan;
     let tries = 0;
@@ -384,6 +405,7 @@
     <div class="header-left">
       Plan: {initialPlan.name}
       <SimulationStatusBadge simulationStatus={$simulationStatus} />
+      <SchedulingStatusBadge schedulingStatus={$schedulingStatus} />
     </div>
     <div>
       <button
@@ -395,6 +417,17 @@
         }}
       >
         <i class="bi bi-play-btn" />
+      </button>
+
+      <button
+        class="st-button icon header-button"
+        on:click={runScheduling}
+        use:tooltip={{
+          content: 'Run Scheduling',
+          placement: 'bottom',
+        }}
+      >
+        <i class="bi bi-calendar2-week" />
       </button>
 
       <button

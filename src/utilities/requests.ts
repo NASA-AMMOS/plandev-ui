@@ -21,6 +21,7 @@ import type {
   ParameterValidationResponse,
   Resource,
   ResourceValue,
+  SchedulingResponse,
   Session,
   SessionResponse,
   Simulation,
@@ -148,6 +149,15 @@ function hasuraUrl() {
     return HASURA_CLIENT_URL;
   } else {
     return HASURA_SERVER_URL;
+  }
+}
+
+function schedulerUrl() {
+  const { SCHEDULER_CLIENT_URL, SCHEDULER_SERVER_URL } = get<Env>(envStore);
+  if (browser) {
+    return SCHEDULER_CLIENT_URL;
+  } else {
+    return SCHEDULER_SERVER_URL;
   }
 }
 
@@ -927,6 +937,39 @@ export async function reqResourceTypes(
     console.log(response);
     console.log(json);
     return [];
+  }
+}
+
+export async function reqSchedule(planId: number): Promise<SchedulingResponse> {
+  let response: Response;
+  let json: SchedulingResponse;
+  try {
+    const user = get<User | null>(userStore);
+    const SCHEDULER_URL = schedulerUrl();
+
+    const body = {
+      action: { name: 'SCHEDULE' },
+      input: { planId: `${planId}` },
+      session_variables: { 'x-hasura-role': '' },
+    };
+    const options = {
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(`${SCHEDULER_URL}/schedule`, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+    return json;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return { status: 'failed' };
   }
 }
 

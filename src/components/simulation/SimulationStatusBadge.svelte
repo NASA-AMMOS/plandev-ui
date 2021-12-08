@@ -34,7 +34,7 @@
 </script>
 
 <span class="simulation-status" style="background-color: {color}">
-  Simulation Status: {simulationStatus}
+  Simulation: {simulationStatus}
 </span>
 
 <style>

@@ -9,6 +9,8 @@ export const defaultEnv: Env = {
   GATEWAY_SERVER_URL: 'http://localhost:9000',
   HASURA_CLIENT_URL: 'http://localhost:8080/v1/graphql',
   HASURA_SERVER_URL: 'http://localhost:8080/v1/graphql',
+  SCHEDULER_CLIENT_URL: 'http://localhost:27193',
+  SCHEDULER_SERVER_URL: 'http://localhost:27193',
 };
 
 /** Stores. */
