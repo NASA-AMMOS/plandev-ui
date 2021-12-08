@@ -40,6 +40,7 @@ import {
   DELETE_CONSTRAINT,
   DELETE_MODEL,
   DELETE_PLAN_AND_SIMULATIONS,
+  GET_ACTIVITIES_FOR_PLAN,
   GET_MODELS,
   GET_PLAN,
   GET_PLANS_AND_MODELS,
@@ -159,6 +160,18 @@ function schedulerUrl() {
   } else {
     return SCHEDULER_SERVER_URL;
   }
+}
+
+function toActivity(activity: any, startTime: Date): Activity {
+  return {
+    arguments: activity.arguments,
+    children: [],
+    duration: 0,
+    id: activity.id,
+    parent: null,
+    startTime: getDoyTimeFromDuration(startTime, activity.startOffset),
+    type: activity.type,
+  };
 }
 
 /* Requests. */
@@ -652,6 +665,48 @@ export async function reqDeleteView(id: number): Promise<DeleteViewResponse> {
   }
 }
 
+export async function reqGetActivitiesForPlan(
+  planId: number,
+): Promise<Activity[]> {
+  let response: Response;
+  let json: any;
+  try {
+    const user = get<User | null>(userStore);
+    const HASURA_URL = hasuraUrl();
+
+    const options = {
+      body: JSON.stringify({
+        query: GET_ACTIVITIES_FOR_PLAN,
+        variables: { planId },
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user?.ssoToken,
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+    if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
+
+    const { data } = json;
+    const { activities = [], plan } = data;
+    const startTime = new Date(plan.startTime);
+    const newActivities = activities.map((activity: any) =>
+      toActivity(activity, startTime),
+    );
+
+    return newActivities;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return [];
+  }
+}
+
 export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
   let response: Response;
   let json: any;
@@ -759,15 +814,9 @@ export async function reqGetPlan(
 
     return {
       ...plan,
-      activities: plan.activities.map((activity: any) => ({
-        arguments: activity.arguments,
-        children: [],
-        duration: 0,
-        id: activity.id,
-        parent: null,
-        startTime: getDoyTimeFromDuration(startTime, activity.startOffset),
-        type: activity.type,
-      })),
+      activities: plan.activities.map((activity: any) =>
+        toActivity(activity, startTime),
+      ),
       endTime: getDoyTimeFromDuration(startTime, plan.duration),
       startTime: getDoyTime(startTime),
     };

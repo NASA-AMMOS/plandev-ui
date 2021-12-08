@@ -75,6 +75,20 @@ export const DELETE_PLAN_AND_SIMULATIONS = `
   }
 `;
 
+export const GET_ACTIVITIES_FOR_PLAN = `
+  query GetActivitiesForPlan($planId: Int!) {
+    activities: activity(where: { plan_id: { _eq: $planId } }) {
+      arguments
+      id
+      startOffset: start_offset
+      type
+    }
+    plan: plan_by_pk(id: $planId) {
+      startTime: start_time
+    }
+  }
+`;
+
 export const GET_MODELS = `
   query GetModels {
     models: mission_model {

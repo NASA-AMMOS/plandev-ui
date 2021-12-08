@@ -117,6 +117,7 @@
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import {
     Plan,
+    reqGetActivitiesForPlan,
     reqGetPlan,
     reqGetView,
     reqSchedule,
@@ -357,8 +358,11 @@
     const response = await reqSchedule(planId);
 
     if (response.status === 'complete') {
+      const newActivities = await reqGetActivitiesForPlan(planId);
       simulationStatus.update(SimulationStatus.Dirty);
+      $activitiesMap = keyBy(newActivities);
       $schedulingStatus = SchedulingStatus.Complete;
+      $selectedActivityId = null;
     } else {
       console.log(response);
       if (response.status === 'failed') {
