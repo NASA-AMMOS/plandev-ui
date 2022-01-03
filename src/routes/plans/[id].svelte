@@ -16,8 +16,9 @@
 
   export async function load({
     fetch,
-    page,
+    params,
     session,
+    url,
   }: LoadInput): Promise<LoadOutput> {
     if (!session.user) {
       return {
@@ -26,12 +27,11 @@
       };
     }
 
-    const { params, query } = page;
     const { id } = params;
     const planId = parseFloat(id);
 
     const initialPlan = await reqGetPlan(fetch, planId);
-    const initialView = await reqGetView(fetch, query);
+    const initialView = await reqGetView(fetch, url.searchParams);
 
     return {
       props: {

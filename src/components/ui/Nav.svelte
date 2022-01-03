@@ -85,7 +85,7 @@
   {#each filteredNavItems as item}
     <div
       class="nav-item"
-      class:active={$page.path.includes(item.path)}
+      class:active={$page.url.pathname.includes(item.path)}
       style="height: {width}px; width: {width}px;"
       on:pointerenter={() => item.path && prefetch(item.path)}
       on:click|stopPropagation={() => onClickNavItem(item)}

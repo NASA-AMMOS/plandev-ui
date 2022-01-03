@@ -75,7 +75,7 @@
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
-    const queryModelId = $page.query.get('modelId');
+    const queryModelId = $page.url.searchParams.get('modelId');
     if (queryModelId) {
       modelId = parseFloat(queryModelId);
       removeQueryParam('modelId');
