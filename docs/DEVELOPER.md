@@ -32,10 +32,7 @@ Before you can build aerie-ui, you must install and configure the following prod
 
 ## Getting the Sources
 
-Clone the aerie-ui repository:
-
-1. Login to your JPL GitHub account
-1. [Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the [aerie-ui repository](https://github.com/NASA-AMMOS/aerie-ui).
+[Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the aerie-ui repository:
 
 ```shell
 git clone https://github.com/NASA-AMMOS/aerie-ui.git
