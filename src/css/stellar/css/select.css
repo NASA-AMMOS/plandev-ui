@@ -1,0 +1,25 @@
+.st-select {
+  background: var(--st-select-background);
+  border: var(--st-select-border);
+  border-radius: 4px;
+  color: var(--st-select-color);
+  cursor: pointer;
+  font-family: var(--st-select-font-family);
+  font-size: var(--st-select-font-size);
+  font-weight: var(--st-select-font-weight);
+  height: var(--st-select-height);
+  letter-spacing: var(--st-select-letter-spacing);
+  line-height: var(--st-select-line-height);
+}
+.st-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.st-select:hover:not([disabled], .error) {
+  background: var(--st-select-hover-background);
+}
+.st-select.error {
+  background-color: var(--st-select-error-background-color);
+  border: 1px solid var(--st-red);
+  color: var(--st-red);
+}

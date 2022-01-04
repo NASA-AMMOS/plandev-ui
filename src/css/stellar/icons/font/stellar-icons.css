@@ -1,0 +1,378 @@
+@font-face {
+  font-family: 'stellar-icons';
+  src: url('./stellar-icons.woff2?1a4ef283f5ffafa0b2f1924e779f5e93')
+      format('woff2'),
+    url('./stellar-icons.woff?1a4ef283f5ffafa0b2f1924e779f5e93') format('woff');
+}
+
+[class^='si-']::before,
+[class*=' si-']::before {
+  display: inline-block;
+  font-family: stellar-icons !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -0.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.si-activity_dictionary::before {
+  content: '\f101';
+}
+.si-activity_group::before {
+  content: '\f102';
+}
+.si-activity::before {
+  content: '\f103';
+}
+.si-arrow_down_left::before {
+  content: '\f104';
+}
+.si-arrow_down::before {
+  content: '\f105';
+}
+.si-arrow_left::before {
+  content: '\f106';
+}
+.si-arrow_line::before {
+  content: '\f107';
+}
+.si-arrow_up::before {
+  content: '\f108';
+}
+.si-az_el_target::before {
+  content: '\f109';
+}
+.si-bar_chart::before {
+  content: '\f10a';
+}
+.si-calendar::before {
+  content: '\f10b';
+}
+.si-camera_video::before {
+  content: '\f10c';
+}
+.si-check::before {
+  content: '\f10d';
+}
+.si-chevron_down::before {
+  content: '\f10e';
+}
+.si-chevron_left::before {
+  content: '\f10f';
+}
+.si-chevron_right::before {
+  content: '\f110';
+}
+.si-chevron_up::before {
+  content: '\f111';
+}
+.si-close_popout::before {
+  content: '\f112';
+}
+.si-close::before {
+  content: '\f113';
+}
+.si-collapse::before {
+  content: '\f114';
+}
+.si-collision::before {
+  content: '\f115';
+}
+.si-color_select::before {
+  content: '\f116';
+}
+.si-contrast::before {
+  content: '\f117';
+}
+.si-cpu::before {
+  content: '\f118';
+}
+.si-crosshairs_fine::before {
+  content: '\f119';
+}
+.si-crosshairs_loose::before {
+  content: '\f11a';
+}
+.si-cursor_default::before {
+  content: '\f11b';
+}
+.si-download::before {
+  content: '\f11c';
+}
+.si-drill_dark::before {
+  content: '\f11d';
+}
+.si-drill_light::before {
+  content: '\f11e';
+}
+.si-duplicate::before {
+  content: '\f11f';
+}
+.si-edit::before {
+  content: '\f120';
+}
+.si-ellipse::before {
+  content: '\f121';
+}
+.si-external_link::before {
+  content: '\f122';
+}
+.si-filter::before {
+  content: '\f123';
+}
+.si-font_size::before {
+  content: '\f124';
+}
+.si-graphql::before {
+  content: '\f125';
+}
+.si-grid::before {
+  content: '\f126';
+}
+.si-hamburger::before {
+  content: '\f127';
+}
+.si-helicopter::before {
+  content: '\f128';
+}
+.si-help_outlined::before {
+  content: '\f129';
+}
+.si-help::before {
+  content: '\f12a';
+}
+.si-home::before {
+  content: '\f12b';
+}
+.si-info::before {
+  content: '\f12c';
+}
+.si-layers::before {
+  content: '\f12d';
+}
+.si-letter_spacing::before {
+  content: '\f12e';
+}
+.si-line_height::before {
+  content: '\f12f';
+}
+.si-line::before {
+  content: '\f130';
+}
+.si-link::before {
+  content: '\f131';
+}
+.si-locate::before {
+  content: '\f132';
+}
+.si-lock::before {
+  content: '\f133';
+}
+.si-M20_Hazcam::before {
+  content: '\f134';
+}
+.si-M20_MastcamZ::before {
+  content: '\f135';
+}
+.si-M20_MEDA::before {
+  content: '\f136';
+}
+.si-M20_MOXIE::before {
+  content: '\f137';
+}
+.si-M20_Navcam::before {
+  content: '\f138';
+}
+.si-M20_PIXL::before {
+  content: '\f139';
+}
+.si-M20_RIMFAX::before {
+  content: '\f13a';
+}
+.si-M20_SHERLOC::before {
+  content: '\f13b';
+}
+.si-M20_SuperCam::before {
+  content: '\f13c';
+}
+.si-M20_WATSON::before {
+  content: '\f13d';
+}
+.si-maximize::before {
+  content: '\f13e';
+}
+.si-microscope::before {
+  content: '\f13f';
+}
+.si-minus::before {
+  content: '\f140';
+}
+.si-move::before {
+  content: '\f141';
+}
+.si-no_opacity::before {
+  content: '\f142';
+}
+.si-opacity::before {
+  content: '\f143';
+}
+.si-path::before {
+  content: '\f144';
+}
+.si-pen::before {
+  content: '\f145';
+}
+.si-person::before {
+  content: '\f146';
+}
+.si-pin_crossed::before {
+  content: '\f147';
+}
+.si-pin::before {
+  content: '\f148';
+}
+.si-plan::before {
+  content: '\f149';
+}
+.si-plus::before {
+  content: '\f14a';
+}
+.si-point_target::before {
+  content: '\f14b';
+}
+.si-polygon::before {
+  content: '\f14c';
+}
+.si-polyline::before {
+  content: '\f14d';
+}
+.si-popout::before {
+  content: '\f14e';
+}
+.si-proximity_target::before {
+  content: '\f14f';
+}
+.si-rectangle::before {
+  content: '\f150';
+}
+.si-refresh::before {
+  content: '\f151';
+}
+.si-region_target::before {
+  content: '\f152';
+}
+.si-remove_all::before {
+  content: '\f153';
+}
+.si-rotate_clockwise::before {
+  content: '\f154';
+}
+.si-rotate_counter_clockwise::before {
+  content: '\f155';
+}
+.si-rover_arm::before {
+  content: '\f156';
+}
+.si-rover_drive::before {
+  content: '\f157';
+}
+.si-rover::before {
+  content: '\f158';
+}
+.si-ruler::before {
+  content: '\f159';
+}
+.si-satellite::before {
+  content: '\f15a';
+}
+.si-search::before {
+  content: '\f15b';
+}
+.si-settings::before {
+  content: '\f15c';
+}
+.si-sol_latest::before {
+  content: '\f15d';
+}
+.si-sol::before {
+  content: '\f15e';
+}
+.si-sort::before {
+  content: '\f15f';
+}
+.si-SOX::before {
+  content: '\f160';
+}
+.si-spinner::before {
+  content: '\f161';
+}
+.si-star_outline::before {
+  content: '\f162';
+}
+.si-star::before {
+  content: '\f163';
+}
+.si-stroke_width::before {
+  content: '\f164';
+}
+.si-sunrise::before {
+  content: '\f165';
+}
+.si-sunset::before {
+  content: '\f166';
+}
+.si-switch::before {
+  content: '\f167';
+}
+.si-table::before {
+  content: '\f168';
+}
+.si-target_group::before {
+  content: '\f169';
+}
+.si-target_single::before {
+  content: '\f16a';
+}
+.si-text_alt::before {
+  content: '\f16b';
+}
+.si-text::before {
+  content: '\f16c';
+}
+.si-thermal::before {
+  content: '\f16d';
+}
+.si-three_dot::before {
+  content: '\f16e';
+}
+.si-timeline::before {
+  content: '\f16f';
+}
+.si-trash::before {
+  content: '\f170';
+}
+.si-unlinked::before {
+  content: '\f171';
+}
+.si-unlock::before {
+  content: '\f172';
+}
+.si-upload::before {
+  content: '\f173';
+}
+.si-utility_wrench::before {
+  content: '\f174';
+}
+.si-visible_hide::before {
+  content: '\f175';
+}
+.si-visible_show::before {
+  content: '\f176';
+}
+.si-warning::before {
+  content: '\f177';
+}

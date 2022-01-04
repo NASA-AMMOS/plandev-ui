@@ -1,5 +1,4 @@
-ARG NODE_LTS_IMAGE
-FROM ${NODE_LTS_IMAGE}
+FROM node:lts-alpine
 COPY ./build /app
 COPY package.json /app
 ENV NODE_TLS_REJECT_UNAUTHORIZED "0"
