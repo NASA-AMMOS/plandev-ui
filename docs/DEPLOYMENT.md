@@ -4,20 +4,19 @@ This document describes how to deploy aerie-ui via Docker. All of these instruct
 
 ## Dependencies
 
-The deployment of Aerie UI depends on other Aerie containers on the same Docker network in order to work properly. See the Aerie [docker-compose.yml](https://github.jpl.nasa.gov/Aerie/aerie/blob/develop/scripts/docker-compose-aerie/docker-compose.yml) file for examples on how to deploy these required containers.
+The deployment of Aerie UI depends on other Aerie containers on the same Docker network in order to work properly. See the complete Aerie [deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for examples on how to deploy these other required containers.
 
-## Docker Artifactory
+## Remote Docker Image
 
-These commands pull the [release-0.10.0](https://artifactory.jpl.nasa.gov/artifactory/webapp/#/artifacts/browse/tree/General/docker-release-local/gov/nasa/jpl/aerie/aerie-ui/release-0.10.0) Docker image from Artifactory and start a container from that image.
+This command pulls the latest Docker image from GitHub, and starts a container from that image.
 
 ```bash
-docker login artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie
-docker run --name aerie-ui -d -p 80:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.10.0
+docker run --name aerie-ui -d -p 80:80 ghcr.io/nasa-ammos/aerie-ui:latest
 ```
 
 Goto [http://localhost](http://localhost)
 
-## Docker Local
+## Local Docker Image
 
 First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the aerie-ui, build a Docker image, and start a container using the built image.
 
@@ -30,11 +29,3 @@ docker run --name aerie-ui -d -p 80:80 aerie-ui
 ```
 
 Goto [http://localhost](http://localhost)
-
-## Docker Volumes
-
-To start a container with custom configuration or UI views, you need to [mount](https://docs.docker.com/storage/bind-mounts/) a directory with your custom directories into the container:
-
-```bash
-docker run --name aerie-ui -d -p 80:80 artifactory.jpl.nasa.gov:16003/gov/nasa/jpl/aerie/aerie-ui:release-0.10.0
-```
