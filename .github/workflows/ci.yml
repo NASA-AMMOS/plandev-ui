@@ -48,3 +48,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Delete Untagged Docker Images
         uses: camargo/delete-untagged-docker-images-action@v1.0
+        with:
+          github-token: ${{ secrets.DELETE_PACKAGES }}
