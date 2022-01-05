@@ -46,11 +46,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Remove Untagged Image
-        uses: snok/container-retention-policy@v1
-        with:
-          account-type: org
-          image-names: ${{ env.IMAGE_NAME }}
-          org-name: ${{ github.repository_owner }}
-          token: ${{ github.token }}
-          untagged-only: true
