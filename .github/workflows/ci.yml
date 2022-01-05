@@ -8,7 +8,6 @@ on:
       - v*
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
   REGISTRY: ghcr.io
 
 jobs:
@@ -38,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
@@ -46,6 +45,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - uses: camargo/delete-untagged-docker-images-action@v1
+      - name: Delete Untagged Docker Images
+        uses: camargo/delete-untagged-docker-images-action@v1
         with:
           github-token: ${{ secrets.DELETE_PACKAGES_TOKEN }}
