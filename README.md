@@ -2,7 +2,9 @@
 
 # aerie-ui
 
-The client UI application and reusable UI components for [Aerie](https://github.com/NASA-AMMOS/aerie).
+The web-based client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
+
+<span style="display:block;text-align:center">![Example](/docs/images/Full_Example.png)</span>
 
 ## Want to help?
 
@@ -11,3 +13,7 @@ guidelines for [contributing][contributing]. If you are a developer you can get 
 
 [contributing]: ./docs/CONTRIBUTING.md
 [dev]: ./docs/DEVELOPER.md
+
+## License
+
+The scripts and documentation in this project are released under the [MIT License](LICENSE).
