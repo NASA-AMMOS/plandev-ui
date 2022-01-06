@@ -22,7 +22,7 @@ Before getting started with developing in this repository read/watch all of the 
 
 Before you can build aerie-ui, you must install and configure the following products on your development machine:
 
-- [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com)); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
+- [Git](http://git-scm.com) and/or the [GitHub app](https://desktop.github.com/); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
 
 - [Node.js LTS](http://nodejs.org) which is used to run a development web server, and generate distributable files. If you're on OSX you can use [brew](https://brew.sh/):
 

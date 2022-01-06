@@ -2,7 +2,7 @@
 
 # aerie-ui
 
-The web-based client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
+The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
 <span style="display:block;text-align:center">![Example](/docs/images/Full_Example.png)</span>
 
