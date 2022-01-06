@@ -513,9 +513,10 @@
   <Split
     bind:initialized={horizontalSplitInitialized}
     direction="horizontal"
-    ids={['#sections', '#right-panel']}
-    sizes={[75, 25]}
+    ids={['#left-panel', '#sections', '#right-panel']}
+    sizes={[0, 75, 25]}
   >
+    <div id="left-panel" />
     <Split
       id="sections"
       ids={$viewSectionIds}
@@ -652,6 +653,7 @@
     gap: 0.5rem;
   }
 
+  #left-panel,
   #right-panel {
     overflow-y: scroll;
   }
