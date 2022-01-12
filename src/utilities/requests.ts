@@ -1089,7 +1089,7 @@ export async function reqSimulate(
 
     const body = {
       query: SIMULATE,
-      variables: { planId: `${planId}` },
+      variables: { planId },
     };
     const options = {
       body: JSON.stringify(body),
