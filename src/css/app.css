@@ -2,14 +2,14 @@
 @import 'tippy.js/dist/tippy.css';
 @import 'toastify-js/src/toastify.css';
 
-@import './stellar/icons/font/stellar-icons.css';
-@import './stellar/font/inter/inter.css';
-@import './stellar/css/variables.css';
-@import './stellar/css/typography.css';
-@import './stellar/css/button.css';
-@import './stellar/css/card.css';
-@import './stellar/css/input.css';
-@import './stellar/css/select.css';
+@import '@nasa-jpl/stellar/icons/stellar-icons.css';
+@import '@nasa-jpl/stellar/font/inter/inter.css';
+@import '@nasa-jpl/stellar/css/variables.css';
+@import '@nasa-jpl/stellar/css/typography.css';
+@import '@nasa-jpl/stellar/css/button.css';
+@import '@nasa-jpl/stellar/css/card.css';
+@import '@nasa-jpl/stellar/css/input.css';
+@import '@nasa-jpl/stellar/css/select.css';
 
 @import './theme.css';
 @import './reset.css';

@@ -1,9 +1,0 @@
-.st-card {
-  border: var(--st-card-border);
-  border-radius: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  position: relative;
-  word-wrap: break-word;
-}

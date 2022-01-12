@@ -25,6 +25,7 @@
   "devDependencies": {
     "@codemirror/basic-setup": "^0.19.1",
     "@codemirror/lang-json": "^0.19.1",
+    "@nasa-jpl/stellar": "^1.0.0",
     "@sveltejs/adapter-node": "1.0.0-next.61",
     "@sveltejs/kit": "1.0.0-next.225",
     "@types/cookie": "^0.4.1",
