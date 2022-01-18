@@ -1,7 +1,7 @@
 import { browser } from '$app/env';
 import type { Client, ClientOptions } from 'graphql-ws';
 import { createClient as wsCreateClient } from 'graphql-ws';
-import isEqual from 'lodash-es/isEqual';
+import { isEqual } from 'lodash-es';
 import { noop } from 'svelte/internal';
 import type { Subscriber, Unsubscriber } from 'svelte/store';
 import { hasuraUrl } from '../utilities/app';
