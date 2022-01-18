@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { Activity, StringTMap } from '../../types';
+  import type { ActivitiesMap } from '../../types';
 
-  export let activitiesMap: StringTMap<Activity> = {};
+  export let activitiesMap: ActivitiesMap = {};
   export let children: string[] | null = null;
   export let expanded = true;
   export let type: string = '';

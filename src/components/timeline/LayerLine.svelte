@@ -12,7 +12,6 @@
     QuadtreePoint,
     Resource,
     ResourceLayerFilter,
-    StringTMap,
     TimeRange,
   } from '../../types';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -41,7 +40,7 @@
   let dpr: number = 1;
   let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreePoint>;
-  let visiblePointsById: StringTMap<LinePoint> = {};
+  let visiblePointsById: Record<number, LinePoint> = {};
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;

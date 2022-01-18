@@ -1,5 +1,3 @@
-import type { StringTMap } from '../types';
-
 /**
  * Comparator function for numbers or strings.
  * Defaults to ascending order.
@@ -43,8 +41,8 @@ export function getTarget(event: Event) {
 /**
  * Converts a list to a map keyed by 'id' (or alternate key).
  */
-export function keyBy<T>(list: T[], key = 'id'): StringTMap<T> {
-  return list.reduce((map: StringTMap<T>, value: T) => {
+export function keyBy<T>(list: T[], key = 'id'): Record<number, T> {
+  return list.reduce((map: Record<number, T>, value: T) => {
     map[value[key]] = value;
     return map;
   }, {});

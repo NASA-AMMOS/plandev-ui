@@ -25,7 +25,6 @@
     QuadtreeRect,
     Resource,
     ResourceLayerFilter,
-    StringTMap,
     XRangeLayerColorScheme,
     XRangePoint,
   } from '../../types';
@@ -52,7 +51,7 @@
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
   let quadtree: Quadtree<QuadtreeRect>;
-  let visiblePointsById: StringTMap<XRangePoint> = {};
+  let visiblePointsById: Record<number, XRangePoint> = {};
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -265,7 +264,7 @@
             });
           }
         } else if (schema.type === 'string') {
-          const domainMap: StringTMap<string> = {};
+          const domainMap: Record<string, string> = {};
           for (let i = 0; i < values.length; ++i) {
             const { x, y } = values[i];
             const text = y as string;

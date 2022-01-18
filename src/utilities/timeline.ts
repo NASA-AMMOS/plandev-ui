@@ -1,7 +1,7 @@
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
 import type { ScaleLinear, ScaleTime } from 'd3-scale';
 import { scaleLinear, scaleTime } from 'd3-scale';
-import type { QuadtreePoint, QuadtreeRect, StringTMap } from '../types';
+import type { QuadtreePoint, QuadtreeRect } from '../types';
 
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
@@ -34,7 +34,7 @@ export function searchQuadtreePoint<T>(
   x: number,
   y: number,
   extent: number,
-  map: StringTMap<T>,
+  map: Record<number, T>,
 ): T[] {
   const points: T[] = [];
   if (quadtree) {
@@ -67,7 +67,7 @@ export function searchQuadtreeRect<T>(
   y: number,
   maxH: number,
   maxW: number,
-  map: StringTMap<T>,
+  map: Record<number, T>,
 ): T[] {
   const points: T[] = [];
 

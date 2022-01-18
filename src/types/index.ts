@@ -6,7 +6,6 @@ export * from './d3';
 export * from './parameter';
 export * from './scheduling';
 export * from './simulation';
-export * from './string-t-map';
 export * from './svelte-kit';
 export * from './time-range';
 export * from './timeline';

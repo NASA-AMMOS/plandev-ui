@@ -8,11 +8,11 @@
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type {
     Activity,
+    ActivitiesMap,
     ActivityLayerFilter,
     ActivityPoint,
     DropActivity,
     QuadtreeRect,
-    StringTMap,
     TimeRange,
     UpdateActivity,
   } from '../../types';
@@ -23,7 +23,7 @@
   const dispatch = createEventDispatcher();
 
   export let activities: Activity[] = [];
-  export let activitiesMap: StringTMap<Activity> = {};
+  export let activitiesMap: ActivitiesMap = {};
   export let activityColor: string = '';
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
@@ -54,7 +54,7 @@
   let maxActivityWidth: number;
   let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreeRect>;
-  let visiblePointsById: StringTMap<ActivityPoint> = {};
+  let visiblePointsById: Record<number, ActivityPoint> = {};
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -436,7 +436,7 @@
   }
 
   function sortChildActivities(
-    activitiesMap: StringTMap<Activity>,
+    activitiesMap: ActivitiesMap,
   ): (aId: string, bId: string) => number {
     return (aId: string, bId: string): number => {
       const a = activitiesMap[aId];

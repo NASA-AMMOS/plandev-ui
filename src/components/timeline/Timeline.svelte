@@ -5,13 +5,13 @@
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
   import type {
     Activity,
+    ActivitiesMap,
     ConstraintViolation,
     MouseDown,
     MouseOver,
     MouseOverViolations,
     Resource,
     Row,
-    StringTMap,
     TimeRange,
     VerticalGuide,
   } from '../../types';
@@ -24,7 +24,7 @@
   const dispatch = createEventDispatcher();
 
   export let activities: Activity[] = [];
-  export let activitiesMap: StringTMap<Activity> = {};
+  export let activitiesMap: ActivitiesMap = {};
   export let constraintViolations: ConstraintViolation[] = [];
   export let containerSize: number;
   export let id: number;

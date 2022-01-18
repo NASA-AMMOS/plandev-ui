@@ -1,5 +1,3 @@
-import type { StringTMap } from '.';
-
 export type SchedulingResponse = {
   reason?: string;
   results?: SchedulingResults;
@@ -8,5 +6,5 @@ export type SchedulingResponse = {
 
 export type SchedulingResults = {
   activityCount: number;
-  goalScores: StringTMap<number>;
+  goalScores: Record<string, number>;
 };

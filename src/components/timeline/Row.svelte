@@ -5,6 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import type {
     Activity,
+    ActivitiesMap,
     Axis,
     ConstraintViolation,
     HorizontalGuide,
@@ -13,7 +14,6 @@
     MouseOver,
     Point,
     Resource,
-    StringTMap,
     TimeRange,
     VerticalGuide,
     XAxisTick,
@@ -32,7 +32,7 @@
   const dispatch = createEventDispatcher();
 
   export let activities: Activity[] = [];
-  export let activitiesMap: StringTMap<Activity> = {};
+  export let activitiesMap: ActivitiesMap = {};
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
@@ -58,8 +58,8 @@
   let mousemove: MouseEvent;
   let mouseout: MouseEvent;
   let mouseup: MouseEvent;
-  let mouseDownPointsByLayer: StringTMap<Point[]> = {};
-  let mouseOverPointsByLayer: StringTMap<Point[]> = {};
+  let mouseDownPointsByLayer: Record<number, Point[]> = {};
+  let mouseOverPointsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
