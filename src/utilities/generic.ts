@@ -70,26 +70,6 @@ export function parseJsonFile<T>(file: File): Promise<T> {
 }
 
 /**
- * Parses a file indexed in a FileList as JSON and returns the result.
- */
-export async function parseJsonFileList<T>(
-  files: FileList,
-  index: number = 0,
-): Promise<T> {
-  if (files && files.length) {
-    try {
-      const file = files.item(index);
-      const json = await parseJsonFile<T>(file);
-      return json;
-    } catch (e) {
-      console.log(e);
-      return {} as T;
-    }
-  }
-  return {} as T;
-}
-
-/**
  * Removes a query param from the current URL.
  */
 export function removeQueryParam(key: string): void {

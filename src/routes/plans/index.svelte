@@ -36,20 +36,17 @@
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { onMount } from 'svelte';
-  import {
-    compare,
-    parseJsonFileList,
-    removeQueryParam,
-  } from '../../utilities/generic';
+  import { compare, removeQueryParam } from '../../utilities/generic';
   import { required, timestamp } from '../../utilities/validators';
   import {
     CreatePlan,
     CreatePlanModel,
     reqCreatePlan,
+    reqCreateSimulation,
     reqDeletePlanAndSimulations,
     reqGetPlansAndModels,
   } from '../../utilities/requests';
-  import type { ArgumentsMap } from '../../types';
+  import { simulationTemplates } from '../../stores/simulation';
 
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
@@ -59,18 +56,19 @@
   let endTime = '';
   let endTimeSubmittable = false;
   let error: string | null = null;
-  let files: FileList;
-  let modelId: number;
+  let modelId: number = -1;
   let name = '';
   let nameSubmittable = false;
+  let simulationTemplateId: number | null = null;
   let startTime = '';
   let startTimeSubmittable = false;
 
   $: createButtonDisabeld =
     !endTimeSubmittable ||
-    modelId === undefined ||
+    modelId === -1 ||
     !nameSubmittable ||
     !startTimeSubmittable;
+  $: simulationTemplates.setVariables({ modelId });
   $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
@@ -86,14 +84,8 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const simulationArguments = await parseJsonFileList<ArgumentsMap>(files);
-    const newPlan = await reqCreatePlan(
-      endTime,
-      modelId,
-      name,
-      startTime,
-      simulationArguments,
-    );
+    const newPlan = await reqCreatePlan(endTime, modelId, name, startTime);
+    await reqCreateSimulation(newPlan.id, simulationTemplateId);
 
     if (newPlan) {
       plans = [...plans, newPlan];
@@ -126,7 +118,19 @@
 
         <Field>
           <Label for="model">Models</Label>
-          <select bind:value={modelId} class="st-select w-100" name="model">
+          <select
+            class="st-select w-100"
+            name="model"
+            value={modelId}
+            on:change={({ currentTarget }) => {
+              const { value } = currentTarget;
+              if (value !== '') {
+                modelId = parseFloat(value);
+              } else {
+                modelId = -1;
+              }
+            }}
+          >
             <option value="" />
             {#each sortedModels as model}
               <option value={model.id}>
@@ -169,8 +173,31 @@
         </FieldInputText>
 
         <Field>
-          <Label for="file">Simulation Configuration</Label>
-          <input class="w-100" name="file" type="file" bind:files />
+          <Label for="simulation-templates">Simulation Templates</Label>
+          {#if $simulationTemplates.length}
+            <select
+              class="st-select w-100"
+              name="simulation-templates"
+              value={simulationTemplateId}
+              on:change={({ currentTarget }) => {
+                const { value } = currentTarget;
+                if (value !== '') {
+                  simulationTemplateId = parseFloat(value);
+                } else {
+                  simulationTemplateId = null;
+                }
+              }}
+            >
+              <option value="" />
+              {#each $simulationTemplates as template}
+                <option value={template.id}>
+                  {template.description}
+                </option>
+              {/each}
+            </select>
+          {:else}
+            <input class="st-input w-100" disabled value="Empty" />
+          {/if}
         </Field>
 
         <Field>

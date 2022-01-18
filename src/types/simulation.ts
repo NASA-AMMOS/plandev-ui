@@ -5,6 +5,12 @@ export type Simulation = {
   id: number;
 };
 
+export type SimulationTemplate = {
+  arguments: ArgumentsMap;
+  description: string;
+  id: number;
+};
+
 export type Resource = {
   name: string;
   schema: any;

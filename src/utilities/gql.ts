@@ -183,6 +183,16 @@ export const SIMULATE = `
   }
 `;
 
+export const SUB_SIM_TEMPLATES = `
+  subscription SubSimTemplates($modelId: Int!) {
+    templates: simulation_template(where: { model_id: { _eq: $modelId } }) {
+      arguments
+      description
+      id
+    }
+  }
+`;
+
 export const UPDATE_ACTIVITY = `
   mutation UpdateActivity($id: Int!, $activity: activity_set_input!) {
     updateActivity: update_activity_by_pk(

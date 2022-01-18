@@ -1,11 +1,13 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { ArgumentsMap, ParametersMap } from '../types';
+import type { ArgumentsMap, ParametersMap, SimulationTemplate } from '../types';
+import { SUB_SIM_TEMPLATES } from '../utilities/gql';
 import {
   reqUpdateSimulationArguments,
   reqUploadFiles,
 } from '../utilities/requests';
+import { getGqlSubscribable } from './subscribable';
 
 /* Data. */
 
@@ -51,6 +53,12 @@ export const simulationStatus = (() => {
     },
   };
 })();
+
+export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
+  SUB_SIM_TEMPLATES,
+  { modelId: -1 },
+  [],
+);
 
 /* Utility Functions. */
 

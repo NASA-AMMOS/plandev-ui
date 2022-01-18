@@ -1,4 +1,3 @@
-import { browser } from '$app/env';
 import { get } from 'svelte/store';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
 import type {
@@ -12,7 +11,6 @@ import type {
   CreateConstraint,
   CreateViewResponse,
   DeleteViewResponse,
-  Env,
   Fetch,
   GetViewResponse,
   LoginResponse,
@@ -30,6 +28,7 @@ import type {
   User,
   View,
 } from '../types';
+import { gatewayUrl, hasuraUrl, schedulerUrl } from './app';
 import {
   CREATE_ACTIVITY,
   CREATE_CONSTRAINT,
@@ -134,33 +133,6 @@ export type UpdateActivityInput = {
 };
 
 /* Helpers. */
-
-function gatewayUrl() {
-  const { GATEWAY_CLIENT_URL, GATEWAY_SERVER_URL } = get<Env>(envStore);
-  if (browser) {
-    return GATEWAY_CLIENT_URL;
-  } else {
-    return GATEWAY_SERVER_URL;
-  }
-}
-
-function hasuraUrl() {
-  const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
-  if (browser) {
-    return HASURA_CLIENT_URL;
-  } else {
-    return HASURA_SERVER_URL;
-  }
-}
-
-function schedulerUrl() {
-  const { SCHEDULER_CLIENT_URL, SCHEDULER_SERVER_URL } = get<Env>(envStore);
-  if (browser) {
-    return SCHEDULER_CLIENT_URL;
-  } else {
-    return SCHEDULER_SERVER_URL;
-  }
-}
 
 function toActivity(activity: any, startTime: Date): Activity {
   return {
@@ -344,7 +316,6 @@ export async function reqCreatePlan(
   modelId: number,
   name: string,
   startTime: string,
-  simulationArguments: ArgumentsMap,
 ): Promise<CreatePlan | null> {
   let response: Response;
   let json: any;
@@ -387,8 +358,6 @@ export async function reqCreatePlan(
       startTime,
     };
 
-    await reqCreateSimulation(id, simulationArguments);
-
     return plan;
   } catch (e) {
     console.log(e);
@@ -399,8 +368,9 @@ export async function reqCreatePlan(
 }
 
 export async function reqCreateSimulation(
-  plan_id: string,
-  simulationArguments: ArgumentsMap,
+  plan_id: number,
+  simulation_template_id: number | null = null,
+  simulationArguments: ArgumentsMap = {},
 ): Promise<boolean> {
   let response: Response;
   let json: any;
@@ -408,7 +378,11 @@ export async function reqCreateSimulation(
     const user = get<User | null>(userStore);
     const HASURA_URL = hasuraUrl();
 
-    const simulationInput = { arguments: simulationArguments, plan_id };
+    const simulationInput = {
+      arguments: simulationArguments,
+      plan_id,
+      simulation_template_id,
+    };
     const body = {
       query: CREATE_SIMULATION,
       variables: { simulation: simulationInput },
