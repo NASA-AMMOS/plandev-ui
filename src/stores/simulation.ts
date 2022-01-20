@@ -1,12 +1,9 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { ArgumentsMap, ParametersMap, SimulationTemplate } from '../types';
+import type { ParametersMap, Simulation, SimulationTemplate } from '../types';
 import { SUB_SIM_TEMPLATES } from '../utilities/gql';
-import {
-  reqUpdateSimulationArguments,
-  reqUploadFiles,
-} from '../utilities/requests';
+import { reqUpdateSimulation, reqUploadFiles } from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
 
 /* Data. */
@@ -24,8 +21,8 @@ export enum SimulationStatus {
 /* Stores. */
 
 export const modelParametersMap: Writable<ParametersMap> = writable({});
-export const selectedSimulationId: Writable<number | null> = writable(null);
-export const simulationArgumentsMap: Writable<ArgumentsMap> = writable({});
+
+export const simulation: Writable<Simulation | null> = writable(null);
 
 export const simulationStatus = (() => {
   const {
@@ -62,21 +59,20 @@ export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
 
 /* Utility Functions. */
 
-export async function updateSimulationArguments(
-  simulationId: number,
-  argumentsMap: ArgumentsMap,
+export async function updateSimulation(
+  newSimulation: Simulation,
   newFiles: File[],
 ): Promise<void> {
   try {
-    await reqUpdateSimulationArguments(simulationId, argumentsMap);
+    const updatedSimulation = await reqUpdateSimulation(newSimulation);
     await reqUploadFiles(newFiles);
-    simulationArgumentsMap.set(argumentsMap);
+    simulation.set(updatedSimulation);
     Toastify({
       backgroundColor: '#2da44e',
       duration: 3000,
       gravity: 'bottom',
       position: 'left',
-      text: 'Arguments Updated Successfully',
+      text: 'Simulation Updated Successfully',
     }).showToast();
   } catch (e) {
     console.log(e);
@@ -85,7 +81,7 @@ export async function updateSimulationArguments(
       duration: 3000,
       gravity: 'bottom',
       position: 'left',
-      text: 'Arguments Update Failed',
+      text: 'Simulation Update Failed',
     }).showToast();
   }
 }

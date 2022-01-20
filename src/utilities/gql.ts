@@ -143,6 +143,11 @@ export const GET_PLAN = `
       simulations {
         arguments
         id
+        template: simulation_template {
+          arguments
+          description
+          id
+        }
       }
       startTime: start_time
     }
@@ -213,12 +218,18 @@ export const UPDATE_CONSTRAINT = `
   }
 `;
 
-export const UPDATE_SIMULATION_ARGUMENTS = `
-  mutation UpdateSimulationArguments($simulationId: Int!, $arguments: jsonb!) {
-    updateSimulationArguments: update_simulation_by_pk(
-      pk_columns: {id: $simulationId}, _set: { arguments: $arguments }
+export const UPDATE_SIMULATION = `
+  mutation UpdateSimulation($id: Int!, $simulation: simulation_set_input!) {
+    updateSimulation: update_simulation_by_pk(
+      pk_columns: {id: $id}, _set: $simulation
     ) {
+      arguments
       id
+      template: simulation_template {
+        arguments
+        description
+        id
+      }
     }
   }
 `;

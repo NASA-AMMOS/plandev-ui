@@ -2,13 +2,13 @@
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
   import type {
     ActivityType,
-    ArgumentsMap,
     Constraint,
     CreateActivity,
     CreateConstraint,
     DropActivity,
     MouseDown,
     Row,
+    Simulation,
     TimeRange,
     UpdateActivity,
     View,
@@ -96,11 +96,11 @@
   import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
-    selectedSimulationId,
-    simulationArgumentsMap,
     SimulationStatus,
+    simulation,
     simulationStatus,
-    updateSimulationArguments,
+    simulationTemplates,
+    updateSimulation,
   } from '../../stores/simulation';
   import {
     createView,
@@ -137,14 +137,21 @@
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
-    const { activities, constraints, model, simulations } = initialPlan;
-    const [simulation] = simulations;
-    $activitiesMap = keyBy(activities);
+    const {
+      activities: initialActivities,
+      constraints,
+      model,
+      simulations,
+    } = initialPlan;
+    const [initialSimulation] = simulations;
+
+    $activitiesMap = keyBy(initialActivities);
     $modelConstraints = model.constraints;
     $modelParametersMap = model.parameters.parameters;
     $planConstraints = constraints;
-    $selectedSimulationId = simulation.id;
-    $simulationArgumentsMap = simulation.arguments;
+    $simulation = initialSimulation;
+
+    simulationTemplates.setVariables({ modelId: model.id });
   }
   $: if (initialView) {
     $view = initialView;
@@ -170,8 +177,7 @@
     $resources = [];
     $schedulingStatus = SchedulingStatus.Clean;
     $selectedActivityId = null;
-    $selectedSimulationId = null;
-    $simulationArgumentsMap = {};
+    $simulation = null;
     $violations = [];
   });
 
@@ -295,15 +301,15 @@
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  function onUpdateSimulationArguments(
+  function onUpdateSimulation(
     event: CustomEvent<{
-      newArgumentsMap: ArgumentsMap;
-      newFiles: File[];
+      newFiles?: File[];
+      newSimulation: Simulation;
     }>,
   ) {
     const { detail } = event;
-    const { newArgumentsMap, newFiles } = detail;
-    updateSimulationArguments($selectedSimulationId, newArgumentsMap, newFiles);
+    const { newSimulation, newFiles = [] } = detail;
+    updateSimulation(newSimulation, newFiles);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -612,9 +618,10 @@
         <TimelineForm />
       {:else if $simulationConfigurationPanel.visible}
         <SimulationConfiguration
-          argumentsMap={$simulationArgumentsMap}
-          parametersMap={$modelParametersMap}
-          on:updateArguments={onUpdateSimulationArguments}
+          modelParametersMap={$modelParametersMap}
+          simulation={$simulation}
+          simulationTemplates={$simulationTemplates}
+          on:updateSimulation={onUpdateSimulation}
         />
       {:else if $viewEditorPanel.visible}
         <CodeMirrorJsonEditor

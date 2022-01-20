@@ -47,7 +47,7 @@ import {
   SIMULATE,
   UPDATE_ACTIVITY,
   UPDATE_CONSTRAINT,
-  UPDATE_SIMULATION_ARGUMENTS,
+  UPDATE_SIMULATION,
   VALIDATE_ACTIVITY_ARGUMENTS,
 } from './gql';
 import {
@@ -1237,10 +1237,9 @@ export async function reqUpdateConstraint(
   }
 }
 
-export async function reqUpdateSimulationArguments(
-  simulationId: number,
-  argumentsMap: ArgumentsMap,
-): Promise<boolean> {
+export async function reqUpdateSimulation(
+  simulation: Simulation,
+): Promise<Simulation | null> {
   let response: Response;
   let json: any;
   try {
@@ -1248,8 +1247,14 @@ export async function reqUpdateSimulationArguments(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: UPDATE_SIMULATION_ARGUMENTS,
-      variables: { arguments: argumentsMap, simulationId },
+      query: UPDATE_SIMULATION,
+      variables: {
+        id: simulation.id,
+        simulation: {
+          arguments: simulation.arguments,
+          simulation_template_id: simulation?.template?.id ?? null,
+        },
+      },
     };
     const options = {
       body: JSON.stringify(body),
@@ -1265,12 +1270,14 @@ export async function reqUpdateSimulationArguments(
     if (!response.ok) throw new Error(response.statusText);
     if (json.errors) throw new Error(json.errors[0].message);
 
-    return true;
+    const { data } = json;
+    const { updateSimulation } = data;
+    return updateSimulation;
   } catch (e) {
     console.log(e);
     console.log(response);
     console.log(json);
-    return false;
+    return null;
   }
 }
 

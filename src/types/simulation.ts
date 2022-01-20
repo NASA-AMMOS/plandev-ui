@@ -3,6 +3,7 @@ import type { ArgumentsMap } from '.';
 export type Simulation = {
   arguments: ArgumentsMap;
   id: number;
+  template: SimulationTemplate | null;
 };
 
 export type SimulationTemplate = {

@@ -5,25 +5,19 @@ import type {
   ParametersMap,
 } from '../types';
 
-export function getArgument(value: Argument, schema: any): any {
+export function getArgument(
+  value: Argument,
+  schema: any,
+  defaultValue?: Argument,
+): any {
   const type = schema.type;
 
   if (value !== null && value !== undefined) {
     return value;
-  } else if (type === 'boolean') {
-    return false;
-  } else if (type === 'duration') {
-    return 0;
-  } else if (type === 'int') {
-    return 0;
-  } else if (type === 'path') {
-    return '/etc/os-release';
-  } else if (type === 'real') {
-    return 0;
+  } else if (defaultValue !== undefined) {
+    return defaultValue;
   } else if (type === 'series') {
     return [];
-  } else if (type === 'string') {
-    return '';
   } else if (type === 'struct') {
     const struct = Object.entries(schema.items).reduce(
       (struct, [key, subSchema]) => ({
@@ -33,8 +27,6 @@ export function getArgument(value: Argument, schema: any): any {
       {},
     );
     return struct;
-  } else if (type === 'variant') {
-    return '';
   } else {
     return null;
   }
@@ -43,11 +35,13 @@ export function getArgument(value: Argument, schema: any): any {
 export function getFormParameters(
   parametersMap: ParametersMap,
   argumentsMap: ArgumentsMap,
+  defaultArgumentsMap: ArgumentsMap = {},
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(
     ([name, { schema }]) => {
       const arg: Argument = argumentsMap[name];
-      const value = getArgument(arg, schema);
+      const defaultArg: Argument | undefined = defaultArgumentsMap[name];
+      const value = getArgument(arg, schema, defaultArg);
 
       const formParameter: FormParameter = {
         error: null,
@@ -62,6 +56,15 @@ export function getFormParameters(
   );
 
   return formParameters;
+}
+
+export function isNotEmpty(value: any): boolean {
+  return (
+    value !== null &&
+    value !== undefined &&
+    !Number.isNaN(value) &&
+    value !== ''
+  );
 }
 
 export function updateFormParameter(
