@@ -7,7 +7,6 @@
 
   type NavItem = {
     iconClass: string;
-    iconFontSize: number;
     name: string;
     path: string | null;
   };
@@ -15,37 +14,31 @@
   export let navItems: NavItem[] = [
     {
       iconClass: 'bi bi-calendar-range',
-      iconFontSize: 16,
       name: 'Plans',
       path: '/plans',
     },
     {
       iconClass: 'bi bi-bar-chart',
-      iconFontSize: 16,
       name: 'Models',
       path: '/models',
     },
     {
       iconClass: 'si si-graphql',
-      iconFontSize: 25,
       name: 'GraphQL',
       path: null,
     },
     {
       iconClass: 'bi bi-diagram-3',
-      iconFontSize: 16,
       name: 'Gateway',
       path: null,
     },
     {
       iconClass: 'bi bi-box-arrow-right',
-      iconFontSize: 16,
       name: 'Logout',
       path: null,
     },
     {
       iconClass: 'bi bi-info-circle',
-      iconFontSize: 16,
       name: 'About',
       path: null,
     },
@@ -91,7 +84,7 @@
       on:click|stopPropagation={() => onClickNavItem(item)}
       use:tooltip={{ content: item.name, placement: 'right' }}
     >
-      <i class={item.iconClass} style="font-size: {item.iconFontSize}px" />
+      <i class={item.iconClass} />
     </div>
   {/each}
 </div>
@@ -107,6 +100,7 @@
     align-items: center;
     cursor: pointer;
     display: flex;
+    font-size: 16px;
     justify-content: center;
   }
 

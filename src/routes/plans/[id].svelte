@@ -512,7 +512,7 @@
           placement: 'bottom',
         }}
       >
-        <i class="si si-activity_dictionary" />
+        <i class="bi bi-book" />
       </button>
     </div>
   </TopBar>
