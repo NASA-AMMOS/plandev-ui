@@ -13,15 +13,15 @@ import type {
   DeleteViewResponse,
   Fetch,
   GetViewResponse,
-  LoginResponse,
-  LogoutResponse,
   ParametersMap,
   ParameterValidationResponse,
+  ReqLoginResponse,
+  ReqLogoutResponse,
+  ReqSessionResponse,
   Resource,
   ResourceValue,
   SchedulingResponse,
   Session,
-  SessionResponse,
   Simulation,
   UpdateActivity,
   UpdateViewResponse,
@@ -866,7 +866,7 @@ export async function reqGetViews(): Promise<View[] | null> {
 export async function reqLogin(
   username: string,
   password: string,
-): Promise<LoginResponse> {
+): Promise<ReqLoginResponse> {
   let response: Response;
   let json: any;
   try {
@@ -898,7 +898,7 @@ export async function reqLogin(
   }
 }
 
-export async function reqLogout(ssoToken: string): Promise<LogoutResponse> {
+export async function reqLogout(ssoToken: string): Promise<ReqLogoutResponse> {
   let response: Response;
   let json: any;
   try {
@@ -996,7 +996,9 @@ export async function reqSchedule(planId: number): Promise<SchedulingResponse> {
   }
 }
 
-export async function reqSession(ssoToken: string): Promise<SessionResponse> {
+export async function reqSession(
+  ssoToken: string,
+): Promise<ReqSessionResponse> {
   let response: Response;
   let json: any;
   try {

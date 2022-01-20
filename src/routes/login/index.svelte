@@ -15,10 +15,10 @@
 <script lang="ts">
   import { session } from '$app/stores';
   import { onMount } from 'svelte';
+  import type { LoginResponseBody } from '../auth/login';
   import Field from '../../components/form/Field.svelte';
   import Label from '../../components/form/Label.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import type { LoginPostResponseBody } from '../auth/login';
 
   let error = null;
   let loginButtonText = 'Login';
@@ -43,7 +43,7 @@
         method: 'POST',
       };
       const response = await fetch('/auth/login', options);
-      const loginResponse: LoginPostResponseBody = await response.json();
+      const loginResponse: LoginResponseBody = await response.json();
       const { message, success, user = null } = loginResponse;
 
       if (success) {

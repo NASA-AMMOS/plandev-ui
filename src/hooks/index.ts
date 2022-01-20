@@ -1,33 +1,21 @@
-import type { Request } from '@sveltejs/kit';
+import type { RequestEvent } from '@sveltejs/kit';
 import type { MaybePromise } from '@sveltejs/kit/types/helper';
-import type { ServerRequest, ServerResponse } from '@sveltejs/kit/types/hooks';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
 import { env as envStore } from '../stores/app';
-import type { Env, User } from '../types';
+import type { Env, HandleInput, Session, User } from '../types';
 import { reqSession } from '../utilities/requests';
 
-type HandleInput = {
-  request: ServerRequest<Record<string, any>>;
-  resolve: (
-    request: ServerRequest<Record<string, any>>,
-  ) => MaybePromise<ServerResponse>;
-};
-
-type Session = {
-  user: User | null;
-};
-
 export async function handle({
-  request,
+  event,
   resolve,
-}: HandleInput): Promise<ServerResponse> {
+}: HandleInput): Promise<Response> {
   const { AUTH_TYPE } = get<Env>(envStore);
 
   if (AUTH_TYPE === 'none') {
-    request.locals.user = { id: 'unknown', ssoToken: 'unknown' };
+    event.locals.user = { id: 'unknown', ssoToken: 'unknown' };
   } else {
-    const cookies = parse(request.headers.cookie || '');
+    const cookies = parse(event.request.headers.get('cookie') || '');
     const { user: userCookie = null } = cookies;
 
     if (userCookie) {
@@ -38,22 +26,22 @@ export async function handle({
       const { success } = await reqSession(user.ssoToken);
 
       if (success) {
-        request.locals.user = user;
+        event.locals.user = user;
       } else {
-        request.locals.user = null;
+        event.locals.user = null;
       }
     } else {
-      request.locals.user = null;
+      event.locals.user = null;
     }
   }
 
-  return await resolve(request);
+  return await resolve(event);
 }
 
 export function getSession(
-  request: Request<Record<string, any>>,
+  event: RequestEvent<Session>,
 ): MaybePromise<Session> {
-  const { locals } = request;
+  const { locals } = event;
   const { user = null } = locals;
   return {
     user,

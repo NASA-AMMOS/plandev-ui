@@ -1,17 +1,17 @@
-import type { Request } from '@sveltejs/kit';
+import type { RequestEvent } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import type { LogoutResponse } from '../../types';
+import type { ReqLogoutResponse, Session } from '../../types';
 import { reqLogout } from '../../utilities/requests';
 
 /* Types. */
 
-export type LogoutPostResponseBody = {
+export type LogoutResponseBody = {
   message: string;
   success: boolean;
 };
 
-export type LogoutPostResponse = {
-  body?: LogoutPostResponseBody;
+export type LogoutResponse = {
+  body?: LogoutResponseBody;
   headers?: ResponseHeaders;
   status?: number;
 };
@@ -19,14 +19,14 @@ export type LogoutPostResponse = {
 /* Endpoints. */
 
 export async function post(
-  req: Request<Record<string, any>, unknown>,
-): Promise<LogoutPostResponse> {
-  const { locals } = req;
+  event: RequestEvent<Session>,
+): Promise<LogoutResponse> {
+  const { locals } = event;
   const { user } = locals;
   const { ssoToken = '' } = user;
 
   try {
-    const logoutResponse: LogoutResponse = await reqLogout(ssoToken);
+    const logoutResponse: ReqLogoutResponse = await reqLogout(ssoToken);
     const { message, success } = logoutResponse;
 
     if (success) {

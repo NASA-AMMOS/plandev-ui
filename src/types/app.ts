@@ -8,11 +8,11 @@ export type Env = {
   SCHEDULER_SERVER_URL: string;
 };
 
-export type Session = {
-  user: User;
-};
-
 export type User = {
   id: string;
   ssoToken: string;
+};
+
+export type Session = {
+  user: User | null;
 };

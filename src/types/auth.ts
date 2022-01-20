@@ -1,16 +1,16 @@
-export type LoginResponse = {
+export type ReqLoginResponse = {
   message: string;
   ssoToken: string | null;
   success: boolean;
   username: string | null;
 };
 
-export type LogoutResponse = {
+export type ReqLogoutResponse = {
   message: string;
   success: boolean;
 };
 
-export type SessionResponse = {
+export type ReqSessionResponse = {
   message: string;
   success: boolean;
 };
