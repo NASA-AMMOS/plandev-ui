@@ -171,7 +171,6 @@
         disabled={isChild}
         name="start-time"
       />
-      <div slot="error" />
     </Field>
 
     <fieldset>

@@ -131,13 +131,11 @@
               </option>
             {/each}
           </select>
-          <div slot="error" />
         </Field>
 
         <Field field={nameField}>
           <label for="name" slot="label">Name</label>
           <input autocomplete="off" class="st-input w-100" name="name" />
-          <div slot="error" />
         </Field>
 
         <Field field={startTimeField}>
@@ -148,7 +146,6 @@
             name="start-time"
             placeholder="YYYY-DDDThh:mm:ss"
           />
-          <div slot="error" />
         </Field>
 
         <Field field={endTimeField}>
@@ -159,7 +156,6 @@
             name="end-time"
             placeholder="YYYY-DDDThh:mm:ss"
           />
-          <div slot="error" />
         </Field>
 
         <Field field={simTemplateField}>

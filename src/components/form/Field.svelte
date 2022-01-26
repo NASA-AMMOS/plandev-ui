@@ -4,14 +4,13 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { FieldStore } from '../../types';
   import { getTarget } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
+  import FieldError from './FieldError.svelte';
 
   const dispatch = createEventDispatcher();
 
   export let field: FieldStore<any>;
 
   let container: HTMLFieldSetElement | null;
-  let error: HTMLDivElement | null;
   let input: HTMLInputElement | null;
   let label: HTMLLabelElement | null;
   let select: HTMLSelectElement | null;
@@ -45,15 +44,6 @@
       select.classList.add('error');
     } else {
       select.classList.remove('error');
-    }
-  }
-
-  $: if (error && field) {
-    const errorMessageDiv = error.querySelector('div');
-    if ($field.invalid) {
-      errorMessageDiv.innerHTML = $field.firstError;
-    } else {
-      errorMessageDiv.innerHTML = '';
     }
   }
 
@@ -114,35 +104,5 @@
 <fieldset bind:this={container}>
   <slot name="label" />
   <slot>No input element provided!</slot>
-  {#if $$slots.error && $field.invalid}
-    <div
-      bind:this={error}
-      class="error"
-      use:tooltip={{
-        content: $field.firstError,
-        maxWidth: 'none',
-        placement: 'bottom',
-        theme: 'error',
-      }}
-    >
-      <slot name="error" />
-    </div>
-  {/if}
+  <FieldError {field} />
 </fieldset>
-
-<style>
-  .error {
-    cursor: default;
-    display: table;
-    table-layout: fixed;
-    width: 100%;
-  }
-
-  .error > :global(div) {
-    color: var(--st-red);
-    display: table-cell;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-</style>
