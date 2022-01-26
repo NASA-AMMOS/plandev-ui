@@ -8,6 +8,7 @@
     Simulation,
     SimulationTemplate,
   } from '../../types';
+  import { getTarget } from '../../utilities/generic';
   import {
     getFormParameters,
     isNotEmpty,
@@ -29,18 +30,12 @@
     simulation?.template?.arguments,
   );
 
-  async function onChangeSimulationTemplate(
-    target: EventTarget & HTMLSelectElement,
-  ) {
-    const { value } = target;
-    let templateId = null;
-    if (value !== '') {
-      templateId = parseFloat(value);
-    }
-    const newSimulation: Simulation = {
-      ...simulation,
-      template: { ...simulation?.template, id: templateId },
-    };
+  async function onChangeSimulationTemplate(event: Event) {
+    const { value } = getTarget(event);
+    const id = value as number;
+    const template = { ...simulation?.template, id };
+    const newSimulation: Simulation = { ...simulation, template };
+
     dispatch('updateSimulation', { newSimulation });
   }
 
@@ -74,24 +69,25 @@
       <details open>
         <summary>Templates</summary>
         <div class="mt-3 mb-3">
-          {#if simulationTemplates.length}
-            <select
-              class="st-select w-100"
-              name="simulation-templates"
-              value={simulation?.template?.id || ''}
-              on:change={({ currentTarget }) =>
-                onChangeSimulationTemplate(currentTarget)}
-            >
-              <option value="" />
+          <select
+            class="st-select w-100"
+            data-type="number"
+            disabled={!simulationTemplates.length}
+            name="simulation-templates"
+            value={simulation?.template?.id || null}
+            on:change={onChangeSimulationTemplate}
+          >
+            {#if !simulationTemplates.length}
+              <option value={null}>Empty</option>
+            {:else}
+              <option value={null} />
               {#each simulationTemplates as template}
                 <option value={template.id}>
                   {template.description}
                 </option>
               {/each}
-            </select>
-          {:else}
-            <input class="st-input w-100" disabled value="Empty" />
-          {/if}
+            {/if}
+          </select>
         </div>
       </details>
 
