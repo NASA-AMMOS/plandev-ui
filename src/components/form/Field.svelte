@@ -65,6 +65,7 @@
     if (input && field) {
       input.addEventListener('blur', onBlur);
       input.addEventListener('input', onInput);
+      input.addEventListener('keydown', onKeyDown);
       input.value = $field.value;
     }
 
@@ -79,6 +80,7 @@
     if (input) {
       input.removeEventListener('blur', onBlur);
       input.removeEventListener('input', onInput);
+      input.removeEventListener('keydown', onKeyDown);
     }
 
     if (select) {
@@ -93,9 +95,19 @@
     if (valid) dispatch('valid');
   }
 
-  function onInput(event: Event) {
+  function onInput(event: InputEvent) {
     const { value } = getTarget(event);
     $field.value = value;
+  }
+
+  async function onKeyDown(event: KeyboardEvent) {
+    const { key } = event;
+
+    if (key === 'Enter') {
+      const { value } = getTarget(event);
+      const valid = await field.validate(value);
+      if (valid) dispatch('valid');
+    }
   }
 </script>
 

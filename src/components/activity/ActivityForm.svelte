@@ -94,7 +94,7 @@
   }
 
   function onUpdateStartTime() {
-    if ($startTimeField.valid) {
+    if ($startTimeField.valid && startTime !== $startTimeField.value) {
       dispatch('updateStartTime', { id, startTime: $startTimeField.value });
     }
   }

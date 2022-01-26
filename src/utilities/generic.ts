@@ -20,7 +20,7 @@ export function clamp(num: number, min: number, max: number): number {
 /**
  * Returns a target based on an Event.
  */
-export function getTarget(event: Event | FocusEvent) {
+export function getTarget(event: Event) {
   const { target: eventTarget } = event;
   const target = eventTarget as HTMLElement;
 
