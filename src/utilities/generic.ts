@@ -20,20 +20,28 @@ export function clamp(num: number, min: number, max: number): number {
 /**
  * Returns a target based on an Event.
  */
-export function getTarget(event: Event) {
+export function getTarget(event: Event | FocusEvent) {
   const { target: eventTarget } = event;
   const target = eventTarget as HTMLElement;
 
   if (target.tagName === 'INPUT') {
     const input = target as HTMLInputElement;
-    const { name, type, value, valueAsNumber } = input;
-    return { name, value: type === 'number' ? valueAsNumber : value };
+    const { name, type, value: valueAsString, valueAsNumber } = input;
+    const value = type === 'number' ? valueAsNumber : valueAsString;
+
+    return { name, value };
   } else if (target.tagName === 'SELECT') {
     const select = target as HTMLSelectElement;
-    const { name, value } = select;
+    const type = select.getAttribute('data-type') ?? 'text';
+    const { name, value: valueAsString } = select;
+    const valueAsFloat = parseFloat(valueAsString);
+    const valueAsNumber = Number.isNaN(valueAsFloat) ? null : valueAsFloat;
+    const value = type === 'number' ? valueAsNumber : valueAsString;
+
     return { name, value };
   } else {
     console.log('getTarget called with unknown tag');
+
     return { name: 'unknown', value: 'unknown' };
   }
 }
@@ -46,25 +54,6 @@ export function keyBy<T>(list: T[], key = 'id'): Record<number, T> {
     map[value[key]] = value;
     return map;
   }, {});
-}
-
-/**
- * Parses a File object into JSON. If the parse fails we reject with an error.
- */
-export function parseJsonFile<T>(file: File): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.onload = () => {
-      try {
-        const json: T = JSON.parse(fileReader.result as string);
-        resolve(json);
-      } catch (error) {
-        reject(error);
-      }
-    };
-    fileReader.onerror = error => reject(error);
-    fileReader.readAsText(file);
-  });
 }
 
 /**
@@ -112,25 +101,4 @@ export function setQueryParam(key: string, value: string): void {
  */
 export function sleep(milliseconds = 250): Promise<void> {
   return new Promise(resolve => setTimeout(() => resolve(), milliseconds));
-}
-
-/**
- * Accepts a parent <div /> that contains one child <slot /> and returns the count
- * of the number of children in the <slot />.
- */
-export function slotChildCount(div: HTMLDivElement | undefined): number {
-  if (div) {
-    const [slotDiv] = Array.from(div.childNodes);
-
-    if (slotDiv) {
-      const childNodes = Array.from(slotDiv.childNodes);
-      const { length } = childNodes.filter(
-        ({ nodeName }) => nodeName !== '#comment' && nodeName !== '#text',
-      );
-
-      return length;
-    }
-  }
-
-  return 0;
 }

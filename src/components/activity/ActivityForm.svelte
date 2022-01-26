@@ -9,21 +9,20 @@
     FormParameter,
   } from '../../types';
   import Field from '../form/Field.svelte';
-  import InputText from '../form/InputText.svelte';
-  import Label from '../form/Label.svelte';
+  import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
   import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
   import { reqValidateActivityArguments } from '../../utilities/requests';
   import Card from '../ui/Card.svelte';
-  import FieldInputText from '../form/FieldInputText.svelte';
   import { required, timestamp } from '../../utilities/validators';
   import {
     getFormParameters,
     updateFormParameter,
   } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
+  import { field } from '../../stores/form';
 
   const dispatch = createEventDispatcher();
 
@@ -32,19 +31,28 @@
   export let argumentsMap: ArgumentsMap = {};
   export let children: string[] | null = null;
   export let duration: number | null;
-  export let id: number | undefined;
+  export let id: number;
   export let modelId: number | undefined;
   export let parent: string | null = null;
   export let startTime: string = '';
   export let type: string = '';
 
   let confirmDeleteActivityModal: ConfirmModal | null = null;
+  let currentId: number = id;
+  let startTimeField = field<string>(startTime, [required, timestamp]);
 
   $: activityType = activityTypes.find(({ name }) => name === type);
   $: formParameters = getFormParameters(activityType.parameters, argumentsMap);
   $: hasChildren = children ? children.length > 0 : false;
   $: isChild = parent !== null;
   $: parentId = isChild ? parent : 'None (Root Activity)';
+  $: $startTimeField.value = startTime;
+
+  $: if (id !== currentId) {
+    // Keep track if the activity changes so we can update the fields appropriately.
+    currentId = id;
+    startTimeField = field<string>(startTime, [required, timestamp]);
+  }
 
   function getArguments(formParameter: FormParameter): ArgumentsMap {
     const { name, value } = formParameter;
@@ -84,6 +92,12 @@
   function onDelete() {
     dispatch('delete', id);
   }
+
+  function onUpdateStartTime() {
+    if ($startTimeField.valid) {
+      dispatch('updateStartTime', { id, startTime: $startTimeField.value });
+    }
+  }
 </script>
 
 <Panel hideFooter>
@@ -100,55 +114,67 @@
   </span>
 
   <span slot="body">
-    <Field>
-      <Label for="id">Activity ID</Label>
-      <InputText bind:value={id} disabled name="id">
-        <span slot="suffix">
-          <i class="bi bi-lock-fill" />
-        </span>
-      </InputText>
-    </Field>
+    <fieldset>
+      <label for="id">Activity ID</label>
+      <Input>
+        <input bind:value={id} class="st-input w-100" disabled name="id" />
+        <i class="bi bi-lock-fill" slot="right" />
+      </Input>
+    </fieldset>
 
-    <Field>
-      <Label for="activity-type">Activity Type</Label>
-      <InputText bind:value={type} disabled name="activity-type">
-        <span slot="suffix">
-          <i class="bi bi-lock-fill" />
-        </span>
-      </InputText>
-    </Field>
+    <fieldset>
+      <label for="activity-type">Activity Type</label>
+      <Input>
+        <input
+          bind:value={type}
+          class="st-input w-100"
+          disabled
+          name="activity-type"
+        />
+        <i class="bi bi-lock-fill" slot="right" />
+      </Input>
+    </fieldset>
 
-    <Field>
-      <Label for="parent-id">Parent ID</Label>
-      <InputText bind:value={parentId} disabled name="parent-id">
-        <span slot="suffix">
-          <i class="bi bi-lock-fill" />
-        </span>
-      </InputText>
-    </Field>
+    <fieldset>
+      <label for="parent-id">Parent ID</label>
+      <Input>
+        <input
+          bind:value={parentId}
+          class="st-input w-100"
+          disabled
+          name="parent-id"
+        />
+        <i class="bi bi-lock-fill" slot="right" />
+      </Input>
+    </fieldset>
 
     {#if duration !== null}
-      <Field>
-        <Label for="duration">Duration</Label>
-        <InputText bind:value={duration} disabled name="duration">
-          <span slot="suffix">
-            <i class="bi bi-lock-fill" />
-          </span>
-        </InputText>
-      </Field>
+      <fieldset>
+        <label for="duration">Duration</label>
+        <Input>
+          <input
+            bind:value={duration}
+            class="st-input w-100"
+            disabled
+            name="duration"
+          />
+          <i class="bi bi-lock-fill" slot="right" />
+        </Input>
+      </fieldset>
     {/if}
 
-    <FieldInputText
-      bind:value={startTime}
-      disabled={isChild}
-      name="start-time"
-      validators={[required, timestamp]}
-      on:change={() => dispatch('updateStartTime', { id, startTime })}
-    >
-      Start Time
-    </FieldInputText>
+    <Field field={startTimeField} on:valid={onUpdateStartTime}>
+      <label for="start-time" slot="label">Start Time</label>
+      <input
+        autocomplete="off"
+        class="st-input w-100"
+        disabled={isChild}
+        name="start-time"
+      />
+      <div slot="error" />
+    </Field>
 
-    <Field>
+    <fieldset>
       <details open>
         <summary>Parameters</summary>
         <div class="mt-2">
@@ -159,9 +185,9 @@
           />
         </div>
       </details>
-    </Field>
+    </fieldset>
 
-    <Field>
+    <fieldset>
       <details open={hasChildren}>
         <summary>Decomposition</summary>
         <div class="mt-2">
@@ -172,7 +198,7 @@
           {/if}
         </div>
       </details>
-    </Field>
+    </fieldset>
   </span>
 </Panel>
 
@@ -187,9 +213,5 @@
 <style>
   details {
     cursor: pointer;
-  }
-
-  .icon {
-    font-size: 0.8rem;
   }
 </style>

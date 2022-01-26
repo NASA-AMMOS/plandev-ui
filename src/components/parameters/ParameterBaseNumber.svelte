@@ -3,7 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter } from '../../types';
-  import InputText from '../form/InputText.svelte';
+  import Input from '../form/Input.svelte';
   import Spinner from '../ui/Spinner.svelte';
   import ParameterBaseError from './ParameterBaseError.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -21,17 +21,17 @@
 
 <div class="parameter-base-number" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
-  <InputText
-    bind:value={formParameter.value}
-    {disabled}
-    invalid={formParameter.error !== null}
-    type="number"
-    on:change={() => dispatch('change', formParameter)}
-  >
-    <span slot="suffix">
-      <Spinner visible={formParameter.loading} />
-    </span>
-  </InputText>
+  <Input>
+    <input
+      bind:value={formParameter.value}
+      class="st-input w-100"
+      class:error={formParameter.error !== null}
+      {disabled}
+      type="number"
+      on:change={() => dispatch('change', formParameter)}
+    />
+    <Spinner visible={formParameter.loading} slot="right" />
+  </Input>
 </div>
 
 <ParameterBaseError {columns} {formParameter} />

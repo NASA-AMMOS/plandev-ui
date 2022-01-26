@@ -3,6 +3,7 @@ export * from './app';
 export * from './auth';
 export * from './constraint';
 export * from './d3';
+export * from './form';
 export * from './kit';
 export * from './parameter';
 export * from './scheduling';

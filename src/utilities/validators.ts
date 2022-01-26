@@ -1,43 +1,65 @@
-export type ValidationResult = string | null;
+import type { Field, ValidationResult } from '../types';
 
-export type ValidatorFn<T> = (value: T) => string | null;
+export async function validateField<T>(field: Field<T>): Promise<string[]> {
+  const { validators, value } = field;
+  const errors: string[] = [];
 
-export function validate<T>(
-  validators: ValidatorFn<T>[],
-  value: T,
-): ValidationResult {
   for (const validator of validators) {
-    const error = validator(value);
-    if (error !== null) return error;
-  }
-  return null;
-}
+    const error = await validator(value);
 
-export function required(value: number | string): ValidationResult {
-  if (
-    (typeof value === 'number' && isNaN(value as number)) ||
-    (typeof value === 'string' && value === '')
-  ) {
-    return 'Field is required';
-  }
-  return null;
-}
-
-export function timestamp(value: string): ValidationResult {
-  const re =
-    /^(\d{4})-((?=\d*[1-9])\d{3})T(\d{2}):(\d{2}):(\d{2})(\.(\d{3}))?$/;
-  const match = re.exec(value);
-  const error = 'DOY format required: YYYY-DDDThh:mm:ss';
-
-  if (match) {
-    const [, , doy] = match;
-    const dayOfYear = parseInt(doy, 10);
-    if (dayOfYear > 0 && dayOfYear < 366) {
-      return null;
-    } else {
-      return 'Day-of-year must be between 0 and 365';
+    if (error !== null) {
+      errors.push(error);
     }
-  } else {
-    return error;
   }
+
+  return errors;
+}
+
+export function min(
+  min: number,
+  errorMessage?: string,
+): (value: number) => Promise<ValidationResult> {
+  return (value: number): Promise<ValidationResult> =>
+    new Promise(resolve => {
+      if (value < min) {
+        const error = errorMessage ?? `Field cannot be less than ${min}`;
+        return resolve(error);
+      } else {
+        return resolve(null);
+      }
+    });
+}
+
+export function required(value: number | string): Promise<ValidationResult> {
+  return new Promise(resolve => {
+    if (
+      (typeof value === 'number' && Number.isNaN(value as number)) ||
+      (typeof value === 'string' && value === '')
+    ) {
+      return resolve('Field is required');
+    } else {
+      return resolve(null);
+    }
+  });
+}
+
+export function timestamp(value: string): Promise<ValidationResult> {
+  return new Promise(resolve => {
+    const re =
+      /^(\d{4})-((?=\d*[1-9])\d{3})T(\d{2}):(\d{2}):(\d{2})(\.(\d{3}))?$/;
+    const match = re.exec(value);
+    const error = 'DOY format required: YYYY-DDDThh:mm:ss';
+
+    if (match) {
+      const [, , doy] = match;
+      const dayOfYear = parseInt(doy, 10);
+      if (dayOfYear > 0 && dayOfYear < 366) {
+        return resolve(null);
+      } else {
+        return resolve('Day-of-year must be between 0 and 365');
+      }
+    } else {
+      return resolve(error);
+    }
+  });
 }

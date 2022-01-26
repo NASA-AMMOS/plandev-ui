@@ -16,8 +16,6 @@
   import { session } from '$app/stores';
   import { onMount } from 'svelte';
   import type { LoginResponseBody } from '../auth/login';
-  import Field from '../../components/form/Field.svelte';
-  import Label from '../../components/form/Label.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
 
   let error = null;
@@ -65,12 +63,14 @@
   <form on:submit|preventDefault={login}>
     <div class="title">Log in to Aerie</div>
 
-    <Field visible={error !== null}>
-      <AlertError message={error} />
-    </Field>
+    {#if error !== null}
+      <fieldset>
+        <AlertError message={error} />
+      </fieldset>
+    {/if}
 
-    <Field>
-      <Label for="username">Username</Label>
+    <fieldset>
+      <label for="username"> Username </label>
       <input
         autocomplete="off"
         bind:this={usernameInput}
@@ -80,10 +80,10 @@
         required
         type="text"
       />
-    </Field>
+    </fieldset>
 
-    <Field>
-      <Label for="password">Password</Label>
+    <fieldset>
+      <label for="password"> Password </label>
       <input
         autocomplete="off"
         bind:value={password}
@@ -92,9 +92,9 @@
         required
         type="password"
       />
-    </Field>
+    </fieldset>
 
-    <Field>
+    <fieldset>
       <button
         class="st-button w-100"
         disabled={password === '' || username === ''}
@@ -102,7 +102,7 @@
       >
         {loginButtonText}
       </button>
-    </Field>
+    </fieldset>
   </form>
 </div>
 

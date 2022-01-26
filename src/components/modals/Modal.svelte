@@ -76,6 +76,7 @@
     display: flex;
     flex-direction: column;
     height: 350px;
+    justify-content: space-evenly;
     left: 50%;
     max-height: 80vh;
     max-width: 90vw;

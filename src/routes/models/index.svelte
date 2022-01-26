@@ -24,8 +24,6 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import Field from '../../components/form/Field.svelte';
-  import Label from '../../components/form/Label.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Card from '../../components/ui/Card.svelte';
@@ -83,12 +81,14 @@
   <Grid gap="0.2rem" columns="20% auto" padding="0.2rem">
     <Card>
       <form on:submit|preventDefault={createModel}>
-        <Field visible={error !== null}>
-          <AlertError message={error} />
-        </Field>
+        {#if error !== null}
+          <fieldset>
+            <AlertError message={error} />
+          </fieldset>
+        {/if}
 
-        <Field>
-          <Label for="name">Name</Label>
+        <fieldset>
+          <label for="name">Name</label>
           <input
             bind:value={name}
             autocomplete="off"
@@ -96,10 +96,10 @@
             name="name"
             required
           />
-        </Field>
+        </fieldset>
 
-        <Field>
-          <Label for="version">Version</Label>
+        <fieldset>
+          <label for="version">Version</label>
           <input
             bind:value={version}
             autocomplete="off"
@@ -108,14 +108,14 @@
             placeholder="0.0.0"
             required
           />
-        </Field>
+        </fieldset>
 
-        <Field>
-          <Label for="file">Jar File</Label>
+        <fieldset>
+          <label for="file">Jar File</label>
           <input class="w-100" name="file" required type="file" bind:files />
-        </Field>
+        </fieldset>
 
-        <Field>
+        <fieldset>
           <button
             class="st-button create-button"
             disabled={!files || name === '' || version === ''}
@@ -123,7 +123,7 @@
           >
             {createButtonText}
           </button>
-        </Field>
+        </fieldset>
       </form>
     </Card>
     <div>

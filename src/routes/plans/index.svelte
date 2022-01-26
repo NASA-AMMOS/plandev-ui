@@ -27,17 +27,15 @@
   import { goto, prefetch } from '$app/navigation';
   import { page } from '$app/stores';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
-  import Field from '../../components/form/Field.svelte';
-  import FieldInputText from '../../components/form/FieldInputText.svelte';
-  import Label from '../../components/form/Label.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Card from '../../components/ui/Card.svelte';
+  import Field from '../../components/form/Field.svelte';
   import Grid from '../../components/ui/Grid.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { onMount } from 'svelte';
   import { compare, removeQueryParam } from '../../utilities/generic';
-  import { required, timestamp } from '../../utilities/validators';
+  import { min, required, timestamp } from '../../utilities/validators';
   import {
     CreatePlan,
     CreatePlanModel,
@@ -47,35 +45,35 @@
     reqGetPlansAndModels,
   } from '../../utilities/requests';
   import { simulationTemplates } from '../../stores/simulation';
+  import { field } from '../../stores/form';
 
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
 
   let confirmDeletePlan: ConfirmModal | null = null;
   let createButtonText = 'Create';
-  let endTime = '';
-  let endTimeSubmittable = false;
   let error: string | null = null;
-  let modelId: number = -1;
-  let name = '';
-  let nameSubmittable = false;
-  let simulationTemplateId: number | null = null;
-  let startTime = '';
-  let startTimeSubmittable = false;
 
-  $: createButtonDisabeld =
-    !endTimeSubmittable ||
-    modelId === -1 ||
-    !nameSubmittable ||
-    !startTimeSubmittable;
-  $: simulationTemplates.setVariables({ modelId });
+  let endTimeField = field<string>('', [required, timestamp]);
+  let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
+  let nameField = field<string>('', [required]);
+  let simTemplateField = field<number | null>(null);
+  let startTimeField = field<string>('', [required, timestamp]);
+
+  $: createButtonEnabled =
+    $endTimeField.dirtyAndValid &&
+    $modelIdField.dirtyAndValid &&
+    $nameField.dirtyAndValid &&
+    $startTimeField.dirtyAndValid;
+  $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
   $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
   $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
     const queryModelId = $page.url.searchParams.get('modelId');
     if (queryModelId) {
-      modelId = parseFloat(queryModelId);
+      $modelIdField.value = parseFloat(queryModelId);
+      modelIdField.validate();
       removeQueryParam('modelId');
     }
   });
@@ -84,8 +82,13 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const newPlan = await reqCreatePlan(endTime, modelId, name, startTime);
-    await reqCreateSimulation(newPlan.id, simulationTemplateId);
+    const newPlan = await reqCreatePlan(
+      $endTimeField.value,
+      $modelIdField.value,
+      $nameField.value,
+      $startTimeField.value,
+    );
+    await reqCreateSimulation(newPlan.id, $simTemplateField.value);
 
     if (newPlan) {
       plans = [...plans, newPlan];
@@ -112,103 +115,85 @@
   <Grid gap="0.2rem" columns="20% auto" padding="0.2rem">
     <Card>
       <form on:submit|preventDefault={createPlan}>
-        <Field visible={error !== null}>
-          <AlertError message={error} />
-        </Field>
+        {#if error !== null}
+          <fieldset>
+            <AlertError message={error} />
+          </fieldset>
+        {/if}
 
-        <Field>
-          <Label for="model">Models</Label>
-          <select
-            class="st-select w-100"
-            name="model"
-            value={modelId}
-            on:change={({ currentTarget }) => {
-              const { value } = currentTarget;
-              if (value !== '') {
-                modelId = parseFloat(value);
-              } else {
-                modelId = -1;
-              }
-            }}
-          >
-            <option value="" />
+        <Field field={modelIdField}>
+          <label for="model" slot="label">Models</label>
+          <select class="st-select w-100" data-type="number" name="model">
+            <option value="-1" />
             {#each sortedModels as model}
               <option value={model.id}>
                 {model.name}
               </option>
             {/each}
           </select>
+          <div slot="error" />
         </Field>
 
-        <FieldInputText
-          bind:submittable={nameSubmittable}
-          bind:value={name}
-          name="name"
-          required
-          validators={[required]}
-        >
-          Name
-        </FieldInputText>
+        <Field field={nameField}>
+          <label for="name" slot="label">Name</label>
+          <input autocomplete="off" class="st-input w-100" name="name" />
+          <div slot="error" />
+        </Field>
 
-        <FieldInputText
-          bind:submittable={startTimeSubmittable}
-          bind:value={startTime}
-          name="start-time"
-          placeholder="YYYY-DDDThh:mm:ss"
-          required
-          validators={[required, timestamp]}
-        >
-          Start Time
-        </FieldInputText>
+        <Field field={startTimeField}>
+          <label for="start-time" slot="label">Start Time</label>
+          <input
+            autocomplete="off"
+            class="st-input w-100"
+            name="start-time"
+            placeholder="YYYY-DDDThh:mm:ss"
+          />
+          <div slot="error" />
+        </Field>
 
-        <FieldInputText
-          bind:submittable={endTimeSubmittable}
-          bind:value={endTime}
-          name="end-time"
-          placeholder="YYYY-DDDThh:mm:ss"
-          required
-          validators={[required, timestamp]}
-        >
-          End Time
-        </FieldInputText>
+        <Field field={endTimeField}>
+          <label for="end-time" slot="label">End Time</label>
+          <input
+            autocomplete="off"
+            class="st-input w-100"
+            name="end-time"
+            placeholder="YYYY-DDDThh:mm:ss"
+          />
+          <div slot="error" />
+        </Field>
 
-        <Field>
-          <Label for="simulation-templates">Simulation Templates</Label>
-          {#if $simulationTemplates.length}
-            <select
-              class="st-select w-100"
-              name="simulation-templates"
-              value={simulationTemplateId}
-              on:change={({ currentTarget }) => {
-                const { value } = currentTarget;
-                if (value !== '') {
-                  simulationTemplateId = parseFloat(value);
-                } else {
-                  simulationTemplateId = null;
-                }
-              }}
-            >
-              <option value="" />
+        <Field field={simTemplateField}>
+          <label for="simulation-templates" slot="label">
+            Simulation Templates
+          </label>
+          <select
+            class="st-select w-100"
+            data-type="number"
+            disabled={!$simulationTemplates.length}
+            name="simulation-templates"
+          >
+            {#if !$simulationTemplates.length}
+              <option value="null">Empty</option>
+            {:else}
+              <option value="null" />
               {#each $simulationTemplates as template}
                 <option value={template.id}>
                   {template.description}
                 </option>
               {/each}
-            </select>
-          {:else}
-            <input class="st-input w-100" disabled value="Empty" />
-          {/if}
+            {/if}
+          </select>
         </Field>
 
-        <Field>
+        <fieldset>
           <button
             class="st-button create-button"
-            disabled={createButtonDisabeld}
+            disabled={!createButtonEnabled}
             type="submit"
           >
             {createButtonText}
           </button>
-        </Field>
+        </fieldset>
       </form>
     </Card>
     <div>

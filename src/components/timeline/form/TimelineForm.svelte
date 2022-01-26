@@ -3,8 +3,6 @@
 <script lang="ts">
   import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
-  import Field from '../../form/Field.svelte';
-  import Label from '../../form/Label.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Card from '../../ui/Card.svelte';
   import Grid from '../../ui/Grid.svelte';
@@ -80,8 +78,8 @@
       </span>
       {#if $selectedTimeline !== null}
         <Grid columns="50% 50%">
-          <Field>
-            <Label for="marginLeft">Margin Left</Label>
+          <fieldset>
+            <label for="marginLeft">Margin Left</label>
             <input
               class="st-input w-100"
               name="marginLeft"
@@ -89,10 +87,10 @@
               value={$selectedTimeline.marginLeft}
               on:input={updateTimelineEvent}
             />
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="marginRight">Margin Right</Label>
+          <fieldset>
+            <label for="marginRight">Margin Right</label>
             <input
               class="st-input w-100"
               name="marginRight"
@@ -100,10 +98,10 @@
               value={$selectedTimeline.marginRight}
               on:input={updateTimelineEvent}
             />
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="rows">Rows</Label>
+          <fieldset>
+            <label for="rows">Rows</label>
             {#if $selectedTimeline.rows.length}
               <select
                 bind:value={$selectedRowId}
@@ -120,10 +118,10 @@
             {:else}
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="verticalGuides">Vertical Guides</Label>
+          <fieldset>
+            <label for="verticalGuides">Vertical Guides</label>
             {#if $selectedTimeline.verticalGuides.length}
               <select
                 class="st-select w-100"
@@ -139,12 +137,12 @@
             {:else}
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
-          </Field>
+          </fieldset>
         </Grid>
       {:else}
-        <Field>
+        <fieldset>
           <Card class="p-1">No timeline selected</Card>
-        </Field>
+        </fieldset>
       {/if}
     </Details>
 
@@ -163,8 +161,8 @@
       </span>
       {#if $selectedRow !== null}
         <Grid columns="50% 50%">
-          <Field>
-            <Label for="height">Height</Label>
+          <fieldset>
+            <label for="height">Height</label>
             <input
               class="st-input w-100"
               name="height"
@@ -172,10 +170,10 @@
               value={$selectedRow.height}
               on:input={updateRowEvent}
             />
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="horizontalGuides">Horizontal Guides</Label>
+          <fieldset>
+            <label for="horizontalGuides">Horizontal Guides</label>
             {#if $selectedRow.horizontalGuides.length}
               <select
                 class="st-select w-100"
@@ -191,10 +189,10 @@
             {:else}
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="yAxes">Y-Axes</Label>
+          <fieldset>
+            <label for="yAxes">Y-Axes</label>
             {#if $selectedRow.yAxes.length}
               <select
                 bind:value={$selectedYAxisId}
@@ -211,10 +209,10 @@
             {:else}
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
-          </Field>
+          </fieldset>
 
-          <Field>
-            <Label for="layers">Layers</Label>
+          <fieldset>
+            <label for="layers">Layers</label>
             {#if $selectedRow.layers.length}
               <select
                 bind:value={$selectedLayerId}
@@ -231,12 +229,12 @@
             {:else}
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
-          </Field>
+          </fieldset>
         </Grid>
       {:else}
-        <Field>
+        <fieldset>
           <Card class="p-1">No row selected</Card>
-        </Field>
+        </fieldset>
       {/if}
     </Details>
 
@@ -270,9 +268,9 @@
           on:update={updateYAxisEvent}
         />
       {:else}
-        <Field>
+        <fieldset>
           <Card class="p-1">No y-axis selected</Card>
-        </Field>
+        </fieldset>
       {/if}
     </Details>
 
@@ -291,8 +289,8 @@
         {/if}
       </span>
       {#if $selectedLayer !== null}
-        <Field>
-          <Label for="chartType">Chart Type</Label>
+        <fieldset>
+          <label for="chartType">Chart Type</label>
           <select
             class="st-select w-100"
             name="chartType"
@@ -303,7 +301,7 @@
             <option value="line"> Line </option>
             <option value="x-range"> X-Range </option>
           </select>
-        </Field>
+        </fieldset>
 
         <LayerLineForm layer={$selectedLayer} on:input={updateLayerEvent} />
 
@@ -313,9 +311,9 @@
           on:input={updateLayerEvent}
         />
       {:else}
-        <Field>
+        <fieldset>
           <Card class="p-1">No layer selected</Card>
-        </Field>
+        </fieldset>
       {/if}
     </Details>
   </span>

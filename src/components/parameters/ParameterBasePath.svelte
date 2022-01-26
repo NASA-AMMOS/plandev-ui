@@ -3,7 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter } from '../../types';
-  import InputText from '../form/InputText.svelte';
+  import Input from '../form/Input.svelte';
   import ParameterBaseError from './ParameterBaseError.svelte';
   import ParameterName from './ParameterName.svelte';
 
@@ -30,15 +30,16 @@
 <div class="parameter-base-path" style="grid-template-columns: {columns}">
   <ParameterName {formParameter} />
   <div class="file-input">
-    <InputText
-      bind:value={formParameter.value}
-      disabled
-      invalid={formParameter.error !== null}
-    >
-      <span slot="suffix">
-        <i class="bi bi-lock-fill" />
-      </span>
-    </InputText>
+    <Input>
+      <input
+        bind:value={formParameter.value}
+        class="st-input w-100"
+        class:error={formParameter.error !== null}
+        disabled
+        type="text"
+      />
+      <i class="bi bi-lock-fill" slot="right" />
+    </Input>
     <input type="file" on:change={onChange} />
   </div>
 </div>
