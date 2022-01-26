@@ -46,7 +46,7 @@ export function required(value: number | string): Promise<ValidationResult> {
 export function timestamp(value: string): Promise<ValidationResult> {
   return new Promise(resolve => {
     const re =
-      /^(\d{4})-((?=\d*[1-9])\d{3})T(\d{2}):(\d{2}):(\d{2})(\.(\d{3}))?$/;
+      /^(\d{4})-((?=\d*[1-9])\d{3})T(\d{2}):(\d{2}):(\d{2})(\.(\d{1,6}))?$/;
     const match = re.exec(value);
     const error = 'DOY format required: YYYY-DDDThh:mm:ss';
 
