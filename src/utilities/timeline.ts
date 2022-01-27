@@ -6,6 +6,13 @@ import type { QuadtreePoint, QuadtreeRect } from '../types';
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
+/**
+ * The max canvas size (width or height) in pixels.
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
+ * @todo Determine size for each user agent?
+ */
+export const MAX_CANVAS_SIZE = 32767;
+
 export function getXScale(
   domain: Date[],
   width: number,

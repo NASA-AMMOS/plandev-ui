@@ -16,7 +16,7 @@
     VerticalGuide,
   } from '../../types';
   import { getDoyTime } from '../../utilities/time';
-  import { getXScale } from '../../utilities/timeline';
+  import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
@@ -97,7 +97,13 @@
     event: CustomEvent<{ newHeight: number; rowId: string }>,
   ) {
     const { newHeight, rowId } = event.detail;
-    dispatch('updateRowHeight', { newHeight, rowId, timelineId: id });
+    if (newHeight < MAX_CANVAS_SIZE) {
+      dispatch('updateRowHeight', { newHeight, rowId, timelineId: id });
+    } else {
+      console.log(
+        `Cannot update timeline row height to ${newHeight}px since it exceeds the max canvas size of ${MAX_CANVAS_SIZE}px`,
+      );
+    }
   }
 
   async function setRowsMaxHeight(
