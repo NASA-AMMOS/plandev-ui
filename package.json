@@ -27,7 +27,7 @@
     "@codemirror/lang-json": "^0.19.1",
     "@nasa-jpl/stellar": "^1.0.1",
     "@sveltejs/adapter-node": "1.0.0-next.67",
-    "@sveltejs/kit": "1.0.0-next.243",
+    "@sveltejs/kit": "1.0.0-next.247",
     "@types/cookie": "^0.4.1",
     "@types/d3-axis": "^3.0.1",
     "@types/d3-brush": "^3.0.1",
