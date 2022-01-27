@@ -94,6 +94,7 @@
     const { key } = event;
 
     if (key === 'Enter') {
+      event.preventDefault();
       const { value } = getTarget(event);
       const valid = await field.validate(value);
       if (valid) dispatch('valid');
