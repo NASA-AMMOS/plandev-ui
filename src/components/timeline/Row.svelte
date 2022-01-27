@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
+  import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type {
     Activity,
@@ -54,6 +55,7 @@
   let dragleave: DragEvent;
   let dragover: DragEvent;
   let drop: DragEvent;
+  let heightsByLayer: Record<number, number> = {};
   let mousedown: MouseEvent;
   let mousemove: MouseEvent;
   let mouseout: MouseEvent;
@@ -61,6 +63,11 @@
   let mouseDownPointsByLayer: Record<number, Point[]> = {};
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
+
+  $: heightsByLayer = pick(
+    heightsByLayer,
+    layers.map(({ id }) => id),
+  );
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
@@ -77,9 +84,21 @@
     dispatch('mouseOver', { ...detail, points });
   }
 
-  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number }>) {
+  function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
     const { newHeight } = event.detail;
     dispatch('updateRowHeight', { newHeight, rowId: id });
+  }
+
+  function onUpdateRowHeightLayer(
+    event: CustomEvent<{ layerId: number; newHeight: number }>,
+  ) {
+    if (autoAdjustHeight) {
+      const { detail } = event;
+      heightsByLayer[detail.layerId] = detail.newHeight;
+      const heights = Object.values(heightsByLayer);
+      const newHeight = Math.max(...heights);
+      dispatch('updateRowHeight', { newHeight, rowId: id });
+    }
   }
 </script>
 
@@ -169,11 +188,7 @@
             on:dropActivity
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
-            on:updateRowHeight={e => {
-              if (autoAdjustHeight) {
-                onUpdateRowHeight(e);
-              }
-            }}
+            on:updateRowHeight={onUpdateRowHeightLayer}
           />
         {/if}
         {#if layer.chartType === 'line'}
@@ -215,7 +230,7 @@
   <!-- Drag Handle for Row Height Resizing. -->
   <RowDragHandleHeight
     rowHeight={drawHeight}
-    on:updateRowHeight={onUpdateRowHeight}
+    on:updateRowHeight={onUpdateRowHeightDrag}
   />
 </div>
 

@@ -331,7 +331,7 @@
 
       const newHeight = maxY + rowHeight;
       if (newHeight > 0 && drawHeight !== newHeight) {
-        dispatch('updateRowHeight', { newHeight });
+        dispatch('updateRowHeight', { layerId: id, newHeight });
       }
     }
   }
