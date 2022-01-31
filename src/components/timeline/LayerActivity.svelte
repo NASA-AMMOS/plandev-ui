@@ -63,6 +63,7 @@
     activityHeight &&
     drawHeight &&
     drawWidth &&
+    filter &&
     mounted &&
     sortedActivities &&
     viewTimeRange &&

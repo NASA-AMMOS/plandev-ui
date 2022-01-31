@@ -59,6 +59,7 @@
     drawHeight &&
     drawWidth &&
     colorScheme &&
+    filter &&
     mounted &&
     opacity !== undefined &&
     points &&

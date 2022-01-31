@@ -47,6 +47,7 @@
   $: if (
     drawHeight &&
     drawWidth &&
+    filter &&
     lineColor &&
     lineWidth &&
     mounted &&
