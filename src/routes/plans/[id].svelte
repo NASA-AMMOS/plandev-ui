@@ -60,10 +60,10 @@
   import Split from '../../components/ui/Split.svelte';
   import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
-  import CodeMirrorJsonEditor from '../../components/ui/CodeMirrorJsonEditor.svelte';
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
+  import MonacoEditor from '../../components/monaco/MonacoEditor.svelte';
   import {
     activities,
     activitiesMap,
@@ -348,10 +348,12 @@
     viewTimeRange = event.detail;
   }
 
-  function onViewTextChanged(event: CustomEvent<string>): void {
-    const { detail: json } = event;
+  function onViewTextChanged(event: CustomEvent<{ value: string }>): void {
+    const { detail } = event;
+    const { value } = detail;
+
     try {
-      const newView = JSON.parse(json);
+      const newView = JSON.parse(value);
       $view = newView;
     } catch (e) {
       console.log(e);
@@ -624,9 +626,10 @@
           on:updateSimulation={onUpdateSimulation}
         />
       {:else if $viewEditorPanel.visible}
-        <CodeMirrorJsonEditor
-          text={$viewText}
-          on:textChanged={onViewTextChanged}
+        <MonacoEditor
+          language="json"
+          value={$viewText}
+          on:didChangeModelContent={onViewTextChanged}
         />
       {/if}
     </div>

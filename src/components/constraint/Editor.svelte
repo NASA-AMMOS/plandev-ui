@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import MonacoEditor from '../monaco/MonacoEditor.svelte';
   import Card from '../ui/Card.svelte';
-  import CodeMirrorJsonEditor from '../ui/CodeMirrorJsonEditor.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import Panel from '../ui/Panel.svelte';
   import type { Constraint, CreateConstraint } from '../../types';
@@ -41,15 +41,17 @@
     }
   });
 
-  async function onTextChanged(event: CustomEvent<string>) {
-    const { detail: json } = event;
+  async function onTextChanged(event: CustomEvent<{ value: string }>) {
+    const { detail } = event;
+    const { value } = detail;
+
     try {
-      definition = json;
+      definition = value;
       definitionError = null;
 
       clearTimeout(debounce);
       debounce = setTimeout(async () => {
-        const { valid } = await reqValidateConstraint(json);
+        const { valid } = await reqValidateConstraint(value);
         if (!valid) {
           definitionError = 'Input is not a valid constraint';
         }
@@ -143,7 +145,11 @@
         message={definitionError}
         visible={definitionError !== null}
       />
-      <CodeMirrorJsonEditor text={definition} on:textChanged={onTextChanged} />
+      <MonacoEditor
+        language="json"
+        value={definition}
+        on:didChangeModelContent={onTextChanged}
+      />
     </details>
   </span>
 
