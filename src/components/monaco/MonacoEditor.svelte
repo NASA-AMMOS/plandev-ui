@@ -7,16 +7,18 @@
 
   const dispatch = createEventDispatcher();
 
-  export let automaticLayout: boolean = true;
-  export let language: string = '';
-  export let lineNumbers: Editor.LineNumbersType = 'on';
-  export let minimap: Editor.IEditorMinimapOptions = { enabled: false };
-  export let overrideServices: Editor.IEditorOverrideServices = undefined;
-  export let scrollBeyondLastLine: boolean = false;
-  export let value: string = '';
+  export let automaticLayout: boolean | undefined = undefined;
+  export let language: string | undefined = undefined;
+  export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
+  export let minimap: Editor.IEditorMinimapOptions | undefined = undefined;
+  export let model: Editor.ITextModel | null | undefined = undefined;
+  export let override: Editor.IEditorOverrideServices | undefined = undefined;
+  export let scrollBeyondLastLine: boolean | undefined = undefined;
+  export let theme: string | undefined = undefined;
+  export let value: string | undefined = undefined;
 
-  let div: HTMLDivElement | null = null;
-  let editor: Editor.IStandaloneCodeEditor;
+  let div: HTMLDivElement | undefined = undefined;
+  let editor: Editor.IStandaloneCodeEditor | undefined = undefined;
 
   $: if (editor) {
     const currentValue = editor.getValue();
@@ -33,11 +35,12 @@
       language,
       lineNumbers,
       minimap,
+      model,
       scrollBeyondLastLine,
+      theme,
       value,
     };
-
-    editor = await createMonacoEditor(div, options, overrideServices);
+    editor = await createMonacoEditor(div, options, override);
 
     editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {
       const newValue = editor.getModel().getValue();

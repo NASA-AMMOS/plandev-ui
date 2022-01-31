@@ -627,7 +627,11 @@
         />
       {:else if $viewEditorPanel.visible}
         <MonacoEditor
+          automaticLayout={true}
           language="json"
+          lineNumbers="on"
+          minimap={{ enabled: false }}
+          scrollBeyondLastLine={false}
           value={$viewText}
           on:didChangeModelContent={onViewTextChanged}
         />

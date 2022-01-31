@@ -146,7 +146,11 @@
         visible={definitionError !== null}
       />
       <MonacoEditor
+        automaticLayout={true}
         language="json"
+        lineNumbers="on"
+        minimap={{ enabled: false }}
+        scrollBeyondLastLine={false}
         value={definition}
         on:didChangeModelContent={onTextChanged}
       />
