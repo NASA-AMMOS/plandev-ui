@@ -1,6 +1,7 @@
 <script lang="ts" context="module">
   import { reqSetAppStores } from '../utilities/requests';
   import type { LoadOutput } from '@sveltejs/kit';
+  import '../css/app.css';
 
   export async function load({ fetch, session }): Promise<LoadOutput> {
     await reqSetAppStores(fetch, session);
@@ -9,7 +10,6 @@
 </script>
 
 <script lang="ts">
-  import '../css/app.css';
   import Nav from '../components/ui/Nav.svelte';
 
   let navWidth: number = 50;

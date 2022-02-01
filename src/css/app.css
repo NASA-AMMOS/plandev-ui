@@ -12,8 +12,9 @@
 @import '@nasa-jpl/stellar/css/input.css';
 @import '@nasa-jpl/stellar/css/select.css';
 
+@import 'modern-css-reset/dist/reset.min.css';
+
 @import './theme.css';
-@import './reset.css';
 @import './tippy-error.css';
 
 html,
