@@ -117,8 +117,9 @@
 
         <fieldset>
           <button
-            class="st-button create-button"
+            class="st-button"
             disabled={!files || name === '' || version === ''}
+            style="width: 100px"
             type="submit"
           >
             {createButtonText}
@@ -128,52 +129,50 @@
     </Card>
     <div>
       {#if models.length}
-        <Card>
-          <table class="table">
-            <thead>
+        <table class="st-table">
+          <thead>
+            <tr>
+              <th>Actions</th>
+              <th>Name</th>
+              <th>Model ID</th>
+              <th>Version</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each sortedModels as model}
               <tr>
-                <th>Actions</th>
-                <th>Name</th>
-                <th>Model ID</th>
-                <th>Version</th>
+                <td class="actions">
+                  <button
+                    class="st-button icon"
+                    data-cy="create-plan-{model.name}"
+                    on:click={() => goto(`plans?modelId=${model.id}`)}
+                    use:tooltip={{
+                      content: 'Create Plan',
+                      placement: 'bottom',
+                    }}
+                  >
+                    <i class="bi bi-calendar-plus" />
+                  </button>
+                  <button
+                    class="st-button icon"
+                    data-cy="delete-model-{model.name}"
+                    on:click|stopPropagation={() =>
+                      confirmDeleteModel.modal.show(model)}
+                    use:tooltip={{
+                      content: 'Delete Model',
+                      placement: 'bottom',
+                    }}
+                  >
+                    <i class="bi bi-trash" />
+                  </button>
+                </td>
+                <td>{model.name}</td>
+                <td>{model.id}</td>
+                <td>{model.version}</td>
               </tr>
-            </thead>
-            <tbody>
-              {#each sortedModels as model}
-                <tr>
-                  <td class="actions">
-                    <button
-                      class="st-button icon fs-6"
-                      data-cy="create-plan-{model.name}"
-                      on:click={() => goto(`plans?modelId=${model.id}`)}
-                      use:tooltip={{
-                        content: 'Create Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-calendar-plus" />
-                    </button>
-                    <button
-                      class="st-button icon fs-6"
-                      data-cy="delete-model-{model.name}"
-                      on:click|stopPropagation={() =>
-                        confirmDeleteModel.modal.show(model)}
-                      use:tooltip={{
-                        content: 'Delete Model',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-trash" />
-                    </button>
-                  </td>
-                  <td>{model.name}</td>
-                  <td>{model.id}</td>
-                  <td>{model.version}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </Card>
+            {/each}
+          </tbody>
+        </table>
       {:else}
         <Card class="p-1">No Models Found</Card>
       {/if}
@@ -188,17 +187,3 @@
   title="Delete Model"
   on:confirm={deleteModel}
 />
-
-<style>
-  .actions {
-    align-items: center;
-    display: grid;
-    gap: 12px;
-    grid-template-columns: 16px 16px;
-    justify-content: center;
-  }
-
-  .create-button {
-    width: 100px;
-  }
-</style>

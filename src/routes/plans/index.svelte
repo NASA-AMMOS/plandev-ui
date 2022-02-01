@@ -183,8 +183,9 @@
 
         <fieldset>
           <button
-            class="st-button create-button"
+            class="st-button"
             disabled={!createButtonEnabled}
+            style="width: 100px"
             type="submit"
           >
             {createButtonText}
@@ -194,55 +195,53 @@
     </Card>
     <div>
       {#if plans.length}
-        <Card>
-          <table class="table">
-            <thead>
+        <table class="st-table">
+          <thead>
+            <tr>
+              <th>Actions</th>
+              <th>Name</th>
+              <th>Plan ID</th>
+              <th>Model ID</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each sortedPlans as plan}
               <tr>
-                <th>Actions</th>
-                <th>Name</th>
-                <th>Plan ID</th>
-                <th>Model ID</th>
-                <th>Start Time</th>
-                <th>End Time</th>
+                <td class="actions">
+                  <button
+                    class="st-button icon"
+                    on:click={() => goto(`plans/${plan.id}`)}
+                    on:pointerenter={() => prefetch(`plans/${plan.id}`)}
+                    use:tooltip={{
+                      content: 'Open Plan',
+                      placement: 'bottom',
+                    }}
+                  >
+                    <i class="bi bi-box-arrow-in-up-right" />
+                  </button>
+                  <button
+                    class="st-button icon"
+                    on:click|stopPropagation={() =>
+                      confirmDeletePlan.modal.show(plan)}
+                    use:tooltip={{
+                      content: 'Delete Plan',
+                      placement: 'bottom',
+                    }}
+                  >
+                    <i class="bi bi-trash" />
+                  </button>
+                </td>
+                <td>{plan.name}</td>
+                <td>{plan.id}</td>
+                <td>{plan.modelId}</td>
+                <td>{plan.startTime}</td>
+                <td>{plan.endTime}</td>
               </tr>
-            </thead>
-            <tbody>
-              {#each sortedPlans as plan}
-                <tr>
-                  <td class="actions">
-                    <button
-                      class="st-button icon fs-6"
-                      on:click={() => goto(`plans/${plan.id}`)}
-                      on:pointerenter={() => prefetch(`plans/${plan.id}`)}
-                      use:tooltip={{
-                        content: 'Open Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-box-arrow-in-up-right" />
-                    </button>
-                    <button
-                      class="st-button icon fs-6"
-                      on:click|stopPropagation={() =>
-                        confirmDeletePlan.modal.show(plan)}
-                      use:tooltip={{
-                        content: 'Delete Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-trash" />
-                    </button>
-                  </td>
-                  <td>{plan.name}</td>
-                  <td>{plan.id}</td>
-                  <td>{plan.modelId}</td>
-                  <td>{plan.startTime}</td>
-                  <td>{plan.endTime}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </Card>
+            {/each}
+          </tbody>
+        </table>
       {:else}
         <Card class="p-1">No Plans Found</Card>
       {/if}
@@ -257,17 +256,3 @@
   title="Delete Plan"
   on:confirm={deletePlan}
 />
-
-<style>
-  .actions {
-    align-items: center;
-    display: grid;
-    gap: 12px;
-    grid-template-columns: 16px 16px;
-    justify-content: center;
-  }
-
-  .create-button {
-    width: 100px;
-  }
-</style>

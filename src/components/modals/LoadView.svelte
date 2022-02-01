@@ -60,12 +60,13 @@
       <i class="bi bi-x" />
     </button>
   </div>
+
   {#if views.length}
     <div class="content">
-      <table class="table">
+      <table class="st-table">
         <thead>
           <tr>
-            <th />
+            <th>Actions</th>
             <th>ID</th>
             <th>Name</th>
             <th>Owner</th>
@@ -77,7 +78,7 @@
             <tr>
               <td class="actions">
                 <button
-                  class="st-button icon fs-6"
+                  class="st-button icon"
                   on:click={() => onLoadView(view.id)}
                   use:tooltip={{
                     content: 'Load View',
@@ -88,7 +89,7 @@
                 </button>
                 {#if view.meta.owner !== 'system'}
                   <button
-                    class="st-button icon fs-6"
+                    class="st-button icon"
                     on:click={() => onDeleteView(view)}
                     use:tooltip={{
                       content: 'Delete View',
@@ -109,22 +110,6 @@
       </table>
     </div>
   {:else}
-    <div class="content center">No Views Found</div>
+    <div class="content flex-center">No Views Found</div>
   {/if}
 </Modal>
-
-<style>
-  .actions {
-    align-items: center;
-    display: grid;
-    gap: 16px;
-    grid-template-columns: 16px 16px;
-    justify-content: center;
-  }
-
-  .center {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-  }
-</style>

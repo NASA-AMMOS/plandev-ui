@@ -11,11 +11,13 @@
 @import '@nasa-jpl/stellar/css/card.css';
 @import '@nasa-jpl/stellar/css/input.css';
 @import '@nasa-jpl/stellar/css/select.css';
+@import '@nasa-jpl/stellar/css/table.css';
 
 @import 'modern-css-reset/dist/reset.min.css';
 
 @import './stellar.css';
 @import './tooltip.css';
+@import './utilities.css';
 
 html,
 body,
@@ -39,9 +41,4 @@ fieldset {
 
 label.error {
   color: var(--st-red);
-}
-
-.table {
-  text-align: center;
-  width: 100%;
 }

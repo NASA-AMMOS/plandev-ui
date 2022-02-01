@@ -19,7 +19,7 @@
   }
 </script>
 
-<table class="table">
+<table class="st-table">
   <thead>
     <tr>
       {#each columns as column}
@@ -32,12 +32,14 @@
       <tr>
         {#each columns as column}
           {#if column === 'select'}
-            <input
-              checked={selectedId === item?.id}
-              name="select"
-              type="radio"
-              on:click={() => onSelect(item)}
-            />
+            <td>
+              <input
+                checked={selectedId === item?.id}
+                name="select"
+                type="radio"
+                on:click={() => onSelect(item)}
+              />
+            </td>
           {:else}
             <td>{item[column]}</td>
           {/if}

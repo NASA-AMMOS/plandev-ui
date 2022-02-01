@@ -15,6 +15,8 @@
   --st-primary-text-color: var(--st-black);
 }
 
+/* Chip. */
+
 .st-chip {
   align-items: center;
   background: var(--st-gray-20);
@@ -30,4 +32,21 @@
   letter-spacing: 0.04em;
   line-height: 16px;
   padding: 6px;
+}
+
+/* Table. */
+
+.st-table td {
+  align-items: center;
+  display: flex;
+}
+
+.st-table td.actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.st-table td.actions > * {
+  font-size: 1rem;
 }
