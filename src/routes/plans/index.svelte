@@ -30,7 +30,7 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Card from '../../components/ui/Card.svelte';
   import Field from '../../components/form/Field.svelte';
-  import Grid from '../../components/ui/Grid.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { onMount } from 'svelte';
@@ -110,9 +110,9 @@
   }
 </script>
 
-<Grid rows="32px auto">
+<CssGrid rows="32px auto">
   <TopBar>Plans</TopBar>
-  <Grid gap="0.2rem" columns="20% auto" padding="0.2rem">
+  <CssGrid gap="0.2rem" columns="20% auto" padding="0.2rem">
     <Card>
       <form on:submit|preventDefault={createPlan}>
         {#if error !== null}
@@ -247,8 +247,8 @@
         <Card class="p-1">No Plans Found</Card>
       {/if}
     </div>
-  </Grid>
-</Grid>
+  </CssGrid>
+</CssGrid>
 
 <ConfirmModal
   bind:this={confirmDeletePlan}

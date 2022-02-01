@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Layer, LineLayer } from '../../../types';
-  import Grid from '../../ui/Grid.svelte';
+  import CssGrid from '../../ui/CssGrid.svelte';
 
   export let layer: Layer | null;
 
@@ -19,7 +19,7 @@
     />
   </fieldset>
 
-  <Grid columns="33% 33% 33%">
+  <CssGrid columns="33% 33% 33%">
     <fieldset>
       <label for="lineColor">Line Color</label>
       <input
@@ -52,5 +52,5 @@
         on:input
       />
     </fieldset>
-  </Grid>
+  </CssGrid>
 {/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import Grid from '../../ui/Grid.svelte';
+  import CssGrid from '../../ui/CssGrid.svelte';
   import type { Axis, Label as AxisLabel } from '../../../types';
   import { getTarget } from '../../../utilities/generic';
 
@@ -67,7 +67,7 @@
   }
 </script>
 
-<Grid columns="33% 33% 33%">
+<CssGrid columns="33% 33% 33%">
   <fieldset>
     <label class:error={idError !== null} for="id"> Id </label>
     <input
@@ -101,9 +101,9 @@
       on:input|stopPropagation={updateAxis}
     />
   </fieldset>
-</Grid>
+</CssGrid>
 
-<Grid columns="33% 33% 33%">
+<CssGrid columns="33% 33% 33%">
   <fieldset>
     <label for="domainMin"> Domain Min </label>
     <input
@@ -136,4 +136,4 @@
       on:input|stopPropagation={updateAxis}
     />
   </fieldset>
-</Grid>
+</CssGrid>

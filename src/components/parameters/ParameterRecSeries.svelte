@@ -4,7 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter } from '../../types';
   import { getArgument } from '../../utilities/parameters';
-  import Grid from '../ui/Grid.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
@@ -81,7 +81,7 @@
     <ParameterName {formParameter} />
   </div>
   <div class="series-right">
-    <Grid gap="3px" columns="auto auto">
+    <CssGrid gap="3px" columns="auto auto">
       <button
         class="st-button icon"
         disabled={subFormParameters?.length === 0}
@@ -97,7 +97,7 @@
       >
         <i class="bi bi-plus fs-6" />
       </button>
-    </Grid>
+    </CssGrid>
   </div>
 </div>
 

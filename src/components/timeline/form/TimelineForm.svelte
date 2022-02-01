@@ -5,7 +5,7 @@
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Card from '../../ui/Card.svelte';
-  import Grid from '../../ui/Grid.svelte';
+  import CssGrid from '../../ui/CssGrid.svelte';
   import Panel from '../../ui/Panel.svelte';
   import {
     createYAxis,
@@ -77,7 +77,7 @@
         {/if}
       </span>
       {#if $selectedTimeline !== null}
-        <Grid columns="50% 50%">
+        <CssGrid columns="50% 50%">
           <fieldset>
             <label for="marginLeft">Margin Left</label>
             <input
@@ -138,7 +138,7 @@
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
           </fieldset>
-        </Grid>
+        </CssGrid>
       {:else}
         <fieldset>
           <Card class="p-1">No timeline selected</Card>
@@ -160,7 +160,7 @@
         {/if}
       </span>
       {#if $selectedRow !== null}
-        <Grid columns="50% 50%">
+        <CssGrid columns="50% 50%">
           <fieldset>
             <label for="height">Height</label>
             <input
@@ -230,7 +230,7 @@
               <input class="st-input w-100" disabled value="Empty" />
             {/if}
           </fieldset>
-        </Grid>
+        </CssGrid>
       {:else}
         <fieldset>
           <Card class="p-1">No row selected</Card>
@@ -241,7 +241,10 @@
     <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
       <span slot="summary-right">
-        <Grid gap="3px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
+        <CssGrid
+          gap="3px"
+          columns="auto {$selectedYAxis !== null ? 'auto' : ''}"
+        >
           <button
             class="st-button icon"
             on:click|stopPropagation={createYAxis}
@@ -259,7 +262,7 @@
               <i class="bi bi-trash" />
             </button>
           {/if}
-        </Grid>
+        </CssGrid>
       </span>
       {#if $selectedYAxis !== null}
         <YAxisForm

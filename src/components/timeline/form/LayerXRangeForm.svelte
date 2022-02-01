@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Grid from '../../ui/Grid.svelte';
+  import CssGrid from '../../ui/CssGrid.svelte';
   import type { Layer, XRangeLayer } from '../../../types';
 
   const colorSchemes = [
@@ -21,7 +21,7 @@
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'x-range'}
-  <Grid columns="50% 50%">
+  <CssGrid columns="50% 50%">
     <fieldset>
       <label for="colorScheme">Color Scheme</label>
       <select
@@ -48,5 +48,5 @@
         on:input
       />
     </fieldset>
-  </Grid>
+  </CssGrid>
 {/if}

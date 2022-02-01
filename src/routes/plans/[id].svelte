@@ -56,7 +56,7 @@
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import Card from '../../components/ui/Card.svelte';
-  import Grid from '../../components/ui/Grid.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
   import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
@@ -420,7 +420,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<Grid rows="32px auto">
+<CssGrid rows="32px auto">
   <TopBar>
     <div class="header-left">
       Plan: {initialPlan.name}
@@ -638,7 +638,7 @@
       {/if}
     </div>
   </Split>
-</Grid>
+</CssGrid>
 
 <LoadViewModal
   bind:this={loadViewModal}
