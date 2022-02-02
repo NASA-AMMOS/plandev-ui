@@ -1,15 +1,13 @@
 import { browser } from '$app/env';
 import type { Client, ClientOptions } from 'graphql-ws';
-import { createClient as wsCreateClient } from 'graphql-ws';
+import { createClient } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import { noop } from 'svelte/internal';
 import type { Subscriber, Unsubscriber } from 'svelte/store';
 import { hasuraUrl } from '../utilities/app';
 
-type Invalidator<T> = (value?: T) => void;
 type NextValue<T> = { [key: string]: T };
 type QueryVariables = Record<string, unknown>;
-type SubscribeInvalidateTuple<T> = [Subscriber<T>, Invalidator<T>];
+type Subscription<T> = { next: Subscriber<T>; unsubscribe: Unsubscriber };
 
 /**
  * Aerie UI specific wrapper around gqlSubscribable.
@@ -41,14 +39,15 @@ export function gqlSubscribable<T>(
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
 ) {
-  const subscribers: Set<SubscribeInvalidateTuple<T>> = new Set();
+  const subscribers: Set<Subscription<T>> = new Set();
 
   let client: Client | null;
-  let unsubscribe: Unsubscriber | null;
   let value: T | null = initialValue;
   let variables: QueryVariables | null = initialVariables;
 
-  function clientSubscribe() {
+  function clientSubscribe(): Unsubscriber {
+    let unsubscribe: Unsubscriber = () => undefined;
+
     if (browser && client) {
       unsubscribe = client.subscribe<NextValue<T>>(
         {
@@ -60,62 +59,55 @@ export function gqlSubscribable<T>(
           error: error => {
             console.log('subscribe error');
             console.log(error);
-            subscribers.forEach(([next]) => next(initialValue));
+            subscribers.forEach(({ next }) => next(initialValue));
           },
           next: ({ data }) => {
             const [key] = Object.keys(data);
             const { [key]: newValue } = data;
             if (!isEqual(value, newValue)) {
               value = newValue;
-              subscribers.forEach(([next]) => next(value));
+              subscribers.forEach(({ next }) => next(value));
             }
           },
         },
       );
     }
+
+    return unsubscribe;
   }
 
-  function createClient() {
-    if (browser && !client) {
-      client = wsCreateClient(clientOptions);
-    }
-  }
-
-  function destroy() {
-    if (client && unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
-      client.dispose();
-      client = null;
-    }
+  function resubscribe() {
+    subscribers.forEach(subscriber => {
+      subscriber.unsubscribe();
+      const newUnsubscribe = clientSubscribe();
+      subscriber.unsubscribe = newUnsubscribe;
+    });
   }
 
   function setVariables(newVariables: QueryVariables): void {
     if (!isEqual(variables, newVariables)) {
       variables = newVariables;
-
-      if (unsubscribe) {
-        unsubscribe();
-        clientSubscribe();
-      }
+      resubscribe();
     }
   }
 
-  function subscribe(
-    next: Subscriber<T>,
-    invalidate: Invalidator<T> = noop,
-  ): Unsubscriber {
-    createClient();
-    clientSubscribe();
+  function subscribe(next: Subscriber<T>): Unsubscriber {
+    if (browser && !client) {
+      client = createClient(clientOptions);
+    }
 
-    const subscriber: SubscribeInvalidateTuple<T> = [next, invalidate];
+    const unsubscribe = clientSubscribe();
+    const subscriber: Subscription<T> = { next, unsubscribe };
     subscribers.add(subscriber);
     next(value);
 
     return () => {
+      subscriber.unsubscribe();
       subscribers.delete(subscriber);
-      if (subscribers.size === 0) {
-        destroy();
+
+      if (subscribers.size === 0 && client) {
+        client.dispose();
+        client = null;
       }
     };
   }
