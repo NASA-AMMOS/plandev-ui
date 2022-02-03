@@ -5,15 +5,6 @@ import preprocess from 'svelte-preprocess';
 const config = {
   kit: {
     adapter: adapterNode(),
-    target: '#svelte',
-    vite: {
-      mode: process***REMOVED***.MODE || 'development',
-      server: {
-        fs: {
-          strict: false,
-        },
-      },
-    },
   },
   preprocess: preprocess(),
 };

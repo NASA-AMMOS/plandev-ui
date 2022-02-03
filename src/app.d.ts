@@ -1,6 +1,21 @@
-/* eslint @typescript-eslint/no-unused-vars: 0 */
+/* eslint @typescript-eslint/no-unused-vars: 0, @typescript-eslint/no-empty-interface: 0 */
 
 /// <reference types="@sveltejs/kit" />
+/// <reference types="./types" />
+
+declare namespace App {
+  interface Locals {
+    user: User | null;
+  }
+
+  interface Platform {}
+
+  interface Session {
+    user: User | null;
+  }
+
+  interface Stuff {}
+}
 
 /**
  * Types for svelte-dnd-action.

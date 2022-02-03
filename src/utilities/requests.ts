@@ -21,7 +21,6 @@ import type {
   Resource,
   ResourceValue,
   SchedulingResponse,
-  Session,
   Simulation,
   UpdateActivity,
   UpdateViewResponse,
@@ -1029,7 +1028,7 @@ export async function reqSession(
 
 export async function reqSetAppStores(
   fetch: Fetch,
-  session: Session,
+  session: App.Session,
 ): Promise<void> {
   let response: Response;
   let json: any;

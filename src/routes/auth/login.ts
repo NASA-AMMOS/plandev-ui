@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import type { ReqLoginResponse, Session, User } from '../../types';
+import type { ReqLoginResponse, User } from '../../types';
 import { reqLogin } from '../../utilities/requests';
 
 /* Types. */
@@ -24,9 +24,7 @@ export type LoginResponse = {
 
 /* Endpoints. */
 
-export async function post(
-  event: RequestEvent<Session>,
-): Promise<LoginResponse> {
+export async function post(event: RequestEvent): Promise<LoginResponse> {
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;
 

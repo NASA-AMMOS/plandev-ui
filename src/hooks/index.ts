@@ -1,15 +1,12 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import type { Handle, RequestEvent } from '@sveltejs/kit';
 import type { MaybePromise } from '@sveltejs/kit/types/helper';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
 import { env as envStore } from '../stores/app';
-import type { Env, HandleInput, Session, User } from '../types';
+import type { Env, User } from '../types';
 import { reqSession } from '../utilities/requests';
 
-export async function handle({
-  event,
-  resolve,
-}: HandleInput): Promise<Response> {
+export const handle: Handle = async ({ event, resolve }): Promise<Response> => {
   const { AUTH_TYPE } = get<Env>(envStore);
 
   if (AUTH_TYPE === 'none') {
@@ -36,14 +33,12 @@ export async function handle({
   }
 
   return await resolve(event);
-}
+};
 
-export function getSession(
-  event: RequestEvent<Session>,
-): MaybePromise<Session> {
+export const getSession = (event: RequestEvent): MaybePromise<App.Session> => {
   const { locals } = event;
   const { user = null } = locals;
   return {
     user,
   };
-}
+};

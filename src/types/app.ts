@@ -12,7 +12,3 @@ export type User = {
   id: string;
   ssoToken: string;
 };
-
-export type Session = {
-  user: User | null;
-};
