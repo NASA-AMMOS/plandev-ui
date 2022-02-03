@@ -4,7 +4,9 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActivityType } from '../../types';
   import Input from '../form/Input.svelte';
+  import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
+  import Panel from '../ui/Panel.svelte';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -42,36 +44,46 @@
   }
 </script>
 
-<div class="p-1">
-  <fieldset class="w-100 m-0 p-0 pb-1">
-    <label for="search">Find an Activity Type</label>
-    <Input>
-      <i class="bi bi-search" slot="left" />
-      <input bind:value={searchText} class="st-input w-100" name="search" />
-    </Input>
-  </fieldset>
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Activity Dictionary</Chip>
+  </svelte:fragment>
 
-  {#if sortedActivityTypes.length}
-    {#each sortedActivityTypes as activityType}
-      <ListItem
-        draggable
-        style="cursor: move;"
-        on:dragend={onDragEnd}
-        on:dragstart={e => onDragStart(e.detail, activityType)}
-      >
-        {activityType.name}
-        <span slot="suffix">
-          <button
-            class="st-button icon fs-6"
-            on:click={() => createActivity(activityType)}
-            use:tooltip={{ content: 'Create Activity', placement: 'left' }}
-          >
-            <i class="bi bi-plus" />
-          </button>
-        </span>
-      </ListItem>
-    {/each}
-  {:else}
-    <ListItem>No Activity Types Found</ListItem>
-  {/if}
-</div>
+  <svelte:fragment slot="body">
+    <fieldset class="w-100 m-0 p-0 pb-2">
+      <Input>
+        <i class="bi bi-search" slot="left" />
+        <input
+          bind:value={searchText}
+          class="st-input w-100"
+          name="search"
+          placeholder="Find an Activity Type"
+        />
+      </Input>
+    </fieldset>
+
+    {#if sortedActivityTypes.length}
+      {#each sortedActivityTypes as activityType}
+        <ListItem
+          draggable
+          style="cursor: move;"
+          on:dragend={onDragEnd}
+          on:dragstart={e => onDragStart(e.detail, activityType)}
+        >
+          {activityType.name}
+          <span slot="suffix">
+            <button
+              class="st-button icon fs-6"
+              on:click={() => createActivity(activityType)}
+              use:tooltip={{ content: 'Create Activity', placement: 'left' }}
+            >
+              <i class="bi bi-plus" />
+            </button>
+          </span>
+        </ListItem>
+      {/each}
+    {:else}
+      <ListItem>No Activity Types Found</ListItem>
+    {/if}
+  </svelte:fragment>>
+</Panel>

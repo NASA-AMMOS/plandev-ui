@@ -15,26 +15,13 @@
   --st-primary-text-color: var(--st-black);
 }
 
-/* Chip. */
-
-.st-chip {
-  align-items: center;
-  background: var(--st-gray-20);
-  border-radius: 8px;
-  color: var(--st-gray-90);
-  display: flex;
-  font-family: Inter;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 12px;
-  height: 24px;
-  justify-content: center;
-  letter-spacing: 0.04em;
-  line-height: 16px;
-  padding: 6px;
-}
-
 /* Table. */
+
+.st-table {
+  border-left: 1px solid var(--st-gray-20);
+  border-right: 1px solid var(--st-gray-20);
+  border-top: 1px solid var(--st-gray-20);
+}
 
 .st-table td {
   align-items: center;
@@ -44,7 +31,7 @@
 .st-table td.actions {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
 .st-table td.actions > * {

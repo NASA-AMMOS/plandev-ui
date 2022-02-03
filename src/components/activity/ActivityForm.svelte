@@ -8,6 +8,7 @@
     ArgumentsMap,
     FormParameter,
   } from '../../types';
+  import Chip from '../ui/Chip.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
@@ -100,9 +101,9 @@
   }
 </script>
 
-<Panel hideFooter>
-  <span slot="header">Selected Activity</span>
-  <span slot="header-right">
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Selected Activity</Chip>
     <button
       class="st-button icon"
       disabled={isChild}
@@ -111,9 +112,9 @@
     >
       <i class="bi bi-trash" />
     </button>
-  </span>
+  </svelte:fragment>
 
-  <span slot="body">
+  <svelte:fragment slot="body">
     <fieldset>
       <label for="id">Activity ID</label>
       <Input>
@@ -198,7 +199,7 @@
         </div>
       </details>
     </fieldset>
-  </span>
+  </svelte:fragment>
 </Panel>
 
 <ConfirmModal

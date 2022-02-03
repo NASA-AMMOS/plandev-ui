@@ -5,7 +5,9 @@
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Card from '../../ui/Card.svelte';
+  import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
+  import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
   import {
     createYAxis,
@@ -26,9 +28,8 @@
     deleteYAxis,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
-  import YAxisForm from './YAxisForm.svelte';
-  import Details from '../../ui/Details.svelte';
   import { tooltip } from '../../../utilities/tooltip';
+  import YAxisForm from './YAxisForm.svelte';
 
   let confirmDeleteLayerModal: ConfirmModal;
   let confirmDeleteRowModal: ConfirmModal;
@@ -60,8 +61,12 @@
   }
 </script>
 
-<Panel hideHeader hideFooter>
-  <span slot="body">
+<Panel borderLeft>
+  <svelte:fragment slot="header">
+    <Chip>Timeline Configuration</Chip>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
     <Details class="pb-3">
       <span slot="summary-left"> Timeline </span>
       <span slot="summary-right">
@@ -319,7 +324,7 @@
         </fieldset>
       {/if}
     </Details>
-  </span>
+  </svelte:fragment>
 </Panel>
 
 <ConfirmModal

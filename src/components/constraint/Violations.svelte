@@ -3,7 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { ConstraintViolation } from '../../types';
-  import Card from '../ui/Card.svelte';
+  import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
 
@@ -18,13 +18,15 @@
   }
 </script>
 
-<Panel hideFooter>
-  <span slot="header"> Constraint Violations </span>
-  <span slot="body">
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Constraint Violations</Chip>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
     {#if violations.length}
       {#each violations as violation}
         <ListItem
-          class="m-1 p-1"
           style="cursor: pointer"
           on:click={() => clickViolation(violation)}
         >
@@ -35,7 +37,7 @@
         </ListItem>
       {/each}
     {:else}
-      <Card class="m-1 p-1">No Violations Found</Card>
+      No Violations Found
     {/if}
-  </span>
+  </svelte:fragment>
 </Panel>

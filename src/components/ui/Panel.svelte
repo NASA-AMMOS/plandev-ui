@@ -1,59 +1,44 @@
 <script lang="ts">
-  export let hideFooter: boolean = false;
-  export let hideHeader: boolean = false;
+  export let borderLeft: boolean = false;
+  export let borderRight: boolean = false;
+  export let padBody: boolean = true;
+  export let padHeader: boolean = true;
 </script>
 
-<div class="panel">
-  {#if !hideHeader}
-    <div class="header p-1 mb-1">
-      <slot name="header" />
-      <slot name="header-right" />
-    </div>
-  {/if}
-  <div class="body">
+<div class="panel" class:borderLeft class:borderRight>
+  <div class="header" class:padHeader>
+    <slot name="header" />
+  </div>
+
+  <div class="body" class:padBody>
     <slot name="body" />
   </div>
-  {#if !hideFooter}
-    <div class="footer">
-      <slot name="footer" />
-    </div>
-  {/if}
 </div>
 
 <style>
+  .borderLeft {
+    border-left: 1px solid var(--st-gray-20);
+  }
+
+  .borderRight {
+    border-right: 1px solid var(--st-gray-20);
+  }
+
+  .body,
   .panel {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
     height: 100%;
-    width: 100%;
   }
 
-  .panel > .header {
+  .header {
     align-items: center;
-    box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
+    border-bottom: 1px solid var(--st-gray-20);
     display: flex;
-    font-size: 0.8rem;
     justify-content: space-between;
+    height: 40px;
   }
 
-  .panel > .body {
-    flex-grow: 1;
-    overflow: auto;
-  }
-
-  .panel > .footer {
-    align-items: center;
-    box-shadow: 0px 0 5px 0px rgb(0 0 0 / 20%);
-    display: flex;
-    flex-shrink: 0;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .panel > .footer > :global(span) {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: auto auto;
+  .padBody,
+  .padHeader {
+    padding: 0.5rem;
   }
 </style>

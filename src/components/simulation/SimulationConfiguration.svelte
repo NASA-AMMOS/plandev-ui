@@ -16,6 +16,7 @@
   } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
   import Card from '../ui/Card.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
 
   const dispatch = createEventDispatcher();
@@ -62,45 +63,46 @@
   }
 </script>
 
-<Panel hideFooter>
-  <span slot="header"> Simulation Configuration </span>
-  <span slot="body">
-    <div class="m-2">
-      <details open>
-        <summary>Templates</summary>
-        <div class="mt-3 mb-3">
-          <select
-            class="st-select w-100"
-            data-type="number"
-            disabled={!simulationTemplates.length}
-            name="simulation-templates"
-            value={simulation?.template?.id || null}
-            on:change={onChangeSimulationTemplate}
-          >
-            {#if !simulationTemplates.length}
-              <option value={null}>Empty</option>
-            {:else}
-              <option value={null} />
-              {#each simulationTemplates as template}
-                <option value={template.id}>
-                  {template.description}
-                </option>
-              {/each}
-            {/if}
-          </select>
-        </div>
-      </details>
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Simulation Configuration</Chip>
+  </svelte:fragment>
 
-      <details open>
-        <summary>Arguments</summary>
-        <div>
-          {#if formParameters.length}
-            <Parameters {formParameters} on:change={onChangeFormParameters} />
+  <svelte:fragment slot="body">
+    <details open>
+      <summary>Templates</summary>
+      <div class="mt-3 mb-3">
+        <select
+          class="st-select w-100"
+          data-type="number"
+          disabled={!simulationTemplates.length}
+          name="simulation-templates"
+          value={simulation?.template?.id || null}
+          on:change={onChangeSimulationTemplate}
+        >
+          {#if !simulationTemplates.length}
+            <option value={null}>Empty</option>
           {:else}
-            <Card class="m-1 p-1">No Simulation Configuration Found</Card>
+            <option value={null} />
+            {#each simulationTemplates as template}
+              <option value={template.id}>
+                {template.description}
+              </option>
+            {/each}
           {/if}
-        </div>
-      </details>
-    </div>
-  </span>
+        </select>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Arguments</summary>
+      <div>
+        {#if formParameters.length}
+          <Parameters {formParameters} on:change={onChangeFormParameters} />
+        {:else}
+          <Card class="m-1 p-1">No Simulation Configuration Found</Card>
+        {/if}
+      </div>
+    </details>
+  </svelte:fragment>
 </Panel>

@@ -60,7 +60,7 @@
 </script>
 
 <div class="container">
-  <form on:submit|preventDefault={login}>
+  <form on:submit|preventDefault={login} class="p-3">
     <div class="title">Log in to Aerie</div>
 
     {#if error !== null}
@@ -109,10 +109,8 @@
 <style>
   form {
     background-color: var(--st-primary-background-color);
-    border-radius: 4px;
-    box-shadow: 0 2px 1px -1px #0003, 0 1px 1px 0 #00000024,
-      0 1px 3px 0 #0000001f;
-    padding: 5px;
+
+    border: 1px solid var(--st-gray-20);
     width: 300px;
   }
 
@@ -129,6 +127,5 @@
     display: flex;
     font-size: 1rem;
     justify-content: center;
-    padding: 0.5rem;
   }
 </style>

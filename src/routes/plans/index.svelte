@@ -28,9 +28,10 @@
   import { page } from '$app/stores';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Card from '../../components/ui/Card.svelte';
-  import Field from '../../components/form/Field.svelte';
+  import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import Field from '../../components/form/Field.svelte';
+  import Panel from '../../components/ui/Panel.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { onMount } from 'svelte';
@@ -100,6 +101,7 @@
   }
 
   async function deletePlan(event: CustomEvent<CreatePlan>) {
+    event.preventDefault();
     const { detail: plan } = event;
     const { id } = plan;
     const success = await reqDeletePlanAndSimulations(id);
@@ -108,144 +110,168 @@
       plans = plans.filter(plan => plan.id !== id);
     }
   }
+
+  function openPlan(event: Event, id: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    goto(`plans/${id}`);
+  }
 </script>
 
 <CssGrid rows="32px auto">
   <TopBar>Plans</TopBar>
-  <CssGrid gap="0.2rem" columns="20% auto" padding="0.2rem">
-    <Card>
-      <form on:submit|preventDefault={createPlan}>
-        {#if error !== null}
-          <fieldset>
-            <AlertError message={error} />
-          </fieldset>
-        {/if}
 
-        <Field field={modelIdField}>
-          <label for="model" slot="label">Models</label>
-          <select class="st-select w-100" data-type="number" name="model">
-            <option value="-1" />
-            {#each sortedModels as model}
-              <option value={model.id}>
-                {model.name}
-              </option>
-            {/each}
-          </select>
-        </Field>
+  <CssGrid columns="20% auto">
+    <Panel borderRight padBody={false}>
+      <svelte:fragment slot="header">
+        <Chip>New Plan</Chip>
+      </svelte:fragment>
 
-        <Field field={nameField}>
-          <label for="name" slot="label">Name</label>
-          <input autocomplete="off" class="st-input w-100" name="name" />
-        </Field>
+      <svelte:fragment slot="body">
+        <form on:submit|preventDefault={createPlan}>
+          {#if error !== null}
+            <fieldset>
+              <AlertError message={error} />
+            </fieldset>
+          {/if}
 
-        <Field field={startTimeField}>
-          <label for="start-time" slot="label">Start Time</label>
-          <input
-            autocomplete="off"
-            class="st-input w-100"
-            name="start-time"
-            placeholder="YYYY-DDDThh:mm:ss"
-          />
-        </Field>
-
-        <Field field={endTimeField}>
-          <label for="end-time" slot="label">End Time</label>
-          <input
-            autocomplete="off"
-            class="st-input w-100"
-            name="end-time"
-            placeholder="YYYY-DDDThh:mm:ss"
-          />
-        </Field>
-
-        <Field field={simTemplateField}>
-          <label for="simulation-templates" slot="label">
-            Simulation Templates
-          </label>
-          <select
-            class="st-select w-100"
-            data-type="number"
-            disabled={!$simulationTemplates.length}
-            name="simulation-templates"
-          >
-            {#if !$simulationTemplates.length}
-              <option value="null">Empty</option>
-            {:else}
-              <option value="null" />
-              {#each $simulationTemplates as template}
-                <option value={template.id}>
-                  {template.description}
+          <Field field={modelIdField}>
+            <label for="model" slot="label">Models</label>
+            <select class="st-select w-100" data-type="number" name="model">
+              <option value="-1" />
+              {#each sortedModels as model}
+                <option value={model.id}>
+                  {model.name}
                 </option>
               {/each}
-            {/if}
-          </select>
-        </Field>
+            </select>
+          </Field>
 
-        <fieldset>
-          <button
-            class="st-button"
-            disabled={!createButtonEnabled}
-            style="width: 100px"
-            type="submit"
-          >
-            {createButtonText}
-          </button>
-        </fieldset>
-      </form>
-    </Card>
-    <div>
-      {#if plans.length}
-        <table class="st-table">
-          <thead>
-            <tr>
-              <th>Actions</th>
-              <th>Name</th>
-              <th>Plan ID</th>
-              <th>Model ID</th>
-              <th>Start Time</th>
-              <th>End Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each sortedPlans as plan}
+          <Field field={nameField}>
+            <label for="name" slot="label">Name</label>
+            <input autocomplete="off" class="st-input w-100" name="name" />
+          </Field>
+
+          <Field field={startTimeField}>
+            <label for="start-time" slot="label">Start Time</label>
+            <input
+              autocomplete="off"
+              class="st-input w-100"
+              name="start-time"
+              placeholder="YYYY-DDDThh:mm:ss"
+            />
+          </Field>
+
+          <Field field={endTimeField}>
+            <label for="end-time" slot="label">End Time</label>
+            <input
+              autocomplete="off"
+              class="st-input w-100"
+              name="end-time"
+              placeholder="YYYY-DDDThh:mm:ss"
+            />
+          </Field>
+
+          <Field field={simTemplateField}>
+            <label for="simulation-templates" slot="label">
+              Simulation Templates
+            </label>
+            <select
+              class="st-select w-100"
+              data-type="number"
+              disabled={!$simulationTemplates.length}
+              name="simulation-templates"
+            >
+              {#if !$simulationTemplates.length}
+                <option value="null">Empty</option>
+              {:else}
+                <option value="null" />
+                {#each $simulationTemplates as template}
+                  <option value={template.id}>
+                    {template.description}
+                  </option>
+                {/each}
+              {/if}
+            </select>
+          </Field>
+
+          <fieldset>
+            <button
+              class="st-button w-100"
+              disabled={!createButtonEnabled}
+              type="submit"
+            >
+              {createButtonText}
+            </button>
+          </fieldset>
+        </form>
+      </svelte:fragment>
+    </Panel>
+
+    <Panel>
+      <svelte:fragment slot="header">
+        <Chip>
+          <i class="bi bi-calendar-range" />
+          Existing Plans
+        </Chip>
+      </svelte:fragment>
+
+      <svelte:fragment slot="body">
+        {#if plans.length}
+          <table class="st-table">
+            <thead>
               <tr>
-                <td class="actions">
-                  <button
-                    class="st-button icon"
-                    on:click={() => goto(`plans/${plan.id}`)}
-                    on:pointerenter={() => prefetch(`plans/${plan.id}`)}
-                    use:tooltip={{
-                      content: 'Open Plan',
-                      placement: 'bottom',
-                    }}
-                  >
-                    <i class="bi bi-box-arrow-in-up-right" />
-                  </button>
-                  <button
-                    class="st-button icon"
-                    on:click|stopPropagation={() =>
-                      confirmDeletePlan.modal.show(plan)}
-                    use:tooltip={{
-                      content: 'Delete Plan',
-                      placement: 'bottom',
-                    }}
-                  >
-                    <i class="bi bi-trash" />
-                  </button>
-                </td>
-                <td>{plan.name}</td>
-                <td>{plan.id}</td>
-                <td>{plan.modelId}</td>
-                <td>{plan.startTime}</td>
-                <td>{plan.endTime}</td>
+                <th>Actions</th>
+                <th>Name</th>
+                <th>Plan ID</th>
+                <th>Model ID</th>
+                <th>Start Time</th>
+                <th>End Time</th>
               </tr>
-            {/each}
-          </tbody>
-        </table>
-      {:else}
-        <Card class="p-1">No Plans Found</Card>
-      {/if}
-    </div>
+            </thead>
+            <tbody>
+              {#each sortedPlans as plan}
+                <tr
+                  on:click={e => openPlan(e, plan.id)}
+                  on:pointerenter={() => prefetch(`plans/${plan.id}`)}
+                >
+                  <td class="actions">
+                    <button
+                      class="st-button icon"
+                      on:click={e => openPlan(e, plan.id)}
+                      use:tooltip={{
+                        content: 'Open Plan',
+                        placement: 'bottom',
+                      }}
+                    >
+                      <i class="bi bi-box-arrow-in-up-right" />
+                    </button>
+                    <button
+                      class="st-button icon"
+                      on:click|stopPropagation={() =>
+                        confirmDeletePlan.modal.show(plan)}
+                      use:tooltip={{
+                        content: 'Delete Plan',
+                        placement: 'bottom',
+                      }}
+                    >
+                      <i class="bi bi-trash" />
+                    </button>
+                  </td>
+                  <td>{plan.name}</td>
+                  <td>{plan.id}</td>
+                  <td>{plan.modelId}</td>
+                  <td>{plan.startTime}</td>
+                  <td>{plan.endTime}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        {:else}
+          No Plans Found
+        {/if}
+      </svelte:fragment>
+    </Panel>
   </CssGrid>
 </CssGrid>
 
@@ -256,3 +282,10 @@
   title="Delete Plan"
   on:confirm={deletePlan}
 />
+
+<style>
+  .st-table tr:hover {
+    background-color: var(--st-gray-10);
+    cursor: pointer;
+  }
+</style>

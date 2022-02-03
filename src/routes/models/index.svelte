@@ -26,7 +26,8 @@
   import { goto } from '$app/navigation';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Card from '../../components/ui/Card.svelte';
+  import Chip from '../../components/ui/Chip.svelte';
+  import Panel from '../../components/ui/Panel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { compare } from '../../utilities/generic';
@@ -78,105 +79,121 @@
 
 <CssGrid rows="32px auto">
   <TopBar>Models</TopBar>
-  <CssGrid gap="0.2rem" columns="20% auto" padding="0.2rem">
-    <Card>
-      <form on:submit|preventDefault={createModel}>
-        {#if error !== null}
+
+  <CssGrid columns="20% auto">
+    <Panel borderRight padBody={false}>
+      <svelte:fragment slot="header">
+        <Chip>New Model</Chip>
+      </svelte:fragment>
+
+      <svelte:fragment slot="body">
+        <form on:submit|preventDefault={createModel}>
+          {#if error !== null}
+            <fieldset>
+              <AlertError message={error} />
+            </fieldset>
+          {/if}
+
           <fieldset>
-            <AlertError message={error} />
+            <label for="name">Name</label>
+            <input
+              bind:value={name}
+              autocomplete="off"
+              class="st-input w-100"
+              name="name"
+              required
+            />
           </fieldset>
-        {/if}
 
-        <fieldset>
-          <label for="name">Name</label>
-          <input
-            bind:value={name}
-            autocomplete="off"
-            class="st-input w-100"
-            name="name"
-            required
-          />
-        </fieldset>
+          <fieldset>
+            <label for="version">Version</label>
+            <input
+              bind:value={version}
+              autocomplete="off"
+              class="st-input w-100"
+              name="version"
+              placeholder="0.0.0"
+              required
+            />
+          </fieldset>
 
-        <fieldset>
-          <label for="version">Version</label>
-          <input
-            bind:value={version}
-            autocomplete="off"
-            class="st-input w-100"
-            name="version"
-            placeholder="0.0.0"
-            required
-          />
-        </fieldset>
+          <fieldset>
+            <label for="file">Jar File</label>
+            <input class="w-100" name="file" required type="file" bind:files />
+          </fieldset>
 
-        <fieldset>
-          <label for="file">Jar File</label>
-          <input class="w-100" name="file" required type="file" bind:files />
-        </fieldset>
+          <fieldset>
+            <button
+              class="st-button w-100"
+              disabled={!files || name === '' || version === ''}
+              type="submit"
+            >
+              {createButtonText}
+            </button>
+          </fieldset>
+        </form>
+      </svelte:fragment>
+    </Panel>
 
-        <fieldset>
-          <button
-            class="st-button"
-            disabled={!files || name === '' || version === ''}
-            style="width: 100px"
-            type="submit"
-          >
-            {createButtonText}
-          </button>
-        </fieldset>
-      </form>
-    </Card>
-    <div>
-      {#if models.length}
-        <table class="st-table">
-          <thead>
-            <tr>
-              <th>Actions</th>
-              <th>Name</th>
-              <th>Model ID</th>
-              <th>Version</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each sortedModels as model}
+    <Panel>
+      <svelte:fragment slot="header">
+        <Chip>
+          <i class="bi bi-bar-chart" />
+          Existing Models
+        </Chip>
+      </svelte:fragment>
+
+      <svelte:fragment slot="body">
+        {#if models.length}
+          <table class="st-table">
+            <thead>
               <tr>
-                <td class="actions">
-                  <button
-                    class="st-button icon"
-                    data-cy="create-plan-{model.name}"
-                    on:click={() => goto(`plans?modelId=${model.id}`)}
-                    use:tooltip={{
-                      content: 'Create Plan',
-                      placement: 'bottom',
-                    }}
-                  >
-                    <i class="bi bi-calendar-plus" />
-                  </button>
-                  <button
-                    class="st-button icon"
-                    data-cy="delete-model-{model.name}"
-                    on:click|stopPropagation={() =>
-                      confirmDeleteModel.modal.show(model)}
-                    use:tooltip={{
-                      content: 'Delete Model',
-                      placement: 'bottom',
-                    }}
-                  >
-                    <i class="bi bi-trash" />
-                  </button>
-                </td>
-                <td>{model.name}</td>
-                <td>{model.id}</td>
-                <td>{model.version}</td>
+                <th>Actions</th>
+                <th>Name</th>
+                <th>Model ID</th>
+                <th>Version</th>
               </tr>
-            {/each}
-          </tbody>
-        </table>
-      {:else}
-        <Card class="p-1">No Models Found</Card>
-      {/if}
-    </div>
+            </thead>
+            <tbody>
+              {#each sortedModels as model}
+                <tr>
+                  <td class="actions">
+                    <button
+                      class="st-button icon"
+                      data-cy="create-plan-{model.name}"
+                      on:click={() => goto(`plans?modelId=${model.id}`)}
+                      use:tooltip={{
+                        content: 'Create Plan',
+                        placement: 'bottom',
+                      }}
+                    >
+                      <i class="bi bi-calendar-plus" />
+                    </button>
+                    <button
+                      class="st-button icon"
+                      data-cy="delete-model-{model.name}"
+                      on:click|stopPropagation={() =>
+                        confirmDeleteModel.modal.show(model)}
+                      use:tooltip={{
+                        content: 'Delete Model',
+                        placement: 'bottom',
+                      }}
+                    >
+                      <i class="bi bi-trash" />
+                    </button>
+                  </td>
+                  <td>{model.name}</td>
+                  <td>{model.id}</td>
+                  <td>{model.version}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        {:else}
+          No Models Found
+        {/if}
+      </svelte:fragment>
+    </Panel>
   </CssGrid>
 </CssGrid>
 

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
@@ -25,9 +26,12 @@
   }
 </script>
 
-<Panel hideFooter>
-  <span slot="header"> Constraint List </span>
-  <span slot="body">
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Constraint List</Chip>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
     <details open>
       <summary class="p-1">Model Constraints</summary>
       <div class="m-1">
@@ -103,7 +107,7 @@
         {/if}
       </div>
     </details>
-  </span>
+  </svelte:fragment>
 </Panel>
 
 <ConfirmModal

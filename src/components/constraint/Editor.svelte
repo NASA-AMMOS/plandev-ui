@@ -3,11 +3,13 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
-  import Card from '../ui/Card.svelte';
   import AlertError from '../ui/AlertError.svelte';
+  import Card from '../ui/Card.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import type { Constraint, CreateConstraint } from '../../types';
   import { reqValidateConstraint } from '../../utilities/requests';
+  import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher();
 
@@ -92,11 +94,22 @@
 </script>
 
 <Panel>
-  <span slot="header"> Constraint Editor </span>
-  <span slot="body">
+  <svelte:fragment slot="header">
+    <Chip>Constraint Editor</Chip>
+    <button
+      class="st-button icon"
+      disabled={!valid}
+      on:click|stopPropagation={save}
+      use:tooltip={{ content: 'Save Constraint', placement: 'left' }}
+    >
+      <i class="bi bi-save" />
+    </button>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
     <details open>
       <summary class="p-2">Constraint Metadata</summary>
-      <Card class="m-2">
+      <Card class="p-1">
         <fieldset>
           <label for="type">Type</label>
           <select bind:value={type} class="st-select w-100" name="type">
@@ -155,17 +168,5 @@
         on:didChangeModelContent={onTextChanged}
       />
     </details>
-  </span>
-
-  <span slot="footer">
-    <button class="st-button save-button" disabled={!valid} on:click={save}>
-      Save
-    </button>
-  </span>
+  </svelte:fragment>
 </Panel>
-
-<style>
-  .save-button {
-    width: 120px;
-  }
-</style>
