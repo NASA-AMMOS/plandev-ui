@@ -101,7 +101,7 @@
   }
 </script>
 
-<Panel>
+<Panel padBody={false}>
   <svelte:fragment slot="header">
     <Chip>Selected Activity</Chip>
     <button

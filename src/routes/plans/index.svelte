@@ -31,6 +31,7 @@
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Field from '../../components/form/Field.svelte';
+  import Input from '../../components/form/Input.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
@@ -54,6 +55,7 @@
   let confirmDeletePlan: ConfirmModal | null = null;
   let createButtonText = 'Create';
   let error: string | null = null;
+  let filterText: string = '';
 
   let endTimeField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
@@ -66,9 +68,19 @@
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid;
+  $: filteredPlans = plans.filter(plan => {
+    const filterTextLowerCase = filterText.toLowerCase();
+    return (
+      plan.endTime.includes(filterTextLowerCase) ||
+      `${plan.id}`.includes(filterTextLowerCase) ||
+      `${plan.modelId}`.includes(filterTextLowerCase) ||
+      plan.name.toLowerCase().includes(filterTextLowerCase) ||
+      plan.startTime.includes(filterTextLowerCase)
+    );
+  });
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
   $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
-  $: sortedPlans = plans.sort((a, b) => compare(a.name, b.name));
+  $: sortedPlans = filteredPlans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
     const queryModelId = $page.url.searchParams.get('modelId');
@@ -214,10 +226,19 @@
           <i class="bi bi-calendar-range" />
           Existing Plans
         </Chip>
+        <Input>
+          <i class="bi bi-search" slot="left" />
+          <input
+            bind:value={filterText}
+            class="st-input"
+            placeholder="Search plans"
+            style="width: 300px"
+          />
+        </Input>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if plans.length}
+        {#if sortedPlans.length}
           <table class="st-table">
             <thead>
               <tr>

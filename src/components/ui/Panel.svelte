@@ -33,8 +33,10 @@
     align-items: center;
     border-bottom: 1px solid var(--st-gray-20);
     display: flex;
+    gap: 0.5rem;
     justify-content: space-between;
     height: 40px;
+    width: 100%;
   }
 
   .padBody,

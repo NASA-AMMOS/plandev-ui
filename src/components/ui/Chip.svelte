@@ -19,5 +19,6 @@
     letter-spacing: 0.04em;
     line-height: 16px;
     padding: 0.5rem;
+    white-space: nowrap;
   }
 </style>

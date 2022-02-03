@@ -14,10 +14,10 @@
 
   export let activityTypes: ActivityType[] = [];
 
-  let searchText: string = '';
+  let filterText: string = '';
 
   $: filteredActivityTypes = activityTypes.filter(({ name }) =>
-    name.toLowerCase().includes(searchText.toLowerCase()),
+    name.toLowerCase().includes(filterText.toLowerCase()),
   );
   $: sortedActivityTypes = filteredActivityTypes.sort((a, b) =>
     compare(a.name, b.name),
@@ -54,10 +54,10 @@
       <Input>
         <i class="bi bi-search" slot="left" />
         <input
-          bind:value={searchText}
+          bind:value={filterText}
           class="st-input w-100"
           name="search"
-          placeholder="Find an Activity Type"
+          placeholder="Filter activity types"
         />
       </Input>
     </fieldset>
