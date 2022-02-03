@@ -1088,8 +1088,10 @@ export async function reqSimulate(
       // Activities.
       const activitiesMap: ActivitiesMap = Object.keys(
         results.activities,
-      ).reduce((activitiesMap: ActivitiesMap, id: string) => {
+      ).reduce((activitiesMap: ActivitiesMap, idAsString: string) => {
+        const id = parseFloat(idAsString);
         const activity = results.activities[id];
+
         activitiesMap[id] = {
           arguments: activity.arguments,
           children: activity.children,
@@ -1099,6 +1101,7 @@ export async function reqSimulate(
           startTime: activity.startTimestamp,
           type: activity.type,
         };
+
         return activitiesMap;
       }, {});
 
