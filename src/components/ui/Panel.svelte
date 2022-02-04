@@ -39,6 +39,10 @@
     width: 100%;
   }
 
+  .header :global(i) {
+    font-size: 1rem;
+  }
+
   .padBody,
   .padHeader {
     padding: 0.5rem;

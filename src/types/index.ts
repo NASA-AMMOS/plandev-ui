@@ -8,6 +8,7 @@ export * from './kit';
 export * from './parameter';
 export * from './scheduling';
 export * from './simulation';
+export * from './table';
 export * from './time-range';
 export * from './timeline';
 export * from './view';

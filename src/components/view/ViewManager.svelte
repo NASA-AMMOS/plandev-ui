@@ -9,6 +9,7 @@
     reqGetViews,
   } from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
+  import Table from '../stellar/Table.svelte';
   import Panel from '../ui/Panel.svelte';
   import Chip from '../ui/Chip.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
@@ -39,10 +40,7 @@
     }
   }
 
-  async function onLoadView(event: Event, viewId: number) {
-    event.preventDefault();
-    event.stopPropagation();
-
+  async function onLoadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
     const newView = await reqGetView(fetch, query);
 
@@ -62,42 +60,34 @@
 
   <svelte:fragment slot="body">
     {#if views.length}
-      <table class="st-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Owner</th>
-            <th>Last Updated</th>
-            <th class="actions-header" />
-          </tr>
-        </thead>
-        <tbody>
-          {#each views as view}
-            <tr on:click={e => onLoadView(e, view.id)}>
-              <td>{view.id}</td>
-              <td>{view.name}</td>
-              <td>{view.meta.owner}</td>
-              <td>{view.meta.timeUpdated}</td>
-              <td class="actions-data">
-                {#if view.meta.owner !== 'system'}
-                  <button
-                    class="st-button icon"
-                    on:click|stopPropagation={() =>
-                      confirmDeleteView.modal.show({ viewId: view.id })}
-                    use:tooltip={{
-                      content: 'Delete View',
-                      placement: 'bottom',
-                    }}
-                  >
-                    <i class="bi bi-trash" />
-                  </button>
-                {/if}
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+      <Table
+        let:currentRow
+        columnDefs={[
+          { field: 'id', name: 'ID' },
+          { field: 'name', name: 'Name' },
+          { field: 'meta.owner', name: 'Owner' },
+          { field: 'meta.timeUpdated', name: 'Last Updated' },
+          { field: 'actions', name: '' },
+        ]}
+        rowData={views}
+        on:rowClick={({ detail }) => onLoadView(detail.id)}
+      >
+        <span slot="actions-data">
+          {#if currentRow?.meta?.owner !== 'system'}
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={() =>
+                confirmDeleteView.modal.show({ viewId: currentRow.id })}
+              use:tooltip={{
+                content: 'Delete View',
+                placement: 'bottom',
+              }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          {/if}
+        </span>
+      </Table>
     {:else}
       No Views Found
     {/if}

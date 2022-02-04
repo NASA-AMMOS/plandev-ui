@@ -53,11 +53,11 @@
   import SchedulingStatusBadge from '../../components/scheduling/SchedulingStatusBadge.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
+  import Table from '../../components/stellar/Table.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import Card from '../../components/ui/Card.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
-  import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
@@ -522,10 +522,16 @@
             />
           {:else if section.table && horizontalSplitInitialized}
             <Table
-              columns={section.table.columns}
-              data={$activities}
-              selectedId={$selectedActivityId}
-              on:select={event => selectActivity(event.detail.id)}
+              columnDefs={[
+                { field: 'id', name: 'ID' },
+                { field: 'type', name: 'Type' },
+                { field: 'startTime', name: 'Start Time' },
+                { field: 'duration', name: 'Duration' },
+              ]}
+              rowData={$activities}
+              rowSelectionMode="single"
+              selectedRowId={$selectedActivityId}
+              on:rowClick={({ detail }) => selectActivity(detail.id)}
             />
           {:else if section.timeline && horizontalSplitInitialized}
             <Timeline

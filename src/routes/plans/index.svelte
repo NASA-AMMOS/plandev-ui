@@ -48,6 +48,7 @@
   } from '../../utilities/requests';
   import { simulationTemplates } from '../../stores/simulation';
   import { field } from '../../stores/form';
+  import Table from '../../components/stellar/Table.svelte';
 
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
@@ -116,8 +117,7 @@
     createButtonText = 'Create';
   }
 
-  async function deletePlan(event: CustomEvent<CreatePlan>) {
-    event.preventDefault();
+  async function deletePlan(event: CustomEvent<CreatePlan>): Promise<void> {
     const { detail: plan } = event;
     const { id } = plan;
     const success = await reqDeletePlanAndSimulations(id);
@@ -125,12 +125,6 @@
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
     }
-  }
-
-  function openPlan(event: Event, id: number): void {
-    event.preventDefault();
-    event.stopPropagation();
-    goto(`plans/${id}`);
   }
 </script>
 
@@ -248,45 +242,33 @@
 
       <svelte:fragment slot="body">
         {#if sortedPlans.length}
-          <table class="st-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Plan ID</th>
-                <th>Model ID</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th class="actions-header" />
-              </tr>
-            </thead>
-            <tbody>
-              {#each sortedPlans as plan}
-                <tr
-                  on:click={e => openPlan(e, plan.id)}
-                  on:pointerenter={() => prefetch(`plans/${plan.id}`)}
-                >
-                  <td>{plan.name}</td>
-                  <td>{plan.id}</td>
-                  <td>{plan.modelId}</td>
-                  <td>{plan.startTime}</td>
-                  <td>{plan.endTime}</td>
-                  <td class="actions-data">
-                    <button
-                      class="st-button icon"
-                      on:click|stopPropagation={() =>
-                        confirmDeletePlan.modal.show(plan)}
-                      use:tooltip={{
-                        content: 'Delete Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-trash" />
-                    </button>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          <Table
+            let:currentRow
+            columnDefs={[
+              { field: 'name', name: 'Name' },
+              { field: 'id', name: 'Plan ID' },
+              { field: 'modelId', name: 'Model ID' },
+              { field: 'startTime', name: 'Start Time' },
+              { field: 'endTime', name: 'End Time' },
+              { field: 'actions', name: '' },
+            ]}
+            rowData={sortedPlans}
+            on:rowClick={({ detail: plan }) => goto(`plans/${plan.id}`)}
+            on:pointerEnter={({ detail: plan }) => prefetch(`plans/${plan.id}`)}
+          >
+            <button
+              class="st-button icon"
+              slot="actions-data"
+              on:click|stopPropagation={() =>
+                confirmDeletePlan.modal.show(currentRow)}
+              use:tooltip={{
+                content: 'Delete Plan',
+                placement: 'bottom',
+              }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          </Table>
         {:else}
           No Plans Found
         {/if}

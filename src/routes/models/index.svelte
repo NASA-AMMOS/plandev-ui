@@ -25,6 +25,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import Table from '../../components/stellar/Table.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import Panel from '../../components/ui/Panel.svelte';
@@ -145,39 +146,31 @@
 
       <svelte:fragment slot="body">
         {#if models.length}
-          <table class="st-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Model ID</th>
-                <th>Version</th>
-                <th class="actions-header" />
-              </tr>
-            </thead>
-            <tbody>
-              {#each sortedModels as model}
-                <tr on:click={() => goto(`plans?modelId=${model.id}`)}>
-                  <td>{model.name}</td>
-                  <td>{model.id}</td>
-                  <td>{model.version}</td>
-                  <td class="actions-data">
-                    <button
-                      class="st-button icon"
-                      data-cy="delete-model-{model.name}"
-                      on:click|stopPropagation={() =>
-                        confirmDeleteModel.modal.show(model)}
-                      use:tooltip={{
-                        content: 'Delete Model',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-trash" />
-                    </button>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          <Table
+            let:currentRow
+            columnDefs={[
+              { field: 'name', name: 'Name' },
+              { field: 'id', name: 'Model ID' },
+              { field: 'version', name: 'Version' },
+              { field: 'actions', name: '' },
+            ]}
+            rowData={sortedModels}
+            on:rowClick={({ detail: model }) =>
+              goto(`plans?modelId=${model.id}`)}
+          >
+            <button
+              class="st-button icon"
+              slot="actions-data"
+              on:click|stopPropagation={() =>
+                confirmDeleteModel.modal.show(currentRow)}
+              use:tooltip={{
+                content: 'Delete Model',
+                placement: 'bottom',
+              }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          </Table>
         {:else}
           No Models Found
         {/if}
