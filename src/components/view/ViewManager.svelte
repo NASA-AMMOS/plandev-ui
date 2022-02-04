@@ -63,16 +63,16 @@
       <Table
         let:currentRow
         columnDefs={[
-          { field: 'id', name: 'ID' },
-          { field: 'name', name: 'Name' },
-          { field: 'meta.owner', name: 'Owner' },
-          { field: 'meta.timeUpdated', name: 'Last Updated' },
+          { field: 'id', name: 'ID', sortable: true },
+          { field: 'name', name: 'Name', sortable: true },
+          { field: 'meta.owner', name: 'Owner', sortable: true },
+          { field: 'meta.timeUpdated', name: 'Last Updated', sortable: true },
           { field: 'actions', name: '' },
         ]}
         rowData={views}
         on:rowClick={({ detail }) => onLoadView(detail.id)}
       >
-        <span slot="actions-data">
+        <span slot="actions-cell">
           {#if currentRow?.meta?.owner !== 'system'}
             <button
               class="st-button icon"

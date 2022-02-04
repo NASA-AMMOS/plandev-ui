@@ -245,11 +245,11 @@
           <Table
             let:currentRow
             columnDefs={[
-              { field: 'name', name: 'Name' },
-              { field: 'id', name: 'Plan ID' },
-              { field: 'modelId', name: 'Model ID' },
-              { field: 'startTime', name: 'Start Time' },
-              { field: 'endTime', name: 'End Time' },
+              { field: 'name', name: 'Name', sortable: true },
+              { field: 'id', name: 'Plan ID', sortable: true },
+              { field: 'modelId', name: 'Model ID', sortable: true },
+              { field: 'startTime', name: 'Start Time', sortable: true },
+              { field: 'endTime', name: 'End Time', sortable: true },
               { field: 'actions', name: '' },
             ]}
             rowData={sortedPlans}
@@ -258,7 +258,7 @@
           >
             <button
               class="st-button icon"
-              slot="actions-data"
+              slot="actions-cell"
               on:click|stopPropagation={() =>
                 confirmDeletePlan.modal.show(currentRow)}
               use:tooltip={{

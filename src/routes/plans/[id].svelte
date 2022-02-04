@@ -523,10 +523,10 @@
           {:else if section.table && horizontalSplitInitialized}
             <Table
               columnDefs={[
-                { field: 'id', name: 'ID' },
-                { field: 'type', name: 'Type' },
-                { field: 'startTime', name: 'Start Time' },
-                { field: 'duration', name: 'Duration' },
+                { field: 'id', name: 'ID', sortable: true },
+                { field: 'type', name: 'Type', sortable: true },
+                { field: 'startTime', name: 'Start Time', sortable: true },
+                { field: 'duration', name: 'Duration', sortable: true },
               ]}
               rowData={$activities}
               rowSelectionMode="single"

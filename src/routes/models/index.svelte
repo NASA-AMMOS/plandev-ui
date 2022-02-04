@@ -149,9 +149,9 @@
           <Table
             let:currentRow
             columnDefs={[
-              { field: 'name', name: 'Name' },
-              { field: 'id', name: 'Model ID' },
-              { field: 'version', name: 'Version' },
+              { field: 'name', name: 'Name', sortable: true },
+              { field: 'id', name: 'Model ID', sortable: true },
+              { field: 'version', name: 'Version', sortable: true },
               { field: 'actions', name: '' },
             ]}
             rowData={sortedModels}
@@ -160,7 +160,7 @@
           >
             <button
               class="st-button icon"
-              slot="actions-data"
+              slot="actions-cell"
               on:click|stopPropagation={() =>
                 confirmDeleteModel.modal.show(currentRow)}
               use:tooltip={{

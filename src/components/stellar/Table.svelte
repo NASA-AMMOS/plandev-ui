@@ -3,7 +3,8 @@
 <script lang="ts">
   import { get } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import type { ColumnDef, RowSelectionMode } from '../../types';
+  import type { ColumnDef, RowSelectionMode, RowSort } from '../../types';
+  import { compare } from '../../utilities/generic';
 
   const dispatch = createEventDispatcher();
 
@@ -13,6 +14,31 @@
   export let selectedRowId: number | null = null;
 
   let currentRow: any;
+  let currentSort: RowSort | null = null;
+  let sortedRowData: any = rowData;
+
+  $: sortedRowData =
+    currentSort !== null
+      ? [...rowData].sort((a, b) =>
+          compare(
+            a[currentSort.field],
+            b[currentSort.field],
+            currentSort.direction === 'asc',
+          ),
+        )
+      : rowData;
+
+  function sort(columnDef: ColumnDef) {
+    if (columnDef.sortable) {
+      if (currentSort === null || currentSort.field !== columnDef.field) {
+        currentSort = { direction: 'asc', field: columnDef.field };
+      } else if (currentSort.direction === 'asc') {
+        currentSort = { direction: 'desc', field: columnDef.field };
+      } else {
+        currentSort = null;
+      }
+    }
+  }
 </script>
 
 <table class="st-table">
@@ -25,6 +51,18 @@
       {#each columnDefs as columnDef}
         {#if columnDef.field === 'actions'}
           <th class="actions-header" />
+        {:else if columnDef.sortable}
+          <th class="sortable-header" on:click={() => sort(columnDef)}>
+            {columnDef.name}
+
+            {#if currentSort?.field === columnDef.field}
+              {#if currentSort.direction === 'asc'}
+                <i class="bi bi-arrow-up-short" />
+              {:else if currentSort.direction === 'desc'}
+                <i class="bi bi-arrow-down-short" />
+              {/if}
+            {/if}
+          </th>
         {:else}
           <th>{columnDef.name}</th>
         {/if}
@@ -33,7 +71,7 @@
   </thead>
 
   <tbody>
-    {#each rowData as row}
+    {#each sortedRowData as row}
       <tr
         on:click|preventDefault={() => dispatch('rowClick', row)}
         on:mouseenter={() => (currentRow = row)}
@@ -41,7 +79,7 @@
         on:pointerenter|preventDefault={() => dispatch('pointerEnter', row)}
       >
         {#if rowSelectionMode !== 'none'}
-          <td class="selection-data">
+          <td class="selection-cell">
             <input
               checked={selectedRowId === row?.id}
               type={rowSelectionMode === 'single' ? 'radio' : 'checkbox'}
@@ -51,8 +89,8 @@
 
         {#each columnDefs as columnDef}
           {#if columnDef.field === 'actions'}
-            <td class="actions-data">
-              <slot {currentRow} name="actions-data" />
+            <td class="actions-cell">
+              <slot {currentRow} name="actions-cell" />
             </td>
           {:else}
             <td>{get(row, columnDef.field)}</td>
@@ -90,27 +128,36 @@
     cursor: pointer;
   }
 
-  .actions-data,
+  .actions-cell,
   .actions-header,
-  .selection-data,
+  .selection-cell,
   .selection-header {
     min-width: 40px;
     width: 40px;
   }
 
-  .actions-data {
+  .actions-cell {
     align-items: center;
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
   }
 
-  .actions-data :global(*) {
+  .actions-cell :global(*) {
     font-size: 1rem;
     visibility: hidden;
   }
 
-  tr:hover td.actions-data :global(*) {
+  tr:hover td.actions-cell :global(*) {
     visibility: visible;
+  }
+
+  .sortable-header {
+    align-items: center;
+    display: flex;
+  }
+
+  .sortable-header > i {
+    font-size: 1.3rem;
   }
 </style>
