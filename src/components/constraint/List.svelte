@@ -14,7 +14,7 @@
   export let modelConstraints: Constraint[] = [];
   export let planConstraints: Constraint[] = [];
 
-  let confirmDeleteModel: ConfirmModal | null = null;
+  let confirmDeleteConstraint: ConfirmModal | null = null;
 
   function deleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
@@ -53,7 +53,7 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteModel.modal.show(constraint)}
+                    confirmDeleteConstraint.modal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -91,7 +91,7 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteModel.modal.show(constraint)}
+                    confirmDeleteConstraint.modal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -111,7 +111,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteModel}
+  bind:this={confirmDeleteConstraint}
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"

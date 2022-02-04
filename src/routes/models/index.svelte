@@ -148,27 +148,19 @@
           <table class="st-table">
             <thead>
               <tr>
-                <th>Actions</th>
                 <th>Name</th>
                 <th>Model ID</th>
                 <th>Version</th>
+                <th class="actions-header" />
               </tr>
             </thead>
             <tbody>
               {#each sortedModels as model}
-                <tr>
-                  <td class="actions">
-                    <button
-                      class="st-button icon"
-                      data-cy="create-plan-{model.name}"
-                      on:click={() => goto(`plans?modelId=${model.id}`)}
-                      use:tooltip={{
-                        content: 'Create Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-calendar-plus" />
-                    </button>
+                <tr on:click={() => goto(`plans?modelId=${model.id}`)}>
+                  <td>{model.name}</td>
+                  <td>{model.id}</td>
+                  <td>{model.version}</td>
+                  <td class="actions-data">
                     <button
                       class="st-button icon"
                       data-cy="delete-model-{model.name}"
@@ -182,9 +174,6 @@
                       <i class="bi bi-trash" />
                     </button>
                   </td>
-                  <td>{model.name}</td>
-                  <td>{model.id}</td>
-                  <td>{model.version}</td>
                 </tr>
               {/each}
             </tbody>

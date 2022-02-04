@@ -31,15 +31,15 @@
   </thead>
   <tbody>
     {#each sortedData as item}
-      <tr>
+      <tr on:click={() => onSelect(item)}>
         {#each columns as column}
           {#if column === 'select'}
             <td>
               <input
                 checked={selectedId === item?.id}
                 name="select"
+                style="cursor: pointer"
                 type="radio"
-                on:click={() => onSelect(item)}
               />
             </td>
           {:else}

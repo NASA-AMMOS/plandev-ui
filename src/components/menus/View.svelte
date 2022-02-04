@@ -26,13 +26,13 @@
 </script>
 
 <Menu bind:this={menu} top="29px">
-  <div class="menu-item" on:click={() => onMenuItemClick('editViewJson')}>
+  <div class="menu-item" on:click={() => onMenuItemClick('editView')}>
     <i class="bi bi-pencil" />
-    Edit View JSON
+    Edit View
   </div>
-  <div class="menu-item" on:click={() => onMenuItemClick('loadView')}>
+  <div class="menu-item" on:click={() => onMenuItemClick('manageViews')}>
     <i class="bi bi-box-arrow-right" />
-    Load View
+    Manage Views
   </div>
   <div class="menu-item" on:click={() => onMenuItemClick('saveAsView')}>
     <i class="bi bi-save" />

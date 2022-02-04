@@ -47,7 +47,6 @@
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
-  import LoadViewModal from '../../components/modals/LoadView.svelte';
   import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
   import ConstraintMenu from '../../components/menus/Constraint.svelte';
   import ViewMenu from '../../components/menus/View.svelte';
@@ -63,7 +62,8 @@
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
-  import MonacoEditor from '../../components/monaco/MonacoEditor.svelte';
+  import ViewEditor from '../../components/view/ViewEditor.svelte';
+  import ViewManager from '../../components/view/ViewManager.svelte';
   import {
     activities,
     activitiesMap,
@@ -91,6 +91,7 @@
     selectedTimelinePanel,
     simulationConfigurationPanel,
     viewEditorPanel,
+    viewManagerPanel,
   } from '../../stores/panels';
   import { resources } from '../../stores/resources';
   import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
@@ -112,7 +113,6 @@
     view,
     viewSectionIds,
     viewSectionSizes,
-    viewText,
   } from '../../stores/views';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import {
@@ -132,7 +132,6 @@
 
   let constraintMenu: ConstraintMenu;
   let horizontalSplitInitialized: boolean = false;
-  let loadViewModal: LoadViewModal;
   let saveAsViewModal: SaveAsViewModal;
   let viewMenu: ViewMenu;
 
@@ -281,13 +280,6 @@
     updateSectionSizes(newSizes);
   }
 
-  function onSetView(event: CustomEvent<{ view: View }>) {
-    const { detail } = event;
-    const { view: newView } = detail;
-    $view = newView;
-    setQueryParam('viewId', `${newView.id}`);
-  }
-
   function onUpdateActivity(event: CustomEvent<UpdateActivity>) {
     const { startTime } = initialPlan;
     const { detail: activity } = event;
@@ -346,18 +338,6 @@
 
   function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
     viewTimeRange = event.detail;
-  }
-
-  function onViewTextChanged(event: CustomEvent<{ value: string }>): void {
-    const { detail } = event;
-    const { value } = detail;
-
-    try {
-      const newView = JSON.parse(value);
-      $view = newView;
-    } catch (e) {
-      console.log(e);
-    }
   }
 
   async function runScheduling() {
@@ -499,8 +479,8 @@
         <ViewMenu
           bind:this={viewMenu}
           currentView={$view}
-          on:editViewJson={() => viewEditorPanel.show()}
-          on:loadView={() => loadViewModal.modal.show()}
+          on:editView={() => viewEditorPanel.show()}
+          on:manageViews={() => viewManagerPanel.show()}
           on:saveAsView={() => saveAsViewModal.modal.show()}
           on:saveView={onSaveView}
         />
@@ -626,25 +606,13 @@
           on:updateSimulation={onUpdateSimulation}
         />
       {:else if $viewEditorPanel.visible}
-        <MonacoEditor
-          automaticLayout={true}
-          language="json"
-          lineNumbers="on"
-          minimap={{ enabled: false }}
-          scrollBeyondLastLine={false}
-          value={$viewText}
-          on:didChangeModelContent={onViewTextChanged}
-        />
+        <ViewEditor />
+      {:else if $viewManagerPanel.visible}
+        <ViewManager />
       {/if}
     </div>
   </Split>
 </CssGrid>
-
-<LoadViewModal
-  bind:this={loadViewModal}
-  currentView={$view}
-  on:setView={onSetView}
-/>
 
 <SaveAsViewModal bind:this={saveAsViewModal} on:createView={onCreateView} />
 

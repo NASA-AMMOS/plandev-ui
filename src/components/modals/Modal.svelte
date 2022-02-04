@@ -116,6 +116,10 @@
     width: 80px;
   }
 
+  .modal > :global(.footer > .st-button.secondary) {
+    border: 1px solid var(--st-gray-30);
+  }
+
   .modal > :global(.content) {
     flex: auto;
     padding: 1rem;

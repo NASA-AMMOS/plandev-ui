@@ -56,6 +56,7 @@
   let createButtonText = 'Create';
   let error: string | null = null;
   let filterText: string = '';
+  let nameInputField: HTMLInputElement;
 
   let endTimeField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
@@ -88,6 +89,9 @@
       $modelIdField.value = parseFloat(queryModelId);
       modelIdField.validate();
       removeQueryParam('modelId');
+      if (nameInputField) {
+        nameInputField.focus();
+      }
     }
   });
 
@@ -161,7 +165,12 @@
 
           <Field field={nameField}>
             <label for="name" slot="label">Name</label>
-            <input autocomplete="off" class="st-input w-100" name="name" />
+            <input
+              bind:this={nameInputField}
+              autocomplete="off"
+              class="st-input w-100"
+              name="name"
+            />
           </Field>
 
           <Field field={startTimeField}>
@@ -231,7 +240,7 @@
           <input
             bind:value={filterText}
             class="st-input"
-            placeholder="Search plans"
+            placeholder="Filter plans"
             style="width: 300px"
           />
         </Input>
@@ -242,12 +251,12 @@
           <table class="st-table">
             <thead>
               <tr>
-                <th>Actions</th>
                 <th>Name</th>
                 <th>Plan ID</th>
                 <th>Model ID</th>
                 <th>Start Time</th>
                 <th>End Time</th>
+                <th class="actions-header" />
               </tr>
             </thead>
             <tbody>
@@ -256,17 +265,12 @@
                   on:click={e => openPlan(e, plan.id)}
                   on:pointerenter={() => prefetch(`plans/${plan.id}`)}
                 >
-                  <td class="actions">
-                    <button
-                      class="st-button icon"
-                      on:click={e => openPlan(e, plan.id)}
-                      use:tooltip={{
-                        content: 'Open Plan',
-                        placement: 'bottom',
-                      }}
-                    >
-                      <i class="bi bi-box-arrow-in-up-right" />
-                    </button>
+                  <td>{plan.name}</td>
+                  <td>{plan.id}</td>
+                  <td>{plan.modelId}</td>
+                  <td>{plan.startTime}</td>
+                  <td>{plan.endTime}</td>
+                  <td class="actions-data">
                     <button
                       class="st-button icon"
                       on:click|stopPropagation={() =>
@@ -279,11 +283,6 @@
                       <i class="bi bi-trash" />
                     </button>
                   </td>
-                  <td>{plan.name}</td>
-                  <td>{plan.id}</td>
-                  <td>{plan.modelId}</td>
-                  <td>{plan.startTime}</td>
-                  <td>{plan.endTime}</td>
                 </tr>
               {/each}
             </tbody>
@@ -303,10 +302,3 @@
   title="Delete Plan"
   on:confirm={deletePlan}
 />
-
-<style>
-  .st-table tr:hover {
-    background-color: var(--st-gray-10);
-    cursor: pointer;
-  }
-</style>

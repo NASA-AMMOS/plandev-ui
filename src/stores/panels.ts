@@ -10,6 +10,7 @@ export const selectedActivityPanel = createPanel(false);
 export const selectedTimelinePanel = createPanel(false);
 export const simulationConfigurationPanel = createPanel(false);
 export const viewEditorPanel = createPanel(false);
+export const viewManagerPanel = createPanel(false);
 
 /** Utility Functions. */
 
@@ -31,5 +32,6 @@ function hideAll(): boolean {
   selectedTimelinePanel.hide();
   simulationConfigurationPanel.hide();
   viewEditorPanel.hide();
+  viewManagerPanel.hide();
   return true;
 }
