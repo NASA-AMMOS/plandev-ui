@@ -15,8 +15,8 @@
     updateFormParameter,
   } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
+  import Chip from '../stellar/Chip.svelte';
   import Card from '../ui/Card.svelte';
-  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
 
   const dispatch = createEventDispatcher();

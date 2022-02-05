@@ -4,8 +4,8 @@
   import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
+  import Chip from '../../stellar/Chip.svelte';
   import Card from '../../ui/Card.svelte';
-  import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';

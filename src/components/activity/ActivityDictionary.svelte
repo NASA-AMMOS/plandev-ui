@@ -4,7 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActivityType } from '../../types';
   import Input from '../form/Input.svelte';
-  import Chip from '../ui/Chip.svelte';
+  import Chip from '../stellar/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import { compare } from '../../utilities/generic';

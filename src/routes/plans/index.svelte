@@ -27,8 +27,8 @@
   import { goto, prefetch } from '$app/navigation';
   import { page } from '$app/stores';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import Chip from '../../components/stellar/Chip.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';

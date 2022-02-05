@@ -8,12 +8,12 @@
     ArgumentsMap,
     FormParameter,
   } from '../../types';
-  import Chip from '../ui/Chip.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
   import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
+  import Chip from '../stellar/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import { reqValidateActivityArguments } from '../../utilities/requests';
   import Card from '../ui/Card.svelte';

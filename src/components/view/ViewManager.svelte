@@ -9,9 +9,9 @@
     reqGetViews,
   } from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
+  import Chip from '../stellar/Chip.svelte';
   import Table from '../stellar/Table.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Chip from '../ui/Chip.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import { view } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';

@@ -25,9 +25,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import Chip from '../../components/stellar/Chip.svelte';
   import Table from '../../components/stellar/Table.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';

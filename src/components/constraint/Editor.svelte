@@ -3,9 +3,9 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
+  import Chip from '../stellar/Chip.svelte';
   import AlertError from '../ui/AlertError.svelte';
   import Card from '../ui/Card.svelte';
-  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import type { Constraint, CreateConstraint } from '../../types';
   import { reqValidateConstraint } from '../../utilities/requests';
