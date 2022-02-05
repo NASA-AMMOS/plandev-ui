@@ -56,7 +56,7 @@
     "graphql-ws": "^5.5.5",
     "lodash-es": "^4.17.21",
     "modern-css-reset": "^1.4.0",
-    "monaco-editor": "0.31.1",
+    "monaco-editor": "^0.32.1",
     "postgres-interval": "^4.0.0",
     "prettier": "^2.5.1",
     "prettier-plugin-svelte": "^2.6.0",
