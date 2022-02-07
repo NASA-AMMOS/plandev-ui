@@ -1,4 +1,5 @@
 ![ci](https://github.com/NASA-AMMOS/aerie-ui/actions/workflows/ci.yml/badge.svg)
+[![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/aerie-ui.svg?label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/aerie-ui/context:javascript)
 
 # aerie-ui
 
