@@ -1,11 +1,6 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type {
-  Constraint,
-  ConstraintViolation,
-  CreateConstraint,
-} from '../types';
 import {
   reqCreateConstraint,
   reqDeleteConstraint,

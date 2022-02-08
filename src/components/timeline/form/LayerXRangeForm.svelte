@@ -1,6 +1,5 @@
 <script lang="ts">
   import CssGrid from '../../ui/CssGrid.svelte';
-  import type { Layer, XRangeLayer } from '../../../types';
 
   const colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },

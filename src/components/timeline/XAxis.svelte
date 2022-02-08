@@ -6,12 +6,6 @@
   import ConstraintViolations from './ConstraintViolations.svelte';
   import XAxisBrush from './XAxisBrush.svelte';
   import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
-  import type {
-    ConstraintViolation,
-    TimeRange,
-    VerticalGuide,
-    XAxisTick,
-  } from '../../types';
   import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher();

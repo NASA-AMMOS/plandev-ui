@@ -4,7 +4,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { ConstraintViolation, TimeRange } from '../../types';
 
   const dispatch = createEventDispatcher();
 

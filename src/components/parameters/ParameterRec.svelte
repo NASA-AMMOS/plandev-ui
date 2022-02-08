@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types';
-
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
   export let labelColumnWidth: number = 200;

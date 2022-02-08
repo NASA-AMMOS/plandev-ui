@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Layer, LineLayer } from '../../../types';
   import CssGrid from '../../ui/CssGrid.svelte';
 
   export let layer: Layer | null;

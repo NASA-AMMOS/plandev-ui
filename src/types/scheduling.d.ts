@@ -1,10 +1,10 @@
-export type SchedulingResponse = {
+type SchedulingResponse = {
   reason?: string;
   results?: SchedulingResults;
   status: 'complete' | 'failed';
 };
 
-export type SchedulingResults = {
+type SchedulingResults = {
   activityCount: number;
   goalScores: Record<string, number>;
 };

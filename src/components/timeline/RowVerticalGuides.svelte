@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
-  import type { TimeRange, VerticalGuide } from '../../types';
   import { getUnixEpochTime } from '../../utilities/time';
 
   export let drawHeight: number = 0;

@@ -1,135 +1,12 @@
 import { get } from 'svelte/store';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
-import type {
-  ActivitiesMap,
-  Activity,
-  ActivityType,
-  ArgumentsMap,
-  Constraint,
-  ConstraintViolation,
-  CreateActivity,
-  CreateConstraint,
-  CreateViewResponse,
-  DeleteViewResponse,
-  Fetch,
-  GetViewResponse,
-  ParametersMap,
-  ParameterValidationResponse,
-  ReqLoginResponse,
-  ReqLogoutResponse,
-  ReqSessionResponse,
-  Resource,
-  ResourceValue,
-  SchedulingResponse,
-  Simulation,
-  UpdateActivity,
-  UpdateViewResponse,
-  User,
-  View,
-} from '../types';
 import { gatewayUrl, hasuraUrl, schedulerUrl } from './app';
-import {
-  CREATE_ACTIVITY,
-  CREATE_CONSTRAINT,
-  CREATE_MODEL,
-  CREATE_PLAN,
-  CREATE_SIMULATION,
-  DELETE_ACTIVITY,
-  DELETE_CONSTRAINT,
-  DELETE_MODEL,
-  DELETE_PLAN_AND_SIMULATIONS,
-  GET_ACTIVITIES_FOR_PLAN,
-  GET_MODELS,
-  GET_PLAN,
-  GET_PLANS_AND_MODELS,
-  RESOURCE_TYPES,
-  SIMULATE,
-  UPDATE_ACTIVITY,
-  UPDATE_CONSTRAINT,
-  UPDATE_SIMULATION,
-  VALIDATE_ACTIVITY_ARGUMENTS,
-} from './gql';
+import * as gql from './gql';
 import {
   getDoyTime,
   getDoyTimeFromDuration,
   getIntervalFromDoyRange,
 } from './time';
-
-/* Types. */
-
-export type CreateActivityResponse = {
-  ids: string[];
-  message: string;
-  success: boolean;
-};
-
-export type CreateModel = {
-  id: number;
-  jarId: number;
-  name: string;
-  version: string;
-};
-
-export type CreatePlan = {
-  endTime: string;
-  id: number;
-  modelId: number;
-  name: string;
-  startTime: string;
-};
-
-export type CreatePlanModel = {
-  id: number;
-  name: string;
-};
-
-export type Model = {
-  activityTypes: ActivityType[];
-  constraints: Constraint[];
-  id: number;
-  parameters: { parameters: ParametersMap };
-};
-
-export type Plan = {
-  activities: Activity[];
-  constraints: Constraint[];
-  duration: string;
-  endTime: string;
-  id: number;
-  model: Model;
-  name: string;
-  simulations: Simulation[];
-  startTime: string;
-};
-
-export type ResourceType = {
-  name: string;
-  schema: { type: string } & any;
-};
-
-export type SimulateResponse = {
-  results?: {
-    activities: {
-      [id: string]: {
-        arguments: ArgumentsMap;
-        children: string[];
-        duration: number;
-        parent: string | null;
-        startTimestamp: string;
-        type: string;
-      };
-    };
-    constraints: { [name: string]: any[] };
-    resources: { [name: string]: ResourceValue[] };
-    start: string;
-  };
-  status: 'complete' | 'failed' | 'incomplete';
-};
-
-export type UpdateActivityInput = {
-  arguments?: ArgumentsMap;
-  start_offset?: string;
-};
 
 /* Helpers. */
 
@@ -169,7 +46,7 @@ export async function reqCreateActivity(
       type: newActivity.type,
     };
     const body = {
-      query: CREATE_ACTIVITY,
+      query: gql.CREATE_ACTIVITY,
       variables: { activity: activityInput },
     };
     const options = {
@@ -223,7 +100,7 @@ export async function reqCreateConstraint(
       summary: newConstraint.summary,
     };
     const body = {
-      query: CREATE_CONSTRAINT,
+      query: gql.CREATE_CONSTRAINT,
       variables: { constraint: constraintInput },
     };
     const options = {
@@ -275,7 +152,7 @@ export async function reqCreateModel(
       version,
     };
     const body = {
-      query: CREATE_MODEL,
+      query: gql.CREATE_MODEL,
       variables: { model: modelInput },
     };
     const options = {
@@ -329,7 +206,7 @@ export async function reqCreatePlan(
       start_time: startTime,
     };
     const body = {
-      query: CREATE_PLAN,
+      query: gql.CREATE_PLAN,
       variables: { plan: planInput },
     };
     const options = {
@@ -383,7 +260,7 @@ export async function reqCreateSimulation(
       simulation_template_id,
     };
     const body = {
-      query: CREATE_SIMULATION,
+      query: gql.CREATE_SIMULATION,
       variables: { simulation: simulationInput },
     };
     const options = {
@@ -451,7 +328,7 @@ export async function reqDeleteActivity(id: number): Promise<boolean> {
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: DELETE_ACTIVITY,
+      query: gql.DELETE_ACTIVITY,
       variables: { id },
     };
     const options = {
@@ -485,7 +362,7 @@ export async function reqDeleteConstraint(id: number): Promise<boolean> {
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: DELETE_CONSTRAINT,
+      query: gql.DELETE_CONSTRAINT,
       variables: { id },
     };
     const options = {
@@ -549,7 +426,10 @@ export async function reqDeleteModel(
     const HASURA_URL = hasuraUrl();
 
     await reqDeleteFile(jarId);
-    const body = { query: DELETE_MODEL, variables: { id } };
+    const body = {
+      query: gql.DELETE_MODEL,
+      variables: { id },
+    };
     const options = {
       body: JSON.stringify(body),
       headers: {
@@ -582,7 +462,10 @@ export async function reqDeletePlanAndSimulations(
     const user = get<User | null>(userStore);
     const HASURA_URL = hasuraUrl();
 
-    const body = { query: DELETE_PLAN_AND_SIMULATIONS, variables: { id } };
+    const body = {
+      query: gql.DELETE_PLAN_AND_SIMULATIONS,
+      variables: { id },
+    };
     const options = {
       body: JSON.stringify(body),
       headers: {
@@ -649,7 +532,7 @@ export async function reqGetActivitiesForPlan(
 
     const options = {
       body: JSON.stringify({
-        query: GET_ACTIVITIES_FOR_PLAN,
+        query: gql.GET_ACTIVITIES_FOR_PLAN,
         variables: { planId },
       }),
       headers: {
@@ -688,7 +571,7 @@ export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
     const HASURA_URL = hasuraUrl();
 
     const options = {
-      body: JSON.stringify({ query: GET_MODELS }),
+      body: JSON.stringify({ query: gql.GET_MODELS }),
       headers: {
         'Content-Type': 'application/json',
         'x-auth-sso-token': user?.ssoToken,
@@ -722,7 +605,7 @@ export async function reqGetPlansAndModels(
     const HASURA_URL = hasuraUrl();
 
     const options = {
-      body: JSON.stringify({ query: GET_PLANS_AND_MODELS }),
+      body: JSON.stringify({ query: gql.GET_PLANS_AND_MODELS }),
       headers: {
         'Content-Type': 'application/json',
         'x-auth-sso-token': user?.ssoToken,
@@ -766,7 +649,10 @@ export async function reqGetPlan(
     const user = get<User | null>(userStore);
     const HASURA_URL = hasuraUrl();
 
-    const body = { query: GET_PLAN, variables: { id } };
+    const body = {
+      query: gql.GET_PLAN,
+      variables: { id },
+    };
     const options = {
       body: JSON.stringify(body),
       headers: {
@@ -933,7 +819,7 @@ export async function reqResourceTypes(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: RESOURCE_TYPES,
+      query: gql.RESOURCE_TYPES,
       variables: { modelId },
     };
     const options = {
@@ -1063,7 +949,7 @@ export async function reqSimulate(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: SIMULATE,
+      query: gql.SIMULATE,
       variables: { planId },
     };
     const options = {
@@ -1171,7 +1057,7 @@ export async function reqUpdateActivity(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: UPDATE_ACTIVITY,
+      query: gql.UPDATE_ACTIVITY,
       variables: { activity: activityInput, id: activity.id },
     };
     const options = {
@@ -1215,7 +1101,7 @@ export async function reqUpdateConstraint(
       summary: updatedConstraint.summary,
     };
     const body = {
-      query: UPDATE_CONSTRAINT,
+      query: gql.UPDATE_CONSTRAINT,
       variables: { constraint: constraintInput, id: updatedConstraint.id },
     };
     const options = {
@@ -1251,7 +1137,7 @@ export async function reqUpdateSimulation(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: UPDATE_SIMULATION,
+      query: gql.UPDATE_SIMULATION,
       variables: {
         id: simulation.id,
         simulation: {
@@ -1373,7 +1259,7 @@ export async function reqValidateActivityArguments(
     const HASURA_URL = hasuraUrl();
 
     const body = {
-      query: VALIDATE_ACTIVITY_ARGUMENTS,
+      query: gql.VALIDATE_ACTIVITY_ARGUMENTS,
       variables: { activityTypeName, arguments: argumentsMap, modelId },
     };
     const options = {

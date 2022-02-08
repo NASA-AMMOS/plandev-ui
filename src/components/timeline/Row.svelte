@@ -4,21 +4,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import type {
-    Activity,
-    ActivitiesMap,
-    Axis,
-    ConstraintViolation,
-    HorizontalGuide,
-    Layer,
-    MouseDown,
-    MouseOver,
-    Point,
-    Resource,
-    TimeRange,
-    VerticalGuide,
-    XAxisTick,
-  } from '../../types';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
   import LayerLine from './LayerLine.svelte';

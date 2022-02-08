@@ -3,7 +3,6 @@ import type { MaybePromise } from '@sveltejs/kit/types/helper';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
 import { env as envStore } from '../stores/app';
-import type { Env, User } from '../types';
 import { reqSession } from '../utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }): Promise<Response> => {

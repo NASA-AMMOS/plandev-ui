@@ -2,15 +2,6 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
-  import type {
-    ActivityPoint,
-    ConstraintViolation,
-    LinePoint,
-    MouseOver,
-    MouseOverViolations,
-    Point,
-    XRangePoint,
-  } from '../../types';
   import { getDoyTime } from '../../utilities/time';
 
   export let mouseOver: MouseOver;

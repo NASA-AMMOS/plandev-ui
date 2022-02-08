@@ -7,7 +7,6 @@
   import AlertError from '../ui/AlertError.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
-  import type { Constraint, CreateConstraint } from '../../types';
   import { reqValidateConstraint } from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 

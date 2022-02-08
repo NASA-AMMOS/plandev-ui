@@ -1,4 +1,4 @@
-export type Env = {
+type Env = {
   AUTH_TYPE: string;
   GATEWAY_CLIENT_URL: string;
   GATEWAY_SERVER_URL: string;
@@ -8,7 +8,7 @@ export type Env = {
   SCHEDULER_SERVER_URL: string;
 };
 
-export type User = {
+type User = {
   id: string;
   ssoToken: string;
 };

@@ -1,7 +1,6 @@
 import type { Writable } from 'svelte/store';
 import { derived, get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { Axis, View } from '../types';
 import { compare, setQueryParam } from '../utilities/generic';
 import { reqCreateView, reqUpdateView } from '../utilities/requests';
 

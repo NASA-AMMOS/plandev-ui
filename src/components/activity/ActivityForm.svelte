@@ -2,12 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type {
-    ActivitiesMap,
-    ActivityType,
-    ArgumentsMap,
-    FormParameter,
-  } from '../../types';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';

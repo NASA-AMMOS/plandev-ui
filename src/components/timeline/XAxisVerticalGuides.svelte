@@ -4,14 +4,14 @@
   import { createEventDispatcher } from 'svelte';
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
-  import type { Selection, TimeRange, VerticalGuide } from '../../types';
+  import type { Selection } from 'd3-selection';
   import { getUnixEpochTime } from '../../utilities/time';
 
   const dispatch = createEventDispatcher();
 
   type VerticalGuideSelection = {
-    group: Selection<SVGGElement>;
-    label: Selection<SVGTextElement>;
+    group: Selection<SVGGElement, unknown, null, undefined>;
+    label: Selection<SVGTextElement, unknown, null, undefined>;
   };
 
   export let drawHeight: number = 20;
@@ -37,7 +37,10 @@
    * Element a is assumed to be to the left of element b with
    * respect to the horizontal axis.
    */
-  function calcBounds(a: Selection<SVGElement>, b: Selection<SVGElement>) {
+  function calcBounds(
+    a: Selection<SVGElement, unknown, null, undefined>,
+    b: Selection<SVGElement, unknown, null, undefined>,
+  ) {
     if (a && b && !a.empty() && !b.empty()) {
       const { right, width } = a.node().getBoundingClientRect();
       const { left } = b.node().getBoundingClientRect();

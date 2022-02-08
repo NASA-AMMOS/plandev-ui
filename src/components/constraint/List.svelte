@@ -6,7 +6,6 @@
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
-  import type { Constraint } from '../../types';
   import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher();

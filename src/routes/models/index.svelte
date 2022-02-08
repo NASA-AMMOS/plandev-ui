@@ -34,7 +34,6 @@
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import {
-    CreateModel,
     reqCreateModel,
     reqDeleteModel,
     reqGetModels,

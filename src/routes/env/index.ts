@@ -1,5 +1,4 @@
 import { defaultEnv } from '../../stores/app';
-import type { Env } from '../../types';
 
 export async function get(): Promise<{ body: Env }> {
   const { env } = process;

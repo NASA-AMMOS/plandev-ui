@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types';
   import { tooltip } from '../../utilities/tooltip';
 
   export let columns: string = '';

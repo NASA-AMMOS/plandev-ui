@@ -32,6 +32,7 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
+  import Table from '../../components/stellar/Table.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import { tooltip } from '../../utilities/tooltip';
@@ -39,8 +40,6 @@
   import { compare, removeQueryParam } from '../../utilities/generic';
   import { min, required, timestamp } from '../../utilities/validators';
   import {
-    CreatePlan,
-    CreatePlanModel,
     reqCreatePlan,
     reqCreateSimulation,
     reqDeletePlanAndSimulations,
@@ -48,7 +47,6 @@
   } from '../../utilities/requests';
   import { simulationTemplates } from '../../stores/simulation';
   import { field } from '../../stores/form';
-  import Table from '../../components/stellar/Table.svelte';
 
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];

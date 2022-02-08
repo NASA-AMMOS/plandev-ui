@@ -3,7 +3,6 @@
 <script lang="ts">
   import { session as appSession } from '$app/stores';
   import { createEventDispatcher } from 'svelte';
-  import type { View } from '../../types';
   import Menu from './Menu.svelte';
 
   const dispatch = createEventDispatcher();

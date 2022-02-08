@@ -1,42 +1,40 @@
-import type { Timeline } from './timeline';
-
-export type CreateViewResponse = {
+type CreateViewResponse = {
   errors: any[] | null;
   message: string;
   success: boolean;
   view: View | null;
 };
 
-export type DeleteViewResponse = {
+type DeleteViewResponse = {
   message: string;
   nextView: View | null;
   success: boolean;
 };
 
-export type GetViewResponse = {
+type GetViewResponse = {
   message: string;
   success: boolean;
   view: View | null;
 };
 
-export type UpdateViewResponse = {
+type UpdateViewResponse = {
   errors: any[] | null;
   message: string;
   success: boolean;
 };
 
-export type ViewMeta = {
+type ViewMeta = {
   owner: string;
   timeCreated: number;
   timeUpdated: number;
   version: string;
 };
 
-export type ViewPlan = {
+type ViewPlan = {
   sections: ViewPlanSection[];
 };
 
-export interface ViewPlanSection {
+type ViewPlanSection = {
   id: number;
   iframe?: {
     src: string;
@@ -48,11 +46,11 @@ export interface ViewPlanSection {
   };
   timeline?: Timeline;
   type: 'iframe' | 'table' | 'timeline';
-}
+};
 
-export interface View {
+type View = {
   id: number;
   meta: ViewMeta;
   name: string;
   plan: ViewPlan;
-}
+};

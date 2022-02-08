@@ -3,18 +3,6 @@
 <script lang="ts">
   import { afterUpdate, createEventDispatcher, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
-  import type {
-    Activity,
-    ActivitiesMap,
-    ConstraintViolation,
-    MouseDown,
-    MouseOver,
-    MouseOverViolations,
-    Resource,
-    Row,
-    TimeRange,
-    VerticalGuide,
-  } from '../../types';
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';

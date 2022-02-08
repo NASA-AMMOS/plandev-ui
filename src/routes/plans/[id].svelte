@@ -1,18 +1,5 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
-  import type {
-    ActivityType,
-    Constraint,
-    CreateActivity,
-    CreateConstraint,
-    DropActivity,
-    MouseDown,
-    Row,
-    Simulation,
-    TimeRange,
-    UpdateActivity,
-    View,
-  } from '../../types';
 
   export async function load({
     fetch,
@@ -116,7 +103,6 @@
   } from '../../stores/views';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import {
-    Plan,
     reqGetActivitiesForPlan,
     reqGetPlan,
     reqGetView,

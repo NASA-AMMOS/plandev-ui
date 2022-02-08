@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
-  import type { XAxisTick } from '../../types';
 
   export let drawHeight: number = 0;
   export let xScaleView: ScaleTime<number, number> | null = null;

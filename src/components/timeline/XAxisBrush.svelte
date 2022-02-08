@@ -5,8 +5,8 @@
   import { brushX } from 'd3-brush';
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
+  import type { Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
-  import type { Selection, TimeRange } from '../../types';
 
   const dispatch = createEventDispatcher();
 
@@ -20,7 +20,7 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yOffset: number = 0;
 
-  let brush: Selection<SVGGElement>;
+  let brush: Selection<SVGGElement, unknown, null, undefined>;
   let g: SVGGElement;
 
   $: if (drawWidth && drawHeight && viewTimeRange && xScaleMax && xScaleView) {
@@ -46,7 +46,9 @@
     dispatch('viewTimeRangeChanged', newViewTimeRange);
   }
 
-  function disableBrushOverlayMouseEvents(g: Selection<SVGGElement>) {
+  function disableBrushOverlayMouseEvents(
+    g: Selection<SVGGElement, unknown, null, undefined>,
+  ) {
     g.select('.overlay')
       .datum({ type: 'selection' })
       .on('mousedown touchstart', () => {

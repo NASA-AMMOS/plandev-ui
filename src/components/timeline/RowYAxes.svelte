@@ -3,7 +3,6 @@
 <script lang="ts">
   import { axisLeft as d3AxisLeft } from 'd3-axis';
   import { select } from 'd3-selection';
-  import type { Axis } from '../../types';
   import { getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;

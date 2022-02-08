@@ -1,12 +1,6 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type {
-  ActivitiesMap,
-  Activity,
-  CreateActivity,
-  UpdateActivity,
-} from '../types';
 import {
   reqCreateActivity,
   reqDeleteActivity,

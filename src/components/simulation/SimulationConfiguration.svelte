@@ -2,12 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type {
-    FormParameter,
-    ParametersMap,
-    Simulation,
-    SimulationTemplate,
-  } from '../../types';
   import { getTarget } from '../../utilities/generic';
   import {
     getFormParameters,

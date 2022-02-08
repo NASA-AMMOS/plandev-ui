@@ -1,5 +1,4 @@
 import { get, writable } from 'svelte/store';
-import type { Field, FieldStore, ValidatorFn } from '../types';
 import { validateField } from '../utilities/validators';
 
 function initialField<T>(

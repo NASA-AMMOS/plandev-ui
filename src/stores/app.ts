@@ -1,5 +1,4 @@
 import { writable } from 'svelte/store';
-import type { Env, User } from '../types';
 
 /** Data. */
 

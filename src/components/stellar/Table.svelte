@@ -3,7 +3,6 @@
 <script lang="ts">
   import { get } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import type { ColumnDef, RowSelectionMode, RowSort } from '../../types';
   import { compare } from '../../utilities/generic';
 
   const dispatch = createEventDispatcher();

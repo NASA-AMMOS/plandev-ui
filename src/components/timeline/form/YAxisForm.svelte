@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
-  import type { Axis, Label as AxisLabel } from '../../../types';
   import { getTarget } from '../../../utilities/generic';
 
   const dispatch = createEventDispatcher();
@@ -40,7 +39,7 @@
 
   function updateLabel(event: Event) {
     const { name, value } = getTarget(event);
-    const label: AxisLabel = { ...axis.label, [name]: value };
+    const label: Label = { ...axis.label, [name]: value };
     dispatch('update', { prop: 'label', value: label });
   }
 

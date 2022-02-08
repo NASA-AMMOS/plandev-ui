@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter } from '../../types';
   import { getArgument } from '../../utilities/parameters';
   import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';

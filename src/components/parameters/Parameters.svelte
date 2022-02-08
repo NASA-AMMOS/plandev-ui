@@ -3,7 +3,6 @@
 <script lang="ts">
   import ParameterBase from './ParameterBase.svelte';
   import ParameterRec from './ParameterRec.svelte';
-  import type { FormParameter } from '../../types';
   import { compare } from '../../utilities/generic';
 
   export let disabled: boolean = false;

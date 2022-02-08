@@ -1,6 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
-import type { ReqLogoutResponse } from '../../types';
 import { reqLogout } from '../../utilities/requests';
 
 /* Types. */

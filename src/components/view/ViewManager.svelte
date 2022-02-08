@@ -2,19 +2,18 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { View } from '../../types';
-  import {
-    reqDeleteView,
-    reqGetView,
-    reqGetViews,
-  } from '../../utilities/requests';
-  import { tooltip } from '../../utilities/tooltip';
   import Chip from '../stellar/Chip.svelte';
   import Table from '../stellar/Table.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import { view } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
+  import {
+    reqDeleteView,
+    reqGetView,
+    reqGetViews,
+  } from '../../utilities/requests';
+  import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteView: ConfirmModal | null = null;
   let views: View[] = [];

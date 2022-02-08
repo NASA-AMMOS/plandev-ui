@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { ActivityType } from '../../types';
   import Input from '../form/Input.svelte';
   import Chip from '../stellar/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';

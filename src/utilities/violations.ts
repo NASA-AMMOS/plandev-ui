@@ -1,5 +1,3 @@
-import type { ConstraintViolation } from '../types';
-
 /**
  * Transforms a list of violation windows in microseconds by a given offset time.
  * The offsetTime argument should be in milliseconds.

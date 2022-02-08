@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter } from '../../types';
   import Input from '../form/Input.svelte';
   import Spinner from '../ui/Spinner.svelte';
   import ParameterBaseError from './ParameterBaseError.svelte';

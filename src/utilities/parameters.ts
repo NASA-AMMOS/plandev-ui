@@ -1,10 +1,3 @@
-import type {
-  Argument,
-  ArgumentsMap,
-  FormParameter,
-  ParametersMap,
-} from '../types';
-
 export function getArgument(
   value: Argument,
   schema: any,

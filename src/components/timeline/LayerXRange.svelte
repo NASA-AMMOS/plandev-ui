@@ -21,13 +21,6 @@
   import { clamp } from '../../utilities/generic';
   import { getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
-  import type {
-    QuadtreeRect,
-    Resource,
-    ResourceLayerFilter,
-    XRangeLayerColorScheme,
-    XRangePoint,
-  } from '../../types';
 
   const dispatch = createEventDispatcher();
 

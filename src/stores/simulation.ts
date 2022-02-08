@@ -1,7 +1,6 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import type { ParametersMap, Simulation, SimulationTemplate } from '../types';
 import { SUB_SIM_TEMPLATES } from '../utilities/gql';
 import { reqUpdateSimulation, reqUploadFiles } from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';

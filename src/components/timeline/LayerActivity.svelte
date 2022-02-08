@@ -6,16 +6,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import type {
-    Activity,
-    ActivitiesMap,
-    ActivityLayerFilter,
-    ActivityPoint,
-    DropActivity,
-    QuadtreeRect,
-    TimeRange,
-    UpdateActivity,
-  } from '../../types';
   import { compare } from '../../utilities/generic';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';

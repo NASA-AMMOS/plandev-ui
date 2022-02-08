@@ -1,40 +1,40 @@
-export interface ActivityLayer extends Layer {
+interface ActivityLayer extends Layer {
   activityColor: string;
   activityHeight: number;
 }
 
-export interface ActivityLayerFilter {
+type ActivityLayerFilter = {
   type: string;
-}
+};
 
-export interface ActivityPoint extends Point {
+interface ActivityPoint extends Point {
   children?: ActivityPoint[];
   duration: number;
   label?: Label;
   parent: string | null;
 }
 
-export interface Axis {
+type Axis = {
   color: string;
   id: number;
   label: Label;
   scaleDomain: (number | null)[];
   tickCount: number | null;
-}
+};
 
-export interface DropActivity {
+type DropActivity = {
   activityTypeName: string;
   startTime: string;
-}
+};
 
-export interface HorizontalGuide {
+type HorizontalGuide = {
   id: number;
   label: Label;
   y: number;
   yAxisId: number;
-}
+};
 
-export interface Label {
+type Label = {
   align?: CanvasTextAlign;
   baseline?: CanvasTextBaseline;
   color?: string;
@@ -42,9 +42,9 @@ export interface Label {
   fontSize?: number;
   hidden?: boolean;
   text: string;
-}
+};
 
-export interface Layer {
+interface Layer {
   chartType: 'activity' | 'line' | 'x-range';
   filter: {
     activity?: ActivityLayerFilter;
@@ -54,33 +54,33 @@ export interface Layer {
   yAxisId: number | null;
 }
 
-export interface LineLayer extends Layer {
+interface LineLayer extends Layer {
   lineColor: string;
   lineWidth: number;
   pointRadius: number;
 }
 
-export interface LinePoint extends Point {
+interface LinePoint extends Point {
   radius: number;
   y: number;
 }
 
-export interface MouseDown {
+type MouseDown = {
   e: MouseEvent;
   layerId: number;
   points: Point[];
   rowId: number;
   timelineId: number;
   yAxisId: number | null;
-}
+};
 
-export interface MouseOver {
+type MouseOver = {
   e: MouseEvent;
   layerId: number;
   points: Point[];
-}
+};
 
-export interface Point {
+interface Point {
   id: number;
   name: string;
   selected: boolean;
@@ -88,57 +88,62 @@ export interface Point {
   x: number;
 }
 
-export interface QuadtreePoint {
+type QuadtreePoint = {
   id: number;
   x: number;
   y: number;
-}
+};
 
-export interface QuadtreeRect {
+type QuadtreeRect = {
   height: number;
   id: number;
   width: number;
   x: number;
   y: number;
-}
+};
 
-export interface ResourceLayerFilter {
+type ResourceLayerFilter = {
   name: string;
-}
+};
 
-export interface Row {
+type Row = {
   autoAdjustHeight: boolean;
   height: number;
   horizontalGuides: HorizontalGuide[];
   id: number;
   layers: Layer[];
   yAxes: Axis[];
-}
+};
 
-export interface Timeline {
+type TimeRange = {
+  end: number;
+  start: number;
+};
+
+type Timeline = {
   id: number;
   marginLeft: number;
   marginRight: number;
   rows: Row[];
   verticalGuides: VerticalGuide[];
-}
+};
 
-export interface VerticalGuide {
+type VerticalGuide = {
   id: number;
   label: Label;
   timestamp: string;
-}
+};
 
-export interface XAxisTick {
+type XAxisTick = {
   date: Date;
   time: string;
   yearDay: string;
-}
+};
 
 /**
  * @see https://github.com/d3/d3-scale-chromatic#categorical
  */
-export type XRangeLayerColorScheme =
+type XRangeLayerColorScheme =
   | 'schemeAccent'
   | 'schemeCategory10'
   | 'schemeDark2'
@@ -150,11 +155,11 @@ export type XRangeLayerColorScheme =
   | 'schemeSet3'
   | 'schemeTableau10';
 
-export interface XRangeLayer extends Layer {
+interface XRangeLayer extends Layer {
   colorScheme: XRangeLayerColorScheme;
   opacity: number;
 }
 
-export interface XRangePoint extends Point {
+interface XRangePoint extends Point {
   label: Label;
 }

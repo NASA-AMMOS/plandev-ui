@@ -6,14 +6,6 @@
   import { quadtree as d3Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
   import { curveLinear, line as d3Line } from 'd3-shape';
-  import type {
-    Axis,
-    LinePoint,
-    QuadtreePoint,
-    Resource,
-    ResourceLayerFilter,
-    TimeRange,
-  } from '../../types';
   import { getUnixEpochTime } from '../../utilities/time';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 

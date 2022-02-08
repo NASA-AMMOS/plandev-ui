@@ -1,7 +1,6 @@
 import { browser } from '$app/env';
 import { get } from 'svelte/store';
 import { env as envStore } from '../stores/app';
-import type { Env } from '../types';
 
 export function gatewayUrl() {
   const { GATEWAY_CLIENT_URL, GATEWAY_SERVER_URL } = get<Env>(envStore);

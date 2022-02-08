@@ -1,6 +1,4 @@
-import type { TimeRange } from './time-range';
-
-export type Constraint = {
+type Constraint = {
   definition: string;
   description: string;
   id: number;
@@ -10,20 +8,20 @@ export type Constraint = {
   summary: string;
 };
 
-export type ConstraintViolationAssociations = {
+type ConstraintViolationAssociations = {
   activityIds?: string[];
   resourceIds?: string[];
 };
 
-export type ConstraintViolation = {
+type ConstraintViolation = {
   associations: ConstraintViolationAssociations;
   constraint: Constraint;
   windows: TimeRange[];
 };
 
-export type CreateConstraint = Omit<Constraint, 'id'>;
+type CreateConstraint = Omit<Constraint, 'id'>;
 
-export interface MouseOverViolations {
+interface MouseOverViolations {
   e: MouseEvent;
   violations: ConstraintViolation[];
 }

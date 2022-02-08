@@ -1,5 +1,3 @@
-import type { Field, ValidationResult } from '../types';
-
 export async function validateField<T>(field: Field<T>): Promise<string[]> {
   const { validators, value } = field;
   const errors: string[] = [];
