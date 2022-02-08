@@ -12,14 +12,14 @@ type SimulationTemplate = {
 
 type Resource = {
   name: string;
-  schema: any;
+  schema: ValueSchema;
   startTime: string;
   values: ResourceValue[];
 };
 
 type ResourceType = {
   name: string;
-  schema: { type: string } & any;
+  schema: ValueSchema;
 };
 
 type ResourceValue = {

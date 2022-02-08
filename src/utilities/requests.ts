@@ -987,7 +987,7 @@ export async function reqSimulate(
       // Resources.
       const resourceTypes: ResourceType[] = await reqResourceTypes(modelId);
       const resourceTypesMap = resourceTypes.reduce(
-        (map: { [name: string]: any }, { name, schema }) => {
+        (map: Record<string, ValueSchema>, { name, schema }) => {
           map[name] = schema;
           return map;
         },
@@ -996,7 +996,7 @@ export async function reqSimulate(
       const resources: Resource[] = Object.entries(results.resources).map(
         ([name, values]) => ({
           name,
-          schema: resourceTypesMap[name] || { type: 'unknown' },
+          schema: resourceTypesMap[name],
           startTime: results.start,
           values,
         }),

@@ -1,6 +1,6 @@
 export function getArgument(
   value: Argument,
-  schema: any,
+  schema: ValueSchema,
   defaultValue?: Argument,
 ): any {
   const type = schema.type;

@@ -10,7 +10,7 @@
   const dispatch = createEventDispatcher();
 
   export let disabled: boolean = false;
-  export let formParameter: FormParameter;
+  export let formParameter: FormParameter<ValueSchemaStruct>;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
@@ -19,7 +19,9 @@
 
   $: subFormParameters = getSubFormParameters(formParameter);
 
-  function getSubFormParameters(formParameter: FormParameter): FormParameter[] {
+  function getSubFormParameters(
+    formParameter: FormParameter<ValueSchemaStruct>,
+  ): FormParameter[] {
     const subFormParameters = [];
     const { schema, value = [] } = formParameter;
     const { items: keys } = schema;

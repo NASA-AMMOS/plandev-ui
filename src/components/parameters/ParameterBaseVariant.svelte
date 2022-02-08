@@ -7,8 +7,6 @@
 
   const dispatch = createEventDispatcher();
 
-  type Variant = { key: string; label: string };
-
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
   export let labelColumnWidth: number = 200;
@@ -16,7 +14,7 @@
   export let levelPadding: number = 20;
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
-  $: variants = formParameter.schema.variants as Variant[];
+  $: variants = (formParameter.schema as ValueSchemaVariant).variants;
 </script>
 
 <div class="parameter-base-variant" style="grid-template-columns: {columns}">
