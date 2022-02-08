@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import Split from 'split.js';
 
   const dispatch = createEventDispatcher();
@@ -7,10 +7,10 @@
   export let direction: 'horizontal' | 'vertical' = 'vertical';
   export let id: string = '';
   export let ids: string[] = [];
-  export let initialized: boolean = false;
   export let minSize: number = 0;
   export let sizes: number[] = [];
 
+  let initialized: boolean = false;
   let mounted: boolean = false;
   let split: Split.Instance;
 
@@ -18,6 +18,12 @@
 
   onMount(() => {
     mounted = true;
+  });
+
+  onDestroy(() => {
+    if (split) {
+      split.destroy();
+    }
   });
 
   /**
@@ -51,7 +57,7 @@
 </script>
 
 <div class="split-{direction}" {id}>
-  <slot />
+  <slot {initialized} />
 </div>
 
 <style>

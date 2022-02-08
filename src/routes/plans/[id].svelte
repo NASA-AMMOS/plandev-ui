@@ -131,7 +131,6 @@
   export let initialView: View | null;
 
   let constraintMenu: ConstraintMenu;
-  let horizontalSplitInitialized: boolean = false;
   let saveAsViewModal: SaveAsViewModal;
   let viewMenu: ViewMenu;
 
@@ -499,13 +498,14 @@
     </div>
   </TopBar>
   <Split
-    bind:initialized={horizontalSplitInitialized}
+    let:initialized={horizontalSplitInitialized}
     direction="horizontal"
     ids={['#left-panel', '#sections', '#right-panel']}
     sizes={[0, 75, 25]}
   >
     <div id="left-panel" />
     <Split
+      let:initialized={verticalSplitInitialized}
       id="sections"
       ids={$viewSectionIds}
       sizes={$viewSectionSizes}
@@ -513,108 +513,112 @@
     >
       {#each $view.plan.sections as section, i (section.id)}
         <div class="section" id={`section-${section.id}`}>
-          {#if section.iframe && horizontalSplitInitialized}
-            <iframe
-              allow="fullscreen"
-              class="h-100 w-100 border-0"
-              src={section.iframe.src}
-              title="iframe-{section.id}"
-            />
-          {:else if section.table && horizontalSplitInitialized}
-            <Table
-              columnDefs={[
-                { field: 'id', name: 'ID', sortable: true },
-                { field: 'type', name: 'Type', sortable: true },
-                { field: 'startTime', name: 'Start Time', sortable: true },
-                { field: 'duration', name: 'Duration', sortable: true },
-              ]}
-              rowData={$activities}
-              rowSelectionMode="single"
-              selectedRowId={$selectedActivityId}
-              on:rowClick={({ detail }) => selectActivity(detail.id)}
-            />
-          {:else if section.timeline && horizontalSplitInitialized}
-            <Timeline
-              activities={$activities}
-              activitiesMap={$activitiesMap}
-              constraintViolations={$violations}
-              containerSize={$viewSectionSizes[i]}
-              id={section.timeline.id}
-              marginLeft={section.timeline.marginLeft ?? 50}
-              marginRight={section.timeline.marginRight ?? 20}
-              {maxTimeRange}
-              resources={$resources}
-              rows={section.timeline.rows}
-              selectedActivity={$selectedActivity}
-              verticalGuides={section.timeline.verticalGuides}
-              {viewTimeRange}
-              on:dragActivity={onUpdateStartTime}
-              on:dragActivityEnd={onUpdateActivity}
-              on:dropActivity={onDropActivity}
-              on:mouseDown={onMouseDown}
-              on:resetViewTimeRange={onResetViewTimeRange}
-              on:updateRowHeight={onUpdateRowHeight}
-              on:updateRows={onUpdateRows}
-              on:viewTimeRangeChanged={onViewTimeRangeChanged}
-            />
+          {#if horizontalSplitInitialized && verticalSplitInitialized}
+            {#if section.iframe}
+              <iframe
+                allow="fullscreen"
+                class="h-100 w-100 border-0"
+                src={section.iframe.src}
+                title="iframe-{section.id}"
+              />
+            {:else if section.table}
+              <Table
+                columnDefs={[
+                  { field: 'id', name: 'ID', sortable: true },
+                  { field: 'type', name: 'Type', sortable: true },
+                  { field: 'startTime', name: 'Start Time', sortable: true },
+                  { field: 'duration', name: 'Duration', sortable: true },
+                ]}
+                rowData={$activities}
+                rowSelectionMode="single"
+                selectedRowId={$selectedActivityId}
+                on:rowClick={({ detail }) => selectActivity(detail.id)}
+              />
+            {:else if section.timeline}
+              <Timeline
+                activities={$activities}
+                activitiesMap={$activitiesMap}
+                constraintViolations={$violations}
+                containerSize={$viewSectionSizes[i]}
+                id={section.timeline.id}
+                marginLeft={section.timeline.marginLeft ?? 50}
+                marginRight={section.timeline.marginRight ?? 20}
+                {maxTimeRange}
+                resources={$resources}
+                rows={section.timeline.rows}
+                selectedActivity={$selectedActivity}
+                verticalGuides={section.timeline.verticalGuides}
+                {viewTimeRange}
+                on:dragActivity={onUpdateStartTime}
+                on:dragActivityEnd={onUpdateActivity}
+                on:dropActivity={onDropActivity}
+                on:mouseDown={onMouseDown}
+                on:resetViewTimeRange={onResetViewTimeRange}
+                on:updateRowHeight={onUpdateRowHeight}
+                on:updateRows={onUpdateRows}
+                on:viewTimeRangeChanged={onViewTimeRangeChanged}
+              />
+            {/if}
           {/if}
         </div>
       {/each}
     </Split>
     <div id="right-panel">
-      {#if $activityDictionaryPanel.visible}
-        <ActivityDictionary
-          activityTypes={initialPlan.model.activityTypes}
-          on:createActivity={onCreateActivity}
-        />
-      {:else if $constraintEditorPanel.visible}
-        <ConstraintEditor
-          constraint={$selectedConstraint}
-          modelId={initialPlan.model.id}
-          planId={initialPlan.id}
-          on:create={onCreateConstraint}
-          on:update={onUpdateConstraint}
-        />
-      {:else if $constraintListPanel.visible}
-        <ConstraintList
-          modelConstraints={$modelConstraints}
-          planConstraints={$planConstraints}
-          on:delete={onDeleteConstraint}
-          on:edit={onEditConstraint}
-        />
-      {:else if $constraintViolationsPanel.visible}
-        <ConstraintViolations
-          violations={$violations}
-          on:selectWindow={onViewTimeRangeChanged}
-        />
-      {:else if $selectedActivityPanel.visible}
-        {#if $selectedActivity}
-          <ActivityForm
-            activitiesMap={$activitiesMap}
+      {#if horizontalSplitInitialized}
+        {#if $activityDictionaryPanel.visible}
+          <ActivityDictionary
             activityTypes={initialPlan.model.activityTypes}
-            argumentsMap={$selectedActivity.arguments}
-            modelId={initialPlan.model.id}
-            {...$selectedActivity}
-            on:updateArguments={onUpdateActivity}
-            on:updateStartTime={onUpdateActivity}
-            on:delete={onDeleteActivity}
+            on:createActivity={onCreateActivity}
           />
-        {:else}
-          <Card class="p-1 m-1">No Activity Selected</Card>
+        {:else if $constraintEditorPanel.visible}
+          <ConstraintEditor
+            constraint={$selectedConstraint}
+            modelId={initialPlan.model.id}
+            planId={initialPlan.id}
+            on:create={onCreateConstraint}
+            on:update={onUpdateConstraint}
+          />
+        {:else if $constraintListPanel.visible}
+          <ConstraintList
+            modelConstraints={$modelConstraints}
+            planConstraints={$planConstraints}
+            on:delete={onDeleteConstraint}
+            on:edit={onEditConstraint}
+          />
+        {:else if $constraintViolationsPanel.visible}
+          <ConstraintViolations
+            violations={$violations}
+            on:selectWindow={onViewTimeRangeChanged}
+          />
+        {:else if $selectedActivityPanel.visible}
+          {#if $selectedActivity}
+            <ActivityForm
+              activitiesMap={$activitiesMap}
+              activityTypes={initialPlan.model.activityTypes}
+              argumentsMap={$selectedActivity.arguments}
+              modelId={initialPlan.model.id}
+              {...$selectedActivity}
+              on:updateArguments={onUpdateActivity}
+              on:updateStartTime={onUpdateActivity}
+              on:delete={onDeleteActivity}
+            />
+          {:else}
+            <Card class="p-1 m-1">No Activity Selected</Card>
+          {/if}
+        {:else if $selectedTimelinePanel.visible}
+          <TimelineForm />
+        {:else if $simulationConfigurationPanel.visible}
+          <SimulationConfiguration
+            modelParametersMap={$modelParametersMap}
+            simulation={$simulation}
+            simulationTemplates={$simulationTemplates}
+            on:updateSimulation={onUpdateSimulation}
+          />
+        {:else if $viewEditorPanel.visible}
+          <ViewEditor />
+        {:else if $viewManagerPanel.visible}
+          <ViewManager />
         {/if}
-      {:else if $selectedTimelinePanel.visible}
-        <TimelineForm />
-      {:else if $simulationConfigurationPanel.visible}
-        <SimulationConfiguration
-          modelParametersMap={$modelParametersMap}
-          simulation={$simulation}
-          simulationTemplates={$simulationTemplates}
-          on:updateSimulation={onUpdateSimulation}
-        />
-      {:else if $viewEditorPanel.visible}
-        <ViewEditor />
-      {:else if $viewManagerPanel.visible}
-        <ViewManager />
       {/if}
     </div>
   </Split>
