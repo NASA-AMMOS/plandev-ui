@@ -15,7 +15,6 @@
 <script lang="ts">
   import { session } from '$app/stores';
   import { onMount } from 'svelte';
-  import type { LoginResponseBody } from '../auth/login';
   import AlertError from '../../components/ui/AlertError.svelte';
 
   let error = null;

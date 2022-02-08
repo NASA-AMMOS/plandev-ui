@@ -1,21 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import type { ResponseHeaders } from '@sveltejs/kit/types/helper';
 import { reqLogout } from '../../utilities/requests';
-
-/* Types. */
-
-export type LogoutResponseBody = {
-  message: string;
-  success: boolean;
-};
-
-export type LogoutResponse = {
-  body?: LogoutResponseBody;
-  headers?: ResponseHeaders;
-  status?: number;
-};
-
-/* Endpoints. */
 
 export async function post(event: RequestEvent): Promise<LogoutResponse> {
   const { locals } = event;
