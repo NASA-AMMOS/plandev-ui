@@ -971,24 +971,18 @@ export async function reqSimulate(
 
     if (status === 'complete') {
       // Activities.
-      const activitiesMap: ActivitiesMap = Object.keys(
-        results.activities,
-      ).reduce((activitiesMap: ActivitiesMap, idAsString: string) => {
-        const id = parseFloat(idAsString);
-        const activity = results.activities[id];
-
+      const activitiesMap: ActivitiesMap = {};
+      for (const [id, activity] of Object.entries(results.activities)) {
         activitiesMap[id] = {
           arguments: activity.arguments,
           children: activity.children,
           duration: activity.duration,
-          id,
+          id: parseFloat(id),
           parent: activity.parent,
           startTime: activity.startTimestamp,
           type: activity.type,
         };
-
-        return activitiesMap;
-      }, {});
+      }
 
       // Resources.
       const resourceTypes: ResourceType[] = await reqResourceTypes(modelId);
@@ -1011,12 +1005,10 @@ export async function reqSimulate(
       // Constraint Violations.
       const constraintViolations: ConstraintViolation[] = Object.entries(
         results.constraints,
-      ).flatMap(([name, violations]: [string, any]) =>
-        violations.map((violation: any) => ({
+      ).flatMap(([name, violations]) =>
+        violations.map(violation => ({
           associations: violation.associations,
-          constraint: {
-            name,
-          },
+          constraint: { name },
           windows: violation.windows,
         })),
       );

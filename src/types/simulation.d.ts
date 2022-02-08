@@ -27,20 +27,18 @@ type ResourceValue = {
   y: number | string;
 };
 
+type SimulationResponseActivity = Omit<Activity, 'id' | 'startTime'> & {
+  computedAttributes: string;
+  startTimestamp: string;
+};
+
+type SimulationResponseViolation = Omit<ConstraintViolation, 'constraint'>;
+
 type SimulateResponse = {
   results?: {
-    activities: {
-      [id: string]: {
-        arguments: ArgumentsMap;
-        children: string[];
-        duration: number;
-        parent: string | null;
-        startTimestamp: string;
-        type: string;
-      };
-    };
-    constraints: { [name: string]: any[] };
-    resources: { [name: string]: ResourceValue[] };
+    activities: Record<string, SimulationResponseActivity>;
+    constraints: Record<string, SimulationResponseViolation[]>;
+    resources: Record<string, ResourceValue[]>;
     start: string;
   };
   status: 'complete' | 'failed' | 'incomplete';

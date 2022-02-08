@@ -9,19 +9,19 @@ type Constraint = {
 };
 
 type ConstraintViolationAssociations = {
-  activityIds?: string[];
+  activityIds?: number[];
   resourceIds?: string[];
 };
 
 type ConstraintViolation = {
   associations: ConstraintViolationAssociations;
-  constraint: Constraint;
+  constraint: Pick<Constraint, 'name'>;
   windows: TimeRange[];
 };
 
 type CreateConstraint = Omit<Constraint, 'id'>;
 
-interface MouseOverViolations {
+type MouseOverViolations = {
   e: MouseEvent;
   violations: ConstraintViolation[];
-}
+};
