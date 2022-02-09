@@ -8,10 +8,10 @@
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
-
   export let modelConstraints: Constraint[] = [];
   export let planConstraints: Constraint[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let confirmDeleteConstraint: ConfirmModal | null = null;
 

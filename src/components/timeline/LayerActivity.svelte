@@ -10,8 +10,6 @@
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
-  const dispatch = createEventDispatcher();
-
   export let activities: Activity[] = [];
   export let activitiesMap: ActivitiesMap = {};
   export let activityColor: string = '';
@@ -35,6 +33,8 @@
   export let showChildren: boolean = true;
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;

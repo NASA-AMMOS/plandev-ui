@@ -7,13 +7,13 @@
   import ParameterRec from './ParameterRec.svelte';
   import ParameterRecError from './ParameterRecError.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let disabled: boolean = false;
   export let formParameter: FormParameter<ValueSchemaStruct>;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+
+  const dispatch = createEventDispatcher();
 
   let expanded: boolean = false;
 

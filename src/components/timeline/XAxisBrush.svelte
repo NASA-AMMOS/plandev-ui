@@ -8,8 +8,6 @@
   import type { Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let brushOverlayColor: string = '#E8EAF6';
   export let brushSelectionColor: string = '#7986cb';
   export let drawHeight: number = 20;
@@ -19,6 +17,8 @@
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yOffset: number = 0;
+
+  const dispatch = createEventDispatcher();
 
   let brush: Selection<SVGGElement, unknown, null, undefined>;
   let g: SVGGElement;

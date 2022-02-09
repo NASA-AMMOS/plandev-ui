@@ -4,9 +4,9 @@
   import { createEventDispatcher, tick } from 'svelte';
   import Modal from './Modal.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let modal: Modal | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let buttonElement: HTMLButtonElement;
   let nameElement: HTMLInputElement;

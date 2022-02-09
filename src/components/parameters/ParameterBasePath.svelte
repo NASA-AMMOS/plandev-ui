@@ -6,12 +6,12 @@
   import ParameterBaseError from './ParameterBaseError.svelte';
   import ParameterName from './ParameterName.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let formParameter: FormParameter;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+
+  const dispatch = createEventDispatcher();
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  const dispatch = createEventDispatcher();
-
   export { className as class };
   export { styleName as style };
   export let draggable: boolean = false;
+
+  const dispatch = createEventDispatcher();
 
   let className: string = '';
   let styleName: string = '';

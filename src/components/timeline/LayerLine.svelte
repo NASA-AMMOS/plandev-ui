@@ -9,8 +9,6 @@
   import { getUnixEpochTime } from '../../utilities/time';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 
-  const dispatch = createEventDispatcher();
-
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
@@ -26,6 +24,8 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yAxes: Axis[] = [];
   export let yAxisId: number | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;

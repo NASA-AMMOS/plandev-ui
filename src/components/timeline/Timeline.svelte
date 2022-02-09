@@ -9,8 +9,6 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let activities: Activity[] = [];
   export let activitiesMap: ActivitiesMap = {};
   export let constraintViolations: ConstraintViolation[] = [];
@@ -24,6 +22,8 @@
   export let selectedActivity: Activity | null = null;
   export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let clientWidth: number = 0;
   let mouseOver: MouseOver;

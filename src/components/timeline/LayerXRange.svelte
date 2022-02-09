@@ -22,8 +22,6 @@
   import { getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
-  const dispatch = createEventDispatcher();
-
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -35,6 +33,8 @@
   export let opacity: number = 0.8;
   export let resources: Resource[] = [];
   export let xScaleView: ScaleTime<number, number> | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;

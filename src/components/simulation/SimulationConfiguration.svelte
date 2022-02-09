@@ -2,22 +2,22 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import Parameters from '../parameters/Parameters.svelte';
+  import Chip from '../stellar/Chip.svelte';
+  import Card from '../ui/Card.svelte';
+  import Panel from '../ui/Panel.svelte';
   import { getTarget } from '../../utilities/generic';
   import {
     getFormParameters,
     isNotEmpty,
     updateFormParameter,
   } from '../../utilities/parameters';
-  import Parameters from '../parameters/Parameters.svelte';
-  import Chip from '../stellar/Chip.svelte';
-  import Card from '../ui/Card.svelte';
-  import Panel from '../ui/Panel.svelte';
-
-  const dispatch = createEventDispatcher();
 
   export let modelParametersMap: ParametersMap;
   export let simulation: Simulation | null;
   export let simulationTemplates: SimulationTemplate[];
+
+  const dispatch = createEventDispatcher();
 
   $: formParameters = getFormParameters(
     modelParametersMap,

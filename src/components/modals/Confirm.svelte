@@ -4,8 +4,6 @@
   import { createEventDispatcher } from 'svelte';
   import Modal from './Modal.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let cancelText: string = 'Cancel';
   export let confirmText: string = 'Yes';
   export let height: number = 150;
@@ -13,6 +11,8 @@
   export let modal: Modal | null = null;
   export let title: string = 'Confirm';
   export let width: number = 350;
+
+  const dispatch = createEventDispatcher();
 
   function onConfirm() {
     dispatch('confirm', { ...modal.context });

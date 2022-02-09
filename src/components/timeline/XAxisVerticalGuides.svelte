@@ -7,18 +7,13 @@
   import type { Selection } from 'd3-selection';
   import { getUnixEpochTime } from '../../utilities/time';
 
-  const dispatch = createEventDispatcher();
-
-  type VerticalGuideSelection = {
-    group: Selection<SVGGElement, unknown, null, undefined>;
-    label: Selection<SVGTextElement, unknown, null, undefined>;
-  };
-
   export let drawHeight: number = 20;
   export let drawWidth: number = 0;
   export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let g: SVGGElement;
 

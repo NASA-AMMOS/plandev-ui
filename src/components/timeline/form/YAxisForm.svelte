@@ -3,10 +3,10 @@
   import CssGrid from '../../ui/CssGrid.svelte';
   import { getTarget } from '../../../utilities/generic';
 
-  const dispatch = createEventDispatcher();
-
   export let axes: Axis[] = [];
   export let axis: Axis;
+
+  const dispatch = createEventDispatcher();
 
   let idError: string | null = null;
 

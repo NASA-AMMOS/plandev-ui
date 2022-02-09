@@ -5,8 +5,6 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createMonacoEditor } from './monaco';
 
-  const dispatch = createEventDispatcher();
-
   export let automaticLayout: boolean | undefined = undefined;
   export let language: string | undefined = undefined;
   export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
@@ -16,6 +14,8 @@
   export let scrollBeyondLastLine: boolean | undefined = undefined;
   export let theme: string | undefined = undefined;
   export let value: string | undefined = undefined;
+
+  const dispatch = createEventDispatcher();
 
   let div: HTMLDivElement | undefined = undefined;
   let editor: Editor.IStandaloneCodeEditor | undefined = undefined;

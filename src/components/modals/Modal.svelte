@@ -4,12 +4,12 @@
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
 
-  const dispatch = createEventDispatcher();
-
   export let context: any = {};
   export let height = 350;
   export let shown = false;
   export let width = 400;
+
+  const dispatch = createEventDispatcher();
 
   export function hide(): void {
     context = {};

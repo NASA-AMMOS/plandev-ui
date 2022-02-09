@@ -9,9 +9,9 @@
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
-
   export let activityTypes: ActivityType[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let filterText: string = '';
 

@@ -3,9 +3,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let rowHeight: number = 0;
+
+  const dispatch = createEventDispatcher();
 
   let clientY: number | null = null;
 

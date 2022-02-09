@@ -134,6 +134,21 @@ type VerticalGuide = {
   timestamp: string;
 };
 
+type VerticalGuideSelection = {
+  group: import('d3-selection').Selection<
+    SVGGElement,
+    unknown,
+    null,
+    undefined
+  >;
+  label: import('d3-selection').Selection<
+    SVGTextElement,
+    unknown,
+    null,
+    undefined
+  >;
+};
+
 type XAxisTick = {
   date: Date;
   time: string;

@@ -5,8 +5,6 @@
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -14,6 +12,8 @@
   export let mouseout: MouseEvent | undefined;
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let g: SVGGElement;
   let mounted = false;

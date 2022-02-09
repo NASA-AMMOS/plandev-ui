@@ -2,13 +2,13 @@
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import Split from 'split.js';
 
-  const dispatch = createEventDispatcher();
-
   export let direction: 'horizontal' | 'vertical' = 'vertical';
   export let id: string = '';
   export let ids: string[] = [];
   export let minSize: number = 0;
   export let sizes: number[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let initialized: boolean = false;
   let mounted: boolean = false;

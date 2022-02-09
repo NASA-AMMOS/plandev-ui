@@ -5,9 +5,9 @@
   import { getTarget } from '../../utilities/generic';
   import FieldError from './FieldError.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let field: FieldStore<any>;
+
+  const dispatch = createEventDispatcher();
 
   let container: HTMLFieldSetElement | null;
   let input: HTMLInputElement | null;

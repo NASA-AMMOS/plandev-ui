@@ -19,8 +19,6 @@
   import { tooltip } from '../../utilities/tooltip';
   import { field } from '../../stores/form';
 
-  const dispatch = createEventDispatcher();
-
   export let activitiesMap: ActivitiesMap = {};
   export let activityTypes: ActivityType[] = [];
   export let argumentsMap: ArgumentsMap = {};
@@ -31,6 +29,8 @@
   export let parent: string | null = null;
   export let startTime: string = '';
   export let type: string = '';
+
+  const dispatch = createEventDispatcher();
 
   let confirmDeleteActivityModal: ConfirmModal | null = null;
   let currentId: number = id;

@@ -5,12 +5,12 @@
   import { createEventDispatcher } from 'svelte';
   import { compare } from '../../utilities/generic';
 
-  const dispatch = createEventDispatcher();
-
   export let columnDefs: ColumnDef[] = [];
   export let rowData: any[] = [];
   export let rowSelectionMode: RowSelectionMode = 'none';
   export let selectedRowId: number | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let currentRow: any;
   let currentSort: RowSort | null = null;

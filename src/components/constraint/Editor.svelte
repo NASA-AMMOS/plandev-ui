@@ -10,11 +10,11 @@
   import { reqValidateConstraint } from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
-
   export let constraint: Constraint | null = null;
   export let modelId: number;
   export let planId: number;
+
+  const dispatch = createEventDispatcher();
 
   let debounce: NodeJS.Timeout;
   let definition: string = '';

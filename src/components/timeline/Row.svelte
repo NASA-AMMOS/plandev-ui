@@ -15,8 +15,6 @@
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
   import RowDragHandleMove from './RowDragHandleMove.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let activities: Activity[] = [];
   export let activitiesMap: ActivitiesMap = {};
   export let autoAdjustHeight: boolean = false;
@@ -35,6 +33,8 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
   export let yAxes: Axis[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let dragenter: DragEvent;
   let dragleave: DragEvent;

@@ -3,9 +3,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let disabled: boolean = true;
+
+  const dispatch = createEventDispatcher();
 </script>
 
 <div

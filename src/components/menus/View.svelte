@@ -5,10 +5,10 @@
   import { createEventDispatcher } from 'svelte';
   import Menu from './Menu.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let currentView: View;
   export let menu: Menu | null = null;
+
+  const dispatch = createEventDispatcher();
 
   function onMenuItemClick(type: string) {
     if (menu) {

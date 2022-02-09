@@ -8,8 +8,6 @@
   import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
-
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 90;
   export let drawWidth: number = 0;
@@ -19,6 +17,8 @@
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let axisOffset = 55;
   let violationsOffset = 20;

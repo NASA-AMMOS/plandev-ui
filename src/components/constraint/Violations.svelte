@@ -6,9 +6,9 @@
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
 
-  const dispatch = createEventDispatcher();
-
   export let violations: ConstraintViolation[] = [];
+
+  const dispatch = createEventDispatcher();
 
   function clickViolation(violation: ConstraintViolation) {
     const { windows } = violation;
