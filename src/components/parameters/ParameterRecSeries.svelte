@@ -33,7 +33,6 @@
       const subFormParameter: FormParameter = {
         error: null,
         index: i,
-        loading: false,
         name: `[${i}]`,
         schema: schema.items,
         value: getArgument(value[i], schema.items),

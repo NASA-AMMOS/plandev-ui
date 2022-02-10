@@ -31,7 +31,6 @@
       const subFormParameter: FormParameter = {
         error: null,
         key,
-        loading: false,
         name: key,
         schema: schema.items[key],
         value: value ? value[key] || null : null,

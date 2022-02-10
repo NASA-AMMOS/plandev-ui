@@ -39,6 +39,7 @@ fieldset {
   padding: 0.5rem;
 }
 
-label.error {
+label.error,
+span.error {
   color: var(--st-red);
 }

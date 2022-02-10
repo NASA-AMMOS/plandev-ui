@@ -3,7 +3,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import Input from '../form/Input.svelte';
-  import Spinner from '../ui/Spinner.svelte';
   import ParameterBaseError from './ParameterBaseError.svelte';
   import ParameterName from './ParameterName.svelte';
 
@@ -29,7 +28,6 @@
       type="number"
       on:change={() => dispatch('change', formParameter)}
     />
-    <Spinner visible={formParameter.loading} slot="right" />
   </Input>
 </div>
 

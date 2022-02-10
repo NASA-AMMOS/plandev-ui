@@ -62,11 +62,7 @@
   <form on:submit|preventDefault={login} class="p-3">
     <div class="title">Log in to Aerie</div>
 
-    {#if error !== null}
-      <fieldset>
-        <AlertError message={error} />
-      </fieldset>
-    {/if}
+    <AlertError class="m-2" {error} />
 
     <fieldset>
       <label for="username"> Username </label>

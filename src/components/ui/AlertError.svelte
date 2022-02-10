@@ -3,25 +3,24 @@
 
   export { className as class };
   export { styleName as style };
-  export let message: string = '';
-  export let visible: boolean = true;
+  export let error: string | null = '';
 
   let className: string = '';
   let styleName: string = '';
 </script>
 
-{#if visible}
+{#if error !== null}
   <div
     class="alert-error {className}"
     style={styleName}
     use:tooltip={{
-      content: message,
+      content: error,
       maxWidth: 'none',
       placement: 'top',
       theme: 'error',
     }}
   >
-    {message}
+    {error}
   </div>
 {/if}
 

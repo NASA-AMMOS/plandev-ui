@@ -88,11 +88,7 @@
 
       <svelte:fragment slot="body">
         <form on:submit|preventDefault={createModel}>
-          {#if error !== null}
-            <fieldset>
-              <AlertError message={error} />
-            </fieldset>
-          {/if}
+          <AlertError class="m-2" {error} />
 
           <fieldset>
             <label for="name">Name</label>

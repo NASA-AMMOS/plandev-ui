@@ -3,7 +3,6 @@ type FormParameter<T = ValueSchema> = {
   file?: File;
   index?: number;
   key?: string;
-  loading: boolean;
   name: string;
   schema: T;
   value: Argument;

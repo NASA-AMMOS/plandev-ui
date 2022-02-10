@@ -4,7 +4,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
   import Chip from '../stellar/Chip.svelte';
-  import AlertError from '../ui/AlertError.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
   import { reqValidateConstraint } from '../../utilities/requests';
@@ -151,12 +150,14 @@
     </details>
 
     <details open class="h-100">
-      <summary class="p-2">Constraint Definition</summary>
-      <AlertError
-        class="mb-3 ms-2 me-2"
-        message={definitionError}
-        visible={definitionError !== null}
-      />
+      <summary class="p-2">
+        <span class:error={definitionError !== null}>
+          Constraint Definition
+          {#if definitionError !== null}
+            ({definitionError})
+          {/if}
+        </span>
+      </summary>
       <MonacoEditor
         automaticLayout={true}
         language="json"

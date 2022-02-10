@@ -57,11 +57,6 @@
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-
-    formParameters = updateFormParameter(formParameters, formParameter, {
-      loading: true,
-    });
-
     const { name, value } = formParameter;
     const { errors, success } = await reqValidateActivityArguments(
       type,
@@ -72,14 +67,12 @@
     if (success) {
       formParameters = updateFormParameter(formParameters, formParameter, {
         error: null,
-        loading: false,
       });
       const newArguments = getArguments(formParameter);
       dispatch('updateArguments', { arguments: newArguments, id });
     } else {
       formParameters = updateFormParameter(formParameters, formParameter, {
         error: errors[0],
-        loading: false,
       });
     }
   }

@@ -38,7 +38,6 @@ export function getFormParameters(
 
       const formParameter: FormParameter = {
         error: null,
-        loading: false,
         name,
         schema,
         value,
