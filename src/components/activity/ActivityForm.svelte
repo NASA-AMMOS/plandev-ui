@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { isNil, omitBy } from 'lodash-es';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
@@ -9,15 +10,12 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../stellar/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { reqValidateActivityArguments } from '../../utilities/requests';
   import Card from '../ui/Card.svelte';
-  import { required, timestamp } from '../../utilities/validators';
-  import {
-    getFormParameters,
-    updateFormParameter,
-  } from '../../utilities/parameters';
-  import { tooltip } from '../../utilities/tooltip';
   import { field } from '../../stores/form';
+  import { getFormParameters } from '../../utilities/parameters';
+  import { reqValidateActivityArguments } from '../../utilities/requests';
+  import { tooltip } from '../../utilities/tooltip';
+  import { required, timestamp } from '../../utilities/validators';
 
   export let activitiesMap: ActivitiesMap = {};
   export let activityTypes: ActivityType[] = [];
@@ -34,6 +32,7 @@
 
   let confirmDeleteActivityModal: ConfirmModal | null = null;
   let currentId: number = id;
+  let parameterError: string | null = null;
   let startTimeField = field<string>(startTime, [required, timestamp]);
 
   $: activityType = activityTypes.find(({ name }) => name === type);
@@ -42,6 +41,7 @@
   $: isChild = parent !== null;
   $: parentId = isChild ? parent : 'None (Root Activity)';
   $: $startTimeField.value = startTime;
+  $: validateArguments(argumentsMap);
 
   $: if (id !== currentId) {
     // Keep track if the activity changes so we can update the fields appropriately.
@@ -52,29 +52,13 @@
   function getArguments(formParameter: FormParameter): ArgumentsMap {
     const { name, value } = formParameter;
     const newArgument = { [name]: value };
-    return { ...argumentsMap, ...newArgument };
+    return omitBy({ ...argumentsMap, ...newArgument }, isNil);
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    const { name, value } = formParameter;
-    const { errors, success } = await reqValidateActivityArguments(
-      type,
-      modelId,
-      { [name]: value },
-    );
-
-    if (success) {
-      formParameters = updateFormParameter(formParameters, formParameter, {
-        error: null,
-      });
-      const newArguments = getArguments(formParameter);
-      dispatch('updateArguments', { arguments: newArguments, id });
-    } else {
-      formParameters = updateFormParameter(formParameters, formParameter, {
-        error: errors[0],
-      });
-    }
+    const newArguments = getArguments(formParameter);
+    dispatch('updateArguments', { arguments: newArguments, id });
   }
 
   function onDelete() {
@@ -84,6 +68,22 @@
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
       dispatch('updateStartTime', { id, startTime: $startTimeField.value });
+    }
+  }
+
+  async function validateArguments(newArguments: ArgumentsMap) {
+    const { errors, success } = await reqValidateActivityArguments(
+      type,
+      modelId,
+      newArguments,
+    );
+
+    // TODO: Update to account for errors returned for individual arguments.
+    if (!success) {
+      console.log(errors);
+      parameterError = 'one or more invalid - see console';
+    } else {
+      parameterError = null;
     }
   }
 </script>
@@ -163,7 +163,14 @@
 
     <fieldset>
       <details open>
-        <summary>Parameters</summary>
+        <summary>
+          <span class:error={parameterError !== null}>
+            Parameters
+            {#if parameterError !== null}
+              ({parameterError})
+            {/if}
+          </span>
+        </summary>
         <div class="mt-2">
           <Parameters
             disabled={isChild}
