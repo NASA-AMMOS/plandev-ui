@@ -60,7 +60,7 @@ export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
 
 export async function updateSimulation(
   newSimulation: Simulation,
-  newFiles: File[],
+  newFiles: File[] = [],
 ): Promise<void> {
   try {
     const updatedSimulation = await reqUpdateSimulation(newSimulation);

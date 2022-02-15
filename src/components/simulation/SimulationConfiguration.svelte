@@ -1,59 +1,48 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../stellar/Chip.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { getTarget } from '../../utilities/generic';
   import {
-    getFormParameters,
-    isNotEmpty,
-    updateFormParameter,
-  } from '../../utilities/parameters';
-
-  export let modelParametersMap: ParametersMap;
-  export let simulation: Simulation | null;
-  export let simulationTemplates: SimulationTemplate[];
-
-  const dispatch = createEventDispatcher();
+    modelParametersMap,
+    SimulationStatus,
+    simulation,
+    simulationStatus,
+    simulationTemplates,
+    updateSimulation,
+  } from '../../stores/simulation';
+  import { getTarget } from '../../utilities/generic';
+  import { getArguments, getFormParameters } from '../../utilities/parameters';
 
   $: formParameters = getFormParameters(
-    modelParametersMap,
-    simulation?.arguments,
-    simulation?.template?.arguments,
+    $modelParametersMap,
+    $simulation?.arguments,
+    $simulation?.template?.arguments,
   );
+
+  async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    const newArgumentsMap = getArguments($simulation?.arguments, formParameter);
+    const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
+    const newSimulation: Simulation = {
+      ...$simulation,
+      arguments: newArgumentsMap,
+    };
+
+    updateSimulation(newSimulation, newFiles);
+    simulationStatus.update(SimulationStatus.Dirty);
+  }
 
   async function onChangeSimulationTemplate(event: Event) {
     const { value } = getTarget(event);
     const id = value as number;
-    const template = { ...simulation?.template, id };
-    const newSimulation: Simulation = { ...simulation, template };
+    const template = { ...$simulation?.template, id };
+    const newSimulation: Simulation = { ...$simulation, template };
 
-    dispatch('updateSimulation', { newSimulation });
-  }
-
-  async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
-    const { detail: formParameter } = event;
-    formParameters = updateFormParameter(formParameters, formParameter);
-
-    const { newArgumentsMap, newFiles } = formParameters.reduce(
-      ({ newArgumentsMap, newFiles }, { file, name, value }) => {
-        const defaultArgumentsMap = simulation?.template?.arguments || {};
-
-        if (isNotEmpty(value) && defaultArgumentsMap[name] !== value) {
-          newArgumentsMap[name] = value;
-        }
-        if (file) newFiles.push(file);
-
-        return { newArgumentsMap, newFiles };
-      },
-      { newArgumentsMap: {}, newFiles: [] },
-    );
-
-    const newSimulation = { ...simulation, arguments: newArgumentsMap };
-    dispatch('updateSimulation', { newFiles, newSimulation });
+    updateSimulation(newSimulation);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 </script>
 
@@ -69,16 +58,16 @@
         <select
           class="st-select w-100"
           data-type="number"
-          disabled={!simulationTemplates.length}
+          disabled={!$simulationTemplates.length}
           name="simulation-templates"
-          value={simulation?.template?.id || null}
+          value={$simulation?.template?.id || null}
           on:change={onChangeSimulationTemplate}
         >
-          {#if !simulationTemplates.length}
+          {#if !$simulationTemplates.length}
             <option value={null}>Empty</option>
           {:else}
             <option value={null} />
-            {#each simulationTemplates as template}
+            {#each $simulationTemplates as template}
               <option value={template.id}>
                 {template.description}
               </option>

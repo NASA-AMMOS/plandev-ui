@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { isNil, omitBy } from 'lodash-es';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
@@ -12,7 +11,7 @@
   import Panel from '../ui/Panel.svelte';
   import Card from '../ui/Card.svelte';
   import { field } from '../../stores/form';
-  import { getFormParameters } from '../../utilities/parameters';
+  import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { reqValidateActivityArguments } from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
@@ -49,15 +48,9 @@
     startTimeField = field<string>(startTime, [required, timestamp]);
   }
 
-  function getArguments(formParameter: FormParameter): ArgumentsMap {
-    const { name, value } = formParameter;
-    const newArgument = { [name]: value };
-    return omitBy({ ...argumentsMap, ...newArgument }, isNil);
-  }
-
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
-    const newArguments = getArguments(formParameter);
+    const newArguments = getArguments(argumentsMap, formParameter);
     dispatch('updateArguments', { arguments: newArguments, id });
   }
 

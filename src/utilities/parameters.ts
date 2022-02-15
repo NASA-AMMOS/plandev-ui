@@ -1,3 +1,5 @@
+import { isNil, omitBy } from 'lodash-es';
+
 export function getArgument(
   value: Argument,
   schema: ValueSchema,
@@ -25,6 +27,15 @@ export function getArgument(
   }
 }
 
+export function getArguments(
+  argumentsMap: ArgumentsMap,
+  formParameter: FormParameter,
+): ArgumentsMap {
+  const { name, value } = formParameter;
+  const newArgument = { [name]: value };
+  return omitBy({ ...argumentsMap, ...newArgument }, isNil);
+}
+
 export function getFormParameters(
   parametersMap: ParametersMap,
   argumentsMap: ArgumentsMap,
@@ -48,26 +59,4 @@ export function getFormParameters(
   );
 
   return formParameters;
-}
-
-export function isNotEmpty(value: any): boolean {
-  return (
-    value !== null &&
-    value !== undefined &&
-    !Number.isNaN(value) &&
-    value !== ''
-  );
-}
-
-export function updateFormParameter(
-  formParameters: FormParameter[],
-  newFormParameter: FormParameter,
-  update?: Partial<FormParameter>,
-): FormParameter[] {
-  return formParameters.map(formParameter => {
-    if (formParameter.name === newFormParameter.name) {
-      return { ...newFormParameter, ...update };
-    }
-    return formParameter;
-  });
 }

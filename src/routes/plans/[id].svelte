@@ -88,7 +88,6 @@
     simulation,
     simulationStatus,
     simulationTemplates,
-    updateSimulation,
   } from '../../stores/simulation';
   import {
     createView,
@@ -275,18 +274,6 @@
   async function onUpdateConstraint(event: CustomEvent<Constraint>) {
     const { detail: updatedConstraint } = event;
     await updateConstraint(updatedConstraint);
-    simulationStatus.update(SimulationStatus.Dirty);
-  }
-
-  function onUpdateSimulation(
-    event: CustomEvent<{
-      newFiles?: File[];
-      newSimulation: Simulation;
-    }>,
-  ) {
-    const { detail } = event;
-    const { newSimulation, newFiles = [] } = detail;
-    updateSimulation(newSimulation, newFiles);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -594,12 +581,7 @@
         {:else if $selectedTimelinePanel.visible}
           <TimelineForm />
         {:else if $simulationConfigurationPanel.visible}
-          <SimulationConfiguration
-            modelParametersMap={$modelParametersMap}
-            simulation={$simulation}
-            simulationTemplates={$simulationTemplates}
-            on:updateSimulation={onUpdateSimulation}
-          />
+          <SimulationConfiguration />
         {:else if $viewEditorPanel.visible}
           <ViewEditor />
         {:else if $viewManagerPanel.visible}
