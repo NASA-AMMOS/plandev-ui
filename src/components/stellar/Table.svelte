@@ -72,7 +72,7 @@
   <tbody>
     {#each sortedRowData as row}
       <tr
-        on:click|preventDefault={() => dispatch('rowClick', row)}
+        on:click|stopPropagation={() => dispatch('rowClick', row)}
         on:mouseenter={() => (currentRow = row)}
         on:mouseleave={() => (currentRow = null)}
         on:pointerenter|preventDefault={() => dispatch('pointerEnter', row)}
