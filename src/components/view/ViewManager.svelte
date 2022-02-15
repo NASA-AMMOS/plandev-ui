@@ -66,8 +66,8 @@
           { field: 'name', name: 'Name', sortable: true },
           { field: 'meta.owner', name: 'Owner', sortable: true },
           { field: 'meta.timeUpdated', name: 'Last Updated', sortable: true },
-          { field: 'actions', name: '' },
         ]}
+        rowActions
         rowData={views}
         on:rowClick={({ detail }) => onLoadView(detail.id)}
       >

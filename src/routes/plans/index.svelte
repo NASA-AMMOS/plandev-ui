@@ -244,8 +244,8 @@
               { field: 'modelId', name: 'Model ID', sortable: true },
               { field: 'startTime', name: 'Start Time', sortable: true },
               { field: 'endTime', name: 'End Time', sortable: true },
-              { field: 'actions', name: '' },
             ]}
+            rowActions
             rowData={sortedPlans}
             on:rowClick={({ detail: plan }) => goto(`plans/${plan.id}`)}
             on:pointerEnter={({ detail: plan }) => prefetch(`plans/${plan.id}`)}

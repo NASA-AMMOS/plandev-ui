@@ -6,6 +6,7 @@
   import { compare } from '../../utilities/generic';
 
   export let columnDefs: ColumnDef[] = [];
+  export let rowActions: boolean = false;
   export let rowData: any[] = [];
   export let rowSelectionMode: RowSelectionMode = 'none';
   export let selectedRowId: number | null = null;
@@ -48,9 +49,7 @@
       {/if}
 
       {#each columnDefs as columnDef}
-        {#if columnDef.field === 'actions'}
-          <th class="actions-header" />
-        {:else if columnDef.sortable}
+        {#if columnDef.sortable}
           <th class="sortable-header" on:click={() => sort(columnDef)}>
             {columnDef.name}
 
@@ -66,6 +65,10 @@
           <th>{columnDef.name}</th>
         {/if}
       {/each}
+
+      {#if rowActions}
+        <th class="actions-header" />
+      {/if}
     </tr>
   </thead>
 
@@ -87,14 +90,14 @@
         {/if}
 
         {#each columnDefs as columnDef}
-          {#if columnDef.field === 'actions'}
-            <td class="actions-cell">
-              <slot {currentRow} name="actions-cell" />
-            </td>
-          {:else}
-            <td>{get(row, columnDef.field)}</td>
-          {/if}
+          <td>{get(row, columnDef.field)}</td>
         {/each}
+
+        {#if rowActions}
+          <td class="actions-cell">
+            <slot {currentRow} name="actions-cell" />
+          </td>
+        {/if}
       </tr>
     {/each}
   </tbody>

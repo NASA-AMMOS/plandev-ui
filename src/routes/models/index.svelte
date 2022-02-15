@@ -147,8 +147,8 @@
               { field: 'name', name: 'Name', sortable: true },
               { field: 'id', name: 'Model ID', sortable: true },
               { field: 'version', name: 'Version', sortable: true },
-              { field: 'actions', name: '' },
             ]}
+            rowActions
             rowData={sortedModels}
             on:rowClick={({ detail: model }) =>
               goto(`plans?modelId=${model.id}`)}
