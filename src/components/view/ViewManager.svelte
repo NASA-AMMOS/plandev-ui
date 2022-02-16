@@ -41,7 +41,7 @@
 
   async function onLoadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await reqGetView(fetch, query);
+    const newView = await reqGetView(query);
 
     if (view) {
       $view = newView;

@@ -1,10 +1,7 @@
 <script lang="ts" context="module">
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
 
-  export async function load({
-    fetch,
-    session,
-  }: LoadInput): Promise<LoadOutput> {
+  export async function load({ session }: LoadInput): Promise<LoadOutput> {
     if (!session.user) {
       return {
         redirect: '/login',
@@ -12,7 +9,7 @@
       };
     }
 
-    const { models = [], plans = [] } = await reqGetPlansAndModels(fetch);
+    const { models = [], plans = [] } = await reqGetPlansAndModels();
 
     return {
       props: {

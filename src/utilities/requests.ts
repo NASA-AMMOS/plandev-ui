@@ -22,6 +22,43 @@ function toActivity(activity: any, startTime: Date): Activity {
   };
 }
 
+export async function reqHasura<T = any>(
+  query: string,
+  variables: QueryVariables = {},
+): Promise<Record<string, T>> {
+  let response: Response;
+  let json: any;
+
+  try {
+    const user = get<User | null>(userStore);
+    const HASURA_URL = hasuraUrl();
+
+    const body = { query, variables };
+    const options = {
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-sso-token': user.ssoToken ?? '',
+      },
+      method: 'POST',
+    };
+
+    response = await fetch(HASURA_URL, options);
+    json = await response.json();
+
+    if (!response.ok) throw new Error(response.statusText);
+    if (json.errors) throw new Error(json.errors[0].message);
+
+    const { data } = json;
+    return data;
+  } catch (e) {
+    console.log(e);
+    console.log(response);
+    console.log(json);
+    return null;
+  }
+}
+
 /* Requests. */
 
 export async function reqCreateActivity(
@@ -29,12 +66,7 @@ export async function reqCreateActivity(
   planId: number,
   planStartTime: string,
 ): Promise<Activity | null> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const start_offset = getIntervalFromDoyRange(
       planStartTime,
       newActivity.startTime,
@@ -45,25 +77,9 @@ export async function reqCreateActivity(
       start_offset,
       type: newActivity.type,
     };
-    const body = {
-      query: gql.CREATE_ACTIVITY,
-      variables: { activity: activityInput },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.CREATE_ACTIVITY, {
+      activity: activityInput,
+    });
     const { createActivity } = data;
     const { id } = createActivity;
     const activity: Activity = {
@@ -73,11 +89,10 @@ export async function reqCreateActivity(
       id,
       parent: null,
     };
+
     return activity;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -85,12 +100,7 @@ export async function reqCreateActivity(
 export async function reqCreateConstraint(
   newConstraint: CreateConstraint,
 ): Promise<Constraint | null> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const constraintInput = {
       definition: newConstraint.definition,
       description: newConstraint.description,
@@ -99,36 +109,19 @@ export async function reqCreateConstraint(
       plan_id: newConstraint.planId,
       summary: newConstraint.summary,
     };
-    const body = {
-      query: gql.CREATE_CONSTRAINT,
-      variables: { constraint: constraintInput },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.CREATE_CONSTRAINT, {
+      constraint: constraintInput,
+    });
     const { createConstraint } = data;
     const { id } = createConstraint;
     const constraint: Constraint = {
       ...newConstraint,
       id,
     };
+
     return constraint;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -138,12 +131,7 @@ export async function reqCreateModel(
   version: string,
   file: File,
 ): Promise<CreateModel | null> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const jar_id = await reqUploadFile(file);
     const modelInput = {
       jar_id,
@@ -151,25 +139,7 @@ export async function reqCreateModel(
       name,
       version,
     };
-    const body = {
-      query: gql.CREATE_MODEL,
-      variables: { model: modelInput },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.CREATE_MODEL, { model: modelInput });
     const { createModel } = data;
     const { id } = createModel;
     const model: CreateModel = {
@@ -178,11 +148,10 @@ export async function reqCreateModel(
       name,
       version,
     };
+
     return model;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -193,37 +162,14 @@ export async function reqCreatePlan(
   name: string,
   startTime: string,
 ): Promise<CreatePlan | null> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const planInput = {
       duration: getIntervalFromDoyRange(startTime, endTime),
       model_id: modelId,
       name,
       start_time: startTime,
     };
-    const body = {
-      query: gql.CREATE_PLAN,
-      variables: { plan: planInput },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.CREATE_PLAN, { plan: planInput });
     const { createPlan } = data;
     const { id } = createPlan;
     const plan: CreatePlan = {
@@ -237,8 +183,6 @@ export async function reqCreatePlan(
     return plan;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -248,40 +192,16 @@ export async function reqCreateSimulation(
   simulation_template_id: number | null = null,
   simulationArguments: ArgumentsMap = {},
 ): Promise<boolean> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const simulationInput = {
       arguments: simulationArguments,
       plan_id,
       simulation_template_id,
     };
-    const body = {
-      query: gql.CREATE_SIMULATION,
-      variables: { simulation: simulationInput },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.CREATE_SIMULATION, { simulation: simulationInput });
     return true;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return false;
   }
 }
@@ -321,69 +241,21 @@ export async function reqCreateView(view: View): Promise<CreateViewResponse> {
 }
 
 export async function reqDeleteActivity(id: number): Promise<boolean> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.DELETE_ACTIVITY,
-      variables: { id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.DELETE_ACTIVITY, { id });
     return true;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return false;
   }
 }
 
 export async function reqDeleteConstraint(id: number): Promise<boolean> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.DELETE_CONSTRAINT,
-      variables: { id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.DELETE_CONSTRAINT, { id });
     return true;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return false;
   }
 }
@@ -419,36 +291,12 @@ export async function reqDeleteModel(
   id: number,
   jarId: number,
 ): Promise<boolean> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     await reqDeleteFile(jarId);
-    const body = {
-      query: gql.DELETE_MODEL,
-      variables: { id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.DELETE_MODEL, { id });
     return true;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return false;
   }
 }
@@ -456,35 +304,11 @@ export async function reqDeleteModel(
 export async function reqDeletePlanAndSimulations(
   id: number,
 ): Promise<boolean> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.DELETE_PLAN_AND_SIMULATIONS,
-      variables: { id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.DELETE_PLAN_AND_SIMULATIONS, { id });
     return true;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return false;
   }
 }
@@ -524,30 +348,8 @@ export async function reqDeleteView(id: number): Promise<DeleteViewResponse> {
 export async function reqGetActivitiesForPlan(
   planId: number,
 ): Promise<Activity[]> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const options = {
-      body: JSON.stringify({
-        query: gql.GET_ACTIVITIES_FOR_PLAN,
-        variables: { planId },
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
     const { activities = [], plan } = data;
     const startTime = new Date(plan.startTime);
     const newActivities = activities.map((activity: any) =>
@@ -557,69 +359,29 @@ export async function reqGetActivitiesForPlan(
     return newActivities;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return [];
   }
 }
 
-export async function reqGetModels(fetch: Fetch): Promise<CreateModel[]> {
-  let response: Response;
-  let json: any;
+export async function reqGetModels(): Promise<CreateModel[]> {
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const options = {
-      body: JSON.stringify({ query: gql.GET_MODELS }),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.GET_MODELS);
     const { models = [] } = data;
     return models;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return [];
   }
 }
 
-export async function reqGetPlansAndModels(
-  fetch: Fetch,
-): Promise<{ models: CreatePlanModel[]; plans: CreatePlan[] }> {
-  let response: Response;
-  let json: any;
+export async function reqGetPlansAndModels(): Promise<{
+  models: CreatePlanModel[];
+  plans: CreatePlan[];
+}> {
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const options = {
-      body: JSON.stringify({ query: gql.GET_PLANS_AND_MODELS }),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.GET_PLANS_AND_MODELS);
     const { models, plans } = data;
+
     return {
       models,
       plans: plans.map((plan: any) => {
@@ -633,41 +395,13 @@ export async function reqGetPlansAndModels(
     };
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return { models: [], plans: [] };
   }
 }
 
-export async function reqGetPlan(
-  fetch: Fetch,
-  id: number,
-): Promise<Plan | null> {
-  let response: Response;
-  let json: any;
+export async function reqGetPlan(id: number): Promise<Plan | null> {
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.GET_PLAN,
-      variables: { id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    const data = await reqHasura(gql.GET_PLAN, { id });
     const { plan } = data;
     const startTime = new Date(plan.startTime);
 
@@ -681,16 +415,11 @@ export async function reqGetPlan(
     };
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
 
-export async function reqGetView(
-  fetch: Fetch,
-  query: URLSearchParams,
-): Promise<View | null> {
+export async function reqGetView(query: URLSearchParams): Promise<View | null> {
   let response: Response;
   let json: GetViewResponse;
   try {
@@ -812,38 +541,14 @@ export async function reqLogout(ssoToken: string): Promise<ReqLogoutResponse> {
 export async function reqResourceTypes(
   modelId: number,
 ): Promise<ResourceType[]> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.RESOURCE_TYPES,
-      variables: { modelId },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
-    const resourceTypes: ResourceType[] = data.resourceTypes;
-
+    const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, {
+      modelId,
+    });
+    const { resourceTypes } = data;
     return resourceTypes;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return [];
   }
 }
@@ -923,7 +628,7 @@ export async function reqSetAppStores(
     json = await response.json();
     if (!response.ok) throw new Error(response.statusText);
     envStore.set(json);
-    userStore.set(session?.user || null);
+    userStore.set(session.user || null);
   } catch (e) {
     console.log(e);
     console.log(response);
@@ -942,32 +647,10 @@ export async function reqSimulate(
   resources?: Resource[];
   status: 'complete' | 'failed' | 'incomplete';
 }> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.SIMULATE,
-      variables: { planId },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
-    const { results, status }: SimulateResponse = data.simulate;
+    const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId });
+    const { simulate } = data;
+    const { results, status }: SimulateResponse = simulate;
 
     if (status === 'complete') {
       // Activities.
@@ -1019,8 +702,6 @@ export async function reqSimulate(
     }
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return { status: 'failed' };
   }
 }
@@ -1042,35 +723,14 @@ export async function reqUpdateActivity(
     );
   }
 
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.UPDATE_ACTIVITY,
-      variables: { activity: activityInput, id: activity.id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.UPDATE_ACTIVITY, {
+      activity: activityInput,
+      id: activity.id,
+    });
     return activity;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -1078,12 +738,7 @@ export async function reqUpdateActivity(
 export async function reqUpdateConstraint(
   updatedConstraint: Constraint,
 ): Promise<Constraint> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
     const constraintInput = {
       definition: updatedConstraint.definition,
       description: updatedConstraint.description,
@@ -1092,29 +747,13 @@ export async function reqUpdateConstraint(
       plan_id: updatedConstraint.planId,
       summary: updatedConstraint.summary,
     };
-    const body = {
-      query: gql.UPDATE_CONSTRAINT,
-      variables: { constraint: constraintInput, id: updatedConstraint.id },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
+    await reqHasura(gql.UPDATE_CONSTRAINT, {
+      constraint: constraintInput,
+      id: updatedConstraint.id,
+    });
     return updatedConstraint;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -1122,43 +761,18 @@ export async function reqUpdateConstraint(
 export async function reqUpdateSimulation(
   simulation: Simulation,
 ): Promise<Simulation | null> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.UPDATE_SIMULATION,
-      variables: {
-        id: simulation.id,
-        simulation: {
-          arguments: simulation.arguments,
-          simulation_template_id: simulation?.template?.id ?? null,
-        },
+    const data = await reqHasura<Simulation>(gql.UPDATE_SIMULATION, {
+      id: simulation.id,
+      simulation: {
+        arguments: simulation.arguments,
+        simulation_template_id: simulation?.template?.id ?? null,
       },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
-      },
-      method: 'POST',
-    };
-
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
+    });
     const { updateSimulation } = data;
     return updateSimulation;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     return null;
   }
 }
@@ -1244,37 +858,20 @@ export async function reqValidateActivityArguments(
   modelId: number,
   argumentsMap: ArgumentsMap,
 ): Promise<ParameterValidationResponse> {
-  let response: Response;
-  let json: any;
   try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
-
-    const body = {
-      query: gql.VALIDATE_ACTIVITY_ARGUMENTS,
-      variables: { activityTypeName, arguments: argumentsMap, modelId },
-    };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user?.ssoToken,
+    const data = await reqHasura<ParameterValidationResponse>(
+      gql.VALIDATE_ACTIVITY_ARGUMENTS,
+      {
+        activityTypeName,
+        arguments: argumentsMap,
+        modelId,
       },
-      method: 'POST',
-    };
+    );
 
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
     const { validateActivityArguments } = data;
     return validateActivityArguments;
   } catch (e) {
     console.log(e);
-    console.log(response);
-    console.log(json);
     const { message } = e;
     return { errors: [message], success: false };
   }

@@ -5,10 +5,6 @@ import { isEqual } from 'lodash-es';
 import type { Subscriber, Unsubscriber } from 'svelte/store';
 import { hasuraUrl } from '../utilities/app';
 
-type NextValue<T> = { [key: string]: T };
-type QueryVariables = Record<string, unknown>;
-type Subscription<T> = { next: Subscriber<T>; unsubscribe: Unsubscriber };
-
 /**
  * Aerie UI specific wrapper around gqlSubscribable.
  */

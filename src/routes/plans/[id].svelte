@@ -2,7 +2,6 @@
   import type { LoadInput, LoadOutput } from '@sveltejs/kit';
 
   export async function load({
-    fetch,
     params,
     session,
     url,
@@ -17,8 +16,8 @@
     const { id } = params;
     const planId = parseFloat(id);
 
-    const initialPlan = await reqGetPlan(fetch, planId);
-    const initialView = await reqGetView(fetch, url.searchParams);
+    const initialPlan = await reqGetPlan(planId);
+    const initialView = await reqGetView(url.searchParams);
 
     return {
       props: {
