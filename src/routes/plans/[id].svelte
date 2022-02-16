@@ -61,7 +61,6 @@
     updateActivity,
   } from '../../stores/activities';
   import {
-    deleteConstraint,
     modelConstraints,
     planConstraints,
     selectedConstraint,
@@ -197,12 +196,6 @@
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  async function onDeleteConstraint(event: CustomEvent<number>) {
-    const { detail: constraintId } = event;
-    await deleteConstraint(constraintId);
-    simulationStatus.update(SimulationStatus.Dirty);
-  }
-
   function onDropActivity(event: CustomEvent<DropActivity>) {
     const { id: planId } = initialPlan;
     const { detail } = event;
@@ -214,12 +207,6 @@
     };
     createActivity(activity, planId, initialPlan.startTime);
     simulationStatus.update(SimulationStatus.Dirty);
-  }
-
-  function onEditConstraint(event: CustomEvent<Constraint>) {
-    const { detail: constraint } = event;
-    $selectedConstraint = constraint;
-    constraintEditorPanel.show();
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -552,12 +539,7 @@
             on:update={onUpdateConstraint}
           />
         {:else if $constraintListPanel.visible}
-          <ConstraintList
-            modelConstraints={$modelConstraints}
-            planConstraints={$planConstraints}
-            on:delete={onDeleteConstraint}
-            on:edit={onEditConstraint}
-          />
+          <ConstraintList />
         {:else if $constraintViolationsPanel.visible}
           <ConstraintViolations
             violations={$violations}

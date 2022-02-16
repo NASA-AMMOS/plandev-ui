@@ -1,27 +1,31 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Chip from '../stellar/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import {
+    deleteConstraint,
+    modelConstraints,
+    planConstraints,
+    selectedConstraint,
+  } from '../../stores/constraints';
+  import { constraintEditorPanel } from '../../stores/panels';
+  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
   import { tooltip } from '../../utilities/tooltip';
-
-  export let modelConstraints: Constraint[] = [];
-  export let planConstraints: Constraint[] = [];
-
-  const dispatch = createEventDispatcher();
 
   let confirmDeleteConstraint: ConfirmModal | null = null;
 
-  function deleteConstraint(event: CustomEvent<Constraint>) {
+  async function onDeleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
-    dispatch('delete', constraint.id);
+    await deleteConstraint(constraint.id);
+    simulationStatus.update(SimulationStatus.Dirty);
   }
 
-  function editConstraint(constraint: Constraint) {
-    dispatch('edit', constraint);
+  function onEditConstraint(constraint: Constraint) {
+    $selectedConstraint = constraint;
+    constraintEditorPanel.show();
   }
 </script>
 
@@ -34,14 +38,14 @@
     <details open>
       <summary class="p-1">Model Constraints</summary>
       <div class="m-1">
-        {#if modelConstraints.length}
-          {#each modelConstraints as constraint}
+        {#if $modelConstraints.length}
+          {#each $modelConstraints as constraint}
             <ListItem>
               {constraint.name}
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => editConstraint(constraint)}
+                  on:click|stopPropagation={() => onEditConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -72,14 +76,14 @@
     <details open>
       <summary class="p-1">Plan Constraints</summary>
       <div class="m-1">
-        {#if planConstraints.length}
-          {#each planConstraints as constraint}
+        {#if $planConstraints.length}
+          {#each $planConstraints as constraint}
             <ListItem>
               {constraint.name}
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => editConstraint(constraint)}
+                  on:click|stopPropagation={() => onEditConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -114,5 +118,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"
-  on:confirm={deleteConstraint}
+  on:confirm={onDeleteConstraint}
 />
