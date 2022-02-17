@@ -8,24 +8,20 @@
   import ConfirmModal from '../../components/modals/Confirm.svelte';
   import { view } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
-  import {
-    reqDeleteView,
-    reqGetView,
-    reqGetViews,
-  } from '../../utilities/requests';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteView: ConfirmModal | null = null;
   let views: View[] = [];
 
   onMount(async () => {
-    views = await reqGetViews();
+    views = await req.getViews();
   });
 
   async function onDeleteView(event: CustomEvent<{ viewId: number }>) {
     const { detail } = event;
     const { viewId } = detail;
-    const { message, nextView, success } = await reqDeleteView(viewId);
+    const { message, nextView, success } = await req.deleteView(viewId);
 
     if (success) {
       views = views.filter(v => v.id !== viewId);
@@ -41,7 +37,7 @@
 
   async function onLoadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await reqGetView(query);
+    const newView = await req.getView(query);
 
     if (view) {
       $view = newView;

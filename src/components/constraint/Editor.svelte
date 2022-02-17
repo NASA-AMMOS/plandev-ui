@@ -6,7 +6,7 @@
   import Chip from '../stellar/Chip.svelte';
   import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { reqValidateConstraint } from '../../utilities/requests';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   export let constraint: Constraint | null = null;
@@ -51,7 +51,7 @@
 
       clearTimeout(debounce);
       debounce = setTimeout(async () => {
-        const { valid } = await reqValidateConstraint(value);
+        const { valid } = await req.validateConstraint(value);
         if (!valid) {
           definitionError = 'Input is not a valid constraint';
         }

@@ -2,7 +2,7 @@ import type { Writable } from 'svelte/store';
 import { derived, get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { compare, setQueryParam } from '../utilities/generic';
-import { reqCreateView, reqUpdateView } from '../utilities/requests';
+import req from '../utilities/requests';
 
 /* Stores. */
 
@@ -92,7 +92,7 @@ export async function createView(currentView: View): Promise<void> {
     message,
     success,
     view: newView,
-  } = await reqCreateView(currentView);
+  } = await req.createView(currentView);
 
   if (success) {
     view.update(() => newView);
@@ -413,7 +413,7 @@ export function updateTimeline(prop: string, value: any, timelineId?: number) {
 }
 
 export async function updateView(currentView: View): Promise<void> {
-  const { errors, message, success } = await reqUpdateView(currentView);
+  const { errors, message, success } = await req.updateView(currentView);
 
   if (success) {
     Toastify({

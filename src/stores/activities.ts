@@ -1,11 +1,7 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import {
-  reqCreateActivity,
-  reqDeleteActivity,
-  reqUpdateActivity,
-} from '../utilities/requests';
+import req from '../utilities/requests';
 
 /* Stores. */
 
@@ -42,7 +38,7 @@ export async function createActivity(
   planId: number,
   planStartTime: string,
 ) {
-  const newActivity = await reqCreateActivity(activity, planId, planStartTime);
+  const newActivity = await req.createActivity(activity, planId, planStartTime);
   if (newActivity) {
     const { id } = newActivity;
     activitiesMap.update(activities => {
@@ -70,7 +66,7 @@ export async function createActivity(
 }
 
 export async function deleteActivity(id: number) {
-  const success = await reqDeleteActivity(id);
+  const success = await req.deleteActivity(id);
   if (success) {
     activitiesMap.update(activities => {
       delete activities[id];
@@ -98,7 +94,7 @@ export async function updateActivity(
   activity: UpdateActivity,
   planStartTime: string,
 ) {
-  const updatedActivity = await reqUpdateActivity(activity, planStartTime);
+  const updatedActivity = await req.updateActivity(activity, planStartTime);
   if (updatedActivity) {
     activitiesMap.update(activities => ({
       ...activities,

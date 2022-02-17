@@ -2,7 +2,7 @@ import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { SUB_SIM_TEMPLATES } from '../utilities/gql';
-import { reqUpdateSimulation, reqUploadFiles } from '../utilities/requests';
+import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
 
 /* Data. */
@@ -63,8 +63,8 @@ export async function updateSimulation(
   newFiles: File[] = [],
 ): Promise<void> {
   try {
-    const updatedSimulation = await reqUpdateSimulation(newSimulation);
-    await reqUploadFiles(newFiles);
+    const updatedSimulation = await req.updateSimulation(newSimulation);
+    await req.uploadFiles(newFiles);
     simulation.set(updatedSimulation);
     Toastify({
       backgroundColor: '#2da44e',

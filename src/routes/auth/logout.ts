@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { reqLogout } from '../../utilities/requests';
+import req from '../../utilities/requests';
 
 export async function post(event: RequestEvent): Promise<LogoutResponse> {
   const { locals } = event;
@@ -7,7 +7,7 @@ export async function post(event: RequestEvent): Promise<LogoutResponse> {
   const { ssoToken = '' } = user;
 
   try {
-    const logoutResponse: ReqLogoutResponse = await reqLogout(ssoToken);
+    const logoutResponse: ReqLogoutResponse = await req.logout(ssoToken);
     const { message, success } = logoutResponse;
 
     if (success) {

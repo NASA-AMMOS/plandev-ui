@@ -9,7 +9,7 @@
       };
     }
 
-    const { models = [], plans = [] } = await reqGetPlansAndModels();
+    const { models = [], plans = [] } = await req.getPlansAndModels();
 
     return {
       props: {
@@ -21,6 +21,7 @@
 </script>
 
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto, prefetch } from '$app/navigation';
   import { page } from '$app/stores';
   import ConfirmModal from '../../components/modals/Confirm.svelte';
@@ -32,18 +33,12 @@
   import Table from '../../components/stellar/Table.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
-  import { tooltip } from '../../utilities/tooltip';
-  import { onMount } from 'svelte';
-  import { compare, removeQueryParam } from '../../utilities/generic';
-  import { min, required, timestamp } from '../../utilities/validators';
-  import {
-    reqCreatePlan,
-    reqCreateSimulation,
-    reqDeletePlanAndSimulations,
-    reqGetPlansAndModels,
-  } from '../../utilities/requests';
   import { simulationTemplates } from '../../stores/simulation';
   import { field } from '../../stores/form';
+  import { compare, removeQueryParam } from '../../utilities/generic';
+  import req from '../../utilities/requests';
+  import { tooltip } from '../../utilities/tooltip';
+  import { min, required, timestamp } from '../../utilities/validators';
 
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
@@ -95,13 +90,13 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const newPlan = await reqCreatePlan(
+    const newPlan = await req.createPlan(
       $endTimeField.value,
       $modelIdField.value,
       $nameField.value,
       $startTimeField.value,
     );
-    await reqCreateSimulation(newPlan.id, $simTemplateField.value);
+    await req.createSimulation(newPlan.id, $simTemplateField.value);
 
     if (newPlan) {
       plans = [...plans, newPlan];
@@ -115,7 +110,7 @@
   async function deletePlan(event: CustomEvent<CreatePlan>): Promise<void> {
     const { detail: plan } = event;
     const { id } = plan;
-    const success = await reqDeletePlanAndSimulations(id);
+    const success = await req.deletePlanAndSimulations(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);

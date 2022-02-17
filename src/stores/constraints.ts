@@ -1,11 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import {
-  reqCreateConstraint,
-  reqDeleteConstraint,
-  reqUpdateConstraint,
-} from '../utilities/requests';
+import req from '../utilities/requests';
 
 /* Stores. */
 
@@ -19,7 +15,7 @@ export const violations: Writable<ConstraintViolation[]> = writable([]);
 export async function createConstraint(
   constraint: CreateConstraint,
 ): Promise<void> {
-  const newConstraint = await reqCreateConstraint(constraint);
+  const newConstraint = await req.createConstraint(constraint);
 
   if (newConstraint) {
     if (newConstraint.modelId) {
@@ -52,7 +48,7 @@ export async function createConstraint(
 }
 
 export async function deleteConstraint(id: number): Promise<void> {
-  const success = await reqDeleteConstraint(id);
+  const success = await req.deleteConstraint(id);
 
   if (success) {
     modelConstraints.update(constraints => {
@@ -82,7 +78,7 @@ export async function deleteConstraint(id: number): Promise<void> {
 }
 
 export async function updateConstraint(constraint: Constraint): Promise<void> {
-  const updatedConstraint = await reqUpdateConstraint(constraint);
+  const updatedConstraint = await req.updateConstraint(constraint);
 
   if (updatedConstraint) {
     if (updatedConstraint.modelId) {

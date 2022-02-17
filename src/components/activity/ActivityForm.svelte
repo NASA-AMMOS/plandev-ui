@@ -12,7 +12,7 @@
   import Card from '../ui/Card.svelte';
   import { field } from '../../stores/form';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
-  import { reqValidateActivityArguments } from '../../utilities/requests';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
 
@@ -65,7 +65,7 @@
   }
 
   async function validateArguments(newArguments: ArgumentsMap) {
-    const { errors, success } = await reqValidateActivityArguments(
+    const { errors, success } = await req.validateActivityArguments(
       type,
       modelId,
       newArguments,

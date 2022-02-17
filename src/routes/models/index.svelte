@@ -9,7 +9,7 @@
       };
     }
 
-    const models = await reqGetModels();
+    const models = await req.getModels();
 
     return {
       props: {
@@ -30,11 +30,7 @@
   import TopBar from '../../components/ui/TopBar.svelte';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import {
-    reqCreateModel,
-    reqDeleteModel,
-    reqGetModels,
-  } from '../../utilities/requests';
+  import req from '../../utilities/requests';
 
   export let models: CreateModel[] = [];
 
@@ -52,7 +48,7 @@
     error = null;
 
     const file = files[0];
-    const newModel = await reqCreateModel(name, version, file);
+    const newModel = await req.createModel(name, version, file);
 
     if (newModel) {
       models = [...models, newModel];
@@ -66,7 +62,7 @@
   async function deleteModel(event: CustomEvent<CreateModel>) {
     const { detail: model } = event;
     const { id, jarId } = model;
-    const success = await reqDeleteModel(id, jarId);
+    const success = await req.deleteModel(id, jarId);
 
     if (success) {
       models = models.filter(model => model.id !== id);

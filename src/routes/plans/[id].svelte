@@ -16,8 +16,8 @@
     const { id } = params;
     const planId = parseFloat(id);
 
-    const initialPlan = await reqGetPlan(planId);
-    const initialView = await reqGetView(url.searchParams);
+    const initialPlan = await req.getPlan(planId);
+    const initialView = await req.getView(url.searchParams);
 
     return {
       props: {
@@ -99,13 +99,7 @@
     viewSectionSizes,
   } from '../../stores/views';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
-  import {
-    reqGetActivitiesForPlan,
-    reqGetPlan,
-    reqGetView,
-    reqSchedule,
-    reqSimulate,
-  } from '../../utilities/requests';
+  import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { offsetViolationWindows } from '../../utilities/violations';
@@ -301,10 +295,10 @@
   async function runScheduling() {
     $schedulingStatus = SchedulingStatus.Executing;
     const { id: planId } = initialPlan;
-    const response = await reqSchedule(planId);
+    const response = await req.schedule(planId);
 
     if (response.status === 'complete') {
-      const newActivities = await reqGetActivitiesForPlan(planId);
+      const newActivities = await req.getActivitiesForPlan(planId);
       simulationStatus.update(SimulationStatus.Dirty);
       $activitiesMap = keyBy(newActivities);
       $schedulingStatus = SchedulingStatus.Complete;
@@ -330,7 +324,7 @@
         constraintViolations,
         status,
         resources: newResources,
-      } = await reqSimulate(model.id, planId);
+      } = await req.simulate(model.id, planId);
 
       if (status === 'complete') {
         $activitiesMap = newActivitiesMap;
