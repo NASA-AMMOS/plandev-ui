@@ -23,9 +23,9 @@
     "version": "node ./scripts/version.js"
   },
   "devDependencies": {
-    "@nasa-jpl/stellar": "^1.0.1",
+    "@nasa-jpl/stellar": "^1.0.2",
     "@sveltejs/adapter-node": "1.0.0-next.68",
-    "@sveltejs/kit": "1.0.0-next.271",
+    "@sveltejs/kit": "1.0.0-next.278",
     "@types/cookie": "^0.4.1",
     "@types/d3-axis": "^3.0.1",
     "@types/d3-brush": "^3.0.1",
@@ -62,7 +62,7 @@
     "prettier-plugin-svelte": "^2.6.0",
     "split.js": "^1.6.5",
     "svelte": "3.46.4",
-    "svelte-check": "^2.4.3",
+    "svelte-check": "^2.4.5",
     "svelte-dnd-action": "^0.9.14",
     "svelte-preprocess": "^4.10.3",
     "tippy.js": "^6.3.7",
