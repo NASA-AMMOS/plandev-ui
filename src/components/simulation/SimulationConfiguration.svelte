@@ -25,8 +25,10 @@
     req
       .getEffectiveModelArguments(modelId, $simulation?.arguments)
       .then(({ arguments: defaultArguments }) => {
-        // Displayed simulation arguments are either default arguments, or simulation template arguments.
-        // Simulation template arguments take precedence over default arguments.
+        // Displayed simulation arguments are either user input arguments,
+        // simulation template arguments, or default arguments.
+        // User input arguments take precedence over simulation template arguments,
+        // which take precedence over default arguments.
         const defaultArgumentsMap = {
           ...defaultArguments,
           ...$simulation?.template?.arguments,
