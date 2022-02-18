@@ -1,9 +1,11 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import type { editor as Editor } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { createMonacoEditor } from './monaco';
+  import type { editor as Editor } from 'monaco-editor/esm/vs/editor/editor.api';
+  import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+  import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+  import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
   export let automaticLayout: boolean | undefined = undefined;
   export let language: string | undefined = undefined;
@@ -30,6 +32,18 @@
   }
 
   onMount(async () => {
+    self.MonacoEnvironment = self.MonacoEnvironment ?? {
+      getWorker(_moduleId: unknown, label: string): Worker {
+        if (label === 'json') {
+          return new jsonWorker();
+        }
+        if (label === 'typescript' || label === 'javascript') {
+          return new tsWorker();
+        }
+        return new editorWorker();
+      },
+    };
+
     const options: Editor.IStandaloneEditorConstructionOptions = {
       automaticLayout,
       language,
@@ -40,7 +54,8 @@
       theme,
       value,
     };
-    editor = await createMonacoEditor(div, options, override);
+    const monaco = await import('monaco-editor');
+    editor = monaco.editor.create(div, options, override);
 
     editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {
       const newValue = editor.getModel().getValue();
