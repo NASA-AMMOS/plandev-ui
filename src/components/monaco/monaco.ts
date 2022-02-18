@@ -1,16 +1,7 @@
-import type {
-  editor as Editor,
-  Environment,
-} from 'monaco-editor/esm/vs/editor/editor.api';
+import type { editor as Editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-
-declare global {
-  interface Window {
-    MonacoEnvironment: Environment;
-  }
-}
 
 export async function createMonacoEditor(
   domElement: HTMLElement,
