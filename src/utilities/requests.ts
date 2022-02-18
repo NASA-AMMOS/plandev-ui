@@ -357,6 +357,48 @@ const req = {
     }
   },
 
+  async getEffectiveActivityArguments(
+    modelId: number,
+    activityTypeName: string,
+    argumentsMap: ArgumentsMap,
+  ): Promise<EffectiveArguments | null> {
+    try {
+      const data = await reqHasura<EffectiveArguments>(
+        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS,
+        {
+          activityTypeName,
+          arguments: argumentsMap,
+          modelId,
+        },
+      );
+      const { effectiveActivityArguments } = data;
+      return effectiveActivityArguments;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async getEffectiveModelArguments(
+    modelId: number,
+    argumentsMap: ArgumentsMap,
+  ): Promise<EffectiveArguments | null> {
+    try {
+      const data = await reqHasura<EffectiveArguments>(
+        gql.GET_EFFECTIVE_MODEL_ARGUMENTS,
+        {
+          arguments: argumentsMap,
+          modelId,
+        },
+      );
+      const { effectiveModelArguments } = data;
+      return effectiveModelArguments;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getModels(): Promise<CreateModel[]> {
     try {
       const data = await reqHasura(gql.GET_MODELS);

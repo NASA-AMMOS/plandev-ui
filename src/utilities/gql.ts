@@ -89,6 +89,33 @@ export const GET_ACTIVITIES_FOR_PLAN = `
   }
 `;
 
+export const GET_EFFECTIVE_ACTIVITY_ARGUMENTS = `
+  query GetEffectiveActivityArguments($modelId: ID!, $activityTypeName: String!, $arguments: ActivityArguments!) {
+    effectiveActivityArguments: getActivityEffectiveArguments(
+      missionModelId: $modelId,
+      activityTypeName: $activityTypeName,
+      activityArguments: $arguments
+    ) {
+      arguments
+      errors
+      success
+    }
+  }
+`;
+
+export const GET_EFFECTIVE_MODEL_ARGUMENTS = `
+  query GetEffectiveModelArguments($modelId: ID!, $arguments: ModelArguments!) {
+    effectiveModelArguments: getModelEffectiveArguments(
+      missionModelId: $modelId,
+      modelArguments: $arguments
+    ) {
+      arguments
+      errors
+      success
+    }
+  }
+`;
+
 export const GET_MODELS = `
   query GetModels {
     models: mission_model {

@@ -47,6 +47,15 @@ export function getTarget(event: Event) {
 }
 
 /**
+ * Returns true if a value is considered "empty". False otherwise.
+ */
+export function isEmpty(value: any): boolean {
+  return (
+    value === null || value === undefined || value === '' || Number.isNaN(value)
+  );
+}
+
+/**
  * Converts a list to a map keyed by 'id' (or alternate key).
  */
 export function keyBy<T>(list: T[], key = 'id'): Record<number, T> {

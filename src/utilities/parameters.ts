@@ -1,4 +1,5 @@
-import { isNil, omitBy } from 'lodash-es';
+import { omitBy } from 'lodash-es';
+import { isEmpty } from './generic';
 
 export function getArgument(
   value: Argument,
@@ -33,7 +34,7 @@ export function getArguments(
 ): ArgumentsMap {
   const { name, value } = formParameter;
   const newArgument = { [name]: value };
-  return omitBy({ ...argumentsMap, ...newArgument }, isNil);
+  return omitBy({ ...argumentsMap, ...newArgument }, isEmpty);
 }
 
 export function getFormParameters(

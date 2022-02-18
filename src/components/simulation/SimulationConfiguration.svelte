@@ -15,12 +15,29 @@
   } from '../../stores/simulation';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import req from '../../utilities/requests';
 
-  $: formParameters = getFormParameters(
-    $modelParametersMap,
-    $simulation?.arguments,
-    $simulation?.template?.arguments,
-  );
+  export let modelId: number;
+
+  let formParameters: FormParameter[] = [];
+
+  $: {
+    req
+      .getEffectiveModelArguments(modelId, $simulation?.arguments)
+      .then(({ arguments: defaultArguments }) => {
+        // Displayed simulation arguments are either default arguments, or simulation template arguments.
+        // Simulation template arguments take precedence over default arguments.
+        const defaultArgumentsMap = {
+          ...defaultArguments,
+          ...$simulation?.template?.arguments,
+        };
+        formParameters = getFormParameters(
+          $modelParametersMap,
+          $simulation?.arguments,
+          defaultArgumentsMap,
+        );
+      });
+  }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;

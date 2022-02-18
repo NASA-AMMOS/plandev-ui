@@ -22,7 +22,7 @@
   export let children: string[] | null = null;
   export let duration: number | null;
   export let id: number;
-  export let modelId: number | undefined;
+  export let modelId: number;
   export let parent: string | null = null;
   export let startTime: string = '';
   export let type: string = '';
@@ -31,12 +31,23 @@
 
   let confirmDeleteActivityModal: ConfirmModal | null = null;
   let currentId: number = id;
+  let formParameters: FormParameter[] = [];
   let parameterError: string | null = null;
   let startTimeField = field<string>(startTime, [required, timestamp]);
 
   $: activityType = activityTypes.find(({ name }) => name === type);
-  $: formParameters = getFormParameters(activityType.parameters, argumentsMap);
   $: hasChildren = children ? children.length > 0 : false;
+  $: {
+    req
+      .getEffectiveActivityArguments(modelId, activityType.name, argumentsMap)
+      .then(({ arguments: defaultArgumentsMap }) => {
+        formParameters = getFormParameters(
+          activityType.parameters,
+          argumentsMap,
+          defaultArgumentsMap,
+        );
+      });
+  }
   $: isChild = parent !== null;
   $: parentId = isChild ? parent : 'None (Root Activity)';
   $: $startTimeField.value = startTime;

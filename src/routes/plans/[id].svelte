@@ -556,7 +556,7 @@
         {:else if $selectedTimelinePanel.visible}
           <TimelineForm />
         {:else if $simulationConfigurationPanel.visible}
-          <SimulationConfiguration />
+          <SimulationConfiguration modelId={initialPlan.model.id} />
         {:else if $viewEditorPanel.visible}
           <ViewEditor />
         {:else if $viewManagerPanel.visible}
