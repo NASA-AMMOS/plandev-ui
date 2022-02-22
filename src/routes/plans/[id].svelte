@@ -53,6 +53,7 @@
   import {
     activities,
     activitiesMap,
+    selectActivity,
     selectedActivityId,
     selectedActivity,
     createActivity,
@@ -78,6 +79,7 @@
     viewEditorPanel,
     viewManagerPanel,
   } from '../../stores/panels';
+  import { plan } from '../../stores/plan';
   import { resources } from '../../stores/resources';
   import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
   import {
@@ -123,6 +125,7 @@
     $activitiesMap = keyBy(initialActivities);
     $modelConstraints = model.constraints;
     $modelParametersMap = model.parameters.parameters;
+    $plan = initialPlan;
     $planConstraints = constraints;
     $simulation = initialSimulation;
 
@@ -155,21 +158,6 @@
     $simulation = null;
     $violations = [];
   });
-
-  async function onCreateActivity(event: CustomEvent<ActivityType>) {
-    const { detail: activityType } = event;
-    const { id: planId, startTime } = initialPlan;
-    const activity: CreateActivity = {
-      arguments: {},
-      startTime,
-      type: activityType.name,
-    };
-    const { id, success } = await createActivity(activity, planId, startTime);
-    if (success) {
-      selectActivity(id);
-      simulationStatus.update(SimulationStatus.Dirty);
-    }
-  }
 
   async function onCreateConstraint(event: CustomEvent<CreateConstraint>) {
     const { detail: newConstraint } = event;
@@ -343,11 +331,6 @@
 
     simulationStatus.update(SimulationStatus.Incomplete);
   }
-
-  function selectActivity(id: number): void {
-    $selectedActivityId = id;
-    selectedActivityPanel.show();
-  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -519,10 +502,7 @@
     <div id="right-panel">
       {#if horizontalSplitInitialized}
         {#if $activityDictionaryPanel.visible}
-          <ActivityDictionary
-            activityTypes={initialPlan.model.activityTypes}
-            on:createActivity={onCreateActivity}
-          />
+          <ActivityDictionary />
         {:else if $constraintEditorPanel.visible}
           <ConstraintEditor
             constraint={$selectedConstraint}

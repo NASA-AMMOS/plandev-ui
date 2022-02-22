@@ -1,18 +1,17 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Input from '../form/Input.svelte';
   import Chip from '../stellar/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
+  import { createActivity, selectActivity } from '../../stores/activities';
+  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
+  import { plan } from '../../stores/plan';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let activityTypes: ActivityType[] = [];
-
-  const dispatch = createEventDispatcher();
-
+  let activityTypes: ActivityType[] = $plan.model.activityTypes;
   let filterText: string = '';
 
   $: filteredActivityTypes = activityTypes.filter(({ name }) =>
@@ -22,8 +21,19 @@
     compare(a.name, b.name),
   );
 
-  function createActivity(activityType: ActivityType): void {
-    dispatch('createActivity', activityType);
+  async function onCreateActivity(activityType: ActivityType): Promise<void> {
+    const { id: planId, startTime } = $plan;
+    const activity: CreateActivity = {
+      arguments: {},
+      startTime,
+      type: activityType.name,
+    };
+    const { id, success } = await createActivity(activity, planId, startTime);
+
+    if (success) {
+      selectActivity(id);
+      simulationStatus.update(SimulationStatus.Dirty);
+    }
   }
 
   function onDragEnd(): void {
@@ -73,7 +83,7 @@
           <span slot="suffix">
             <button
               class="st-button icon fs-6"
-              on:click={() => createActivity(activityType)}
+              on:click={() => onCreateActivity(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <i class="bi bi-plus" />

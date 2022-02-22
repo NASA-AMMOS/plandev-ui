@@ -1,6 +1,7 @@
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
+import { selectedActivityPanel } from '../stores/panels';
 import req from '../utilities/requests';
 
 /* Stores. */
@@ -65,7 +66,7 @@ export async function createActivity(
   }
 }
 
-export async function deleteActivity(id: number) {
+export async function deleteActivity(id: number): Promise<void> {
   const success = await req.deleteActivity(id);
   if (success) {
     activitiesMap.update(activities => {
@@ -88,6 +89,11 @@ export async function deleteActivity(id: number) {
       text: 'Activity Delete Failed',
     }).showToast();
   }
+}
+
+export function selectActivity(id: number): void {
+  selectedActivityId.set(id);
+  selectedActivityPanel.show();
 }
 
 export async function updateActivity(
