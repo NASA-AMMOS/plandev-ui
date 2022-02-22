@@ -1,5 +1,5 @@
 import type { Handle, RequestEvent } from '@sveltejs/kit';
-import type { MaybePromise } from '@sveltejs/kit/types/helper';
+import type { MaybePromise } from '@sveltejs/kit/types/internal';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
 import { env as envStore } from '../stores/app';
