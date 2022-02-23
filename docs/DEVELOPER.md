@@ -4,8 +4,8 @@ This document describes how to set up your development environment to build and 
 
 - [Prerequisite Knowledge](#prerequisite-knowledge)
 - [Prerequisite Software](#prerequisite-software)
-- [Getting the Sources](#getting-the-sources)
 - [Directory Structure](#directory-structure)
+- [Getting the Sources](#getting-the-sources)
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
 - [Building](#building)
@@ -31,15 +31,6 @@ Before you can build aerie-ui, you must install and configure the following prod
   brew install node
   ```
 
-## Getting the Sources
-
-[Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the aerie-ui repository:
-
-```shell
-git clone https://github.com/NASA-AMMOS/aerie-ui.git
-cd aerie-ui
-```
-
 ## Directory Structure
 
 ```sh
@@ -57,9 +48,18 @@ cd aerie-ui
 └── static          # Statically served files
 ```
 
+## Getting the Sources
+
+[Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the aerie-ui repository:
+
+```shell
+git clone https://github.com/NASA-AMMOS/aerie-ui.git
+cd aerie-ui
+```
+
 ## Installing NPM Modules
 
-Next, install the JavaScript modules needed to build aerie-ui:
+Install the JavaScript modules needed to build aerie-ui:
 
 ```shell
 npm install
