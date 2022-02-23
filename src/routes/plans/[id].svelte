@@ -41,7 +41,6 @@
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import Table from '../../components/stellar/Table.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
-  import Card from '../../components/ui/Card.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
@@ -531,7 +530,7 @@
               on:delete={onDeleteActivity}
             />
           {:else}
-            <Card class="p-1 m-1">No Activity Selected</Card>
+            <div class="p-1">No Activity Selected</div>
           {/if}
         {:else if $selectedTimelinePanel.visible}
           <TimelineForm />

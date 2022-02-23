@@ -9,7 +9,6 @@
   import ParameterRec from './ParameterRec.svelte';
   import ParameterRecError from './ParameterRecError.svelte';
   import { tooltip } from '../../utilities/tooltip';
-  import Card from '../ui/Card.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter<ValueSchemaSeries>;
@@ -130,7 +129,7 @@
         </li>
       {/each}
     {:else}
-      <Card class="p-1">This series has no values</Card>
+      <div class="p-1">This series has no values</div>
     {/if}
   </ul>
 {/if}

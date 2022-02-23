@@ -9,7 +9,6 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../stellar/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Card from '../ui/Card.svelte';
   import { field } from '../../stores/form';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
@@ -192,7 +191,7 @@
           {#if hasChildren}
             <Decomposition {activitiesMap} {children} {type} />
           {:else}
-            <Card class="p-1">This activity has no children</Card>
+            <div class="p-1">This activity has no children</div>
           {/if}
         </div>
       </details>

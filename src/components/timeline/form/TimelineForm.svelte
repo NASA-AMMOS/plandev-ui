@@ -5,7 +5,6 @@
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import ConfirmModal from '../../modals/Confirm.svelte';
   import Chip from '../../stellar/Chip.svelte';
-  import Card from '../../ui/Card.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
@@ -145,9 +144,7 @@
           </fieldset>
         </CssGrid>
       {:else}
-        <fieldset>
-          <Card class="p-1">No timeline selected</Card>
-        </fieldset>
+        <fieldset>No timeline selected</fieldset>
       {/if}
     </Details>
 
@@ -237,9 +234,7 @@
           </fieldset>
         </CssGrid>
       {:else}
-        <fieldset>
-          <Card class="p-1">No row selected</Card>
-        </fieldset>
+        <fieldset>No row selected</fieldset>
       {/if}
     </Details>
 
@@ -276,9 +271,7 @@
           on:update={updateYAxisEvent}
         />
       {:else}
-        <fieldset>
-          <Card class="p-1">No y-axis selected</Card>
-        </fieldset>
+        <fieldset>No y-axis selected</fieldset>
       {/if}
     </Details>
 
@@ -319,9 +312,7 @@
           on:input={updateLayerEvent}
         />
       {:else}
-        <fieldset>
-          <Card class="p-1">No layer selected</Card>
-        </fieldset>
+        <fieldset>No layer selected</fieldset>
       {/if}
     </Details>
   </svelte:fragment>

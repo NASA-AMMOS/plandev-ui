@@ -4,7 +4,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
   import Chip from '../stellar/Chip.svelte';
-  import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
@@ -107,7 +106,7 @@
   <svelte:fragment slot="body">
     <details open>
       <summary class="p-2">Constraint Metadata</summary>
-      <Card class="p-1">
+      <div class="p-1">
         <fieldset>
           <label for="type">Type</label>
           <select bind:value={type} class="st-select w-100" name="type">
@@ -146,7 +145,7 @@
             name="summary"
           />
         </fieldset>
-      </Card>
+      </div>
     </details>
 
     <details open class="h-100">

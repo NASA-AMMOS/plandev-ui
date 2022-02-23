@@ -3,7 +3,6 @@
 <script lang="ts">
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../stellar/Chip.svelte';
-  import Card from '../ui/Card.svelte';
   import Panel from '../ui/Panel.svelte';
   import {
     modelParametersMap,
@@ -102,7 +101,7 @@
         {#if formParameters.length}
           <Parameters {formParameters} on:change={onChangeFormParameters} />
         {:else}
-          <Card class="m-1 p-1">No Simulation Configuration Found</Card>
+          <div class="p-1">No simulation configuration found</div>
         {/if}
       </div>
     </details>
