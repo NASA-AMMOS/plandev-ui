@@ -5,6 +5,7 @@ This document describes how to set up your development environment to build and 
 - [Prerequisite Knowledge](#prerequisite-knowledge)
 - [Prerequisite Software](#prerequisite-software)
 - [Getting the Sources](#getting-the-sources)
+- [Directory Structure](#directory-structure)
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
 - [Building](#building)
@@ -37,6 +38,23 @@ Before you can build aerie-ui, you must install and configure the following prod
 ```shell
 git clone https://github.com/NASA-AMMOS/aerie-ui.git
 cd aerie-ui
+```
+
+## Directory Structure
+
+```sh
+.
+├── .github         # GitHub metadata
+├── docs            # Documentation
+├── scripts         # Helper build scripts
+└── src             # The source code
+    ├── components  # Svelte components
+    ├── css         # Style sheets
+    ├── routes      # Svelte Kit route components
+    ├── stores      # Svelte stores
+    ├── types       # Global TypeScript types
+    └── utilities   # Pure functions and values
+└── static          # Statically served files
 ```
 
 ## Installing NPM Modules
