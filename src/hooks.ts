@@ -2,8 +2,8 @@ import type { Handle, RequestEvent } from '@sveltejs/kit';
 import type { MaybePromise } from '@sveltejs/kit/types/internal';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
-import { env as envStore } from '../stores/app';
-import req from '../utilities/requests';
+import { env as envStore } from './stores/app';
+import req from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }): Promise<Response> => {
   const { AUTH_TYPE } = get<Env>(envStore);
