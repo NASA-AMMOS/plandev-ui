@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import Parameters from '../parameters/Parameters.svelte';
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import {
     modelParametersMap,

@@ -7,7 +7,7 @@
   import ConfirmModal from '../modals/Confirm.svelte';
   import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
   import { getArguments, getFormParameters } from '../../utilities/parameters';

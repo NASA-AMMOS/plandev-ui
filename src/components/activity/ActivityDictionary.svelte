@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import Input from '../form/Input.svelte';
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import { createActivity, selectActivity } from '../../stores/activities';

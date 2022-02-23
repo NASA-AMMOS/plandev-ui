@@ -1,6 +1,6 @@
 <script lang="ts">
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import { view, viewText } from '../../stores/views';
 

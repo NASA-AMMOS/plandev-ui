@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../../components/modals/Confirm.svelte';

@@ -3,7 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
-  import Chip from '../stellar/Chip.svelte';
+  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';

@@ -39,14 +39,14 @@
   import SchedulingStatusBadge from '../../components/scheduling/SchedulingStatusBadge.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
-  import Table from '../../components/stellar/Table.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
-  import CssGrid from '../../components/ui/CssGrid.svelte';
-  import Split from '../../components/ui/Split.svelte';
-  import TopBar from '../../components/ui/TopBar.svelte';
   import ConstraintEditor from '../../components/constraint/Editor.svelte';
   import ConstraintList from '../../components/constraint/List.svelte';
   import ConstraintViolations from '../../components/constraint/Violations.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
+  import Split from '../../components/ui/Split.svelte';
+  import Table from '../../components/ui/Table.svelte';
+  import TopBar from '../../components/ui/TopBar.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import ViewManager from '../../components/view/ViewManager.svelte';
   import {
