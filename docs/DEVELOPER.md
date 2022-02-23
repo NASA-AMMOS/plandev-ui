@@ -4,7 +4,6 @@ This document describes how to set up your development environment to build and 
 
 - [Prerequisite Knowledge](#prerequisite-knowledge)
 - [Prerequisite Software](#prerequisite-software)
-- [Directory Structure](#directory-structure)
 - [Getting the Sources](#getting-the-sources)
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
@@ -30,23 +29,6 @@ Before you can build aerie-ui, you must install and configure the following prod
   ```shell
   brew install node
   ```
-
-## Directory Structure
-
-```sh
-.
-├── .github         # GitHub metadata
-├── docs            # Documentation
-├── scripts         # Helper build scripts
-└── src             # The source code
-    ├── components  # Svelte components
-    ├── css         # Style sheets
-    ├── routes      # Svelte Kit route components
-    ├── stores      # Svelte stores
-    ├── types       # Global TypeScript types
-    └── utilities   # Pure functions and values
-└── static          # Statically served files
-```
 
 ## Getting the Sources
 

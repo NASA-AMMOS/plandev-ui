@@ -7,6 +7,23 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
 <span style="display:block;text-align:center">![Example](/docs/images/Full_Example.png)</span>
 
+## Directory Structure
+
+```sh
+.
+├── .github         # GitHub metadata
+├── docs            # Documentation
+├── scripts         # Helper build scripts
+└── src             # The source code
+    ├── components  # Svelte components
+    ├── css         # Style sheets
+    ├── routes      # Svelte Kit route components
+    ├── stores      # Svelte stores
+    ├── types       # Global TypeScript types
+    └── utilities   # Pure functions and values
+└── static          # Statically served files
+```
+
 ## Want to help?
 
 Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
