@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import MonacoEditor from '../monaco/MonacoEditor.svelte';
   import Chip from '../ui/Chip.svelte';
+  import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
