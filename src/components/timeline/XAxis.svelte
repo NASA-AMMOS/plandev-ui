@@ -120,6 +120,10 @@
     pointer-events: all;
   }
 
+  .reset-view-time-range-icon:focus {
+    outline: 0;
+  }
+
   .reset-view-time-range-icon:hover {
     fill: var(--st-gray-70);
   }

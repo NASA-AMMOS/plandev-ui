@@ -74,7 +74,13 @@
     viewEditorPanel,
     viewManagerPanel,
   } from '../../stores/panels';
-  import { plan } from '../../stores/plan';
+  import {
+    maxTimeRange,
+    plan,
+    planEndTimeMs,
+    planStartTimeMs,
+    viewTimeRange,
+  } from '../../stores/plan';
   import { resources } from '../../stores/resources';
   import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
   import {
@@ -124,15 +130,17 @@
     $planConstraints = constraints;
     $simulation = initialSimulation;
 
+    $planEndTimeMs = getUnixEpochTime(initialPlan.endTime);
+    $planStartTimeMs = getUnixEpochTime(initialPlan.startTime);
+    $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
+    $viewTimeRange = $maxTimeRange;
+
     simulationTemplates.setVariables({ modelId: model.id });
   }
+
   $: if (initialView) {
     $view = initialView;
   }
-  $: endTimeMs = getUnixEpochTime(initialPlan.endTime);
-  $: maxTimeRange = { end: endTimeMs, start: startTimeMs };
-  $: startTimeMs = getUnixEpochTime(initialPlan.startTime);
-  $: viewTimeRange = { end: endTimeMs, start: startTimeMs };
 
   onMount(() => {
     if ($view) {
@@ -214,7 +222,7 @@
   }
 
   function onResetViewTimeRange() {
-    viewTimeRange = maxTimeRange;
+    $viewTimeRange = $maxTimeRange;
   }
 
   async function onSaveView() {
@@ -272,7 +280,7 @@
   }
 
   function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
-    viewTimeRange = event.detail;
+    $viewTimeRange = event.detail;
   }
 
   async function runScheduling() {
@@ -312,7 +320,10 @@
       if (status === 'complete') {
         $activitiesMap = newActivitiesMap;
         $resources = newResources;
-        $violations = offsetViolationWindows(constraintViolations, startTimeMs);
+        $violations = offsetViolationWindows(
+          constraintViolations,
+          $planStartTimeMs,
+        );
         simulationStatus.update(SimulationStatus.Complete);
         return;
       } else if (status === 'failed') {
@@ -474,12 +485,12 @@
                 id={section.timeline.id}
                 marginLeft={section.timeline.marginLeft ?? 50}
                 marginRight={section.timeline.marginRight ?? 20}
-                {maxTimeRange}
+                maxTimeRange={$maxTimeRange}
                 resources={$resources}
                 rows={section.timeline.rows}
                 selectedActivity={$selectedActivity}
                 verticalGuides={section.timeline.verticalGuides}
-                {viewTimeRange}
+                viewTimeRange={$viewTimeRange}
                 on:dragActivity={onUpdateStartTime}
                 on:dragActivityEnd={onUpdateActivity}
                 on:dropActivity={onDropActivity}
