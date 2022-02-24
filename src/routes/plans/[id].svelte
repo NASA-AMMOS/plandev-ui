@@ -60,8 +60,6 @@
     planConstraints,
     selectedConstraint,
     violations,
-    createConstraint,
-    updateConstraint,
   } from '../../stores/constraints';
   import {
     activityDictionaryPanel,
@@ -115,27 +113,19 @@
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
-    const {
-      activities: initialActivities,
-      constraints,
-      model,
-      simulations,
-    } = initialPlan;
-    const [initialSimulation] = simulations;
-
-    $activitiesMap = keyBy(initialActivities);
-    $modelConstraints = model.constraints;
-    $modelParametersMap = model.parameters.parameters;
+    $activitiesMap = keyBy(initialPlan.activities);
+    $modelConstraints = initialPlan.model.constraints;
+    $modelParametersMap = initialPlan.model.parameters.parameters;
     $plan = initialPlan;
-    $planConstraints = constraints;
-    $simulation = initialSimulation;
+    $planConstraints = initialPlan.constraints;
+    $simulation = initialPlan.simulations[0];
 
     $planEndTimeMs = getUnixEpochTime(initialPlan.endTime);
     $planStartTimeMs = getUnixEpochTime(initialPlan.startTime);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $viewTimeRange = $maxTimeRange;
 
-    simulationTemplates.setVariables({ modelId: model.id });
+    simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }
 
   $: if (initialView) {
@@ -161,12 +151,6 @@
     $simulation = null;
     $violations = [];
   });
-
-  async function onCreateConstraint(event: CustomEvent<CreateConstraint>) {
-    const { detail: newConstraint } = event;
-    await createConstraint(newConstraint);
-    simulationStatus.update(SimulationStatus.Dirty);
-  }
 
   function onCreateView(event: CustomEvent<string>) {
     const { detail: name } = event;
@@ -239,12 +223,6 @@
     const { startTime } = initialPlan;
     const { detail: activity } = event;
     updateActivity(activity, startTime);
-    simulationStatus.update(SimulationStatus.Dirty);
-  }
-
-  async function onUpdateConstraint(event: CustomEvent<Constraint>) {
-    const { detail: updatedConstraint } = event;
-    await updateConstraint(updatedConstraint);
     simulationStatus.update(SimulationStatus.Dirty);
   }
 
@@ -510,20 +488,11 @@
         {#if $activityDictionaryPanel.visible}
           <ActivityDictionary />
         {:else if $constraintEditorPanel.visible}
-          <ConstraintEditor
-            constraint={$selectedConstraint}
-            modelId={initialPlan.model.id}
-            planId={initialPlan.id}
-            on:create={onCreateConstraint}
-            on:update={onUpdateConstraint}
-          />
+          <ConstraintEditor />
         {:else if $constraintListPanel.visible}
           <ConstraintList />
         {:else if $constraintViolationsPanel.visible}
-          <ConstraintViolations
-            violations={$violations}
-            on:selectWindow={onViewTimeRangeChanged}
-          />
+          <ConstraintViolations />
         {:else if $selectedActivityPanel.visible}
           {#if $selectedActivity}
             <ActivityForm

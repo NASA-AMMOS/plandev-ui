@@ -1,19 +1,16 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-
-  export let violations: ConstraintViolation[] = [];
-
-  const dispatch = createEventDispatcher();
+  import { violations } from '../../stores/constraints';
+  import { viewTimeRange } from '../../stores/plan';
 
   function clickViolation(violation: ConstraintViolation) {
     const { windows } = violation;
     const [window] = windows;
-    dispatch('selectWindow', window);
+    $viewTimeRange = window;
   }
 </script>
 
@@ -23,8 +20,8 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if violations.length}
-      {#each violations as violation}
+    {#if $violations.length}
+      {#each $violations as violation}
         <ListItem
           style="cursor: pointer"
           on:click={() => clickViolation(violation)}

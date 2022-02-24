@@ -1,18 +1,19 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import MonacoEditor from '../monaco/MonacoEditor.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
-
-  export let constraint: Constraint | null = null;
-  export let modelId: number;
-  export let planId: number;
-
-  const dispatch = createEventDispatcher();
+  import {
+    selectedConstraint,
+    createConstraint,
+    updateConstraint,
+  } from '../../stores/constraints';
+  import { plan } from '../../stores/plan';
+  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
 
   let debounce: NodeJS.Timeout;
   let definition: string = '';
@@ -24,13 +25,17 @@
 
   $: valid = definition !== '' && !definitionError && name !== '';
 
-  onMount(async () => {
-    if (constraint) {
-      definition = JSON.stringify(JSON.parse(constraint.definition), null, 2);
-      description = constraint.description;
-      name = constraint.name;
-      summary = constraint.summary;
-      type = constraint.modelId ? 'model' : 'plan';
+  onMount(() => {
+    if ($selectedConstraint) {
+      definition = JSON.stringify(
+        JSON.parse($selectedConstraint.definition),
+        null,
+        2,
+      );
+      description = $selectedConstraint.description;
+      name = $selectedConstraint.name;
+      summary = $selectedConstraint.summary;
+      type = $selectedConstraint.modelId ? 'model' : 'plan';
     } else {
       definition = '';
       description = '';
@@ -61,21 +66,22 @@
     }
   }
 
-  function save() {
-    const useModelId = type === 'model' ? modelId : null;
-    const usePlanId = type === 'plan' ? planId : null;
+  async function save() {
+    const useModelId = type === 'model' ? $plan.model.id : null;
+    const usePlanId = type === 'plan' ? $plan.id : null;
 
-    if (constraint) {
+    if ($selectedConstraint) {
       const updatedConstraint: Constraint = {
         definition,
         description,
-        id: constraint.id,
+        id: $selectedConstraint.id,
         modelId: useModelId,
         name,
         planId: usePlanId,
         summary,
       };
-      dispatch('update', updatedConstraint);
+      await updateConstraint(updatedConstraint);
+      simulationStatus.update(SimulationStatus.Dirty);
     } else {
       const newConstraint: CreateConstraint = {
         definition,
@@ -85,7 +91,8 @@
         planId: usePlanId,
         summary,
       };
-      dispatch('create', newConstraint);
+      await createConstraint(newConstraint);
+      simulationStatus.update(SimulationStatus.Dirty);
     }
   }
 </script>
