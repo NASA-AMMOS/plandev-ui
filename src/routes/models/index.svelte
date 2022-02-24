@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
-  import type { LoadInput, LoadOutput } from '@sveltejs/kit';
+  import type { Load } from '@sveltejs/kit';
 
-  export async function load({ session }: LoadInput): Promise<LoadOutput> {
+  export const load: Load = async ({ session }) => {
     if (!session.user) {
       return {
         redirect: '/login',
@@ -16,7 +16,7 @@
         models,
       },
     };
-  }
+  };
 </script>
 
 <script lang="ts">

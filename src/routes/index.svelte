@@ -1,10 +1,10 @@
 <script lang="ts" context="module">
-  import type { LoadOutput } from '@sveltejs/kit';
+  import type { Load } from '@sveltejs/kit';
 
-  export async function load(): Promise<LoadOutput> {
+  export const load: Load = () => {
     return {
       redirect: '/plans',
       status: 302,
     };
-  }
+  };
 </script>

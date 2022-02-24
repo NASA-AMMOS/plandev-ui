@@ -1,7 +1,7 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import type { RequestHandler } from '@sveltejs/kit';
 import req from '../../utilities/requests';
 
-export async function post(event: RequestEvent): Promise<LogoutResponse> {
+export const post: RequestHandler = async event => {
   const { locals } = event;
   const { user } = locals;
   const { ssoToken = '' } = user;
@@ -38,4 +38,4 @@ export async function post(event: RequestEvent): Promise<LogoutResponse> {
       },
     };
   }
-}
+};

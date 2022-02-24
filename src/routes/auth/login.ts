@@ -1,7 +1,7 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import type { RequestHandler } from '@sveltejs/kit';
 import req from '../../utilities/requests';
 
-export async function post(event: RequestEvent): Promise<LoginResponse> {
+export const post: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;
 
@@ -40,4 +40,4 @@ export async function post(event: RequestEvent): Promise<LoginResponse> {
       },
     };
   }
-}
+};
