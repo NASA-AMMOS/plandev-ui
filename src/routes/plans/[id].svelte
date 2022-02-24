@@ -40,9 +40,9 @@
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
-  import ConstraintEditor from '../../components/constraint/Editor.svelte';
-  import ConstraintList from '../../components/constraint/List.svelte';
-  import ConstraintViolations from '../../components/constraint/Violations.svelte';
+  import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
+  import ConstraintList from '../../components/constraint/ConstraintList.svelte';
+  import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
   import Table from '../../components/ui/Table.svelte';
