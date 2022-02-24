@@ -13,7 +13,7 @@
   }
 </script>
 
-<div class="decomposition mt-2 mb-2" on:click={toggle}>
+<div class="activity-decomposition mt-2 mb-2" on:click={toggle}>
   {#if hasChildren}
     <i class={expanded ? 'bi bi-chevron-down' : 'bi bi-chevron-right'} />
   {/if}
@@ -40,7 +40,7 @@
     list-style: none;
   }
 
-  .decomposition {
+  .activity-decomposition {
     align-items: center;
     display: grid;
     gap: 5px;

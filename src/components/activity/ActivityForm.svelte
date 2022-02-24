@@ -2,10 +2,10 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import ActivityDecomposition from './ActivityDecomposition.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/Confirm.svelte';
-  import Decomposition from './Decomposition.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -189,7 +189,7 @@
         <summary>Decomposition</summary>
         <div class="mt-2">
           {#if hasChildren}
-            <Decomposition {activitiesMap} {children} {type} />
+            <ActivityDecomposition {activitiesMap} {children} {type} />
           {:else}
             <div class="p-1">This activity has no children</div>
           {/if}
