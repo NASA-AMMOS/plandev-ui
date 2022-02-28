@@ -4,14 +4,6 @@
   import { onMount } from 'svelte';
   import Modal from './Modal.svelte';
 
-  type Version = {
-    branch: string;
-    commit: string;
-    commitUrl: string;
-    date: string;
-    name: string;
-  };
-
   export let modal: Modal | null = null;
 
   let version: Version;
