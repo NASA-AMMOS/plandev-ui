@@ -5,6 +5,7 @@
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
+  import { ExecutionStatus } from '../../utilities/enums';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import {
@@ -13,7 +14,7 @@
     updateConstraint,
   } from '../../stores/constraints';
   import { plan } from '../../stores/plan';
-  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
+  import { simulationStatus } from '../../stores/simulation';
 
   let debounce: NodeJS.Timeout;
   let definition: string = '';
@@ -81,7 +82,7 @@
         summary,
       };
       await updateConstraint(updatedConstraint);
-      simulationStatus.update(SimulationStatus.Dirty);
+      simulationStatus.update(ExecutionStatus.Dirty);
     } else {
       const newConstraint: CreateConstraint = {
         definition,
@@ -92,7 +93,7 @@
         summary,
       };
       await createConstraint(newConstraint);
-      simulationStatus.update(SimulationStatus.Dirty);
+      simulationStatus.update(ExecutionStatus.Dirty);
     }
   }
 </script>

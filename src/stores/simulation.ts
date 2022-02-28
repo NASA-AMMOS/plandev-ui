@@ -1,21 +1,10 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
+import { ExecutionStatus } from '../utilities/enums';
 import { SUB_SIM_TEMPLATES } from '../utilities/gql';
 import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
-
-/* Data. */
-
-export enum SimulationStatus {
-  Clean = 'Clean',
-  Complete = 'Complete',
-  Dirty = 'Dirty',
-  Executing = 'Executing',
-  Failed = 'Failed',
-  Incomplete = 'Incomplete',
-  Unknown = 'Unknown',
-}
 
 /* Stores. */
 
@@ -28,16 +17,16 @@ export const simulationStatus = (() => {
     set,
     subscribe,
     update: updateStore,
-  } = writable<SimulationStatus>(SimulationStatus.Clean);
+  } = writable<ExecutionStatus>(ExecutionStatus.Clean);
 
   return {
     set,
     subscribe,
-    update(newStatus: SimulationStatus) {
+    update(newStatus: ExecutionStatus) {
       updateStore(currentStatus => {
         switch (currentStatus) {
-          case SimulationStatus.Clean:
-            if (newStatus === SimulationStatus.Dirty) {
+          case ExecutionStatus.Clean:
+            if (newStatus === ExecutionStatus.Dirty) {
               return currentStatus;
             } else {
               return newStatus;

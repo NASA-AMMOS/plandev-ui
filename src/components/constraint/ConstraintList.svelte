@@ -12,7 +12,8 @@
     selectedConstraint,
   } from '../../stores/constraints';
   import { constraintEditorPanel } from '../../stores/panels';
-  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
+  import { simulationStatus } from '../../stores/simulation';
+  import { ExecutionStatus } from '../../utilities/enums';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteConstraint: ConfirmModal | null = null;
@@ -20,7 +21,7 @@
   async function onDeleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
     await deleteConstraint(constraint.id);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   function onEditConstraint(constraint: Constraint) {

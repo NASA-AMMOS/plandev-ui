@@ -6,12 +6,12 @@
   import Panel from '../ui/Panel.svelte';
   import {
     modelParametersMap,
-    SimulationStatus,
     simulation,
     simulationStatus,
     simulationTemplates,
     updateSimulation,
   } from '../../stores/simulation';
+  import { ExecutionStatus } from '../../utilities/enums';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
@@ -50,7 +50,7 @@
     };
 
     updateSimulation(newSimulation, newFiles);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   async function onChangeSimulationTemplate(event: Event) {
@@ -60,7 +60,7 @@
     const newSimulation: Simulation = { ...$simulation, template };
 
     updateSimulation(newSimulation);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 </script>
 

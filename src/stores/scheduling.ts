@@ -1,18 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
+import { ExecutionStatus } from '../utilities/enums';
 
-/* Data. */
-
-export enum SchedulingStatus {
-  Clean = 'Clean',
-  Complete = 'Complete',
-  Executing = 'Executing',
-  Failed = 'Failed',
-  Unknown = 'Unknown',
-}
-
-/* Stores. */
-
-export const schedulingStatus: Writable<SchedulingStatus> = writable(
-  SchedulingStatus.Clean,
+export const schedulingStatus: Writable<ExecutionStatus> = writable(
+  ExecutionStatus.Clean,
 );

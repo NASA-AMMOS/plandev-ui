@@ -6,8 +6,9 @@
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import { createActivity, selectActivity } from '../../stores/activities';
-  import { SimulationStatus, simulationStatus } from '../../stores/simulation';
+  import { simulationStatus } from '../../stores/simulation';
   import { plan } from '../../stores/plan';
+  import { ExecutionStatus } from '../../utilities/enums';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -32,7 +33,7 @@
 
     if (success) {
       selectActivity(id);
-      simulationStatus.update(SimulationStatus.Dirty);
+      simulationStatus.update(ExecutionStatus.Dirty);
     }
   }
 

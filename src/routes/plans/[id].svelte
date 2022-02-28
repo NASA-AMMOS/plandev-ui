@@ -32,15 +32,14 @@
   import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
   import ConstraintMenu from '../../components/menus/Constraint.svelte';
   import ViewMenu from '../../components/menus/View.svelte';
-  import SchedulingStatusBadge from '../../components/scheduling/SchedulingStatusBadge.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
-  import SimulationStatusBadge from '../../components/simulation/SimulationStatusBadge.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
   import ConstraintList from '../../components/constraint/ConstraintList.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
+  import StatusBadge from '../../components/ui/StatusBadge.svelte';
   import Table from '../../components/ui/Table.svelte';
   import TopBar from '../../components/ui/TopBar.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
@@ -80,10 +79,9 @@
     viewTimeRange,
   } from '../../stores/plan';
   import { resources } from '../../stores/resources';
-  import { SchedulingStatus, schedulingStatus } from '../../stores/scheduling';
+  import { schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
-    SimulationStatus,
     simulation,
     simulationStatus,
     simulationTemplates,
@@ -99,6 +97,7 @@
     viewSectionIds,
     viewSectionSizes,
   } from '../../stores/views';
+  import { ExecutionStatus } from '../../utilities/enums';
   import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -140,13 +139,13 @@
 
   onDestroy(() => {
     activityDictionaryPanel.show();
-    simulationStatus.update(SimulationStatus.Clean);
+    simulationStatus.update(ExecutionStatus.Clean);
     $activitiesMap = {};
     $modelConstraints = [];
     $modelParametersMap = {};
     $planConstraints = [];
     $resources = [];
-    $schedulingStatus = SchedulingStatus.Clean;
+    $schedulingStatus = ExecutionStatus.Clean;
     $selectedActivityId = null;
     $simulation = null;
     $violations = [];
@@ -161,7 +160,7 @@
   function onDeleteActivity(event: CustomEvent<number>) {
     const { detail: activityId } = event;
     deleteActivity(activityId);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   function onDropActivity(event: CustomEvent<DropActivity>) {
@@ -174,7 +173,7 @@
       type,
     };
     createActivity(activity, planId, initialPlan.startTime);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -223,7 +222,7 @@
     const { startTime } = initialPlan;
     const { detail: activity } = event;
     updateActivity(activity, startTime);
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   function onUpdateRowHeight(
@@ -254,7 +253,7 @@
     const { id, startTime } = detail;
     $activitiesMap[id].children = [];
     $activitiesMap[id].startTime = startTime;
-    simulationStatus.update(SimulationStatus.Dirty);
+    simulationStatus.update(ExecutionStatus.Dirty);
   }
 
   function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
@@ -262,22 +261,22 @@
   }
 
   async function runScheduling() {
-    $schedulingStatus = SchedulingStatus.Executing;
+    $schedulingStatus = ExecutionStatus.Executing;
     const { id: planId } = initialPlan;
     const response = await req.schedule(planId);
 
     if (response.status === 'complete') {
       const newActivities = await req.getActivitiesForPlan(planId);
-      simulationStatus.update(SimulationStatus.Dirty);
+      simulationStatus.update(ExecutionStatus.Dirty);
       $activitiesMap = keyBy(newActivities);
-      $schedulingStatus = SchedulingStatus.Complete;
+      $schedulingStatus = ExecutionStatus.Complete;
       $selectedActivityId = null;
     } else {
       console.log(response);
       if (response.status === 'failed') {
-        $schedulingStatus = SchedulingStatus.Failed;
+        $schedulingStatus = ExecutionStatus.Failed;
       } else {
-        $schedulingStatus = SchedulingStatus.Unknown;
+        $schedulingStatus = ExecutionStatus.Unknown;
       }
     }
   }
@@ -285,7 +284,7 @@
   async function runSimulation() {
     const { model, id: planId } = initialPlan;
     let tries = 0;
-    simulationStatus.update(SimulationStatus.Executing);
+    simulationStatus.update(ExecutionStatus.Executing);
 
     do {
       const {
@@ -302,10 +301,10 @@
           constraintViolations,
           $planStartTimeMs,
         );
-        simulationStatus.update(SimulationStatus.Complete);
+        simulationStatus.update(ExecutionStatus.Complete);
         return;
       } else if (status === 'failed') {
-        simulationStatus.update(SimulationStatus.Failed);
+        simulationStatus.update(ExecutionStatus.Failed);
         return;
       }
 
@@ -313,7 +312,7 @@
       ++tries;
     } while (tries < 10); // Trying a max of 10 times.
 
-    simulationStatus.update(SimulationStatus.Incomplete);
+    simulationStatus.update(ExecutionStatus.Incomplete);
   }
 </script>
 
@@ -323,8 +322,8 @@
   <TopBar>
     <div class="header-left">
       Plan: {initialPlan.name}
-      <SimulationStatusBadge simulationStatus={$simulationStatus} />
-      <SchedulingStatusBadge schedulingStatus={$schedulingStatus} />
+      <StatusBadge status={$simulationStatus} title="Simulation" />
+      <StatusBadge status={$schedulingStatus} title="Scheduling" />
     </div>
     <div>
       <button
