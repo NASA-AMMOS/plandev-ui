@@ -69,7 +69,7 @@
             </ListItem>
           {/each}
         {:else}
-          <ListItem>No Model Constraints Found</ListItem>
+          <div class="p-2">No Model Constraints Found</div>
         {/if}
       </div>
     </details>
@@ -107,7 +107,7 @@
             </ListItem>
           {/each}
         {:else}
-          <ListItem>No Plan Constraints Found</ListItem>
+          <div class="p-2">No Plan Constraints Found</div>
         {/if}
       </div>
     </details>
