@@ -14,3 +14,10 @@
   --st-primary: var(--st-primary-90);
   --st-primary-text-color: var(--st-black);
 }
+
+.st-button.ellipsis {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
