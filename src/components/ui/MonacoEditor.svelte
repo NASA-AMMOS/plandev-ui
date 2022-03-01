@@ -7,6 +7,8 @@
   import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
   import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
+  export { className as class };
+  export { styleName as style };
   export let automaticLayout: boolean | undefined = undefined;
   export let language: string | undefined = undefined;
   export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
@@ -19,8 +21,10 @@
 
   const dispatch = createEventDispatcher();
 
+  let className: string = '';
   let div: HTMLDivElement | undefined = undefined;
   let editor: Editor.IStandaloneCodeEditor | undefined = undefined;
+  let styleName: string = '';
 
   $: if (editor) {
     const currentValue = editor.getValue();
@@ -74,7 +78,7 @@
   <slot name="loading">Loading Editor...</slot>
 {/if}
 
-<div bind:this={div} class="monaco-editor" />
+<div bind:this={div} class="monaco-editor {className}" style={styleName} />
 
 <style>
   .monaco-editor {
