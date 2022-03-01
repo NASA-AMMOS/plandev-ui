@@ -14,7 +14,7 @@
   let mounted: boolean = false;
   let split: Split.Instance;
 
-  $: ids && mounted && setSplit();
+  $: ids && mounted && sizes && setSplit();
 
   onMount(() => {
     mounted = true;
