@@ -26,6 +26,7 @@
 
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { keyBy } from 'lodash-es';
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
@@ -37,6 +38,8 @@
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
   import ConstraintList from '../../components/constraint/ConstraintList.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import SchedulingGoalEditor from '../../components/scheduling/SchedulingGoalEditor.svelte';
+  import SchedulingGoalList from '../../components/scheduling/SchedulingGoalList.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Split from '../../components/ui/Split.svelte';
   import StatusBadge from '../../components/ui/StatusBadge.svelte';
@@ -98,7 +101,7 @@
     viewSectionSizes,
   } from '../../stores/views';
   import { ExecutionStatus } from '../../utilities/enums';
-  import { keyBy, setQueryParam, sleep } from '../../utilities/generic';
+  import { setQueryParam, sleep } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
@@ -109,10 +112,11 @@
 
   let constraintMenu: ConstraintMenu;
   let saveAsViewModal: SaveAsViewModal;
+  let showSchedulingPanel: boolean = false;
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
-    $activitiesMap = keyBy(initialPlan.activities);
+    $activitiesMap = keyBy(initialPlan.activities, 'id');
     $modelConstraints = initialPlan.model.constraints;
     $modelParametersMap = initialPlan.model.parameters.parameters;
     $plan = initialPlan;
@@ -260,27 +264,6 @@
     $viewTimeRange = event.detail;
   }
 
-  async function runScheduling() {
-    $schedulingStatus = ExecutionStatus.Executing;
-    const { id: planId } = initialPlan;
-    const response = await req.schedule(planId);
-
-    if (response.status === 'complete') {
-      const newActivities = await req.getActivitiesForPlan(planId);
-      simulationStatus.update(ExecutionStatus.Dirty);
-      $activitiesMap = keyBy(newActivities);
-      $schedulingStatus = ExecutionStatus.Complete;
-      $selectedActivityId = null;
-    } else {
-      console.log(response);
-      if (response.status === 'failed') {
-        $schedulingStatus = ExecutionStatus.Failed;
-      } else {
-        $schedulingStatus = ExecutionStatus.Unknown;
-      }
-    }
-  }
-
   async function runSimulation() {
     const { model, id: planId } = initialPlan;
     let tries = 0;
@@ -339,9 +322,9 @@
 
       <button
         class="st-button icon header-button"
-        on:click={runScheduling}
+        on:click={() => (showSchedulingPanel = !showSchedulingPanel)}
         use:tooltip={{
-          content: 'Run Scheduling',
+          content: 'Scheduling',
           placement: 'bottom',
         }}
       >
@@ -416,13 +399,26 @@
       </button>
     </div>
   </TopBar>
+
   <Split
     let:initialized={horizontalSplitInitialized}
     direction="horizontal"
     ids={['#left-panel', '#sections', '#right-panel']}
-    sizes={[0, 75, 25]}
+    sizes={showSchedulingPanel ? [40, 50, 20] : [0, 75, 25]}
   >
-    <div id="left-panel" />
+    <Split id="left-panel" ids={['#top', '#bottom']} sizes={[40, 60]}>
+      <div id="top">
+        {#if horizontalSplitInitialized && showSchedulingPanel}
+          <SchedulingGoalList />
+        {/if}
+      </div>
+      <div id="bottom">
+        {#if horizontalSplitInitialized && showSchedulingPanel}
+          <SchedulingGoalEditor />
+        {/if}
+      </div>
+    </Split>
+
     <Split
       let:initialized={verticalSplitInitialized}
       id="sections"
@@ -482,6 +478,7 @@
         </div>
       {/each}
     </Split>
+
     <div id="right-panel">
       {#if horizontalSplitInitialized}
         {#if $activityDictionaryPanel.visible}
@@ -543,7 +540,8 @@
   }
 
   #left-panel,
-  #right-panel {
+  #right-panel,
+  #top {
     overflow-y: scroll;
   }
 

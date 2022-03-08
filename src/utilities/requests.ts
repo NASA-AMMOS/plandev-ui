@@ -172,12 +172,13 @@ const req = {
       };
       const data = await reqHasura(gql.CREATE_PLAN, { plan: planInput });
       const { createPlan } = data;
-      const { id } = createPlan;
+      const { id, revision } = createPlan;
       const plan: CreatePlan = {
         endTime,
         id,
         modelId,
         name,
+        revision,
         startTime,
       };
 
@@ -185,6 +186,39 @@ const req = {
     } catch (e) {
       console.log(e);
       return null;
+    }
+  },
+
+  async createSchedulingGoal(
+    goal: SchedulingGoalInsertInput,
+  ): Promise<SchedulingGoal> {
+    try {
+      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, {
+        goal,
+      });
+      const { createSchedulingGoal } = data;
+      return createSchedulingGoal;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async createSchedulingSpec(spec: SchedulingSpecInsertInput): Promise<void> {
+    try {
+      await reqHasura(gql.CREATE_SCHEDULING_SPEC, { spec });
+    } catch (e) {
+      console.log(e);
+    }
+  },
+
+  async createSchedulingSpecGoal(
+    spec_goal: SchedulingSpecGoalInsertInput,
+  ): Promise<void> {
+    try {
+      await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal });
+    } catch (e) {
+      console.log(e);
     }
   },
 
@@ -299,9 +333,9 @@ const req = {
     }
   },
 
-  async deletePlanAndSimulations(id: number): Promise<boolean> {
+  async deletePlan(id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.DELETE_PLAN_AND_SIMULATIONS, { id });
+      await reqHasura(gql.DELETE_PLAN, { id });
       return true;
     } catch (e) {
       console.log(e);
@@ -452,6 +486,23 @@ const req = {
     } catch (e) {
       console.log(e);
       return { models: [], plans: [] };
+    }
+  },
+
+  async getSchedulingSpecGoalPriorities(
+    specification_id: number,
+  ): Promise<number[]> {
+    try {
+      const data = await reqHasura<SchedulingSpecGoal[]>(
+        gql.GET_SCHEDULING_SPEC_GOAL_PRIORITIES,
+        {
+          specification_id,
+        },
+      );
+      const { specGoals } = data;
+      return specGoals.map(({ priority }) => priority).sort();
+    } catch (e) {
+      console.log(e);
     }
   },
 

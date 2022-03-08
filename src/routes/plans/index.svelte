@@ -97,6 +97,13 @@
       $startTimeField.value,
     );
     await req.createSimulation(newPlan.id, $simTemplateField.value);
+    await req.createSchedulingSpec({
+      horizon_end: $endTimeField.value,
+      horizon_start: $startTimeField.value,
+      plan_id: newPlan.id,
+      plan_revision: newPlan.revision,
+      simulation_arguments: {},
+    });
 
     if (newPlan) {
       plans = [...plans, newPlan];
@@ -110,7 +117,7 @@
   async function deletePlan(event: CustomEvent<CreatePlan>): Promise<void> {
     const { detail: plan } = event;
     const { id } = plan;
-    const success = await req.deletePlanAndSimulations(id);
+    const success = await req.deletePlan(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);

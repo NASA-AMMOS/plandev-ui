@@ -26,7 +26,7 @@
 
   .body,
   .panel {
-    height: 100%;
+    height: calc(100% - 40px);
   }
 
   .header {

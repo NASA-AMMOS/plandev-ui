@@ -56,16 +56,6 @@ export function isEmpty(value: any): boolean {
 }
 
 /**
- * Converts a list to a map keyed by 'id' (or alternate key).
- */
-export function keyBy<T>(list: T[], key = 'id'): Record<number, T> {
-  return list.reduce((map: Record<number, T>, value: T) => {
-    map[value[key]] = value;
-    return map;
-  }, {});
-}
-
-/**
  * Removes a query param from the current URL.
  */
 export function removeQueryParam(key: string): void {
