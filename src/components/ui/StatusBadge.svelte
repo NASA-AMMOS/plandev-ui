@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
 
-  export let status: ExecutionStatus = ExecutionStatus.Clean;
+  export let status: Status = Status.Clean;
   export let title: string = '';
 
   const colors: Record<string, string> = {
@@ -13,17 +13,17 @@
 
   let color: string = colors.blue;
 
-  $: if (status === ExecutionStatus.Clean) {
+  $: if (status === Status.Clean) {
     color = colors.blue;
-  } else if (status === ExecutionStatus.Complete) {
+  } else if (status === Status.Complete) {
     color = colors.green;
-  } else if (status === ExecutionStatus.Dirty) {
+  } else if (status === Status.Dirty) {
     color = colors.red;
-  } else if (status === ExecutionStatus.Executing) {
+  } else if (status === Status.Executing) {
     color = colors.yellow;
-  } else if (status === ExecutionStatus.Failed) {
+  } else if (status === Status.Failed) {
     color = colors.red;
-  } else if (ExecutionStatus.Incomplete) {
+  } else if (Status.Incomplete) {
     color = colors.yellow;
   } else {
     color = colors.red;

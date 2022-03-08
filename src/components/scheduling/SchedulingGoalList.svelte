@@ -13,7 +13,7 @@
     schedulingStatus,
   } from '../../stores/scheduling';
   import { simulationStatus } from '../../stores/simulation';
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
   import req from '../../utilities/requests';
   import { onMount } from 'svelte';
 
@@ -23,21 +23,21 @@
   });
 
   async function runScheduling() {
-    $schedulingStatus = ExecutionStatus.Executing;
+    $schedulingStatus = Status.Executing;
     const { id: planId } = $plan;
     const response = await req.schedule(planId);
 
     if (response.status === 'complete') {
       const newActivities = await req.getActivitiesForPlan(planId);
-      simulationStatus.update(ExecutionStatus.Dirty);
+      simulationStatus.update(Status.Dirty);
       $activitiesMap = keyBy(newActivities, 'id');
-      $schedulingStatus = ExecutionStatus.Complete;
+      $schedulingStatus = Status.Complete;
       $selectedActivityId = null;
     } else {
       if (response.status === 'failed') {
-        $schedulingStatus = ExecutionStatus.Failed;
+        $schedulingStatus = Status.Failed;
       } else {
-        $schedulingStatus = ExecutionStatus.Unknown;
+        $schedulingStatus = Status.Unknown;
       }
     }
   }

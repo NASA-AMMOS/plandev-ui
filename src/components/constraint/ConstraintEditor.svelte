@@ -5,7 +5,7 @@
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import {
@@ -82,7 +82,7 @@
         summary,
       };
       await updateConstraint(updatedConstraint);
-      simulationStatus.update(ExecutionStatus.Dirty);
+      simulationStatus.update(Status.Dirty);
     } else {
       const newConstraint: CreateConstraint = {
         definition,
@@ -93,7 +93,7 @@
         summary,
       };
       await createConstraint(newConstraint);
-      simulationStatus.update(ExecutionStatus.Dirty);
+      simulationStatus.update(Status.Dirty);
     }
   }
 </script>

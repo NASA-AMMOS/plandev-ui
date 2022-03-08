@@ -1,7 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import { ExecutionStatus } from '../utilities/enums';
+import { Status } from '../utilities/enums';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
@@ -14,9 +14,7 @@ export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
   [],
 );
 
-export const schedulingStatus: Writable<ExecutionStatus> = writable(
-  ExecutionStatus.Clean,
-);
+export const schedulingStatus: Writable<Status> = writable(Status.Clean);
 
 /* Utility Functions. */
 

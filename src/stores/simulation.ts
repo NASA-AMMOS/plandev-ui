@@ -1,7 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import { ExecutionStatus } from '../utilities/enums';
+import { Status } from '../utilities/enums';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
@@ -17,16 +17,16 @@ export const simulationStatus = (() => {
     set,
     subscribe,
     update: updateStore,
-  } = writable<ExecutionStatus>(ExecutionStatus.Clean);
+  } = writable<Status>(Status.Clean);
 
   return {
     set,
     subscribe,
-    update(newStatus: ExecutionStatus) {
+    update(newStatus: Status) {
       updateStore(currentStatus => {
         switch (currentStatus) {
-          case ExecutionStatus.Clean:
-            if (newStatus === ExecutionStatus.Dirty) {
+          case Status.Clean:
+            if (newStatus === Status.Dirty) {
               return currentStatus;
             } else {
               return newStatus;

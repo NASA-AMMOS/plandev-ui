@@ -1,4 +1,4 @@
-export enum ExecutionStatus {
+export enum Status {
   Clean = 'Clean',
   Complete = 'Complete',
   Dirty = 'Dirty',

@@ -11,7 +11,7 @@
     simulationTemplates,
     updateSimulation,
   } from '../../stores/simulation';
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
@@ -50,7 +50,7 @@
     };
 
     updateSimulation(newSimulation, newFiles);
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 
   async function onChangeSimulationTemplate(event: Event) {
@@ -60,7 +60,7 @@
     const newSimulation: Simulation = { ...$simulation, template };
 
     updateSimulation(newSimulation);
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 </script>
 

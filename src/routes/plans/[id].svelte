@@ -100,7 +100,7 @@
     viewSectionIds,
     viewSectionSizes,
   } from '../../stores/views';
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
   import { setQueryParam, sleep } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -143,13 +143,13 @@
 
   onDestroy(() => {
     activityDictionaryPanel.show();
-    simulationStatus.update(ExecutionStatus.Clean);
+    simulationStatus.update(Status.Clean);
     $activitiesMap = {};
     $modelConstraints = [];
     $modelParametersMap = {};
     $planConstraints = [];
     $resources = [];
-    $schedulingStatus = ExecutionStatus.Clean;
+    $schedulingStatus = Status.Clean;
     $selectedActivityId = null;
     $simulation = null;
     $violations = [];
@@ -164,7 +164,7 @@
   function onDeleteActivity(event: CustomEvent<number>) {
     const { detail: activityId } = event;
     deleteActivity(activityId);
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 
   function onDropActivity(event: CustomEvent<DropActivity>) {
@@ -177,7 +177,7 @@
       type,
     };
     createActivity(activity, planId, initialPlan.startTime);
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -226,7 +226,7 @@
     const { startTime } = initialPlan;
     const { detail: activity } = event;
     updateActivity(activity, startTime);
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 
   function onUpdateRowHeight(
@@ -257,7 +257,7 @@
     const { id, startTime } = detail;
     $activitiesMap[id].children = [];
     $activitiesMap[id].startTime = startTime;
-    simulationStatus.update(ExecutionStatus.Dirty);
+    simulationStatus.update(Status.Dirty);
   }
 
   function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
@@ -267,7 +267,7 @@
   async function runSimulation() {
     const { model, id: planId } = initialPlan;
     let tries = 0;
-    simulationStatus.update(ExecutionStatus.Executing);
+    simulationStatus.update(Status.Executing);
 
     do {
       const {
@@ -284,10 +284,10 @@
           constraintViolations,
           $planStartTimeMs,
         );
-        simulationStatus.update(ExecutionStatus.Complete);
+        simulationStatus.update(Status.Complete);
         return;
       } else if (status === 'failed') {
-        simulationStatus.update(ExecutionStatus.Failed);
+        simulationStatus.update(Status.Failed);
         return;
       }
 
@@ -295,7 +295,7 @@
       ++tries;
     } while (tries < 10); // Trying a max of 10 times.
 
-    simulationStatus.update(ExecutionStatus.Incomplete);
+    simulationStatus.update(Status.Incomplete);
   }
 </script>
 

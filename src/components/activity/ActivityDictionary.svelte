@@ -8,7 +8,7 @@
   import { createActivity, selectActivity } from '../../stores/activities';
   import { simulationStatus } from '../../stores/simulation';
   import { plan } from '../../stores/plan';
-  import { ExecutionStatus } from '../../utilities/enums';
+  import { Status } from '../../utilities/enums';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -33,7 +33,7 @@
 
     if (success) {
       selectActivity(id);
-      simulationStatus.update(ExecutionStatus.Dirty);
+      simulationStatus.update(Status.Dirty);
     }
   }
 
