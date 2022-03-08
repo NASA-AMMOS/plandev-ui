@@ -2,7 +2,7 @@ import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { ExecutionStatus } from '../utilities/enums';
-import { SUB_SIM_TEMPLATES } from '../utilities/gql';
+import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
 
@@ -40,7 +40,7 @@ export const simulationStatus = (() => {
 })();
 
 export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
-  SUB_SIM_TEMPLATES,
+  gql.SUB_SIM_TEMPLATES,
   { modelId: -1 },
   [],
 );

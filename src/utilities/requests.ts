@@ -1,7 +1,7 @@
 import { get } from 'svelte/store';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
 import { gatewayUrl, hasuraUrl, schedulerUrl } from './app';
-import * as gql from './gql';
+import gql from './gql';
 import {
   getDoyTime,
   getDoyTimeFromDuration,

@@ -2,14 +2,14 @@ import type { Writable } from 'svelte/store';
 import { writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { ExecutionStatus } from '../utilities/enums';
-import { SUB_SCHEDULING_SPEC_GOALS } from '../utilities/gql';
+import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { getGqlSubscribable } from './subscribable';
 
 /* Stores. */
 
 export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
-  SUB_SCHEDULING_SPEC_GOALS,
+  gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: -1 },
   [],
 );
