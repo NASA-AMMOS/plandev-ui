@@ -403,21 +403,21 @@
   <Split
     let:initialized={horizontalSplitInitialized}
     direction="horizontal"
-    ids={['#left-panel', '#sections', '#right-panel']}
-    sizes={showSchedulingPanel ? [40, 50, 20] : [0, 75, 25]}
+    ids={showSchedulingPanel
+      ? ['#left-panel', '#sections', '#right-panel']
+      : ['#sections', '#right-panel']}
+    sizes={showSchedulingPanel ? [40, 50, 20] : [75, 25]}
   >
-    <Split id="left-panel" ids={['#top', '#bottom']} sizes={[40, 60]}>
-      <div id="top">
-        {#if horizontalSplitInitialized && showSchedulingPanel}
+    {#if showSchedulingPanel}
+      <Split id="left-panel" ids={['#top', '#bottom']} sizes={[40, 60]}>
+        <div id="top">
           <SchedulingGoalList />
-        {/if}
-      </div>
-      <div id="bottom">
-        {#if horizontalSplitInitialized && showSchedulingPanel}
+        </div>
+        <div id="bottom">
           <SchedulingGoalEditor />
-        {/if}
-      </div>
-    </Split>
+        </div>
+      </Split>
+    {/if}
 
     <Split
       let:initialized={verticalSplitInitialized}

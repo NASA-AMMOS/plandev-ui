@@ -75,7 +75,9 @@
 </script>
 
 {#if !editor}
-  <slot name="loading">Loading Editor...</slot>
+  <slot name="loading">
+    <div style:padding="0.5rem">Loading Editor...</div>
+  </slot>
 {/if}
 
 <div bind:this={div} class="monaco-editor {className}" style={styleName} />
