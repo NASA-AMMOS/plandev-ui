@@ -17,28 +17,33 @@
   import req from '../../utilities/requests';
   import { onMount } from 'svelte';
 
+  $: specification_id = $plan.scheduling_specifications[0].id;
+
   onMount(() => {
-    const specification_id = $plan.scheduling_specifications[0].id;
     schedulingSpecGoals.setVariables({ specification_id });
   });
 
   async function runScheduling() {
-    $schedulingStatus = Status.Executing;
     const { id: planId } = $plan;
-    const response = await req.schedule(planId);
+    const plan_revision = await req.getPlanRevision(planId);
+    await req.updateSchedulingSpec(specification_id, { plan_revision });
 
-    if (response.status === 'complete') {
+    $schedulingStatus = Status.Executing;
+    const { reason, status } = await req.schedule(specification_id);
+
+    if (status === 'complete') {
       const newActivities = await req.getActivitiesForPlan(planId);
-      simulationStatus.update(Status.Dirty);
       $activitiesMap = keyBy(newActivities, 'id');
-      $schedulingStatus = Status.Complete;
       $selectedActivityId = null;
-    } else {
-      if (response.status === 'failed') {
-        $schedulingStatus = Status.Failed;
-      } else {
-        $schedulingStatus = Status.Unknown;
-      }
+
+      simulationStatus.update(Status.Dirty);
+      $schedulingStatus = Status.Complete;
+    } else if (status === 'failed') {
+      $schedulingStatus = Status.Failed;
+      console.log(reason);
+    } else if (status === 'incomplete') {
+      $schedulingStatus = Status.Incomplete;
+      console.log(reason);
     }
   }
 </script>

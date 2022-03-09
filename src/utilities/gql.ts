@@ -246,6 +246,14 @@ const gql = {
     }
   `,
 
+  GET_PLAN_REVISION: `#graphql
+    query GetPlanRevision($id: Int!) {
+      plan: plan_by_pk(id: $id) {
+        revision
+      }
+    }
+  `,
+
   GET_SCHEDULING_SPEC_GOAL_PRIORITIES: `#graphql
     query GetSchedulingSpecGoalPriorities($specification_id: Int!) {
       specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
@@ -263,11 +271,20 @@ const gql = {
     }
   `,
 
+  SCHEDULE: `#graphql
+    query Schedule($specificationId: Int!) {
+      schedule(specificationId: $specificationId){
+        reason
+        status
+      }
+    }
+  `,
+
   SIMULATE: `#graphql
     query Simulate($planId: Int!) {
       simulate(planId: $planId) {
-        status
         results
+        status
       }
     }
   `,
@@ -306,7 +323,7 @@ const gql = {
   UPDATE_ACTIVITY: `#graphql
     mutation UpdateActivity($id: Int!, $activity: activity_set_input!) {
       updateActivity: update_activity_by_pk(
-        pk_columns: {id: $id}, _set: $activity
+        pk_columns: { id: $id }, _set: $activity
       ) {
         id
       }
@@ -316,7 +333,17 @@ const gql = {
   UPDATE_CONSTRAINT: `#graphql
     mutation UpdateConstraint($id: Int!, $constraint: condition_set_input!) {
       updateConstraint: update_condition_by_pk(
-        pk_columns: {id: $id}, _set: $constraint
+        pk_columns: { id: $id }, _set: $constraint
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_SPEC: `#graphql
+    mutation UpdateSchedulingSpec($id: Int!, $spec: scheduling_specification_set_input!) {
+      updateSchedulingSpec: update_scheduling_specification_by_pk(
+        pk_columns: { id: $id }, _set: $spec
       ) {
         id
       }
@@ -326,7 +353,7 @@ const gql = {
   UPDATE_SIMULATION: `#graphql
     mutation UpdateSimulation($id: Int!, $simulation: simulation_set_input!) {
       updateSimulation: update_simulation_by_pk(
-        pk_columns: {id: $id}, _set: $simulation
+        pk_columns: { id: $id }, _set: $simulation
       ) {
         arguments
         id

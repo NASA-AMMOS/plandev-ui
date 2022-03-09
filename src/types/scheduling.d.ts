@@ -16,15 +16,11 @@ type SchedulingGoalInsertInput = Omit<
   'created_date' | 'id' | 'modified_date' | 'revision'
 >;
 
-type SchedulingResponse = {
-  reason?: string;
-  results?: SchedulingResults;
-  status: 'complete' | 'failed';
-};
+type SchedulingResponseStatus = 'complete' | 'failed' | 'incomplete';
 
-type SchedulingResults = {
-  activityCount: number;
-  goalScores: Record<string, number>;
+type SchedulingResponse = {
+  reason: string;
+  status: SchedulingResponseStatus;
 };
 
 type SchedulingSpec = {

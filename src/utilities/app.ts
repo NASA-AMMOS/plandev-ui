@@ -19,12 +19,3 @@ export function hasuraUrl() {
     return HASURA_SERVER_URL;
   }
 }
-
-export function schedulerUrl() {
-  const { SCHEDULER_CLIENT_URL, SCHEDULER_SERVER_URL } = get<Env>(envStore);
-  if (browser) {
-    return SCHEDULER_CLIENT_URL;
-  } else {
-    return SCHEDULER_SERVER_URL;
-  }
-}

@@ -4,8 +4,6 @@ type Env = {
   GATEWAY_SERVER_URL: string;
   HASURA_CLIENT_URL: string;
   HASURA_SERVER_URL: string;
-  SCHEDULER_CLIENT_URL: string;
-  SCHEDULER_SERVER_URL: string;
 };
 
 type User = {

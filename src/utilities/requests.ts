@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
-import { gatewayUrl, hasuraUrl, schedulerUrl } from './app';
+import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
 import {
   getDoyTime,
@@ -464,6 +464,21 @@ const req = {
     }
   },
 
+  async getPlanRevision(id: number): Promise<number | null> {
+    try {
+      const data = await reqHasura<Pick<Plan, 'revision'>>(
+        gql.GET_PLAN_REVISION,
+        { id },
+      );
+      const { plan } = data;
+      const { revision } = plan;
+      return revision;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getPlansAndModels(): Promise<{
     models: CreatePlanModel[];
     plans: CreatePlan[];
@@ -635,36 +650,16 @@ const req = {
     }
   },
 
-  async schedule(planId: number): Promise<SchedulingResponse> {
-    let response: Response;
-    let json: SchedulingResponse;
+  async schedule(specificationId: number): Promise<SchedulingResponse> {
     try {
-      const user = get<User | null>(userStore);
-      const SCHEDULER_URL = schedulerUrl();
-
-      const body = {
-        action: { name: 'SCHEDULE' },
-        input: { planId: `${planId}` },
-        session_variables: { 'x-hasura-role': '' },
-      };
-      const options = {
-        body: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'POST',
-      };
-
-      response = await fetch(`${SCHEDULER_URL}/schedule`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-      return json;
+      const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, {
+        specificationId,
+      });
+      const { schedule } = data;
+      return schedule;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return { status: 'failed' };
+      return { reason: e.message, status: 'failed' };
     }
   },
 
@@ -830,6 +825,17 @@ const req = {
     } catch (e) {
       console.log(e);
       return null;
+    }
+  },
+
+  async updateSchedulingSpec(
+    id: number,
+    spec: Partial<SchedulingSpec>,
+  ): Promise<void> {
+    try {
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec });
+    } catch (e) {
+      console.log(e);
     }
   },
 
