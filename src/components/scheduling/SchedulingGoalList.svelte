@@ -52,7 +52,7 @@
   <svelte:fragment slot="header">
     <Chip>Scheduling Goals</Chip>
     <button class="st-button ellipsis" on:click={runScheduling}>
-      Schedule
+      Schedule & Analyze
     </button>
   </svelte:fragment>
 
