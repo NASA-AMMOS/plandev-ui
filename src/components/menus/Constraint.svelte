@@ -28,7 +28,7 @@
   }
 </script>
 
-<Menu bind:this={menu} top="29px">
+<Menu bind:this={menu} right="0px" top="30px">
   <div class="menu-item" on:click={() => onMenuItemClick('constraintCreate')}>
     <i class="bi bi-plus-circle" />
     Create Constraint

@@ -4,6 +4,9 @@
   import { hideAll } from 'tippy.js';
   import { fade } from 'svelte/transition';
 
+  export let bottom: string = 'unset';
+  export let left: string = 'unset';
+  export let right: string = 'unset';
   export let shown = false;
   export let top: string = 'unset';
 
@@ -12,6 +15,7 @@
   }
 
   export function show(): void {
+    hideAll();
     shown = true;
   }
 
@@ -33,8 +37,11 @@
 {#if shown}
   <div
     class="menu-container"
+    style:bottom
+    style:left
+    style:right
+    style:top
     transition:fade={{ duration: 200 }}
-    style="top: {top};"
     on:mouseenter={() => hideAll()}
   >
     <div class="menu" on:click={event => event.stopPropagation()}>

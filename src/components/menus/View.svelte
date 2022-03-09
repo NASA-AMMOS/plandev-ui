@@ -36,7 +36,7 @@
   }
 </script>
 
-<Menu bind:this={menu} top="29px">
+<Menu bind:this={menu} right="0px" top="30px">
   <div class="menu-item" on:click={() => onMenuItemClick('editView')}>
     <i class="bi bi-pencil" />
     Edit View
