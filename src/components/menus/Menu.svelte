@@ -12,7 +12,6 @@
   }
 
   export function show(): void {
-    hideAll();
     shown = true;
   }
 
@@ -36,6 +35,7 @@
     class="menu-container"
     transition:fade={{ duration: 200 }}
     style="top: {top};"
+    on:mouseenter={() => hideAll()}
   >
     <div class="menu" on:click={event => event.stopPropagation()}>
       <slot />

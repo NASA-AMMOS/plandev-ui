@@ -10,6 +10,18 @@
 
   const dispatch = createEventDispatcher();
 
+  export function hide() {
+    if (menu) {
+      menu.hide();
+    }
+  }
+
+  export function toggle() {
+    if (menu) {
+      menu.toggle();
+    }
+  }
+
   function onMenuItemClick(type: string) {
     if (menu) {
       dispatch(type);

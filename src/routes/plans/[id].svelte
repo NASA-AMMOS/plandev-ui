@@ -110,9 +110,10 @@
   export let initialPlan: Plan | null;
   export let initialView: View | null;
 
-  let constraintMenu: ConstraintMenu;
   let saveAsViewModal: SaveAsViewModal;
   let showSchedulingPanel: boolean = false;
+
+  let constraintMenu: ConstraintMenu;
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
@@ -345,8 +346,8 @@
       <button
         class="st-button icon header-button"
         on:click|stopPropagation={() => {
-          viewMenu.menu.hide();
-          constraintMenu.menu.toggle();
+          viewMenu.hide();
+          constraintMenu.toggle();
         }}
         use:tooltip={{
           content: 'Constraints',
@@ -368,8 +369,8 @@
       <button
         class="st-button icon header-button"
         on:click|stopPropagation={() => {
-          constraintMenu.menu.hide();
-          viewMenu.menu.toggle();
+          constraintMenu.hide();
+          viewMenu.toggle();
         }}
         use:tooltip={{
           content: 'Views',
