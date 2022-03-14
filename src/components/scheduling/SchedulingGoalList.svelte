@@ -5,8 +5,10 @@
   import SchedulingGoal from './SchedulingGoal.svelte';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
+  import { schedulingPanelEditor } from '../../stores/panels';
   import { plan } from '../../stores/plan';
   import {
     schedulingSpecGoals,
@@ -57,14 +59,22 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <Input>
-      <i class="bi bi-search" slot="left" />
-      <input
-        class="st-input w-100"
-        name="search"
-        placeholder="Find scheduling goals"
-      />
-    </Input>
+    <CssGrid gap="3px" columns="auto 80px">
+      <Input>
+        <i class="bi bi-search" slot="left" />
+        <input
+          class="st-input w-100"
+          name="search"
+          placeholder="Find scheduling goals"
+        />
+      </Input>
+      <button
+        class="st-button secondary"
+        on:click={() => ($schedulingPanelEditor = true)}
+      >
+        New Goal
+      </button>
+    </CssGrid>
     {#if !$schedulingSpecGoals.length}
       <div class="pt-1">No scheduling goals found</div>
     {:else}

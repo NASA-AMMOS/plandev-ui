@@ -68,6 +68,8 @@
     constraintEditorPanel,
     constraintListPanel,
     constraintViolationsPanel,
+    schedulingPanel,
+    schedulingPanelEditor,
     selectedActivityPanel,
     selectedTimelinePanel,
     simulationConfigurationPanel,
@@ -110,10 +112,8 @@
   export let initialPlan: Plan | null;
   export let initialView: View | null;
 
-  let saveAsViewModal: SaveAsViewModal;
-  let showSchedulingPanel: boolean = false;
-
   let constraintMenu: ConstraintMenu;
+  let saveAsViewModal: SaveAsViewModal;
   let viewMenu: ViewMenu;
 
   $: if (initialPlan) {
@@ -323,7 +323,7 @@
 
       <button
         class="st-button icon header-button"
-        on:click={() => (showSchedulingPanel = !showSchedulingPanel)}
+        on:click={() => ($schedulingPanel = !$schedulingPanel)}
         use:tooltip={{
           content: 'Scheduling',
           placement: 'bottom',
@@ -404,19 +404,25 @@
   <Split
     let:initialized={horizontalSplitInitialized}
     direction="horizontal"
-    ids={showSchedulingPanel
+    ids={$schedulingPanel
       ? ['#left-panel', '#sections', '#right-panel']
       : ['#sections', '#right-panel']}
-    sizes={showSchedulingPanel ? [40, 50, 20] : [75, 25]}
+    sizes={$schedulingPanel ? [20, 60, 20] : [75, 25]}
   >
-    {#if showSchedulingPanel}
-      <Split id="left-panel" ids={['#top', '#bottom']} sizes={[40, 60]}>
+    {#if $schedulingPanel}
+      <Split
+        id="left-panel"
+        ids={$schedulingPanelEditor ? ['#top', '#bottom'] : ['#top']}
+        sizes={$schedulingPanelEditor ? [40, 60] : [100, 0]}
+      >
         <div id="top">
           <SchedulingGoalList />
         </div>
-        <div id="bottom">
-          <SchedulingGoalEditor />
-        </div>
+        {#if $schedulingPanelEditor}
+          <div id="bottom">
+            <SchedulingGoalEditor />
+          </div>
+        {/if}
       </Split>
     {/if}
 

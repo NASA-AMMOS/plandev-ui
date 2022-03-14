@@ -7,6 +7,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
+  import { schedulingPanelEditor } from '../../stores/panels';
   import { plan } from '../../stores/plan';
   import req from '../../utilities/requests';
   import { createSchedulingGoal } from '../../stores/scheduling';
@@ -15,6 +16,9 @@
   let definitionField = field<string>('', [required]);
   let descriptionField = field<string>('');
   let nameField = field<string>('', [required]);
+
+  $: saveButtonEnabled =
+    $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
   async function onSaveGoal() {
     createGoal();
@@ -43,6 +47,7 @@
       specification_id: $plan.scheduling_specifications[0].id,
     };
     await req.createSchedulingSpecGoal(specGoal);
+    $schedulingPanelEditor = false;
   }
 
   async function onDidChangeModelContent(
@@ -51,20 +56,29 @@
     const { detail } = event;
     const { value } = detail;
     $definitionField.value = value;
+    definitionField.validate(value);
   }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <Chip>Scheduling Goal Editor</Chip>
-    <button
-      class="st-button secondary ellipsis"
-      style="gap: 5px"
-      on:click={onSaveGoal}
-    >
-      <i class="bi bi-save" style="font-size: 0.8rem" />
-      Save Goal
-    </button>
+    <div class="right">
+      <button
+        class="st-button secondary ellipsis"
+        disabled={!saveButtonEnabled}
+        on:click={onSaveGoal}
+      >
+        <i class="bi bi-save" style="font-size: 0.8rem" />
+        Save Goal
+      </button>
+      <button
+        class="st-button icon"
+        on:click={() => ($schedulingPanelEditor = false)}
+      >
+        <i class="bi bi-x" />
+      </button>
+    </div>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -101,3 +115,11 @@
     />
   </svelte:fragment>
 </Panel>
+
+<style>
+  .right {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+  }
+</style>
