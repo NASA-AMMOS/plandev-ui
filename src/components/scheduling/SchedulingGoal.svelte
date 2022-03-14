@@ -1,9 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
+  import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
   import Input from '../form/Input.svelte';
 
-  export let spec: SchedulingSpecGoal;
+  export let goal: SchedulingGoal;
+  export let priority: number;
 
   let expanded = false;
 </script>
@@ -15,21 +18,35 @@
       on:click={() => (expanded = !expanded)}
     />
     <i class="bi-calendar-range" />
-    {spec.goal.name}
+    {goal.name}
   </div>
   <div class="right">
+    <SchedulingGoalAnalysesBadge analyses={goal.analyses} />
     <Input>
-      <input class="st-input" style:width="50px" value={spec.priority} />
+      <input class="st-input" style:width="50px" value={priority} />
       <input checked disabled type="checkbox" slot="right" />
     </Input>
   </div>
 </div>
 
 {#if expanded}
-  <div />
+  <ul>
+    <li>
+      <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
+    </li>
+  </ul>
 {/if}
 
 <style>
+  ul {
+    margin: 0;
+    padding-inline-start: 30px;
+  }
+
+  li {
+    list-style: none;
+  }
+
   .scheduling-goal {
     align-items: center;
     display: flex;
@@ -52,6 +69,8 @@
 
   .right {
     align-items: center;
+    display: flex;
+    gap: 5px;
     justify-content: flex-end;
   }
 </style>

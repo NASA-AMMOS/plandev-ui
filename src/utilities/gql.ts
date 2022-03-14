@@ -293,6 +293,17 @@ const gql = {
     subscription SubSchedulingSpecGoals($specification_id: Int!) {
       specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
         goal {
+          analyses(order_by: { request: { specification_revision: desc } }, limit: 2) {
+            satisfied
+            satisfying_activities {
+              activity_id
+            }
+            satisfying_activities_aggregate {
+              aggregate {
+                count
+              }
+            }
+          }
           author
           created_date
           definition

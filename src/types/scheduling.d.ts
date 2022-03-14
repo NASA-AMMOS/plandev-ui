@@ -1,4 +1,5 @@
 type SchedulingGoal = {
+  analyses: SchedulingGoalAnalysis[];
   author: string | null;
   created_date: string;
   definition: string;
@@ -11,9 +12,15 @@ type SchedulingGoal = {
   revision: number;
 };
 
+type SchedulingGoalAnalysis = {
+  satisfied: boolean;
+  satisfying_activities: { activity_id: number }[];
+  satisfying_activities_aggregate: { aggregate: { count: number } };
+};
+
 type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
-  'created_date' | 'id' | 'modified_date' | 'revision'
+  'analyses' | 'created_date' | 'id' | 'modified_date' | 'revision'
 >;
 
 type SchedulingResponseStatus = 'complete' | 'failed' | 'incomplete';
