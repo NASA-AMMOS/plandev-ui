@@ -82,11 +82,11 @@
     cursor: pointer;
     display: inline-flex;
     gap: 5px;
+    padding: 5px;
   }
 
   .selected {
     background: #e1f5fe;
     border-radius: 4px;
-    padding: 5px;
   }
 </style>
