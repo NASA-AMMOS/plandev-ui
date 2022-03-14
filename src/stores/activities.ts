@@ -44,7 +44,7 @@ export async function createActivity(
     const { id } = newActivity;
     activitiesMap.update(activities => {
       activities[id] = newActivity;
-      return activities;
+      return { ...activities };
     });
     Toastify({
       backgroundColor: '#2da44e',
@@ -71,7 +71,7 @@ export async function deleteActivity(id: number): Promise<void> {
   if (success) {
     activitiesMap.update(activities => {
       delete activities[id];
-      return activities;
+      return { ...activities };
     });
     Toastify({
       backgroundColor: '#2da44e',
