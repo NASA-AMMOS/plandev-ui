@@ -1,7 +1,8 @@
 <script lang="ts">
   import { goto, prefetch } from '$app/navigation';
   import { page, session } from '$app/stores';
-  import AboutModal from '../modals/About.svelte';
+  import AboutModal from '../modals/AboutModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
   import { tooltip } from '../../utilities/tooltip';
   import { env } from '../../stores/app';
 
@@ -45,7 +46,7 @@
   ];
   export let width: number;
 
-  let aboutModal: AboutModal;
+  let aboutModal: Modal;
 
   $: filteredNavItems = navItems.filter(item => {
     if (item.name === 'Logout' && $env.AUTH_TYPE === 'none') {
@@ -89,7 +90,7 @@
   {/each}
 </div>
 
-<AboutModal bind:this={aboutModal} />
+<AboutModal bind:modal={aboutModal} />
 
 <style>
   .nav {

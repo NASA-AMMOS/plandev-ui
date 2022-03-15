@@ -10,7 +10,16 @@ export const defaultEnv: Env = {
   HASURA_SERVER_URL: 'http://localhost:8080/v1/graphql',
 };
 
+export const defaultVersion: Version = {
+  branch: 'unknown',
+  commit: 'unknown',
+  commitUrl: '',
+  date: new Date().toLocaleString(),
+  name: 'aerie-ui',
+};
+
 /** Stores. */
 
 export const env = writable<Env>(defaultEnv);
 export const user = writable<User | null>(null);
+export const version = writable<Version>(defaultVersion);

@@ -5,7 +5,8 @@
   import ActivityDecomposition from './ActivityDecomposition.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
-  import ConfirmModal from '../modals/Confirm.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -28,7 +29,7 @@
 
   const dispatch = createEventDispatcher();
 
-  let confirmDeleteActivityModal: ConfirmModal | null = null;
+  let confirmDeleteActivityModal: Modal;
   let currentId: number = id;
   let formParameters: FormParameter[] = [];
   let parameterError: string | null = null;
@@ -200,7 +201,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteActivityModal}
+  bind:modal={confirmDeleteActivityModal}
   confirmText="Delete"
   message="Are you sure you want to delete this activity?"
   title="Delete Activity"

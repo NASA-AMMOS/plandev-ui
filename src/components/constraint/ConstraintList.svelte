@@ -4,7 +4,8 @@
   import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
   import {
     deleteConstraint,
     modelConstraints,
@@ -16,7 +17,7 @@
   import { Status } from '../../utilities/enums';
   import { tooltip } from '../../utilities/tooltip';
 
-  let confirmDeleteConstraintModal: ConfirmModal;
+  let confirmDeleteConstraintModal: Modal;
 
   async function onDeleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
@@ -115,7 +116,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteConstraintModal}
+  bind:modal={confirmDeleteConstraintModal}
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"

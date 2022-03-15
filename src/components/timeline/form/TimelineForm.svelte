@@ -3,7 +3,8 @@
 <script lang="ts">
   import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
-  import ConfirmModal from '../../modals/Confirm.svelte';
+  import ConfirmModal from '../../modals/ConfirmModal.svelte';
+  import type Modal from '../../modals/Modal.svelte';
   import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
@@ -30,10 +31,10 @@
   import { tooltip } from '../../../utilities/tooltip';
   import YAxisForm from './YAxisForm.svelte';
 
-  let confirmDeleteLayerModal: ConfirmModal;
-  let confirmDeleteRowModal: ConfirmModal;
-  let confirmDeleteTimelineModal: ConfirmModal;
-  let confirmDeleteYAxisModal: ConfirmModal;
+  let confirmDeleteLayerModal: Modal;
+  let confirmDeleteRowModal: Modal;
+  let confirmDeleteTimelineModal: Modal;
+  let confirmDeleteYAxisModal: Modal;
 
   function updateLayerEvent(event: Event) {
     event.stopPropagation();
@@ -316,7 +317,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteLayerModal}
+  bind:modal={confirmDeleteLayerModal}
   confirmText="Delete"
   message="Are you sure you want to delete this layer?"
   title="Delete Layer"
@@ -324,7 +325,7 @@
 />
 
 <ConfirmModal
-  bind:this={confirmDeleteRowModal}
+  bind:modal={confirmDeleteRowModal}
   confirmText="Delete"
   message="Are you sure you want to delete this row?"
   title="Delete Row"
@@ -332,7 +333,7 @@
 />
 
 <ConfirmModal
-  bind:this={confirmDeleteTimelineModal}
+  bind:modal={confirmDeleteTimelineModal}
   confirmText="Delete"
   message="Are you sure you want to delete this timeline?"
   title="Delete Timeline"
@@ -340,7 +341,7 @@
 />
 
 <ConfirmModal
-  bind:this={confirmDeleteYAxisModal}
+  bind:modal={confirmDeleteYAxisModal}
   confirmText="Delete"
   message="Are you sure you want to delete this y-axis?"
   title="Delete Y-Axis"

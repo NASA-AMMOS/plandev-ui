@@ -1,22 +1,19 @@
-<svelte:options accessors={true} />
+<svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import Modal from './Modal.svelte';
+  import ModalContent from './ModalContent.svelte';
+  import ModalFooter from './ModalFooter.svelte';
+  import ModalHeader from './ModalHeader.svelte';
 
   export let cancelText: string = 'Cancel';
   export let confirmText: string = 'Yes';
   export let height: number = 150;
   export let message: string = 'Are you sure you want to do this?';
-  export let modal: Modal | null = null;
+  export let modal: Modal;
   export let title: string = 'Confirm';
   export let width: number = 350;
-
-  export function show(ctx: any = {}) {
-    if (modal) {
-      modal.show(ctx);
-    }
-  }
 
   const dispatch = createEventDispatcher();
 
@@ -38,22 +35,19 @@
 <svelte:window on:keydown={onKeydown} />
 
 <Modal bind:this={modal} {height} {width}>
-  <div class="header">
-    <div class="title">{title}</div>
-    <button class="st-button icon fs-6" on:click|stopPropagation={modal.hide}>
-      <i class="bi bi-x" />
-    </button>
-  </div>
-  <div class="content">
+  <ModalHeader on:close={modal.hide}>
+    {title}
+  </ModalHeader>
+  <ModalContent>
     <div>{message}</div>
     <div>This action cannot be undone.</div>
-  </div>
-  <div class="footer">
+  </ModalContent>
+  <ModalFooter>
     <button class="st-button secondary" on:click|stopPropagation={modal.hide}>
       {cancelText}
     </button>
     <button class="st-button" on:click={onConfirm}>
       {confirmText}
     </button>
-  </div>
+  </ModalFooter>
 </Modal>

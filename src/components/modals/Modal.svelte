@@ -1,4 +1,4 @@
-<svelte:options accessors={true} />
+<svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
@@ -30,10 +30,6 @@
 
   const dispatch = createEventDispatcher();
 
-  function onClickBody(): void {
-    hide();
-  }
-
   function onKeydownBody(event: KeyboardEvent): void {
     if (event.key == 'Escape') {
       hide();
@@ -41,13 +37,14 @@
   }
 </script>
 
-<svelte:body on:click={onClickBody} on:keydown={onKeydownBody} />
+<svelte:body on:click={hide} on:keydown={onKeydownBody} />
 
 {#if shown}
   <div class="modal-container" transition:fade={{ duration: 50 }}>
     <div
       class="modal"
-      style="height: {height}px; width: {width}px"
+      style:height={`${height}px`}
+      style:width={`${width}px`}
       on:click|stopPropagation
     >
       <slot />
@@ -75,7 +72,6 @@
     box-shadow: 0px 4px 32px rgba(0, 0, 0, 0.24);
     display: flex;
     flex-direction: column;
-    height: 350px;
     justify-content: space-evenly;
     left: 50%;
     max-height: 80vh;
@@ -84,44 +80,6 @@
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 380px;
     z-index: 1000;
-  }
-
-  .modal > :global(.header),
-  .modal > :global(.footer) {
-    align-items: center;
-    background-color: var(--st-gray-20);
-    color: var(--st-gray-100);
-    display: flex;
-    height: 40px;
-    padding: 1rem;
-    width: 100%;
-  }
-
-  .modal > :global(.header) {
-    border-radius: 4px 4px 0px 0px;
-    font-size: 1rem;
-    font-weight: 700;
-    justify-content: space-between;
-  }
-
-  .modal > :global(.footer) {
-    border-radius: 0px 0px 4px 4px;
-    justify-content: flex-end;
-  }
-
-  .modal > :global(.footer > button) {
-    margin-left: 5px;
-    width: 80px;
-  }
-
-  .modal > :global(.footer > .st-button.secondary) {
-    border: 1px solid var(--st-gray-30);
-  }
-
-  .modal > :global(.content) {
-    flex: auto;
-    padding: 1rem;
   }
 </style>

@@ -26,7 +26,8 @@
   import { page } from '$app/stores';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
-  import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
+  import type Modal from '../../components/modals/Modal.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -43,7 +44,7 @@
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
 
-  let confirmDeletePlanModal: ConfirmModal;
+  let confirmDeletePlanModal: Modal;
   let createButtonText = 'Create';
   let error: string | null = null;
   let filterText: string = '';
@@ -271,7 +272,7 @@
 </CssGrid>
 
 <ConfirmModal
-  bind:this={confirmDeletePlanModal}
+  bind:modal={confirmDeletePlanModal}
   confirmText="Delete"
   message="Are you sure you want to delete this plan?"
   title="Delete Plan"

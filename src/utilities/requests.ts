@@ -1,5 +1,9 @@
 import { get } from 'svelte/store';
-import { defaultEnv, env as envStore, user as userStore } from '../stores/app';
+import {
+  env as envStore,
+  user as userStore,
+  version as versionStore,
+} from '../stores/app';
 import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
 import {
@@ -703,20 +707,21 @@ const req = {
   },
 
   async setAppStores(fetch: Fetch, session: App.Session): Promise<void> {
-    let response: Response;
-    let json: any;
     try {
-      response = await fetch('/env');
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-      envStore.set(json);
-      userStore.set(session.user || null);
+      // Set env store.
+      const envResponse = await fetch('/env');
+      const env = await envResponse.json();
+      envStore.set(env);
+
+      // Set version store.
+      const versionResponse = await fetch('/version.json');
+      const version = await versionResponse.json();
+      versionStore.set(version);
+
+      // Set user store.
+      userStore.set(session.user);
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      envStore.set(defaultEnv);
-      userStore.set(session?.user || null);
     }
   },
 

@@ -5,13 +5,14 @@
   import Chip from '../ui/Chip.svelte';
   import Table from '../ui/Table.svelte';
   import Panel from '../ui/Panel.svelte';
-  import ConfirmModal from '../../components/modals/Confirm.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
   import { view } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
-  let confirmDeleteViewModal: ConfirmModal;
+  let confirmDeleteViewModal: Modal;
   let views: View[] = [];
 
   onMount(async () => {
@@ -90,7 +91,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteViewModal}
+  bind:modal={confirmDeleteViewModal}
   confirmText="Delete"
   message="Are you sure you want to delete this view?"
   title="Delete View"

@@ -31,7 +31,8 @@
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
   import ViewMenu from '../../components/menus/ViewMenu.svelte';
-  import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
+  import type Modal from '../../components/modals/Modal.svelte';
+  import SaveAsViewModal from '../../components/modals/SaveAsViewModal.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
@@ -112,7 +113,7 @@
   export let initialView: View | null;
 
   let constraintMenu: Menu;
-  let saveAsViewModal: SaveAsViewModal;
+  let saveAsViewModal: Modal;
   let viewMenu: Menu;
 
   $: if (initialPlan) {
@@ -154,12 +155,6 @@
     $simulation = null;
     $violations = [];
   });
-
-  function onCreateView(event: CustomEvent<string>) {
-    const { detail: name } = event;
-    const newView = { ...$view, name };
-    createView(newView);
-  }
 
   function onDeleteActivity(event: CustomEvent<number>) {
     const { detail: activityId } = event;
@@ -210,6 +205,12 @@
 
   function onResetViewTimeRange() {
     $viewTimeRange = $maxTimeRange;
+  }
+
+  function onSaveAsView(event: CustomEvent<string>) {
+    const { detail: name } = event;
+    const newView = { ...$view, name };
+    createView(newView);
   }
 
   function onSectionsDragEnd(event: CustomEvent<{ newSizes: number[] }>) {
@@ -493,7 +494,7 @@
   </Split>
 </CssGrid>
 
-<SaveAsViewModal bind:this={saveAsViewModal} on:createView={onCreateView} />
+<SaveAsViewModal bind:modal={saveAsViewModal} on:saveAsView={onSaveAsView} />
 
 <style>
   .header-button {

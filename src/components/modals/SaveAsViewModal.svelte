@@ -1,16 +1,13 @@
-<svelte:options accessors={true} />
+<svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte';
   import Modal from './Modal.svelte';
+  import ModalContent from './ModalContent.svelte';
+  import ModalFooter from './ModalFooter.svelte';
+  import ModalHeader from './ModalHeader.svelte';
 
-  export let modal: Modal | null = null;
-
-  export function show(ctx: any = {}) {
-    if (modal) {
-      modal.show(ctx);
-    }
-  }
+  export let modal: Modal;
 
   const dispatch = createEventDispatcher();
 
@@ -27,7 +24,7 @@
 
   async function onSaveAsView() {
     modal.hide();
-    dispatch('createView', name);
+    dispatch('saveAsView', name);
   }
 
   async function onShow() {
@@ -39,13 +36,8 @@
 </script>
 
 <Modal bind:this={modal} height={150} width={200} on:show={onShow}>
-  <div class="header">
-    <div class="title">Save As View</div>
-    <button class="st-button icon fs-6" on:click|stopPropagation={modal.hide}>
-      <i class="bi bi-x" />
-    </button>
-  </div>
-  <div class="content">
+  <ModalHeader on:close={modal.hide}>Save As View</ModalHeader>
+  <ModalContent>
     <fieldset>
       <label for="name">Name</label>
       <input
@@ -59,9 +51,8 @@
         on:keyup={onKeyUp}
       />
     </fieldset>
-  </div>
-
-  <div class="footer">
+  </ModalContent>
+  <ModalFooter>
     <button
       bind:this={buttonElement}
       class="st-button"
@@ -71,5 +62,5 @@
     >
       Save
     </button>
-  </div>
+  </ModalFooter>
 </Modal>

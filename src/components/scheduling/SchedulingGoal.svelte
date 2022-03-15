@@ -7,14 +7,15 @@
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Input from '../form/Input.svelte';
-  import ConfirmModal from '../modals/Confirm.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
   import { schedulingPanelEditor } from '../../stores/panels';
   import { deleteSchedulingGoal } from '../../stores/scheduling';
 
   export let goal: SchedulingGoal;
   export let priority: number;
 
-  let confirmDeleteGoalModal: ConfirmModal;
+  let confirmDeleteGoalModal: Modal;
   let contextMenu: ContextMenu;
   let expanded = false;
 
@@ -54,7 +55,7 @@
 {/if}
 
 <ConfirmModal
-  bind:this={confirmDeleteGoalModal}
+  bind:modal={confirmDeleteGoalModal}
   confirmText="Delete"
   message="Are you sure you want to delete this goal?"
   title="Delete Goal"
