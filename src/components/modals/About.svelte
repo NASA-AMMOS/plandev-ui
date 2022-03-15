@@ -6,6 +6,12 @@
 
   export let modal: Modal | null = null;
 
+  export function toggle(ctx: any = {}) {
+    if (modal) {
+      modal.toggle(ctx);
+    }
+  }
+
   let version: Version;
 
   onMount(async () => {

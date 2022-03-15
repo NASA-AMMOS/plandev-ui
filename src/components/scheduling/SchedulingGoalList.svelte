@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { keyBy } from 'lodash-es';
+  import { onMount } from 'svelte';
   import SchedulingGoal from './SchedulingGoal.svelte';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
@@ -17,7 +18,6 @@
   import { simulationStatus } from '../../stores/simulation';
   import { Status } from '../../utilities/enums';
   import req from '../../utilities/requests';
-  import { onMount } from 'svelte';
 
   $: specification_id = $plan.scheduling_specifications[0].id;
 

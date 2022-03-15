@@ -11,7 +11,7 @@
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
-  let confirmDeleteView: ConfirmModal | null = null;
+  let confirmDeleteViewModal: ConfirmModal;
   let views: View[] = [];
 
   onMount(async () => {
@@ -72,7 +72,7 @@
             <button
               class="st-button icon"
               on:click|stopPropagation={() =>
-                confirmDeleteView.modal.show({ viewId: currentRow.id })}
+                confirmDeleteViewModal.show({ viewId: currentRow.id })}
               use:tooltip={{
                 content: 'Delete View',
                 placement: 'bottom',
@@ -90,7 +90,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteView}
+  bind:this={confirmDeleteViewModal}
   confirmText="Delete"
   message="Are you sure you want to delete this view?"
   title="Delete View"

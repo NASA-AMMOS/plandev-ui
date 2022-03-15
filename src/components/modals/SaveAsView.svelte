@@ -6,6 +6,12 @@
 
   export let modal: Modal | null = null;
 
+  export function show(ctx: any = {}) {
+    if (modal) {
+      modal.show(ctx);
+    }
+  }
+
   const dispatch = createEventDispatcher();
 
   let buttonElement: HTMLButtonElement;

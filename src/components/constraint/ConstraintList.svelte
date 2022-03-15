@@ -16,7 +16,7 @@
   import { Status } from '../../utilities/enums';
   import { tooltip } from '../../utilities/tooltip';
 
-  let confirmDeleteConstraint: ConfirmModal | null = null;
+  let confirmDeleteConstraintModal: ConfirmModal;
 
   async function onDeleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
@@ -57,7 +57,7 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteConstraint.modal.show(constraint)}
+                    confirmDeleteConstraintModal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -95,7 +95,7 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() =>
-                    confirmDeleteConstraint.modal.show(constraint)}
+                    confirmDeleteConstraintModal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -115,7 +115,7 @@
 </Panel>
 
 <ConfirmModal
-  bind:this={confirmDeleteConstraint}
+  bind:this={confirmDeleteConstraintModal}
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"

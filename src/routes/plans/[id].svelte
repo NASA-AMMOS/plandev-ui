@@ -383,7 +383,7 @@
           currentView={$view}
           on:editView={() => viewEditorPanel.show()}
           on:manageViews={() => viewManagerPanel.show()}
-          on:saveAsView={() => saveAsViewModal.modal.show()}
+          on:saveAsView={() => saveAsViewModal.show()}
           on:saveView={onSaveView}
         />
       </button>

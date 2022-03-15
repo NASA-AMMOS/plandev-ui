@@ -97,7 +97,7 @@
     <button
       class="st-button icon"
       disabled={isChild}
-      on:click|stopPropagation={() => confirmDeleteActivityModal.modal.show()}
+      on:click|stopPropagation={() => confirmDeleteActivityModal.show()}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
     >
       <i class="bi bi-trash" />

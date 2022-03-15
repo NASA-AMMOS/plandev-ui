@@ -9,8 +9,6 @@
   export let shown = false;
   export let width = 400;
 
-  const dispatch = createEventDispatcher();
-
   export function hide(): void {
     context = {};
     shown = false;
@@ -30,6 +28,8 @@
     }
   }
 
+  const dispatch = createEventDispatcher();
+
   function onClickBody(): void {
     hide();
   }
@@ -48,7 +48,7 @@
     <div
       class="modal"
       style="height: {height}px; width: {width}px"
-      on:click={event => event.stopPropagation()}
+      on:click|stopPropagation
     >
       <slot />
     </div>

@@ -72,8 +72,7 @@
         {#if $selectedTimeline !== null}
           <button
             class="st-button icon"
-            on:click|stopPropagation={() =>
-              confirmDeleteTimelineModal.modal.show()}
+            on:click|stopPropagation={() => confirmDeleteTimelineModal.show()}
             use:tooltip={{ content: 'Delete Timeline', placement: 'left' }}
           >
             <i class="bi bi-trash" />
@@ -154,7 +153,7 @@
         {#if $selectedRow !== null}
           <button
             class="st-button icon"
-            on:click|stopPropagation={() => confirmDeleteRowModal.modal.show()}
+            on:click|stopPropagation={() => confirmDeleteRowModal.show()}
             use:tooltip={{ content: 'Delete Row', placement: 'left' }}
           >
             <i class="bi bi-trash" />
@@ -255,8 +254,7 @@
           {#if $selectedYAxis !== null}
             <button
               class="st-button icon"
-              on:click|stopPropagation={() =>
-                confirmDeleteYAxisModal.modal.show()}
+              on:click|stopPropagation={() => confirmDeleteYAxisModal.show()}
               use:tooltip={{ content: 'Delete Y-Axis', placement: 'left' }}
             >
               <i class="bi bi-trash" />
@@ -281,8 +279,7 @@
         {#if $selectedLayer !== null}
           <button
             class="st-button icon"
-            on:click|stopPropagation={() =>
-              confirmDeleteLayerModal.modal.show()}
+            on:click|stopPropagation={() => confirmDeleteLayerModal.show()}
             use:tooltip={{ content: 'Delete Layer', placement: 'left' }}
           >
             <i class="bi bi-trash" />

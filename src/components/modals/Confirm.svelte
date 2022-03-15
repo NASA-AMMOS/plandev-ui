@@ -12,6 +12,12 @@
   export let title: string = 'Confirm';
   export let width: number = 350;
 
+  export function show(ctx: any = {}) {
+    if (modal) {
+      modal.show(ctx);
+    }
+  }
+
   const dispatch = createEventDispatcher();
 
   function onConfirm() {

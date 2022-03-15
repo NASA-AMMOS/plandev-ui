@@ -45,7 +45,7 @@
   ];
   export let width: number;
 
-  let about: AboutModal | null = null;
+  let aboutModal: AboutModal;
 
   $: filteredNavItems = navItems.filter(item => {
     if (item.name === 'Logout' && $env.AUTH_TYPE === 'none') {
@@ -58,8 +58,8 @@
     const { name, path } = item;
     if (path) {
       goto(path);
-    } else if (name === 'About' && about) {
-      about.modal.toggle();
+    } else if (name === 'About' && aboutModal) {
+      aboutModal.toggle();
     } else if (name === 'Gateway') {
       open(`${$env.GATEWAY_CLIENT_URL}`, '_newtab');
     } else if (name === 'GraphQL') {
@@ -89,7 +89,7 @@
   {/each}
 </div>
 
-<AboutModal bind:this={about} />
+<AboutModal bind:this={aboutModal} />
 
 <style>
   .nav {

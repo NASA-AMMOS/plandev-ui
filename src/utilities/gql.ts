@@ -120,6 +120,14 @@ const gql = {
     }
   `,
 
+  DELETE_SCHEDULING_GOAL: `#graphql
+    mutation DeleteSchedulingGoal($id: Int!) {
+      deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
   GET_ACTIVITIES_FOR_PLAN: `#graphql
     query GetActivitiesForPlan($planId: Int!) {
       activities: activity(where: { plan_id: { _eq: $planId } }) {

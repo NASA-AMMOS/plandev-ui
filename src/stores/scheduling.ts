@@ -42,3 +42,24 @@ export async function createSchedulingGoal(
     return null;
   }
 }
+
+export async function deleteSchedulingGoal(id: number): Promise<void> {
+  const success = await req.deleteSchedulingGoal(id);
+  if (success) {
+    Toastify({
+      backgroundColor: '#2da44e',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Scheduling Goal Deleted Successfully',
+    }).showToast();
+  } else {
+    Toastify({
+      backgroundColor: '#a32a2a',
+      duration: 3000,
+      gravity: 'bottom',
+      position: 'left',
+      text: 'Scheduling Goal Delete Failed',
+    }).showToast();
+  }
+}

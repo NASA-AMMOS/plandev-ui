@@ -343,6 +343,16 @@ const req = {
     }
   },
 
+  async deleteSchedulingGoal(id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async deleteView(id: number): Promise<DeleteViewResponse> {
     let response: Response;
     let json: DeleteViewResponse;

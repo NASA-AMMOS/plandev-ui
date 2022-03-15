@@ -43,7 +43,7 @@
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
 
-  let confirmDeletePlan: ConfirmModal | null = null;
+  let confirmDeletePlanModal: ConfirmModal;
   let createButtonText = 'Create';
   let error: string | null = null;
   let filterText: string = '';
@@ -253,7 +253,7 @@
               class="st-button icon"
               slot="actions-cell"
               on:click|stopPropagation={() =>
-                confirmDeletePlan.modal.show(currentRow)}
+                confirmDeletePlanModal.show(currentRow)}
               use:tooltip={{
                 content: 'Delete Plan',
                 placement: 'bottom',
@@ -271,7 +271,7 @@
 </CssGrid>
 
 <ConfirmModal
-  bind:this={confirmDeletePlan}
+  bind:this={confirmDeletePlanModal}
   confirmText="Delete"
   message="Are you sure you want to delete this plan?"
   title="Delete Plan"
