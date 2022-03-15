@@ -29,15 +29,16 @@
   import { keyBy } from 'lodash-es';
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
-  import Timeline from '../../components/timeline/Timeline.svelte';
+  import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
+  import ViewMenu from '../../components/menus/ViewMenu.svelte';
   import SaveAsViewModal from '../../components/modals/SaveAsView.svelte';
-  import ConstraintMenu from '../../components/menus/Constraint.svelte';
-  import ViewMenu from '../../components/menus/View.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
+  import Timeline from '../../components/timeline/Timeline.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
   import ConstraintList from '../../components/constraint/ConstraintList.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import type Menu from '../../components/menus/Menu.svelte';
   import SchedulingGoalEditor from '../../components/scheduling/SchedulingGoalEditor.svelte';
   import SchedulingGoalList from '../../components/scheduling/SchedulingGoalList.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -60,7 +61,6 @@
   import {
     modelConstraints,
     planConstraints,
-    selectedConstraint,
     violations,
   } from '../../stores/constraints';
   import {
@@ -97,7 +97,6 @@
     updateRow,
     updateSectionSizes,
     updateTimeline,
-    updateView,
     view,
     viewSectionIds,
     viewSectionSizes,
@@ -112,9 +111,9 @@
   export let initialPlan: Plan | null;
   export let initialView: View | null;
 
-  let constraintMenu: ConstraintMenu;
+  let constraintMenu: Menu;
   let saveAsViewModal: SaveAsViewModal;
-  let viewMenu: ViewMenu;
+  let viewMenu: Menu;
 
   $: if (initialPlan) {
     $activitiesMap = keyBy(initialPlan.activities, 'id');
@@ -211,10 +210,6 @@
 
   function onResetViewTimeRange() {
     $viewTimeRange = $maxTimeRange;
-  }
-
-  async function onSaveView() {
-    updateView($view);
   }
 
   function onSectionsDragEnd(event: CustomEvent<{ newSizes: number[] }>) {
@@ -345,47 +340,20 @@
 
       <button
         class="st-button icon header-button"
-        on:click|stopPropagation={() => {
-          viewMenu.hide();
-          constraintMenu.toggle();
-        }}
-        use:tooltip={{
-          content: 'Constraints',
-          placement: 'bottom',
-        }}
+        on:click|stopPropagation={() => constraintMenu.toggle()}
+        use:tooltip={{ content: 'Constraints', placement: 'bottom' }}
       >
         <i class="bi bi-code" />
-        <ConstraintMenu
-          bind:this={constraintMenu}
-          on:constraintCreate={() => {
-            $selectedConstraint = null;
-            constraintEditorPanel.show();
-          }}
-          on:constraintList={() => constraintListPanel.show()}
-          on:constraintViolations={() => constraintViolationsPanel.show()}
-        />
+        <ConstraintMenu bind:constraintMenu />
       </button>
 
       <button
         class="st-button icon header-button"
-        on:click|stopPropagation={() => {
-          constraintMenu.hide();
-          viewMenu.toggle();
-        }}
-        use:tooltip={{
-          content: 'Views',
-          placement: 'bottom',
-        }}
+        on:click|stopPropagation={() => viewMenu.toggle()}
+        use:tooltip={{ content: 'Views', placement: 'bottom' }}
       >
         <i class="bi bi-columns" />
-        <ViewMenu
-          bind:this={viewMenu}
-          currentView={$view}
-          on:editView={() => viewEditorPanel.show()}
-          on:manageViews={() => viewManagerPanel.show()}
-          on:saveAsView={() => saveAsViewModal.show()}
-          on:saveView={onSaveView}
-        />
+        <ViewMenu bind:viewMenu on:saveAsView={() => saveAsViewModal.show()} />
       </button>
 
       <button

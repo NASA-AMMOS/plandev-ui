@@ -63,6 +63,6 @@
     outline: 0;
     padding: 4px;
     position: absolute;
-    z-index: 200;
+    z-index: 100;
   }
 </style>

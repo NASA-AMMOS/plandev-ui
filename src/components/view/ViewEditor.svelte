@@ -30,7 +30,7 @@
       language="json"
       lineNumbers="on"
       minimap={{ enabled: false }}
-      scrollBeyondLastLine={false}
+      scrollBeyondLastLine={true}
       value={$viewText}
       on:didChangeModelContent={onDidChangeModelContent}
     />

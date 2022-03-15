@@ -1,19 +1,33 @@
-<svelte:options accessors={true} />
+<svelte:options accessors={true} immutable={true} />
+
+<script lang="ts" context="module">
+  const hideFns = new Set<() => void>();
+
+  export function hideAllMenus() {
+    // TODO: https://github.com/sveltejs/language-tools/issues/1229
+    hideFns.forEach(hide => {
+      hide();
+    });
+  }
+</script>
 
 <script lang="ts">
-  import { hideAll } from 'tippy.js';
+  import { hideAll as hideAllTooltips } from 'tippy.js';
   import { fade } from 'svelte/transition';
+  import { onDestroy, onMount } from 'svelte';
 
-  export let right: string = 'auto';
+  export let hideAfterClick: boolean = true;
+  export let right: string = '0px';
   export let shown = false;
-  export let top: string = 'auto';
+  export let top: string = '25px';
 
   export function hide(): void {
     shown = false;
   }
 
   export function show(): void {
-    hideAll();
+    hideAllMenus();
+    hideAllTooltips();
     shown = true;
   }
 
@@ -24,31 +38,45 @@
       show();
     }
   }
+
+  onMount(() => {
+    hideFns.add(hide);
+  });
+
+  onDestroy(() => {
+    hideFns.delete(hide);
+  });
+
+  function onClick() {
+    if (hideAfterClick) {
+      hide();
+    }
+  }
 </script>
 
 <svelte:body on:click={hide} />
 
 {#if shown}
   <div
-    class="menu-container"
+    class="menu"
     style:right
     style:top
-    transition:fade={{ duration: 200 }}
-    on:mouseenter={() => hideAll()}
+    transition:fade={{ duration: 50 }}
+    on:click|stopPropagation={onClick}
+    on:mouseenter={() => hideAllTooltips()}
   >
-    <div class="menu" on:click|stopPropagation>
-      <slot />
-    </div>
+    <slot />
   </div>
 {/if}
 
 <style>
-  .menu-container {
+  .menu {
     background: #fff;
     border-radius: 4px;
-    box-shadow: 0 2px 4px -1px #0003, 0 4px 5px 0 #00000024,
-      0 1px 10px 0 #0000001f;
+    border: 1px solid var(--st-gray-30);
     color: var(--st-primary-text-color);
+    display: flex;
+    flex-direction: column;
     font-size: 1rem;
     min-height: 64px;
     min-width: 150px;
@@ -56,35 +84,5 @@
     position: absolute;
     right: 0;
     z-index: 100;
-  }
-
-  .menu {
-    flex-direction: column;
-    display: flex;
-    width: 100%;
-  }
-
-  .menu :global(.menu-item) {
-    display: grid;
-    font-size: 0.8rem;
-    font-weight: 300;
-    gap: 0.5rem;
-    grid-template-columns: 1rem auto;
-    justify-content: flex-start;
-    overflow: hidden;
-    padding: 10px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
-  }
-
-  .menu :global(.menu-item:hover) {
-    background: var(--st-gray-20);
-    border-radius: 4px;
-  }
-
-  .menu :global(.menu-item.disabled) {
-    color: var(--st-gray-40);
-    cursor: not-allowed;
   }
 </style>
