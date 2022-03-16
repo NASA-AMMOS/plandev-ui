@@ -1,7 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  export let activitiesMap: ActivitiesMap = {};
+  import { activitiesMap } from '../../stores/activities';
+
   export let children: string[] | null = null;
   export let expanded = true;
   export let type: string = '';
@@ -24,7 +25,7 @@
   <ul>
     {#each children as childId}
       <li>
-        <svelte:self {activitiesMap} {...activitiesMap[childId]} />
+        <svelte:self {...$activitiesMap[childId]} />
       </li>
     {/each}
   </ul>

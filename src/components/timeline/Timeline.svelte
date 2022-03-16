@@ -87,8 +87,7 @@
   function onDragActivity(event: CustomEvent<UpdateActivity>) {
     const { detail } = event;
     const { id, startTime } = detail;
-    $activitiesMap[id].children = [];
-    $activitiesMap[id].startTime = startTime;
+    $activitiesMap[id] = { ...$activitiesMap[id], children: [], startTime };
     simulationStatus.update(Status.Dirty);
   }
 

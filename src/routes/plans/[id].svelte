@@ -52,7 +52,6 @@
     activitiesMap,
     selectActivity,
     selectedActivityId,
-    selectedActivity,
   } from '../../stores/activities';
   import {
     modelConstraints,
@@ -320,21 +319,11 @@
         {:else if $constraintViolationsPanel.visible}
           <ConstraintViolations />
         {:else if $selectedActivityPanel.visible}
-          {#if $selectedActivity}
-            <ActivityForm
-              activitiesMap={$activitiesMap}
-              activityTypes={initialPlan.model.activityTypes}
-              argumentsMap={$selectedActivity.arguments}
-              modelId={initialPlan.model.id}
-              {...$selectedActivity}
-            />
-          {:else}
-            <div class="p-1">No Activity Selected</div>
-          {/if}
+          <ActivityForm />
         {:else if $selectedTimelinePanel.visible}
           <TimelineForm />
         {:else if $simulationConfigurationPanel.visible}
-          <SimulationConfiguration modelId={initialPlan.model.id} />
+          <SimulationConfiguration />
         {:else if $viewEditorPanel.visible}
           <ViewEditor />
         {:else if $viewManagerPanel.visible}

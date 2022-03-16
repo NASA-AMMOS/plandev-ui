@@ -4,6 +4,7 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
+  import { plan } from '../../stores/plan';
   import {
     modelParametersMap,
     simulation,
@@ -16,13 +17,11 @@
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
 
-  export let modelId: number;
-
   let formParameters: FormParameter[] = [];
 
   $: {
     req
-      .getEffectiveModelArguments(modelId, $simulation?.arguments)
+      .getEffectiveModelArguments($plan.model.id, $simulation?.arguments)
       .then(({ arguments: defaultArguments }) => {
         // Displayed simulation arguments are either user input arguments,
         // simulation template arguments, or default arguments.
