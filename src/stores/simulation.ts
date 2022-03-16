@@ -1,9 +1,15 @@
 import type { Writable } from 'svelte/store';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { Status } from '../utilities/enums';
+import { sleep } from '../utilities/generic';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
+import { offsetViolationWindows } from '../utilities/violations';
+import { activitiesMap } from './activities';
+import { violations } from './constraints';
+import { planStartTimeMs } from './plan';
+import { resources } from './resources';
 import { getGqlSubscribable } from './subscribable';
 
 /* Stores. */
@@ -46,6 +52,41 @@ export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
 );
 
 /* Utility Functions. */
+
+export async function runSimulation(plan: Plan) {
+  let tries = 0;
+  simulationStatus.update(Status.Executing);
+
+  do {
+    const {
+      activitiesMap: newActivitiesMap,
+      constraintViolations,
+      status,
+      resources: newResources,
+    } = await req.simulate(plan.model.id, plan.id);
+
+    if (status === 'complete') {
+      activitiesMap.set(newActivitiesMap);
+      resources.set(newResources);
+      violations.set(
+        offsetViolationWindows(
+          constraintViolations,
+          get<number>(planStartTimeMs),
+        ),
+      );
+      simulationStatus.update(Status.Complete);
+      return;
+    } else if (status === 'failed') {
+      simulationStatus.update(Status.Failed);
+      return;
+    }
+
+    await sleep();
+    ++tries;
+  } while (tries < 10); // Trying a max of 10 times.
+
+  simulationStatus.update(Status.Incomplete);
+}
 
 export async function updateSimulation(
   newSimulation: Simulation,

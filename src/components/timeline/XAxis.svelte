@@ -71,7 +71,6 @@
         {verticalGuides}
         {viewTimeRange}
         {xScaleView}
-        on:collapsedVerticalGuides
       />
     </g>
     <g transform="translate(0, {axisOffset})">

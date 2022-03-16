@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import ActivityDecomposition from './ActivityDecomposition.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
@@ -10,7 +9,9 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
+  import { deleteActivity, updateActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
+  import { plan } from '../../stores/plan';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
@@ -26,8 +27,6 @@
   export let parent: string | null = null;
   export let startTime: string = '';
   export let type: string = '';
-
-  const dispatch = createEventDispatcher();
 
   let confirmDeleteActivityModal: Modal;
   let currentId: number = id;
@@ -62,16 +61,16 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    dispatch('updateArguments', { arguments: newArguments, id });
+    updateActivity({ arguments: newArguments, id }, $plan.startTime);
   }
 
   function onDelete() {
-    dispatch('delete', id);
+    deleteActivity(id);
   }
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      dispatch('updateStartTime', { id, startTime: $startTimeField.value });
+      updateActivity({ id, startTime: $startTimeField.value }, $plan.startTime);
     }
   }
 

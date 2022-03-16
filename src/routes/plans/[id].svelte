@@ -55,9 +55,6 @@
     selectActivity,
     selectedActivityId,
     selectedActivity,
-    createActivity,
-    deleteActivity,
-    updateActivity,
   } from '../../stores/activities';
   import {
     modelConstraints,
@@ -88,26 +85,23 @@
   import { schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
+    runSimulation,
     simulation,
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
   import {
     createView,
-    setSelectedTimeline,
-    updateRow,
     updateSectionSizes,
-    updateTimeline,
     view,
     viewSectionIds,
     viewSectionSizes,
   } from '../../stores/views';
   import { Status } from '../../utilities/enums';
-  import { setQueryParam, sleep } from '../../utilities/generic';
+  import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  import { offsetViolationWindows } from '../../utilities/violations';
 
   export let initialPlan: Plan | null;
   export let initialView: View | null;
@@ -156,25 +150,6 @@
     $violations = [];
   });
 
-  function onDeleteActivity(event: CustomEvent<number>) {
-    const { detail: activityId } = event;
-    deleteActivity(activityId);
-    simulationStatus.update(Status.Dirty);
-  }
-
-  function onDropActivity(event: CustomEvent<DropActivity>) {
-    const { id: planId } = initialPlan;
-    const { detail } = event;
-    const { activityTypeName: type, startTime } = detail;
-    const activity: CreateActivity = {
-      arguments: {},
-      startTime,
-      type,
-    };
-    createActivity(activity, planId, initialPlan.startTime);
-    simulationStatus.update(Status.Dirty);
-  }
-
   function onKeydown(event: KeyboardEvent) {
     const { key, metaKey } = event;
 
@@ -183,28 +158,8 @@
       viewEditorPanel.show();
     } else if (metaKey && key === 's') {
       event.preventDefault();
-      runSimulation();
+      runSimulation($plan);
     }
-  }
-
-  function onMouseDown(event: CustomEvent<MouseDown>) {
-    const { detail } = event;
-    const { points } = detail;
-
-    if (points.length) {
-      const [point] = points; // TODO: Multiselect points?
-      if (point.type === 'activity') {
-        selectActivity(point.id);
-      }
-    } else {
-      const { timelineId, rowId, layerId, yAxisId } = detail;
-      setSelectedTimeline(timelineId, rowId, layerId, yAxisId);
-      selectedTimelinePanel.show();
-    }
-  }
-
-  function onResetViewTimeRange() {
-    $viewTimeRange = $maxTimeRange;
   }
 
   function onSaveAsView(event: CustomEvent<string>) {
@@ -217,82 +172,6 @@
     const { detail } = event;
     const { newSizes } = detail;
     updateSectionSizes(newSizes);
-  }
-
-  function onUpdateActivity(event: CustomEvent<UpdateActivity>) {
-    const { startTime } = initialPlan;
-    const { detail: activity } = event;
-    updateActivity(activity, startTime);
-    simulationStatus.update(Status.Dirty);
-  }
-
-  function onUpdateRowHeight(
-    event: CustomEvent<{
-      newHeight: number;
-      rowId: number;
-      timelineId: number;
-    }>,
-  ) {
-    const { detail } = event;
-    const { newHeight, rowId, timelineId } = detail;
-    updateRow('height', newHeight, timelineId, rowId);
-  }
-
-  function onUpdateRows(
-    event: CustomEvent<{
-      rows: Row[];
-      timelineId: number;
-    }>,
-  ) {
-    const { detail } = event;
-    const { rows, timelineId } = detail;
-    updateTimeline('rows', rows, timelineId);
-  }
-
-  function onUpdateStartTime(event: CustomEvent<UpdateActivity>) {
-    const { detail } = event;
-    const { id, startTime } = detail;
-    $activitiesMap[id].children = [];
-    $activitiesMap[id].startTime = startTime;
-    simulationStatus.update(Status.Dirty);
-  }
-
-  function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
-    $viewTimeRange = event.detail;
-  }
-
-  async function runSimulation() {
-    const { model, id: planId } = initialPlan;
-    let tries = 0;
-    simulationStatus.update(Status.Executing);
-
-    do {
-      const {
-        activitiesMap: newActivitiesMap,
-        constraintViolations,
-        status,
-        resources: newResources,
-      } = await req.simulate(model.id, planId);
-
-      if (status === 'complete') {
-        $activitiesMap = newActivitiesMap;
-        $resources = newResources;
-        $violations = offsetViolationWindows(
-          constraintViolations,
-          $planStartTimeMs,
-        );
-        simulationStatus.update(Status.Complete);
-        return;
-      } else if (status === 'failed') {
-        simulationStatus.update(Status.Failed);
-        return;
-      }
-
-      await sleep();
-      ++tries;
-    } while (tries < 10); // Trying a max of 10 times.
-
-    simulationStatus.update(Status.Incomplete);
   }
 </script>
 
@@ -308,7 +187,7 @@
     <div>
       <button
         class="st-button icon header-button"
-        on:click={runSimulation}
+        on:click={() => runSimulation($plan)}
         use:tooltip={{
           content: 'Run Simulation',
           placement: 'bottom',
@@ -427,27 +306,12 @@
               />
             {:else if section.timeline}
               <Timeline
-                activities={$activities}
-                activitiesMap={$activitiesMap}
-                constraintViolations={$violations}
                 containerSize={$viewSectionSizes[i]}
                 id={section.timeline.id}
                 marginLeft={section.timeline.marginLeft ?? 50}
                 marginRight={section.timeline.marginRight ?? 20}
-                maxTimeRange={$maxTimeRange}
-                resources={$resources}
                 rows={section.timeline.rows}
-                selectedActivity={$selectedActivity}
                 verticalGuides={section.timeline.verticalGuides}
-                viewTimeRange={$viewTimeRange}
-                on:dragActivity={onUpdateStartTime}
-                on:dragActivityEnd={onUpdateActivity}
-                on:dropActivity={onDropActivity}
-                on:mouseDown={onMouseDown}
-                on:resetViewTimeRange={onResetViewTimeRange}
-                on:updateRowHeight={onUpdateRowHeight}
-                on:updateRows={onUpdateRows}
-                on:viewTimeRangeChanged={onViewTimeRangeChanged}
               />
             {/if}
           {/if}
@@ -473,9 +337,6 @@
               argumentsMap={$selectedActivity.arguments}
               modelId={initialPlan.model.id}
               {...$selectedActivity}
-              on:updateArguments={onUpdateActivity}
-              on:updateStartTime={onUpdateActivity}
-              on:delete={onDeleteActivity}
             />
           {:else}
             <div class="p-1">No Activity Selected</div>

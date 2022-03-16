@@ -2,7 +2,9 @@ import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { selectedActivityPanel } from '../stores/panels';
+import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
+import { simulationStatus } from './simulation';
 
 /* Stores. */
 
@@ -80,6 +82,7 @@ export async function deleteActivity(id: number): Promise<void> {
       position: 'left',
       text: 'Activity Deleted Successfully',
     }).showToast();
+    simulationStatus.update(Status.Dirty);
   } else {
     Toastify({
       backgroundColor: '#a32a2a',
@@ -116,6 +119,7 @@ export async function updateActivity(
       position: 'left',
       text: 'Activity Updated Successfully',
     }).showToast();
+    simulationStatus.update(Status.Dirty);
   } else {
     Toastify({
       backgroundColor: '#a32a2a',

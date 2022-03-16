@@ -1,29 +1,39 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { afterUpdate, createEventDispatcher, tick } from 'svelte';
+  import { afterUpdate, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
+  import {
+    activities,
+    activitiesMap,
+    createActivity,
+    selectActivity,
+    selectedActivity,
+    updateActivity,
+  } from '../../stores/activities';
+  import { violations } from '../../stores/constraints';
+  import { plan, maxTimeRange, viewTimeRange } from '../../stores/plan';
+  import { resources } from '../../stores/resources';
+  import {
+    setSelectedTimeline,
+    updateRow,
+    updateTimeline,
+  } from '../../stores/views';
+  import { selectedTimelinePanel } from '../../stores/panels';
+  import { simulationStatus } from '../../stores/simulation';
+  import { Status } from '../../utilities/enums';
 
-  export let activities: Activity[] = [];
-  export let activitiesMap: ActivitiesMap = {};
-  export let constraintViolations: ConstraintViolation[] = [];
   export let containerSize: number;
   export let id: number;
   export let marginLeft: number = 20;
   export let marginRight: number = 20;
-  export let maxTimeRange: TimeRange | null = null;
-  export let resources: Resource[] = [];
   export let rows: Row[] = [];
-  export let selectedActivity: Activity | null = null;
   export let verticalGuides: VerticalGuide[] = [];
-  export let viewTimeRange: TimeRange | null = null;
-
-  const dispatch = createEventDispatcher();
 
   let clientWidth: number = 0;
   let mouseOver: MouseOver;
@@ -36,8 +46,11 @@
 
   $: drawWidth = clientWidth > 0 ? clientWidth - marginLeft - marginRight : 0;
   $: setRowsMaxHeight(timelineDiv, xAxisDiv, containerSize);
-  $: xDomainMax = [new Date(maxTimeRange.start), new Date(maxTimeRange.end)];
-  $: xDomainView = [new Date(viewTimeRange.start), new Date(viewTimeRange.end)];
+  $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
+  $: xDomainView = [
+    new Date($viewTimeRange.start),
+    new Date($viewTimeRange.end),
+  ];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
   $: xTicksView = xScaleView.ticks().map((date: Date) => {
@@ -68,12 +81,47 @@
     if (source === SOURCES.POINTER) {
       rowDragMoveDisabled = true;
     }
-    dispatch('updateRows', { rows, timelineId: id });
+    updateTimeline('rows', rows, id);
+  }
+
+  function onDragActivity(event: CustomEvent<UpdateActivity>) {
+    const { detail } = event;
+    const { id, startTime } = detail;
+    $activitiesMap[id].children = [];
+    $activitiesMap[id].startTime = startTime;
+    simulationStatus.update(Status.Dirty);
+  }
+
+  function onDragActivityEnd(event: CustomEvent<UpdateActivity>) {
+    const { detail: activity } = event;
+    updateActivity(activity, $plan.startTime);
+  }
+
+  function onDropActivity(event: CustomEvent<DropActivity>) {
+    const { detail } = event;
+    const { activityTypeName: type, startTime } = detail;
+    const activity: CreateActivity = {
+      arguments: {},
+      startTime,
+      type,
+    };
+    createActivity(activity, $plan.id, $plan.startTime);
+    simulationStatus.update(Status.Dirty);
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
-    dispatch('mouseDown', { ...detail, timelineId: id });
+    const { layerId, points, rowId, yAxisId } = detail;
+
+    if (points.length) {
+      const [point] = points; // TODO: Multiselect points?
+      if (point.type === 'activity') {
+        selectActivity(point.id);
+      }
+    } else {
+      setSelectedTimeline(id, rowId, layerId, yAxisId);
+      selectedTimelinePanel.show();
+    }
   }
 
   function onMouseDownRowMove(event: Event) {
@@ -81,17 +129,21 @@
     rowDragMoveDisabled = false;
   }
 
+  function onResetViewTimeRange() {
+    $viewTimeRange = $maxTimeRange;
+  }
+
   function onUpdateRowHeight(
-    event: CustomEvent<{ newHeight: number; rowId: string }>,
+    event: CustomEvent<{ newHeight: number; rowId: number }>,
   ) {
     const { newHeight, rowId } = event.detail;
     if (newHeight < MAX_CANVAS_SIZE) {
-      dispatch('updateRowHeight', { newHeight, rowId, timelineId: id });
-    } else {
-      console.log(
-        `Cannot update timeline row height to ${newHeight}px since it exceeds the max canvas size of ${MAX_CANVAS_SIZE}px`,
-      );
+      updateRow('height', newHeight, id, rowId);
     }
+  }
+
+  function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
+    $viewTimeRange = event.detail;
   }
 
   async function setRowsMaxHeight(
@@ -117,18 +169,17 @@
 >
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
-      {constraintViolations}
+      constraintViolations={$violations}
       drawHeight={xAxisDrawHeight}
       {drawWidth}
       {marginLeft}
       {verticalGuides}
-      {viewTimeRange}
+      viewTimeRange={$viewTimeRange}
       {xScaleMax}
       {xScaleView}
       {xTicksView}
-      on:collapsedVerticalGuides
-      on:resetViewTimeRange
-      on:viewTimeRangeChanged
+      on:resetViewTimeRange={onResetViewTimeRange}
+      on:viewTimeRangeChanged={onViewTimeRangeChanged}
     />
   </div>
   <div
@@ -144,27 +195,27 @@
   >
     {#each rows as row (row.id)}
       <TimelineRow
-        {activities}
-        {activitiesMap}
+        activities={$activities}
+        activitiesMap={$activitiesMap}
         autoAdjustHeight={row.autoAdjustHeight}
-        {constraintViolations}
+        constraintViolations={$violations}
         drawHeight={row.height}
         {drawWidth}
         horizontalGuides={row.horizontalGuides}
         id={row.id}
         layers={row.layers}
         {marginLeft}
-        {resources}
+        resources={$resources}
         {rowDragMoveDisabled}
-        {selectedActivity}
+        selectedActivity={$selectedActivity}
         {verticalGuides}
-        {viewTimeRange}
+        viewTimeRange={$viewTimeRange}
         {xScaleView}
         {xTicksView}
         yAxes={row.yAxes}
-        on:dragActivity
-        on:dragActivityEnd
-        on:dropActivity
+        on:dragActivity={onDragActivity}
+        on:dragActivityEnd={onDragActivityEnd}
+        on:dropActivity={onDropActivity}
         on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}
