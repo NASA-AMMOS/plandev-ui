@@ -55,31 +55,29 @@
 <style>
   .modal-container {
     align-items: center;
-    background: #00000052;
+    background-color: #00000052;
     bottom: 0;
     display: flex;
-    left: 0;
-    position: absolute;
     justify-content: center;
+    left: 0;
+    position: fixed;
     right: 0;
     top: 0;
     z-index: 999;
   }
 
   .modal {
-    background-color: var(--st-gray-10);
+    background-color: var(--st-primary-background-color);
     border-radius: 4px;
-    box-shadow: 0px 4px 32px rgba(0, 0, 0, 0.24);
+    color: var(--st-primary-text-color);
     display: flex;
     flex-direction: column;
+    font-family: Inter, Roboto;
+    font-size: 12px;
+    font-weight: 300;
     justify-content: space-evenly;
-    left: 50%;
-    max-height: 80vh;
-    max-width: 90vw;
     min-height: 150px;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    text-align: left;
     z-index: 1000;
   }
 </style>

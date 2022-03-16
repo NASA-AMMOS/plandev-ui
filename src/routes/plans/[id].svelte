@@ -31,8 +31,6 @@
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
   import ViewMenu from '../../components/menus/ViewMenu.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
-  import SaveAsViewModal from '../../components/modals/SaveAsViewModal.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
@@ -91,7 +89,6 @@
     simulationTemplates,
   } from '../../stores/simulation';
   import {
-    createView,
     updateSectionSizes,
     view,
     viewSectionIds,
@@ -107,7 +104,6 @@
   export let initialView: View | null;
 
   let constraintMenu: Menu;
-  let saveAsViewModal: Modal;
   let viewMenu: Menu;
 
   $: if (initialPlan) {
@@ -160,12 +156,6 @@
       event.preventDefault();
       runSimulation($plan);
     }
-  }
-
-  function onSaveAsView(event: CustomEvent<string>) {
-    const { detail: name } = event;
-    const newView = { ...$view, name };
-    createView(newView);
   }
 
   function onSectionsDragEnd(event: CustomEvent<{ newSizes: number[] }>) {
@@ -233,7 +223,7 @@
         use:tooltip={{ content: 'Views', placement: 'bottom' }}
       >
         <i class="bi bi-columns" />
-        <ViewMenu bind:viewMenu on:saveAsView={() => saveAsViewModal.show()} />
+        <ViewMenu bind:viewMenu />
       </button>
 
       <button
@@ -354,8 +344,6 @@
     </div>
   </Split>
 </CssGrid>
-
-<SaveAsViewModal bind:modal={saveAsViewModal} on:saveAsView={onSaveAsView} />
 
 <style>
   .header-button {

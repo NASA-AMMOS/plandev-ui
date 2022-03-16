@@ -38,19 +38,17 @@
 <Modal bind:this={modal} height={150} width={200} on:show={onShow}>
   <ModalHeader on:close={modal.hide}>Save As View</ModalHeader>
   <ModalContent>
-    <fieldset>
-      <label for="name">Name</label>
-      <input
-        bind:this={nameElement}
-        bind:value={name}
-        autocomplete="off"
-        class="st-input w-100"
-        name="name"
-        required
-        type="text"
-        on:keyup={onKeyUp}
-      />
-    </fieldset>
+    <label for="name">Name</label>
+    <input
+      bind:this={nameElement}
+      bind:value={name}
+      autocomplete="off"
+      class="st-input w-100"
+      name="name"
+      required
+      type="text"
+      on:keyup={onKeyUp}
+    />
   </ModalContent>
   <ModalFooter>
     <button
