@@ -168,9 +168,6 @@
             {selectedActivity}
             {viewTimeRange}
             {xScaleView}
-            on:dragActivity
-            on:dragActivityEnd
-            on:dropActivity
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
             on:updateRowHeight={onUpdateRowHeightLayer}

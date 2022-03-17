@@ -15,13 +15,23 @@
     updateActivity,
   } from '../../stores/activities';
   import { field } from '../../stores/form';
-  import { plan } from '../../stores/plan';
+  import { activityTypesMap, plan } from '../../stores/plan';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
 
-  let activityType: ActivityType;
+  // Activity vars.
+  let argumentsMap: ArgumentsMap | null = null;
+  let children: string[] | null = null;
+  let duration: number | null = null;
+  let id: number | null = null;
+  let parent: string | null = null;
+  let startTime: string | null = null;
+  let type: string | null = null;
+
+  // Other vars.
+  let model: Model;
   let confirmDeleteActivityModal: Modal;
   let formParameters: FormParameter[] = [];
   let hasChildren: boolean;
@@ -31,74 +41,66 @@
   let startTimeField: FieldStore<string>;
 
   $: if ($selectedActivity) {
-    activityType = $plan.model.activityTypes.find(
-      ({ name }) => name === $selectedActivity?.type,
-    );
-    hasChildren = $selectedActivity.children
-      ? $selectedActivity.children.length > 0
-      : false;
-    isChild = $selectedActivity.parent !== null;
-    parentId = isChild ? $selectedActivity.parent : 'None (Root Activity)';
-    startTimeField = field<string>($selectedActivity.startTime, [
-      required,
-      timestamp,
-    ]);
+    argumentsMap = $selectedActivity.arguments;
+    children = $selectedActivity.children;
+    duration = $selectedActivity.duration;
+    id = $selectedActivity.id;
+    parent = $selectedActivity.parent;
+    startTime = $selectedActivity.startTime;
+    type = $selectedActivity.type;
+  } else {
+    argumentsMap = null;
+    children = null;
+    duration = null;
+    id = null;
+    parent = null;
+    startTime = null;
+    type = null;
+  }
 
+  $: model = $plan.model;
+  $: activityType = $activityTypesMap[type] || null;
+  $: hasChildren = children ? children.length > 0 : false;
+  $: isChild = parent !== null;
+  $: parentId = isChild ? parent : 'None (Root Activity)';
+  $: startTimeField = field<string>(startTime, [required, timestamp]);
+
+  $: if (activityType && argumentsMap) {
     req
-      .getEffectiveActivityArguments(
-        $plan.model.id,
-        activityType.name,
-        $selectedActivity.arguments,
-      )
+      .getEffectiveActivityArguments(model.id, activityType.name, argumentsMap)
       .then(({ arguments: defaultArgumentsMap }) => {
         formParameters = getFormParameters(
           activityType.parameters,
-          $selectedActivity.arguments,
+          argumentsMap,
           defaultArgumentsMap,
         );
       });
-
-    validateArguments($selectedActivity?.arguments);
   }
+  $: validateArguments(argumentsMap);
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
-    if ($selectedActivity) {
-      const { detail: formParameter } = event;
-      const newArguments = getArguments(
-        $selectedActivity.arguments,
-        formParameter,
-      );
-      updateActivity(
-        { arguments: newArguments, id: $selectedActivity.id },
-        $plan.startTime,
-      );
-    }
+    const { detail: formParameter } = event;
+    const newArguments = getArguments(argumentsMap, formParameter);
+    updateActivity(id, { arguments: newArguments });
   }
 
   function onDelete() {
-    if ($selectedActivity) {
-      deleteActivity($selectedActivity.id);
-    }
+    deleteActivity(id);
   }
 
   function onUpdateStartTime() {
-    if (
-      $selectedActivity &&
-      $startTimeField.valid &&
-      $selectedActivity.startTime !== $startTimeField.value
-    ) {
-      updateActivity(
-        { id: $selectedActivity.id, startTime: $startTimeField.value },
-        $plan.startTime,
-      );
+    if ($startTimeField.valid && startTime !== $startTimeField.value) {
+      updateActivity(id, { startTime: $startTimeField.value });
     }
   }
 
-  async function validateArguments(newArguments: ArgumentsMap) {
-    if ($selectedActivity) {
+  async function validateArguments(
+    newArguments: ArgumentsMap | null,
+  ): Promise<void> {
+    if (newArguments) {
       const { errors, success } = await req.validateActivityArguments(
-        $selectedActivity.type,
-        $plan.model.id,
+        type,
+        model.id,
         newArguments,
       );
 
@@ -131,12 +133,7 @@
       <fieldset>
         <label for="id">Activity ID</label>
         <Input>
-          <input
-            bind:value={$selectedActivity.id}
-            class="st-input w-100"
-            disabled
-            name="id"
-          />
+          <input bind:value={id} class="st-input w-100" disabled name="id" />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -145,7 +142,7 @@
         <label for="activity-type">Activity Type</label>
         <Input>
           <input
-            bind:value={$selectedActivity.type}
+            bind:value={type}
             class="st-input w-100"
             disabled
             name="activity-type"
@@ -171,7 +168,7 @@
         <label for="duration">Duration</label>
         <Input>
           <input
-            bind:value={$selectedActivity.duration}
+            bind:value={duration}
             class="st-input w-100"
             disabled
             name="duration"
@@ -215,10 +212,7 @@
           <summary>Decomposition</summary>
           <div class="mt-2">
             {#if hasChildren}
-              <ActivityDecomposition
-                children={$selectedActivity.children}
-                type={$selectedActivity.type}
-              />
+              <ActivityDecomposition {children} {type} />
             {:else}
               <div class="p-1">This activity has no children</div>
             {/if}

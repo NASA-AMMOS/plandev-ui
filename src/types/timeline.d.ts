@@ -22,11 +22,6 @@ type Axis = {
   tickCount: number | null;
 };
 
-type DropActivity = {
-  activityTypeName: string;
-  startTime: string;
-};
-
 type HorizontalGuide = {
   id: number;
   label: Label;

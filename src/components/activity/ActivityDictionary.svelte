@@ -5,10 +5,8 @@
   import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { createActivity, selectActivity } from '../../stores/activities';
-  import { simulationStatus } from '../../stores/simulation';
+  import { createActivity } from '../../stores/activities';
   import { plan } from '../../stores/plan';
-  import { Status } from '../../utilities/enums';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -22,19 +20,9 @@
     compare(a.name, b.name),
   );
 
-  async function onCreateActivity(activityType: ActivityType): Promise<void> {
-    const { id: planId, startTime } = $plan;
-    const activity: CreateActivity = {
-      arguments: {},
-      startTime,
-      type: activityType.name,
-    };
-    const { id, success } = await createActivity(activity, planId, startTime);
-
-    if (success) {
-      selectActivity(id);
-      simulationStatus.update(Status.Dirty);
-    }
+  function onCreateActivity(activityType: ActivityType): void {
+    const { startTime } = $plan;
+    createActivity({}, startTime, activityType.name);
   }
 
   function onDragEnd(): void {

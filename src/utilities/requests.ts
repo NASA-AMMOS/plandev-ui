@@ -4,6 +4,7 @@ import {
   user as userStore,
   version as versionStore,
 } from '../stores/app';
+import { plan } from '../stores/plan';
 import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
 import {
@@ -67,32 +68,35 @@ async function reqHasura<T = any>(
 
 const req = {
   async createActivity(
-    newActivity: CreateActivity,
-    planId: number,
-    planStartTime: string,
+    argumentsMap: ArgumentsMap,
+    startTime: string,
+    type: string,
   ): Promise<Activity | null> {
     try {
+      const currentPlan = get<Plan>(plan);
       const start_offset = getIntervalFromDoyRange(
-        planStartTime,
-        newActivity.startTime,
+        currentPlan.startTime,
+        startTime,
       );
-      const activityInput = {
-        arguments: newActivity.arguments,
-        plan_id: planId,
+      const activityInsertInput: ActivityInsertInput = {
+        arguments: argumentsMap,
+        plan_id: currentPlan.id,
         start_offset,
-        type: newActivity.type,
+        type,
       };
       const data = await reqHasura(gql.CREATE_ACTIVITY, {
-        activity: activityInput,
+        activity: activityInsertInput,
       });
       const { createActivity } = data;
       const { id } = createActivity;
       const activity: Activity = {
-        ...newActivity,
+        arguments: argumentsMap,
         children: [],
         duration: 0,
         id,
         parent: null,
+        startTime,
+        type,
       };
 
       return activity;
@@ -794,31 +798,29 @@ const req = {
   },
 
   async updateActivity(
-    activity: UpdateActivity,
-    planStartTime: string,
-  ): Promise<UpdateActivity | null> {
-    const activityInput: UpdateActivityInput = {};
+    id: number,
+    activity: Partial<Activity>,
+  ): Promise<boolean> {
+    const activitySetInput: ActivitySetInput = {};
 
     if (activity.arguments) {
-      activityInput.arguments = activity.arguments;
+      activitySetInput.arguments = activity.arguments;
     }
 
     if (activity.startTime) {
-      activityInput.start_offset = getIntervalFromDoyRange(
+      const planStartTime = get<Plan>(plan).startTime;
+      activitySetInput.start_offset = getIntervalFromDoyRange(
         planStartTime,
         activity.startTime,
       );
     }
 
     try {
-      await reqHasura(gql.UPDATE_ACTIVITY, {
-        activity: activityInput,
-        id: activity.id,
-      });
-      return activity;
+      await reqHasura(gql.UPDATE_ACTIVITY, { activity: activitySetInput, id });
+      return true;
     } catch (e) {
       console.log(e);
-      return null;
+      return false;
     }
   },
 

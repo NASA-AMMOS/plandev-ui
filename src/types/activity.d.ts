@@ -5,6 +5,8 @@ type ActivityType = {
   parameters: ParametersMap;
 };
 
+type ActivityTypesMap = Record<string, ActivityType>;
+
 type Activity = {
   arguments: ArgumentsMap;
   children: string[] | null;
@@ -17,17 +19,11 @@ type Activity = {
 
 type ActivitiesMap = Record<ActivityId, Activity>;
 
-type CreateActivity = Pick<Activity, 'arguments' | 'startTime' | 'type'>;
-
-type CreateActivityResponse = {
-  ids: ActivityId[];
-  message: string;
-  success: boolean;
+type ActivityInsertInput = {
+  arguments: ArgumentsMap;
+  plan_id: number;
+  start_offset: string;
+  type: string;
 };
 
-type UpdateActivity = { id: ActivityId } & Partial<Activity>;
-
-type UpdateActivityInput = {
-  arguments?: ArgumentsMap;
-  start_offset?: string;
-};
+type ActivitySetInput = Partial<ActivityInsertInput>;

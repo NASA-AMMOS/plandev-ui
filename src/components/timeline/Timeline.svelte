@@ -11,13 +11,11 @@
   import {
     activities,
     activitiesMap,
-    createActivity,
     selectActivity,
     selectedActivity,
-    updateActivity,
   } from '../../stores/activities';
   import { violations } from '../../stores/constraints';
-  import { plan, maxTimeRange, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
   import {
     setSelectedTimeline,
@@ -25,8 +23,6 @@
     updateTimeline,
   } from '../../stores/views';
   import { selectedTimelinePanel } from '../../stores/panels';
-  import { simulationStatus } from '../../stores/simulation';
-  import { Status } from '../../utilities/enums';
 
   export let containerSize: number;
   export let id: number;
@@ -82,30 +78,6 @@
       rowDragMoveDisabled = true;
     }
     updateTimeline('rows', rows, id);
-  }
-
-  function onDragActivity(event: CustomEvent<UpdateActivity>) {
-    const { detail } = event;
-    const { id, startTime } = detail;
-    $activitiesMap[id] = { ...$activitiesMap[id], children: [], startTime };
-    simulationStatus.update(Status.Dirty);
-  }
-
-  function onDragActivityEnd(event: CustomEvent<UpdateActivity>) {
-    const { detail: activity } = event;
-    updateActivity(activity, $plan.startTime);
-  }
-
-  function onDropActivity(event: CustomEvent<DropActivity>) {
-    const { detail } = event;
-    const { activityTypeName: type, startTime } = detail;
-    const activity: CreateActivity = {
-      arguments: {},
-      startTime,
-      type,
-    };
-    createActivity(activity, $plan.id, $plan.startTime);
-    simulationStatus.update(Status.Dirty);
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
@@ -212,9 +184,6 @@
         {xScaleView}
         {xTicksView}
         yAxes={row.yAxes}
-        on:dragActivity={onDragActivity}
-        on:dragActivityEnd={onDragActivityEnd}
-        on:dropActivity={onDropActivity}
         on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}

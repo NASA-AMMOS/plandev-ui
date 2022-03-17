@@ -37,17 +37,19 @@ export const selectedActivity = derived(
 /* Utility Functions. */
 
 export async function createActivity(
-  activity: CreateActivity,
-  planId: number,
-  planStartTime: string,
+  argumentsMap: ArgumentsMap,
+  startTime: string,
+  type: string,
 ) {
-  const newActivity = await req.createActivity(activity, planId, planStartTime);
+  const newActivity = await req.createActivity(argumentsMap, startTime, type);
+
   if (newActivity) {
     const { id } = newActivity;
     activitiesMap.update(activities => {
       activities[id] = newActivity;
       return { ...activities };
     });
+
     Toastify({
       backgroundColor: '#2da44e',
       duration: 3000,
@@ -55,6 +57,10 @@ export async function createActivity(
       position: 'left',
       text: 'Activity Created Successfully',
     }).showToast();
+
+    selectActivity(id);
+    simulationStatus.update(Status.Dirty);
+
     return { id, success: true };
   } else {
     Toastify({
@@ -64,17 +70,20 @@ export async function createActivity(
       position: 'left',
       text: 'Activity Create Failed',
     }).showToast();
+
     return { id: null, success: false };
   }
 }
 
 export async function deleteActivity(id: number): Promise<void> {
   const success = await req.deleteActivity(id);
+
   if (success) {
     activitiesMap.update(activities => {
       delete activities[id];
       return { ...activities };
     });
+
     Toastify({
       backgroundColor: '#2da44e',
       duration: 3000,
@@ -82,6 +91,7 @@ export async function deleteActivity(id: number): Promise<void> {
       position: 'left',
       text: 'Activity Deleted Successfully',
     }).showToast();
+
     simulationStatus.update(Status.Dirty);
   } else {
     Toastify({
@@ -100,33 +110,39 @@ export function selectActivity(id: number): void {
 }
 
 export async function updateActivity(
-  activity: UpdateActivity,
-  planStartTime: string,
+  id: number,
+  partialActivity: Partial<Activity>,
+  httpEnabled: boolean = true,
 ) {
-  const updatedActivity = await req.updateActivity(activity, planStartTime);
-  if (updatedActivity) {
-    activitiesMap.update(activities => ({
-      ...activities,
-      [updatedActivity.id]: {
-        ...activities[updatedActivity.id],
-        ...updatedActivity,
-      },
-    }));
-    Toastify({
-      backgroundColor: '#2da44e',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'Activity Updated Successfully',
-    }).showToast();
-    simulationStatus.update(Status.Dirty);
-  } else {
-    Toastify({
-      backgroundColor: '#a32a2a',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'Activity Update Failed',
-    }).showToast();
+  if (httpEnabled) {
+    const success = await req.updateActivity(id, partialActivity);
+
+    if (success) {
+      Toastify({
+        backgroundColor: '#2da44e',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'Activity Updated Successfully',
+      }).showToast();
+    } else {
+      Toastify({
+        backgroundColor: '#a32a2a',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'Activity Update Failed',
+      }).showToast();
+    }
   }
+
+  activitiesMap.update(currActivitiesMap => ({
+    ...currActivitiesMap,
+    [id]: {
+      ...currActivitiesMap[id],
+      ...partialActivity,
+    },
+  }));
+
+  simulationStatus.update(Status.Dirty);
 }
