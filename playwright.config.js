@@ -2,7 +2,9 @@
 const config = {
   reporter: [
     [process***REMOVED***.CI ? 'github' : 'list'],
-    ['html', { open: 'never', outputFolder: 'test-report' }],
+    ['html', { outputFile: 'index.html', outputFolder: 'test-results' }],
+    ['json', { outputFile: 'test-results/json-results.json' }],
+    ['junit', { outputFile: 'test-results/junit-results.xml' }],
   ],
   use: {
     baseURL: 'http://localhost:3000',

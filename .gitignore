@@ -1,7 +1,7 @@
 .DS_Store
 build
 node_modules
-test-report
+test-results
 /.svelte-kit
 /package
 /static/version.json
