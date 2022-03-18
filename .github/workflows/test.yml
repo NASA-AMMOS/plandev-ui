@@ -26,9 +26,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Validate Gradle Wrapper (Aerie)
-        working-directory: ./aerie
-        uses: gradle/wrapper-validation-action@v1
       - name: Build (Aerie)
         working-directory: ./aerie
         run: |
