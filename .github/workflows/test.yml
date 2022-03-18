@@ -26,7 +26,8 @@ jobs:
           docker compose -f docker-compose-test.yml up -d
           docker images
           docker ps -a
-      - uses: actions/setup-node@v2
+      - name: Setup Node
+        uses: actions/setup-node@v2
         with:
           node-version: '16.13.0'
       - name: Install Dependencies
@@ -41,7 +42,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: test-results
+          name: Playwright Test Results
           path: test-results
       - name: Print Logs for Aerie Services
         run: docker compose -f docker-compose-test.yml logs -t
