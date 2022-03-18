@@ -14,39 +14,54 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Aerie UI Repo
+      - name: Checkout Repo (UI)
         uses: actions/checkout@v3
-      - name: Checkout Aerie Repo
+      - name: Checkout Repo (Aerie)
         uses: actions/checkout@v3
         with:
           path: aerie
           repository: NASA-AMMOS/aerie
-      - name: Start Aerie Services
+      - name: Setup Java (Aerie)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Validate Gradle Wrapper (Aerie)
+        working-directory: ./aerie
+        uses: gradle/wrapper-validation-action@v1
+      - name: Build (Aerie)
+        working-directory: ./aerie
+        run: |
+          ./gradlew distributeSql
+          ./gradlew examples:banananation:build
+      - name: Start Services (Aerie)
         run: |
           docker compose -f docker-compose-test.yml up -d
           docker images
           docker ps -a
-      - name: Setup Node
+      - name: Setup Node (UI)
         uses: actions/setup-node@v2
         with:
           node-version: '16.13.0'
-      - name: Install Dependencies
+      - name: Install Dependencies (UI)
         run: npm ci
-      - name: Install Playwright Dependencies
-        run: npx playwright install chromium --with-deps
-      - name: Build
+      - name: Build (UI)
         run: npm run build
+      - name: Install Playwright Dependencies (Test)
+        run: npx playwright install chromium --with-deps
       - name: Test
         run: npm test
-      - name: Upload Test Results
+      - name: Upload Results (Test)
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Playwright Test Results
+          name: 🎭 Playwright Run Results
           path: test-results
-      - name: Print Logs for Aerie Services
+      - name: Print Logs for Services (Aerie)
         run: docker compose -f docker-compose-test.yml logs -t
-      - name: Stop Aerie Services
+      - name: Stop Services (Aerie)
         run: |
           docker compose -f docker-compose-test.yml down
           docker ps -a
+      - name: Prune Volumes (Aerie)
+        run: docker volume prune --force
