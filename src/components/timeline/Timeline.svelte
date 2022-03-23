@@ -10,8 +10,8 @@
   import TimelineXAxis from './XAxis.svelte';
   import {
     activities,
+    activityActions,
     activitiesMap,
-    selectActivity,
     selectedActivity,
   } from '../../stores/activities';
   import { violations } from '../../stores/constraints';
@@ -87,7 +87,7 @@
     if (points.length) {
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
-        selectActivity(point.id);
+        activityActions.selectActivity(point.id);
       }
     } else {
       setSelectedTimeline(id, rowId, layerId, yAxisId);

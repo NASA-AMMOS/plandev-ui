@@ -2,6 +2,8 @@ import { keyBy } from 'lodash-es';
 import type { Readable, Writable } from 'svelte/store';
 import { derived, writable } from 'svelte/store';
 
+/* Stores. */
+
 export const plan: Writable<Plan | null> = writable(null);
 
 export const activityTypesMap: Readable<ActivityTypesMap> = derived(
@@ -24,3 +26,15 @@ export const viewTimeRange: Writable<TimeRange> = writable({
   end: 0,
   start: 0,
 });
+
+/* Action Functions. */
+
+export const planActions = {
+  reset(): void {
+    plan.set(null);
+    planEndTimeMs.set(0);
+    planStartTimeMs.set(0);
+    maxTimeRange.set({ end: 0, start: 0 });
+    viewTimeRange.set({ end: 0, start: 0 });
+  },
+};

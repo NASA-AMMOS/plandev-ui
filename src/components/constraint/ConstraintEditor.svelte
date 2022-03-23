@@ -5,29 +5,26 @@
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { Status } from '../../utilities/enums';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import {
+    constraintActions,
     selectedConstraint,
-    createConstraint,
-    updateConstraint,
   } from '../../stores/constraints';
-  import { plan } from '../../stores/plan';
-  import { simulationStatus } from '../../stores/simulation';
 
+  let constraintType: ConstraintType = 'model';
   let debounce: NodeJS.Timeout;
   let definition: string = '';
   let definitionError: string | null = null;
   let description: string = '';
   let name: string = '';
   let summary: string = '';
-  let type: string = 'model';
 
   $: valid = definition !== '' && !definitionError && name !== '';
 
   onMount(() => {
     if ($selectedConstraint) {
+      constraintType = $selectedConstraint.model_id ? 'model' : 'plan';
       definition = JSON.stringify(
         JSON.parse($selectedConstraint.definition),
         null,
@@ -36,17 +33,18 @@
       description = $selectedConstraint.description;
       name = $selectedConstraint.name;
       summary = $selectedConstraint.summary;
-      type = $selectedConstraint.modelId ? 'model' : 'plan';
     } else {
+      constraintType = 'model';
       definition = '';
       description = '';
       name = '';
       summary = '';
-      type = 'model';
     }
   });
 
-  async function onTextChanged(event: CustomEvent<{ value: string }>) {
+  async function onDidChangeModelContent(
+    event: CustomEvent<{ value: string }>,
+  ) {
     const { detail } = event;
     const { value } = detail;
 
@@ -67,33 +65,24 @@
     }
   }
 
-  async function save() {
-    const useModelId = type === 'model' ? $plan.model.id : null;
-    const usePlanId = type === 'plan' ? $plan.id : null;
-
+  function saveConstraint() {
     if ($selectedConstraint) {
-      const updatedConstraint: Constraint = {
+      constraintActions.updateConstraint(
+        constraintType,
+        $selectedConstraint.id,
         definition,
         description,
-        id: $selectedConstraint.id,
-        modelId: useModelId,
         name,
-        planId: usePlanId,
         summary,
-      };
-      await updateConstraint(updatedConstraint);
-      simulationStatus.update(Status.Dirty);
+      );
     } else {
-      const newConstraint: CreateConstraint = {
+      constraintActions.createConstraint(
+        constraintType,
         definition,
         description,
-        modelId: useModelId,
         name,
-        planId: usePlanId,
         summary,
-      };
-      await createConstraint(newConstraint);
-      simulationStatus.update(Status.Dirty);
+      );
     }
   }
 </script>
@@ -104,7 +93,7 @@
     <button
       class="st-button icon"
       disabled={!valid}
-      on:click|stopPropagation={save}
+      on:click={() => saveConstraint()}
       use:tooltip={{ content: 'Save Constraint', placement: 'left' }}
     >
       <i class="bi bi-save" />
@@ -117,7 +106,11 @@
       <div class="p-1">
         <fieldset>
           <label for="type">Type</label>
-          <select bind:value={type} class="st-select w-100" name="type">
+          <select
+            bind:value={constraintType}
+            class="st-select w-100"
+            name="type"
+          >
             <option value="model">Model</option>
             <option value="plan">Plan</option>
           </select>
@@ -172,7 +165,7 @@
         minimap={{ enabled: false }}
         scrollBeyondLastLine={false}
         value={definition}
-        on:didChangeModelContent={onTextChanged}
+        on:didChangeModelContent={onDidChangeModelContent}
       />
     </details>
   </svelte:fragment>

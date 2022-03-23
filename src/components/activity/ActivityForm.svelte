@@ -9,11 +9,7 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
-  import {
-    deleteActivity,
-    selectedActivity,
-    updateActivity,
-  } from '../../stores/activities';
+  import { activityActions, selectedActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -81,16 +77,16 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    updateActivity(id, { arguments: newArguments });
+    activityActions.updateActivity(id, { arguments: newArguments });
   }
 
   function onDelete() {
-    deleteActivity(id);
+    activityActions.deleteActivity(id);
   }
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      updateActivity(id, { startTime: $startTimeField.value });
+      activityActions.updateActivity(id, { startTime: $startTimeField.value });
     }
   }
 

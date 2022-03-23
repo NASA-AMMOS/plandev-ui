@@ -8,9 +8,9 @@
   import {
     modelParametersMap,
     simulation,
+    simulationActions,
     simulationStatus,
     simulationTemplates,
-    updateSimulation,
   } from '../../stores/simulation';
   import { Status } from '../../utilities/enums';
   import { getTarget } from '../../utilities/generic';
@@ -48,7 +48,7 @@
       arguments: newArgumentsMap,
     };
 
-    updateSimulation(newSimulation, newFiles);
+    simulationActions.updateSimulation(newSimulation, newFiles);
     simulationStatus.update(Status.Dirty);
   }
 
@@ -58,7 +58,7 @@
     const template = { ...$simulation?.template, id };
     const newSimulation: Simulation = { ...$simulation, template };
 
-    updateSimulation(newSimulation);
+    simulationActions.updateSimulation(newSimulation);
     simulationStatus.update(Status.Dirty);
   }
 </script>

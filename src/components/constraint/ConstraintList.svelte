@@ -7,7 +7,7 @@
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import {
-    deleteConstraint,
+    constraintActions,
     modelConstraints,
     planConstraints,
     selectedConstraint,
@@ -21,7 +21,7 @@
 
   async function onDeleteConstraint(event: CustomEvent<Constraint>) {
     const { detail: constraint } = event;
-    await deleteConstraint(constraint.id);
+    await constraintActions.deleteConstraint(constraint.id);
     simulationStatus.update(Status.Dirty);
   }
 

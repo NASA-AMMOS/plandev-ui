@@ -50,19 +50,20 @@
   import {
     activities,
     activitiesMap,
-    selectActivity,
+    activityActions,
     selectedActivityId,
   } from '../../stores/activities';
   import {
+    constraintActions,
     modelConstraints,
     planConstraints,
-    violations,
   } from '../../stores/constraints';
   import {
     activityDictionaryPanel,
     constraintEditorPanel,
     constraintListPanel,
     constraintViolationsPanel,
+    panelActions,
     schedulingPanel,
     schedulingPanelEditor,
     selectedActivityPanel,
@@ -74,15 +75,16 @@
   import {
     maxTimeRange,
     plan,
+    planActions,
     planEndTimeMs,
     planStartTimeMs,
     viewTimeRange,
   } from '../../stores/plan';
-  import { resources } from '../../stores/resources';
+  import { resourceActions } from '../../stores/resources';
   import { schedulingActions, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
-    runSimulation,
+    simulationActions,
     simulation,
     simulationStatus,
     simulationTemplates,
@@ -93,7 +95,6 @@
     viewSectionIds,
     viewSectionSizes,
   } from '../../stores/views';
-  import { Status } from '../../utilities/enums';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -132,17 +133,13 @@
   });
 
   onDestroy(() => {
-    activityDictionaryPanel.show();
-    simulationStatus.update(Status.Clean);
-    $activitiesMap = {};
-    $modelConstraints = [];
-    $modelParametersMap = {};
-    $planConstraints = [];
-    $resources = [];
+    activityActions.reset();
+    constraintActions.reset();
+    panelActions.reset();
+    planActions.reset();
+    resourceActions.reset();
     schedulingActions.reset();
-    $selectedActivityId = null;
-    $simulation = null;
-    $violations = [];
+    simulationActions.reset();
   });
 
   function onKeydown(event: KeyboardEvent) {
@@ -153,7 +150,7 @@
       viewEditorPanel.show();
     } else if (metaKey && key === 's') {
       event.preventDefault();
-      runSimulation($plan);
+      simulationActions.runSimulation();
     }
   }
 
@@ -176,7 +173,7 @@
     <div>
       <button
         class="st-button icon header-button"
-        on:click={() => runSimulation($plan)}
+        on:click={() => simulationActions.runSimulation()}
         use:tooltip={{
           content: 'Run Simulation',
           placement: 'bottom',
@@ -291,7 +288,8 @@
                 rowData={$activities}
                 rowSelectionMode="single"
                 selectedRowId={$selectedActivityId}
-                on:rowClick={({ detail }) => selectActivity(detail.id)}
+                on:rowClick={({ detail }) =>
+                  activityActions.selectActivity(detail.id)}
               />
             {:else if section.timeline}
               <Timeline

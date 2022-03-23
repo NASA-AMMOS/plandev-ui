@@ -5,7 +5,7 @@
   import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { createActivity } from '../../stores/activities';
+  import { activityActions } from '../../stores/activities';
   import { plan } from '../../stores/plan';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
@@ -19,11 +19,6 @@
   $: sortedActivityTypes = filteredActivityTypes.sort((a, b) =>
     compare(a.name, b.name),
   );
-
-  function onCreateActivity(activityType: ActivityType): void {
-    const { startTime } = $plan;
-    createActivity({}, startTime, activityType.name);
-  }
 
   function onDragEnd(): void {
     document.getElementById('list-item-drag-image').remove();
@@ -72,7 +67,8 @@
           <span slot="suffix">
             <button
               class="st-button icon fs-6"
-              on:click={() => onCreateActivity(activityType)}
+              on:click={() =>
+                activityActions.createActivityAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <i class="bi bi-plus" />

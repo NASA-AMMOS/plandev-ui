@@ -24,7 +24,7 @@ export const selectedGoalId: Writable<number | null> = writable(null);
 
 export const selectedSpecId = derived(
   plan,
-  $plan => $plan.scheduling_specifications[0]?.id ?? null,
+  $plan => $plan?.scheduling_specifications[0]?.id ?? null,
 );
 
 export const selectedSpecGoal = derived(

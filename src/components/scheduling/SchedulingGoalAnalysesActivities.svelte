@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import {
+    activityActions,
     activitiesMap,
-    selectActivity,
     selectedActivityId,
   } from '../../stores/activities';
 
@@ -38,7 +38,7 @@
               class="satisfied-activity"
               class:selected={$selectedActivityId === activity.activity_id}
               on:click={() => {
-                selectActivity(activity.activity_id);
+                activityActions.selectActivity(activity.activity_id);
               }}
             >
               <i class="si si-activity" />

@@ -193,9 +193,9 @@ const gql = {
           definition
           description
           id
-          modelId: model_id
+          model_id
           name
-          planId: plan_id
+          plan_id
           summary
         }
         duration
@@ -209,9 +209,9 @@ const gql = {
             definition
             description
             id
-            modelId: model_id
+            model_id
             name
-            planId: plan_id
+            plan_id
             summary
           }
           id

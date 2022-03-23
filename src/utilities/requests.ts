@@ -107,28 +107,13 @@ const req = {
   },
 
   async createConstraint(
-    newConstraint: CreateConstraint,
-  ): Promise<Constraint | null> {
+    constraint: ConstraintInsertInput,
+  ): Promise<number | null> {
     try {
-      const constraintInput = {
-        definition: newConstraint.definition,
-        description: newConstraint.description,
-        model_id: newConstraint.modelId,
-        name: newConstraint.name,
-        plan_id: newConstraint.planId,
-        summary: newConstraint.summary,
-      };
-      const data = await reqHasura(gql.CREATE_CONSTRAINT, {
-        constraint: constraintInput,
-      });
+      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint });
       const { createConstraint } = data;
       const { id } = createConstraint;
-      const constraint: Constraint = {
-        ...newConstraint,
-        id,
-      };
-
-      return constraint;
+      return id;
     } catch (e) {
       console.log(e);
       return null;
@@ -824,24 +809,16 @@ const req = {
     }
   },
 
-  async updateConstraint(updatedConstraint: Constraint): Promise<Constraint> {
+  async updateConstraint(
+    id: number,
+    constraint: Partial<Constraint>,
+  ): Promise<boolean> {
     try {
-      const constraintInput = {
-        definition: updatedConstraint.definition,
-        description: updatedConstraint.description,
-        model_id: updatedConstraint.modelId,
-        name: updatedConstraint.name,
-        plan_id: updatedConstraint.planId,
-        summary: updatedConstraint.summary,
-      };
-      await reqHasura(gql.UPDATE_CONSTRAINT, {
-        constraint: constraintInput,
-        id: updatedConstraint.id,
-      });
-      return updatedConstraint;
+      await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
+      return true;
     } catch (e) {
       console.log(e);
-      return null;
+      return false;
     }
   },
 

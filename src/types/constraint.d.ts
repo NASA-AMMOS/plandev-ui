@@ -2,11 +2,15 @@ type Constraint = {
   definition: string;
   description: string;
   id: number;
-  modelId: number | null;
+  model_id: number | null;
   name: string;
-  planId: number | null;
+  plan_id: number | null;
   summary: string;
 };
+
+type ConstraintInsertInput = Omit<Constraint, 'id'>;
+
+type ConstraintType = 'model' | 'plan';
 
 type ConstraintViolationAssociations = {
   activityIds?: number[];
@@ -18,8 +22,6 @@ type ConstraintViolation = {
   constraint: Pick<Constraint, 'name'>;
   windows: TimeRange[];
 };
-
-type CreateConstraint = Omit<Constraint, 'id'>;
 
 type MouseOverViolations = {
   e: MouseEvent;

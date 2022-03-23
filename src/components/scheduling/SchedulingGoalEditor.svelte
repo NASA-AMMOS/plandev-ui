@@ -27,7 +27,13 @@
   $: saveButtonEnabled =
     $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
-  async function saveGoal() {
+  function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
+    const { detail } = event;
+    const { value } = detail;
+    definitionField.validate(value);
+  }
+
+  function saveGoal() {
     const definition = $definitionField.value;
     const description = $descriptionField.value;
     const name = $nameField.value;
@@ -39,14 +45,6 @@
       const { user } = $session;
       schedulingActions.createGoal(definition, description, name, user.id);
     }
-  }
-
-  async function onDidChangeModelContent(
-    event: CustomEvent<{ value: string }>,
-  ) {
-    const { detail } = event;
-    const { value } = detail;
-    definitionField.validate(value);
   }
 </script>
 

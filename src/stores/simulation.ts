@@ -1,6 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
+import { plan } from '../stores/plan';
 import { Status } from '../utilities/enums';
 import { sleep } from '../utilities/generic';
 import gql from '../utilities/gql';
@@ -51,66 +52,76 @@ export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
   [],
 );
 
-/* Utility Functions. */
+/* Action Functions. */
 
-export async function runSimulation(plan: Plan) {
-  let tries = 0;
-  simulationStatus.update(Status.Executing);
+export const simulationActions = {
+  reset(): void {
+    modelParametersMap.set({});
+    simulation.set(null);
+    simulationStatus.set(Status.Clean);
+  },
 
-  do {
-    const {
-      activitiesMap: newActivitiesMap,
-      constraintViolations,
-      status,
-      resources: newResources,
-    } = await req.simulate(plan.model.id, plan.id);
+  async runSimulation(): Promise<void> {
+    const { id: planId, model } = get(plan);
 
-    if (status === 'complete') {
-      activitiesMap.set(newActivitiesMap);
-      resources.set(newResources);
-      violations.set(
-        offsetViolationWindows(
-          constraintViolations,
-          get<number>(planStartTimeMs),
-        ),
-      );
-      simulationStatus.update(Status.Complete);
-      return;
-    } else if (status === 'failed') {
-      simulationStatus.update(Status.Failed);
-      return;
+    let tries = 0;
+    simulationStatus.update(Status.Executing);
+
+    do {
+      const {
+        activitiesMap: newActivitiesMap,
+        constraintViolations,
+        status,
+        resources: newResources,
+      } = await req.simulate(model.id, planId);
+
+      if (status === 'complete') {
+        activitiesMap.set(newActivitiesMap);
+        resources.set(newResources);
+        violations.set(
+          offsetViolationWindows(
+            constraintViolations,
+            get<number>(planStartTimeMs),
+          ),
+        );
+        simulationStatus.update(Status.Complete);
+        return;
+      } else if (status === 'failed') {
+        simulationStatus.update(Status.Failed);
+        return;
+      }
+
+      await sleep();
+      ++tries;
+    } while (tries < 10); // Trying a max of 10 times.
+
+    simulationStatus.update(Status.Incomplete);
+  },
+
+  async updateSimulation(
+    newSimulation: Simulation,
+    newFiles: File[] = [],
+  ): Promise<void> {
+    try {
+      const updatedSimulation = await req.updateSimulation(newSimulation);
+      await req.uploadFiles(newFiles);
+      simulation.set(updatedSimulation);
+      Toastify({
+        backgroundColor: '#2da44e',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'Simulation Updated Successfully',
+      }).showToast();
+    } catch (e) {
+      console.log(e);
+      Toastify({
+        backgroundColor: '#a32a2a',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'Simulation Update Failed',
+      }).showToast();
     }
-
-    await sleep();
-    ++tries;
-  } while (tries < 10); // Trying a max of 10 times.
-
-  simulationStatus.update(Status.Incomplete);
-}
-
-export async function updateSimulation(
-  newSimulation: Simulation,
-  newFiles: File[] = [],
-): Promise<void> {
-  try {
-    const updatedSimulation = await req.updateSimulation(newSimulation);
-    await req.uploadFiles(newFiles);
-    simulation.set(updatedSimulation);
-    Toastify({
-      backgroundColor: '#2da44e',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'Simulation Updated Successfully',
-    }).showToast();
-  } catch (e) {
-    console.log(e);
-    Toastify({
-      backgroundColor: '#a32a2a',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'Simulation Update Failed',
-    }).showToast();
-  }
-}
+  },
+};
