@@ -23,6 +23,7 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
     ├── types       # Global TypeScript types
     └── utilities   # Pure functions and constant values
 └── static          # Statically served files
+└── tests           # End-to-end tests
 ```
 
 ## Want to help?
