@@ -845,6 +845,19 @@ const req = {
     }
   },
 
+  async updateSchedulingGoal(
+    id: number,
+    goal: Partial<SchedulingGoal>,
+  ): Promise<boolean> {
+    try {
+      await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async updateSchedulingSpec(
     id: number,
     spec: Partial<SchedulingSpec>,

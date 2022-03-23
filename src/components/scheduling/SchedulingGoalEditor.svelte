@@ -7,47 +7,38 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
-  import { schedulingPanelEditor } from '../../stores/panels';
-  import { plan } from '../../stores/plan';
-  import req from '../../utilities/requests';
-  import { createSchedulingGoal } from '../../stores/scheduling';
+  import { schedulingActions, selectedSpecGoal } from '../../stores/scheduling';
   import { required } from '../../utilities/validators';
 
   let definitionField = field<string>('', [required]);
   let descriptionField = field<string>('');
   let nameField = field<string>('', [required]);
 
+  $: if ($selectedSpecGoal) {
+    definitionField.validate($selectedSpecGoal.goal.definition);
+    descriptionField.validate($selectedSpecGoal.goal.description);
+    nameField.validate($selectedSpecGoal.goal.name);
+  } else {
+    $definitionField.value = '';
+    $descriptionField.value = '';
+    $nameField.value = '';
+  }
+
   $: saveButtonEnabled =
     $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
-  async function onSaveGoal() {
-    createGoal();
-  }
+  async function saveGoal() {
+    const definition = $definitionField.value;
+    const description = $descriptionField.value;
+    const name = $nameField.value;
 
-  async function createGoal() {
-    const goal: SchedulingGoalInsertInput = {
-      author: $session.user.id,
-      definition: $definitionField.value,
-      description: $descriptionField.value,
-      last_modified_by: $session.user.id,
-      model_id: $plan.model.id,
-      name: $nameField.value,
-    };
-    const newGoal = await createSchedulingGoal(goal);
-
-    const specification_id = $plan.scheduling_specifications[0].id;
-    const priorities = await req.getSchedulingSpecGoalPriorities(
-      specification_id,
-    );
-    const priority = priorities.pop() + 1 || 1;
-
-    const specGoal: SchedulingSpecGoalInsertInput = {
-      goal_id: newGoal.id,
-      priority,
-      specification_id: $plan.scheduling_specifications[0].id,
-    };
-    await req.createSchedulingSpecGoal(specGoal);
-    $schedulingPanelEditor = false;
+    if ($selectedSpecGoal) {
+      const { goal } = $selectedSpecGoal;
+      schedulingActions.updateGoal(goal.id, { definition, description, name });
+    } else {
+      const { user } = $session;
+      schedulingActions.createGoal(definition, description, name, user.id);
+    }
   }
 
   async function onDidChangeModelContent(
@@ -55,7 +46,6 @@
   ) {
     const { detail } = event;
     const { value } = detail;
-    $definitionField.value = value;
     definitionField.validate(value);
   }
 </script>
@@ -67,14 +57,14 @@
       <button
         class="st-button secondary ellipsis"
         disabled={!saveButtonEnabled}
-        on:click={onSaveGoal}
+        on:click={() => saveGoal()}
       >
         <i class="bi bi-save" style="font-size: 0.8rem" />
         Save Goal
       </button>
       <button
         class="st-button icon"
-        on:click={() => ($schedulingPanelEditor = false)}
+        on:click={() => schedulingActions.closeGoalEditor()}
       >
         <i class="bi bi-x" />
       </button>

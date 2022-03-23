@@ -36,7 +36,13 @@ export function field<T>(
     async validate(newValue?: T): Promise<boolean> {
       const currentField: Field<T> = get(this);
       const value = newValue === undefined ? currentField.value : newValue;
-      const newField: Field<T> = { ...currentField, pending: true, value };
+      const dirty = initialValue !== value;
+      const newField: Field<T> = {
+        ...currentField,
+        dirty,
+        pending: true,
+        value,
+      };
       set(newField);
 
       const errors = await validateField(newField);

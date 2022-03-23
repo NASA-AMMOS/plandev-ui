@@ -325,6 +325,7 @@ const gql = {
           revision
         }
         priority
+        specification_id
       }
     }
   `,
@@ -353,6 +354,16 @@ const gql = {
     mutation UpdateConstraint($id: Int!, $constraint: condition_set_input!) {
       updateConstraint: update_condition_by_pk(
         pk_columns: { id: $id }, _set: $constraint
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL: `#graphql
+    mutation UpdateSchedulingGoal($id: Int!, $goal: scheduling_goal_set_input!) {
+      updateSchedulingGoal: update_scheduling_goal_by_pk(
+        pk_columns: { id: $id }, _set: $goal
       ) {
         id
       }

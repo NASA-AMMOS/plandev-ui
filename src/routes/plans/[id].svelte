@@ -79,7 +79,7 @@
     viewTimeRange,
   } from '../../stores/plan';
   import { resources } from '../../stores/resources';
-  import { schedulingStatus } from '../../stores/scheduling';
+  import { schedulingActions, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
     runSimulation,
@@ -139,7 +139,7 @@
     $modelParametersMap = {};
     $planConstraints = [];
     $resources = [];
-    $schedulingStatus = Status.Clean;
+    schedulingActions.reset();
     $selectedActivityId = null;
     $simulation = null;
     $violations = [];

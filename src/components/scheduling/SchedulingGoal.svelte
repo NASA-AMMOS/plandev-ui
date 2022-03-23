@@ -9,8 +9,7 @@
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { schedulingPanelEditor } from '../../stores/panels';
-  import { deleteSchedulingGoal } from '../../stores/scheduling';
+  import { schedulingActions } from '../../stores/scheduling';
 
   export let goal: SchedulingGoal;
   export let priority: number;
@@ -18,17 +17,12 @@
   let confirmDeleteGoalModal: Modal;
   let contextMenu: ContextMenu;
   let expanded = false;
-
-  function onConfirmDeleteGoal() {
-    deleteSchedulingGoal(goal.id);
-  }
-
-  function onOpenContextMenu(event: MouseEvent) {
-    contextMenu.show(event);
-  }
 </script>
 
-<div class="scheduling-goal" on:contextmenu|preventDefault={onOpenContextMenu}>
+<div
+  class="scheduling-goal"
+  on:contextmenu|preventDefault={e => contextMenu.show(e)}
+>
   <div class="left">
     <i
       class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'}
@@ -59,12 +53,12 @@
   confirmText="Delete"
   message="Are you sure you want to delete this goal?"
   title="Delete Goal"
-  on:confirm={onConfirmDeleteGoal}
+  on:confirm={() => schedulingActions.deleteGoal(goal.id)}
 />
 
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => ($schedulingPanelEditor = true)}>
+  <ContextMenuItem on:click={() => schedulingActions.openGoalEditor(goal.id)}>
     Edit Goal
   </ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
