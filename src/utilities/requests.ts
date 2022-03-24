@@ -721,12 +721,14 @@ const req = {
     activitiesMap?: ActivitiesMap;
     constraintViolations?: ConstraintViolation[];
     resources?: Resource[];
-    status: 'complete' | 'failed' | 'incomplete';
+    status: SimulationStatus;
   }> {
     try {
-      const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId });
+      const data = await reqHasura<SimulationResponse>(gql.SIMULATE, {
+        planId,
+      });
       const { simulate } = data;
-      const { results, status }: SimulateResponse = simulate;
+      const { results, status }: SimulationResponse = simulate;
 
       if (status === 'complete') {
         // Activities.

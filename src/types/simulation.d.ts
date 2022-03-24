@@ -34,14 +34,14 @@ type SimulationResponseActivity = Omit<Activity, 'id' | 'startTime'> & {
 
 type SimulationResponseViolation = Omit<ConstraintViolation, 'constraint'>;
 
-type SimulateResponseStatus = 'complete' | 'failed' | 'incomplete';
+type SimulationStatus = 'complete' | 'failed' | 'incomplete' | 'pending';
 
-type SimulateResponse = {
+type SimulationResponse = {
   results?: {
     activities: Record<string, SimulationResponseActivity>;
     constraints: Record<string, SimulationResponseViolation[]>;
     resources: Record<string, ResourceValue[]>;
     start: string;
   };
-  status: SimulateResponseStatus;
+  status: SimulationStatus;
 };

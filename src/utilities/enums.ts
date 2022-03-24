@@ -5,5 +5,6 @@ export enum Status {
   Executing = 'Executing',
   Failed = 'Failed',
   Incomplete = 'Incomplete',
+  Pending = 'Pending',
   Unknown = 'Unknown',
 }

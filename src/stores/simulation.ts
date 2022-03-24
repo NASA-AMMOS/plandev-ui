@@ -89,6 +89,10 @@ export const simulationActions = {
       } else if (status === 'failed') {
         simulationStatus.update(Status.Failed);
         return;
+      } else if (status === 'incomplete') {
+        simulationStatus.update(Status.Executing);
+      } else if (status === 'pending') {
+        simulationStatus.update(Status.Pending);
       }
 
       await sleep();

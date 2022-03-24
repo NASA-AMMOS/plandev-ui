@@ -25,6 +25,8 @@
     color = colors.red;
   } else if (Status.Incomplete) {
     color = colors.yellow;
+  } else if (Status.Pending) {
+    color = colors.yellow;
   } else {
     color = colors.red;
   }
