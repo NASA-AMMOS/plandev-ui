@@ -10,25 +10,10 @@
     constraintActions,
     modelConstraints,
     planConstraints,
-    selectedConstraint,
   } from '../../stores/constraints';
-  import { constraintEditorPanel } from '../../stores/panels';
-  import { simulationStatus } from '../../stores/simulation';
-  import { Status } from '../../utilities/enums';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteConstraintModal: Modal;
-
-  async function onDeleteConstraint(event: CustomEvent<Constraint>) {
-    const { detail: constraint } = event;
-    await constraintActions.deleteConstraint(constraint.id);
-    simulationStatus.update(Status.Dirty);
-  }
-
-  function onEditConstraint(constraint: Constraint) {
-    $selectedConstraint = constraint;
-    constraintEditorPanel.show();
-  }
 </script>
 
 <Panel>
@@ -47,7 +32,8 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => onEditConstraint(constraint)}
+                  on:click|stopPropagation={() =>
+                    constraintActions.editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -85,7 +71,8 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => onEditConstraint(constraint)}
+                  on:click|stopPropagation={() =>
+                    constraintActions.editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -120,5 +107,6 @@
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"
-  on:confirm={onDeleteConstraint}
+  on:confirm={({ detail: constraint }) =>
+    constraintActions.deleteConstraint(constraint.id)}
 />

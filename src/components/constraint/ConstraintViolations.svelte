@@ -4,14 +4,7 @@
   import Chip from '../ui/Chip.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { violations } from '../../stores/constraints';
-  import { viewTimeRange } from '../../stores/plan';
-
-  function clickViolation(violation: ConstraintViolation) {
-    const { windows } = violation;
-    const [window] = windows;
-    $viewTimeRange = window;
-  }
+  import { constraintActions, violations } from '../../stores/constraints';
 </script>
 
 <Panel>
@@ -24,7 +17,7 @@
       {#each $violations as violation}
         <ListItem
           style="cursor: pointer"
-          on:click={() => clickViolation(violation)}
+          on:click={() => constraintActions.zoomToViolation(violation)}
         >
           {violation.constraint.name}
           <span slot="suffix">

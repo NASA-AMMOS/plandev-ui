@@ -6,7 +6,6 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
-  import { tooltip } from '../../utilities/tooltip';
   import {
     constraintActions,
     selectedConstraint,
@@ -91,12 +90,12 @@
   <svelte:fragment slot="header">
     <Chip>Constraint Editor</Chip>
     <button
-      class="st-button icon"
+      class="st-button secondary ellipsis"
       disabled={!valid}
       on:click={() => saveConstraint()}
-      use:tooltip={{ content: 'Save Constraint', placement: 'left' }}
     >
-      <i class="bi bi-save" />
+      <i class="bi bi-save" style="font-size: 0.8rem" />
+      Save Constraint
     </button>
   </svelte:fragment>
 

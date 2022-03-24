@@ -1,7 +1,8 @@
 import type { Writable } from 'svelte/store';
 import { get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import { plan } from '../stores/plan';
+import { constraintEditorPanel } from '../stores/panels';
+import { plan, viewTimeRange } from '../stores/plan';
 import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
 import { simulationStatus } from './simulation';
@@ -69,13 +70,13 @@ export const constraintActions = {
     const success = await req.deleteConstraint(id);
 
     if (success) {
-      modelConstraints.update(constraints => {
-        return constraints.filter(constraint => constraint.id !== id);
-      });
+      modelConstraints.update(constraints =>
+        constraints.filter(constraint => constraint.id !== id),
+      );
 
-      planConstraints.update(constraints => {
-        return constraints.filter(constraint => constraint.id !== id);
-      });
+      planConstraints.update(constraints =>
+        constraints.filter(constraint => constraint.id !== id),
+      );
 
       Toastify({
         backgroundColor: '#2da44e',
@@ -95,6 +96,11 @@ export const constraintActions = {
         text: 'Constraint Delete Failed',
       }).showToast();
     }
+  },
+
+  editConstraint(constraint: Constraint): void {
+    selectedConstraint.set(constraint);
+    constraintEditorPanel.show();
   },
 
   reset(): void {
@@ -161,5 +167,11 @@ export const constraintActions = {
         text: 'Constraint Update Failed',
       }).showToast();
     }
+  },
+
+  zoomToViolation(violation: ConstraintViolation): void {
+    const { windows } = violation;
+    const [window] = windows;
+    viewTimeRange.set(window);
   },
 };

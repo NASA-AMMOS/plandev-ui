@@ -80,10 +80,6 @@
     activityActions.updateActivity(id, { arguments: newArguments });
   }
 
-  function onDelete() {
-    activityActions.deleteActivity(id);
-  }
-
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
       activityActions.updateActivity(id, { startTime: $startTimeField.value });
@@ -223,7 +219,7 @@
     confirmText="Delete"
     message="Are you sure you want to delete this activity?"
     title="Delete Activity"
-    on:confirm={onDelete}
+    on:confirm={() => activityActions.deleteActivity(id)}
   />
 {:else}
   <div class="p-1">No Activity Selected</div>
