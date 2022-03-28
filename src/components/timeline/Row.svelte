@@ -15,8 +15,6 @@
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
   import RowDragHandleMove from './RowDragHandleMove.svelte';
 
-  export let activities: Activity[] = [];
-  export let activitiesMap: ActivitiesMap = {};
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
@@ -27,7 +25,6 @@
   export let marginLeft: number = 50;
   export let resources: Resource[] = [];
   export let rowDragMoveDisabled = true;
-  export let selectedActivity: Activity | null = null;
   export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -151,8 +148,6 @@
         {#if layer.chartType === 'activity'}
           <LayerActivity
             {...layer}
-            {activities}
-            {activitiesMap}
             {drawHeight}
             {drawWidth}
             {dragenter}
@@ -165,7 +160,6 @@
             {mouseout}
             {mouseup}
             {overlaySvg}
-            {selectedActivity}
             {viewTimeRange}
             {xScaleView}
             on:mouseDown={onMouseDown}

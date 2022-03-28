@@ -6,13 +6,10 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { activityActions } from '../../stores/activities';
-  import { compare } from '../../utilities/generic';
-  import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
+  import { activityActions, activityPoints } from '../../stores/activities';
+  import { getDoyTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
-  export let activities: Activity[] = [];
-  export let activitiesMap: ActivitiesMap = {};
   export let activityColor: string = '';
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
@@ -30,7 +27,6 @@
   export let mouseout: MouseEvent | undefined;
   export let mouseup: MouseEvent | undefined;
   export let overlaySvg: SVGElement;
-  export let selectedActivity: Activity | null = null;
   export let showChildren: boolean = true;
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -43,28 +39,9 @@
   let dragOffsetX: number | null = null;
   let dragPoint: ActivityPoint | null = null;
   let maxActivityWidth: number;
-  let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, ActivityPoint> = {};
 
-  $: canvasHeightDpr = drawHeight * dpr;
-  $: canvasWidthDpr = drawWidth * dpr;
-  $: if (
-    activityColor &&
-    activityHeight &&
-    drawHeight &&
-    drawWidth &&
-    filter &&
-    mounted &&
-    sortedActivities &&
-    viewTimeRange &&
-    xScaleView
-  ) {
-    draw();
-  }
-  $: if (selectedActivity) {
-    draw();
-  }
   $: onDragenter(dragenter);
   $: onDragleave(dragleave);
   $: onDragover(dragover);
@@ -73,41 +50,32 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: onMouseup(mouseup);
+
+  $: canvasHeightDpr = drawHeight * dpr;
+  $: canvasWidthDpr = drawWidth * dpr;
   $: overlaySvgSelection = select(overlaySvg);
   $: rowHeight = activityHeight + activityRowPadding;
-  $: sortedActivities = activities.sort(sortActivities).map(activity => ({
-    ...activity,
-    children: activity.children
-      ? activity.children.sort(sortChildActivities(activitiesMap))
-      : null,
-  }));
+
+  $: if (
+    $activityPoints !== undefined &&
+    activityColor &&
+    activityHeight &&
+    ctx &&
+    drawHeight &&
+    drawWidth &&
+    filter &&
+    viewTimeRange &&
+    xScaleView
+  ) {
+    draw();
+  }
 
   onMount(() => {
     if (canvas) {
       ctx = canvas.getContext('2d');
       dpr = window.devicePixelRatio;
     }
-    mounted = true;
   });
-
-  /**
-   * Converts an Activity to an ActivityPoint.
-   */
-  function activityToPoint(activity: Activity): ActivityPoint {
-    const point: ActivityPoint = {
-      duration: activity?.duration / 1000 || 0, // µs -> ms
-      id: activity.id,
-      label: {
-        text: activity.type,
-      },
-      name: `${activity.id}`,
-      parent: activity?.parent || null,
-      selected: selectedActivity?.id === activity.id,
-      type: 'activity',
-      x: getUnixEpochTime(activity.startTime),
-    };
-    return point;
-  }
 
   /**
    * @note We only allow dragging parent activities.
@@ -262,11 +230,10 @@
       let maxY = Number.MIN_SAFE_INTEGER;
       const coords = [];
 
-      for (const activity of sortedActivities) {
-        const point: ActivityPoint = activityToPoint(activity);
+      for (const point of $activityPoints) {
         const r = new RegExp(filter?.type);
-        const includeActivity = r.test(activity.type);
-        const isParentActivity = !activity.parent;
+        const includeActivity = r.test(point.type);
+        const isParentActivity = !point.parent;
 
         if (
           isParentActivity &&
@@ -297,7 +264,7 @@
             largestY = y;
           }
 
-          const childCoords = drawChildren(activity, y);
+          const childCoords = drawChildren(point, y);
 
           if (childCoords) {
             if (childCoords.xEnd > largestXEnd) {
@@ -361,41 +328,36 @@
     }
   }
 
-  function drawChildren(parent: Activity, parentY: number) {
+  function drawChildren(parent: ActivityPoint, parentY: number) {
     if (showChildren && parent?.children?.length) {
       let largestXEnd = Number.MIN_SAFE_INTEGER;
       let largestY = Number.MIN_SAFE_INTEGER;
       let y = parentY;
 
-      for (const childId of parent.children) {
-        const childActivity = activitiesMap[childId];
+      for (const point of parent.children) {
+        const x = xScaleView(point.x);
+        const end = xScaleView(point.x + point.duration);
+        const { textWidth } = setLabelContext(point);
+        const xEnd = end + textWidth;
+        y = y + rowHeight;
 
-        if (childActivity) {
-          const point = activityToPoint(childActivity);
-          const x = xScaleView(point.x);
-          const end = xScaleView(point.x + point.duration);
-          const { textWidth } = setLabelContext(point);
-          const xEnd = end + textWidth;
-          y = y + rowHeight;
+        drawActivity(point, x, y, end);
 
-          drawActivity(point, x, y, end);
+        if (xEnd > largestXEnd) {
+          largestXEnd = xEnd;
+        }
+        if (y > largestY) {
+          largestY = y;
+        }
 
-          if (xEnd > largestXEnd) {
-            largestXEnd = xEnd;
+        const childCoords = drawChildren(point, y);
+
+        if (childCoords) {
+          if (childCoords.xEnd > largestXEnd) {
+            largestXEnd = childCoords.xEnd;
           }
-          if (y > largestY) {
-            largestY = y;
-          }
-
-          const childCoords = drawChildren(childActivity, y);
-
-          if (childCoords) {
-            if (childCoords.xEnd > largestXEnd) {
-              largestXEnd = childCoords.xEnd;
-            }
-            if (childCoords.y > largestY) {
-              largestY = childCoords.y;
-            }
+          if (childCoords.y > largestY) {
+            largestY = childCoords.y;
           }
         }
       }
@@ -420,29 +382,6 @@
       textMetrics.actualBoundingBoxAscent +
       textMetrics.actualBoundingBoxDescent;
     return { labelText, textHeight, textMetrics, textWidth };
-  }
-
-  function sortChildActivities(
-    activitiesMap: ActivitiesMap,
-  ): (aId: string, bId: string) => number {
-    return (aId: string, bId: string): number => {
-      const a = activitiesMap[aId];
-      const b = activitiesMap[bId];
-
-      if (a && b) {
-        const aStartTime = getUnixEpochTime(a.startTime);
-        const bStartTime = getUnixEpochTime(b.startTime);
-        return compare(aStartTime, bStartTime);
-      }
-
-      return 0;
-    };
-  }
-
-  function sortActivities(a: Activity, b: Activity): number {
-    const aStartTime = getUnixEpochTime(a.startTime);
-    const bStartTime = getUnixEpochTime(b.startTime);
-    return compare(aStartTime, bStartTime);
   }
 </script>
 

@@ -8,10 +8,10 @@ type ActivityLayerFilter = {
 };
 
 interface ActivityPoint extends Point {
-  children?: ActivityPoint[];
+  children: ActivityPoint[];
   duration: number;
-  label?: Label;
-  parent: string | null;
+  label: Label;
+  parent: number | null;
 }
 
 type Axis = {

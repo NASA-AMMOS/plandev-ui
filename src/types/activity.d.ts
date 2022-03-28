@@ -9,10 +9,10 @@ type ActivityTypesMap = Record<string, ActivityType>;
 
 type Activity = {
   arguments: ArgumentsMap;
-  children: string[] | null;
+  children: number[] | null;
   duration: number | null;
   id: ActivityId;
-  parent: string | null;
+  parent: number | null;
   startTime: string;
   type: string;
 };

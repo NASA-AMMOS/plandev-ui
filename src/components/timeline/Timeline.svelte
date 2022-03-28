@@ -8,12 +8,7 @@
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
-  import {
-    activities,
-    activityActions,
-    activitiesMap,
-    selectedActivity,
-  } from '../../stores/activities';
+  import { activityActions } from '../../stores/activities';
   import { violations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
@@ -166,8 +161,6 @@
   >
     {#each rows as row (row.id)}
       <TimelineRow
-        activities={$activities}
-        activitiesMap={$activitiesMap}
         autoAdjustHeight={row.autoAdjustHeight}
         constraintViolations={$violations}
         drawHeight={row.height}
@@ -178,7 +171,6 @@
         {marginLeft}
         resources={$resources}
         {rowDragMoveDisabled}
-        selectedActivity={$selectedActivity}
         {verticalGuides}
         viewTimeRange={$viewTimeRange}
         {xScaleView}

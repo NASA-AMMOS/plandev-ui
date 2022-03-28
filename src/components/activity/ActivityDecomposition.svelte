@@ -3,7 +3,7 @@
 <script lang="ts">
   import { activitiesMap } from '../../stores/activities';
 
-  export let children: string[] | null = null;
+  export let children: number[] | null = null;
   export let expanded = true;
   export let type: string = '';
 

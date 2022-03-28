@@ -5,6 +5,7 @@ import {
   version as versionStore,
 } from '../stores/app';
 import { plan } from '../stores/plan';
+import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
 import {
@@ -14,18 +15,6 @@ import {
 } from './time';
 
 /* Helpers. */
-
-function toActivity(activity: any, startTime: Date): Activity {
-  return {
-    arguments: activity.arguments,
-    children: [],
-    duration: 0,
-    id: activity.id,
-    parent: null,
-    startTime: getDoyTimeFromDuration(startTime, activity.startOffset),
-    type: activity.type,
-  };
-}
 
 async function reqHasura<T = any>(
   query: string,

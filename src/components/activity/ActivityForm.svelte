@@ -19,10 +19,10 @@
 
   // Activity vars.
   let argumentsMap: ArgumentsMap | null = null;
-  let children: string[] | null = null;
+  let children: number[] | null = null;
   let duration: number | null = null;
   let id: number | null = null;
-  let parent: string | null = null;
+  let parent: number | null = null;
   let startTime: string | null = null;
   let type: string | null = null;
 
@@ -33,7 +33,7 @@
   let hasChildren: boolean;
   let isChild: boolean;
   let parameterError: string | null = null;
-  let parentId: string | null = null;
+  let parentId: number | string | null = null;
   let startTimeField: FieldStore<string>;
 
   $: if ($selectedActivity) {

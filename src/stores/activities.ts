@@ -7,6 +7,7 @@ import {
 } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { selectedActivityPanel } from '../stores/panels';
+import { activitiesToPoints } from '../utilities/activities';
 import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
 import { plan } from './plan';
@@ -38,6 +39,16 @@ export const selectedActivity = derived(
   [activitiesMap, selectedActivityId],
   ([$activitiesMap, $selectedActivityId]) =>
     $activitiesMap[$selectedActivityId] || null,
+);
+
+/**
+ * Derived store that transforms activities to activity points.
+ * Returns a list of activity points and nested child activity points sorted by start time ascending.
+ */
+export const activityPoints = derived(
+  [activitiesMap, activities, selectedActivityId],
+  ([$activitiesMap, $activities, $selectedActivityId]) =>
+    activitiesToPoints($activitiesMap, $activities, $selectedActivityId),
 );
 
 /* Action Functions. */
