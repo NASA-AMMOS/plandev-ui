@@ -1,3 +1,9 @@
+type SchedulingDslTypesResponse = {
+  reason: string;
+  status: 'failure' | 'success';
+  typescript: string;
+};
+
 type SchedulingGoal = {
   analyses: SchedulingGoalAnalysis[];
   author: string | null;

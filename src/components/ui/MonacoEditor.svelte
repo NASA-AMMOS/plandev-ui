@@ -14,6 +14,7 @@
   export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
   export let minimap: Editor.IEditorMinimapOptions | undefined = undefined;
   export let model: Editor.ITextModel | null | undefined = undefined;
+  export let monaco: Monaco | undefined = undefined;
   export let override: Editor.IEditorOverrideServices | undefined = undefined;
   export let scrollBeyondLastLine: boolean | undefined = undefined;
   export let theme: string | undefined = undefined;
@@ -58,7 +59,7 @@
       theme,
       value,
     };
-    const monaco = await import('monaco-editor');
+    monaco = await import('monaco-editor');
     editor = monaco.editor.create(div, options, override);
 
     editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {

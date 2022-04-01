@@ -12,7 +12,8 @@ type Field<T> = {
 };
 
 type FieldStore<T> = import('svelte/store').Writable<Field<T>> & {
-  validate(value?: T): Promise<boolean>;
+  reset(value: T): void;
+  validateAndSet(value?: T): Promise<boolean>;
 };
 
 type ValidatorFn<T> = (value: T) => Promise<ValidationResult>;

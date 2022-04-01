@@ -79,7 +79,7 @@
     const queryModelId = $page.url.searchParams.get('modelId');
     if (queryModelId) {
       $modelIdField.value = parseFloat(queryModelId);
-      modelIdField.validate();
+      modelIdField.validateAndSet();
       removeQueryParam('modelId');
       if (nameInputField) {
         nameInputField.focus();

@@ -496,6 +496,27 @@ const req = {
     }
   },
 
+  async getSchedulingDslTypes(model_id: number): Promise<string> {
+    try {
+      const data = await reqHasura<SchedulingDslTypesResponse>(
+        gql.GET_SCHEDULING_DSL_TYPES,
+        { model_id },
+      );
+      const { schedulingDslTypes } = data;
+      const { reason, status, typescript } = schedulingDslTypes;
+
+      if (status === 'success') {
+        return typescript;
+      } else {
+        console.log(reason);
+        return '';
+      }
+    } catch (e) {
+      console.log(e);
+      return '';
+    }
+  },
+
   async getSchedulingSpecGoalPriorities(
     specification_id: number,
   ): Promise<number[]> {

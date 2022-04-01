@@ -80,7 +80,7 @@
 
   async function onBlur(event: FocusEvent) {
     const { value } = getTarget(event);
-    const valid = await field.validate(value);
+    const valid = await field.validateAndSet(value);
     if (valid) dispatch('valid');
   }
 
@@ -95,7 +95,7 @@
     if (key === 'Enter') {
       event.preventDefault();
       const { value } = getTarget(event);
-      const valid = await field.validate(value);
+      const valid = await field.validateAndSet(value);
       if (valid) dispatch('valid');
     }
   }

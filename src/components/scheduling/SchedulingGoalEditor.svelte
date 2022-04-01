@@ -7,30 +7,45 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
-  import { schedulingActions, selectedSpecGoal } from '../../stores/scheduling';
+  import {
+    schedulingActions,
+    schedulingDslTypes,
+    selectedSpecGoal,
+  } from '../../stores/scheduling';
   import { required } from '../../utilities/validators';
 
   let definitionField = field<string>('', [required]);
   let descriptionField = field<string>('');
+  let monaco: Monaco;
   let nameField = field<string>('', [required]);
 
   $: if ($selectedSpecGoal) {
-    definitionField.validate($selectedSpecGoal.goal.definition);
-    descriptionField.validate($selectedSpecGoal.goal.description);
-    nameField.validate($selectedSpecGoal.goal.name);
+    definitionField.validateAndSet($selectedSpecGoal.goal.definition);
+    descriptionField.validateAndSet($selectedSpecGoal.goal.description);
+    nameField.validateAndSet($selectedSpecGoal.goal.name);
   } else {
-    $definitionField.value = '';
-    $descriptionField.value = '';
-    $nameField.value = '';
+    definitionField.reset(`export default (): Goal => {\n\n}`);
+    descriptionField.reset('');
+    nameField.reset('');
   }
 
   $: saveButtonEnabled =
     $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
+  $: if (monaco !== undefined && $schedulingDslTypes !== undefined) {
+    const { languages } = monaco;
+    const { typescript } = languages;
+    const { typescriptDefaults } = typescript;
+    const options = typescriptDefaults.getCompilerOptions();
+
+    typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'] });
+    typescriptDefaults.setExtraLibs([{ content: $schedulingDslTypes }]);
+  }
+
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
     const { value } = detail;
-    definitionField.validate(value);
+    definitionField.validateAndSet(value);
   }
 
   function saveGoal() {
@@ -93,10 +108,11 @@
 
     <fieldset>Goal Definition</fieldset>
     <MonacoEditor
+      bind:monaco
       automaticLayout={true}
       language="typescript"
       lineNumbers="on"
-      minimap={{ enabled: true }}
+      minimap={{ enabled: false }}
       scrollBeyondLastLine={true}
       value={$definitionField.value}
       on:didChangeModelContent={onDidChangeModelContent}

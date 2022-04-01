@@ -13,11 +13,15 @@
     const planId = parseFloat(id);
 
     const initialPlan = await req.getPlan(planId);
+    const initialSchedulingDslTypes = await req.getSchedulingDslTypes(
+      initialPlan.model.id,
+    );
     const initialView = await req.getView(url.searchParams);
 
     return {
       props: {
         initialPlan,
+        initialSchedulingDslTypes,
         initialView,
       },
     };
@@ -81,7 +85,11 @@
     viewTimeRange,
   } from '../../stores/plan';
   import { resourceActions } from '../../stores/resources';
-  import { schedulingActions, schedulingStatus } from '../../stores/scheduling';
+  import {
+    schedulingActions,
+    schedulingDslTypes,
+    schedulingStatus,
+  } from '../../stores/scheduling';
   import {
     modelParametersMap,
     simulationActions,
@@ -101,6 +109,7 @@
   import { tooltip } from '../../utilities/tooltip';
 
   export let initialPlan: Plan | null;
+  export let initialSchedulingDslTypes: string;
   export let initialView: View | null;
 
   let constraintMenu: Menu;
@@ -120,6 +129,10 @@
     $viewTimeRange = $maxTimeRange;
 
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
+  }
+
+  $: if (initialSchedulingDslTypes) {
+    $schedulingDslTypes = initialSchedulingDslTypes;
   }
 
   $: if (initialView) {

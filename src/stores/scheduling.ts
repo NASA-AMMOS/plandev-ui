@@ -12,6 +12,8 @@ import { getGqlSubscribable } from './subscribable';
 
 /* Stores. */
 
+export const schedulingDslTypes: Writable<string> = writable('');
+
 export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
   gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: -1 },
@@ -124,6 +126,7 @@ export const schedulingActions = {
   },
 
   reset(): void {
+    schedulingDslTypes.set('');
     schedulingStatus.set(Status.Clean);
     selectedGoalId.set(null);
   },

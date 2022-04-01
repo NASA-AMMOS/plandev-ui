@@ -27,13 +27,16 @@ export function field<T>(
   const { set, subscribe, update } = writable<Field<T>>(field);
 
   return {
+    reset(value: T): void {
+      update(currentField => initialField(value, currentField.validators));
+    },
     set(newField: Field<T>) {
       const dirty = newField.initialValue !== newField.value;
       set({ ...newField, dirty });
     },
     subscribe,
     update,
-    async validate(newValue?: T): Promise<boolean> {
+    async validateAndSet(newValue?: T): Promise<boolean> {
       const currentField: Field<T> = get(this);
       const value = newValue === undefined ? currentField.value : newValue;
       const dirty = initialValue !== value;

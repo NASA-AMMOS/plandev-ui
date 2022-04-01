@@ -262,6 +262,16 @@ const gql = {
     }
   `,
 
+  GET_SCHEDULING_DSL_TYPES: `#graphql
+    query GetSchedulingDslTypes($model_id: Int!) {
+      schedulingDslTypes: schedulingDslTypescript(missionModelId: $model_id) {
+        reason
+        status
+        typescript
+      }
+    }
+  `,
+
   GET_SCHEDULING_SPEC_GOAL_PRIORITIES: `#graphql
     query GetSchedulingSpecGoalPriorities($specification_id: Int!) {
       specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
