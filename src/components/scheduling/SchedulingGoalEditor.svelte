@@ -33,11 +33,7 @@
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
-    typescriptDefaults.setCompilerOptions({
-      ...options,
-      lib: ['ESNext'],
-      strictNullChecks: true,
-    });
+    typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
     typescriptDefaults.setExtraLibs([{ content: $schedulingDslTypes, filePath: 'aerie-scheduling.d.ts' }]);
   }
 
