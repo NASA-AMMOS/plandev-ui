@@ -86,13 +86,7 @@
 
           <fieldset>
             <label for="name">Name</label>
-            <input
-              bind:value={name}
-              autocomplete="off"
-              class="st-input w-100"
-              name="name"
-              required
-            />
+            <input bind:value={name} autocomplete="off" class="st-input w-100" name="name" required />
           </fieldset>
 
           <fieldset>
@@ -113,11 +107,7 @@
           </fieldset>
 
           <fieldset>
-            <button
-              class="st-button w-100"
-              disabled={!files || name === '' || version === ''}
-              type="submit"
-            >
+            <button class="st-button w-100" disabled={!files || name === '' || version === ''} type="submit">
               {createButtonText}
             </button>
           </fieldset>
@@ -144,14 +134,12 @@
             ]}
             rowActions
             rowData={sortedModels}
-            on:rowClick={({ detail: model }) =>
-              goto(`plans?modelId=${model.id}`)}
+            on:rowClick={({ detail: model }) => goto(`plans?modelId=${model.id}`)}
           >
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() =>
-                confirmDeleteModelModal.show(currentRow)}
+              on:click|stopPropagation={() => confirmDeleteModelModal.show(currentRow)}
               use:tooltip={{
                 content: 'Delete Model',
                 placement: 'bottom',

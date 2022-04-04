@@ -48,16 +48,7 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
-  $: if (
-    drawHeight &&
-    drawWidth &&
-    colorScheme &&
-    filter &&
-    mounted &&
-    opacity !== undefined &&
-    points &&
-    xScaleView
-  ) {
+  $: if (drawHeight && drawWidth && colorScheme && filter && mounted && opacity !== undefined && points && xScaleView) {
     draw();
   }
   $: onMousedown(mousedown);
@@ -107,9 +98,7 @@
         i = j - 1; // Minus since the loop auto increments i at the end of the block.
 
         const xStart = clamp(xScaleView(point.x), 0, drawWidth);
-        const xEnd = nextPoint
-          ? clamp(xScaleView(nextPoint.x), 0, drawWidth)
-          : drawWidth;
+        const xEnd = nextPoint ? clamp(xScaleView(nextPoint.x), 0, drawWidth) : drawWidth;
         const xWidth = xEnd - xStart;
         const y = 0;
 
@@ -137,22 +126,14 @@
 
           const { textHeight, textWidth } = setLabelContext(point);
           if (textWidth < xWidth) {
-            ctx.fillText(
-              labelText,
-              xStart + xWidth / 2 - textWidth / 2,
-              drawHeight / 2 + textHeight / 2,
-              textWidth,
-            );
+            ctx.fillText(labelText, xStart + xWidth / 2 - textWidth / 2, drawHeight / 2 + textHeight / 2, textWidth);
           } else {
             const extraLabelPadding = 10;
             let newLabelText = labelText;
             let newTextWidth = textWidth;
 
             // Remove characters from label until it is small enough to fit in x-range point.
-            while (
-              newTextWidth > 0 &&
-              newTextWidth > xWidth - extraLabelPadding
-            ) {
+            while (newTextWidth > 0 && newTextWidth > xWidth - extraLabelPadding) {
               newLabelText = newLabelText.slice(0, -1);
               const textMeasurement = measureText(newLabelText);
               newTextWidth = textMeasurement.textWidth;
@@ -199,9 +180,7 @@
 
   function measureText(text: string) {
     const textMetrics = ctx.measureText(text);
-    const textHeight =
-      textMetrics.actualBoundingBoxAscent +
-      textMetrics.actualBoundingBoxDescent;
+    const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
     const textWidth = textMetrics.width;
     return { textHeight, textWidth };
   }
@@ -215,14 +194,7 @@
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
-      const points = searchQuadtreeRect<XRangePoint>(
-        quadtree,
-        x,
-        y,
-        drawHeight,
-        maxXWidth,
-        visiblePointsById,
-      );
+      const points = searchQuadtreeRect<XRangePoint>(quadtree, x, y, drawHeight, maxXWidth, visiblePointsById);
       dispatch('mouseOver', { e, layerId: id, points });
     }
   }

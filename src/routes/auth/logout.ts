@@ -17,8 +17,7 @@ export const post: RequestHandler = async event => {
           success: true,
         },
         headers: {
-          'set-cookie':
-            'user=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
+          'set-cookie': 'user=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
         },
       };
     } else {

@@ -18,14 +18,7 @@
   let g: SVGGElement;
   let mounted = false;
 
-  $: if (
-    constraintViolations &&
-    drawWidth &&
-    drawHeight &&
-    mounted &&
-    viewTimeRange &&
-    xScaleView
-  ) {
+  $: if (constraintViolations && drawWidth && drawHeight && mounted && viewTimeRange && xScaleView) {
     draw();
   }
   $: onMousemove(mousemove);
@@ -61,9 +54,7 @@
       });
 
       if (filteredWindows.length) {
-        const group = gSelection
-          .append('g')
-          .attr('class', constraintViolationClass);
+        const group = gSelection.append('g').attr('class', constraintViolationClass);
 
         for (const window of filteredWindows) {
           const { start, width } = clampWindow(window);

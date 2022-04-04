@@ -15,10 +15,7 @@
   <svelte:fragment slot="body">
     {#if $violations.length}
       {#each $violations as violation}
-        <ListItem
-          style="cursor: pointer"
-          on:click={() => constraintActions.zoomToViolation(violation)}
-        >
+        <ListItem style="cursor: pointer" on:click={() => constraintActions.zoomToViolation(violation)}>
           {violation.constraint.name}
           <span slot="suffix">
             <i class="bi bi-exclamation-triangle" />

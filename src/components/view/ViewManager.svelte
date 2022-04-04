@@ -72,8 +72,7 @@
           {#if currentRow?.meta?.owner !== 'system'}
             <button
               class="st-button icon"
-              on:click|stopPropagation={() =>
-                confirmDeleteViewModal.show({ viewId: currentRow.id })}
+              on:click|stopPropagation={() => confirmDeleteViewModal.show({ viewId: currentRow.id })}
               use:tooltip={{
                 content: 'Delete View',
                 placement: 'bottom',

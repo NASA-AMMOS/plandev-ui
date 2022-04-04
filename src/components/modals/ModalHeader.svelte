@@ -6,10 +6,7 @@
 
 <div class="modal-header">
   <slot />
-  <button
-    class="st-button icon fs-6"
-    on:click|stopPropagation={() => dispatch('close')}
-  >
+  <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
     <i class="bi bi-x" />
   </button>
 </div>

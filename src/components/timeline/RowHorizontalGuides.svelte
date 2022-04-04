@@ -31,9 +31,7 @@
           const yScale = getYScale(domain, drawHeight);
           const y = yScale(guide.y);
 
-          const lineGroup = gSelection
-            .append('g')
-            .attr('class', horizontalGuideClass);
+          const lineGroup = gSelection.append('g').attr('class', horizontalGuideClass);
 
           const color = 'gray';
           const dashLength = 2;

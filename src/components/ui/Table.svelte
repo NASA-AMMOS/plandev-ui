@@ -20,11 +20,7 @@
   $: sortedRowData =
     currentSort !== null
       ? [...rowData].sort((a, b) =>
-          compare(
-            a[currentSort.field],
-            b[currentSort.field],
-            currentSort.direction === 'asc',
-          ),
+          compare(a[currentSort.field], b[currentSort.field], currentSort.direction === 'asc'),
         )
       : rowData;
 
@@ -82,10 +78,7 @@
       >
         {#if rowSelectionMode !== 'none'}
           <td class="selection-cell">
-            <input
-              checked={selectedRowId === row?.id}
-              type={rowSelectionMode === 'single' ? 'radio' : 'checkbox'}
-            />
+            <input checked={selectedRowId === row?.id} type={rowSelectionMode === 'single' ? 'radio' : 'checkbox'} />
           </td>
         {/if}
 

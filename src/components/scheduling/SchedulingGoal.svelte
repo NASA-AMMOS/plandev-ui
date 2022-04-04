@@ -19,15 +19,9 @@
   let expanded = false;
 </script>
 
-<div
-  class="scheduling-goal"
-  on:contextmenu|preventDefault={e => contextMenu.show(e)}
->
+<div class="scheduling-goal" on:contextmenu|preventDefault={e => contextMenu.show(e)}>
   <div class="left">
-    <i
-      class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'}
-      on:click={() => (expanded = !expanded)}
-    />
+    <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="bi-calendar-range" />
     {goal.name}
   </div>
@@ -58,13 +52,9 @@
 
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => schedulingActions.openGoalEditor(goal.id)}>
-    Edit Goal
-  </ContextMenuItem>
+  <ContextMenuItem on:click={() => schedulingActions.openGoalEditor(goal.id)}>Edit Goal</ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
-  <ContextMenuItem on:click={() => confirmDeleteGoalModal.show()}>
-    Delete Goal
-  </ContextMenuItem>
+  <ContextMenuItem on:click={() => confirmDeleteGoalModal.show()}>Delete Goal</ContextMenuItem>
 </ContextMenu>
 
 <style>

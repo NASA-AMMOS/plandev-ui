@@ -13,12 +13,8 @@
   let activityTypes: ActivityType[] = $plan.model.activityTypes;
   let filterText: string = '';
 
-  $: filteredActivityTypes = activityTypes.filter(({ name }) =>
-    name.toLowerCase().includes(filterText.toLowerCase()),
-  );
-  $: sortedActivityTypes = filteredActivityTypes.sort((a, b) =>
-    compare(a.name, b.name),
-  );
+  $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
+  $: sortedActivityTypes = filteredActivityTypes.sort((a, b) => compare(a.name, b.name));
 
   function onDragEnd(): void {
     document.getElementById('list-item-drag-image').remove();
@@ -46,12 +42,7 @@
     <fieldset class="w-100 m-0 p-0 pb-2">
       <Input>
         <i class="bi bi-search" slot="left" />
-        <input
-          bind:value={filterText}
-          class="st-input w-100"
-          name="search"
-          placeholder="Filter activity types"
-        />
+        <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter activity types" />
       </Input>
     </fieldset>
 
@@ -67,8 +58,7 @@
           <span slot="suffix">
             <button
               class="st-button icon fs-6"
-              on:click={() =>
-                activityActions.createActivityAtPlanStart(activityType)}
+              on:click={() => activityActions.createActivityAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <i class="bi bi-plus" />

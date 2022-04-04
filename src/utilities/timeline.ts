@@ -12,19 +12,13 @@ export const CANVAS_PADDING_Y = 8;
  */
 export const MAX_CANVAS_SIZE = 32767;
 
-export function getXScale(
-  domain: Date[],
-  width: number,
-): ScaleTime<number, number, never> {
+export function getXScale(domain: Date[], width: number): ScaleTime<number, number, never> {
   return scaleTime()
     .domain(domain)
     .range([CANVAS_PADDING_X, width - CANVAS_PADDING_X]);
 }
 
-export function getYScale(
-  domain: number[],
-  height: number,
-): ScaleLinear<number, number> {
+export function getYScale(domain: number[], height: number): ScaleLinear<number, number> {
   return scaleLinear()
     .domain(domain)
     .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);

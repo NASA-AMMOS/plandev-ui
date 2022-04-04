@@ -16,65 +16,17 @@
 </script>
 
 {#if formParameter.schema.type === 'boolean'}
-  <ParameterBaseBoolean
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseBoolean {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'duration'}
-  <ParameterBaseDuration
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseDuration {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'int'}
-  <ParameterBaseNumber
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseNumber {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'path'}
-  <ParameterBasePath
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBasePath {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'real'}
-  <ParameterBaseNumber
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseNumber {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'string'}
-  <ParameterBaseString
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseString {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {:else if formParameter.schema.type === 'variant'}
-  <ParameterBaseVariant
-    {disabled}
-    {labelColumnWidth}
-    {level}
-    {levelPadding}
-    {formParameter}
-    on:change
-  />
+  <ParameterBaseVariant {disabled} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
 {/if}

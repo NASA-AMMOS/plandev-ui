@@ -17,13 +17,7 @@
 
   let g: SVGGElement;
 
-  $: if (
-    drawWidth &&
-    drawHeight &&
-    verticalGuides &&
-    viewTimeRange &&
-    xScaleView
-  ) {
+  $: if (drawWidth && drawHeight && verticalGuides && viewTimeRange && xScaleView) {
     draw();
   }
 
@@ -71,17 +65,9 @@
         if (viewTimeRange.start <= time && time <= viewTimeRange.end) {
           const x = xScaleView(time);
 
-          const group = gSelection
-            .append('g')
-            .attr('class', verticalGuideClass)
-            .attr('id', guide.id);
+          const group = gSelection.append('g').attr('class', verticalGuideClass).attr('id', guide.id);
 
-          group
-            .append('circle')
-            .attr('cx', x)
-            .attr('cy', 0)
-            .attr('r', circleRadius)
-            .attr('fill', circleColor);
+          group.append('circle').attr('cx', x).attr('cy', 0).attr('r', circleRadius).attr('fill', circleColor);
 
           group
             .append('line')

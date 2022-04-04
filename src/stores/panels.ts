@@ -7,8 +7,7 @@ export const panelActions = {
     const { subscribe, update } = writable({ visible });
     return {
       hide: () => update(panel => ({ ...panel, visible: false })),
-      show: () =>
-        update(panel => panelActions.hideAll() && { ...panel, visible: true }),
+      show: () => update(panel => panelActions.hideAll() && { ...panel, visible: true }),
       subscribe,
     };
   },

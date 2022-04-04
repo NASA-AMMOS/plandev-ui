@@ -70,13 +70,9 @@ export const constraintActions = {
     const success = await req.deleteConstraint(id);
 
     if (success) {
-      modelConstraints.update(constraints =>
-        constraints.filter(constraint => constraint.id !== id),
-      );
+      modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
 
-      planConstraints.update(constraints =>
-        constraints.filter(constraint => constraint.id !== id),
-      );
+      planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
 
       Toastify({
         backgroundColor: '#2da44e',

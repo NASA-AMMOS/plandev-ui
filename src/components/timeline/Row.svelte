@@ -71,9 +71,7 @@
     dispatch('updateRowHeight', { newHeight, rowId: id });
   }
 
-  function onUpdateRowHeightLayer(
-    event: CustomEvent<{ layerId: number; newHeight: number }>,
-  ) {
+  function onUpdateRowHeightLayer(event: CustomEvent<{ layerId: number; newHeight: number }>) {
     if (autoAdjustHeight) {
       const { detail } = event;
       heightsByLayer[detail.layerId] = detail.newHeight;
@@ -122,28 +120,15 @@
             on:mouseOverViolations
           />
           <RowYAxes {drawHeight} {yAxes} />
-          <RowHorizontalGuides
-            {drawHeight}
-            {drawWidth}
-            {horizontalGuides}
-            {yAxes}
-          />
-          <RowVerticalGuides
-            {drawHeight}
-            {verticalGuides}
-            {viewTimeRange}
-            {xScaleView}
-          />
+          <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} {yAxes} />
+          <RowVerticalGuides {drawHeight} {verticalGuides} {viewTimeRange} {xScaleView} />
           <RowXAxisTicks {drawHeight} {xScaleView} {xTicksView} />
         {/if}
       </g>
     </svg>
 
     <!-- Layers of Canvas Visualizations. -->
-    <div
-      class="layers"
-      style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px"
-    >
+    <div class="layers" style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px">
       {#each layers as layer (layer.id)}
         {#if layer.chartType === 'activity'}
           <LayerActivity
@@ -204,10 +189,7 @@
   </div>
 
   <!-- Drag Handle for Row Height Resizing. -->
-  <RowDragHandleHeight
-    rowHeight={drawHeight}
-    on:updateRowHeight={onUpdateRowHeightDrag}
-  />
+  <RowDragHandleHeight rowHeight={drawHeight} on:updateRowHeight={onUpdateRowHeightDrag} />
 </div>
 
 <style>

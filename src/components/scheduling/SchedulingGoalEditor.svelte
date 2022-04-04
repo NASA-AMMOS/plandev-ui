@@ -7,11 +7,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
-  import {
-    schedulingActions,
-    schedulingDslTypes,
-    selectedSpecGoal,
-  } from '../../stores/scheduling';
+  import { schedulingActions, schedulingDslTypes, selectedSpecGoal } from '../../stores/scheduling';
   import { required } from '../../utilities/validators';
 
   let definitionField = field<string>('', [required]);
@@ -29,8 +25,7 @@
     nameField.reset('');
   }
 
-  $: saveButtonEnabled =
-    $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
+  $: saveButtonEnabled = $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
   $: if (monaco !== undefined && $schedulingDslTypes !== undefined) {
     const { languages } = monaco;
@@ -43,9 +38,7 @@
       lib: ['ESNext'],
       strictNullChecks: true,
     });
-    typescriptDefaults.setExtraLibs([
-      { content: $schedulingDslTypes, filePath: 'aerie-scheduling.d.ts' },
-    ]);
+    typescriptDefaults.setExtraLibs([{ content: $schedulingDslTypes, filePath: 'aerie-scheduling.d.ts' }]);
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
@@ -73,18 +66,11 @@
   <svelte:fragment slot="header">
     <Chip>Scheduling Goal Editor</Chip>
     <div class="right">
-      <button
-        class="st-button secondary ellipsis"
-        disabled={!saveButtonEnabled}
-        on:click={() => saveGoal()}
-      >
+      <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={() => saveGoal()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />
         Save Goal
       </button>
-      <button
-        class="st-button icon"
-        on:click={() => schedulingActions.closeGoalEditor()}
-      >
+      <button class="st-button icon" on:click={() => schedulingActions.closeGoalEditor()}>
         <i class="bi bi-x" />
       </button>
     </div>
@@ -93,23 +79,12 @@
   <svelte:fragment slot="body">
     <Field field={nameField}>
       <label for="name" slot="label">Goal Name</label>
-      <input
-        autocomplete="off"
-        class="st-input w-100"
-        name="name"
-        placeholder="Enter Goal Name (required)"
-        required
-      />
+      <input autocomplete="off" class="st-input w-100" name="name" placeholder="Enter Goal Name (required)" required />
     </Field>
 
     <Field field={descriptionField}>
       <label for="description" slot="label">Goal Description</label>
-      <textarea
-        autocomplete="off"
-        class="st-input w-100"
-        name="name"
-        placeholder="Enter Goal Description (optional)"
-      />
+      <textarea autocomplete="off" class="st-input w-100" name="name" placeholder="Enter Goal Description (optional)" />
     </Field>
 
     <fieldset>Goal Definition</fieldset>

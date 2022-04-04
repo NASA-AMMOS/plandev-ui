@@ -4,11 +4,7 @@ module.exports = {
     es2017: true,
     node: true,
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
   ignorePatterns: ['*.cjs'],
   overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
   parser: '@typescript-eslint/parser',
@@ -22,11 +18,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     'no-undef': 'off',
-    'sort-keys': [
-      'error',
-      'asc',
-      { caseSensitive: true, natural: false, minKeys: 2 },
-    ],
+    'sort-keys': ['error', 'asc', { caseSensitive: true, natural: false, minKeys: 2 }],
   },
   settings: {
     'svelte3/typescript': () => require('typescript'),

@@ -20,23 +20,17 @@
   let formParameters: FormParameter[] = [];
 
   $: {
-    req
-      .getEffectiveModelArguments($plan.model.id, $simulation?.arguments)
-      .then(({ arguments: defaultArguments }) => {
-        // Displayed simulation arguments are either user input arguments,
-        // simulation template arguments, or default arguments.
-        // User input arguments take precedence over simulation template arguments,
-        // which take precedence over default arguments.
-        const defaultArgumentsMap = {
-          ...defaultArguments,
-          ...$simulation?.template?.arguments,
-        };
-        formParameters = getFormParameters(
-          $modelParametersMap,
-          $simulation?.arguments,
-          defaultArgumentsMap,
-        );
-      });
+    req.getEffectiveModelArguments($plan.model.id, $simulation?.arguments).then(({ arguments: defaultArguments }) => {
+      // Displayed simulation arguments are either user input arguments,
+      // simulation template arguments, or default arguments.
+      // User input arguments take precedence over simulation template arguments,
+      // which take precedence over default arguments.
+      const defaultArgumentsMap = {
+        ...defaultArguments,
+        ...$simulation?.template?.arguments,
+      };
+      formParameters = getFormParameters($modelParametersMap, $simulation?.arguments, defaultArgumentsMap);
+    });
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {

@@ -130,18 +130,8 @@ type VerticalGuide = {
 };
 
 type VerticalGuideSelection = {
-  group: import('d3-selection').Selection<
-    SVGGElement,
-    unknown,
-    null,
-    undefined
-  >;
-  label: import('d3-selection').Selection<
-    SVGTextElement,
-    unknown,
-    null,
-    undefined
-  >;
+  group: import('d3-selection').Selection<SVGGElement, unknown, null, undefined>;
+  label: import('d3-selection').Selection<SVGTextElement, unknown, null, undefined>;
 };
 
 type XAxisTick = {

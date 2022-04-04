@@ -96,11 +96,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        activityActions.updateActivity(
-          dragPoint.id,
-          { children: [], startTime },
-          false,
-        );
+        activityActions.updateActivity(dragPoint.id, { children: [], startTime }, false);
       }
     }
   }
@@ -142,10 +138,7 @@
   function onDragover(e: DragEvent | undefined): void {
     if (e) {
       const { offsetX } = e;
-      overlaySvgSelection
-        .select('.activity-drag-guide')
-        .attr('x1', offsetX)
-        .attr('x2', offsetX);
+      overlaySvgSelection.select('.activity-drag-guide').attr('x1', offsetX).attr('x2', offsetX);
     }
   }
 
@@ -290,12 +283,7 @@
     }
   }
 
-  function drawActivity(
-    point: ActivityPoint,
-    x: number,
-    y: number,
-    end: number,
-  ) {
+  function drawActivity(point: ActivityPoint, x: number, y: number, end: number) {
     const { id } = point;
     const activityWidth = Math.max(5.0, end - x);
     const rect = new Path2D();
@@ -378,9 +366,7 @@
     const labelText = point.label?.text || '';
     const textMetrics = ctx.measureText(labelText);
     const textWidth = textMetrics.width;
-    const textHeight =
-      textMetrics.actualBoundingBoxAscent +
-      textMetrics.actualBoundingBoxDescent;
+    const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
     return { labelText, textHeight, textMetrics, textWidth };
   }
 </script>

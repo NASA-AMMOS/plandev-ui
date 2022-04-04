@@ -16,9 +16,8 @@
     <div>Copyright 2021, by the California Institute of Technology.</div>
     <div>ALL RIGHTS RESERVED.</div>
     <div>
-      United States Government sponsorship acknowledged. Any commercial use must
-      be negotiated with the Office of Technology Transfer at the California
-      Institute of Technology.
+      United States Government sponsorship acknowledged. Any commercial use must be negotiated with the Office of
+      Technology Transfer at the California Institute of Technology.
     </div>
     <div class="mt-3">
       {$version.name} -
@@ -30,8 +29,6 @@
     </div>
   </ModalContent>
   <ModalFooter>
-    <button class="st-button" on:click|stopPropagation={modal.hide}>
-      Close
-    </button>
+    <button class="st-button" on:click|stopPropagation={modal.hide}> Close </button>
   </ModalFooter>
 </Modal>

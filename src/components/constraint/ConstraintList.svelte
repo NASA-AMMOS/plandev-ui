@@ -6,11 +6,7 @@
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import {
-    constraintActions,
-    modelConstraints,
-    planConstraints,
-  } from '../../stores/constraints';
+  import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteConstraintModal: Modal;
@@ -32,8 +28,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() =>
-                    constraintActions.editConstraint(constraint)}
+                  on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -43,8 +38,7 @@
                 </button>
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() =>
-                    confirmDeleteConstraintModal.show(constraint)}
+                  on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -71,8 +65,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() =>
-                    constraintActions.editConstraint(constraint)}
+                  on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
                   use:tooltip={{
                     content: 'Edit Constraint',
                     placement: 'left',
@@ -82,8 +75,7 @@
                 </button>
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() =>
-                    confirmDeleteConstraintModal.show(constraint)}
+                  on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
                   use:tooltip={{
                     content: 'Delete Constraint',
                     placement: 'left',
@@ -107,6 +99,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"
-  on:confirm={({ detail: constraint }) =>
-    constraintActions.deleteConstraint(constraint.id)}
+  on:confirm={({ detail: constraint }) => constraintActions.deleteConstraint(constraint.id)}
 />

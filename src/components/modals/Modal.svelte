@@ -41,12 +41,7 @@
 
 {#if shown}
   <div class="modal-container" transition:fade={{ duration: 50 }}>
-    <div
-      class="modal"
-      style:height={`${height}px`}
-      style:width={`${width}px`}
-      on:click|stopPropagation
-    >
+    <div class="modal" style:height={`${height}px`} style:width={`${width}px`} on:click|stopPropagation>
       <slot />
     </div>
   </div>

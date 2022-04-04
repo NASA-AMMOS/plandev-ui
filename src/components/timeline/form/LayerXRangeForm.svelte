@@ -23,12 +23,7 @@
   <CssGrid columns="50% 50%">
     <fieldset>
       <label for="colorScheme">Color Scheme</label>
-      <select
-        class="st-select w-100"
-        name="colorScheme"
-        value={lineLayer.colorScheme}
-        on:change
-      >
+      <select class="st-select w-100" name="colorScheme" value={lineLayer.colorScheme} on:change>
         {#each colorSchemes as colorScheme}
           <option value={colorScheme.value}>
             {colorScheme.name}
@@ -39,13 +34,7 @@
 
     <fieldset>
       <label for="opacity">Opacity</label>
-      <input
-        class="st-input w-100"
-        name="opacity"
-        type="number"
-        value={lineLayer.opacity}
-        on:input
-      />
+      <input class="st-input w-100" name="opacity" type="number" value={lineLayer.opacity} on:input />
     </fieldset>
   </CssGrid>
 {/if}

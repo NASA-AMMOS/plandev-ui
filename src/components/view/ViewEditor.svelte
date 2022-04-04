@@ -4,9 +4,7 @@
   import Panel from '../ui/Panel.svelte';
   import { view, viewText } from '../../stores/views';
 
-  function onDidChangeModelContent(
-    event: CustomEvent<{ value: string }>,
-  ): void {
+  function onDidChangeModelContent(event: CustomEvent<{ value: string }>): void {
     const { detail } = event;
     const { value } = detail;
 

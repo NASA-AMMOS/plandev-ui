@@ -51,13 +51,7 @@
     />
   </ModalContent>
   <ModalFooter>
-    <button
-      bind:this={buttonElement}
-      class="st-button"
-      disabled={name === ''}
-      type="button"
-      on:click={onSaveAsView}
-    >
+    <button bind:this={buttonElement} class="st-button" disabled={name === ''} type="button" on:click={onSaveAsView}>
       Save
     </button>
   </ModalFooter>

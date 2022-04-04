@@ -13,9 +13,7 @@
     const planId = parseFloat(id);
 
     const initialPlan = await req.getPlan(planId);
-    const initialSchedulingDslTypes = await req.getSchedulingDslTypes(
-      initialPlan.model.id,
-    );
+    const initialSchedulingDslTypes = await req.getSchedulingDslTypes(initialPlan.model.id);
     const initialView = await req.getView(url.searchParams);
 
     return {
@@ -51,17 +49,8 @@
   import TopBar from '../../components/ui/TopBar.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import ViewManager from '../../components/view/ViewManager.svelte';
-  import {
-    activities,
-    activitiesMap,
-    activityActions,
-    selectedActivityId,
-  } from '../../stores/activities';
-  import {
-    constraintActions,
-    modelConstraints,
-    planConstraints,
-  } from '../../stores/constraints';
+  import { activities, activitiesMap, activityActions, selectedActivityId } from '../../stores/activities';
+  import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import {
     activityDictionaryPanel,
     constraintEditorPanel,
@@ -76,20 +65,9 @@
     viewEditorPanel,
     viewManagerPanel,
   } from '../../stores/panels';
-  import {
-    maxTimeRange,
-    plan,
-    planActions,
-    planEndTimeMs,
-    planStartTimeMs,
-    viewTimeRange,
-  } from '../../stores/plan';
+  import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
   import { resourceActions } from '../../stores/resources';
-  import {
-    schedulingActions,
-    schedulingDslTypes,
-    schedulingStatus,
-  } from '../../stores/scheduling';
+  import { schedulingActions, schedulingDslTypes, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
     simulationActions,
@@ -97,12 +75,7 @@
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
-  import {
-    updateSectionSizes,
-    view,
-    viewSectionIds,
-    viewSectionSizes,
-  } from '../../stores/views';
+  import { updateSectionSizes, view, viewSectionIds, viewSectionSizes } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -251,9 +224,7 @@
   <Split
     let:initialized={horizontalSplitInitialized}
     direction="horizontal"
-    ids={$schedulingPanel
-      ? ['#left-panel', '#sections', '#right-panel']
-      : ['#sections', '#right-panel']}
+    ids={$schedulingPanel ? ['#left-panel', '#sections', '#right-panel'] : ['#sections', '#right-panel']}
     sizes={$schedulingPanel ? [20, 60, 20] : [75, 25]}
   >
     {#if $schedulingPanel}
@@ -301,8 +272,7 @@
                 rowData={$activities}
                 rowSelectionMode="single"
                 selectedRowId={$selectedActivityId}
-                on:rowClick={({ detail }) =>
-                  activityActions.selectActivity(detail.id)}
+                on:rowClick={({ detail }) => activityActions.selectActivity(detail.id)}
               />
             {:else if section.timeline}
               <Timeline

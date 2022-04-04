@@ -79,22 +79,11 @@
 
     <fieldset>
       <label for="password"> Password </label>
-      <input
-        autocomplete="off"
-        bind:value={password}
-        class="st-input w-100"
-        name="password"
-        required
-        type="password"
-      />
+      <input autocomplete="off" bind:value={password} class="st-input w-100" name="password" required type="password" />
     </fieldset>
 
     <fieldset>
-      <button
-        class="st-button w-100"
-        disabled={password === '' || username === ''}
-        type="submit"
-      >
+      <button class="st-button w-100" disabled={password === '' || username === ''} type="submit">
         {loginButtonText}
       </button>
     </fieldset>

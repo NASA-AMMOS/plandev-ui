@@ -38,11 +38,7 @@ export function getDoyTime(date: Date, includeMsecs = true): string {
  * Get a day-of-year timestamp from a given JavaScript Date object, and
  * a duration in Postgres Interval format.
  */
-export function getDoyTimeFromDuration(
-  startDate: Date,
-  duration: string,
-  includeMsecs = true,
-): string {
+export function getDoyTimeFromDuration(startDate: Date, duration: string, includeMsecs = true): string {
   const interval = parse(duration);
   const { hours, milliseconds, minutes, seconds } = interval;
   const endDate = new Date(startDate.getTime());
@@ -56,10 +52,7 @@ export function getDoyTimeFromDuration(
 /**
  * Returns a Postgres Interval over the specified range of DOY strings.
  */
-export function getIntervalFromDoyRange(
-  startTime: string,
-  endTime: string,
-): string {
+export function getIntervalFromDoyRange(startTime: string, endTime: string): string {
   const startTimeMs = getUnixEpochTime(startTime);
   const endTimeMs = getUnixEpochTime(endTime);
   const differenceMs = endTimeMs - startTimeMs;

@@ -46,9 +46,7 @@
     dispatch('viewTimeRangeChanged', newViewTimeRange);
   }
 
-  function disableBrushOverlayMouseEvents(
-    g: Selection<SVGGElement, unknown, null, undefined>,
-  ) {
+  function disableBrushOverlayMouseEvents(g: Selection<SVGGElement, unknown, null, undefined>) {
     g.select('.overlay')
       .datum({ type: 'selection' })
       .on('mousedown touchstart', () => {
@@ -77,10 +75,7 @@
       brush = select(g).call(xBrush);
 
       if (type === 'max') {
-        const extent = [
-          new Date(viewTimeRange.start),
-          new Date(viewTimeRange.end),
-        ].map(xScaleMax);
+        const extent = [new Date(viewTimeRange.start), new Date(viewTimeRange.end)].map(xScaleMax);
         brush.call(xBrush.move, extent).call(disableBrushOverlayMouseEvents);
       } else {
         brush.call(xBrush.move, null);

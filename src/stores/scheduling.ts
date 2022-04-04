@@ -24,10 +24,7 @@ export const schedulingStatus: Writable<Status> = writable(Status.Clean);
 
 export const selectedGoalId: Writable<number | null> = writable(null);
 
-export const selectedSpecId = derived(
-  plan,
-  $plan => $plan?.scheduling_specifications[0]?.id ?? null,
-);
+export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specifications[0]?.id ?? null);
 
 export const selectedSpecGoal = derived(
   [schedulingSpecGoals, selectedSpecId, selectedGoalId],
@@ -49,12 +46,7 @@ export const schedulingActions = {
     selectedGoalId.set(null);
   },
 
-  async createGoal(
-    definition: string,
-    description: string,
-    name: string,
-    userId: string,
-  ): Promise<void> {
+  async createGoal(definition: string, description: string, name: string, userId: string): Promise<void> {
     const { model } = get(plan);
     const specId = get(selectedSpecId);
 

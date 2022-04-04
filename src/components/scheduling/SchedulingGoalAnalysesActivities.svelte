@@ -1,11 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    activityActions,
-    activitiesMap,
-    selectedActivityId,
-  } from '../../stores/activities';
+  import { activityActions, activitiesMap, selectedActivityId } from '../../stores/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
@@ -19,10 +15,7 @@
 
 <div class="scheduling-goal-analysis-activities">
   <div class="left">
-    <i
-      class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'}
-      on:click={() => (expanded = !expanded)}
-    />
+    <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="si si-activity_group" />
     Activities
   </div>

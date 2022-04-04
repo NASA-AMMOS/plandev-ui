@@ -22,9 +22,7 @@
 
   $: subFormParameters = getSubFormParameters(formParameter);
 
-  function getSubFormParameters(
-    formParameter: FormParameter<ValueSchemaSeries>,
-  ): FormParameter[] {
+  function getSubFormParameters(formParameter: FormParameter<ValueSchemaSeries>): FormParameter[] {
     const subFormParameters = [];
     const { schema, value = [] } = formParameter;
 

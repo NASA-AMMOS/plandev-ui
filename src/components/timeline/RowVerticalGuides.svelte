@@ -20,13 +20,6 @@
 
 <g class="row-vertical-guides">
   {#each filteredVerticalGuides as { x }}
-    <line
-      x1={x}
-      y1="0"
-      x2={x}
-      y2={drawHeight}
-      stroke="gray"
-      stroke-dasharray="2"
-    />
+    <line x1={x} y1="0" x2={x} y2={drawHeight} stroke="gray" stroke-dasharray="2" />
   {/each}
 </g>

@@ -5,9 +5,7 @@
   export let rows: string = 'none';
 </script>
 
-<div
-  style="gap: {gap}; grid-template-columns: {columns}; grid-template-rows: {rows}; padding: {padding}"
->
+<div style="gap: {gap}; grid-template-columns: {columns}; grid-template-rows: {rows}; padding: {padding}">
   <slot />
 </div>
 

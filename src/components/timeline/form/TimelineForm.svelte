@@ -241,10 +241,7 @@
     <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
       <span slot="summary-right">
-        <CssGrid
-          gap="3px"
-          columns="auto {$selectedYAxis !== null ? 'auto' : ''}"
-        >
+        <CssGrid gap="3px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
           <button
             class="st-button icon"
             on:click|stopPropagation={createYAxis}
@@ -264,11 +261,7 @@
         </CssGrid>
       </span>
       {#if $selectedYAxis !== null}
-        <YAxisForm
-          axes={$selectedRow.yAxes}
-          axis={$selectedYAxis}
-          on:update={updateYAxisEvent}
-        />
+        <YAxisForm axes={$selectedRow.yAxes} axis={$selectedYAxis} on:update={updateYAxisEvent} />
       {:else}
         <fieldset>No y-axis selected</fieldset>
       {/if}
@@ -304,11 +297,7 @@
 
         <LayerLineForm layer={$selectedLayer} on:input={updateLayerEvent} />
 
-        <LayerXRangeForm
-          layer={$selectedLayer}
-          on:change={updateLayerEvent}
-          on:input={updateLayerEvent}
-        />
+        <LayerXRangeForm layer={$selectedLayer} on:change={updateLayerEvent} on:input={updateLayerEvent} />
       {:else}
         <fieldset>No layer selected</fieldset>
       {/if}

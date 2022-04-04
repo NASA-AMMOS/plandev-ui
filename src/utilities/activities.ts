@@ -24,13 +24,7 @@ export function activityToPoint(
 
           return 0;
         })
-        .map(childId =>
-          activityToPoint(
-            activitiesMap,
-            activitiesMap[childId],
-            selectedActivityId,
-          ),
-        )
+        .map(childId => activityToPoint(activitiesMap, activitiesMap[childId], selectedActivityId))
     : [];
 
   const point: ActivityPoint = {
@@ -63,9 +57,7 @@ export function activitiesToPoints(
       const bStartTime = getUnixEpochTime(b.startTime);
       return compare(aStartTime, bStartTime);
     })
-    .map(activity =>
-      activityToPoint(activitiesMap, activity, selectedActivityId),
-    );
+    .map(activity => activityToPoint(activitiesMap, activity, selectedActivityId));
 }
 
 /**

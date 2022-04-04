@@ -65,13 +65,7 @@
       />
     </g>
     <g transform="translate(0, {verticalGuidesOffset})">
-      <XAxisVerticalGuides
-        {drawHeight}
-        {drawWidth}
-        {verticalGuides}
-        {viewTimeRange}
-        {xScaleView}
-      />
+      <XAxisVerticalGuides {drawHeight} {drawWidth} {verticalGuides} {viewTimeRange} {xScaleView} />
     </g>
     <g transform="translate(0, {axisOffset})">
       <XAxisBrush

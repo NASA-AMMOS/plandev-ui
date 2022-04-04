@@ -153,38 +153,21 @@
 
           <Field field={nameField}>
             <label for="name" slot="label">Name</label>
-            <input
-              bind:this={nameInputField}
-              autocomplete="off"
-              class="st-input w-100"
-              name="name"
-            />
+            <input bind:this={nameInputField} autocomplete="off" class="st-input w-100" name="name" />
           </Field>
 
           <Field field={startTimeField}>
             <label for="start-time" slot="label">Start Time</label>
-            <input
-              autocomplete="off"
-              class="st-input w-100"
-              name="start-time"
-              placeholder="YYYY-DDDThh:mm:ss"
-            />
+            <input autocomplete="off" class="st-input w-100" name="start-time" placeholder="YYYY-DDDThh:mm:ss" />
           </Field>
 
           <Field field={endTimeField}>
             <label for="end-time" slot="label">End Time</label>
-            <input
-              autocomplete="off"
-              class="st-input w-100"
-              name="end-time"
-              placeholder="YYYY-DDDThh:mm:ss"
-            />
+            <input autocomplete="off" class="st-input w-100" name="end-time" placeholder="YYYY-DDDThh:mm:ss" />
           </Field>
 
           <Field field={simTemplateField}>
-            <label for="simulation-templates" slot="label">
-              Simulation Templates
-            </label>
+            <label for="simulation-templates" slot="label"> Simulation Templates </label>
             <select
               class="st-select w-100"
               data-type="number"
@@ -205,11 +188,7 @@
           </Field>
 
           <fieldset>
-            <button
-              class="st-button w-100"
-              disabled={!createButtonEnabled}
-              type="submit"
-            >
+            <button class="st-button w-100" disabled={!createButtonEnabled} type="submit">
               {createButtonText}
             </button>
           </fieldset>
@@ -225,12 +204,7 @@
         </Chip>
         <Input>
           <i class="bi bi-search" slot="left" />
-          <input
-            bind:value={filterText}
-            class="st-input"
-            placeholder="Filter plans"
-            style="width: 300px"
-          />
+          <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
         </Input>
       </svelte:fragment>
 
@@ -253,8 +227,7 @@
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() =>
-                confirmDeletePlanModal.show(currentRow)}
+              on:click|stopPropagation={() => confirmDeletePlanModal.show(currentRow)}
               use:tooltip={{
                 content: 'Delete Plan',
                 placement: 'bottom',

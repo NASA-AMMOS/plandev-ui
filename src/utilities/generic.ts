@@ -2,11 +2,7 @@
  * Comparator function for numbers or strings.
  * Defaults to ascending order.
  */
-export function compare(
-  a: number | string,
-  b: number | string,
-  isAsc = true,
-): number {
+export function compare(a: number | string, b: number | string, isAsc = true): number {
   return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
 }
 
@@ -50,9 +46,7 @@ export function getTarget(event: Event) {
  * Returns true if a value is considered "empty". False otherwise.
  */
 export function isEmpty(value: any): boolean {
-  return (
-    value === null || value === undefined || value === '' || Number.isNaN(value)
-  );
+  return value === null || value === undefined || value === '' || Number.isNaN(value);
 }
 
 /**

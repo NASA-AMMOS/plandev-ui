@@ -1,25 +1,14 @@
 import { get } from 'svelte/store';
-import {
-  env as envStore,
-  user as userStore,
-  version as versionStore,
-} from '../stores/app';
+import { env as envStore, user as userStore, version as versionStore } from '../stores/app';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
-import {
-  getDoyTime,
-  getDoyTimeFromDuration,
-  getIntervalFromDoyRange,
-} from './time';
+import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 
 /* Helpers. */
 
-async function reqHasura<T = any>(
-  query: string,
-  variables: QueryVariables = {},
-): Promise<Record<string, T>> {
+async function reqHasura<T = any>(query: string, variables: QueryVariables = {}): Promise<Record<string, T>> {
   let response: Response;
   let json: any;
 
@@ -56,17 +45,10 @@ async function reqHasura<T = any>(
 /* Requests. */
 
 const req = {
-  async createActivity(
-    argumentsMap: ArgumentsMap,
-    startTime: string,
-    type: string,
-  ): Promise<Activity | null> {
+  async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string): Promise<Activity | null> {
     try {
       const currentPlan = get<Plan>(plan);
-      const start_offset = getIntervalFromDoyRange(
-        currentPlan.startTime,
-        startTime,
-      );
+      const start_offset = getIntervalFromDoyRange(currentPlan.startTime, startTime);
       const activityInsertInput: ActivityInsertInput = {
         arguments: argumentsMap,
         plan_id: currentPlan.id,
@@ -95,9 +77,7 @@ const req = {
     }
   },
 
-  async createConstraint(
-    constraint: ConstraintInsertInput,
-  ): Promise<number | null> {
+  async createConstraint(constraint: ConstraintInsertInput): Promise<number | null> {
     try {
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint });
       const { createConstraint } = data;
@@ -109,11 +89,7 @@ const req = {
     }
   },
 
-  async createModel(
-    name: string,
-    version: string,
-    file: File,
-  ): Promise<CreateModel | null> {
+  async createModel(name: string, version: string, file: File): Promise<CreateModel | null> {
     try {
       const jar_id = await req.uploadFile(file);
       const modelInput = {
@@ -139,12 +115,7 @@ const req = {
     }
   },
 
-  async createPlan(
-    endTime: string,
-    modelId: number,
-    name: string,
-    startTime: string,
-  ): Promise<CreatePlan | null> {
+  async createPlan(endTime: string, modelId: number, name: string, startTime: string): Promise<CreatePlan | null> {
     try {
       const planInput = {
         duration: getIntervalFromDoyRange(startTime, endTime),
@@ -171,9 +142,7 @@ const req = {
     }
   },
 
-  async createSchedulingGoal(
-    goal: SchedulingGoalInsertInput,
-  ): Promise<SchedulingGoal> {
+  async createSchedulingGoal(goal: SchedulingGoalInsertInput): Promise<SchedulingGoal> {
     try {
       const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, {
         goal,
@@ -194,9 +163,7 @@ const req = {
     }
   },
 
-  async createSchedulingSpecGoal(
-    spec_goal: SchedulingSpecGoalInsertInput,
-  ): Promise<void> {
+  async createSchedulingSpecGoal(spec_goal: SchedulingSpecGoalInsertInput): Promise<void> {
     try {
       await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal });
     } catch (e) {
@@ -372,9 +339,7 @@ const req = {
       const data = await reqHasura(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
       const { activities = [], plan } = data;
       const startTime = new Date(plan.startTime);
-      const newActivities = activities.map((activity: any) =>
-        toActivity(activity, startTime),
-      );
+      const newActivities = activities.map((activity: any) => toActivity(activity, startTime));
 
       return newActivities;
     } catch (e) {
@@ -389,14 +354,11 @@ const req = {
     argumentsMap: ArgumentsMap,
   ): Promise<EffectiveArguments | null> {
     try {
-      const data = await reqHasura<EffectiveArguments>(
-        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS,
-        {
-          activityTypeName,
-          arguments: argumentsMap,
-          modelId,
-        },
-      );
+      const data = await reqHasura<EffectiveArguments>(gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS, {
+        activityTypeName,
+        arguments: argumentsMap,
+        modelId,
+      });
       const { effectiveActivityArguments } = data;
       return effectiveActivityArguments;
     } catch (e) {
@@ -405,18 +367,12 @@ const req = {
     }
   },
 
-  async getEffectiveModelArguments(
-    modelId: number,
-    argumentsMap: ArgumentsMap,
-  ): Promise<EffectiveArguments | null> {
+  async getEffectiveModelArguments(modelId: number, argumentsMap: ArgumentsMap): Promise<EffectiveArguments | null> {
     try {
-      const data = await reqHasura<EffectiveArguments>(
-        gql.GET_EFFECTIVE_MODEL_ARGUMENTS,
-        {
-          arguments: argumentsMap,
-          modelId,
-        },
-      );
+      const data = await reqHasura<EffectiveArguments>(gql.GET_EFFECTIVE_MODEL_ARGUMENTS, {
+        arguments: argumentsMap,
+        modelId,
+      });
       const { effectiveModelArguments } = data;
       return effectiveModelArguments;
     } catch (e) {
@@ -444,9 +400,7 @@ const req = {
 
       return {
         ...plan,
-        activities: plan.activities.map((activity: any) =>
-          toActivity(activity, startTime),
-        ),
+        activities: plan.activities.map((activity: any) => toActivity(activity, startTime)),
         endTime: getDoyTimeFromDuration(startTime, plan.duration),
         startTime: getDoyTime(startTime),
       };
@@ -458,10 +412,7 @@ const req = {
 
   async getPlanRevision(id: number): Promise<number | null> {
     try {
-      const data = await reqHasura<Pick<Plan, 'revision'>>(
-        gql.GET_PLAN_REVISION,
-        { id },
-      );
+      const data = await reqHasura<Pick<Plan, 'revision'>>(gql.GET_PLAN_REVISION, { id });
       const { plan } = data;
       const { revision } = plan;
       return revision;
@@ -498,10 +449,7 @@ const req = {
 
   async getSchedulingDslTypes(model_id: number): Promise<string> {
     try {
-      const data = await reqHasura<SchedulingDslTypesResponse>(
-        gql.GET_SCHEDULING_DSL_TYPES,
-        { model_id },
-      );
+      const data = await reqHasura<SchedulingDslTypesResponse>(gql.GET_SCHEDULING_DSL_TYPES, { model_id });
       const { schedulingDslTypes } = data;
       const { reason, status, typescript } = schedulingDslTypes;
 
@@ -517,16 +465,11 @@ const req = {
     }
   },
 
-  async getSchedulingSpecGoalPriorities(
-    specification_id: number,
-  ): Promise<number[]> {
+  async getSchedulingSpecGoalPriorities(specification_id: number): Promise<number[]> {
     try {
-      const data = await reqHasura<SchedulingSpecGoal[]>(
-        gql.GET_SCHEDULING_SPEC_GOAL_PRIORITIES,
-        {
-          specification_id,
-        },
-      );
+      const data = await reqHasura<SchedulingSpecGoal[]>(gql.GET_SCHEDULING_SPEC_GOAL_PRIORITIES, {
+        specification_id,
+      });
       const { specGoals } = data;
       return specGoals.map(({ priority }) => priority).sort();
     } catch (e) {
@@ -757,31 +700,25 @@ const req = {
 
         // Resources.
         const resourceTypes: ResourceType[] = await req.resourceTypes(modelId);
-        const resourceTypesMap = resourceTypes.reduce(
-          (map: Record<string, ValueSchema>, { name, schema }) => {
-            map[name] = schema;
-            return map;
-          },
-          {},
-        );
-        const resources: Resource[] = Object.entries(results.resources).map(
-          ([name, values]) => ({
-            name,
-            schema: resourceTypesMap[name],
-            startTime: results.start,
-            values,
-          }),
-        );
+        const resourceTypesMap = resourceTypes.reduce((map: Record<string, ValueSchema>, { name, schema }) => {
+          map[name] = schema;
+          return map;
+        }, {});
+        const resources: Resource[] = Object.entries(results.resources).map(([name, values]) => ({
+          name,
+          schema: resourceTypesMap[name],
+          startTime: results.start,
+          values,
+        }));
 
         // Constraint Violations.
-        const constraintViolations: ConstraintViolation[] = Object.entries(
-          results.constraints,
-        ).flatMap(([name, violations]) =>
-          violations.map(violation => ({
-            associations: violation.associations,
-            constraint: { name },
-            windows: violation.windows,
-          })),
+        const constraintViolations: ConstraintViolation[] = Object.entries(results.constraints).flatMap(
+          ([name, violations]) =>
+            violations.map(violation => ({
+              associations: violation.associations,
+              constraint: { name },
+              windows: violation.windows,
+            })),
         );
 
         return { activitiesMap, constraintViolations, resources, status };
@@ -794,10 +731,7 @@ const req = {
     }
   },
 
-  async updateActivity(
-    id: number,
-    activity: Partial<Activity>,
-  ): Promise<boolean> {
+  async updateActivity(id: number, activity: Partial<Activity>): Promise<boolean> {
     const activitySetInput: ActivitySetInput = {};
 
     if (activity.arguments) {
@@ -806,10 +740,7 @@ const req = {
 
     if (activity.startTime) {
       const planStartTime = get<Plan>(plan).startTime;
-      activitySetInput.start_offset = getIntervalFromDoyRange(
-        planStartTime,
-        activity.startTime,
-      );
+      activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.startTime);
     }
 
     try {
@@ -821,10 +752,7 @@ const req = {
     }
   },
 
-  async updateConstraint(
-    id: number,
-    constraint: Partial<Constraint>,
-  ): Promise<boolean> {
+  async updateConstraint(id: number, constraint: Partial<Constraint>): Promise<boolean> {
     try {
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
       return true;
@@ -834,10 +762,7 @@ const req = {
     }
   },
 
-  async updateSchedulingGoal(
-    id: number,
-    goal: Partial<SchedulingGoal>,
-  ): Promise<boolean> {
+  async updateSchedulingGoal(id: number, goal: Partial<SchedulingGoal>): Promise<boolean> {
     try {
       await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
       return true;
@@ -847,10 +772,7 @@ const req = {
     }
   },
 
-  async updateSchedulingSpec(
-    id: number,
-    spec: Partial<SchedulingSpec>,
-  ): Promise<void> {
+  async updateSchedulingSpec(id: number, spec: Partial<SchedulingSpec>): Promise<void> {
     try {
       await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec });
     } catch (e) {
@@ -957,14 +879,11 @@ const req = {
     argumentsMap: ArgumentsMap,
   ): Promise<ParameterValidationResponse> {
     try {
-      const data = await reqHasura<ParameterValidationResponse>(
-        gql.VALIDATE_ACTIVITY_ARGUMENTS,
-        {
-          activityTypeName,
-          arguments: argumentsMap,
-          modelId,
-        },
-      );
+      const data = await reqHasura<ParameterValidationResponse>(gql.VALIDATE_ACTIVITY_ARGUMENTS, {
+        activityTypeName,
+        arguments: argumentsMap,
+        modelId,
+      });
 
       const { validateActivityArguments } = data;
       return validateActivityArguments;

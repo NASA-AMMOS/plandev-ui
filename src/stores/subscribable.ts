@@ -18,12 +18,7 @@ export function getGqlSubscribable<T>(
   const url = `ws://${baseUrl}`;
   const clientOptions: ClientOptions = { url };
 
-  return gqlSubscribable<T>(
-    clientOptions,
-    query,
-    initialVariables,
-    initialValue,
-  );
+  return gqlSubscribable<T>(clientOptions, query, initialVariables, initialValue);
 }
 
 /**

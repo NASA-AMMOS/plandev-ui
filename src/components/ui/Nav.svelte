@@ -72,10 +72,7 @@
   }
 </script>
 
-<div
-  class="nav"
-  style="grid-template-rows: repeat({filteredNavItems.length}, {width}px)"
->
+<div class="nav" style="grid-template-rows: repeat({filteredNavItems.length}, {width}px)">
   {#each filteredNavItems as item}
     <div
       class="nav-item"
@@ -106,12 +103,7 @@
   }
 
   .nav-item.active {
-    background-image: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 1) 3px,
-      rgba(0, 0, 0, 1) 3px,
-      rgba(0, 0, 0, 0) 3px
-    );
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 1) 3px, rgba(0, 0, 0, 1) 3px, rgba(0, 0, 0, 0) 3px);
   }
 
   .nav-item:hover {

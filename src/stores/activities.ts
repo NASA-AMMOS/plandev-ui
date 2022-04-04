@@ -1,10 +1,4 @@
-import {
-  derived,
-  get,
-  writable,
-  type Readable,
-  type Writable,
-} from 'svelte/store';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { selectedActivityPanel } from '../stores/panels';
 import { activitiesToPoints } from '../utilities/activities';
@@ -23,9 +17,9 @@ export const activitiesMap: Writable<ActivitiesMap> = writable({});
 /**
  * Derived store that converts the activities map into a list of activities.
  */
-export const activities = derived(activitiesMap, $activitiesMap =>
-  Object.values($activitiesMap),
-) as Readable<Activity[]>;
+export const activities = derived(activitiesMap, $activitiesMap => Object.values($activitiesMap)) as Readable<
+  Activity[]
+>;
 
 /**
  * Store that tracks the currently selected activity ID.
@@ -37,8 +31,7 @@ export const selectedActivityId: Writable<number | null> = writable(null);
  */
 export const selectedActivity = derived(
   [activitiesMap, selectedActivityId],
-  ([$activitiesMap, $selectedActivityId]) =>
-    $activitiesMap[$selectedActivityId] || null,
+  ([$activitiesMap, $selectedActivityId]) => $activitiesMap[$selectedActivityId] || null,
 );
 
 /**
@@ -54,11 +47,7 @@ export const activityPoints = derived(
 /* Action Functions. */
 
 export const activityActions = {
-  async createActivity(
-    argumentsMap: ArgumentsMap,
-    startTime: string,
-    type: string,
-  ) {
+  async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string) {
     const newActivity = await req.createActivity(argumentsMap, startTime, type);
 
     if (newActivity) {
@@ -137,11 +126,7 @@ export const activityActions = {
     selectedActivityPanel.show();
   },
 
-  async updateActivity(
-    id: number,
-    partialActivity: Partial<Activity>,
-    doRequest: boolean = true,
-  ) {
+  async updateActivity(id: number, partialActivity: Partial<Activity>, doRequest: boolean = true) {
     if (doRequest) {
       const success = await req.updateActivity(id, partialActivity);
 

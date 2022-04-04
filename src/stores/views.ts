@@ -12,87 +12,66 @@ export const viewSectionIds = derived(view, $view =>
   $view ? $view.plan.sections.map(({ id }) => `#section-${id}`) : [],
 );
 
-export const viewSectionSizes = derived(view, $view =>
-  $view ? $view.plan.sections.map(({ size }) => size) : [],
-);
+export const viewSectionSizes = derived(view, $view => ($view ? $view.plan.sections.map(({ size }) => size) : []));
 
-export const viewText = derived(view, $view =>
-  $view ? JSON.stringify($view, null, 2) : '',
-);
+export const viewText = derived(view, $view => ($view ? JSON.stringify($view, null, 2) : ''));
 
 export const selectedTimelineId: Writable<number | null> = writable(null);
 
-export const selectedTimeline = derived(
-  [view, selectedTimelineId],
-  ([$view, $selectedTimelineId]) => {
-    if ($view !== null && $selectedTimelineId !== null) {
-      for (const section of $view.plan.sections) {
-        if (section.timeline && section.timeline.id === $selectedTimelineId) {
-          return section.timeline;
-        }
+export const selectedTimeline = derived([view, selectedTimelineId], ([$view, $selectedTimelineId]) => {
+  if ($view !== null && $selectedTimelineId !== null) {
+    for (const section of $view.plan.sections) {
+      if (section.timeline && section.timeline.id === $selectedTimelineId) {
+        return section.timeline;
       }
     }
-    return null;
-  },
-);
+  }
+  return null;
+});
 
 export const selectedRowId: Writable<number | null> = writable(null);
 
-export const selectedRow = derived(
-  [selectedTimeline, selectedRowId],
-  ([$selectedTimeline, $selectedRowId]) => {
-    if ($selectedTimeline !== null) {
-      for (const row of $selectedTimeline.rows) {
-        if (row.id === $selectedRowId) {
-          return row;
-        }
+export const selectedRow = derived([selectedTimeline, selectedRowId], ([$selectedTimeline, $selectedRowId]) => {
+  if ($selectedTimeline !== null) {
+    for (const row of $selectedTimeline.rows) {
+      if (row.id === $selectedRowId) {
+        return row;
       }
     }
-    return null;
-  },
-);
+  }
+  return null;
+});
 
 export const selectedYAxisId: Writable<number | null> = writable(null);
 
-export const selectedYAxis = derived(
-  [selectedRow, selectedYAxisId],
-  ([$selectedRow, $selectedYAxisId]) => {
-    if ($selectedRow !== null) {
-      for (const yAxis of $selectedRow.yAxes) {
-        if (yAxis.id === $selectedYAxisId) {
-          return yAxis;
-        }
+export const selectedYAxis = derived([selectedRow, selectedYAxisId], ([$selectedRow, $selectedYAxisId]) => {
+  if ($selectedRow !== null) {
+    for (const yAxis of $selectedRow.yAxes) {
+      if (yAxis.id === $selectedYAxisId) {
+        return yAxis;
       }
     }
-    return null;
-  },
-);
+  }
+  return null;
+});
 
 export const selectedLayerId: Writable<number | null> = writable(null);
 
-export const selectedLayer = derived(
-  [selectedRow, selectedLayerId],
-  ([$selectedRow, $selectedLayerId]) => {
-    if ($selectedRow !== null) {
-      for (const layer of $selectedRow.layers) {
-        if (layer.id === $selectedLayerId) {
-          return layer;
-        }
+export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selectedRow, $selectedLayerId]) => {
+  if ($selectedRow !== null) {
+    for (const layer of $selectedRow.layers) {
+      if (layer.id === $selectedLayerId) {
+        return layer;
       }
     }
-    return null;
-  },
-);
+  }
+  return null;
+});
 
 /* Utility Functions. */
 
 export async function createView(currentView: View): Promise<void> {
-  const {
-    errors,
-    message,
-    success,
-    view: newView,
-  } = await req.createView(currentView);
+  const { errors, message, success, view: newView } = await req.createView(currentView);
 
   if (success) {
     view.update(() => newView);
@@ -134,9 +113,7 @@ export function createYAxis(): void {
               rows: section.timeline.rows.map(row => {
                 if (row.id === rowId) {
                   const { yAxes } = row;
-                  const [yAxis] = yAxes.sort((a, b) =>
-                    compare(a.id, b.id, false),
-                  );
+                  const [yAxis] = yAxes.sort((a, b) => compare(a.id, b.id, false));
                   const newYAxis: Axis = {
                     color: '#000000',
                     id: yAxis !== undefined ? yAxis.id + 1 : 0,
@@ -178,9 +155,7 @@ export function deleteLayer(): void {
               ...section.timeline,
               rows: section.timeline.rows.map(row => {
                 if (row.id === rowId) {
-                  const layers = row.layers.filter(
-                    layer => layer.id !== layerId,
-                  );
+                  const layers = row.layers.filter(layer => layer.id !== layerId);
                   if (layers.length) selectedLayerId.set(layers[0].id);
                   return {
                     ...row,
@@ -337,12 +312,7 @@ export function updateLayer(prop: string, value: any) {
   }));
 }
 
-export function updateRow(
-  prop: string,
-  value: any,
-  timelineId?: number,
-  rowId?: number,
-) {
+export function updateRow(prop: string, value: any, timelineId?: number, rowId?: number) {
   timelineId = timelineId ?? get<number | null>(selectedTimelineId);
   rowId = rowId ?? get<number | null>(selectedRowId);
 

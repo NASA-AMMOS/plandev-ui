@@ -20,12 +20,4 @@
   }
 </script>
 
-<svelte:component
-  this={component}
-  {disabled}
-  {formParameter}
-  {labelColumnWidth}
-  {level}
-  {levelPadding}
-  on:change
-/>
+<svelte:component this={component} {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />

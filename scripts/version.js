@@ -31,11 +31,7 @@ function main() {
     name: `${packageName}-${packageVersion}`,
   };
 
-  writeFileSync(
-    'static/version.json',
-    `${JSON.stringify(version, null, 2)}\n`,
-    { encoding: 'utf8' },
-  );
+  writeFileSync('static/version.json', `${JSON.stringify(version, null, 2)}\n`, { encoding: 'utf8' });
 }
 
 main();

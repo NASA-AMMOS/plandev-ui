@@ -92,13 +92,7 @@
 
   <fieldset>
     <label for="color"> Axis Color </label>
-    <input
-      class="w-100"
-      name="color"
-      type="color"
-      value={axis.color}
-      on:input|stopPropagation={updateAxis}
-    />
+    <input class="w-100" name="color" type="color" value={axis.color} on:input|stopPropagation={updateAxis} />
   </fieldset>
 </CssGrid>
 

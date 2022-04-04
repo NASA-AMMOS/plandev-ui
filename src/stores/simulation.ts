@@ -20,11 +20,7 @@ export const modelParametersMap: Writable<ParametersMap> = writable({});
 export const simulation: Writable<Simulation | null> = writable(null);
 
 export const simulationStatus = (() => {
-  const {
-    set,
-    subscribe,
-    update: updateStore,
-  } = writable<Status>(Status.Clean);
+  const { set, subscribe, update: updateStore } = writable<Status>(Status.Clean);
 
   return {
     set,
@@ -46,11 +42,7 @@ export const simulationStatus = (() => {
   };
 })();
 
-export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(
-  gql.SUB_SIM_TEMPLATES,
-  { modelId: -1 },
-  [],
-);
+export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(gql.SUB_SIM_TEMPLATES, { modelId: -1 }, []);
 
 /* Action Functions. */
 
@@ -78,12 +70,7 @@ export const simulationActions = {
       if (status === 'complete') {
         activitiesMap.set(newActivitiesMap);
         resources.set(newResources);
-        violations.set(
-          offsetViolationWindows(
-            constraintViolations,
-            get<number>(planStartTimeMs),
-          ),
-        );
+        violations.set(offsetViolationWindows(constraintViolations, get<number>(planStartTimeMs)));
         simulationStatus.update(Status.Complete);
         return;
       } else if (status === 'failed') {
@@ -102,10 +89,7 @@ export const simulationActions = {
     simulationStatus.update(Status.Incomplete);
   },
 
-  async updateSimulation(
-    newSimulation: Simulation,
-    newFiles: File[] = [],
-  ): Promise<void> {
+  async updateSimulation(newSimulation: Simulation, newFiles: File[] = []): Promise<void> {
     try {
       const updatedSimulation = await req.updateSimulation(newSimulation);
       await req.uploadFiles(newFiles);

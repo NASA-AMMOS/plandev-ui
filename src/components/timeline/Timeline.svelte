@@ -12,11 +12,7 @@
   import { violations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
-  import {
-    setSelectedTimeline,
-    updateRow,
-    updateTimeline,
-  } from '../../stores/views';
+  import { setSelectedTimeline, updateRow, updateTimeline } from '../../stores/views';
   import { selectedTimelinePanel } from '../../stores/panels';
 
   export let containerSize: number;
@@ -38,10 +34,7 @@
   $: drawWidth = clientWidth > 0 ? clientWidth - marginLeft - marginRight : 0;
   $: setRowsMaxHeight(timelineDiv, xAxisDiv, containerSize);
   $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
-  $: xDomainView = [
-    new Date($viewTimeRange.start),
-    new Date($viewTimeRange.end),
-  ];
+  $: xDomainView = [new Date($viewTimeRange.start), new Date($viewTimeRange.end)];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
   $: xTicksView = xScaleView.ticks().map((date: Date) => {
@@ -99,9 +92,7 @@
     $viewTimeRange = $maxTimeRange;
   }
 
-  function onUpdateRowHeight(
-    event: CustomEvent<{ newHeight: number; rowId: number }>,
-  ) {
+  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (newHeight < MAX_CANVAS_SIZE) {
       updateRow('height', newHeight, id, rowId);
@@ -127,12 +118,7 @@
   }
 </script>
 
-<div
-  bind:this={timelineDiv}
-  bind:clientWidth
-  class="timeline"
-  id={`timeline-${id}`}
->
+<div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${id}`}>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
       constraintViolations={$violations}

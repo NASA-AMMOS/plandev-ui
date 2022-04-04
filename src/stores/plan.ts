@@ -6,15 +6,12 @@ import { derived, writable } from 'svelte/store';
 
 export const plan: Writable<Plan | null> = writable(null);
 
-export const activityTypesMap: Readable<ActivityTypesMap> = derived(
-  plan,
-  $plan => {
-    if ($plan) {
-      return keyBy($plan.model.activityTypes, 'name');
-    }
-    return {};
-  },
-);
+export const activityTypesMap: Readable<ActivityTypesMap> = derived(plan, $plan => {
+  if ($plan) {
+    return keyBy($plan.model.activityTypes, 'name');
+  }
+  return {};
+});
 
 export const planEndTimeMs: Writable<number> = writable(0);
 

@@ -125,13 +125,7 @@
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
-      const points = searchQuadtreePoint<LinePoint>(
-        quadtree,
-        x,
-        y,
-        pointRadius,
-        visiblePointsById,
-      );
+      const points = searchQuadtreePoint<LinePoint>(quadtree, x, y, pointRadius, visiblePointsById);
       dispatch('mouseOver', { e, layerId: id, points });
     }
   }
@@ -142,10 +136,7 @@
     }
   }
 
-  function resourcesToLinePoints(
-    resources: Resource[],
-    radius: number,
-  ): LinePoint[] {
+  function resourcesToLinePoints(resources: Resource[], radius: number): LinePoint[] {
     const points: LinePoint[] = [];
     let id = 0;
 
@@ -173,9 +164,7 @@
         } else if (
           schema.type === 'int' ||
           schema.type === 'real' ||
-          (schema.type === 'struct' &&
-            schema?.items?.rate?.type === 'real' &&
-            schema?.items?.initial?.type === 'real')
+          (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
         ) {
           for (let i = 0; i < values.length; ++i) {
             const value = values[i];

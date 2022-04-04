@@ -13,31 +13,15 @@
   let levelPadding: number = 20;
 
   $: labelColumnWidth = clientWidth * 0.65;
-  $: sortedFormParameters = formParameters.sort((a, b) =>
-    compare(a.name, b.name),
-  );
+  $: sortedFormParameters = formParameters.sort((a, b) => compare(a.name, b.name));
 </script>
 
 {#each sortedFormParameters as formParameter (formParameter.name)}
   <div bind:clientWidth class="parameter">
     {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}
-      <ParameterRec
-        {disabled}
-        {formParameter}
-        {labelColumnWidth}
-        {level}
-        {levelPadding}
-        on:change
-      />
+      <ParameterRec {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
     {:else}
-      <ParameterBase
-        {disabled}
-        {formParameter}
-        {labelColumnWidth}
-        {level}
-        {levelPadding}
-        on:change
-      />
+      <ParameterBase {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
     {/if}
   </div>
 {/each}

@@ -6,10 +6,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
-  import {
-    constraintActions,
-    selectedConstraint,
-  } from '../../stores/constraints';
+  import { constraintActions, selectedConstraint } from '../../stores/constraints';
 
   let constraintType: ConstraintType = 'model';
   let debounce: NodeJS.Timeout;
@@ -24,11 +21,7 @@
   onMount(() => {
     if ($selectedConstraint) {
       constraintType = $selectedConstraint.model_id ? 'model' : 'plan';
-      definition = JSON.stringify(
-        JSON.parse($selectedConstraint.definition),
-        null,
-        2,
-      );
+      definition = JSON.stringify(JSON.parse($selectedConstraint.definition), null, 2);
       description = $selectedConstraint.description;
       name = $selectedConstraint.name;
       summary = $selectedConstraint.summary;
@@ -41,9 +34,7 @@
     }
   });
 
-  async function onDidChangeModelContent(
-    event: CustomEvent<{ value: string }>,
-  ) {
+  async function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
     const { value } = detail;
 
@@ -75,13 +66,7 @@
         summary,
       );
     } else {
-      constraintActions.createConstraint(
-        constraintType,
-        definition,
-        description,
-        name,
-        summary,
-      );
+      constraintActions.createConstraint(constraintType, definition, description, name, summary);
     }
   }
 </script>
@@ -89,11 +74,7 @@
 <Panel>
   <svelte:fragment slot="header">
     <Chip>Constraint Editor</Chip>
-    <button
-      class="st-button secondary ellipsis"
-      disabled={!valid}
-      on:click={() => saveConstraint()}
-    >
+    <button class="st-button secondary ellipsis" disabled={!valid} on:click={() => saveConstraint()}>
       <i class="bi bi-save" style="font-size: 0.8rem" />
       Save Constraint
     </button>
@@ -105,11 +86,7 @@
       <div class="p-1">
         <fieldset>
           <label for="type">Type</label>
-          <select
-            bind:value={constraintType}
-            class="st-select w-100"
-            name="type"
-          >
+          <select bind:value={constraintType} class="st-select w-100" name="type">
             <option value="model">Model</option>
             <option value="plan">Plan</option>
           </select>
@@ -117,33 +94,17 @@
 
         <fieldset>
           <label for="name">Name</label>
-          <input
-            bind:value={name}
-            autocomplete="off"
-            class="st-input w-100"
-            name="name"
-            required
-          />
+          <input bind:value={name} autocomplete="off" class="st-input w-100" name="name" required />
         </fieldset>
 
         <fieldset>
           <label for="description">Description</label>
-          <input
-            bind:value={description}
-            autocomplete="off"
-            class="st-input w-100"
-            name="description"
-          />
+          <input bind:value={description} autocomplete="off" class="st-input w-100" name="description" />
         </fieldset>
 
         <fieldset>
           <label for="summary">Summary</label>
-          <input
-            bind:value={summary}
-            autocomplete="off"
-            class="st-input w-100"
-            name="summary"
-          />
+          <input bind:value={summary} autocomplete="off" class="st-input w-100" name="summary" />
         </fieldset>
       </div>
     </details>

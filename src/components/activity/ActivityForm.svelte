@@ -65,11 +65,7 @@
     req
       .getEffectiveActivityArguments(model.id, activityType.name, argumentsMap)
       .then(({ arguments: defaultArgumentsMap }) => {
-        formParameters = getFormParameters(
-          activityType.parameters,
-          argumentsMap,
-          defaultArgumentsMap,
-        );
+        formParameters = getFormParameters(activityType.parameters, argumentsMap, defaultArgumentsMap);
       });
   }
   $: validateArguments(argumentsMap);
@@ -86,15 +82,9 @@
     }
   }
 
-  async function validateArguments(
-    newArguments: ArgumentsMap | null,
-  ): Promise<void> {
+  async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments) {
-      const { errors, success } = await req.validateActivityArguments(
-        type,
-        model.id,
-        newArguments,
-      );
+      const { errors, success } = await req.validateActivityArguments(type, model.id, newArguments);
 
       // TODO: Update to account for errors returned for individual arguments.
       if (!success) {
@@ -133,12 +123,7 @@
       <fieldset>
         <label for="activity-type">Activity Type</label>
         <Input>
-          <input
-            bind:value={type}
-            class="st-input w-100"
-            disabled
-            name="activity-type"
-          />
+          <input bind:value={type} class="st-input w-100" disabled name="activity-type" />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -146,12 +131,7 @@
       <fieldset>
         <label for="parent-id">Parent ID</label>
         <Input>
-          <input
-            bind:value={parentId}
-            class="st-input w-100"
-            disabled
-            name="parent-id"
-          />
+          <input bind:value={parentId} class="st-input w-100" disabled name="parent-id" />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -159,24 +139,14 @@
       <fieldset>
         <label for="duration">Duration</label>
         <Input>
-          <input
-            bind:value={duration}
-            class="st-input w-100"
-            disabled
-            name="duration"
-          />
+          <input bind:value={duration} class="st-input w-100" disabled name="duration" />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
 
       <Field field={startTimeField} on:valid={onUpdateStartTime}>
         <label for="start-time" slot="label">Start Time</label>
-        <input
-          autocomplete="off"
-          class="st-input w-100"
-          disabled={isChild}
-          name="start-time"
-        />
+        <input autocomplete="off" class="st-input w-100" disabled={isChild} name="start-time" />
       </Field>
 
       <fieldset>
@@ -190,11 +160,7 @@
             </span>
           </summary>
           <div class="mt-2">
-            <Parameters
-              disabled={isChild}
-              {formParameters}
-              on:change={onChangeFormParameters}
-            />
+            <Parameters disabled={isChild} {formParameters} on:change={onChangeFormParameters} />
           </div>
         </details>
       </fieldset>

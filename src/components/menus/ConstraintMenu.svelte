@@ -4,11 +4,7 @@
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
   import { selectedConstraint } from '../../stores/constraints';
-  import {
-    constraintEditorPanel,
-    constraintListPanel,
-    constraintViolationsPanel,
-  } from '../../stores/panels';
+  import { constraintEditorPanel, constraintListPanel, constraintViolationsPanel } from '../../stores/panels';
 
   export let constraintMenu: Menu;
 </script>
