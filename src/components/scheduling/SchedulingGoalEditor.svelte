@@ -38,8 +38,14 @@
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
-    typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'] });
-    typescriptDefaults.setExtraLibs([{ content: $schedulingDslTypes }]);
+    typescriptDefaults.setCompilerOptions({
+      ...options,
+      lib: ['ESNext'],
+      strictNullChecks: true,
+    });
+    typescriptDefaults.setExtraLibs([
+      { content: $schedulingDslTypes, filePath: 'aerie-scheduling.d.ts' },
+    ]);
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
