@@ -39,7 +39,7 @@
     </MenuItem>
     <MenuItem on:click={() => window.open(`${$env.GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
       <i class="si si-graphql" />
-      Graph QL Playground
+      GraphQL Playground
     </MenuItem>
     <MenuItem on:click={() => logout()}>
       <i class="bi bi-box-arrow-right" />
