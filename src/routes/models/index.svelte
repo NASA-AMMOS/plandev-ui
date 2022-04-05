@@ -28,7 +28,7 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import TopBar from '../../components/ui/TopBar.svelte';
+  import Nav from '../../components/app/Nav.svelte';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import req from '../../utilities/requests';
@@ -71,8 +71,10 @@
   }
 </script>
 
-<CssGrid rows="32px auto">
-  <TopBar>Models</TopBar>
+<CssGrid rows="42px auto">
+  <Nav>
+    <span slot="title">Models</span>
+  </Nav>
 
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>

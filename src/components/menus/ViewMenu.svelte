@@ -13,7 +13,7 @@
 
   let saveAsViewModal: Modal;
 
-  $: saveViewDisabled = $view?.meta?.owner !== $session.user.id;
+  $: saveViewDisabled = $view?.meta?.owner !== $session?.user?.id;
 
   function saveAsView(event: CustomEvent<string>) {
     const { detail: name } = event;
@@ -28,7 +28,7 @@
   }
 </script>
 
-<Menu bind:this={viewMenu}>
+<Menu right="0px" top="30px" bind:this={viewMenu}>
   <MenuItem on:click={() => viewEditorPanel.show()}>
     <i class="bi bi-pencil" />
     Edit View

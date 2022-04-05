@@ -9,7 +9,7 @@
   export let constraintMenu: Menu;
 </script>
 
-<Menu bind:this={constraintMenu}>
+<Menu right="0px" top="30px" bind:this={constraintMenu}>
   <MenuItem
     on:click={() => {
       $selectedConstraint = null;

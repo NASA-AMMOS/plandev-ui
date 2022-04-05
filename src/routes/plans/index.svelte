@@ -33,7 +33,7 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import Table from '../../components/ui/Table.svelte';
-  import TopBar from '../../components/ui/TopBar.svelte';
+  import Nav from '../../components/app/Nav.svelte';
   import { simulationTemplates } from '../../stores/simulation';
   import { field } from '../../stores/form';
   import { compare, removeQueryParam } from '../../utilities/generic';
@@ -126,8 +126,10 @@
   }
 </script>
 
-<CssGrid rows="32px auto">
-  <TopBar>Plans</TopBar>
+<CssGrid rows="42px auto">
+  <Nav>
+    <span slot="title">Plans</span>
+  </Nav>
 
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>

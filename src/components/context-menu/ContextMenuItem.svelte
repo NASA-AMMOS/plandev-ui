@@ -4,7 +4,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<div class="context-menu-item" on:click={() => dispatch('click')}>
+<div class="context-menu-item" on:click|preventDefault={() => dispatch('click')}>
   <slot />
 </div>
 

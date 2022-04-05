@@ -46,7 +46,7 @@
   import Split from '../../components/ui/Split.svelte';
   import StatusBadge from '../../components/ui/StatusBadge.svelte';
   import Table from '../../components/ui/Table.svelte';
-  import TopBar from '../../components/ui/TopBar.svelte';
+  import Nav from '../../components/app/Nav.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import ViewManager from '../../components/view/ViewManager.svelte';
   import { activities, activitiesMap, activityActions, selectedActivityId } from '../../stores/activities';
@@ -149,14 +149,15 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<CssGrid rows="32px auto">
-  <TopBar>
-    <div class="header-left">
-      Plan: {initialPlan.name}
+<CssGrid rows="42px auto">
+  <Nav>
+    <span slot="title">{initialPlan.name}</span>
+    <div slot="left">
       <StatusBadge status={$simulationStatus} title="Simulation" />
       <StatusBadge status={$schedulingStatus} title="Scheduling" />
     </div>
-    <div>
+
+    <div slot="right">
       <button
         class="st-button icon header-button"
         on:click={() => simulationActions.runSimulation()}
@@ -219,7 +220,7 @@
         <i class="bi bi-book" />
       </button>
     </div>
-  </TopBar>
+  </Nav>
 
   <Split
     let:initialized={horizontalSplitInitialized}
@@ -326,12 +327,6 @@
   .header-button:hover {
     background-color: transparent;
     color: var(--st-white);
-  }
-
-  .header-left {
-    display: grid;
-    grid-auto-flow: column;
-    gap: 0.5rem;
   }
 
   #left-panel,

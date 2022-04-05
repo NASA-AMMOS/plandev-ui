@@ -17,9 +17,10 @@
   import { onDestroy, onMount } from 'svelte';
 
   export let hideAfterClick: boolean = true;
-  export let right: string = '0px';
+  export let left: string = 'auto';
+  export let right: string = 'auto';
   export let shown = false;
-  export let top: string = '25px';
+  export let top: string = 'auto';
 
   export function hide(): void {
     shown = false;
@@ -59,6 +60,7 @@
 {#if shown}
   <div
     class="menu"
+    style:left
     style:right
     style:top
     transition:fade={{ duration: 50 }}
@@ -73,16 +75,15 @@
   .menu {
     background: #fff;
     border-radius: 4px;
-    border: 1px solid var(--st-gray-30);
+    box-shadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #0000001f;
     color: var(--st-primary-text-color);
     display: flex;
     flex-direction: column;
     font-size: 1rem;
-    min-height: 64px;
+    min-height: 32px;
     min-width: 150px;
     outline: 0;
     position: absolute;
-    right: 0;
     z-index: 100;
   }
 </style>

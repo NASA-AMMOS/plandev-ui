@@ -9,14 +9,7 @@
   };
 </script>
 
-<script lang="ts">
-  import Nav from '../components/ui/Nav.svelte';
-
-  let navWidth: number = 50;
-</script>
-
-<div style="grid-template-columns: {navWidth}px auto">
-  <Nav width={navWidth} />
+<div>
   <slot />
 </div>
 

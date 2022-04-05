@@ -8,21 +8,23 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<div class="menu-item" class:disabled on:click={() => dispatch('click')}>
+<div class="menu-item" class:disabled on:click|preventDefault={() => dispatch('click')}>
   <slot />
 </div>
 
 <style>
   .menu-item {
+    align-items: center;
     display: grid;
     font-size: 0.8rem;
     font-weight: 300;
-    gap: 0.5rem;
+    gap: 0.2rem;
     grid-template-columns: 1rem auto;
     justify-content: flex-start;
     overflow: hidden;
-    padding: 10px;
+    padding: 8px;
     text-overflow: ellipsis;
+    user-select: none;
     white-space: nowrap;
     width: 100%;
   }
