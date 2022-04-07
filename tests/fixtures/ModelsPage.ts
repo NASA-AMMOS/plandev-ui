@@ -12,11 +12,11 @@ export class ModelsPage {
   readonly confirmModal: Locator;
   readonly confirmModalDeleteButton: Locator;
   readonly createButton: Locator;
-  readonly deleteButton: Locator;
   readonly inputFile: Locator;
   readonly inputName: Locator;
   readonly inputVersion: Locator;
-  readonly modelTableRow: Locator;
+  readonly tableRow: Locator;
+  readonly tableRowDeleteButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -30,33 +30,40 @@ export class ModelsPage {
     this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
     this.confirmModalDeleteButton = page.locator(`.modal button:has-text("Delete")`);
     this.createButton = page.locator('text=Create');
-    this.deleteButton = page.locator(`tr:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`);
     this.inputFile = page.locator('input[name="file"]');
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
-    this.modelTableRow = page.locator(`tr:has-text("${this.modelName}")`);
+    this.tableRow = page.locator(`tr:has-text("${this.modelName}")`);
+    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`);
   }
 
   async createModel() {
-    await expect(this.modelTableRow).not.toBeVisible();
+    await expect(this.tableRow).not.toBeVisible();
     await this.inputName.fill(this.modelName);
     await this.inputVersion.fill(this.modelVersion);
     await this.inputFile.setInputFiles(this.jarPath);
     await this.createButton.click();
-    await expect(this.modelTableRow).toBeVisible();
+    await this.tableRow.waitFor({ state: 'attached' });
+    await expect(this.tableRow).toBeVisible();
   }
 
   async deleteModel() {
-    await expect(this.modelTableRow).toBeVisible();
-    await expect(this.deleteButton).not.toBeVisible();
-    await this.modelTableRow.hover();
-    await expect(this.deleteButton).toBeVisible();
+    await expect(this.tableRow).toBeVisible();
+    await expect(this.tableRowDeleteButton).not.toBeVisible();
+
+    await this.tableRow.hover();
+    await this.tableRowDeleteButton.waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButton).toBeVisible();
+
     await expect(this.confirmModal).not.toBeVisible();
-    await this.deleteButton.click();
+    await this.tableRowDeleteButton.click();
+    await this.confirmModal.waitFor({ state: 'attached' });
     await expect(this.confirmModal).toBeVisible();
+
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await expect(this.modelTableRow).not.toBeVisible();
+    await this.tableRow.waitFor({ state: 'detached' });
+    await expect(this.tableRow).not.toBeVisible();
   }
 
   async fillInputFile() {
