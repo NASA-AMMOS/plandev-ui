@@ -21,6 +21,8 @@
     "prebuild": "npm run version",
     "preview": "svelte-kit preview",
     "test": "playwright test",
+    "test:codegen": "playwright codegen http://localhost:3000",
+    "test:debug": "PWDEBUG=1 playwright test",
     "version": "node ./scripts/version.js"
   },
   "devDependencies": {
@@ -70,6 +72,7 @@
     "tippy.js": "^6.3.7",
     "toastify-js": "^1.11.2",
     "tslib": "^2.3.1",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.3",
+    "unique-names-generator": "^4.7.1"
   }
 }

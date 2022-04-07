@@ -12,9 +12,10 @@ const config = {
     browserName: 'chromium',
   },
   webServer: {
-    command: 'ORIGIN=http://localhost:3000 node build',
+    command: 'node build',
     env: {
       AUTH_TYPE: 'none',
+      ORIGIN: 'http://localhost:3000',
     },
     port: 3000,
   },
