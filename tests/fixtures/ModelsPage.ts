@@ -28,7 +28,7 @@ export class ModelsPage {
 
     this.alertError = page.locator('.alert-error');
     this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
-    this.confirmModalDeleteButton = page.locator(`.modal button:has-text("Delete")`);
+    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
     this.createButton = page.locator('text=Create');
     this.inputFile = page.locator('input[name="file"]');
     this.inputName = page.locator('input[name="name"]');
