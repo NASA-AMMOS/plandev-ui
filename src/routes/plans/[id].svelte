@@ -149,7 +149,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<CssGrid rows="42px auto">
+<CssGrid class="h-100 w-100" rows="42px auto">
   <Nav>
     <span slot="title">{initialPlan.name}</span>
     <div slot="left">
