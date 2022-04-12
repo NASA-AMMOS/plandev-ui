@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { env as envStore, user as userStore, version as versionStore } from '../stores/app';
+import { user as userStore } from '../stores/app';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
@@ -645,25 +645,6 @@ const req = {
         message: 'An unexpected error occurred',
         success: false,
       };
-    }
-  },
-
-  async setAppStores(fetch: Fetch, session: App.Session): Promise<void> {
-    try {
-      // Set env store.
-      const envResponse = await fetch('/env');
-      const env = await envResponse.json();
-      envStore.set(env);
-
-      // Set version store.
-      const versionResponse = await fetch('/version.json');
-      const version = await versionResponse.json();
-      versionStore.set(version);
-
-      // Set user store.
-      userStore.set(session.user);
-    } catch (e) {
-      console.log(e);
     }
   },
 
