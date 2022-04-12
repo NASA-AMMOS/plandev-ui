@@ -225,7 +225,7 @@
 
       for (const point of $activityPoints) {
         const r = new RegExp(filter?.type);
-        const includeActivity = r.test(point.type);
+        const includeActivity = r.test(point?.label?.text);
         const isParentActivity = !point.parent;
 
         if (
