@@ -23,6 +23,7 @@
     "test": "playwright test",
     "test:codegen": "playwright codegen http://localhost:3000",
     "test:debug": "PWDEBUG=1 playwright test",
+    "test:dev": "AUTH_TYPE=none ORIGIN=http://localhost:3000 node build",
     "version": "node ./scripts/version.js"
   },
   "devDependencies": {

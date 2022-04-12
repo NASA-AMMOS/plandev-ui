@@ -39,9 +39,9 @@ export class ModelsPage {
 
   async createModel() {
     await expect(this.tableRow).not.toBeVisible();
-    await this.inputName.fill(this.modelName);
-    await this.inputVersion.fill(this.modelVersion);
-    await this.inputFile.setInputFiles(this.jarPath);
+    await this.fillInputName();
+    await this.fillInputVersion();
+    await this.fillInputFile();
     await this.createButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
     await expect(this.tableRow).toBeVisible();
@@ -67,15 +67,21 @@ export class ModelsPage {
   }
 
   async fillInputFile() {
+    await this.inputFile.focus();
     await this.inputFile.setInputFiles(this.jarPath);
+    await this.inputFile.evaluate(e => e.blur());
   }
 
   async fillInputName() {
+    await this.inputName.focus();
     await this.inputName.fill(this.modelName);
+    await this.inputName.evaluate(e => e.blur());
   }
 
   async fillInputVersion() {
+    await this.inputVersion.focus();
     await this.inputVersion.fill(this.modelVersion);
+    await this.inputVersion.evaluate(e => e.blur());
   }
 
   async goto() {

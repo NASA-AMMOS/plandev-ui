@@ -86,4 +86,9 @@ test.describe('Plans Page', () => {
     await plansPage.fillInputEndTime();
     await expect(plansPage.createButton).not.toBeDisabled();
   });
+
+  test('Create and delete plan', async ({ modelsPage, plansPage }) => {
+    await plansPage.createPlan(modelsPage.modelName);
+    await plansPage.deletePlan();
+  });
 });
