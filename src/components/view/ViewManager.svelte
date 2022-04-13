@@ -73,10 +73,7 @@
             <button
               class="st-button icon"
               on:click|stopPropagation={() => confirmDeleteViewModal.show({ viewId: currentRow.id })}
-              use:tooltip={{
-                content: 'Delete View',
-                placement: 'bottom',
-              }}
+              use:tooltip={{ content: 'Delete View', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
             </button>

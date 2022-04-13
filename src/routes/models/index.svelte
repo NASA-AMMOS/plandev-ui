@@ -142,10 +142,7 @@
               class="st-button icon"
               slot="actions-cell"
               on:click|stopPropagation={() => confirmDeleteModelModal.show(currentRow)}
-              use:tooltip={{
-                content: 'Delete Model',
-                placement: 'bottom',
-              }}
+              use:tooltip={{ content: 'Delete Model', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
             </button>

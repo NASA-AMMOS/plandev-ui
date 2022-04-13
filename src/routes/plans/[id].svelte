@@ -161,10 +161,7 @@
       <button
         class="st-button icon header-button"
         on:click={() => simulationActions.runSimulation()}
-        use:tooltip={{
-          content: 'Run Simulation',
-          placement: 'bottom',
-        }}
+        use:tooltip={{ content: 'Run Simulation', placement: 'bottom' }}
       >
         <i class="bi bi-play-btn" />
       </button>
@@ -172,10 +169,7 @@
       <button
         class="st-button icon header-button"
         on:click={() => ($schedulingPanel = !$schedulingPanel)}
-        use:tooltip={{
-          content: 'Scheduling',
-          placement: 'bottom',
-        }}
+        use:tooltip={{ content: 'Scheduling', placement: 'bottom' }}
       >
         <i class="bi bi-calendar2-week" />
       </button>
@@ -183,10 +177,7 @@
       <button
         class="st-button icon header-button"
         on:click={() => simulationConfigurationPanel.show()}
-        use:tooltip={{
-          content: 'Simulation Configuration',
-          placement: 'bottom',
-        }}
+        use:tooltip={{ content: 'Simulation Configuration', placement: 'bottom' }}
       >
         <i class="bi bi-sliders" />
       </button>
@@ -212,10 +203,7 @@
       <button
         class="st-button icon header-button"
         on:click={() => activityDictionaryPanel.show()}
-        use:tooltip={{
-          content: 'Activity Dictionary',
-          placement: 'bottom',
-        }}
+        use:tooltip={{ content: 'Activity Dictionary', placement: 'bottom' }}
       >
         <i class="bi bi-book" />
       </button>

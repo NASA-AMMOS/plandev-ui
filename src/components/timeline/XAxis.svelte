@@ -32,10 +32,7 @@
         <text
           class="reset-view-time-range-icon"
           on:click={() => dispatch('resetViewTimeRange')}
-          use:tooltip={{
-            content: 'Reset Time',
-            placement: 'left',
-          }}
+          use:tooltip={{ content: 'Reset Time', placement: 'left' }}
         >
           &#xf117;
         </text>

@@ -29,20 +29,14 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
-                  use:tooltip={{
-                    content: 'Edit Constraint',
-                    placement: 'left',
-                  }}
+                  use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />
                 </button>
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
-                  use:tooltip={{
-                    content: 'Delete Constraint',
-                    placement: 'left',
-                  }}
+                  use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-trash" />
                 </button>
@@ -66,20 +60,14 @@
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
-                  use:tooltip={{
-                    content: 'Edit Constraint',
-                    placement: 'left',
-                  }}
+                  use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />
                 </button>
                 <button
                   class="st-button icon"
                   on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
-                  use:tooltip={{
-                    content: 'Delete Constraint',
-                    placement: 'left',
-                  }}
+                  use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-trash" />
                 </button>
