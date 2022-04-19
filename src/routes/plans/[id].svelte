@@ -29,7 +29,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { keyBy } from 'lodash-es';
-  import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
+  import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
   import ActivityTable from '../../components/activity/ActivityTable.svelte';
   import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
@@ -53,7 +53,7 @@
   import { activitiesMap, activityActions } from '../../stores/activities';
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import {
-    activityDictionaryPanel,
+    activityTypesPanel,
     constraintEditorPanel,
     constraintListPanel,
     constraintViolationsPanel,
@@ -203,8 +203,8 @@
 
       <button
         class="st-button icon header-button"
-        on:click={() => activityDictionaryPanel.show()}
-        use:tooltip={{ content: 'Activity Dictionary', placement: 'bottom' }}
+        on:click={() => activityTypesPanel.show()}
+        use:tooltip={{ content: 'Activity Types', placement: 'bottom' }}
       >
         <i class="bi bi-book" />
       </button>
@@ -265,8 +265,8 @@
 
     <div id="right-panel">
       {#if horizontalSplitInitialized}
-        {#if $activityDictionaryPanel.visible}
-          <ActivityDictionary />
+        {#if $activityTypesPanel.visible}
+          <ActivityTypes />
         {:else if $constraintEditorPanel.visible}
           <ConstraintEditor />
         {:else if $constraintListPanel.visible}

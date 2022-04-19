@@ -35,7 +35,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Activity Dictionary</Chip>
+    <Chip>Activity Types</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">

@@ -13,7 +13,7 @@ export const panelActions = {
   },
 
   hideAll(): boolean {
-    activityDictionaryPanel.hide();
+    activityTypesPanel.hide();
     constraintEditorPanel.hide();
     constraintListPanel.hide();
     constraintViolationsPanel.hide();
@@ -26,13 +26,13 @@ export const panelActions = {
   },
 
   reset(): void {
-    activityDictionaryPanel.show();
+    activityTypesPanel.show();
   },
 };
 
 /** Stores. */
 
-export const activityDictionaryPanel = panelActions.createPanel(true);
+export const activityTypesPanel = panelActions.createPanel(true);
 export const constraintEditorPanel = panelActions.createPanel(false);
 export const constraintListPanel = panelActions.createPanel(false);
 export const constraintViolationsPanel = panelActions.createPanel(false);
