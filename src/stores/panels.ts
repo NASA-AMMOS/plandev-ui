@@ -19,7 +19,7 @@ export const panelActions = {
     constraintViolationsPanel.hide();
     selectedActivityPanel.hide();
     selectedTimelinePanel.hide();
-    simulationConfigurationPanel.hide();
+    simulationPanel.hide();
     viewEditorPanel.hide();
     viewManagerPanel.hide();
     return true;
@@ -40,6 +40,6 @@ export const schedulingPanel = writable<boolean>(false);
 export const schedulingPanelEditor = writable<boolean>(false);
 export const selectedActivityPanel = panelActions.createPanel(false);
 export const selectedTimelinePanel = panelActions.createPanel(false);
-export const simulationConfigurationPanel = panelActions.createPanel(false);
+export const simulationPanel = panelActions.createPanel(false);
 export const viewEditorPanel = panelActions.createPanel(false);
 export const viewManagerPanel = panelActions.createPanel(false);

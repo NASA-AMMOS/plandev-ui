@@ -59,7 +59,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Simulation Configuration</Chip>
+    <Chip>Simulation</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -94,7 +94,7 @@
         {#if formParameters.length}
           <Parameters {formParameters} on:change={onChangeFormParameters} />
         {:else}
-          <div class="p-1">No simulation configuration found</div>
+          <div class="p-1">No simulation arguments found</div>
         {/if}
       </div>
     </details>

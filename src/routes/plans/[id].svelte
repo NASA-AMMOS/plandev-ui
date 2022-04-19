@@ -34,7 +34,7 @@
   import ActivityTable from '../../components/activity/ActivityTable.svelte';
   import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
   import ViewMenu from '../../components/menus/ViewMenu.svelte';
-  import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
+  import Simulation from '../../components/simulation/Simulation.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
@@ -62,7 +62,7 @@
     schedulingPanelEditor,
     selectedActivityPanel,
     selectedTimelinePanel,
-    simulationConfigurationPanel,
+    simulationPanel,
     viewEditorPanel,
     viewManagerPanel,
   } from '../../stores/panels';
@@ -177,8 +177,8 @@
 
       <button
         class="st-button icon header-button"
-        on:click={() => simulationConfigurationPanel.show()}
-        use:tooltip={{ content: 'Simulation Configuration', placement: 'bottom' }}
+        on:click={() => simulationPanel.show()}
+        use:tooltip={{ content: 'Simulation', placement: 'bottom' }}
       >
         <i class="bi bi-sliders" />
       </button>
@@ -277,8 +277,8 @@
           <ActivityForm />
         {:else if $selectedTimelinePanel.visible}
           <TimelineForm />
-        {:else if $simulationConfigurationPanel.visible}
-          <SimulationConfiguration />
+        {:else if $simulationPanel.visible}
+          <Simulation />
         {:else if $viewEditorPanel.visible}
           <ViewEditor />
         {:else if $viewManagerPanel.visible}
