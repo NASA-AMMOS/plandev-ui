@@ -14,7 +14,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Constraint List</Chip>
+    <Chip>Constraints</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">

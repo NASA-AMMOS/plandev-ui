@@ -38,7 +38,7 @@
   import Timeline from '../../components/timeline/Timeline.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
-  import ConstraintList from '../../components/constraint/ConstraintList.svelte';
+  import Constraints from '../../components/constraint/Constraints.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import type Menu from '../../components/menus/Menu.svelte';
   import SchedulingGoalEditor from '../../components/scheduling/SchedulingGoalEditor.svelte';
@@ -55,7 +55,7 @@
   import {
     activityTypesPanel,
     constraintEditorPanel,
-    constraintListPanel,
+    constraintsPanel,
     constraintViolationsPanel,
     panelActions,
     schedulingPanel,
@@ -269,8 +269,8 @@
           <ActivityTypes />
         {:else if $constraintEditorPanel.visible}
           <ConstraintEditor />
-        {:else if $constraintListPanel.visible}
-          <ConstraintList />
+        {:else if $constraintsPanel.visible}
+          <Constraints />
         {:else if $constraintViolationsPanel.visible}
           <ConstraintViolations />
         {:else if $selectedActivityPanel.visible}
