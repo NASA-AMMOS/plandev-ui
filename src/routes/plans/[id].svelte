@@ -31,6 +31,7 @@
   import { keyBy } from 'lodash-es';
   import ActivityDictionary from '../../components/activity/ActivityDictionary.svelte';
   import ActivityForm from '../../components/activity/ActivityForm.svelte';
+  import ActivityTable from '../../components/activity/ActivityTable.svelte';
   import ConstraintMenu from '../../components/menus/ConstraintMenu.svelte';
   import ViewMenu from '../../components/menus/ViewMenu.svelte';
   import SimulationConfiguration from '../../components/simulation/SimulationConfiguration.svelte';
@@ -43,13 +44,13 @@
   import SchedulingGoalEditor from '../../components/scheduling/SchedulingGoalEditor.svelte';
   import SchedulingGoalList from '../../components/scheduling/SchedulingGoalList.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import IFrame from '../../components/ui/IFrame.svelte';
   import Split from '../../components/ui/Split.svelte';
   import StatusBadge from '../../components/ui/StatusBadge.svelte';
-  import Table from '../../components/ui/Table.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import ViewManager from '../../components/view/ViewManager.svelte';
-  import { activities, activitiesMap, activityActions, selectedActivityId } from '../../stores/activities';
+  import { activitiesMap, activityActions } from '../../stores/activities';
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import {
     activityDictionaryPanel,
@@ -244,25 +245,9 @@
         <div class="section" id={`section-${section.id}`}>
           {#if horizontalSplitInitialized && verticalSplitInitialized}
             {#if section.iframe}
-              <iframe
-                allow="fullscreen"
-                class="h-100 w-100 border-0"
-                src={section.iframe.src}
-                title="iframe-{section.id}"
-              />
+              <IFrame src={section.iframe.src} title="iframe-{section.id}" />
             {:else if section.table}
-              <Table
-                columnDefs={[
-                  { field: 'id', name: 'ID', sortable: true },
-                  { field: 'type', name: 'Type', sortable: true },
-                  { field: 'startTime', name: 'Start Time', sortable: true },
-                  { field: 'duration', name: 'Duration', sortable: true },
-                ]}
-                rowData={$activities}
-                rowSelectionMode="single"
-                selectedRowId={$selectedActivityId}
-                on:rowClick={({ detail }) => activityActions.selectActivity(detail.id)}
-              />
+              <ActivityTable />
             {:else if section.timeline}
               <Timeline
                 containerSize={$viewSectionSizes[i]}
