@@ -21,7 +21,7 @@ export const panelActions = {
     selectedTimelinePanel.hide();
     simulationPanel.hide();
     viewEditorPanel.hide();
-    viewManagerPanel.hide();
+    viewsPanel.hide();
     return true;
   },
 
@@ -42,4 +42,4 @@ export const selectedActivityPanel = panelActions.createPanel(false);
 export const selectedTimelinePanel = panelActions.createPanel(false);
 export const simulationPanel = panelActions.createPanel(false);
 export const viewEditorPanel = panelActions.createPanel(false);
-export const viewManagerPanel = panelActions.createPanel(false);
+export const viewsPanel = panelActions.createPanel(false);

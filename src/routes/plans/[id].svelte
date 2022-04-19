@@ -49,7 +49,7 @@
   import StatusBadge from '../../components/ui/StatusBadge.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
-  import ViewManager from '../../components/view/ViewManager.svelte';
+  import Views from '../../components/view/Views.svelte';
   import { activitiesMap, activityActions } from '../../stores/activities';
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import {
@@ -64,7 +64,7 @@
     selectedTimelinePanel,
     simulationPanel,
     viewEditorPanel,
-    viewManagerPanel,
+    viewsPanel,
   } from '../../stores/panels';
   import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
   import { resourceActions } from '../../stores/resources';
@@ -281,8 +281,8 @@
           <Simulation />
         {:else if $viewEditorPanel.visible}
           <ViewEditor />
-        {:else if $viewManagerPanel.visible}
-          <ViewManager />
+        {:else if $viewsPanel.visible}
+          <Views />
         {/if}
       {/if}
     </div>

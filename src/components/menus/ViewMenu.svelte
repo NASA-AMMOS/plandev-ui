@@ -6,7 +6,7 @@
   import MenuItem from './MenuItem.svelte';
   import type Modal from '../modals/Modal.svelte';
   import SaveAsViewModal from '../modals/SaveAsViewModal.svelte';
-  import { viewEditorPanel, viewManagerPanel } from '../../stores/panels';
+  import { viewEditorPanel, viewsPanel } from '../../stores/panels';
   import { createView, updateView, view } from '../../stores/views';
 
   export let viewMenu: Menu;
@@ -29,13 +29,13 @@
 </script>
 
 <Menu right="0px" top="30px" bind:this={viewMenu}>
+  <MenuItem on:click={() => viewsPanel.show()}>
+    <i class="bi bi-box-arrow-right" />
+    Views
+  </MenuItem>
   <MenuItem on:click={() => viewEditorPanel.show()}>
     <i class="bi bi-pencil" />
     Edit View
-  </MenuItem>
-  <MenuItem on:click={() => viewManagerPanel.show()}>
-    <i class="bi bi-box-arrow-right" />
-    Manage Views
   </MenuItem>
   <MenuItem on:click={() => saveAsViewModal.show()}>
     <i class="bi bi-save" />

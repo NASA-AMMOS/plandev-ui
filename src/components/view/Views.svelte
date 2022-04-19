@@ -51,7 +51,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Manage Views</Chip>
+    <Chip>Views</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
