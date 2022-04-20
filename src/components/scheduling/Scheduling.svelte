@@ -16,7 +16,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Scheduling Goals</Chip>
+    <Chip>Scheduling</Chip>
     <button class="st-button ellipsis" on:click={() => schedulingActions.runScheduling()}> Schedule & Analyze </button>
   </svelte:fragment>
 

@@ -60,7 +60,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <Chip>Scheduling Goal Editor</Chip>
+    <Chip>Scheduling Editor</Chip>
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={() => saveGoal()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />

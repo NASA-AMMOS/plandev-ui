@@ -41,8 +41,8 @@
   import Constraints from '../../components/constraint/Constraints.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import type Menu from '../../components/menus/Menu.svelte';
-  import SchedulingGoalEditor from '../../components/scheduling/SchedulingGoalEditor.svelte';
-  import SchedulingGoalList from '../../components/scheduling/SchedulingGoalList.svelte';
+  import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
+  import Scheduling from '../../components/scheduling/Scheduling.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import IFrame from '../../components/ui/IFrame.svelte';
   import Split from '../../components/ui/Split.svelte';
@@ -224,11 +224,11 @@
         sizes={$schedulingPanelEditor ? [40, 60] : [100, 0]}
       >
         <div id="top">
-          <SchedulingGoalList />
+          <Scheduling />
         </div>
         {#if $schedulingPanelEditor}
           <div id="bottom">
-            <SchedulingGoalEditor />
+            <SchedulingEditor />
           </div>
         {/if}
       </Split>
