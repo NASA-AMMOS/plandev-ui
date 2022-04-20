@@ -97,21 +97,21 @@
   }
 </script>
 
-{#if $selectedActivity}
-  <Panel padBody={false}>
-    <svelte:fragment slot="header">
-      <Chip>Selected Activity</Chip>
-      <button
-        class="st-button icon"
-        disabled={isChild}
-        on:click|stopPropagation={() => confirmDeleteActivityModal.show()}
-        use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
-      >
-        <i class="bi bi-trash" />
-      </button>
-    </svelte:fragment>
+<Panel padBody={false}>
+  <svelte:fragment slot="header">
+    <Chip>Selected Activity</Chip>
+    <button
+      class="st-button icon"
+      disabled={isChild}
+      on:click|stopPropagation={() => confirmDeleteActivityModal.show()}
+      use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
+    >
+      <i class="bi bi-trash" />
+    </button>
+  </svelte:fragment>
 
-    <svelte:fragment slot="body">
+  <svelte:fragment slot="body">
+    {#if $selectedActivity}
       <fieldset>
         <label for="id">Activity ID</label>
         <Input>
@@ -177,19 +177,19 @@
           </div>
         </details>
       </fieldset>
-    </svelte:fragment>
-  </Panel>
+    {:else}
+      <div class="p-2">No Activity Selected</div>
+    {/if}
+  </svelte:fragment>
+</Panel>
 
-  <ConfirmModal
-    bind:modal={confirmDeleteActivityModal}
-    confirmText="Delete"
-    message="Are you sure you want to delete this activity?"
-    title="Delete Activity"
-    on:confirm={() => activityActions.deleteActivity(id)}
-  />
-{:else}
-  <div class="p-1">No Activity Selected</div>
-{/if}
+<ConfirmModal
+  bind:modal={confirmDeleteActivityModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this activity?"
+  title="Delete Activity"
+  on:confirm={() => activityActions.deleteActivity(id)}
+/>
 
 <style>
   details {
