@@ -58,7 +58,7 @@
   }
 </script>
 
-<Panel padBody={false}>
+<Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
     <Chip>Scheduling Editor</Chip>
     <div class="right">

@@ -1,6 +1,7 @@
 <script lang="ts">
   export let borderLeft: boolean = false;
   export let borderRight: boolean = false;
+  export let overflowYBody: 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' = 'scroll';
   export let padBody: boolean = true;
   export let padHeader: boolean = true;
 </script>
@@ -10,23 +11,18 @@
     <slot name="header" />
   </div>
 
-  <div class="body" class:padBody>
+  <div class="body" class:padBody style="overflow-y: {overflowYBody};">
     <slot name="body" />
   </div>
 </div>
 
 <style>
-  .borderLeft {
-    border-left: 1px solid var(--st-gray-20);
-  }
-
-  .borderRight {
-    border-right: 1px solid var(--st-gray-20);
-  }
-
-  .body,
   .panel {
-    height: calc(100% - 40px);
+    display: grid;
+    grid-template-rows: 40px 100%;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
   }
 
   .header {
@@ -35,8 +31,10 @@
     display: flex;
     gap: 0.5rem;
     justify-content: space-between;
-    height: 40px;
-    width: 100%;
+  }
+
+  .body {
+    height: calc(100% - 40px);
   }
 
   .header :global(i) {
@@ -46,5 +44,13 @@
   .padBody,
   .padHeader {
     padding: 0.5rem;
+  }
+
+  .borderLeft {
+    border-left: 1px solid var(--st-gray-20);
+  }
+
+  .borderRight {
+    border-right: 1px solid var(--st-gray-20);
   }
 </style>

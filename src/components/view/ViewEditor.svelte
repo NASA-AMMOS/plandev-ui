@@ -17,7 +17,7 @@
   }
 </script>
 
-<Panel padBody={false}>
+<Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
     <Chip>Edit View</Chip>
   </svelte:fragment>

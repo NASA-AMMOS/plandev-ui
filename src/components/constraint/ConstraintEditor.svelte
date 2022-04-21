@@ -71,7 +71,7 @@
   }
 </script>
 
-<Panel>
+<Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
     <Chip>Constraint Editor</Chip>
     <button class="st-button secondary ellipsis" disabled={!valid} on:click={() => saveConstraint()}>
