@@ -4,10 +4,10 @@
   import ActivityDecomposition from './ActivityDecomposition.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import Parameters from '../parameters/Parameters.svelte';
-  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import { activityActions, selectedActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
@@ -16,6 +16,8 @@
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
+
+  export let gridId: number;
 
   // Activity vars.
   let argumentsMap: ArgumentsMap | null = null;
@@ -99,7 +101,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <Chip>Selected Activity</Chip>
+    <GridMenu {gridId} title="Selected Activity" />
     <button
       class="st-button icon"
       disabled={isChild || !$selectedActivity}

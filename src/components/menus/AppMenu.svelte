@@ -24,7 +24,7 @@
 
   <i class="bi bi-chevron-down" />
 
-  <Menu left="16px" top="36px" bind:this={appMenu}>
+  <Menu bind:this={appMenu}>
     <MenuItem on:click={() => goto('/plans')} on:pointerenter={() => prefetch('/plans')}>
       <i class="bi bi-calendar-range" />
       Plans
@@ -61,6 +61,7 @@
     cursor: pointer;
     gap: 5px;
     justify-content: center;
+    position: relative;
   }
 
   .app-icon {

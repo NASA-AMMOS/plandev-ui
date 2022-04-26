@@ -1,11 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import req from '../../utilities/requests';
   import { constraintActions, selectedConstraint } from '../../stores/constraints';
+
+  export let gridId: number;
 
   let constraintType: ConstraintType = 'model';
   let debounce: NodeJS.Timeout;
@@ -70,7 +72,7 @@
 
 <Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
-    <Chip>Constraint Editor</Chip>
+    <GridMenu {gridId} title="Constraint Editor" />
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={!valid} on:click={() => saveConstraint()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />
@@ -127,3 +129,11 @@
     />
   </svelte:fragment>
 </Panel>
+
+<style>
+  .right {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+  }
+</style>

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import Table from '../ui/Table.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
@@ -11,6 +11,8 @@
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
+
+  export let gridId: number;
 
   let confirmDeleteViewModal: Modal;
   let views: View[] = [];
@@ -51,7 +53,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Views</Chip>
+    <GridMenu {gridId} title="Views" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

@@ -1,4 +1,4 @@
-<svelte:options immutable={true} />
+<svelte:options immutable={false} />
 
 <script lang="ts">
   import Split from 'split-grid';
@@ -87,33 +87,33 @@
 {:else if grid?.type === 'component'}
   <div class="component">
     {#if grid.componentName === 'ActivityForm'}
-      <ActivityForm />
+      <ActivityForm gridId={grid.id} />
     {:else if grid.componentName === 'ActivityTable'}
       <ActivityTable activityTableId={grid?.activityTableId} />
     {:else if grid.componentName === 'ActivityTypes'}
-      <ActivityTypes />
+      <ActivityTypes gridId={grid.id} />
     {:else if grid.componentName === 'ConstraintEditor'}
-      <ConstraintEditor />
+      <ConstraintEditor gridId={grid.id} />
     {:else if grid.componentName === 'Constraints'}
-      <Constraints />
+      <Constraints gridId={grid.id} />
     {:else if grid.componentName === 'ConstraintViolations'}
-      <ConstraintViolations />
+      <ConstraintViolations gridId={grid.id} />
     {:else if grid.componentName === 'IFrame'}
       <IFrame iFrameId={grid?.iFrameId} />
     {:else if grid.componentName === 'SchedulingEditor'}
-      <SchedulingEditor />
+      <SchedulingEditor gridId={grid.id} />
     {:else if grid.componentName === 'Scheduling'}
-      <Scheduling />
+      <Scheduling gridId={grid.id} />
     {:else if grid.componentName === 'Simulation'}
-      <Simulation />
+      <Simulation gridId={grid.id} />
     {:else if grid.componentName === 'Timeline'}
       <Timeline timelineId={grid?.timelineId} />
     {:else if grid.componentName === 'TimelineForm'}
-      <TimelineForm />
+      <TimelineForm gridId={grid.id} />
     {:else if grid.componentName === 'ViewEditor'}
-      <ViewEditor />
+      <ViewEditor gridId={grid.id} />
     {:else if grid.componentName === 'Views'}
-      <Views />
+      <Views gridId={grid.id} />
     {/if}
   </div>
 {/if}

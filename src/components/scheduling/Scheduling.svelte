@@ -4,10 +4,12 @@
   import { onMount } from 'svelte';
   import SchedulingGoal from './SchedulingGoal.svelte';
   import Input from '../form/Input.svelte';
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import { schedulingActions, schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+
+  export let gridId: number;
 
   onMount(() => {
     schedulingSpecGoals.setVariables({ specification_id: $selectedSpecId });
@@ -16,7 +18,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Scheduling</Chip>
+    <GridMenu {gridId} title="Scheduling" />
     <StatusBadge status={$schedulingStatus} title="Schedule" on:click={() => schedulingActions.runScheduling()} />
   </svelte:fragment>
 

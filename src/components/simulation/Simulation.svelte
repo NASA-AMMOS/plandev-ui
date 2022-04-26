@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
-  import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import { plan } from '../../stores/plan';
@@ -17,6 +17,8 @@
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
+
+  export let gridId: number;
 
   let formParameters: FormParameter[] = [];
 
@@ -60,7 +62,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Simulation</Chip>
+    <GridMenu {gridId} title="Simulation" />
     <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => simulationActions.runSimulation()} />
   </svelte:fragment>
 

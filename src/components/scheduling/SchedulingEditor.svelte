@@ -3,12 +3,14 @@
 <script lang="ts">
   import { session } from '$app/stores';
   import Field from '../form/Field.svelte';
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
   import { schedulingActions, schedulingDslTypes, selectedSpecGoal } from '../../stores/scheduling';
   import { required } from '../../utilities/validators';
+
+  export let gridId: number;
 
   let definitionField = field<string>('', [required]);
   let descriptionField = field<string>('');
@@ -60,7 +62,7 @@
 
 <Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
-    <Chip>Scheduling Editor</Chip>
+    <GridMenu {gridId} title="Scheduling Editor" />
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={() => saveGoal()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />

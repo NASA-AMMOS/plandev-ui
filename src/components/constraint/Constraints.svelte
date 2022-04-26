@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
@@ -9,12 +9,14 @@
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import { tooltip } from '../../utilities/tooltip';
 
+  export let gridId: number;
+
   let confirmDeleteConstraintModal: Modal;
 </script>
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Constraints</Chip>
+    <GridMenu {gridId} title="Constraints" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

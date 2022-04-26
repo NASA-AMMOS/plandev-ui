@@ -1,9 +1,11 @@
 <script lang="ts">
   import { session } from '$app/stores';
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { view, viewActions, viewText } from '../../stores/views';
+
+  export let gridId: number;
 
   let name: string = '';
 
@@ -35,7 +37,7 @@
 
 <Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
-    <Chip>Edit View</Chip>
+    <GridMenu {gridId} title="View Editor" />
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={saveViewDisabled} on:click={saveView}>
         <i class="bi bi-save" style="font-size: 0.8rem" />
@@ -65,3 +67,11 @@
     />
   </svelte:fragment>
 </Panel>
+
+<style>
+  .right {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+  }
+</style>

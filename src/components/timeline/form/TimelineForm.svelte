@@ -5,7 +5,6 @@
   import LayerXRangeForm from './LayerXRangeForm.svelte';
   import ConfirmModal from '../../modals/ConfirmModal.svelte';
   import type Modal from '../../modals/Modal.svelte';
-  import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
@@ -24,6 +23,9 @@
   import { getTarget } from '../../../utilities/generic';
   import { tooltip } from '../../../utilities/tooltip';
   import YAxisForm from './YAxisForm.svelte';
+  import GridMenu from '../../menus/GridMenu.svelte';
+
+  export let gridId: number;
 
   let confirmDeleteLayerModal: Modal;
   let confirmDeleteRowModal: Modal;
@@ -63,7 +65,7 @@
 
 <Panel borderLeft>
   <svelte:fragment slot="header">
-    <Chip>Timeline</Chip>
+    <GridMenu {gridId} title="Timeline" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

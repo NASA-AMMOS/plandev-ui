@@ -2,13 +2,15 @@
 
 <script lang="ts">
   import Input from '../form/Input.svelte';
-  import Chip from '../ui/Chip.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import { activityActions } from '../../stores/activities';
   import { plan } from '../../stores/plan';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
+
+  export let gridId: number;
 
   let activityTypes: ActivityType[] = $plan.model.activityTypes;
   let filterText: string = '';
@@ -35,7 +37,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Activity Types</Chip>
+    <GridMenu {gridId} title="Activity Types" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">
