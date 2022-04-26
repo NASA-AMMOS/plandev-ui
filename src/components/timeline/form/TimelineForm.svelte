@@ -37,9 +37,11 @@
   }
 
   onMount(() => {
-    const firstTimeline = $view.plan.timelines[0];
-    if (firstTimeline) {
-      viewActions.setSelectedTimeline(firstTimeline.id);
+    if ($selectedTimelineId === null) {
+      const firstTimeline = $view.plan.timelines[0];
+      if (firstTimeline) {
+        viewActions.setSelectedTimeline(firstTimeline.id);
+      }
     }
   });
 </script>
