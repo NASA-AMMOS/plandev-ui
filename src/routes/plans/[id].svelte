@@ -113,18 +113,18 @@
   <Nav>
     <span slot="title">{initialPlan.name}</span>
 
-    <div slot="left">
+    <svelte:fragment slot="left">
       <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => simulationActions.runSimulation()} />
-    </div>
+    </svelte:fragment>
 
-    <div slot="right">
+    <svelte:fragment slot="right">
       <NavButton icon="si si-activity" title="Activities" />
       <NavButton icon="bi bi-braces-asterisk" title="Constraints" />
       <NavButton icon="bi bi-calendar3" title="Scheduling" />
       <NavButton icon="bi bi-gear-wide-connected" title="Simulation" />
       <NavButton icon="bi bi-calendar2-range" title="Timeline" />
       <NavButton icon="bi bi-columns" title="Views" />
-    </div>
+    </svelte:fragment>
   </Nav>
 
   <Grid grid={$view?.plan.layout} />
