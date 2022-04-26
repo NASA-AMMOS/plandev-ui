@@ -11,7 +11,9 @@
     </div>
     <slot name="left" />
   </div>
-  <slot name="right" />
+  <div class="right">
+    <slot name="right" />
+  </div>
 </div>
 
 <style>
@@ -21,6 +23,7 @@
     color: var(--st-primary-background-color);
     display: flex;
     font-size: 1rem;
+    height: 42px;
     padding: 1rem;
   }
 
@@ -46,5 +49,10 @@
     display: flex;
     flex-grow: 1;
     gap: 10px;
+  }
+
+  .right {
+    align-items: center;
+    display: inline-flex;
   }
 </style>

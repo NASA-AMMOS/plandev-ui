@@ -71,7 +71,7 @@
   }
 </script>
 
-<CssGrid class="h-100 w-100" rows="42px auto">
+<CssGrid rows="42px calc(100vh - 42px)">
   <Nav>
     <span slot="title">Models</span>
   </Nav>

@@ -1,7 +1,6 @@
 import type { Writable } from 'svelte/store';
 import { get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import { constraintEditorPanel } from '../stores/panels';
 import { plan, viewTimeRange } from '../stores/plan';
 import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
@@ -46,6 +45,8 @@ export const constraintActions = {
         planConstraints.update(constraints => [...constraints, newConstraint]);
       }
 
+      selectedConstraint.set(newConstraint);
+
       Toastify({
         backgroundColor: '#2da44e',
         duration: 3000,
@@ -71,8 +72,12 @@ export const constraintActions = {
 
     if (success) {
       modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
-
       planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+
+      const currentSelectedConstraint = get(selectedConstraint);
+      if (currentSelectedConstraint && currentSelectedConstraint.id === id) {
+        selectedConstraint.set(null);
+      }
 
       Toastify({
         backgroundColor: '#2da44e',
@@ -94,16 +99,15 @@ export const constraintActions = {
     }
   },
 
-  editConstraint(constraint: Constraint): void {
-    selectedConstraint.set(constraint);
-    constraintEditorPanel.show();
-  },
-
   reset(): void {
     modelConstraints.set([]);
     planConstraints.set([]);
     selectedConstraint.set(null);
     violations.set([]);
+  },
+
+  selectConstraint(constraint: Constraint | null): void {
+    selectedConstraint.set(constraint);
   },
 
   async updateConstraint(

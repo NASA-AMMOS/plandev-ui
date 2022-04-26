@@ -52,7 +52,7 @@
 
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => schedulingActions.openGoalEditor(goal.id)}>Edit Goal</ContextMenuItem>
+  <ContextMenuItem on:click={() => schedulingActions.selectGoal(goal.id)}>Edit Goal</ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
   <ContextMenuItem on:click={() => confirmDeleteGoalModal.show()}>Delete Goal</ContextMenuItem>
 </ContextMenu>

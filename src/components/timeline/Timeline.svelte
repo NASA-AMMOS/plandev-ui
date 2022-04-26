@@ -12,27 +12,26 @@
   import { violations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
-  import { setSelectedTimeline, updateRow, updateTimeline } from '../../stores/views';
-  import { selectedTimelinePanel } from '../../stores/panels';
+  import { viewActions } from '../../stores/views';
+  import { view } from '../../stores/views';
 
-  export let containerSize: number;
-  export let id: number;
-  export let marginLeft: number = 20;
-  export let marginRight: number = 20;
-  export let rows: Row[] = [];
-  export let verticalGuides: VerticalGuide[] = [];
+  export let timelineId: number;
 
   let clientWidth: number = 0;
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
+  let rows: Row[] = [];
+  let timeline: Timeline;
   let timelineDiv: HTMLDivElement;
   let xAxisDiv: HTMLDivElement;
   let xAxisDrawHeight: number = 90;
 
-  $: drawWidth = clientWidth > 0 ? clientWidth - marginLeft - marginRight : 0;
-  $: setRowsMaxHeight(timelineDiv, xAxisDiv, containerSize);
+  $: timeline = $view?.plan.timelines.find(timeline => timeline.id === timelineId);
+  $: rows = timeline?.rows || [];
+  $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
+  $: setRowsMaxHeight(timelineDiv, xAxisDiv);
   $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
   $: xDomainView = [new Date($viewTimeRange.start), new Date($viewTimeRange.end)];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
@@ -44,7 +43,7 @@
   });
 
   afterUpdate(() => {
-    setRowsMaxHeight(timelineDiv, xAxisDiv, containerSize);
+    setRowsMaxHeight(timelineDiv, xAxisDiv);
   });
 
   function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
@@ -65,21 +64,18 @@
     if (source === SOURCES.POINTER) {
       rowDragMoveDisabled = true;
     }
-    updateTimeline('rows', rows, id);
+    viewActions.updateTimeline('rows', rows, timelineId);
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
-    const { layerId, points, rowId, yAxisId } = detail;
+    const { points } = detail;
 
     if (points.length) {
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
         activityActions.selectActivity(point.id);
       }
-    } else {
-      setSelectedTimeline(id, rowId, layerId, yAxisId);
-      selectedTimelinePanel.show();
     }
   }
 
@@ -95,7 +91,7 @@
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (newHeight < MAX_CANVAS_SIZE) {
-      updateRow('height', newHeight, id, rowId);
+      viewActions.updateRow('height', newHeight, timelineId, rowId);
     }
   }
 
@@ -103,13 +99,9 @@
     $viewTimeRange = event.detail;
   }
 
-  async function setRowsMaxHeight(
-    timelineDiv: HTMLDivElement,
-    xAxisDiv: HTMLDivElement,
-    containerSize: number | undefined,
-  ) {
-    if (timelineDiv && xAxisDiv && containerSize !== undefined) {
-      await tick();
+  async function setRowsMaxHeight(timelineDiv: HTMLDivElement, xAxisDiv: HTMLDivElement) {
+    await tick();
+    if (timelineDiv && xAxisDiv && timelineDiv.parentElement) {
       const { clientHeight: parentHeight } = timelineDiv.parentElement;
       const offsetTop = xAxisDiv.clientHeight;
       const maxHeight = parentHeight - offsetTop;
@@ -118,14 +110,14 @@
   }
 </script>
 
-<div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${id}`}>
+<div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
       constraintViolations={$violations}
       drawHeight={xAxisDrawHeight}
       {drawWidth}
-      {marginLeft}
-      {verticalGuides}
+      marginLeft={timeline?.marginLeft}
+      verticalGuides={timeline?.verticalGuides}
       viewTimeRange={$viewTimeRange}
       {xScaleMax}
       {xScaleView}
@@ -154,10 +146,10 @@
         horizontalGuides={row.horizontalGuides}
         id={row.id}
         layers={row.layers}
-        {marginLeft}
+        marginLeft={timeline?.marginLeft}
         resources={$resources}
         {rowDragMoveDisabled}
-        {verticalGuides}
+        verticalGuides={timeline?.verticalGuides}
         viewTimeRange={$viewTimeRange}
         {xScaleView}
         {xTicksView}

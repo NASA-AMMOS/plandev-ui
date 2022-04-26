@@ -23,6 +23,17 @@ type UpdateViewResponse = {
   success: boolean;
 };
 
+type ViewActivityTable = {
+  columnDefs: ColumnDef[];
+  id: number;
+};
+
+type ViewIFrame = {
+  id: number;
+  src: string;
+  title: string;
+};
+
 type ViewMeta = {
   owner: string;
   timeCreated: number;
@@ -31,21 +42,10 @@ type ViewMeta = {
 };
 
 type ViewPlan = {
-  sections: ViewPlanSection[];
-};
-
-type ViewPlanSection = {
-  id: number;
-  iframe?: {
-    src: string;
-  };
-  size: number;
-  table?: {
-    columns: string[];
-    type: 'activity';
-  };
-  timeline?: Timeline;
-  type: 'iframe' | 'table' | 'timeline';
+  activityTables: ViewActivityTable[];
+  iFrames: ViewIFrame[];
+  layout: Grid;
+  timelines: Timeline[];
 };
 
 type View = {

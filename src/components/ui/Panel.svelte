@@ -19,8 +19,7 @@
 <style>
   .panel {
     display: grid;
-    grid-template-rows: 40px 100%;
-    height: 100%;
+    grid-template-rows: 42px calc(100% - 42px);
     overflow: hidden;
     width: 100%;
   }
@@ -30,11 +29,8 @@
     border-bottom: 1px solid var(--st-gray-20);
     display: flex;
     gap: 0.5rem;
+    height: 42px;
     justify-content: space-between;
-  }
-
-  .body {
-    height: calc(100% - 40px);
   }
 
   .header :global(i) {

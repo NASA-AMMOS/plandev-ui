@@ -102,7 +102,7 @@
     <Chip>Selected Activity</Chip>
     <button
       class="st-button icon"
-      disabled={isChild}
+      disabled={isChild || !$selectedActivity}
       on:click|stopPropagation={() => confirmDeleteActivityModal.show()}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
     >

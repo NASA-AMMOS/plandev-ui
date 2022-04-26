@@ -1,6 +1,5 @@
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import Toastify from 'toastify-js';
-import { selectedActivityPanel } from '../stores/panels';
 import { activitiesToPoints } from '../utilities/activities';
 import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
@@ -123,7 +122,6 @@ export const activityActions = {
 
   selectActivity(id: number): void {
     selectedActivityId.set(id);
-    selectedActivityPanel.show();
   },
 
   async updateActivity(id: number, partialActivity: Partial<Activity>, doRequest: boolean = true) {

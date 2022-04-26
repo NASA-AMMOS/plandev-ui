@@ -66,8 +66,9 @@
         <i class="bi bi-save" style="font-size: 0.8rem" />
         Save Goal
       </button>
-      <button class="st-button icon" on:click={() => schedulingActions.closeGoalEditor()}>
-        <i class="bi bi-x" />
+      <button class="st-button secondary ellipsis" on:click={() => schedulingActions.selectGoal()}>
+        <i class="bi bi-plus-square" style="font-size: 0.8rem" />
+        New Goal
       </button>
     </div>
   </svelte:fragment>
@@ -84,6 +85,7 @@
     </Field>
 
     <fieldset>Goal Definition</fieldset>
+
     <MonacoEditor
       bind:monaco
       automaticLayout={true}

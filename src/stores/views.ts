@@ -2,17 +2,20 @@ import type { Writable } from 'svelte/store';
 import { derived, get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { compare, setQueryParam } from '../utilities/generic';
+import {
+  activitiesGrid,
+  constraintsGrid,
+  schedulingGrid,
+  simulationGrid,
+  timelineGrid,
+  updateGrid,
+  viewsGrid,
+} from '../utilities/grid';
 import req from '../utilities/requests';
 
 /* Stores. */
 
 export const view: Writable<View | null> = writable(null);
-
-export const viewSectionIds = derived(view, $view =>
-  $view ? $view.plan.sections.map(({ id }) => `#section-${id}`) : [],
-);
-
-export const viewSectionSizes = derived(view, $view => ($view ? $view.plan.sections.map(({ size }) => size) : []));
 
 export const viewText = derived(view, $view => ($view ? JSON.stringify($view, null, 2) : ''));
 
@@ -20,9 +23,9 @@ export const selectedTimelineId: Writable<number | null> = writable(null);
 
 export const selectedTimeline = derived([view, selectedTimelineId], ([$view, $selectedTimelineId]) => {
   if ($view !== null && $selectedTimelineId !== null) {
-    for (const section of $view.plan.sections) {
-      if (section.timeline && section.timeline.id === $selectedTimelineId) {
-        return section.timeline;
+    for (const timeline of $view.plan.timelines) {
+      if (timeline && timeline.id === $selectedTimelineId) {
+        return timeline;
       }
     }
   }
@@ -68,49 +71,48 @@ export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selected
   return null;
 });
 
-/* Utility Functions. */
+/* Action Functions. */
 
-export async function createView(currentView: View): Promise<void> {
-  const { errors, message, success, view: newView } = await req.createView(currentView);
+export const viewActions = {
+  async createView(currentView: View): Promise<void> {
+    const { errors, message, success, view: newView } = await req.createView(currentView);
 
-  if (success) {
-    view.update(() => newView);
-    setQueryParam('viewId', `${newView.id}`);
-    Toastify({
-      backgroundColor: '#2da44e',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'View Created Successfully',
-    }).showToast();
-  } else {
-    console.log(errors);
-    console.log(message);
-    Toastify({
-      backgroundColor: '#a32a2a',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'View Create Failed',
-    }).showToast();
-  }
-}
+    if (success) {
+      view.update(() => newView);
+      setQueryParam('viewId', `${newView.id}`);
+      Toastify({
+        backgroundColor: '#2da44e',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'View Created Successfully',
+      }).showToast();
+    } else {
+      console.log(errors);
+      console.log(message);
+      Toastify({
+        backgroundColor: '#a32a2a',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'View Create Failed',
+      }).showToast();
+    }
+  },
 
-export function createYAxis(): void {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
+  createYAxis(): void {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   const { yAxes } = row;
                   const [yAxis] = yAxes.sort((a, b) => compare(a.id, b.id, false));
@@ -129,31 +131,28 @@ export function createYAxis(): void {
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function deleteLayer(): void {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
-  const layerId = get<number | null>(selectedLayerId);
+  deleteLayer(): void {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
+    const layerId = get<number | null>(selectedLayerId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   const layers = row.layers.filter(layer => layer.id !== layerId);
                   if (layers.length) selectedLayerId.set(layers[0].id);
@@ -164,75 +163,70 @@ export function deleteLayer(): void {
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function deleteRow(): void {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
+  deleteRow(): void {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          const rows = section.timeline.rows.filter(row => row.id !== rowId);
-          if (rows.length) selectedRowId.set(rows[0].id);
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            const rows = timeline.rows.filter(row => row.id !== rowId);
+            if (rows.length) selectedRowId.set(rows[0].id);
+
+            return {
+              ...timeline,
               rows,
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function deleteTimeline(): void {
-  const timelineId = get<number | null>(selectedTimelineId);
+  deleteTimeline(): void {
+    const timelineId = get<number | null>(selectedTimelineId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.filter(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          selectedTimelineId.set(null);
-          return false;
-        }
-        return true;
-      }),
-    },
-  }));
-}
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.filter(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            selectedTimelineId.set(null);
+            return false;
+          }
+          return true;
+        }),
+      },
+    }));
+  },
 
-export function deleteYAxis(): void {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
-  const yAxisId = get<number | null>(selectedYAxisId);
+  deleteYAxis(): void {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
+    const yAxisId = get<number | null>(selectedYAxisId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   const yAxes = row.yAxes.filter(yAxis => yAxis.id !== yAxisId);
                   if (yAxes.length) selectedYAxisId.set(yAxes[0].id);
@@ -243,50 +237,75 @@ export function deleteYAxis(): void {
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function setSelectedTimeline(
-  timelineId: number | null,
-  rowId: number | null,
-  layerId: number | null,
-  yAxisId: number | null,
-): void {
-  selectedTimelineId.set(timelineId);
-  selectedRowId.set(rowId);
-  selectedYAxisId.set(yAxisId);
-  selectedLayerId.set(layerId);
-}
+  setLayout(title: GridName) {
+    let layout: Grid;
 
-export function unsetSelectedTimeline(): void {
-  selectedTimelineId.set(null);
-  selectedRowId.set(null);
-  selectedYAxisId.set(null);
-  selectedLayerId.set(null);
-}
+    if (title === 'Activities') {
+      layout = activitiesGrid;
+    } else if (title === 'Constraints') {
+      layout = constraintsGrid;
+    } else if (title === 'Scheduling') {
+      layout = schedulingGrid;
+    } else if (title === 'Simulation') {
+      layout = simulationGrid;
+    } else if (title === 'Timeline') {
+      layout = timelineGrid;
+    } else if (title === 'Views') {
+      layout = viewsGrid;
+    } else {
+      layout = activitiesGrid;
+    }
 
-export function updateLayer(prop: string, value: any) {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
-  const layerId = get<number | null>(selectedLayerId);
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        layout,
+      },
+    }));
+  },
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+  setSelectedTimeline(timelineId: number | null): void {
+    selectedTimelineId.set(timelineId);
+    const currentTimeline = get(selectedTimeline);
+
+    if (currentTimeline) {
+      const firstRow = currentTimeline.rows[0];
+
+      if (firstRow) {
+        selectedRowId.set(firstRow.id);
+
+        const firstLayer = firstRow.layers[0];
+        if (firstLayer) selectedLayerId.set(firstLayer.id);
+
+        const firstYAxis = firstRow.yAxes[0];
+        if (firstYAxis) selectedYAxisId.set(firstYAxis.id);
+      }
+    }
+  },
+
+  updateLayer(prop: string, value: any) {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
+    const layerId = get<number | null>(selectedLayerId);
+
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -303,30 +322,37 @@ export function updateLayer(prop: string, value: any) {
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function updateRow(prop: string, value: any, timelineId?: number, rowId?: number) {
-  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
-  rowId = rowId ?? get<number | null>(selectedRowId);
+  updateLayout(id: number, prop: string, value: any) {
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        layout: updateGrid(currentView.plan.layout, id, prop, value),
+      },
+    }));
+  },
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+  updateRow(prop: string, value: any, timelineId?: number, rowId?: number) {
+    timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+    rowId = rowId ?? get<number | null>(selectedRowId);
+
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -335,93 +361,72 @@ export function updateRow(prop: string, value: any, timelineId?: number, rowId?:
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export function updateSectionSizes(newSizes: number[]) {
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map((section, i) => {
-        return {
-          ...section,
-          size: newSizes[i],
-        };
-      }),
-    },
-  }));
-}
+  updateTimeline(prop: string, value: any, timelineId?: number) {
+    timelineId = timelineId ?? get<number | null>(selectedTimelineId);
 
-export function updateTimeline(prop: string, value: any, timelineId?: number) {
-  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
-
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
               [prop]: value,
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
 
-export async function updateView(currentView: View): Promise<void> {
-  const { errors, message, success } = await req.updateView(currentView);
+  async updateView(currentView: View): Promise<void> {
+    const { errors, message, success } = await req.updateView(currentView);
 
-  if (success) {
-    Toastify({
-      backgroundColor: '#2da44e',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'View Updated Successfully',
-    }).showToast();
-  } else {
-    console.log(errors);
-    console.log(message);
-    Toastify({
-      backgroundColor: '#a32a2a',
-      duration: 3000,
-      gravity: 'bottom',
-      position: 'left',
-      text: 'View Update Failed',
-    }).showToast();
-  }
-}
+    if (success) {
+      Toastify({
+        backgroundColor: '#2da44e',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'View Updated Successfully',
+      }).showToast();
+    } else {
+      console.log(errors);
+      console.log(message);
+      Toastify({
+        backgroundColor: '#a32a2a',
+        duration: 3000,
+        gravity: 'bottom',
+        position: 'left',
+        text: 'View Update Failed',
+      }).showToast();
+    }
+  },
 
-export async function updateYAxis(prop: string, value: any) {
-  const timelineId = get<number | null>(selectedTimelineId);
-  const rowId = get<number | null>(selectedRowId);
-  const yAxisId = get<number | null>(selectedYAxisId);
+  updateYAxis(prop: string, value: any) {
+    const timelineId = get<number | null>(selectedTimelineId);
+    const rowId = get<number | null>(selectedRowId);
+    const yAxisId = get<number | null>(selectedYAxisId);
 
-  view.update(currentView => ({
-    ...currentView,
-    plan: {
-      ...currentView.plan,
-      sections: currentView.plan.sections.map(section => {
-        if (section.timeline && section.timeline.id === timelineId) {
-          return {
-            ...section,
-            timeline: {
-              ...section.timeline,
-              rows: section.timeline.rows.map(row => {
+    view.update(currentView => ({
+      ...currentView,
+      plan: {
+        ...currentView.plan,
+        timelines: currentView.plan.timelines.map(timeline => {
+          if (timeline && timeline.id === timelineId) {
+            return {
+              ...timeline,
+              rows: timeline.rows.map(row => {
                 if (row.id === rowId) {
                   return {
                     ...row,
@@ -439,11 +444,11 @@ export async function updateYAxis(prop: string, value: any) {
                 }
                 return row;
               }),
-            },
-          };
-        }
-        return section;
-      }),
-    },
-  }));
-}
+            };
+          }
+          return timeline;
+        }),
+      },
+    }));
+  },
+};

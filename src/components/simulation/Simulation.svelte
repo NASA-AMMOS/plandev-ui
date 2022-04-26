@@ -4,6 +4,7 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Chip from '../ui/Chip.svelte';
   import Panel from '../ui/Panel.svelte';
+  import StatusBadge from '../ui/StatusBadge.svelte';
   import { plan } from '../../stores/plan';
   import {
     modelParametersMap,
@@ -60,6 +61,7 @@
 <Panel>
   <svelte:fragment slot="header">
     <Chip>Simulation</Chip>
+    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => simulationActions.runSimulation()} />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

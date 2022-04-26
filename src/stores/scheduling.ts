@@ -6,7 +6,6 @@ import { Status } from '../utilities/enums';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { activitiesMap, selectedActivityId } from './activities';
-import { schedulingPanelEditor } from './panels';
 import { simulationStatus } from './simulation';
 import { getGqlSubscribable } from './subscribable';
 
@@ -41,11 +40,6 @@ export const selectedSpecGoal = derived(
 /* Action Functions. */
 
 export const schedulingActions = {
-  closeGoalEditor(): void {
-    schedulingPanelEditor.set(false);
-    selectedGoalId.set(null);
-  },
-
   async createGoal(definition: string, description: string, name: string, userId: string): Promise<void> {
     const { model } = get(plan);
     const specId = get(selectedSpecId);
@@ -69,7 +63,7 @@ export const schedulingActions = {
     };
     await req.createSchedulingSpecGoal(specGoal);
 
-    schedulingActions.closeGoalEditor();
+    schedulingActions.selectGoal(null);
 
     if (newGoal) {
       Toastify({
@@ -112,11 +106,6 @@ export const schedulingActions = {
     }
   },
 
-  openGoalEditor(goalId: number | null = null): void {
-    schedulingPanelEditor.set(true);
-    selectedGoalId.set(goalId);
-  },
-
   reset(): void {
     schedulingDslTypes.set('');
     schedulingStatus.set(Status.Clean);
@@ -147,6 +136,10 @@ export const schedulingActions = {
       schedulingStatus.set(Status.Incomplete);
       console.log(reason);
     }
+  },
+
+  selectGoal(goalId: number | null = null): void {
+    selectedGoalId.set(goalId);
   },
 
   async updateGoal(id: number, goal: Partial<SchedulingGoal>): Promise<void> {

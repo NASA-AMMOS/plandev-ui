@@ -10,7 +10,7 @@
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
   import {
-    createYAxis,
+    viewActions,
     selectedLayerId,
     selectedLayer,
     selectedRowId,
@@ -18,14 +18,8 @@
     selectedTimeline,
     selectedYAxisId,
     selectedYAxis,
-    updateLayer,
-    updateRow,
-    updateTimeline,
-    updateYAxis,
-    deleteLayer,
-    deleteRow,
-    deleteTimeline,
-    deleteYAxis,
+    view,
+    selectedTimelineId,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import { tooltip } from '../../../utilities/tooltip';
@@ -36,37 +30,64 @@
   let confirmDeleteTimelineModal: Modal;
   let confirmDeleteYAxisModal: Modal;
 
+  async function onChangeSelectedTimeline(event: Event) {
+    const { value } = getTarget(event);
+    const id = value as number;
+    viewActions.setSelectedTimeline(id);
+  }
+
   function updateLayerEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    updateLayer(name, value);
+    viewActions.updateLayer(name, value);
   }
 
   function updateRowEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    updateRow(name, value);
+    viewActions.updateRow(name, value);
   }
 
   function updateTimelineEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    updateTimeline(name, value);
+    viewActions.updateTimeline(name, value);
   }
 
   function updateYAxisEvent(event: CustomEvent<{ prop: string; value: any }>) {
     const { detail } = event;
     const { prop, value } = detail;
-    updateYAxis(prop, value);
+    viewActions.updateYAxis(prop, value);
   }
 </script>
 
 <Panel borderLeft>
   <svelte:fragment slot="header">
-    <Chip>Timeline Configuration</Chip>
+    <Chip>Timeline</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    <fieldset>
+      <select
+        class="st-select w-100"
+        data-type="number"
+        name="timelines"
+        value={$selectedTimelineId}
+        on:change={onChangeSelectedTimeline}
+      >
+        {#if !$view.plan.timelines.length}
+          <option value={null}>Empty</option>
+        {:else}
+          <option value={null} />
+          {#each $view.plan.timelines as timeline}
+            <option value={timeline.id}>
+              Timeline {timeline.id}
+            </option>
+          {/each}
+        {/if}
+      </select>
+    </fieldset>
+
     <Details class="pb-3">
       <span slot="summary-left"> Timeline </span>
       <span slot="summary-right">
@@ -242,13 +263,15 @@
       <span slot="summary-left"> Y-Axis </span>
       <span slot="summary-right">
         <CssGrid gap="3px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
-          <button
-            class="st-button icon"
-            on:click|stopPropagation={createYAxis}
-            use:tooltip={{ content: 'Create Y-Axis', placement: 'left' }}
-          >
-            <i class="bi bi-plus fs-6" />
-          </button>
+          {#if $selectedTimeline !== null}
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={viewActions.createYAxis}
+              use:tooltip={{ content: 'Create Y-Axis', placement: 'left' }}
+            >
+              <i class="bi bi-plus fs-6" />
+            </button>
+          {/if}
           {#if $selectedYAxis !== null}
             <button
               class="st-button icon"
@@ -310,7 +333,7 @@
   confirmText="Delete"
   message="Are you sure you want to delete this layer?"
   title="Delete Layer"
-  on:confirm={deleteLayer}
+  on:confirm={viewActions.deleteLayer}
 />
 
 <ConfirmModal
@@ -318,7 +341,7 @@
   confirmText="Delete"
   message="Are you sure you want to delete this row?"
   title="Delete Row"
-  on:confirm={deleteRow}
+  on:confirm={viewActions.deleteRow}
 />
 
 <ConfirmModal
@@ -326,7 +349,7 @@
   confirmText="Delete"
   message="Are you sure you want to delete this timeline?"
   title="Delete Timeline"
-  on:confirm={deleteTimeline}
+  on:confirm={viewActions.deleteTimeline}
 />
 
 <ConfirmModal
@@ -334,5 +357,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this y-axis?"
   title="Delete Y-Axis"
-  on:confirm={deleteYAxis}
+  on:confirm={viewActions.deleteYAxis}
 />

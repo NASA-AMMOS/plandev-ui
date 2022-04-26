@@ -28,7 +28,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
+                  on:click|stopPropagation={() => constraintActions.selectConstraint(constraint)}
                   use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />
@@ -59,7 +59,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => constraintActions.editConstraint(constraint)}
+                  on:click|stopPropagation={() => constraintActions.selectConstraint(constraint)}
                   use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />

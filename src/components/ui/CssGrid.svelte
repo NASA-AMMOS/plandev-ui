@@ -18,6 +18,5 @@
 <style>
   div {
     display: grid;
-    overflow: hidden;
   }
 </style>
