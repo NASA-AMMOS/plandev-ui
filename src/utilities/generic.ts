@@ -34,7 +34,7 @@ export function getTarget(event: Event) {
     const valueAsNumber = Number.isNaN(valueAsFloat) ? null : valueAsFloat;
     const value = type === 'number' ? valueAsNumber : valueAsString;
 
-    return { name, value };
+    return { name, value, valueAsNumber };
   } else {
     console.log('getTarget called with unknown tag');
 

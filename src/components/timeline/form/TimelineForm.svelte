@@ -1,10 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { onMount } from 'svelte';
   import LayerLineForm from './LayerLineForm.svelte';
   import LayerXRangeForm from './LayerXRangeForm.svelte';
-  import ConfirmModal from '../../modals/ConfirmModal.svelte';
-  import type Modal from '../../modals/Modal.svelte';
+  import YAxisForm from './YAxisForm.svelte';
+  import GridMenu from '../../menus/GridMenu.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
@@ -16,33 +17,12 @@
     selectedRow,
     selectedTimeline,
     selectedYAxisId,
-    selectedYAxis,
     view,
     selectedTimelineId,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
-  import { tooltip } from '../../../utilities/tooltip';
-  import YAxisForm from './YAxisForm.svelte';
-  import GridMenu from '../../menus/GridMenu.svelte';
 
   export let gridId: number;
-
-  let confirmDeleteLayerModal: Modal;
-  let confirmDeleteRowModal: Modal;
-  let confirmDeleteTimelineModal: Modal;
-  let confirmDeleteYAxisModal: Modal;
-
-  async function onChangeSelectedTimeline(event: Event) {
-    const { value } = getTarget(event);
-    const id = value as number;
-    viewActions.setSelectedTimeline(id);
-  }
-
-  function updateLayerEvent(event: Event) {
-    event.stopPropagation();
-    const { name, value } = getTarget(event);
-    viewActions.updateLayer(name, value);
-  }
 
   function updateRowEvent(event: Event) {
     event.stopPropagation();
@@ -56,11 +36,12 @@
     viewActions.updateTimeline(name, value);
   }
 
-  function updateYAxisEvent(event: CustomEvent<{ prop: string; value: any }>) {
-    const { detail } = event;
-    const { prop, value } = detail;
-    viewActions.updateYAxis(prop, value);
-  }
+  onMount(() => {
+    const firstTimeline = $view.plan.timelines[0];
+    if (firstTimeline) {
+      viewActions.setSelectedTimeline(firstTimeline.id);
+    }
+  });
 </script>
 
 <Panel borderLeft>
@@ -69,42 +50,35 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    <!-- Select Timeline. -->
     <fieldset>
       <select
         class="st-select w-100"
         data-type="number"
         name="timelines"
         value={$selectedTimelineId}
-        on:change={onChangeSelectedTimeline}
+        on:change={e => {
+          const { valueAsNumber: id } = getTarget(e);
+          viewActions.setSelectedTimeline(id);
+        }}
       >
-        {#if !$view.plan.timelines.length}
-          <option value={null}>Empty</option>
-        {:else}
-          <option value={null} />
-          {#each $view.plan.timelines as timeline}
-            <option value={timeline.id}>
-              Timeline {timeline.id}
-            </option>
-          {/each}
-        {/if}
+        {#each $view.plan.timelines as timeline}
+          <option value={timeline.id}>
+            Timeline {timeline.id}
+          </option>
+        {/each}
       </select>
     </fieldset>
 
+    <!-- Timeline. -->
     <Details class="pb-3">
       <span slot="summary-left"> Timeline </span>
-      <span slot="summary-right">
-        {#if $selectedTimeline !== null}
-          <button
-            class="st-button icon"
-            on:click|stopPropagation={() => confirmDeleteTimelineModal.show()}
-            use:tooltip={{ content: 'Delete Timeline', placement: 'left' }}
-          >
-            <i class="bi bi-trash" />
-          </button>
-        {/if}
-      </span>
-      {#if $selectedTimeline !== null}
-        <CssGrid columns="50% 50%">
+
+      {#if !$selectedTimeline}
+        <fieldset>No timeline selected</fieldset>
+      {:else}
+        <CssGrid columns="1fr 1fr 1fr">
+          <!-- Timeline Margin Left. -->
           <fieldset>
             <label for="marginLeft">Margin Left</label>
             <input
@@ -116,6 +90,7 @@
             />
           </fieldset>
 
+          <!-- Timeline Margin Right. -->
           <fieldset>
             <label for="marginRight">Margin Right</label>
             <input
@@ -127,65 +102,39 @@
             />
           </fieldset>
 
+          <!-- Timeline Rows. -->
           <fieldset>
             <label for="rows">Rows</label>
-            {#if $selectedTimeline.rows.length}
-              <select
-                bind:value={$selectedRowId}
-                class="st-select w-100"
-                disabled={$selectedTimeline.rows.length === 1}
-                name="rows"
-              >
-                {#each $selectedTimeline.rows as row}
-                  <option value={row.id}>
-                    {row.id}
-                  </option>
-                {/each}
-              </select>
-            {:else}
-              <input class="st-input w-100" disabled value="Empty" />
-            {/if}
-          </fieldset>
-
-          <fieldset>
-            <label for="verticalGuides">Vertical Guides</label>
-            {#if $selectedTimeline.verticalGuides.length}
-              <select
-                class="st-select w-100"
-                disabled={$selectedTimeline.verticalGuides.length === 1}
-                name="verticalGuides"
-              >
-                {#each $selectedTimeline.verticalGuides as verticalGuide}
-                  <option value={verticalGuide.id}>
-                    {verticalGuide.id}
-                  </option>
-                {/each}
-              </select>
-            {:else}
-              <input class="st-input w-100" disabled value="Empty" />
-            {/if}
+            <select
+              class="st-select w-100"
+              data-type="number"
+              name="rows"
+              value={$selectedRowId}
+              on:change={e => {
+                const { valueAsNumber: id } = getTarget(e);
+                viewActions.setSelectedRow(id);
+              }}
+            >
+              {#each $selectedTimeline.rows as row}
+                <option value={row.id}>
+                  {row.id}
+                </option>
+              {/each}
+            </select>
           </fieldset>
         </CssGrid>
-      {:else}
-        <fieldset>No timeline selected</fieldset>
       {/if}
     </Details>
 
+    <!-- Row. -->
     <Details class="pb-3">
       <span slot="summary-left"> Row </span>
-      <span slot="summary-right">
-        {#if $selectedRow !== null}
-          <button
-            class="st-button icon"
-            on:click|stopPropagation={() => confirmDeleteRowModal.show()}
-            use:tooltip={{ content: 'Delete Row', placement: 'left' }}
-          >
-            <i class="bi bi-trash" />
-          </button>
-        {/if}
-      </span>
-      {#if $selectedRow !== null}
-        <CssGrid columns="50% 50%">
+
+      {#if !$selectedRow}
+        <fieldset>No row selected</fieldset>
+      {:else}
+        <CssGrid columns="1fr 1fr 1fr">
+          <!-- Row Height. -->
           <fieldset>
             <label for="height">Height</label>
             <input
@@ -197,122 +146,65 @@
             />
           </fieldset>
 
-          <fieldset>
-            <label for="horizontalGuides">Horizontal Guides</label>
-            {#if $selectedRow.horizontalGuides.length}
-              <select
-                class="st-select w-100"
-                disabled={$selectedRow.horizontalGuides.length === 1}
-                name="horizontalGuides"
-              >
-                {#each $selectedRow.horizontalGuides as horizontalGuide}
-                  <option value={horizontalGuide.id}>
-                    {horizontalGuide.id}
-                  </option>
-                {/each}
-              </select>
-            {:else}
-              <input class="st-input w-100" disabled value="Empty" />
-            {/if}
-          </fieldset>
-
+          <!-- Row Y-Axes. -->
           <fieldset>
             <label for="yAxes">Y-Axes</label>
-            {#if $selectedRow.yAxes.length}
-              <select
-                bind:value={$selectedYAxisId}
-                class="st-select w-100"
-                disabled={$selectedRow.yAxes.length === 1}
-                name="yAxes"
-              >
-                {#each $selectedRow.yAxes as yAxis}
-                  <option value={yAxis.id}>
-                    {yAxis.id}
-                  </option>
-                {/each}
-              </select>
-            {:else}
-              <input class="st-input w-100" disabled value="Empty" />
-            {/if}
+            <select
+              bind:value={$selectedYAxisId}
+              class="st-select w-100"
+              disabled={!$selectedRow.yAxes.length}
+              name="yAxes"
+            >
+              {#each $selectedRow.yAxes as yAxis}
+                <option value={yAxis.id}>
+                  {yAxis.id}
+                </option>
+              {/each}
+            </select>
           </fieldset>
 
+          <!-- Row Layers. -->
           <fieldset>
             <label for="layers">Layers</label>
-            {#if $selectedRow.layers.length}
-              <select
-                bind:value={$selectedLayerId}
-                class="st-select w-100"
-                disabled={$selectedRow.layers.length === 1}
-                name="layers"
-              >
-                {#each $selectedRow.layers as layer}
-                  <option value={layer.id}>
-                    {layer.id}
-                  </option>
-                {/each}
-              </select>
-            {:else}
-              <input class="st-input w-100" disabled value="Empty" />
-            {/if}
+            <select
+              bind:value={$selectedLayerId}
+              class="st-select w-100"
+              disabled={!$selectedRow.layers.length}
+              name="layers"
+            >
+              {#each $selectedRow.layers as layer}
+                <option value={layer.id}>
+                  {layer.id}
+                </option>
+              {/each}
+            </select>
           </fieldset>
         </CssGrid>
-      {:else}
-        <fieldset>No row selected</fieldset>
       {/if}
     </Details>
 
+    <!-- Y-Axis. -->
     <Details class="pb-3">
       <span slot="summary-left"> Y-Axis </span>
-      <span slot="summary-right">
-        <CssGrid gap="3px" columns="auto {$selectedYAxis !== null ? 'auto' : ''}">
-          {#if $selectedTimeline !== null}
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={viewActions.createYAxis}
-              use:tooltip={{ content: 'Create Y-Axis', placement: 'left' }}
-            >
-              <i class="bi bi-plus fs-6" />
-            </button>
-          {/if}
-          {#if $selectedYAxis !== null}
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => confirmDeleteYAxisModal.show()}
-              use:tooltip={{ content: 'Delete Y-Axis', placement: 'left' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          {/if}
-        </CssGrid>
-      </span>
-      {#if $selectedYAxis !== null}
-        <YAxisForm axes={$selectedRow.yAxes} axis={$selectedYAxis} on:update={updateYAxisEvent} />
-      {:else}
-        <fieldset>No y-axis selected</fieldset>
-      {/if}
+
+      <YAxisForm />
     </Details>
 
+    <!-- Layer. -->
     <Details>
       <span slot="summary-left"> Layer </span>
-      <span slot="summary-right">
-        {#if $selectedLayer !== null}
-          <button
-            class="st-button icon"
-            on:click|stopPropagation={() => confirmDeleteLayerModal.show()}
-            use:tooltip={{ content: 'Delete Layer', placement: 'left' }}
-          >
-            <i class="bi bi-trash" />
-          </button>
-        {/if}
-      </span>
-      {#if $selectedLayer !== null}
+
+      {#if !$selectedLayer}
+        <fieldset>No layer selected</fieldset>
+      {:else}
+        <!-- Layer Chart Type. -->
         <fieldset>
           <label for="chartType">Chart Type</label>
           <select
             class="st-select w-100"
             name="chartType"
             value={$selectedLayer.chartType}
-            on:change={updateLayerEvent}
+            on:change={viewActions.updateLayer}
           >
             <option value="activity"> Activity </option>
             <option value="line"> Line </option>
@@ -320,44 +212,10 @@
           </select>
         </fieldset>
 
-        <LayerLineForm layer={$selectedLayer} on:input={updateLayerEvent} />
+        <LayerLineForm />
 
-        <LayerXRangeForm layer={$selectedLayer} on:change={updateLayerEvent} on:input={updateLayerEvent} />
-      {:else}
-        <fieldset>No layer selected</fieldset>
+        <LayerXRangeForm />
       {/if}
     </Details>
   </svelte:fragment>
 </Panel>
-
-<ConfirmModal
-  bind:modal={confirmDeleteLayerModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this layer?"
-  title="Delete Layer"
-  on:confirm={viewActions.deleteLayer}
-/>
-
-<ConfirmModal
-  bind:modal={confirmDeleteRowModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this row?"
-  title="Delete Row"
-  on:confirm={viewActions.deleteRow}
-/>
-
-<ConfirmModal
-  bind:modal={confirmDeleteTimelineModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this timeline?"
-  title="Delete Timeline"
-  on:confirm={viewActions.deleteTimeline}
-/>
-
-<ConfirmModal
-  bind:modal={confirmDeleteYAxisModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this y-axis?"
-  title="Delete Y-Axis"
-  on:confirm={viewActions.deleteYAxis}
-/>

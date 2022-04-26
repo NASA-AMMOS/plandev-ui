@@ -1,15 +1,12 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import { getTarget } from '../../../utilities/generic';
+  import { selectedRow, selectedYAxis, viewActions } from '../../../stores/views';
 
-  export let axes: Axis[] = [];
-  export let axis: Axis;
-
-  const dispatch = createEventDispatcher();
-
+  let axes: Axis[] = [];
   let idError: string | null = null;
 
+  $: axes = $selectedRow?.yAxes || [];
   $: axesIdsMap = axes.reduce((ids: { [id: number]: number }, axis) => {
     ids[axis.id] = axis.id;
     return ids;
@@ -17,19 +14,19 @@
 
   function updateAxis(event: Event) {
     const { name: prop, value } = getTarget(event);
-    dispatch('update', { prop, value });
+    viewActions.updateYAxis(prop, value);
   }
 
   function updateId(event: Event) {
     const { value } = getTarget(event);
 
     if (!isNaN(value as number)) {
-      if (value === axis.id) {
+      if (value === $selectedYAxis.id) {
         idError = null;
       } else if (value === axesIdsMap[value]) {
         idError = `Y-Axis with id=${value} already exists`;
       } else {
-        dispatch('update', { prop: 'id', value });
+        viewActions.updateYAxis('id', value);
         idError = null;
       }
     } else {
@@ -39,15 +36,15 @@
 
   function updateLabel(event: Event) {
     const { name, value } = getTarget(event);
-    const label: Label = { ...axis.label, [name]: value };
-    dispatch('update', { prop: 'label', value: label });
+    const label: Label = { ...$selectedYAxis.label, [name]: value };
+    viewActions.updateYAxis('label', label);
   }
 
   function updateScaleDomain(event: Event) {
     const { name, value: v } = getTarget(event);
     const numberValue = v as number;
     const value = isNaN(numberValue) ? null : numberValue;
-    const scaleDomain = [...axis.scaleDomain];
+    const scaleDomain = [...$selectedYAxis.scaleDomain];
 
     if (name === 'domainMin') {
       scaleDomain[0] = value;
@@ -59,74 +56,84 @@
 
     const [min, max] = scaleDomain;
     if (min === null && max === null) {
-      dispatch('update', { prop: 'scaleDomain', value: [] });
+      viewActions.updateYAxis('scaleDomain', []);
     } else {
-      dispatch('update', { prop: 'scaleDomain', value: scaleDomain });
+      viewActions.updateYAxis('scaleDomain', scaleDomain);
     }
   }
 </script>
 
-<CssGrid columns="33% 33% 33%">
-  <fieldset>
-    <label class:error={idError !== null} for="id"> Id </label>
-    <input
-      class="st-input w-100"
-      class:error={idError !== null}
-      name="id"
-      type="number"
-      value={axis.id}
-      on:input|stopPropagation={updateId}
-    />
-  </fieldset>
+{#if !$selectedYAxis}
+  <fieldset>No y-axis selected</fieldset>
+{:else}
+  <CssGrid columns="33% 33% 33%">
+    <fieldset>
+      <label class:error={idError !== null} for="id"> Id </label>
+      <input
+        class="st-input w-100"
+        class:error={idError !== null}
+        name="id"
+        type="number"
+        value={$selectedYAxis.id}
+        on:input|stopPropagation={updateId}
+      />
+    </fieldset>
 
-  <fieldset>
-    <label for="label"> Label Text </label>
-    <input
-      class="st-input w-100"
-      name="text"
-      type="text"
-      value={axis.label.text}
-      on:input|stopPropagation={updateLabel}
-    />
-  </fieldset>
+    <fieldset>
+      <label for="label"> Label Text </label>
+      <input
+        class="st-input w-100"
+        name="text"
+        type="text"
+        value={$selectedYAxis.label.text}
+        on:input|stopPropagation={updateLabel}
+      />
+    </fieldset>
 
-  <fieldset>
-    <label for="color"> Axis Color </label>
-    <input class="w-100" name="color" type="color" value={axis.color} on:input|stopPropagation={updateAxis} />
-  </fieldset>
-</CssGrid>
+    <fieldset>
+      <label for="color"> Axis Color </label>
+      <input
+        class="w-100"
+        name="color"
+        type="color"
+        value={$selectedYAxis.color}
+        on:input|stopPropagation={updateAxis}
+      />
+    </fieldset>
+  </CssGrid>
 
-<CssGrid columns="33% 33% 33%">
-  <fieldset>
-    <label for="domainMin"> Domain Min </label>
-    <input
-      class="st-input w-100"
-      name="domainMin"
-      type="number"
-      value={axis.scaleDomain[0]}
-      on:input|stopPropagation={updateScaleDomain}
-    />
-  </fieldset>
+  <CssGrid columns="33% 33% 33%">
+    <fieldset>
+      <label for="domainMin"> Domain Min </label>
+      <input
+        class="st-input w-100"
+        name="domainMin"
+        type="number"
+        value={$selectedYAxis.scaleDomain[0]}
+        on:input|stopPropagation={updateScaleDomain}
+      />
+    </fieldset>
 
-  <fieldset>
-    <label for="domainMax"> Domain Max </label>
-    <input
-      class="st-input w-100"
-      name="domainMax"
-      type="number"
-      value={axis.scaleDomain[1]}
-      on:input|stopPropagation={updateScaleDomain}
-    />
-  </fieldset>
+    <fieldset>
+      <label for="domainMax"> Domain Max </label>
+      <input
+        class="st-input w-100"
+        name="domainMax"
+        type="number"
+        value={$selectedYAxis.scaleDomain[1]}
+        on:input|stopPropagation={updateScaleDomain}
+      />
+    </fieldset>
 
-  <fieldset>
-    <label for="tickCount"> Tick Count </label>
-    <input
-      class="st-input w-100"
-      name="tickCount"
-      type="number"
-      value={axis.tickCount}
-      on:input|stopPropagation={updateAxis}
-    />
-  </fieldset>
-</CssGrid>
+    <fieldset>
+      <label for="tickCount"> Tick Count </label>
+      <input
+        class="st-input w-100"
+        name="tickCount"
+        type="number"
+        value={$selectedYAxis.tickCount}
+        on:input|stopPropagation={updateAxis}
+      />
+    </fieldset>
+  </CssGrid>
+{/if}

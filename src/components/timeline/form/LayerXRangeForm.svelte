@@ -1,5 +1,6 @@
 <script lang="ts">
   import CssGrid from '../../ui/CssGrid.svelte';
+  import { selectedLayer, viewActions } from '../../../stores/views';
 
   const colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },
@@ -14,16 +15,19 @@
     { name: 'Tableau 10', value: 'schemeTableau10' },
   ];
 
-  export let layer: Layer | null;
-
-  $: lineLayer = layer as XRangeLayer;
+  $: lineLayer = $selectedLayer as XRangeLayer;
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'x-range'}
   <CssGrid columns="50% 50%">
     <fieldset>
       <label for="colorScheme">Color Scheme</label>
-      <select class="st-select w-100" name="colorScheme" value={lineLayer.colorScheme} on:change>
+      <select
+        class="st-select w-100"
+        name="colorScheme"
+        value={lineLayer.colorScheme}
+        on:change={viewActions.updateLayer}
+      >
         {#each colorSchemes as colorScheme}
           <option value={colorScheme.value}>
             {colorScheme.name}
@@ -34,7 +38,13 @@
 
     <fieldset>
       <label for="opacity">Opacity</label>
-      <input class="st-input w-100" name="opacity" type="number" value={lineLayer.opacity} on:input />
+      <input
+        class="st-input w-100"
+        name="opacity"
+        type="number"
+        value={lineLayer.opacity}
+        on:input={viewActions.updateLayer}
+      />
     </fieldset>
   </CssGrid>
 {/if}
