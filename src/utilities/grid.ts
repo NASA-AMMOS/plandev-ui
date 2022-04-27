@@ -9,7 +9,7 @@ export const activitiesGrid: Grid = {
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
-      rowSizes: '70% 3px 1fr',
+      rowSizes: '3fr 3px 1fr',
       rows: [
         { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
@@ -41,7 +41,7 @@ export const constraintsGrid: Grid = {
     { id: 5, track: 1, type: 'gutter' },
     {
       id: 6,
-      rowSizes: '70% 3px 30%',
+      rowSizes: '2fr 3px 1fr',
       rows: [
         { componentName: 'Timeline', id: 7, timelineId: 0, type: 'component' },
         { id: 8, track: 1, type: 'gutter' },
@@ -73,7 +73,7 @@ export const schedulingGrid: Grid = {
     { id: 5, track: 1, type: 'gutter' },
     {
       id: 6,
-      rowSizes: '70% 3px 1fr',
+      rowSizes: '2fr 3px 1fr',
       rows: [
         { componentName: 'Timeline', id: 7, timelineId: 0, type: 'component' },
         { id: 8, track: 1, type: 'gutter' },
@@ -94,7 +94,7 @@ export const simulationGrid: Grid = {
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
-      rowSizes: '70% 3px 1fr',
+      rowSizes: '2fr 3px 1fr',
       rows: [
         { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
@@ -124,7 +124,7 @@ export const viewsGrid: Grid = {
     { id: 5, track: 1, type: 'gutter' },
     {
       id: 6,
-      rowSizes: '70% 3px 1fr',
+      rowSizes: '2fr 3px 1fr',
       rows: [
         { componentName: 'Timeline', id: 7, timelineId: 0, type: 'component' },
         { id: 8, track: 1, type: 'gutter' },
