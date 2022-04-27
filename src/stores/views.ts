@@ -7,7 +7,6 @@ import {
   constraintsGrid,
   schedulingGrid,
   simulationGrid,
-  timelineGrid,
   updateGrid,
   viewsGrid,
 } from '../utilities/grid';
@@ -111,8 +110,6 @@ export const viewActions = {
       layout = schedulingGrid;
     } else if (title === 'Simulation') {
       layout = simulationGrid;
-    } else if (title === 'Timeline') {
-      layout = timelineGrid;
     } else if (title === 'Views') {
       layout = viewsGrid;
     } else {

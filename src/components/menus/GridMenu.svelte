@@ -28,6 +28,10 @@
       <i class="bi bi-braces-asterisk" />
       Constraints
     </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('ConstraintEditor')}>
+      <i class="bi bi-code" />
+      Constraint Editor
+    </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ConstraintViolations')}>
       <i class="bi bi-file-earmark-excel" />
       Constraint Violations
@@ -35,6 +39,10 @@
     <MenuItem on:click={() => updateGridComponent('Scheduling')}>
       <i class="bi bi-calendar3" />
       Scheduling
+    </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('SchedulingEditor')}>
+      <i class="bi bi-code" />
+      Scheduling Editor
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityForm')}>
       <i class="si si-activity" />
@@ -51,6 +59,10 @@
     <MenuItem on:click={() => updateGridComponent('Views')}>
       <i class="bi bi-columns" />
       Views
+    </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('ViewEditor')}>
+      <i class="bi bi-code" />
+      View Editor
     </MenuItem>
   </Menu>
 </div>

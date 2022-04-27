@@ -117,7 +117,6 @@
       <NavButton icon="bi bi-braces-asterisk" title="Constraints" />
       <NavButton icon="bi bi-calendar3" status={$schedulingStatus} title="Scheduling" />
       <NavButton icon="bi bi-gear-wide-connected" status={$simulationStatus} title="Simulation" />
-      <NavButton icon="bi bi-calendar2-range" title="Timeline" />
       <NavButton icon="bi bi-columns" title="Views" />
     </svelte:fragment>
   </Nav>
