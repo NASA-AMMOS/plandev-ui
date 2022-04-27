@@ -37,7 +37,7 @@
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
   import { resourceActions } from '../../stores/resources';
-  import { schedulingActions, schedulingDslTypes } from '../../stores/scheduling';
+  import { schedulingActions, schedulingDslTypes, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
     simulationActions,
@@ -49,7 +49,6 @@
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
-  import StatusBadge from '../../components/ui/StatusBadge.svelte';
 
   export let initialPlan: Plan | null;
   export let initialSchedulingDslTypes: string;
@@ -113,15 +112,11 @@
   <Nav>
     <span slot="title">{initialPlan.name}</span>
 
-    <svelte:fragment slot="left">
-      <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => simulationActions.runSimulation()} />
-    </svelte:fragment>
-
     <svelte:fragment slot="right">
       <NavButton icon="si si-activity" title="Activities" />
       <NavButton icon="bi bi-braces-asterisk" title="Constraints" />
-      <NavButton icon="bi bi-calendar3" title="Scheduling" />
-      <NavButton icon="bi bi-gear-wide-connected" title="Simulation" />
+      <NavButton icon="bi bi-calendar3" status={$schedulingStatus} title="Scheduling" />
+      <NavButton icon="bi bi-gear-wide-connected" status={$simulationStatus} title="Simulation" />
       <NavButton icon="bi bi-calendar2-range" title="Timeline" />
       <NavButton icon="bi bi-columns" title="Views" />
     </svelte:fragment>

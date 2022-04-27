@@ -1,8 +1,8 @@
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { activitiesToPoints } from '../utilities/activities';
-import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
+import { Status } from '../utilities/status';
 import { plan } from './plan';
 import { simulationStatus } from './simulation';
 

@@ -2,8 +2,8 @@ import type { Writable } from 'svelte/store';
 import { get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { plan, viewTimeRange } from '../stores/plan';
-import { Status } from '../utilities/enums';
 import req from '../utilities/requests';
+import { Status } from '../utilities/status';
 import { simulationStatus } from './simulation';
 
 /* Stores. */

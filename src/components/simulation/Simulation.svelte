@@ -13,7 +13,7 @@
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
-  import { Status } from '../../utilities/enums';
+  import { Status } from '../../utilities/status';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
