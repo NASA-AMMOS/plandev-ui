@@ -13,7 +13,6 @@
 
 <script lang="ts">
   import { hideAll as hideAllTooltips } from 'tippy.js';
-  import { fade } from 'svelte/transition';
   import { onDestroy, onMount } from 'svelte';
 
   export let hideAfterClick: boolean = true;
