@@ -1,5 +1,5 @@
 import { expect, test as base } from '@playwright/test';
-import { AppNav } from '../fixtures/AppNav';
+import { AppNav } from '../fixtures/AppNav.js';
 
 const test = base.extend<{ appNav: AppNav }>({
   appNav: async ({ page }, use) => {

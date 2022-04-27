@@ -1,5 +1,6 @@
-/** @type {import('@playwright/test').PlaywrightTestConfig} */
-const config = {
+import type { PlaywrightTestConfig } from '@playwright/test';
+
+const config: PlaywrightTestConfig = {
   forbidOnly: !!process***REMOVED***.CI,
   reporter: [
     [process***REMOVED***.CI ? 'github' : 'list'],
