@@ -68,7 +68,11 @@
         <i class="bi bi-save" style="font-size: 0.8rem" />
         Save Goal
       </button>
-      <button class="st-button secondary ellipsis" on:click={() => schedulingActions.selectGoal()}>
+      <button
+        class="st-button secondary ellipsis"
+        disabled={!$selectedSpecGoal}
+        on:click={() => schedulingActions.selectGoal()}
+      >
         <i class="bi bi-plus-square" style="font-size: 0.8rem" />
         New Goal
       </button>
@@ -76,6 +80,18 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    {#if $selectedSpecGoal}
+      <fieldset>
+        <label for="id">Id</label>
+        <input
+          class="st-input w-100"
+          disabled
+          name="id"
+          value="{$selectedSpecGoal.specification_id}-{$selectedSpecGoal.goal.id}"
+        />
+      </fieldset>
+    {/if}
+
     <Field field={nameField}>
       <label for="name" slot="label">Goal Name</label>
       <input autocomplete="off" class="st-input w-100" name="name" placeholder="Enter Goal Name (required)" required />

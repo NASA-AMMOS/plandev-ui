@@ -144,5 +144,6 @@
 
   .split-grid {
     display: grid;
+    overflow: scroll;
   }
 </style>

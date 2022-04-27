@@ -272,14 +272,6 @@ const gql = {
     }
   `,
 
-  GET_SCHEDULING_SPEC_GOAL_PRIORITIES: `#graphql
-    query GetSchedulingSpecGoalPriorities($specification_id: Int!) {
-      specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
-        priority
-      }
-    }
-  `,
-
   RESOURCE_TYPES: `#graphql
     query ResourceTypes($modelId: ID!) {
       resourceTypes(missionModelId: $modelId) {

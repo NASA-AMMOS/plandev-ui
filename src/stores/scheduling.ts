@@ -3,6 +3,7 @@ import { derived, get, writable, type Writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { plan } from '../stores/plan';
 import { Status } from '../utilities/enums';
+import { sleep } from '../utilities/generic';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
 import { activitiesMap, selectedActivityId } from './activities';
@@ -54,11 +55,8 @@ export const schedulingActions = {
     };
     const newGoal = await req.createSchedulingGoal(goal);
 
-    const priorities = await req.getSchedulingSpecGoalPriorities(specId);
-    const priority = priorities.pop() + 1 || 1;
     const specGoal: SchedulingSpecGoalInsertInput = {
       goal_id: newGoal.id,
-      priority,
       specification_id: specId,
     };
     await req.createSchedulingSpecGoal(specGoal);
@@ -119,23 +117,34 @@ export const schedulingActions = {
     const plan_revision = await req.getPlanRevision(planId);
     await req.updateSchedulingSpec(specification_id, { plan_revision });
 
+    let tries = 0;
     schedulingStatus.set(Status.Executing);
-    const { reason, status } = await req.schedule(specification_id);
 
-    if (status === 'complete') {
-      const newActivities = await req.getActivitiesForPlan(planId);
+    do {
+      const { reason, status } = await req.schedule(specification_id);
 
-      activitiesMap.set(keyBy(newActivities, 'id'));
-      selectedActivityId.set(null);
-      simulationStatus.update(Status.Dirty);
-      schedulingStatus.set(Status.Complete);
-    } else if (status === 'failed') {
-      schedulingStatus.set(Status.Failed);
-      console.log(reason);
-    } else if (status === 'incomplete') {
-      schedulingStatus.set(Status.Incomplete);
-      console.log(reason);
-    }
+      if (status === 'complete') {
+        const newActivities = await req.getActivitiesForPlan(planId);
+
+        activitiesMap.set(keyBy(newActivities, 'id'));
+        selectedActivityId.set(null);
+        simulationStatus.update(Status.Dirty);
+        schedulingStatus.set(Status.Complete);
+        return;
+      } else if (status === 'failed') {
+        schedulingStatus.set(Status.Failed);
+        console.log(reason);
+        return;
+      } else if (status === 'incomplete') {
+        schedulingStatus.set(Status.Incomplete);
+        console.log(reason);
+      }
+
+      await sleep();
+      ++tries;
+    } while (tries < 10); // Trying a max of 10 times.
+
+    schedulingStatus.set(Status.Incomplete);
   },
 
   selectGoal(goalId: number | null = null): void {

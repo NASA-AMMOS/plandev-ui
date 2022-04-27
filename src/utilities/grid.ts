@@ -58,22 +58,29 @@ export const constraintsGrid: Grid = {
 };
 
 export const schedulingGrid: Grid = {
-  columnSizes: '1fr 3px 2fr 3px 1fr',
+  columnSizes: '1fr 3px 3fr',
   columns: [
-    { componentName: 'SchedulingEditor', id: 1, type: 'component' },
-    { id: 2, track: 1, type: 'gutter' },
     {
-      id: 3,
-      rowSizes: '70% 3px 1fr',
+      id: 1,
+      rowSizes: '1fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
-        { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
+        { componentName: 'Scheduling', id: 2, type: 'component' },
+        { id: 3, track: 1, type: 'gutter' },
+        { componentName: 'SchedulingEditor', id: 4, type: 'component' },
       ],
       type: 'rows',
     },
-    { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'Scheduling', id: 8, type: 'component' },
+    { id: 5, track: 1, type: 'gutter' },
+    {
+      id: 6,
+      rowSizes: '70% 3px 1fr',
+      rows: [
+        { componentName: 'Timeline', id: 7, timelineId: 0, type: 'component' },
+        { id: 8, track: 1, type: 'gutter' },
+        { activityTableId: 0, componentName: 'ActivityTable', id: 9, type: 'component' },
+      ],
+      type: 'rows',
+    },
   ],
   gridName: 'Scheduling',
   id: 0,

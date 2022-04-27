@@ -465,18 +465,6 @@ const req = {
     }
   },
 
-  async getSchedulingSpecGoalPriorities(specification_id: number): Promise<number[]> {
-    try {
-      const data = await reqHasura<SchedulingSpecGoal[]>(gql.GET_SCHEDULING_SPEC_GOAL_PRIORITIES, {
-        specification_id,
-      });
-      const { specGoals } = data;
-      return specGoals.map(({ priority }) => priority).sort();
-    } catch (e) {
-      console.log(e);
-    }
-  },
-
   async getView(query: URLSearchParams): Promise<View | null> {
     let response: Response;
     let json: GetViewResponse;

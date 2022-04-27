@@ -37,6 +37,11 @@
     font-size: 1rem;
   }
 
+  .body {
+    display: flex;
+    flex-direction: column;
+  }
+
   .padBody,
   .padHeader {
     padding: 0.5rem;

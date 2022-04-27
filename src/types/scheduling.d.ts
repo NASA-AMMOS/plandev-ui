@@ -56,6 +56,5 @@ type SchedulingSpecGoal = {
 
 type SchedulingSpecGoalInsertInput = {
   goal_id: number;
-  priority: number;
   specification_id: number;
 };
