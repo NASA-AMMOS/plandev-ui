@@ -59,7 +59,6 @@
     class="menu"
     style:left="0"
     style:top="115%"
-    transition:fade={{ duration: 50 }}
     on:click|stopPropagation={onClick}
     on:mouseenter={() => hideAllTooltips()}
   >
