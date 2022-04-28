@@ -66,7 +66,7 @@
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={() => saveGoal()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />
-        Save Goal
+        Save
       </button>
       <button
         class="st-button secondary ellipsis"
@@ -74,7 +74,7 @@
         on:click={() => schedulingActions.selectGoal()}
       >
         <i class="bi bi-plus-square" style="font-size: 0.8rem" />
-        New Goal
+        New
       </button>
     </div>
   </svelte:fragment>

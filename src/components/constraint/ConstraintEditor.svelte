@@ -76,11 +76,11 @@
     <div class="right">
       <button class="st-button secondary ellipsis" disabled={!valid} on:click={() => saveConstraint()}>
         <i class="bi bi-save" style="font-size: 0.8rem" />
-        Save Constraint
+        Save
       </button>
       <button class="st-button secondary ellipsis" on:click={() => constraintActions.selectConstraint(null)}>
         <i class="bi bi-plus-square" style="font-size: 0.8rem" />
-        New Constraint
+        New
       </button>
     </div>
   </svelte:fragment>
