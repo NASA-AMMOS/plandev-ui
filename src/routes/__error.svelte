@@ -1,1 +1,1 @@
-<div>An unexpected error occured.</div>
+<div class="app-error">An unexpected error occured.</div>

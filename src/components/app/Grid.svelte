@@ -85,7 +85,7 @@
     {/each}
   </div>
 {:else if grid?.type === 'component'}
-  <div class="component">
+  <div class="component" data-component-name={grid.componentName}>
     {#if grid.componentName === 'ActivityForm'}
       <ActivityForm gridId={grid.id} />
     {:else if grid.componentName === 'ActivityTable'}

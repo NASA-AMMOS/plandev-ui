@@ -46,9 +46,6 @@ export class ModelsPage {
     await this.createButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
     await expect(this.tableRow).toBeVisible();
-
-    // Artificial wait for Hasura events to finish seeding the database when a model is created.
-    await this.page.waitForTimeout(3000);
   }
 
   async deleteModel() {

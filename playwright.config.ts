@@ -2,7 +2,6 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
   forbidOnly: !!process***REMOVED***.CI,
-  fullyParallel: true,
   reporter: [
     [process***REMOVED***.CI ? 'github' : 'list'],
     ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'test-results' }],

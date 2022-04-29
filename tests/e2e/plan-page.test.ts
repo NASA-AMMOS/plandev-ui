@@ -34,7 +34,19 @@ test.describe('Plan Page', () => {
     await modelsPage.deleteModel();
   });
 
-  test('Plan title should be visible in the top navigation bar', async ({ planPage, plansPage }) => {
+  test('Error page should not be visible, and the plan title should be visible in the top navigation bar', async ({
+    planPage,
+    plansPage,
+  }) => {
+    await expect(planPage.appError).not.toBeVisible();
     await expect(planPage.planTitle(plansPage.planName)).toBeVisible();
+  });
+
+  test('Initially the Activities layout should be displayed', async ({ planPage }) => {
+    await expect(planPage.activityFormComponent).toBeVisible();
+    await expect(planPage.activityTableComponent).toBeVisible();
+    await expect(planPage.activityTypesComponent).toBeVisible();
+    await expect(planPage.timelineComponent).toBeVisible();
+    await expect(planPage.activitiesNavButton).toHaveClass(/selected/);
   });
 });

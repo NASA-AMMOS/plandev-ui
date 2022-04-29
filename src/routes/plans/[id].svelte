@@ -110,7 +110,7 @@
 
 <CssGrid rows="42px calc(100vh - 42px)">
   <Nav>
-    <span slot="title">{initialPlan.name}</span>
+    <span class="plan-title" slot="title">{initialPlan.name}</span>
 
     <svelte:fragment slot="right">
       <NavButton icon="si si-activity" title="Activities" />
