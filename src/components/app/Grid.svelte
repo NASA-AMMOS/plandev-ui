@@ -1,4 +1,4 @@
-<svelte:options immutable={false} />
+<svelte:options immutable={true} />
 
 <script lang="ts">
   import Split from 'split-grid';

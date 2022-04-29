@@ -153,40 +153,41 @@ export const viewsGrid: Grid = {
  */
 export function updateGrid(grid: Grid, id: number, prop: string, value: any): Grid {
   if (grid.type === 'component' && grid.id === id) {
-    grid[prop] = value;
-    return grid;
+    return { ...grid, [prop]: value };
   }
 
   if (grid.type === 'columns') {
     if (id === grid.id) {
-      grid[prop] = value;
-      return grid;
+      return { ...grid, [prop]: value };
     }
 
-    grid.columns.map(column => {
-      if (column.type === 'columns' && id === column.id) {
-        column[prop] = value;
-        return column;
-      } else {
-        return updateGrid(column, id, prop, value);
-      }
-    });
+    return {
+      ...grid,
+      columns: grid.columns.map(column => {
+        if (column.type === 'columns' && id === column.id) {
+          return { ...column, [prop]: value };
+        } else {
+          return updateGrid(column, id, prop, value);
+        }
+      }),
+    };
   }
 
   if (grid.type === 'rows') {
     if (id === grid.id) {
-      grid[prop] = value;
-      return grid;
+      return { ...grid, [prop]: value };
     }
 
-    grid.rows.map(row => {
-      if (row.type === 'rows' && id === row.id) {
-        row[prop] = value;
-        return row;
-      } else {
-        return updateGrid(row, id, prop, value);
-      }
-    });
+    return {
+      ...grid,
+      rows: grid.rows.map(row => {
+        if (row.type === 'rows' && id === row.id) {
+          return { ...row, [prop]: value };
+        } else {
+          return updateGrid(row, id, prop, value);
+        }
+      }),
+    };
   }
 
   return grid;
