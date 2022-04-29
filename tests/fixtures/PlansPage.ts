@@ -8,6 +8,7 @@ export class PlansPage {
 
   readonly endTime: string;
   readonly planName: string;
+  public planId: string;
   readonly startTime: string;
 
   readonly alertError: Locator;
@@ -21,6 +22,7 @@ export class PlansPage {
   readonly inputStartTime: Locator;
   readonly tableRow: Locator;
   readonly tableRowDeleteButton: Locator;
+  readonly tableRowPlanId: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -39,6 +41,7 @@ export class PlansPage {
     this.inputStartTime = page.locator('input[name="start-time"]');
     this.tableRow = page.locator(`tr:has-text("${this.planName}")`);
     this.tableRowDeleteButton = page.locator(`tr:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`);
+    this.tableRowPlanId = page.locator(`tr:has-text("${this.planName}") > td >> nth=1`);
   }
 
   async createPlan(modelName: string) {
@@ -50,6 +53,9 @@ export class PlansPage {
     await this.createButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
     await expect(this.tableRow).toBeVisible();
+    await expect(this.tableRowPlanId).toBeVisible();
+    const el = await this.tableRowPlanId.elementHandle();
+    this.planId = await el.textContent();
   }
 
   async deletePlan() {
