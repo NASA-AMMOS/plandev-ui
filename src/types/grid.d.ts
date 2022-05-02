@@ -39,7 +39,7 @@ type GridGutter = {
   type: 'gutter';
 };
 
-type GridName = 'Activities' | 'Constraints' | 'Custom' | 'Scheduling' | 'Simulation' | 'Views';
+type GridName = 'Activities' | 'Constraints' | 'Scheduling' | 'Simulation' | 'View';
 
 type GridRows = {
   gridName?: GridName;

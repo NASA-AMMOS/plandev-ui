@@ -121,29 +121,6 @@ export const simulationGrid: Grid = {
   type: 'columns',
 };
 
-export const viewsGrid: Grid = {
-  columnSizes: '1fr 3px 3fr 3px 1fr',
-  columns: [
-    {
-      id: 1,
-      rowSizes: '1fr 3px 2fr',
-      rows: [
-        { componentName: 'Views', id: 2, type: 'component' },
-        { id: 3, track: 1, type: 'gutter' },
-        { componentName: 'ViewEditor', id: 4, type: 'component' },
-      ],
-      type: 'rows',
-    },
-    { id: 5, track: 1, type: 'gutter' },
-    { componentName: 'Timeline', id: 6, timelineId: 0, type: 'component' },
-    { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'TimelineForm', id: 8, type: 'component' },
-  ],
-  gridName: 'Views',
-  id: 0,
-  type: 'columns',
-};
-
 /**
  * Grid utility functions.
  */

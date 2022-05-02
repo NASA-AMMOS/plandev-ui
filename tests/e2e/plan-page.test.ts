@@ -42,11 +42,11 @@ test.describe('Plan Page', () => {
     await expect(planPage.planTitle(plansPage.planName)).toBeVisible();
   });
 
-  test('Initially the Activities layout should be displayed', async ({ planPage }) => {
+  test('Initially the View layout should be displayed', async ({ planPage }) => {
     await expect(planPage.activityFormComponent).toBeVisible();
     await expect(planPage.activityTableComponent).toBeVisible();
     await expect(planPage.activityTypesComponent).toBeVisible();
     await expect(planPage.timelineComponent).toBeVisible();
-    await expect(planPage.activitiesNavButton).toHaveClass(/selected/);
+    await expect(planPage.viewNavButton).toHaveClass(/selected/);
   });
 });

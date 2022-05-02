@@ -15,7 +15,7 @@ export class PlanPage {
   readonly constraintsNavButton: Locator;
   readonly schedulingNavButton: Locator;
   readonly simulationNavButton: Locator;
-  readonly viewsNavButton: Locator;
+  readonly viewNavButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -32,7 +32,7 @@ export class PlanPage {
     this.constraintsNavButton = page.locator(`.nav-button:has-text("Constraints")`);
     this.schedulingNavButton = page.locator(`.nav-button:has-text("Scheduling")`);
     this.simulationNavButton = page.locator(`.nav-button:has-text("Simulation")`);
-    this.viewsNavButton = page.locator(`.nav-button:has-text("Views")`);
+    this.viewNavButton = page.locator(`.nav-button:has-text("View")`);
   }
 
   /**

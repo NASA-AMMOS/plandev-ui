@@ -7,7 +7,7 @@
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { view } from '../../stores/views';
+  import { view, viewLayout } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
@@ -30,7 +30,8 @@
       views = views.filter(v => v.id !== viewId);
       if ($view.id === viewId) {
         // If we deleted the view we are viewing, switch to the next view.
-        $view = nextView;
+        $view = { ...nextView };
+        $viewLayout = { ...nextView.plan.layout };
         setQueryParam('viewId', `${nextView.id}`);
       }
     } else {
@@ -43,7 +44,8 @@
     const newView = await req.getView(query);
 
     if (view) {
-      $view = newView;
+      $view = { ...newView };
+      $viewLayout = { ...newView.plan.layout };
       setQueryParam('viewId', `${newView.id}`);
     } else {
       console.log(`No view found for ID: ${viewId}`);

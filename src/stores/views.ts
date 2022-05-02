@@ -2,20 +2,24 @@ import type { Writable } from 'svelte/store';
 import { derived, get, writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import { getTarget, setQueryParam } from '../utilities/generic';
-import {
-  activitiesGrid,
-  constraintsGrid,
-  schedulingGrid,
-  simulationGrid,
-  updateGrid,
-  viewsGrid,
-} from '../utilities/grid';
+import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
 import req from '../utilities/requests';
 
 /* Stores. */
 
+/**
+ * Current user-defined view.
+ */
 export const view: Writable<View | null> = writable(null);
 
+/**
+ * Current user-defined layout.
+ */
+export const viewLayout: Writable<Grid | null> = writable(null);
+
+/**
+ * Formatted JSON string of the current view.
+ */
 export const viewText = derived(view, $view => ($view ? JSON.stringify($view, null, 2) : ''));
 
 export const selectedTimelineId: Writable<number | null> = writable(null);
@@ -110,8 +114,9 @@ export const viewActions = {
       layout = schedulingGrid;
     } else if (title === 'Simulation') {
       layout = simulationGrid;
-    } else if (title === 'Views') {
-      layout = viewsGrid;
+    } else if (title === 'View') {
+      const viewGrid = get(viewLayout);
+      layout = viewGrid;
     } else {
       layout = activitiesGrid;
     }

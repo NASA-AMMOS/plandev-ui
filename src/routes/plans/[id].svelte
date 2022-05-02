@@ -45,7 +45,7 @@
     simulationTemplates,
     simulationStatus,
   } from '../../stores/simulation';
-  import { view, viewActions } from '../../stores/views';
+  import { view, viewLayout } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -75,7 +75,8 @@
   }
 
   $: if (initialView) {
-    $view = initialView;
+    $view = { ...initialView };
+    $viewLayout = { ...initialView.plan.layout };
   }
 
   onMount(() => {
@@ -96,10 +97,7 @@
   function onKeydown(event: KeyboardEvent) {
     const { key, metaKey } = event;
 
-    if (metaKey && key === 'e') {
-      event.preventDefault();
-      viewActions.setLayout('Views');
-    } else if (metaKey && key === 's') {
+    if (metaKey && key === 's') {
       event.preventDefault();
       simulationActions.runSimulation();
     }
@@ -117,7 +115,7 @@
       <NavButton icon="bi bi-braces-asterisk" title="Constraints" />
       <NavButton icon="bi bi-calendar3" status={$schedulingStatus} title="Scheduling" />
       <NavButton icon="bi bi-gear-wide-connected" status={$simulationStatus} title="Simulation" />
-      <NavButton icon="bi bi-columns" title="Views" />
+      <NavButton icon="bi bi-columns" title="View" />
     </svelte:fragment>
   </Nav>
 
