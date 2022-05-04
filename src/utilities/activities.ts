@@ -24,7 +24,16 @@ export function activityToPoint(
 
           return 0;
         })
-        .map(childId => activityToPoint(activitiesMap, activitiesMap[childId], selectedActivityId))
+        .reduce((childActivityPoints, childId) => {
+          const childActivity = activitiesMap[childId];
+
+          if (childActivity) {
+            const childActivityPoint = activityToPoint(activitiesMap, childActivity, selectedActivityId);
+            childActivityPoints.push(childActivityPoint);
+          }
+
+          return childActivityPoints;
+        }, [])
     : [];
 
   const point: ActivityPoint = {
