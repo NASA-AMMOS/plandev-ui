@@ -308,11 +308,6 @@ const gql = {
             satisfying_activities {
               activity_id
             }
-            satisfying_activities_aggregate {
-              aggregate {
-                count
-              }
-            }
           }
           author
           created_date

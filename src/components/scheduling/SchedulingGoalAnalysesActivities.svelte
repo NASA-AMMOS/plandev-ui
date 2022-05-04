@@ -24,22 +24,26 @@
 {#if expanded}
   <ul>
     {#if analysis}
-      {#each analysis.satisfying_activities as activity}
-        {#if $activitiesMap[activity.activity_id]}
-          <li>
-            <div
-              class="satisfied-activity"
-              class:selected={$selectedActivityId === activity.activity_id}
-              on:click={() => {
-                activityActions.selectActivity(activity.activity_id);
-              }}
-            >
-              <i class="si si-activity" />
-              {$activitiesMap[activity.activity_id].type}
-            </div>
-          </li>
-        {/if}
-      {/each}
+      {#if analysis.satisfying_activities.length}
+        {#each analysis.satisfying_activities as activity}
+          {#if $activitiesMap[activity.activity_id]}
+            <li>
+              <div
+                class="satisfied-activity"
+                class:selected={$selectedActivityId === activity.activity_id}
+                on:click={() => {
+                  activityActions.selectActivity(activity.activity_id);
+                }}
+              >
+                <i class="si si-activity" />
+                {$activitiesMap[activity.activity_id].type}
+              </div>
+            </li>
+          {/if}
+        {/each}
+      {:else}
+        <li>No Satisfied Activities</li>
+      {/if}
     {:else}
       <li>No Satisfied Activities</li>
     {/if}

@@ -1,39 +1,36 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { difference } from 'lodash-es';
+
   export let analyses: SchedulingGoalAnalysis[] = [];
 
-  let activitiesDifference: number | null = null;
   let currentAnalysis: SchedulingGoalAnalysis | null = null;
-  let prevAnalysis: SchedulingGoalAnalysis | null = null;
+  let previousAnalysis: SchedulingGoalAnalysis | null = null;
+  let satisfyingActivitiesDifference: number | null = null;
 
   $: {
     currentAnalysis = analyses[0] || null;
-    prevAnalysis = analyses[1] || null;
-    if (currentAnalysis && prevAnalysis) {
-      activitiesDifference =
-        currentAnalysis.satisfying_activities_aggregate.aggregate.count -
-        prevAnalysis.satisfying_activities_aggregate.aggregate.count;
+    previousAnalysis = analyses[1] || null;
+
+    if (currentAnalysis && previousAnalysis) {
+      const currentActivityIds = currentAnalysis.satisfying_activities.map(({ activity_id }) => activity_id);
+      const previousActivityIds = previousAnalysis.satisfying_activities.map(({ activity_id }) => activity_id);
+      satisfyingActivitiesDifference = difference(currentActivityIds, previousActivityIds).length;
+    } else if (currentAnalysis) {
+      satisfyingActivitiesDifference = currentAnalysis.satisfying_activities.length;
     }
   }
 </script>
 
 {#if currentAnalysis}
   <div class="scheduling-goal-analyses-badge">
-    {#if activitiesDifference !== null}
-      <div
-        class="difference-badge"
-        class:negative={activitiesDifference < 0}
-        class:positive={activitiesDifference > -1}
-      >
-        {#if activitiesDifference > -1}
-          +{activitiesDifference}
-        {:else}
-          {activitiesDifference}
-        {/if}
+    {#if satisfyingActivitiesDifference !== null}
+      <div class="difference-badge">
+        +{satisfyingActivitiesDifference}
       </div>
     {/if}
-    <div>{currentAnalysis.satisfying_activities_aggregate.aggregate.count}</div>
+    {currentAnalysis.satisfying_activities.length}
     {#if currentAnalysis.satisfied}
       <i class="bi bi-check-circle-fill" style:color="var(--st-primary-50)" />
     {:else}
@@ -65,20 +62,11 @@
 
   .difference-badge {
     align-items: center;
-    background-color: var(--st-gray-30);
+    background-color: var(--st-primary-20);
     border-radius: 4px;
+    color: var(--st-primary-90);
     display: inline-flex;
     justify-content: center;
     padding: 2px;
-  }
-
-  .difference-badge.negative {
-    background-color: rgba(186, 0, 34, 0.08);
-    color: #ba0022;
-  }
-
-  .difference-badge.positive {
-    background-color: var(--st-primary-20);
-    color: var(--st-primary-90);
   }
 </style>

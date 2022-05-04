@@ -21,7 +21,6 @@ type SchedulingGoal = {
 type SchedulingGoalAnalysis = {
   satisfied: boolean;
   satisfying_activities: { activity_id: number }[];
-  satisfying_activities_aggregate: { aggregate: { count: number } };
 };
 
 type SchedulingGoalInsertInput = Omit<

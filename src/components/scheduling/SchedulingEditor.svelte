@@ -82,24 +82,35 @@
   <svelte:fragment slot="body">
     {#if $selectedSpecGoal}
       <fieldset>
-        <label for="id">Id</label>
+        <label for="goal-id">Id</label>
         <input
           class="st-input w-100"
           disabled
-          name="id"
+          name="goal-id"
           value="{$selectedSpecGoal.specification_id}-{$selectedSpecGoal.goal.id}"
         />
       </fieldset>
     {/if}
 
     <Field field={nameField}>
-      <label for="name" slot="label">Goal Name</label>
-      <input autocomplete="off" class="st-input w-100" name="name" placeholder="Enter Goal Name (required)" required />
+      <label for="goal-name" slot="label">Goal Name</label>
+      <input
+        autocomplete="off"
+        class="st-input w-100"
+        name="goal-name"
+        placeholder="Enter Goal Name (required)"
+        required
+      />
     </Field>
 
     <Field field={descriptionField}>
-      <label for="description" slot="label">Goal Description</label>
-      <textarea autocomplete="off" class="st-input w-100" name="name" placeholder="Enter Goal Description (optional)" />
+      <label for="goal-description" slot="label">Goal Description</label>
+      <textarea
+        autocomplete="off"
+        class="st-input w-100"
+        name="goal-description"
+        placeholder="Enter Goal Description (optional)"
+      />
     </Field>
 
     <fieldset>Goal Definition</fieldset>
