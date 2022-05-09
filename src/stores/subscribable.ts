@@ -12,7 +12,7 @@ export function getGqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-) {
+): GqlSubscribable<T> {
   const HASURA_URL = hasuraUrl();
   const [, baseUrl] = HASURA_URL.split('http://');
   const url = `ws://${baseUrl}`;
@@ -29,7 +29,7 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-) {
+): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
 
   let client: Client | null;

@@ -14,6 +14,18 @@ export function clamp(num: number, min: number, max: number): number {
 }
 
 /**
+ * Wraps FileReader's readAsDataURL in a Promise that returns a base64 encoded string of the File content.
+ * This is so we can easily use FileReader with async/await.
+ */
+export function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise(resolve => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve(fileReader.result as string);
+    fileReader.readAsDataURL(file);
+  });
+}
+
+/**
  * Returns a target based on an Event.
  */
 export function getTarget(event: Event) {

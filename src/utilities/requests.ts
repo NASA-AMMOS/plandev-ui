@@ -3,6 +3,7 @@ import { user as userStore } from '../stores/app';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
+import { readFileAsDataUrl } from './generic';
 import gql from './gql';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 
@@ -71,6 +72,21 @@ const req = {
       };
 
       return activity;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async createCommandDictionary(file: File) {
+    try {
+      const result = await readFileAsDataUrl(file);
+      // Strip 'data:text/xml;base64' from result since command expansion server fails if it's included.
+      const [, dictionary] = result.split(',');
+      const data = await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+      const { createCommandDictionary } = data;
+      const { id } = createCommandDictionary;
+      return id;
     } catch (e) {
       console.log(e);
       return null;
@@ -234,6 +250,16 @@ const req = {
     }
   },
 
+  async deleteCommandDictionary(id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async deleteConstraint(id: number): Promise<boolean> {
     try {
       await reqHasura(gql.DELETE_CONSTRAINT, { id });
@@ -342,6 +368,17 @@ const req = {
       const newActivities = activities.map((activity: any) => toActivity(activity, startTime));
 
       return newActivities;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
+  async getCommandDictionaries(): Promise<CommandDictionary[]> {
+    try {
+      const data = await reqHasura(gql.GET_COMMAND_DICTIONARIES);
+      const { commandDictionaries = [] } = data;
+      return commandDictionaries;
     } catch (e) {
       console.log(e);
       return [];

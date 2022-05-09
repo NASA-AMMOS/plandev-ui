@@ -10,6 +10,14 @@ const gql = {
     }
   `,
 
+  CREATE_COMMAND_DICTIONARY: `#graphql
+    mutation CreateCommandDictionary($dictionary: String!) {
+      createCommandDictionary: uploadDictionary(dictionary: $dictionary) {
+        id
+      }
+    }
+  `,
+
   CREATE_CONSTRAINT: `#graphql
     mutation CreateConstraint($constraint: condition_insert_input!) {
       createConstraint: insert_condition_one(object: $constraint) {
@@ -86,6 +94,14 @@ const gql = {
     }
   `,
 
+  DELETE_COMMAND_DICTIONARY: `#graphql
+    mutation DeleteCommandDictionary($id: Int!) {
+      deleteCommandDictionary: delete_command_dictionary_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
   DELETE_CONSTRAINT: `#graphql
     mutation DeleteConstraint($id: Int!) {
       deleteConstraint: delete_condition_by_pk(id: $id) {
@@ -138,6 +154,17 @@ const gql = {
       }
       plan: plan_by_pk(id: $planId) {
         startTime: start_time
+      }
+    }
+  `,
+
+  GET_COMMAND_DICTIONARIES: `#graphql
+    query GetCommandDictionaries {
+      commandDictionaries: command_dictionary {
+        command_types_typescript_path
+        id
+        mission
+        version
       }
     }
   `,
@@ -295,6 +322,17 @@ const gql = {
       simulate(planId: $planId) {
         results
         status
+      }
+    }
+  `,
+
+  SUB_COMMAND_DICTIONARIES: `#graphql
+    subscription SubCommandDictionaries {
+      command_dictionary {
+        command_types_typescript_path
+        id
+        mission
+        version
       }
     }
   `,
