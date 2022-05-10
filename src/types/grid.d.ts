@@ -1,23 +1,12 @@
-type GridComponentName =
-  | 'ActivityForm'
-  | 'ActivityTable'
-  | 'ActivityTypes'
-  | 'ConstraintEditor'
-  | 'Constraints'
-  | 'ConstraintViolations'
-  | 'IFrame'
-  | 'SchedulingEditor'
-  | 'Scheduling'
-  | 'Simulation'
-  | 'Timeline'
-  | 'TimelineForm'
-  | 'ViewEditor'
-  | 'Views';
+type GridChangeSizesEvent = {
+  gridId: number;
+  newSizes: string;
+};
 
 type GridComponent = {
   activityTableId?: number;
-  componentName: GridComponentName;
-  gridName?: GridName;
+  componentName: string;
+  gridName?: string;
   iFrameId?: number;
   id: number;
   timelineId?: number;
@@ -25,7 +14,7 @@ type GridComponent = {
 };
 
 type GridColumns = {
-  gridName?: GridName;
+  gridName?: string;
   id: number;
   columns: Grid[];
   columnSizes: string;
@@ -33,16 +22,14 @@ type GridColumns = {
 };
 
 type GridGutter = {
-  gridName?: GridName;
+  gridName?: string;
   id: number;
   track: number;
   type: 'gutter';
 };
 
-type GridName = 'Activities' | 'Constraints' | 'Scheduling' | 'Simulation' | 'View';
-
 type GridRows = {
-  gridName?: GridName;
+  gridName?: string;
   id: number;
   rows: Grid[];
   rowSizes: string;

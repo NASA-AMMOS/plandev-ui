@@ -29,10 +29,24 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { keyBy } from 'lodash-es';
+  import ActivityForm from '../../components/activity/ActivityForm.svelte';
+  import ActivityTable from '../../components/activity/ActivityTable.svelte';
+  import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
+  import SplitGrid from '../../components/app/SplitGrid.svelte';
+  import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
+  import Constraints from '../../components/constraint/Constraints.svelte';
+  import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
+  import Scheduling from '../../components/scheduling/Scheduling.svelte';
+  import Simulation from '../../components/simulation/Simulation.svelte';
+  import Timeline from '../../components/timeline/Timeline.svelte';
+  import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import Grid from '../../components/app/Grid.svelte';
+  import IFrame from '../../components/ui/IFrame.svelte';
+  import ViewEditor from '../../components/view/ViewEditor.svelte';
+  import Views from '../../components/view/Views.svelte';
   import { activitiesMap, activityActions } from '../../stores/activities';
   import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
   import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
@@ -53,6 +67,23 @@
   export let initialPlan: Plan | null;
   export let initialSchedulingDslTypes: string;
   export let initialView: View | null;
+
+  const gridComponentsByName: Record<string, unknown> = {
+    ActivityForm,
+    ActivityTable,
+    ActivityTypes,
+    ConstraintEditor,
+    ConstraintViolations,
+    Constraints,
+    IFrame,
+    Scheduling,
+    SchedulingEditor,
+    Simulation,
+    Timeline,
+    TimelineForm,
+    ViewEditor,
+    Views,
+  };
 
   $: if (initialPlan) {
     $activitiesMap = keyBy(initialPlan.activities, 'id');
@@ -94,7 +125,19 @@
     simulationActions.reset();
   });
 
-  function onKeydown(event: KeyboardEvent) {
+  function changeColumnSizes(event: CustomEvent<GridChangeSizesEvent>): void {
+    const { detail } = event;
+    const { gridId, newSizes } = detail;
+    viewActions.updateLayout(gridId, 'columnSizes', newSizes);
+  }
+
+  function changeRowSizes(event: CustomEvent<GridChangeSizesEvent>): void {
+    const { detail } = event;
+    const { gridId, newSizes } = detail;
+    viewActions.updateLayout(gridId, 'rowSizes', newSizes);
+  }
+
+  function onKeydown(event: KeyboardEvent): void {
     const { key, metaKey } = event;
 
     if (metaKey && key === 's') {
@@ -146,5 +189,10 @@
     </svelte:fragment>
   </Nav>
 
-  <Grid grid={$view?.plan.layout} />
+  <SplitGrid
+    grid={$view?.plan.layout}
+    {gridComponentsByName}
+    on:changeColumnSizes={changeColumnSizes}
+    on:changeRowSizes={changeRowSizes}
+  />
 </CssGrid>

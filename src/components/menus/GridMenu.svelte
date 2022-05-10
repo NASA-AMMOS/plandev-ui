@@ -10,7 +10,7 @@
 
   let gridMenu: Menu;
 
-  function updateGridComponent(name: GridComponentName) {
+  function updateGridComponent(name: string) {
     viewActions.updateLayout(gridId, 'componentName', name);
   }
 </script>

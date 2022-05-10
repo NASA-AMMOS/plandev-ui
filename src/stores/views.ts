@@ -103,7 +103,7 @@ export const viewActions = {
     }
   },
 
-  setLayout(title: GridName) {
+  setLayout(title: string) {
     let layout: Grid;
 
     if (title === 'Activities') {
