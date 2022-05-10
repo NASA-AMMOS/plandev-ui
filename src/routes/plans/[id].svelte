@@ -34,7 +34,6 @@
   import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
-  import SplitGrid from '../../components/app/SplitGrid.svelte';
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
   import Constraints from '../../components/constraint/Constraints.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
@@ -45,6 +44,7 @@
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import IFrame from '../../components/ui/IFrame.svelte';
+  import SplitGrid from '../../components/ui/SplitGrid.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, activityActions } from '../../stores/activities';
