@@ -1,22 +1,17 @@
 <script lang="ts">
-  import { view, viewActions } from '../../stores/views';
+  import { createEventDispatcher } from 'svelte';
   import type { Status } from '../../utilities/status';
   import { getColorForStatus } from '../../utilities/status';
 
   export let icon: string = '';
+  export let selected: boolean = false;
   export let status: Status | null = null;
-  export let title: GridName;
+  export let title: string;
 
-  let selected: boolean = false;
-
-  $: selected = $view.plan.layout?.gridName === title;
-
-  function onClick() {
-    viewActions.setLayout(title);
-  }
+  const dispatch = createEventDispatcher();
 </script>
 
-<div class="nav-button" class:selected on:click|preventDefault={() => onClick()}>
+<div class="nav-button" class:selected on:click|preventDefault={() => dispatch('click')}>
   <i class={icon} style="color: {status !== null ? getColorForStatus(status) : 'unset'}" />
   {title}
 </div>

@@ -45,7 +45,7 @@
     simulationTemplates,
     simulationStatus,
   } from '../../stores/simulation';
-  import { view, viewLayout } from '../../stores/views';
+  import { viewActions, view, viewLayout } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -111,11 +111,38 @@
     <span class="plan-title" slot="title">{initialPlan.name}</span>
 
     <svelte:fragment slot="right">
-      <NavButton icon="si si-activity" title="Activities" />
-      <NavButton icon="bi bi-braces-asterisk" title="Constraints" />
-      <NavButton icon="bi bi-calendar3" status={$schedulingStatus} title="Scheduling" />
-      <NavButton icon="bi bi-gear-wide-connected" status={$simulationStatus} title="Simulation" />
-      <NavButton icon="bi bi-columns" title="View" />
+      <NavButton
+        icon="si si-activity"
+        selected={$view.plan.layout?.gridName === 'Activities'}
+        title="Activities"
+        on:click={() => viewActions.setLayout('Activities')}
+      />
+      <NavButton
+        icon="bi bi-braces-asterisk"
+        selected={$view.plan.layout?.gridName === 'Constraints'}
+        title="Constraints"
+        on:click={() => viewActions.setLayout('Constraints')}
+      />
+      <NavButton
+        icon="bi bi-calendar3"
+        selected={$view.plan.layout?.gridName === 'Scheduling'}
+        status={$schedulingStatus}
+        title="Scheduling"
+        on:click={() => viewActions.setLayout('Scheduling')}
+      />
+      <NavButton
+        icon="bi bi-gear-wide-connected"
+        selected={$view.plan.layout?.gridName === 'Simulation'}
+        status={$simulationStatus}
+        title="Simulation"
+        on:click={() => viewActions.setLayout('Simulation')}
+      />
+      <NavButton
+        icon="bi bi-columns"
+        selected={$view.plan.layout?.gridName === 'View'}
+        title="View"
+        on:click={() => viewActions.setLayout('View')}
+      />
     </svelte:fragment>
   </Nav>
 
