@@ -121,7 +121,7 @@
       <svelte:fragment slot="header">
         <Chip>
           <i class="bi bi-bar-chart" />
-          Existing Models
+          Models
         </Chip>
       </svelte:fragment>
 

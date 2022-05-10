@@ -202,7 +202,7 @@
       <svelte:fragment slot="header">
         <Chip>
           <i class="bi bi-calendar-range" />
-          Existing Plans
+          Plans
         </Chip>
         <Input>
           <i class="bi bi-search" slot="left" />
