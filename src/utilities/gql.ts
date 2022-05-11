@@ -200,7 +200,7 @@ const gql = {
     query GetModels {
       models: mission_model {
         id
-        jarId: jar_id,
+        jar_id,
         name
         version
       }

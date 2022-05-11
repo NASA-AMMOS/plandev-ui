@@ -1,6 +1,6 @@
-type CreateModel = {
+type ModelInput = {
   id: number;
-  jarId: number;
+  jar_id: number;
   name: string;
   version: string;
 };

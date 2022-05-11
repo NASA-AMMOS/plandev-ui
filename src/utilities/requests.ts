@@ -105,7 +105,7 @@ const req = {
     }
   },
 
-  async createModel(name: string, version: string, file: File): Promise<CreateModel | null> {
+  async createModel(name: string, version: string, file: File): Promise<ModelInput | null> {
     try {
       const jar_id = await req.uploadFile(file);
       const modelInput = {
@@ -117,9 +117,9 @@ const req = {
       const data = await reqHasura(gql.CREATE_MODEL, { model: modelInput });
       const { createModel } = data;
       const { id } = createModel;
-      const model: CreateModel = {
+      const model: ModelInput = {
         id,
-        jarId: jar_id,
+        jar_id,
         name,
         version,
       };
@@ -297,9 +297,9 @@ const req = {
     }
   },
 
-  async deleteModel(id: number, jarId: number): Promise<boolean> {
+  async deleteModel(id: number, jar_id: number): Promise<boolean> {
     try {
-      await req.deleteFile(jarId);
+      await req.deleteFile(jar_id);
       await reqHasura(gql.DELETE_MODEL, { id });
       return true;
     } catch (e) {
@@ -418,7 +418,7 @@ const req = {
     }
   },
 
-  async getModels(): Promise<CreateModel[]> {
+  async getModels(): Promise<ModelInput[]> {
     try {
       const data = await reqHasura(gql.GET_MODELS);
       const { models = [] } = data;

@@ -74,7 +74,12 @@
   </div>
 {:else if grid?.type === 'component'}
   <div class="split-grid-component" data-component-name={grid.componentName}>
-    <svelte:component this={gridComponentsByName[grid.componentName]} {...grid} gridId={grid.id} />
+    <svelte:component
+      this={gridComponentsByName[grid.componentName]}
+      {...grid?.props || {}}
+      {...grid}
+      gridId={grid.id}
+    />
   </div>
 {/if}
 

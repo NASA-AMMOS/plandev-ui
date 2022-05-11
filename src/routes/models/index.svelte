@@ -33,7 +33,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import req from '../../utilities/requests';
 
-  export let models: CreateModel[] = [];
+  export let models: ModelInput[] = [];
 
   let confirmDeleteModelModal: Modal;
   let createButtonText = 'Create';
@@ -60,10 +60,10 @@
     createButtonText = 'Create';
   }
 
-  async function deleteModel(event: CustomEvent<CreateModel>) {
+  async function deleteModel(event: CustomEvent<ModelInput>) {
     const { detail: model } = event;
-    const { id, jarId } = model;
-    const success = await req.deleteModel(id, jarId);
+    const { id, jar_id } = model;
+    const success = await req.deleteModel(id, jar_id);
 
     if (success) {
       models = models.filter(model => model.id !== id);

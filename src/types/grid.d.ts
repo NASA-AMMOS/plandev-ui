@@ -9,6 +9,7 @@ type GridComponent = {
   gridName?: string;
   iFrameId?: number;
   id: number;
+  props?: unknown;
   timelineId?: number;
   type: 'component';
 };
