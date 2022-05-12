@@ -10,6 +10,7 @@
   export { className as class };
   export { styleName as style };
   export let automaticLayout: boolean | undefined = undefined;
+  export let fixedOverflowWidgets: boolean | undefined = undefined;
   export let language: string | undefined = undefined;
   export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
   export let minimap: Editor.IEditorMinimapOptions | undefined = undefined;
@@ -51,6 +52,7 @@
 
     const options: Editor.IStandaloneEditorConstructionOptions = {
       automaticLayout,
+      fixedOverflowWidgets,
       language,
       lineNumbers,
       minimap,
