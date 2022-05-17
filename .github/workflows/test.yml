@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '18'
       - name: Build (Aerie)
         working-directory: ./aerie
         run: |
@@ -55,11 +55,14 @@ jobs:
           name: 🎭 Playwright Run Results
           path: test-results
       - name: Print Logs for Services (Aerie)
+        if: always()
         run: docker compose -f docker-compose-test.yml logs -t
       - name: Stop Services (Aerie)
+        if: always()
         run: |
           docker ps -a
           docker compose -f docker-compose-test.yml down
           docker ps -a
       - name: Prune Volumes (Aerie)
+        if: always()
         run: docker volume prune --force

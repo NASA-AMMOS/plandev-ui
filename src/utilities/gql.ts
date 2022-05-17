@@ -26,6 +26,14 @@ const gql = {
     }
   `,
 
+  CREATE_EXPANSION_RULE: `#graphql
+    mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
+      createExpansionRule: insert_expansion_rule_one(object: $rule) {
+        id
+      }
+    }
+  `,
+
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: insert_mission_model_one(object: $model) {
@@ -110,6 +118,14 @@ const gql = {
     }
   `,
 
+  DELETE_EXPANSION_RULE: `#graphql
+    mutation DeleteExpansionRule($id: Int!) {
+      deleteExpansionRule: delete_expansion_rule_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
   DELETE_MODEL: `#graphql
     mutation DeleteModel($id: Int!) {
       deleteModel: delete_mission_model_by_pk(id: $id) {
@@ -158,13 +174,18 @@ const gql = {
     }
   `,
 
-  GET_COMMAND_DICTIONARIES: `#graphql
-    query GetCommandDictionaries {
-      commandDictionaries: command_dictionary {
-        command_types_typescript_path
-        id
-        mission
-        version
+  GET_ACTIVITY_TYPESCRIPT: `#graphql
+    query GetActivityTypeScript($activityTypeName: String!, $modelId: Int!) {
+      activity: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
+        typescript
+      }
+    }
+  `,
+
+  GET_COMMAND_TYPESCRIPT: `#graphql
+    query GetCommandTypeScript($commandDictionaryId: Int!) {
+      command: getCommandTypeScript(commandDictionaryId: $commandDictionaryId) {
+        typescript
       }
     }
   `,
@@ -192,6 +213,18 @@ const gql = {
         arguments
         errors
         success
+      }
+    }
+  `,
+
+  GET_EXPANSION_RULE: `#graphql
+    query GetExpansionRule($id: Int!) {
+      expansionRule: expansion_rule_by_pk(id: $id) {
+        activity_type
+        authoring_command_dict_id
+        authoring_mission_model_id
+        expansion_logic
+        id
       }
     }
   `,
@@ -326,12 +359,43 @@ const gql = {
     }
   `,
 
+  SUB_ACTIVITY_TYPE_NAMES: `#graphql
+    subscription SubActivityTypes($modelId: Int!) {
+      activityTypes: activity_type(where: { model_id: { _eq: $modelId } }) {
+        name
+      }
+    }
+  `,
+
   SUB_COMMAND_DICTIONARIES: `#graphql
     subscription SubCommandDictionaries {
       command_dictionary {
         command_types_typescript_path
         id
         mission
+        version
+      }
+    }
+  `,
+
+  SUB_EXPANSION_RULES: `#graphql
+    subscription SubExpansionRules {
+      expansionRules: expansion_rule {
+        activity_type
+        authoring_command_dict_id
+        authoring_mission_model_id
+        expansion_logic
+        id
+      }
+    }
+  `,
+
+  SUB_MODELS: `#graphql
+    subscription SubModels {
+      models: mission_model {
+        id
+        jar_id,
+        name
         version
       }
     }
@@ -389,6 +453,16 @@ const gql = {
     mutation UpdateConstraint($id: Int!, $constraint: condition_set_input!) {
       updateConstraint: update_condition_by_pk(
         pk_columns: { id: $id }, _set: $constraint
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_EXPANSION_RULE: `#graphql
+    mutation UpdateExpansionRule($id: Int!, $rule: expansion_rule_set_input!) {
+      updateExpansionRule: update_expansion_rule_by_pk(
+        pk_columns: { id: $id }, _set: $rule
       ) {
         id
       }

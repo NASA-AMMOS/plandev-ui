@@ -50,6 +50,28 @@ test.describe('App Nav', () => {
     await expect(page).toHaveURL(`${baseURL}/models`);
   });
 
+  test(`Clicking on the app menu 'Dictionaries' option should route to the dictionaries page`, async ({
+    appNav,
+    baseURL,
+    page,
+  }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    await appNav.appMenuItemDictionaries.click();
+    await expect(page).toHaveURL(`${baseURL}/dictionaries`);
+  });
+
+  test(`Clicking on the app menu 'Expansion' option should route to the expansion/rules page`, async ({
+    appNav,
+    baseURL,
+    page,
+  }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    await appNav.appMenuItemExpansion.click();
+    await expect(page).toHaveURL(`${baseURL}/expansion/rules`);
+  });
+
   test(`Clicking on the app menu 'Gateway' option should open a new tab to the gateway page`, async ({
     appNav,
     page,

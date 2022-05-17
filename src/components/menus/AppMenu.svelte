@@ -33,6 +33,14 @@
       <i class="bi bi-bar-chart" />
       Models
     </MenuItem>
+    <MenuItem on:click={() => goto('/dictionaries')} on:pointerenter={() => prefetch('/dictionaries')}>
+      <i class="bi bi-journal-text" />
+      Dictionaries
+    </MenuItem>
+    <MenuItem on:click={() => goto('/expansion/rules')} on:pointerenter={() => prefetch('/expansion/rules')}>
+      <i class="bi bi-code-square" />
+      Expansion
+    </MenuItem>
     <MenuItem on:click={() => window.open($env.GATEWAY_CLIENT_URL, '_newtab')}>
       <i class="bi bi-diagram-3" />
       Gateway

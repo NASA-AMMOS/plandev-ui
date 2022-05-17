@@ -34,16 +34,6 @@ test.describe('Scheduling', () => {
     await modelsPage.deleteModel();
   });
 
-  test('Clicking on the Scheduling nav button should show the scheduling layout', async ({ planPage }) => {
-    await planPage.showSchedulingLayout();
-    await expect(planPage.schedulingComponent).toBeVisible();
-    await expect(planPage.schedulingEditorComponent).toBeVisible();
-    await expect(planPage.timelineComponent).toBeVisible();
-    await expect(planPage.activityTableComponent).toBeVisible();
-    await expect(planPage.activityFormComponent).toBeVisible();
-    await expect(planPage.schedulingNavButton).toHaveClass(/selected/);
-  });
-
   test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async ({ planPage }) => {
     await planPage.showSchedulingLayout();
     const goalName = 'Recurrence Goal';

@@ -1,23 +1,4 @@
-<script lang="ts" context="module">
-  import type { Load } from '@sveltejs/kit';
-
-  export const load: Load = async ({ session }) => {
-    if (!session.user) {
-      return {
-        redirect: '/login',
-        status: 302,
-      };
-    }
-
-    const initialDictionaries = await req.getCommandDictionaries();
-
-    return {
-      props: {
-        initialDictionaries,
-      },
-    };
-  };
-</script>
+<svelte:options immutable={true} />
 
 <script lang="ts">
   import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
@@ -28,21 +9,16 @@
   import Panel from '../../components/ui/Panel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Nav from '../../components/app/Nav.svelte';
-  import { getGqlSubscribable } from '../../stores/subscribable';
+  import { dictionaries } from '../../stores/expansion';
   import { compare } from '../../utilities/generic';
-  import gql from '../../utilities/gql';
   import { tooltip } from '../../utilities/tooltip';
   import req from '../../utilities/requests';
 
-  export let initialDictionaries: CommandDictionary[] = [];
-
   let confirmDeleteDictionaryModal: Modal;
   let createButtonText = 'Create';
-  let dictionaries: GqlSubscribable<CommandDictionary[]>;
   let error: string | null = null;
   let files: FileList;
 
-  $: dictionaries = getGqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND_DICTIONARIES, {}, initialDictionaries);
   $: sortedDictionaries = $dictionaries.sort((a, b) => compare(a.version, b.version));
 
   async function createDictionary() {

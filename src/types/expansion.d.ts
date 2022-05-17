@@ -4,3 +4,13 @@ type CommandDictionary = {
   mission: string;
   version: string;
 };
+
+type ExpansionRule = {
+  activity_type: string;
+  authoring_command_dict_id: number;
+  authoring_mission_model_id: number;
+  expansion_logic: string;
+  id: number;
+};
+
+type ExpansionRuleInsertInput = Omit<ExpansionRule, 'id'>;

@@ -3,44 +3,43 @@ import { user as userStore } from '../stores/app';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
-import { readFileAsDataUrl } from './generic';
+import { decodeBase64, readFileAsDataUrl } from './generic';
 import gql from './gql';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 
 /* Helpers. */
 
 async function reqHasura<T = any>(query: string, variables: QueryVariables = {}): Promise<Record<string, T>> {
-  let response: Response;
-  let json: any;
+  const user = get<User | null>(userStore);
+  const HASURA_URL = hasuraUrl();
 
-  try {
-    const user = get<User | null>(userStore);
-    const HASURA_URL = hasuraUrl();
+  const body = { query, variables };
+  const options = {
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-auth-sso-token': user.ssoToken ?? '',
+    },
+    method: 'POST',
+  };
 
-    const body = { query, variables };
-    const options = {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-sso-token': user.ssoToken ?? '',
-      },
-      method: 'POST',
-    };
+  const response: Response = await fetch(HASURA_URL, options);
+  const json = await response.json();
 
-    response = await fetch(HASURA_URL, options);
-    json = await response.json();
-
-    if (!response.ok) throw new Error(response.statusText);
-    if (json.errors) throw new Error(json.errors[0].message);
-
-    const { data } = json;
-    return data;
-  } catch (e) {
-    console.log(e);
+  if (!response.ok) {
     console.log(response);
     console.log(json);
-    return null;
+    throw new Error(response.statusText);
   }
+
+  if (json.errors) {
+    console.log(response);
+    console.log(json);
+    throw new Error(json.errors[0].message);
+  }
+
+  const { data } = json;
+  return data;
 }
 
 /* Requests. */
@@ -98,6 +97,18 @@ const req = {
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint });
       const { createConstraint } = data;
       const { id } = createConstraint;
+      return id;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async createExpansionRule(rule: ExpansionRuleInsertInput): Promise<number | null> {
+    try {
+      const data = await reqHasura(gql.CREATE_EXPANSION_RULE, { rule });
+      const { createExpansionRule } = data;
+      const { id } = createExpansionRule;
       return id;
     } catch (e) {
       console.log(e);
@@ -270,6 +281,16 @@ const req = {
     }
   },
 
+  async deleteExpansionRule(id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_EXPANSION_RULE, { id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async deleteFile(id: number): Promise<boolean> {
     let response: Response;
     let json: any;
@@ -374,14 +395,37 @@ const req = {
     }
   },
 
-  async getCommandDictionaries(): Promise<CommandDictionary[]> {
-    try {
-      const data = await reqHasura(gql.GET_COMMAND_DICTIONARIES);
-      const { commandDictionaries = [] } = data;
-      return commandDictionaries;
-    } catch (e) {
-      console.log(e);
-      return [];
+  async getActivityTypeScript(activityTypeName: string | null, modelId: number | null): Promise<string> {
+    if (activityTypeName !== null && modelId !== null) {
+      try {
+        const data = await reqHasura(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
+        const { activity } = data;
+        const { typescript: typeScriptBase64 } = activity;
+        const typeScript = decodeBase64(typeScriptBase64);
+        return typeScript;
+      } catch (e) {
+        console.log(e);
+        return '';
+      }
+    } else {
+      return '';
+    }
+  },
+
+  async getCommandTypeScript(commandDictionaryId: number | null): Promise<string> {
+    if (commandDictionaryId !== null) {
+      try {
+        const data = await reqHasura(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
+        const { command } = data;
+        const { typescript: typeScriptBase64 } = command;
+        const typeScript = decodeBase64(typeScriptBase64);
+        return typeScript;
+      } catch (e) {
+        console.log(e);
+        return '';
+      }
+    } else {
+      return '';
     }
   },
 
@@ -412,6 +456,17 @@ const req = {
       });
       const { effectiveModelArguments } = data;
       return effectiveModelArguments;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async getExpansionRule(id: number): Promise<ExpansionRule> {
+    try {
+      const data = await reqHasura(gql.GET_EXPANSION_RULE, { id });
+      const { expansionRule } = data;
+      return expansionRule;
     } catch (e) {
       console.log(e);
       return null;
@@ -761,6 +816,16 @@ const req = {
   async updateConstraint(id: number, constraint: Partial<Constraint>): Promise<boolean> {
     try {
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
+  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<boolean> {
+    try {
+      await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule });
       return true;
     } catch (e) {
       console.log(e);

@@ -83,6 +83,7 @@ export class PlanPage {
    * If we do not wait then navigation to the plan will fail because the data is not there yet.
    */
   async goto(planId: string) {
+    await this.page.goto('/plans');
     await this.page.waitForTimeout(1000);
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'networkidle' });
   }
@@ -100,5 +101,11 @@ export class PlanPage {
     await this.timelineComponent.waitFor({ state: 'visible' });
     await this.activityTableComponent.waitFor({ state: 'visible' });
     await this.activityFormComponent.waitFor({ state: 'visible' });
+    await expect(this.schedulingComponent).toBeVisible();
+    await expect(this.schedulingEditorComponent).toBeVisible();
+    await expect(this.timelineComponent).toBeVisible();
+    await expect(this.activityTableComponent).toBeVisible();
+    await expect(this.activityFormComponent).toBeVisible();
+    await expect(this.schedulingNavButton).toHaveClass(/selected/);
   }
 }

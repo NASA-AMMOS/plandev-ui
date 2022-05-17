@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<command_dictionary>
+  <header mission_name="GENERIC" spacecraft_id="42" schema_version="5.0" version="1.0.0" />
+  <enum_definitions>
+    <enum_table name="SomeEnum">
+      <values>
+        <enum symbol="ON" numeric="1" />
+        <enum symbol="OFF" numeric="0" />
+      </values>
+    </enum_table>
+    <enum_table name="SomeOtherEnum">
+      <values>
+        <enum symbol="CLEAR_A" numeric="1"/>
+        <enum symbol="CLEAR_B" numeric="2"/>
+        <enum symbol="CLEAR_C" numeric="3"/>
+      </values>
+    </enum_table>
+  </enum_definitions>
+  <command_definitions>
+    <hw_command opcode="" stem="HDW_CMD_0">
+      <categories>
+        <category name="module" value="n/a" />
+      </categories>
+      <description><![CDATA[Does something interesting.]]></description>
+    </hw_command>
+    <hw_command opcode="" stem="HDW_CMD_1">
+      <categories>
+        <ops_category>ABC</ops_category>
+      </categories>
+      <description>Does something else interesting.</description>
+    </hw_command>
+    <fsw_command opcode="" stem="FSW_CMD_0">
+      <arguments>
+        <enum_arg name="enum_arg_0" bit_length="8" enum_name="SomeEnum" default_value="ON" />
+        <boolean_arg name="boolean_arg_0" bit_length="8" default_value="FALSE">
+          <boolean_format true_str="TRUE" false_str="FALSE" />
+        </boolean_arg>
+        <float_arg name="float_arg_0" bit_length="64" units="none" default_value="1.0">
+          <range_of_values>
+            <include min="0.001" max="1.0001" />
+          </range_of_values>
+          <description>This is a description of float_arg_0</description>
+        </float_arg>
+      </arguments>
+      <categories>
+        <category name="cat" value="a" />
+      </categories>
+      <description><![CDATA[Does something interesting to the spacecraft.]]></description>
+    </fsw_command>
+    <fsw_command opcode="" stem="FSW_CMD_1" class="FSW">
+      <arguments>
+        <float_arg name="float_arg_0" bit_length="64" units="None">
+          <description>Some float argument.</description>
+        </float_arg>
+        <integer_arg name="integer_arg_0" bit_length="8" units="None">
+          <range_of_values>
+            <include min="-1" max="32"/>
+          </range_of_values>
+          <description>Some integer arg.</description>
+        </integer_arg>
+        <repeat_arg name="repeat_arg_0" prefix_bit_length="8">
+          <description>Some repeat argument.</description>
+          <repeat min="1" max="10">
+            <arguments>
+              <enum_arg name="enum_arg_0" bit_length="8" enum_name="SomeEnum">
+                <description>Some repeated enum argument.</description>
+              </enum_arg>
+              <unsigned_arg name="unsigned_arg_0" bit_length="16" units="index">
+                <range_of_values>
+                  <include min="0" max="3999"/>
+                </range_of_values>
+                <description>Some repeated unsigned argument.</description>
+              </unsigned_arg>
+            </arguments>
+          </repeat>
+        </repeat_arg>
+        <time_arg name="time_arg_0" bit_length="32" units="SCLK">
+          <description><![CDATA[Some time argument.]]></description>
+        </time_arg>
+        <unsigned_arg name="unsigned_arg_0" bit_length="16" units="METER" default_value="2000">
+          <range_of_values>
+            <include min="1" max="2039"/>
+          </range_of_values>
+          <description>Some unsigned argument.</description>
+        </unsigned_arg>
+        <var_string_arg name="var_string_arg_0" prefix_bit_length="8" max_bit_length="1024">
+          <valid_regex><![CDATA[[0-9a-fxA-FX]{4,}]]></valid_regex>
+          <description>Some var string argument.</description>
+        </var_string_arg>
+      </arguments>
+      <description>This command does something interesting.</description>
+    </fsw_command>
+  </command_definitions>
+</command_dictionary>

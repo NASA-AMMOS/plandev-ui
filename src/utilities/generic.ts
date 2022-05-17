@@ -1,3 +1,5 @@
+import { browser } from '$app/env';
+
 /**
  * Comparator function for numbers or strings.
  * Defaults to ascending order.
@@ -11,6 +13,17 @@ export function compare(a: number | string, b: number | string, isAsc = true): n
  */
 export function clamp(num: number, min: number, max: number): number {
   return Math.min(Math.max(num, min), max);
+}
+
+/**
+ * Cross browser/server base64 decoding.
+ */
+export function decodeBase64(base64String: string): string {
+  if (browser) {
+    return window.atob(base64String);
+  } else {
+    return Buffer.from(base64String, 'base64').toString('utf-8');
+  }
 }
 
 /**

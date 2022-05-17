@@ -23,7 +23,7 @@ export async function getOptionValueFromText(page: Page, selectSelector: string,
   const options = await getAllSelectOptions(page, selectSelector);
 
   for (const option of options) {
-    if (option.text === text) {
+    if (option.text.includes(text)) {
       return option.value;
     }
   }
