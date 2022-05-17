@@ -70,7 +70,7 @@
   }
 </script>
 
-<Panel overflowYBody="hidden" padBody={false}>
+<Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Constraint Editor" />
     <div class="right">
@@ -123,7 +123,7 @@
       language="json"
       lineNumbers="on"
       minimap={{ enabled: false }}
-      scrollBeyondLastLine={true}
+      scrollBeyondLastLine={false}
       value={definition}
       on:didChangeModelContent={onDidChangeModelContent}
     />

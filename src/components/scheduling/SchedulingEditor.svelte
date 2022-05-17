@@ -60,7 +60,7 @@
   }
 </script>
 
-<Panel overflowYBody="hidden" padBody={false}>
+<Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Scheduling Editor" />
     <div class="right">
@@ -121,7 +121,7 @@
       language="typescript"
       lineNumbers="on"
       minimap={{ enabled: false }}
-      scrollBeyondLastLine={true}
+      scrollBeyondLastLine={false}
       value={$definitionField.value}
       on:didChangeModelContent={onDidChangeModelContent}
     />
