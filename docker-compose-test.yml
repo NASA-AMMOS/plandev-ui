@@ -6,18 +6,18 @@ version: '3.7'
 services:
   aerie_commanding:
     container_name: aerie_commanding
-    depends_on: ["postgres"]
+    depends_on: ['postgres']
     environment:
-      LOG_FILE: console
-      LOG_LEVEL: debug
-      MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
-      COMMANDING_SERVER_PORT: 27184
       COMMANDING_DB: aerie_commanding
       COMMANDING_DB_PASSWORD: aerie
       COMMANDING_DB_PORT: 5432
       COMMANDING_DB_SERVER: postgres
       COMMANDING_DB_USER: aerie
       COMMANDING_LOCAL_STORE: /usr/src/app/commanding_file_store
+      COMMANDING_SERVER_PORT: 27184
+      LOG_FILE: console
+      LOG_LEVEL: debug
+      MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
     image: 'ghcr.io/nasa-ammos/aerie-commanding:develop'
     ports: ['27184:27184']
     restart: always
