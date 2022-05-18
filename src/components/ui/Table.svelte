@@ -127,8 +127,8 @@
   .actions-header,
   .selection-cell,
   .selection-header {
-    min-width: 40px;
-    width: 40px;
+    min-width: 60px;
+    width: 60px;
   }
 
   .actions-cell {
