@@ -504,16 +504,21 @@ const req = {
 
   async getPlan(id: number): Promise<Plan | null> {
     try {
-      const data = await reqHasura(gql.GET_PLAN, { id });
+      const data = await reqHasura<Plan | null>(gql.GET_PLAN, { id });
       const { plan } = data;
-      const startTime = new Date(plan.startTime);
 
-      return {
-        ...plan,
-        activities: plan.activities.map((activity: any) => toActivity(activity, startTime)),
-        endTime: getDoyTimeFromDuration(startTime, plan.duration),
-        startTime: getDoyTime(startTime),
-      };
+      if (plan) {
+        const startTime = new Date(plan.startTime);
+
+        return {
+          ...plan,
+          activities: plan.activities.map((activity: any) => toActivity(activity, startTime)),
+          endTime: getDoyTimeFromDuration(startTime, plan.duration),
+          startTime: getDoyTime(startTime),
+        };
+      } else {
+        return null;
+      }
     } catch (e) {
       console.log(e);
       return null;
