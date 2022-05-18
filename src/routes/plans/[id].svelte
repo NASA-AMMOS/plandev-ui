@@ -11,27 +11,30 @@
 
     const { id } = params;
     const planId = parseFloat(id);
-    const initialPlan = await req.getPlan(planId);
 
-    if (initialPlan) {
-      const initialConstraintsTsExtraLibs = await req.getConstraintsTsExtraLibs(initialPlan.model.id);
-      const initialSchedulingTsExtraLibs = await req.getSchedulingTsExtraLibs(initialPlan.model.id);
-      const initialView = await req.getView(url.searchParams);
+    if (!Number.isNaN(planId)) {
+      const initialPlan = await req.getPlan(planId);
 
-      return {
-        props: {
-          initialConstraintsTsExtraLibs,
-          initialPlan,
-          initialSchedulingTsExtraLibs,
-          initialView,
-        },
-      };
-    } else {
-      return {
-        redirect: '/plans',
-        status: 302,
-      };
+      if (initialPlan) {
+        const initialConstraintsTsExtraLibs = await req.getConstraintsTsExtraLibs(initialPlan.model.id);
+        const initialSchedulingTsExtraLibs = await req.getSchedulingTsExtraLibs(initialPlan.model.id);
+        const initialView = await req.getView(url.searchParams);
+
+        return {
+          props: {
+            initialConstraintsTsExtraLibs,
+            initialPlan,
+            initialSchedulingTsExtraLibs,
+            initialView,
+          },
+        };
+      }
     }
+
+    return {
+      redirect: '/plans',
+      status: 302,
+    };
   };
 </script>
 
