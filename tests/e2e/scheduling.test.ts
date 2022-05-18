@@ -1,48 +1,45 @@
-import { expect, test as base } from '@playwright/test';
-import { ModelsPage } from '../fixtures/ModelsPage.js';
-import { PlanPage } from '../fixtures/PlanPage.js';
-import { PlansPage } from '../fixtures/PlansPage.js';
+import { expect, test, type Page } from '@playwright/test';
+import { Models } from '../fixtures/Models.js';
+import { Plan } from '../fixtures/Plan.js';
+import { Plans } from '../fixtures/Plans.js';
 
-const test = base.extend<{ modelsPage: ModelsPage; planPage: PlanPage; plansPage: PlansPage }>({
-  modelsPage: async ({ page }, use) => {
-    const modelsPage = new ModelsPage(page);
-    await use(modelsPage);
-  },
-  planPage: async ({ page }, use) => {
-    const planPage = new PlanPage(page);
-    await use(planPage);
-  },
-  plansPage: async ({ page }, use) => {
-    const plansPage = new PlansPage(page);
-    await use(plansPage);
-  },
+let page: Page;
+let models: Models;
+let plan: Plan;
+let plans: Plans;
+
+test.beforeAll(async ({ browser }) => {
+  page = await browser.newPage();
+
+  models = new Models(page);
+  plans = new Plans(page);
+  plan = new Plan(page);
+
+  await models.goto();
+  await models.createModel();
+  await plans.goto();
+  await plans.createPlan(models.modelName);
+  await plan.goto(plans.planId);
 });
 
-test.describe('Scheduling', () => {
-  test.beforeEach(async ({ modelsPage, planPage, plansPage }) => {
-    await modelsPage.goto();
-    await modelsPage.createModel();
-    await plansPage.goto();
-    await plansPage.createPlan(modelsPage.modelName);
-    await planPage.goto(plansPage.planId);
-  });
+test.afterAll(async () => {
+  await plans.goto();
+  await plans.deletePlan();
+  await models.goto();
+  await models.deleteModel();
+  await page.close();
+});
 
-  test.afterEach(async ({ modelsPage, plansPage }) => {
-    await plansPage.goto();
-    await plansPage.deletePlan();
-    await modelsPage.goto();
-    await modelsPage.deleteModel();
-  });
-
-  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async ({ planPage }) => {
-    await planPage.showSchedulingLayout();
+test.describe.serial('Scheduling', () => {
+  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
+    await plan.showSchedulingLayout();
     const goalName = 'Recurrence Goal';
     const goalDescription = 'Add a BakeBananaBread activity every 12 hours';
     const goalDefinition = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
-    await planPage.createSchedulingGoal(goalName, goalDescription, goalDefinition);
-    await planPage.runScheduling();
-    await expect(planPage.schedulingGoalDifferenceBadge).toHaveText('+10');
-    await planPage.runScheduling();
-    await expect(planPage.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await plan.createSchedulingGoal(goalName, goalDescription, goalDefinition);
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
   });
 });

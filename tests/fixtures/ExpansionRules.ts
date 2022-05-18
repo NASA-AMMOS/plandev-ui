@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 
-export class ExpansionRulesPage {
+export class ExpansionRules {
   readonly page: Page;
 
   readonly cancelButton: Locator;

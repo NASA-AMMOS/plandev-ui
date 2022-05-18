@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText, getSelectedOption } from '../utilities/selectors.js';
 
-export class PlansPage {
+export class Plans {
   readonly page: Page;
 
   readonly endTime: string;

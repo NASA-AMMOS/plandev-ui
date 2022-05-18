@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
-export class ModelsPage {
+export class Models {
   readonly page: Page;
 
   readonly jarPath: string;

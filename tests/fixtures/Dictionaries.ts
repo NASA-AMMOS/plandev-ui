@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
-export class DictionariesPage {
+export class Dictionaries {
   readonly page: Page;
 
   readonly dictionaryBuffer: Buffer;
