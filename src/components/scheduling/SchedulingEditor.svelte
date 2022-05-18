@@ -7,7 +7,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
-  import { schedulingActions, schedulingDslTypes, selectedSpecGoal } from '../../stores/scheduling';
+  import { schedulingActions, selectedSpecGoal, schedulingTsExtraLibs } from '../../stores/scheduling';
   import { required } from '../../utilities/validators';
 
   export let gridId: number;
@@ -29,14 +29,14 @@
 
   $: saveButtonEnabled = $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
-  $: if (monaco !== undefined && $schedulingDslTypes !== undefined) {
+  $: if (monaco !== undefined && $schedulingTsExtraLibs !== undefined) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
-    typescriptDefaults.setExtraLibs([{ content: $schedulingDslTypes, filePath: 'aerie-scheduling.d.ts' }]);
+    typescriptDefaults.setExtraLibs($schedulingTsExtraLibs);
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {

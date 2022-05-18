@@ -13,13 +13,15 @@
     const planId = parseFloat(id);
 
     const initialPlan = await req.getPlan(planId);
-    const initialSchedulingDslTypes = await req.getSchedulingDslTypes(initialPlan.model.id);
+    const initialConstraintsTsExtraLibs = await req.getConstraintsTsExtraLibs(initialPlan.model.id);
+    const initialSchedulingTsExtraLibs = await req.getSchedulingTsExtraLibs(initialPlan.model.id);
     const initialView = await req.getView(url.searchParams);
 
     return {
       props: {
+        initialConstraintsTsExtraLibs,
         initialPlan,
-        initialSchedulingDslTypes,
+        initialSchedulingTsExtraLibs,
         initialView,
       },
     };
@@ -48,10 +50,15 @@
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, activityActions } from '../../stores/activities';
-  import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
+  import {
+    constraintActions,
+    constraintsTsExtraLibs,
+    modelConstraints,
+    planConstraints,
+  } from '../../stores/constraints';
   import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
   import { resourceActions } from '../../stores/resources';
-  import { schedulingActions, schedulingDslTypes, schedulingStatus } from '../../stores/scheduling';
+  import { schedulingActions, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
   import {
     modelParametersMap,
     simulationActions,
@@ -64,8 +71,9 @@
   import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
 
+  export let initialConstraintsTsExtraLibs: TypeScriptExtraLib[];
   export let initialPlan: Plan | null;
-  export let initialSchedulingDslTypes: string;
+  export let initialSchedulingTsExtraLibs: TypeScriptExtraLib[];
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
@@ -85,6 +93,10 @@
     Views,
   };
 
+  $: if (initialConstraintsTsExtraLibs) {
+    $constraintsTsExtraLibs = initialConstraintsTsExtraLibs;
+  }
+
   $: if (initialPlan) {
     $activitiesMap = keyBy(initialPlan.activities, 'id');
     $modelConstraints = initialPlan.model.constraints;
@@ -101,8 +113,8 @@
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }
 
-  $: if (initialSchedulingDslTypes) {
-    $schedulingDslTypes = initialSchedulingDslTypes;
+  $: if (initialSchedulingTsExtraLibs) {
+    $schedulingTsExtraLibs = initialSchedulingTsExtraLibs;
   }
 
   $: if (initialView) {

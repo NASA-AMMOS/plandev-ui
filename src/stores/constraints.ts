@@ -8,6 +8,7 @@ import { simulationStatus } from './simulation';
 
 /* Stores. */
 
+export const constraintsTsExtraLibs: Writable<TypeScriptExtraLib[]> = writable([]);
 export const modelConstraints: Writable<Constraint[]> = writable([]);
 export const planConstraints: Writable<Constraint[]> = writable([]);
 export const selectedConstraint: Writable<Constraint | null> = writable(null);
@@ -100,6 +101,7 @@ export const constraintActions = {
   },
 
   reset(): void {
+    constraintsTsExtraLibs.set([]);
     modelConstraints.set([]);
     planConstraints.set([]);
     selectedConstraint.set(null);

@@ -12,8 +12,6 @@ import { getGqlSubscribable } from './subscribable';
 
 /* Stores. */
 
-export const schedulingDslTypes: Writable<string> = writable('');
-
 export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
   gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: -1 },
@@ -21,6 +19,8 @@ export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
 );
 
 export const schedulingStatus: Writable<Status> = writable(Status.Clean);
+
+export const schedulingTsExtraLibs: Writable<TypeScriptExtraLib[]> = writable([]);
 
 export const selectedGoalId: Writable<number | null> = writable(null);
 
@@ -105,8 +105,8 @@ export const schedulingActions = {
   },
 
   reset(): void {
-    schedulingDslTypes.set('');
     schedulingStatus.set(Status.Clean);
+    schedulingTsExtraLibs.set([]);
     selectedGoalId.set(null);
   },
 

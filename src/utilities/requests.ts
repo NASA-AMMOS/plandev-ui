@@ -429,6 +429,24 @@ const req = {
     }
   },
 
+  async getConstraintsTsExtraLibs(model_id: number): Promise<TypeScriptExtraLib[]> {
+    try {
+      const data = await reqHasura<TypeScriptResponse>(gql.GET_CONSTRAINTS_TYPESCRIPT, { model_id });
+      const { constraintsTypeScript } = data;
+      const { reason, status, typescriptFiles: tsExtraLibs } = constraintsTypeScript;
+
+      if (status === 'success') {
+        return tsExtraLibs;
+      } else {
+        console.log(reason);
+        return [];
+      }
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
   async getEffectiveActivityArguments(
     modelId: number,
     activityTypeName: string,
@@ -539,21 +557,21 @@ const req = {
     }
   },
 
-  async getSchedulingDslTypes(model_id: number): Promise<string> {
+  async getSchedulingTsExtraLibs(model_id: number): Promise<TypeScriptExtraLib[]> {
     try {
-      const data = await reqHasura<SchedulingDslTypesResponse>(gql.GET_SCHEDULING_DSL_TYPES, { model_id });
-      const { schedulingDslTypes } = data;
-      const { reason, status, typescript } = schedulingDslTypes;
+      const data = await reqHasura<TypeScriptResponse>(gql.GET_SCHEDULING_TYPESCRIPT, { model_id });
+      const { schedulingTypeScript } = data;
+      const { reason, status, typescriptFiles: tsExtraLibs } = schedulingTypeScript;
 
       if (status === 'success') {
-        return typescript;
+        return tsExtraLibs;
       } else {
         console.log(reason);
-        return '';
+        return [];
       }
     } catch (e) {
       console.log(e);
-      return '';
+      return [];
     }
   },
 
@@ -962,35 +980,6 @@ const req = {
       console.log(e);
       const { message } = e;
       return { errors: [message], success: false };
-    }
-  },
-
-  async validateConstraint(body: string) {
-    let response: Response;
-    let json: any;
-    try {
-      const GATEWAY_URL = gatewayUrl();
-      const options = {
-        body,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/constraint/validate`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
-    } catch (e) {
-      console.log(e);
-      console.log(response);
-      console.log(json);
-      return {
-        errors: ['An unexpected error occurred'],
-        valid: false,
-      };
     }
   },
 };

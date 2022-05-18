@@ -56,6 +56,7 @@ services:
       MERLIN_DB_USER: 'aerie'
       MERLIN_LOCAL_STORE: /usr/src/app/merlin_file_store
       MERLIN_PORT: 27183
+      MERLIN_USE_NEW_CONSTRAINT_PIPELINE: 'true'
       JAVA_OPTS: >
         -Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO

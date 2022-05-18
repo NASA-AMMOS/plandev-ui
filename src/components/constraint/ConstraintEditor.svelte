@@ -4,54 +4,47 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import req from '../../utilities/requests';
-  import { constraintActions, selectedConstraint } from '../../stores/constraints';
+  import { constraintActions, constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
 
   export let gridId: number;
 
   let constraintType: ConstraintType = 'model';
-  let debounce: NodeJS.Timeout;
   let definition: string = '';
-  let definitionError: string | null = null;
   let description: string = '';
+  let monaco: Monaco;
   let name: string = '';
   let summary: string = '';
 
   $: if ($selectedConstraint) {
     constraintType = $selectedConstraint.model_id ? 'model' : 'plan';
-    definition = JSON.stringify(JSON.parse($selectedConstraint.definition), null, 2);
+    definition = $selectedConstraint.definition;
     description = $selectedConstraint.description;
     name = $selectedConstraint.name;
     summary = $selectedConstraint.summary;
   } else {
     constraintType = 'model';
-    definition = '';
+    definition = `export default (): Windows => {\n\n}`;
     description = '';
     name = '';
     summary = '';
   }
 
-  $: valid = definition !== '' && !definitionError && name !== '';
+  $: valid = definition !== '';
+
+  $: if (monaco !== undefined && $constraintsTsExtraLibs !== undefined) {
+    const { languages } = monaco;
+    const { typescript } = languages;
+    const { typescriptDefaults } = typescript;
+    const options = typescriptDefaults.getCompilerOptions();
+
+    typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
+    typescriptDefaults.setExtraLibs($constraintsTsExtraLibs);
+  }
 
   async function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
     const { value } = detail;
-
-    try {
-      definition = value;
-      definitionError = null;
-
-      clearTimeout(debounce);
-      debounce = setTimeout(async () => {
-        const { valid } = await req.validateConstraint(value);
-        if (!valid) {
-          definitionError = 'Input is not a valid constraint';
-        }
-      }, 200);
-    } catch (e) {
-      console.log(e);
-      definitionError = e.message;
-    }
+    definition = value;
   }
 
   function saveConstraint() {
@@ -109,18 +102,10 @@
       <input bind:value={summary} autocomplete="off" class="st-input w-100" name="summary" />
     </fieldset>
 
-    <fieldset>
-      <span class:error={definitionError !== null}>
-        Constraint Definition
-        {#if definitionError !== null}
-          ({definitionError})
-        {/if}
-      </span>
-    </fieldset>
-
     <MonacoEditor
+      bind:monaco
       automaticLayout={true}
-      language="json"
+      language="typescript"
       lineNumbers="on"
       minimap={{ enabled: false }}
       scrollBeyondLastLine={false}

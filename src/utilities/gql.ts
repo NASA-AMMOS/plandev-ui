@@ -190,6 +190,19 @@ const gql = {
     }
   `,
 
+  GET_CONSTRAINTS_TYPESCRIPT: `#graphql
+    query GetConstraintsTypeScript($model_id: ID!) {
+      constraintsTypeScript: constraintsDslTypescript(missionModelId: $model_id) {
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
+      }
+    }
+  `,
+
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS: `#graphql
     query GetEffectiveActivityArguments($modelId: ID!, $activityTypeName: String!, $arguments: ActivityArguments!) {
       effectiveActivityArguments: getActivityEffectiveArguments(
@@ -322,12 +335,15 @@ const gql = {
     }
   `,
 
-  GET_SCHEDULING_DSL_TYPES: `#graphql
-    query GetSchedulingDslTypes($model_id: Int!) {
-      schedulingDslTypes: schedulingDslTypescript(missionModelId: $model_id) {
+  GET_SCHEDULING_TYPESCRIPT: `#graphql
+    query GetSchedulingTypeScript($model_id: Int!) {
+      schedulingTypeScript: schedulingDslTypescript(missionModelId: $model_id) {
         reason
         status
-        typescript
+        typescriptFiles {
+          content
+          filePath
+        }
       }
     }
   `,
