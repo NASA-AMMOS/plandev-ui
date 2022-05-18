@@ -1,3 +1,4 @@
+import { isNil } from 'lodash-es';
 import { get } from 'svelte/store';
 import { user as userStore } from '../stores/app';
 import { plan } from '../stores/plan';
@@ -395,8 +396,11 @@ const req = {
     }
   },
 
-  async getActivityTypeScript(activityTypeName: string | null, modelId: number | null): Promise<string> {
-    if (activityTypeName !== null && modelId !== null) {
+  async getActivityTypeScript(
+    activityTypeName: string | null | undefined,
+    modelId: number | null | undefined,
+  ): Promise<string> {
+    if (!isNil(activityTypeName) && !isNil(modelId)) {
       try {
         const data = await reqHasura(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
         const { activity } = data;
@@ -412,8 +416,8 @@ const req = {
     }
   },
 
-  async getCommandTypeScript(commandDictionaryId: number | null): Promise<string> {
-    if (commandDictionaryId !== null) {
+  async getCommandTypeScript(commandDictionaryId: number | null | undefined): Promise<string> {
+    if (!isNil(commandDictionaryId)) {
       try {
         const data = await reqHasura(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
         const { command } = data;

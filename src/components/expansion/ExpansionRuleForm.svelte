@@ -8,7 +8,6 @@
   import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import { activityTypeNames, dictionaries, models, expansionActions } from '../../stores/expansion';
-  import req from '../../utilities/requests';
 
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
@@ -17,8 +16,6 @@
   export let initialRuleModelId: number | null = null;
   export let mode: 'create' | 'edit' = 'create';
 
-  let activityTypeScript: string = '';
-  let commandTypeScript: string = '';
   let ruleActivityType: string | null = initialRuleActivityType;
   let ruleDictionaryId: number | null = initialRuleDictionaryId;
   let ruleId: number | null = initialRuleId;
@@ -28,8 +25,6 @@
   let saving: boolean = false;
 
   $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
-  $: req.getCommandTypeScript(ruleDictionaryId).then(typeScript => (commandTypeScript = typeScript));
-  $: req.getActivityTypeScript(ruleActivityType, ruleModelId).then(typeScript => (activityTypeScript = typeScript));
   $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
@@ -64,10 +59,19 @@
   }
 </script>
 
-<CssGrid columns="1fr 3fr">
-  <Panel borderRight overflowYBody="hidden">
+<CssGrid columns="1fr 1fr">
+  <Panel overflowYBody="hidden">
     <svelte:fragment slot="header">
       <Chip>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</Chip>
+
+      <div class="right">
+        <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules')}>
+          {mode === 'create' ? 'Cancel' : 'Close'}
+        </button>
+        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
     </svelte:fragment>
 
     <svelte:fragment slot="body">
@@ -126,18 +130,11 @@
   </Panel>
 
   <ExpansionLogicEditor
-    {activityTypeScript}
-    {commandTypeScript}
+    {ruleActivityType}
+    {ruleDictionaryId}
     {ruleLogic}
+    {ruleModelId}
+    title="{mode === 'create' ? 'New' : 'Edit'} Expansion Rule - Logic Editor"
     on:didChangeModelContent={onDidChangeModelContent}
-  >
-    <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules')}>
-      <i class="bi bi-x-square" style="font-size: 0.8rem" />
-      {mode === 'create' ? 'Cancel' : 'Close'}
-    </button>
-    <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>
-      <i class="bi bi bi-save" style="font-size: 0.8rem" />
-      {saving ? 'Saving...' : 'Save'}
-    </button>
-  </ExpansionLogicEditor>
+  />
 </CssGrid>

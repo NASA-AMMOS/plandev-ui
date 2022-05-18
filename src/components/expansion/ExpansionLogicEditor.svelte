@@ -4,12 +4,21 @@
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
+  import req from '../../utilities/requests';
 
-  export let activityTypeScript: string = '';
-  export let commandTypeScript: string = '';
+  export let readOnly: boolean = false;
+  export let ruleActivityType: string | null = null;
+  export let ruleDictionaryId: number | null = null;
   export let ruleLogic: string = '';
+  export let ruleModelId: number | null = null;
+  export let title: string = 'Expansion Rule - Logic Editor';
 
+  let activityTypeScript: string = '';
+  let commandTypeScript: string = '';
   let monaco: Monaco;
+
+  $: req.getCommandTypeScript(ruleDictionaryId).then(typeScript => (commandTypeScript = typeScript));
+  $: req.getActivityTypeScript(ruleActivityType, ruleModelId).then(typeScript => (activityTypeScript = typeScript));
 
   $: if (monaco !== undefined && (commandTypeScript !== undefined || activityTypeScript !== undefined)) {
     const { languages } = monaco;
@@ -25,9 +34,9 @@
   }
 </script>
 
-<Panel overflowYBody="hidden">
+<Panel borderLeft overflowYBody="hidden">
   <svelte:fragment slot="header">
-    <Chip>Expansion Logic Editor</Chip>
+    <Chip>{title}</Chip>
 
     <div class="right">
       <slot />
@@ -42,6 +51,7 @@
       language="typescript"
       lineNumbers="on"
       minimap={{ enabled: false }}
+      {readOnly}
       scrollBeyondLastLine={false}
       value={ruleLogic}
       on:didChangeModelContent

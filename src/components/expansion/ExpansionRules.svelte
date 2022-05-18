@@ -3,9 +3,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import Input from '../form/Input.svelte';
+  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import Chip from '../ui/Chip.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
   import { expansionActions, expansionRules } from '../../stores/expansion';
@@ -15,6 +17,7 @@
   let confirmDeleteRuleModal: Modal;
   let filteredRules: ExpansionRule[] = [];
   let filterText: string = '';
+  let selectedExpansionRule: ExpansionRule | null = null;
   let sortedRules: ExpansionRule[] = [];
 
   $: filteredRules = $expansionRules.filter(rule => {
@@ -30,53 +33,81 @@
     const { id } = rule;
     await expansionActions.deleteExpansionRule(id);
   }
+
+  async function toggleRule(event: CustomEvent<ExpansionRule>) {
+    const { detail: clickedRule } = event;
+
+    if (selectedExpansionRule?.id === clickedRule.id) {
+      selectedExpansionRule = null;
+    } else {
+      selectedExpansionRule = clickedRule;
+    }
+  }
 </script>
 
-<Panel>
-  <svelte:fragment slot="header">
-    <Chip>Expansion Rules</Chip>
+<CssGrid columns="1fr 1fr">
+  <Panel>
+    <svelte:fragment slot="header">
+      <Chip>Expansion Rules</Chip>
 
-    <Input>
-      <i class="bi bi-search" slot="left" />
-      <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 300px" />
-    </Input>
+      <Input>
+        <i class="bi bi-search" slot="left" />
+        <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 300px" />
+      </Input>
 
-    <div class="right">
-      <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules/new')}>
-        <i class="bi bi-plus-square" style="font-size: 0.8rem" />
-        New
-      </button>
-    </div>
-  </svelte:fragment>
+      <div class="right">
+        <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules/new')}> New </button>
+      </div>
+    </svelte:fragment>
 
-  <svelte:fragment slot="body">
-    {#if sortedRules.length}
-      <Table
-        let:currentRow
-        columnDefs={[
-          { field: 'id', name: 'Rule ID', sortable: true },
-          { field: 'activity_type', name: 'Activity Type', sortable: true },
-          { field: 'authoring_command_dict_id', name: 'Command Dictionary ID', sortable: true },
-          { field: 'authoring_mission_model_id', name: 'Model ID', sortable: true },
-        ]}
-        rowActions
-        rowData={sortedRules}
-        on:rowClick={({ detail }) => goto(`/expansion/rules/edit/${detail.id}`)}
-      >
-        <button
-          class="st-button icon"
-          slot="actions-cell"
-          on:click|stopPropagation={() => confirmDeleteRuleModal.show(currentRow)}
-          use:tooltip={{ content: 'Delete Rule', placement: 'bottom' }}
+    <svelte:fragment slot="body">
+      {#if sortedRules.length}
+        <Table
+          let:currentRow
+          columnDefs={[
+            { field: 'id', name: 'Rule ID', sortable: true },
+            { field: 'activity_type', name: 'Activity Type', sortable: true },
+            { field: 'authoring_command_dict_id', name: 'Command Dictionary ID', sortable: true },
+            { field: 'authoring_mission_model_id', name: 'Model ID', sortable: true },
+          ]}
+          rowActions
+          rowData={sortedRules}
+          rowSelectionMode="single"
+          selectedRowId={selectedExpansionRule?.id}
+          on:rowClick={toggleRule}
         >
-          <i class="bi bi-trash" />
-        </button>
-      </Table>
-    {:else}
-      No Rules Found
-    {/if}
-  </svelte:fragment>
-</Panel>
+          <div slot="actions-cell">
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={() => goto(`/expansion/rules/edit/${currentRow.id}`)}
+              use:tooltip={{ content: 'Edit Rule', placement: 'bottom' }}
+            >
+              <i class="bi bi-pencil" />
+            </button>
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={() => confirmDeleteRuleModal.show(currentRow)}
+              use:tooltip={{ content: 'Delete Rule', placement: 'bottom' }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          </div>
+        </Table>
+      {:else}
+        No Rules Found
+      {/if}
+    </svelte:fragment>
+  </Panel>
+
+  <ExpansionLogicEditor
+    readOnly={true}
+    ruleActivityType={selectedExpansionRule?.activity_type}
+    ruleDictionaryId={selectedExpansionRule?.authoring_command_dict_id}
+    ruleLogic={selectedExpansionRule?.expansion_logic ?? 'No Expansion Rule Selected'}
+    ruleModelId={selectedExpansionRule?.authoring_mission_model_id}
+    title="Expansion Rule - Logic Editor (Read-only)"
+  />
+</CssGrid>
 
 <ConfirmModal
   bind:modal={confirmDeleteRuleModal}
