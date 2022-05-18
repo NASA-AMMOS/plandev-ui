@@ -1,12 +1,13 @@
 <script lang="ts">
   export let borderLeft: boolean = false;
   export let borderRight: boolean = false;
+  export let borderTop: boolean = false;
   export let overflowYBody: 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' = 'scroll';
   export let padBody: boolean = true;
   export let padHeader: boolean = true;
 </script>
 
-<div class="panel" class:borderLeft class:borderRight>
+<div class="panel" class:borderLeft class:borderRight class:borderTop>
   <div class="header" class:padHeader>
     <slot name="header" />
   </div>
@@ -53,5 +54,9 @@
 
   .borderRight {
     border-right: 1px solid var(--st-gray-20);
+  }
+
+  .borderTop {
+    border-top: 1px solid var(--st-gray-20);
   }
 </style>
