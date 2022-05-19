@@ -21,11 +21,23 @@
     }
   });
 
+  function onDragEnd(): void {
+    if (div) {
+      if (columns !== 'none') {
+        const newSizes: string = div.style['grid-template-columns'];
+        columns = newSizes;
+      } else if (rows !== 'none') {
+        const newSizes: string = div.style['grid-template-rows'];
+        rows = newSizes;
+      }
+    }
+  }
+
   async function setSplit() {
     await tick();
 
     if (split) split.destroy();
-    split = Split({});
+    split = Split({ onDragEnd });
 
     if (div) {
       const columnGutters = div.querySelectorAll<HTMLDivElement>(':scope > .css-grid-gutter.column');

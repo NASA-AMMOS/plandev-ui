@@ -1,3 +1,4 @@
+import { writable, type Writable } from 'svelte/store';
 import Toastify from 'toastify-js';
 import gql from '../utilities/gql';
 import req from '../utilities/requests';
@@ -16,6 +17,10 @@ export const dictionaries = getGqlSubscribable<CommandDictionary[]>(gql.SUB_COMM
 export const expansionRules = getGqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
 export const models = getGqlSubscribable<ModelInput[]>(gql.SUB_MODELS, {}, []);
+
+/* Writeable. */
+
+export const expansionRulesColumns: Writable<string> = writable('1fr 1px 1fr');
 
 /* Action Functions. */
 
@@ -55,7 +60,7 @@ export const expansionActions = {
     }
   },
 
-  async deleteExpansionRule(id: number): Promise<void> {
+  async deleteExpansionRule(id: number): Promise<boolean> {
     const success = await req.deleteExpansionRule(id);
 
     if (success) {
@@ -66,6 +71,7 @@ export const expansionActions = {
         position: 'left',
         text: 'Expansion Rule Deleted Successfully',
       }).showToast();
+      return true;
     } else {
       Toastify({
         backgroundColor: '#a32a2a',
@@ -74,10 +80,11 @@ export const expansionActions = {
         position: 'left',
         text: 'Expansion Rule Delete Failed',
       }).showToast();
+      return false;
     }
   },
 
-  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<void> {
+  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<boolean> {
     const success = await req.updateExpansionRule(id, rule);
 
     if (success) {
@@ -88,6 +95,7 @@ export const expansionActions = {
         position: 'left',
         text: 'Expansion Rule Updated Successfully',
       }).showToast();
+      return true;
     } else {
       Toastify({
         backgroundColor: '#a32a2a',
@@ -96,6 +104,7 @@ export const expansionActions = {
         position: 'left',
         text: 'Expansion Rule Update Failed',
       }).showToast();
+      return false;
     }
   },
 };

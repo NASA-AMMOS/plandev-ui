@@ -8,9 +8,10 @@
   import type Modal from '../modals/Modal.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
+  import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
-  import { expansionActions, expansionRules } from '../../stores/expansion';
+  import { expansionActions, expansionRules, expansionRulesColumns } from '../../stores/expansion';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -31,7 +32,11 @@
   async function deleteRule(event: CustomEvent<ExpansionRule>) {
     const { detail: rule } = event;
     const { id } = rule;
-    await expansionActions.deleteExpansionRule(id);
+    const success = await expansionActions.deleteExpansionRule(id);
+
+    if (success && id === selectedExpansionRule?.id) {
+      selectedExpansionRule = null;
+    }
   }
 
   async function toggleRule(event: CustomEvent<ExpansionRule>) {
@@ -45,7 +50,7 @@
   }
 </script>
 
-<CssGrid columns="1fr 1fr">
+<CssGrid bind:columns={$expansionRulesColumns}>
   <Panel>
     <svelte:fragment slot="header">
       <Chip>Expansion Rules</Chip>
@@ -98,6 +103,8 @@
       {/if}
     </svelte:fragment>
   </Panel>
+
+  <CssGridGutter track={1} type="column" />
 
   <ExpansionLogicEditor
     readOnly={true}

@@ -34,7 +34,7 @@
   }
 </script>
 
-<Panel borderLeft overflowYBody="hidden">
+<Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
     <Chip>{title}</Chip>
 

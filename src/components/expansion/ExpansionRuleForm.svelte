@@ -6,8 +6,15 @@
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
+  import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { activityTypeNames, dictionaries, models, expansionActions } from '../../stores/expansion';
+  import {
+    activityTypeNames,
+    dictionaries,
+    models,
+    expansionActions,
+    expansionRulesColumns,
+  } from '../../stores/expansion';
 
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
@@ -59,7 +66,7 @@
   }
 </script>
 
-<CssGrid columns="1fr 1fr">
+<CssGrid bind:columns={$expansionRulesColumns}>
   <Panel overflowYBody="hidden">
     <svelte:fragment slot="header">
       <Chip>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</Chip>
@@ -128,6 +135,8 @@
       </fieldset>
     </svelte:fragment>
   </Panel>
+
+  <CssGridGutter track={1} type="column" />
 
   <ExpansionLogicEditor
     {ruleActivityType}
