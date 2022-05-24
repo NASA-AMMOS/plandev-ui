@@ -34,12 +34,16 @@
     const { id } = rule;
     const success = await expansionActions.deleteExpansionRule(id);
 
-    if (success && id === selectedExpansionRule?.id) {
-      selectedExpansionRule = null;
+    if (success) {
+      sortedRules = sortedRules.filter(rule => rule.id !== id);
+
+      if (id === selectedExpansionRule?.id) {
+        selectedExpansionRule = null;
+      }
     }
   }
 
-  async function toggleRule(event: CustomEvent<ExpansionRule>) {
+  function toggleRule(event: CustomEvent<ExpansionRule>) {
     const { detail: clickedRule } = event;
 
     if (selectedExpansionRule?.id === clickedRule.id) {

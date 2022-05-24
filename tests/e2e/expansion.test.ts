@@ -1,11 +1,14 @@
 import { test, type Page } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { ExpansionRules } from '../fixtures/ExpansionRules.js';
+import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Models } from '../fixtures/Models.js';
 
 let page: Page;
+
 let dictionaries: Dictionaries;
 let expansionRules: ExpansionRules;
+let expansionSets: ExpansionSets;
 let models: Models;
 
 test.beforeAll(async ({ browser }) => {
@@ -13,6 +16,7 @@ test.beforeAll(async ({ browser }) => {
 
   dictionaries = new Dictionaries(page);
   expansionRules = new ExpansionRules(page);
+  expansionSets = new ExpansionSets(page, expansionRules);
   models = new Models(page);
 
   await models.goto();
@@ -30,9 +34,13 @@ test.afterAll(async () => {
   await page.close();
 });
 
-test.describe.serial('Expansion Rules', () => {
+test.describe.serial('Expansion', () => {
   test('Create expansion rule', async ({ baseURL }) => {
     await expansionRules.creatExpansionRule(baseURL, dictionaries.dictionaryName, models.modelName);
+  });
+
+  test('Create expansion set', async ({ baseURL }) => {
+    await expansionSets.creatExpansionSet(baseURL, dictionaries.dictionaryName, models.modelName);
   });
 
   test('Delete expansion rule', async () => {

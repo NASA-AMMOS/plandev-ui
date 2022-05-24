@@ -45,6 +45,9 @@ export class Dictionaries {
     await expect(this.tableRow).toBeVisible();
   }
 
+  /**
+   * @note Automatically cascade deletes any dependent expansion rules and expansion sets.
+   */
   async deleteDictionary() {
     await expect(this.tableRow).toBeVisible();
     await expect(this.tableRowDeleteButton).not.toBeVisible();

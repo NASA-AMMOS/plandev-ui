@@ -19,6 +19,12 @@
         title="Rules"
         on:click={() => goto('/expansion/rules')}
       />
+      <NavButton
+        icon="bi bi-card-list"
+        selected={$page.url.pathname.includes('sets')}
+        title="Sets"
+        on:click={() => goto('/expansion/sets')}
+      />
     </svelte:fragment>
   </Nav>
 

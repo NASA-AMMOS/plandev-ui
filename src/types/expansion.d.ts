@@ -14,3 +14,10 @@ type ExpansionRule = {
 };
 
 type ExpansionRuleInsertInput = Omit<ExpansionRule, 'id'>;
+
+type ExpansionSet = {
+  command_dict_id: number;
+  expansion_rules: ExpansionRule[];
+  id: number;
+  mission_model_id: number;
+};

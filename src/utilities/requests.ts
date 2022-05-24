@@ -117,6 +117,18 @@ const req = {
     }
   },
 
+  async createExpansionSet(dictionaryId: number, modelId: number, expansionRuleIds: number[]): Promise<number | null> {
+    try {
+      const data = await reqHasura(gql.CREATE_EXPANSION_SET, { dictionaryId, expansionRuleIds, modelId });
+      const { createExpansionSet } = data;
+      const { id } = createExpansionSet;
+      return id;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async createModel(name: string, version: string, file: File): Promise<ModelInput | null> {
     try {
       const jar_id = await req.uploadFile(file);
@@ -292,6 +304,16 @@ const req = {
     }
   },
 
+  async deleteExpansionSet(id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_EXPANSION_SET, { id });
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async deleteFile(id: number): Promise<boolean> {
     let response: Response;
     let json: any;
@@ -413,6 +435,21 @@ const req = {
       }
     } else {
       return '';
+    }
+  },
+
+  async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
+    if (!isNil(modelId)) {
+      try {
+        const data = await reqHasura<ActivityTypeExpansionRules[]>(gql.GET_ACTIVITY_TYPES_EXPANSION_RULES, { modelId });
+        const { activityTypes } = data;
+        return activityTypes;
+      } catch (e) {
+        console.log(e);
+        return [];
+      }
+    } else {
+      return [];
     }
   },
 

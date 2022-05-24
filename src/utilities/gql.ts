@@ -34,6 +34,18 @@ const gql = {
     }
   `,
 
+  CREATE_EXPANSION_SET: `#graphql
+    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!) {
+      createExpansionSet(
+        commandDictionaryId: $dictionaryId,
+        missionModelId: $modelId,
+        expansionIds: $expansionRuleIds
+      ) {
+        id
+      }
+    }
+  `,
+
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: insert_mission_model_one(object: $model) {
@@ -126,6 +138,14 @@ const gql = {
     }
   `,
 
+  DELETE_EXPANSION_SET: `#graphql
+    mutation DeleteExpansionSet($id: Int!) {
+      deleteExpansionSet: delete_expansion_set_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
   DELETE_MODEL: `#graphql
     mutation DeleteModel($id: Int!) {
       deleteModel: delete_mission_model_by_pk(id: $id) {
@@ -178,6 +198,21 @@ const gql = {
     query GetActivityTypeScript($activityTypeName: String!, $modelId: Int!) {
       activity: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
         typescript
+      }
+    }
+  `,
+
+  GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
+    query GetActivityTypesExpansionRules($modelId: Int!) {
+      activityTypes: activity_type(where: { model_id: { _eq: $modelId } }) {
+        expansion_rules {
+          activity_type
+          authoring_command_dict_id
+          authoring_mission_model_id
+          expansion_logic
+          id
+        }
+        name
       }
     }
   `,
@@ -402,6 +437,23 @@ const gql = {
         authoring_mission_model_id
         expansion_logic
         id
+      }
+    }
+  `,
+
+  SUB_EXPANSION_SETS: `#graphql
+    subscription SubExpansionSets {
+      expansionSets: expansion_set {
+        command_dict_id
+        expansion_rules {
+          activity_type
+          authoring_command_dict_id
+          authoring_mission_model_id
+          expansion_logic
+          id
+        }
+        id
+        mission_model_id
       }
     }
   `,

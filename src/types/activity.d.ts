@@ -5,6 +5,11 @@ type ActivityType = {
   parameters: ParametersMap;
 };
 
+type ActivityTypeExpansionRules = {
+  expansion_rules: ExpansionRule[];
+  name: ActivityType['name'];
+};
+
 type ActivityTypesMap = Record<string, ActivityType>;
 
 type Activity = {
