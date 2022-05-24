@@ -23,7 +23,7 @@
     summary = $selectedConstraint.summary;
   } else {
     constraintType = 'model';
-    definition = `export default (): Windows => {\n\n}`;
+    definition = `export default (): Constraint => {\n\n}`;
     description = '';
     name = '';
     summary = '';
