@@ -4,7 +4,6 @@ import { user as userStore } from '../stores/app';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
-import { decodeBase64, readFileAsDataUrl } from './generic';
 import gql from './gql';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 
@@ -80,9 +79,7 @@ const req = {
 
   async createCommandDictionary(file: File) {
     try {
-      const result = await readFileAsDataUrl(file);
-      // Strip 'data:text/xml;base64' from result since command expansion server fails if it's included.
-      const [, dictionary] = result.split(',');
+      const dictionary = await file.text();
       const data = await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
       const { createCommandDictionary } = data;
       const { id } = createCommandDictionary;
@@ -426,9 +423,8 @@ const req = {
       try {
         const data = await reqHasura(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
         const { activity } = data;
-        const { typescript: typeScriptBase64 } = activity;
-        const typeScript = decodeBase64(typeScriptBase64);
-        return typeScript;
+        const { typescript } = activity;
+        return typescript;
       } catch (e) {
         console.log(e);
         return '';
@@ -458,9 +454,8 @@ const req = {
       try {
         const data = await reqHasura(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
         const { command } = data;
-        const { typescript: typeScriptBase64 } = command;
-        const typeScript = decodeBase64(typeScriptBase64);
-        return typeScript;
+        const { typescript } = command;
+        return typescript;
       } catch (e) {
         console.log(e);
         return '';
