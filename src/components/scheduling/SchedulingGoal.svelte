@@ -10,6 +10,7 @@
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import { schedulingActions } from '../../stores/scheduling';
+  import { tooltip } from '../../utilities/tooltip';
 
   export let goal: SchedulingGoal;
   export let priority: number;
@@ -23,7 +24,9 @@
   <div class="left">
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="bi-calendar-range" />
-    {goal.name}
+    <span class="scheduling-goal-name" use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}>
+      {goal.name}
+    </span>
   </div>
   <div class="right">
     <SchedulingGoalAnalysesBadge analyses={goal.analyses} />
@@ -76,11 +79,19 @@
     padding-top: 5px;
   }
 
+  .scheduling-goal-name {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .left {
     align-items: center;
     display: flex;
     flex-grow: 1;
     gap: 10px;
+    overflow: hidden;
   }
 
   .left > i:first-child {
