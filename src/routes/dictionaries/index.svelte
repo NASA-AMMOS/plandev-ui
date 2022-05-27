@@ -38,7 +38,11 @@
   async function deleteDictionary(event: CustomEvent<CommandDictionary>) {
     const { detail: dictionary } = event;
     const { id } = dictionary;
-    await req.deleteCommandDictionary(id);
+    const success = await req.deleteCommandDictionary(id);
+
+    if (success) {
+      sortedDictionaries = sortedDictionaries.filter(dictionary => dictionary.id !== id);
+    }
   }
 </script>
 

@@ -7,7 +7,7 @@
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { dictionaries, expansionActions, expansionSetsColumns, models } from '../../stores/expansion';
+  import { dictionaries, expansionSetsColumns, models, savingExpansionSet } from '../../stores/expansion';
   import req from '../../utilities/requests';
 
   export let mode: 'create' | 'edit' = 'create';
@@ -17,7 +17,6 @@
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
   let logicEditorTitle: string = 'Expansion Rule - Logic Editor (Read-only)';
   let saveButtonEnabled: boolean = false;
-  let saving: boolean = false;
   let selectedExpansionRules: Record<string, number> = {};
   let setExpansionRuleIds: number[] = [];
   let setDictionaryId: number | null = null;
@@ -35,17 +34,13 @@
   $: saveButtonEnabled = setDictionaryId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
 
   async function saveSet() {
-    saving = true;
-
     if (mode === 'create') {
-      const newSetId = await expansionActions.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
+      const newSetId = await req.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
 
       if (newSetId !== null) {
         goto(`/expansion/sets`);
       }
     }
-
-    saving = false;
   }
 
   function selectExpansionRule(activityTypeName: string, rule: ExpansionRule) {
@@ -73,7 +68,7 @@
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveSet}>
-          {saving ? 'Saving...' : 'Save'}
+          {$savingExpansionSet ? 'Saving...' : 'Save'}
         </button>
       </div>
     </svelte:fragment>

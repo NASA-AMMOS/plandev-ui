@@ -1,6 +1,7 @@
 import { isNil } from 'lodash-es';
 import { get } from 'svelte/store';
 import { user as userStore } from '../stores/app';
+import { savingExpansionRule, savingExpansionSet } from '../stores/expansion';
 import { plan } from '../stores/plan';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
@@ -84,9 +85,11 @@ const req = {
       const data = await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
       const { createCommandDictionary } = data;
       const { id } = createCommandDictionary;
+      showSuccessToast('Command Dictionary Created Successfully');
       return id;
     } catch (e) {
       console.log(e);
+      showFailureToast('Command Dictionary Create Failed');
       return null;
     }
   },
@@ -105,24 +108,34 @@ const req = {
 
   async createExpansionRule(rule: ExpansionRuleInsertInput): Promise<number | null> {
     try {
+      savingExpansionRule.set(true);
       const data = await reqHasura(gql.CREATE_EXPANSION_RULE, { rule });
       const { createExpansionRule } = data;
       const { id } = createExpansionRule;
+      showSuccessToast('Expansion Rule Created Successfully');
+      savingExpansionRule.set(false);
       return id;
     } catch (e) {
       console.log(e);
+      showFailureToast('Expansion Rule Create Failed');
+      savingExpansionRule.set(false);
       return null;
     }
   },
 
   async createExpansionSet(dictionaryId: number, modelId: number, expansionRuleIds: number[]): Promise<number | null> {
     try {
+      savingExpansionSet.set(true);
       const data = await reqHasura(gql.CREATE_EXPANSION_SET, { dictionaryId, expansionRuleIds, modelId });
       const { createExpansionSet } = data;
       const { id } = createExpansionSet;
+      showSuccessToast('Expansion Set Created Successfully');
+      savingExpansionSet.set(false);
       return id;
     } catch (e) {
       console.log(e);
+      showFailureToast('Expansion Set Create Failed');
+      savingExpansionSet.set(false);
       return null;
     }
   },
@@ -297,9 +310,11 @@ const req = {
   async deleteCommandDictionary(id: number): Promise<boolean> {
     try {
       await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
+      showSuccessToast('Command Dictionary Deleted Successfully');
       return true;
     } catch (e) {
       console.log(e);
+      showFailureToast('Command Dictionary Delete Failed');
       return false;
     }
   },
@@ -317,9 +332,11 @@ const req = {
   async deleteExpansionRule(id: number): Promise<boolean> {
     try {
       await reqHasura(gql.DELETE_EXPANSION_RULE, { id });
+      showSuccessToast('Expansion Rule Deleted Successfully');
       return true;
     } catch (e) {
       console.log(e);
+      showFailureToast('Expansion Rule Delete Failed');
       return false;
     }
   },
@@ -327,9 +344,11 @@ const req = {
   async deleteExpansionSet(id: number): Promise<boolean> {
     try {
       await reqHasura(gql.DELETE_EXPANSION_SET, { id });
+      showSuccessToast('Expansion Set Deleted Successfully');
       return true;
     } catch (e) {
       console.log(e);
+      showFailureToast('Expansion Set Delete Failed');
       return false;
     }
   },
@@ -938,10 +957,15 @@ const req = {
 
   async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<boolean> {
     try {
+      savingExpansionRule.set(true);
       await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule });
+      showSuccessToast('Expansion Rule Updated Successfully');
+      savingExpansionRule.set(false);
       return true;
     } catch (e) {
       console.log(e);
+      showFailureToast('Expansion Rule Update Failed');
+      savingExpansionRule.set(false);
       return false;
     }
   },

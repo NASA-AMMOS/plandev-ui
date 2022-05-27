@@ -10,8 +10,9 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
-  import { expansionActions, expansionSets, expansionSetsColumns } from '../../stores/expansion';
+  import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
   import { compare } from '../../utilities/generic';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteSetModal: Modal;
@@ -24,7 +25,7 @@
   async function deleteSet(event: CustomEvent<ExpansionSet>) {
     const { detail: set } = event;
     const { id } = set;
-    const success = await expansionActions.deleteExpansionSet(id);
+    const success = await req.deleteExpansionSet(id);
 
     if (success) {
       sortedSets = sortedSets.filter(set => set.id !== id);

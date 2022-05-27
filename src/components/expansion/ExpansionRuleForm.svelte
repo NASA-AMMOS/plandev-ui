@@ -12,9 +12,10 @@
     activityTypeNames,
     dictionaries,
     models,
-    expansionActions,
     expansionRulesColumns,
+    savingExpansionRule,
   } from '../../stores/expansion';
+  import req from '../../utilities/requests';
 
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
@@ -29,7 +30,6 @@
   let ruleLogic: string = initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
   let saveButtonEnabled: boolean = false;
-  let saving: boolean = false;
 
   $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
   $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
@@ -41,14 +41,14 @@
   }
 
   async function saveRule() {
-    saving = true;
     if (mode === 'create') {
-      const newRuleId = await expansionActions.createExpansionRule(
-        ruleActivityType,
-        ruleLogic,
-        ruleDictionaryId,
-        ruleModelId,
-      );
+      const newRule: ExpansionRuleInsertInput = {
+        activity_type: ruleActivityType,
+        authoring_command_dict_id: ruleDictionaryId,
+        authoring_mission_model_id: ruleModelId,
+        expansion_logic: ruleLogic,
+      };
+      const newRuleId = await req.createExpansionRule(newRule);
 
       if (newRuleId !== null) {
         goto(`/expansion/rules/edit/${newRuleId}`);
@@ -60,9 +60,8 @@
         authoring_mission_model_id: ruleModelId,
         expansion_logic: ruleLogic,
       };
-      await expansionActions.updateExpansionRule(ruleId, updatedRule);
+      await req.updateExpansionRule(ruleId, updatedRule);
     }
-    saving = false;
   }
 </script>
 
@@ -76,7 +75,7 @@
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>
-          {saving ? 'Saving...' : 'Save'}
+          {$savingExpansionRule ? 'Saving...' : 'Save'}
         </button>
       </div>
     </svelte:fragment>

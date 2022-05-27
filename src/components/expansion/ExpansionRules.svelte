@@ -11,8 +11,9 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
-  import { expansionActions, expansionRules, expansionRulesColumns } from '../../stores/expansion';
+  import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
   import { compare } from '../../utilities/generic';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteRuleModal: Modal;
@@ -32,7 +33,7 @@
   async function deleteRule(event: CustomEvent<ExpansionRule>) {
     const { detail: rule } = event;
     const { id } = rule;
-    const success = await expansionActions.deleteExpansionRule(id);
+    const success = await req.deleteExpansionRule(id);
 
     if (success) {
       sortedRules = sortedRules.filter(rule => rule.id !== id);
