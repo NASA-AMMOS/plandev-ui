@@ -36,6 +36,10 @@
       <i class="bi bi-file-earmark-excel" />
       Constraint Violations
     </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('Expansion')}>
+      <i class="bi bi-code-square" />
+      Expansion
+    </MenuItem>
     <MenuItem on:click={() => updateGridComponent('Scheduling')}>
       <i class="bi bi-calendar3" />
       Scheduling

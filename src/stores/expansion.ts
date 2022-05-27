@@ -20,6 +20,8 @@ export const expansionSets = getGqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSIO
 
 export const models = getGqlSubscribable<ModelInput[]>(gql.SUB_MODELS, {}, []);
 
+export const sequences = getGqlSubscribable<ExpansionSet[]>(gql.SUB_SEQUENCES, {}, []);
+
 /* Writeable. */
 
 export const expansionRulesColumns: Writable<string> = writable('1fr 1px 1fr');

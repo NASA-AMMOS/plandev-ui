@@ -98,6 +98,14 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE: `#graphql
+    mutation CreateSequence($sequence: sequence_insert_input!) {
+      createSequence: insert_sequence_one(object: $sequence) {
+        seq_id
+      }
+    }
+  `,
+
   CREATE_SIMULATION: `#graphql
     mutation CreateSimulation($simulation: simulation_insert_input!) {
       createSimulation: insert_simulation_one(object: $simulation) {
@@ -175,6 +183,22 @@ const gql = {
   DELETE_SCHEDULING_GOAL: `#graphql
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE: `#graphql
+    mutation DeleteSequence($seqId: String!, $datasetId: Int!) {
+      deleteSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $datasetId) {
+        seq_id
+      }
+    }
+  `,
+
+  EXPAND: `#graphql
+    mutation Expand($expansionSetId: Int!, $datasetId: Int!) {
+      expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $datasetId) {
         id
       }
     }
@@ -383,6 +407,16 @@ const gql = {
     }
   `,
 
+  GET_SIMULATION_DATASET: `#graphql
+    query GetSimulationDataset($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { dataset: { id: desc } }, limit: 1) {
+        dataset {
+          id
+        }
+      }
+    }
+  `,
+
   RESOURCE_TYPES: `#graphql
     query ResourceTypes($modelId: ID!) {
       resourceTypes(missionModelId: $modelId) {
@@ -493,6 +527,16 @@ const gql = {
         }
         priority
         specification_id
+      }
+    }
+  `,
+
+  SUB_SEQUENCES: `#graphql
+    subscription SubSequences {
+      sequence {
+        metadata
+        seq_id
+        simulation_dataset_id
       }
     }
   `,

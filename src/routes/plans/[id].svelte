@@ -49,6 +49,7 @@
   import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
   import Constraints from '../../components/constraint/Constraints.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import Expansion from '../../components/expansion/Expansion.svelte';
   import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
   import Scheduling from '../../components/scheduling/Scheduling.svelte';
   import Simulation from '../../components/simulation/Simulation.svelte';
@@ -93,6 +94,7 @@
     ConstraintEditor,
     ConstraintViolations,
     Constraints,
+    Expansion,
     IFrame,
     Scheduling,
     SchedulingEditor,

@@ -6,6 +6,7 @@ import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
 import gql from './gql';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
+import { showFailureToast, showSuccessToast } from './toast';
 
 /* Helpers. */
 
@@ -208,6 +209,28 @@ const req = {
     }
   },
 
+  async createSequence(seqId: string): Promise<string | null> {
+    try {
+      const { id: planId } = get(plan);
+      let data = await reqHasura(gql.GET_SIMULATION_DATASET, { planId });
+      const { simulation } = data;
+      const [{ dataset }] = simulation;
+      const { id: datasetId } = dataset;
+
+      const sequence: Sequence = { metadata: {}, seq_id: seqId, simulation_dataset_id: datasetId };
+      data = await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
+      const { createSequence } = data;
+      const { seq_id } = createSequence;
+      showSuccessToast('Sequence Created Successfully');
+
+      return seq_id;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Sequence Create Failed');
+      return null;
+    }
+  },
+
   async createSimulation(
     plan_id: number,
     simulation_template_id: number | null = null,
@@ -369,6 +392,18 @@ const req = {
     }
   },
 
+  async deleteSequence(seqId: string, datasetId: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_SEQUENCE, { datasetId, seqId });
+      showSuccessToast('Sequence Deleted Successfully');
+      return true;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Sequence Delete Failed');
+      return false;
+    }
+  },
+
   async deleteView(id: number): Promise<DeleteViewResponse> {
     let response: Response;
     let json: DeleteViewResponse;
@@ -398,6 +433,27 @@ const req = {
         nextView: null,
         success: false,
       };
+    }
+  },
+
+  async expand(expansionSetId: number): Promise<boolean> {
+    try {
+      const { id: planId } = get(plan);
+      let data = await reqHasura(gql.GET_SIMULATION_DATASET, { planId });
+      const { simulation } = data;
+      const [{ dataset }] = simulation;
+      const { id: datasetId } = dataset;
+
+      data = await reqHasura(gql.EXPAND, { datasetId, expansionSetId });
+      const { expand } = data;
+      console.log(expand);
+      showSuccessToast('Plan Expanded Successfully');
+
+      return true;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Plan Expansion Failed');
+      return false;
     }
   },
 
@@ -797,9 +853,7 @@ const req = {
     status: SimulationStatus;
   }> {
     try {
-      const data = await reqHasura<SimulationResponse>(gql.SIMULATE, {
-        planId,
-      });
+      const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
       const { simulate } = data;
       const { results, status }: SimulationResponse = simulate;
 

@@ -21,3 +21,9 @@ type ExpansionSet = {
   id: number;
   mission_model_id: number;
 };
+
+type Sequence = {
+  metadata: any;
+  seq_id: string;
+  simulation_dataset_id: number;
+};

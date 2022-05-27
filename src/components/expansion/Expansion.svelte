@@ -1,0 +1,124 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import GridMenu from '../menus/GridMenu.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
+  import Panel from '../ui/Panel.svelte';
+  import Table from '../ui/Table.svelte';
+  import { expansionSets, sequences } from '../../stores/expansion';
+  import req from '../../utilities/requests';
+  import { tooltip } from '../../utilities/tooltip';
+
+  export let gridId: number;
+
+  let confirmDeleteSequenceModal: Modal;
+  let createButtonEnabled: boolean = false;
+  let creatingSequence: boolean = false;
+  let expandButtonEnabled: boolean = false;
+  let expandingPlan: boolean = false;
+  let selectedExpansionSetId: number | null = null;
+  let seqIdInput: string = '';
+
+  $: createButtonEnabled = seqIdInput !== '';
+  $: expandButtonEnabled = selectedExpansionSetId !== null;
+
+  async function createSequence() {
+    creatingSequence = true;
+    await req.createSequence(seqIdInput);
+    creatingSequence = false;
+  }
+
+  async function deleteSequence(event: CustomEvent<Sequence>) {
+    const { detail: sequence } = event;
+    const { seq_id, simulation_dataset_id } = sequence;
+    await req.deleteSequence(seq_id, simulation_dataset_id);
+  }
+
+  async function expandPlan() {
+    expandingPlan = true;
+    await req.expand(selectedExpansionSetId);
+    expandingPlan = false;
+  }
+</script>
+
+<Panel>
+  <svelte:fragment slot="header">
+    <GridMenu {gridId} title="Expansion" />
+    <div class="right">
+      <button
+        class="st-button secondary ellipsis"
+        disabled={!expandButtonEnabled}
+        on:click|stopPropagation={expandPlan}
+      >
+        {expandingPlan ? 'Expanding... ' : 'Expand'}
+      </button>
+    </div>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
+    <fieldset>
+      <label for="expansionSet">Expansion Set</label>
+      <select bind:value={selectedExpansionSetId} class="st-select w-100" name="expansionSet">
+        <option value={null} />
+        {#each $expansionSets as set}
+          <option value={set.id}>
+            Expansion Set {set.id}
+          </option>
+        {/each}
+      </select>
+    </fieldset>
+
+    <fieldset>
+      <details open style:cursor="pointer">
+        <summary>Sequences</summary>
+        <div class="mt-2">
+          <CssGrid columns="3fr 1fr" gap="10px">
+            <input bind:value={seqIdInput} class="st-input" />
+            <button
+              class="st-button secondary"
+              disabled={!createButtonEnabled}
+              on:click|stopPropagation={createSequence}
+            >
+              {creatingSequence ? 'Creating... ' : 'Create'}
+            </button>
+          </CssGrid>
+
+          <div class="mt-2">
+            {#if $sequences.length}
+              <Table
+                let:currentRow
+                columnDefs={[
+                  { field: 'seq_id', name: 'Sequence ID', sortable: true },
+                  { field: 'simulation_dataset_id', name: 'Simulation Dataset ID', sortable: true },
+                ]}
+                rowActions
+                rowData={$sequences}
+              >
+                <button
+                  class="st-button icon"
+                  slot="actions-cell"
+                  on:click|stopPropagation={() => confirmDeleteSequenceModal.show(currentRow)}
+                  use:tooltip={{ content: 'Delete Sequence', placement: 'bottom' }}
+                >
+                  <i class="bi bi-trash" />
+                </button>
+              </Table>
+            {:else}
+              No Sequences Found
+            {/if}
+          </div>
+        </div>
+      </details>
+    </fieldset>
+  </svelte:fragment>
+</Panel>
+
+<ConfirmModal
+  bind:modal={confirmDeleteSequenceModal}
+  confirmText="Delete"
+  message="Are you sure you want to delete this sequence?"
+  title="Delete Sequence"
+  on:confirm={deleteSequence}
+/>
