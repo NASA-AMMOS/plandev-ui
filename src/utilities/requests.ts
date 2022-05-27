@@ -3,21 +3,49 @@ import { get } from 'svelte/store';
 import { user as userStore } from '../stores/app';
 import { savingExpansionRule, savingExpansionSet } from '../stores/expansion';
 import { plan } from '../stores/plan';
+import { view } from '../stores/views';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
+import { setQueryParam } from './generic';
 import gql from './gql';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
 
 /* Helpers. */
 
+async function reqGateway<T = any>(
+  url: string,
+  method: string,
+  body?: any,
+  ssoToken?: string,
+  includeContentType: boolean = true,
+): Promise<T> {
+  const user = get<User | null>(userStore);
+  const GATEWAY_URL = gatewayUrl();
+
+  const options: RequestInit = {
+    body,
+    headers: { 'x-auth-sso-token': user?.ssoToken ?? ssoToken ?? '' },
+    method,
+  };
+
+  if (includeContentType) {
+    options.headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(`${GATEWAY_URL}${url}`, options);
+  if (!response.ok) throw new Error(response.statusText);
+  const data = await response.json();
+
+  return data;
+}
+
 async function reqHasura<T = any>(query: string, variables: QueryVariables = {}): Promise<Record<string, T>> {
   const user = get<User | null>(userStore);
   const HASURA_URL = hasuraUrl();
 
-  const body = { query, variables };
-  const options = {
-    body: JSON.stringify(body),
+  const options: RequestInit = {
+    body: JSON.stringify({ query, variables }),
     headers: {
       'Content-Type': 'application/json',
       'x-auth-sso-token': user.ssoToken ?? '',
@@ -143,13 +171,13 @@ const req = {
   async createModel(name: string, version: string, file: File): Promise<ModelInput | null> {
     try {
       const jar_id = await req.uploadFile(file);
-      const modelInput = {
+      const modelInsertInput: ModelInsertInput = {
         jar_id,
         mission: '',
         name,
         version,
       };
-      const data = await reqHasura(gql.CREATE_MODEL, { model: modelInput });
+      const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput });
       const { createModel } = data;
       const { id } = createModel;
       const model: ModelInput = {
@@ -158,10 +186,12 @@ const req = {
         name,
         version,
       };
+      showSuccessToast('Model Created Successfully');
 
       return model;
     } catch (e) {
       console.log(e);
+      showFailureToast('Model Create Failed');
       return null;
     }
   },
@@ -195,9 +225,7 @@ const req = {
 
   async createSchedulingGoal(goal: SchedulingGoalInsertInput): Promise<SchedulingGoal> {
     try {
-      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, {
-        goal,
-      });
+      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal });
       const { createSchedulingGoal } = data;
       return createSchedulingGoal;
     } catch (e) {
@@ -250,12 +278,12 @@ const req = {
     simulationArguments: ArgumentsMap = {},
   ): Promise<boolean> {
     try {
-      const simulationInput = {
+      const simulationInsertInput: SimulationInsertInput = {
         arguments: simulationArguments,
         plan_id,
         simulation_template_id,
       };
-      await reqHasura(gql.CREATE_SIMULATION, { simulation: simulationInput });
+      await reqHasura(gql.CREATE_SIMULATION, { simulation: simulationInsertInput });
       return true;
     } catch (e) {
       console.log(e);
@@ -263,37 +291,23 @@ const req = {
     }
   },
 
-  async createView(view: View): Promise<CreateViewResponse> {
-    let response: Response;
-    let json: CreateViewResponse;
+  async createView(viewInput: View): Promise<void> {
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
+      const data = await reqGateway<CreateViewResponse>('/view', 'POST', JSON.stringify({ view: viewInput }));
+      const { errors, message, success, view: newView } = data;
 
-      const options = {
-        body: JSON.stringify({ view }),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'POST',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/view`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      if (success) {
+        view.update(() => newView);
+        setQueryParam('viewId', `${newView.id}`);
+        showSuccessToast('View Created Successfully');
+      } else {
+        console.log(errors);
+        console.log(message);
+        showFailureToast('View Create Failed');
+      }
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return {
-        errors: null,
-        message: 'An unexpected error occurred',
-        success: false,
-        view: null,
-      };
+      showFailureToast('View Create Failed');
     }
   },
 
@@ -354,28 +368,11 @@ const req = {
   },
 
   async deleteFile(id: number): Promise<boolean> {
-    let response: Response;
-    let json: any;
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
-
-      const options = {
-        headers: {
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'DELETE',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/file/${id}`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
+      await reqGateway(`/file/${id}`, 'DELETE');
       return true;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
       return false;
     }
   },
@@ -384,9 +381,11 @@ const req = {
     try {
       await req.deleteFile(jar_id);
       await reqHasura(gql.DELETE_MODEL, { id });
+      showSuccessToast('Model Deleted Successfully');
       return true;
     } catch (e) {
       console.log(e);
+      showFailureToast('Model Delete Failed');
       return false;
     }
   },
@@ -424,34 +423,12 @@ const req = {
   },
 
   async deleteView(id: number): Promise<DeleteViewResponse> {
-    let response: Response;
-    let json: DeleteViewResponse;
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
-
-      const options = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'DELETE',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/view/${id}`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE');
+      return data;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return {
-        message: 'An unexpected error occurred',
-        nextView: null,
-        success: false,
-      };
+      return { message: 'An unexpected error occurred', nextView: null, success: false };
     }
   },
 
@@ -692,86 +669,33 @@ const req = {
   },
 
   async getView(query: URLSearchParams): Promise<View | null> {
-    let response: Response;
-    let json: GetViewResponse;
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
       const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
-
-      const options = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'GET',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/view/${viewId}`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      const { view } = json;
+      const data = await reqGateway<{ view: View }>(`/view/${viewId}`, 'GET');
+      const { view } = data;
       return view;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
       return null;
     }
   },
 
-  async getViews(): Promise<View[] | null> {
-    let response: Response;
-    let json: View[];
+  async getViews(): Promise<View[]> {
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
-
-      const options = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'GET',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/views`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      const data = await reqGateway<View[]>('/views', 'GET');
+      return data;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return null;
+      return [];
     }
   },
 
   async login(username: string, password: string): Promise<ReqLoginResponse> {
-    let response: Response;
-    let json: any;
     try {
-      const GATEWAY_URL = gatewayUrl();
-      const body = JSON.stringify({ password, username });
-      const options = {
-        body,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/auth/login`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      const data = await reqGateway<ReqLoginResponse>('/auth/login', 'POST', JSON.stringify({ password, username }));
+      return data;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
       return {
         message: 'An unexpected error occurred',
         ssoToken: null,
@@ -782,36 +706,18 @@ const req = {
   },
 
   async logout(ssoToken: string): Promise<ReqLogoutResponse> {
-    let response: Response;
-    let json: any;
     try {
-      const GATEWAY_URL = gatewayUrl();
-      const options = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': ssoToken,
-        },
-        method: 'DELETE',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/auth/logout`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, ssoToken);
+      return data;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
       return { message: 'An unexpected error occurred', success: false };
     }
   },
 
   async resourceTypes(modelId: number): Promise<ResourceType[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, {
-        modelId,
-      });
+      const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, { modelId });
       const { resourceTypes } = data;
       return resourceTypes;
     } catch (e) {
@@ -822,9 +728,7 @@ const req = {
 
   async schedule(specificationId: number): Promise<SchedulingResponse> {
     try {
-      const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, {
-        specificationId,
-      });
+      const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
       const { schedule } = data;
       return schedule;
     } catch (e) {
@@ -834,31 +738,12 @@ const req = {
   },
 
   async session(ssoToken: string): Promise<ReqSessionResponse> {
-    let response: Response;
-    let json: any;
     try {
-      const GATEWAY_URL = gatewayUrl();
-      const options = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': ssoToken,
-        },
-        method: 'GET',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/auth/session`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, ssoToken);
+      return data;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return {
-        message: 'An unexpected error occurred',
-        success: false,
-      };
+      return { message: 'An unexpected error occurred', success: false };
     }
   },
 
@@ -1005,66 +890,33 @@ const req = {
     }
   },
 
-  async updateView(view: View): Promise<UpdateViewResponse> {
-    let response: Response;
-    let json: UpdateViewResponse;
+  async updateView(view: View): Promise<void> {
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
+      const data = await reqGateway<UpdateViewResponse>(`/view/${view.id}`, 'PUT', JSON.stringify({ view }));
+      const { errors, message, success } = data;
 
-      const options = {
-        body: JSON.stringify({ view }),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'PUT',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/view/${view.id}`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      return json;
+      if (success) {
+        showSuccessToast('View Updated Successfully');
+      } else {
+        console.log(errors);
+        console.log(message);
+        showFailureToast('View Update Failed');
+      }
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
-      return {
-        errors: null,
-        message: 'An unexpected error occurred',
-        success: false,
-      };
+      showFailureToast('View Update Failed');
     }
   },
 
   async uploadFile(file: File): Promise<number | null> {
-    let response: Response;
-    let json: any;
     try {
-      const user = get<User | null>(userStore);
-      const GATEWAY_URL = gatewayUrl();
-
       const body = new FormData();
       body.append('file', file, file.name);
-      const options = {
-        body,
-        headers: {
-          'x-auth-sso-token': user?.ssoToken,
-        },
-        method: 'POST',
-      };
-
-      response = await fetch(`${GATEWAY_URL}/file`, options);
-      json = await response.json();
-      if (!response.ok) throw new Error(response.statusText);
-
-      const { id } = json;
+      const data = await reqGateway<{ id: number }>('/file', 'POST', body, null, false);
+      const { id } = data;
       return id;
     } catch (e) {
       console.log(e);
-      console.log(response);
-      console.log(json);
       return null;
     }
   },

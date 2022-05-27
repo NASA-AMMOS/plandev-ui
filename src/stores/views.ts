@@ -1,9 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { derived, get, writable } from 'svelte/store';
-import Toastify from 'toastify-js';
-import { getTarget, setQueryParam } from '../utilities/generic';
+import { getTarget } from '../utilities/generic';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
-import req from '../utilities/requests';
 
 /* Stores. */
 
@@ -77,32 +75,6 @@ export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selected
 /* Action Functions. */
 
 export const viewActions = {
-  async createView(currentView: View): Promise<void> {
-    const { errors, message, success, view: newView } = await req.createView(currentView);
-
-    if (success) {
-      view.update(() => newView);
-      setQueryParam('viewId', `${newView.id}`);
-      Toastify({
-        backgroundColor: '#2da44e',
-        duration: 3000,
-        gravity: 'bottom',
-        position: 'left',
-        text: 'View Created Successfully',
-      }).showToast();
-    } else {
-      console.log(errors);
-      console.log(message);
-      Toastify({
-        backgroundColor: '#a32a2a',
-        duration: 3000,
-        gravity: 'bottom',
-        position: 'left',
-        text: 'View Create Failed',
-      }).showToast();
-    }
-  },
-
   setLayout(title: string) {
     let layout: Grid;
 
@@ -264,30 +236,6 @@ export const viewActions = {
         }),
       },
     }));
-  },
-
-  async updateView(currentView: View): Promise<void> {
-    const { errors, message, success } = await req.updateView(currentView);
-
-    if (success) {
-      Toastify({
-        backgroundColor: '#2da44e',
-        duration: 3000,
-        gravity: 'bottom',
-        position: 'left',
-        text: 'View Updated Successfully',
-      }).showToast();
-    } else {
-      console.log(errors);
-      console.log(message);
-      Toastify({
-        backgroundColor: '#a32a2a',
-        duration: 3000,
-        gravity: 'bottom',
-        position: 'left',
-        text: 'View Update Failed',
-      }).showToast();
-    }
   },
 
   updateYAxis(prop: string, value: any) {

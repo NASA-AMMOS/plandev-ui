@@ -4,6 +4,12 @@ type Simulation = {
   template: SimulationTemplate | null;
 };
 
+type SimulationInsertInput = {
+  arguments: ArgumentsMap;
+  plan_id: number;
+  simulation_template_id: number | null;
+};
+
 type SimulationTemplate = {
   arguments: ArgumentsMap;
   description: string;

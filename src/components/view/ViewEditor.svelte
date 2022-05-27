@@ -3,7 +3,8 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { view, viewActions, viewText } from '../../stores/views';
+  import { view, viewText } from '../../stores/views';
+  import req from '../../utilities/requests';
 
   export let gridId: number;
 
@@ -25,12 +26,12 @@
 
   function saveAsView() {
     const newView = { ...$view, name };
-    viewActions.createView(newView);
+    req.createView(newView);
   }
 
   function saveView() {
     if ($view?.meta?.owner === $session.user.id) {
-      viewActions.updateView($view);
+      req.updateView($view);
     }
   }
 </script>
