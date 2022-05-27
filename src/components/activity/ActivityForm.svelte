@@ -152,7 +152,7 @@
       </Field>
 
       <fieldset>
-        <details open>
+        <details open style:cursor="pointer">
           <summary>
             <span class:error={parameterError !== null}>
               Parameters
@@ -168,7 +168,7 @@
       </fieldset>
 
       <fieldset>
-        <details open={hasChildren}>
+        <details open={hasChildren} style:cursor="pointer">
           <summary>Decomposition</summary>
           <div class="mt-2">
             {#if hasChildren}
@@ -192,9 +192,3 @@
   title="Delete Activity"
   on:confirm={() => activityActions.deleteActivity(id)}
 />
-
-<style>
-  details {
-    cursor: pointer;
-  }
-</style>
