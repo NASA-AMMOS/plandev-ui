@@ -1,13 +1,16 @@
 import { isNil } from 'lodash-es';
 import { get } from 'svelte/store';
+import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { user as userStore } from '../stores/app';
 import { savingExpansionRule, savingExpansionSet } from '../stores/expansion';
 import { plan } from '../stores/plan';
+import { simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
 import { setQueryParam } from './generic';
 import gql from './gql';
+import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
 
@@ -75,7 +78,7 @@ async function reqHasura<T = any>(query: string, variables: QueryVariables = {})
 /* Requests. */
 
 const req = {
-  async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string): Promise<Activity | null> {
+  async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
       const start_offset = getIntervalFromDoyRange(currentPlan.startTime, startTime);
@@ -85,9 +88,7 @@ const req = {
         start_offset,
         type,
       };
-      const data = await reqHasura(gql.CREATE_ACTIVITY, {
-        activity: activityInsertInput,
-      });
+      const data = await reqHasura(gql.CREATE_ACTIVITY, { activity: activityInsertInput });
       const { createActivity } = data;
       const { id } = createActivity;
       const activity: Activity = {
@@ -100,10 +101,14 @@ const req = {
         type,
       };
 
-      return activity;
+      activitiesMap.update(activities => ({ ...activities, [id]: activity }));
+      selectedActivityId.set(id);
+      simulationStatus.update(Status.Dirty);
+
+      showSuccessToast('Activity Created Successfully');
     } catch (e) {
       console.log(e);
-      return null;
+      showFailureToast('Activity Create Failed');
     }
   },
 
@@ -311,13 +316,18 @@ const req = {
     }
   },
 
-  async deleteActivity(id: number): Promise<boolean> {
+  async deleteActivity(id: number): Promise<void> {
     try {
       await reqHasura(gql.DELETE_ACTIVITY, { id });
-      return true;
+      activitiesMap.update(activities => {
+        delete activities[id];
+        return { ...activities };
+      });
+      simulationStatus.update(Status.Dirty);
+      showSuccessToast('Activity Deleted Successfully');
     } catch (e) {
       console.log(e);
-      return false;
+      showFailureToast('Activity Delete Failed');
     }
   },
 
@@ -809,25 +819,37 @@ const req = {
     }
   },
 
-  async updateActivity(id: number, activity: Partial<Activity>): Promise<boolean> {
-    const activitySetInput: ActivitySetInput = {};
+  async updateActivity(id: number, activity: Partial<Activity>, doRequest: boolean = true): Promise<void> {
+    if (doRequest) {
+      const activitySetInput: ActivitySetInput = {};
 
-    if (activity.arguments) {
-      activitySetInput.arguments = activity.arguments;
+      if (activity.arguments) {
+        activitySetInput.arguments = activity.arguments;
+      }
+
+      if (activity.startTime) {
+        const planStartTime = get<Plan>(plan).startTime;
+        activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.startTime);
+      }
+
+      try {
+        await reqHasura(gql.UPDATE_ACTIVITY, { activity: activitySetInput, id });
+        showSuccessToast('Activity Updated Successfully');
+      } catch (e) {
+        console.log(e);
+        showFailureToast('Activity Update Failed');
+      }
     }
 
-    if (activity.startTime) {
-      const planStartTime = get<Plan>(plan).startTime;
-      activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.startTime);
-    }
+    activitiesMap.update(activities => ({
+      ...activities,
+      [id]: {
+        ...activities[id],
+        ...activity,
+      },
+    }));
 
-    try {
-      await reqHasura(gql.UPDATE_ACTIVITY, { activity: activitySetInput, id });
-      return true;
-    } catch (e) {
-      console.log(e);
-      return false;
-    }
+    simulationStatus.update(Status.Dirty);
   },
 
   async updateConstraint(id: number, constraint: Partial<Constraint>): Promise<boolean> {

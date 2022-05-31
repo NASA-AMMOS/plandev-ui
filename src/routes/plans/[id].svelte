@@ -60,7 +60,7 @@
   import SplitGrid from '../../components/ui/SplitGrid.svelte';
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import Views from '../../components/view/Views.svelte';
-  import { activitiesMap, activityActions } from '../../stores/activities';
+  import { activitiesMap, resetActivityStores } from '../../stores/activities';
   import {
     constraintActions,
     constraintsTsExtraLibs,
@@ -141,7 +141,7 @@
   });
 
   onDestroy(() => {
-    activityActions.reset();
+    resetActivityStores();
     constraintActions.reset();
     planActions.reset();
     resourceActions.reset();

@@ -6,7 +6,8 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { activityActions, activityPoints } from '../../stores/activities';
+  import { activityPoints } from '../../stores/activities';
+  import req from '../../utilities/requests';
   import { getDoyTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
@@ -96,7 +97,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        activityActions.updateActivity(dragPoint.id, { children: [], startTime }, false);
+        req.updateActivity(dragPoint.id, { children: [], startTime }, false);
       }
     }
   }
@@ -107,7 +108,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        activityActions.updateActivity(dragPoint.id, { startTime });
+        req.updateActivity(dragPoint.id, { startTime });
       }
       dragOffsetX = null;
       dragPoint = null;
@@ -149,7 +150,7 @@
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      activityActions.createActivity({}, startTime, activityTypeName);
+      req.createActivity({}, startTime, activityTypeName);
     }
   }
 

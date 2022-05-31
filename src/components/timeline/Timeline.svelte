@@ -8,7 +8,7 @@
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
-  import { activityActions } from '../../stores/activities';
+  import { selectedActivityId } from '../../stores/activities';
   import { violations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
@@ -74,7 +74,7 @@
     if (points.length) {
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
-        activityActions.selectActivity(point.id);
+        $selectedActivityId = point.id;
       }
     }
   }

@@ -9,7 +9,7 @@
   import type Modal from '../modals/Modal.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { activityActions, selectedActivity } from '../../stores/activities';
+  import { selectedActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -75,12 +75,12 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    activityActions.updateActivity(id, { arguments: newArguments });
+    req.updateActivity(id, { arguments: newArguments });
   }
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      activityActions.updateActivity(id, { startTime: $startTimeField.value });
+      req.updateActivity(id, { startTime: $startTimeField.value });
     }
   }
 
@@ -190,5 +190,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this activity?"
   title="Delete Activity"
-  on:confirm={() => activityActions.deleteActivity(id)}
+  on:confirm={() => req.deleteActivity(id)}
 />

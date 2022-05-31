@@ -5,9 +5,9 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { activityActions } from '../../stores/activities';
   import { plan } from '../../stores/plan';
   import { compare } from '../../utilities/generic';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -17,6 +17,11 @@
 
   $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
   $: sortedActivityTypes = filteredActivityTypes.sort((a, b) => compare(a.name, b.name));
+
+  async function createActivityAtPlanStart(activityType: ActivityType) {
+    const { startTime } = $plan;
+    req.createActivity({}, startTime, activityType.name);
+  }
 
   function onDragEnd(): void {
     document.getElementById('list-item-drag-image').remove();
@@ -60,7 +65,7 @@
           <span slot="suffix">
             <button
               class="st-button icon fs-6"
-              on:click={() => activityActions.createActivityAtPlanStart(activityType)}
+              on:click={() => createActivityAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <i class="bi bi-plus" />

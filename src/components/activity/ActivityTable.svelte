@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import Table from '../ui/Table.svelte';
-  import { activities, activityActions, selectedActivityId } from '../../stores/activities';
+  import { activities, selectedActivityId } from '../../stores/activities';
   import { view } from '../../stores/views';
 
   export let activityTableId: number;
@@ -17,5 +17,5 @@
   rowData={$activities}
   rowSelectionMode="single"
   selectedRowId={$selectedActivityId}
-  on:rowClick={({ detail }) => activityActions.selectActivity(detail.id)}
+  on:rowClick={({ detail }) => ($selectedActivityId = detail.id)}
 />

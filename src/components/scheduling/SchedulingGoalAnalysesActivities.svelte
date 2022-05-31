@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activityActions, activitiesMap, selectedActivityId } from '../../stores/activities';
+  import { activitiesMap, selectedActivityId } from '../../stores/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
@@ -31,9 +31,7 @@
               <div
                 class="satisfied-activity"
                 class:selected={$selectedActivityId === activity.activity_id}
-                on:click={() => {
-                  activityActions.selectActivity(activity.activity_id);
-                }}
+                on:click={() => ($selectedActivityId = activity.activity_id)}
               >
                 <i class="si si-activity" />
                 {$activitiesMap[activity.activity_id].type}
