@@ -2,8 +2,9 @@ import { browser } from '$app/env';
 import { get } from 'svelte/store';
 import { env as envStore, user as userStore } from '../stores/app';
 
-/* Helpers. */
-
+/**
+ * Function to make HTTP requests to the Aerie Gateway.
+ */
 export async function reqGateway<T = any>(
   url: string,
   method: string,
@@ -32,6 +33,9 @@ export async function reqGateway<T = any>(
   return data;
 }
 
+/**
+ * Function to make HTTP POST requests to the Hasura GraphQL API.
+ */
 export async function reqHasura<T = any>(query: string, variables: QueryVariables = {}): Promise<Record<string, T>> {
   const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
   const HASURA_URL = browser ? HASURA_CLIENT_URL : HASURA_SERVER_URL;
