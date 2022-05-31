@@ -12,8 +12,8 @@
   import { selectedActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
+  import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
-  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
 
@@ -64,7 +64,7 @@
   $: startTimeField = field<string>(startTime, [required, timestamp]);
 
   $: if (activityType && argumentsMap) {
-    req
+    effects
       .getEffectiveActivityArguments(model.id, activityType.name, argumentsMap)
       .then(({ arguments: defaultArgumentsMap }) => {
         formParameters = getFormParameters(activityType.parameters, argumentsMap, defaultArgumentsMap);
@@ -75,18 +75,18 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    req.updateActivity(id, { arguments: newArguments });
+    effects.updateActivity(id, { arguments: newArguments });
   }
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      req.updateActivity(id, { startTime: $startTimeField.value });
+      effects.updateActivity(id, { startTime: $startTimeField.value });
     }
   }
 
   async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments) {
-      const { errors, success } = await req.validateActivityArguments(type, model.id, newArguments);
+      const { errors, success } = await effects.validateActivityArguments(type, model.id, newArguments);
 
       // TODO: Update to account for errors returned for individual arguments.
       if (!success) {
@@ -190,5 +190,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this activity?"
   title="Delete Activity"
-  on:confirm={() => req.deleteActivity(id)}
+  on:confirm={() => effects.deleteActivity(id)}
 />

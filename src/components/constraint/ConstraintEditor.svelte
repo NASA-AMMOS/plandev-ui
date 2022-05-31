@@ -5,7 +5,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
 
   export let gridId: number;
 
@@ -50,9 +50,9 @@
 
   function saveConstraint() {
     if ($selectedConstraint) {
-      req.updateConstraint(constraintType, $selectedConstraint.id, definition, description, name, summary);
+      effects.updateConstraint(constraintType, $selectedConstraint.id, definition, description, name, summary);
     } else {
-      req.createConstraint(constraintType, definition, description, name, summary);
+      effects.createConstraint(constraintType, definition, description, name, summary);
     }
   }
 </script>

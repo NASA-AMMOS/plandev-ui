@@ -8,7 +8,7 @@
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
   import { expansionSets, sequences } from '../../stores/expansion';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -26,19 +26,19 @@
 
   async function createSequence() {
     creatingSequence = true;
-    await req.createSequence(seqIdInput);
+    await effects.createSequence(seqIdInput);
     creatingSequence = false;
   }
 
   async function deleteSequence(event: CustomEvent<Sequence>) {
     const { detail: sequence } = event;
     const { seq_id, simulation_dataset_id } = sequence;
-    await req.deleteSequence(seq_id, simulation_dataset_id);
+    await effects.deleteSequence(seq_id, simulation_dataset_id);
   }
 
   async function expandPlan() {
     expandingPlan = true;
-    await req.expand(selectedExpansionSetId);
+    await effects.expand(selectedExpansionSetId);
     expandingPlan = false;
   }
 </script>

@@ -13,12 +13,12 @@
     const planId = parseFloat(id);
 
     if (!Number.isNaN(planId)) {
-      const initialPlan = await req.getPlan(planId);
+      const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialConstraintsTsExtraLibs = await req.getConstraintsTsExtraLibs(initialPlan.model.id);
-        const initialSchedulingTsExtraLibs = await req.getSchedulingTsExtraLibs(initialPlan.model.id);
-        const initialView = await req.getView(url.searchParams);
+        const initialConstraintsTsExtraLibs = await effects.getConstraintsTsExtraLibs(initialPlan.model.id);
+        const initialSchedulingTsExtraLibs = await effects.getSchedulingTsExtraLibs(initialPlan.model.id);
+        const initialView = await effects.getView(url.searchParams);
 
         return {
           props: {
@@ -85,8 +85,8 @@
     resetSimulationStores,
   } from '../../stores/simulation';
   import { viewActions, view, viewLayout } from '../../stores/views';
+  import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
-  import req from '../../utilities/requests';
   import { getUnixEpochTime } from '../../utilities/time';
 
   export let initialConstraintsTsExtraLibs: TypeScriptExtraLib[];
@@ -173,7 +173,7 @@
 
     if (metaKey && key === 's') {
       event.preventDefault();
-      req.simulate();
+      effects.simulate();
     }
   }
 </script>

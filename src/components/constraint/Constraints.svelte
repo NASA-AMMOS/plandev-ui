@@ -7,7 +7,7 @@
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import { modelConstraints, planConstraints, selectedConstraint } from '../../stores/constraints';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -90,5 +90,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"
-  on:confirm={({ detail: constraint }) => req.deleteConstraint(constraint.id)}
+  on:confirm={({ detail: constraint }) => effects.deleteConstraint(constraint.id)}
 />

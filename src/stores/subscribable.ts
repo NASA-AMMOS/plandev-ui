@@ -2,8 +2,8 @@ import { browser } from '$app/env';
 import type { Client, ClientOptions } from 'graphql-ws';
 import { createClient } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import type { Subscriber, Unsubscriber } from 'svelte/store';
-import { hasuraUrl } from '../utilities/app';
+import { get, type Subscriber, type Unsubscriber } from 'svelte/store';
+import { env as envStore } from '../stores/app';
 
 /**
  * Aerie UI specific wrapper around gqlSubscribable.
@@ -13,7 +13,8 @@ export function getGqlSubscribable<T>(
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
 ): GqlSubscribable<T> {
-  const HASURA_URL = hasuraUrl();
+  const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
+  const HASURA_URL = browser ? HASURA_CLIENT_URL : HASURA_SERVER_URL;
   const [, baseUrl] = HASURA_URL.split('http://');
   const url = `ws://${baseUrl}`;
   const clientOptions: ClientOptions = { url };

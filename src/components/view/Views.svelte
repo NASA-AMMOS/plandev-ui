@@ -9,7 +9,7 @@
   import type Modal from '../modals/Modal.svelte';
   import { view, viewLayout } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -18,13 +18,13 @@
   let views: View[] = [];
 
   onMount(async () => {
-    views = await req.getViews();
+    views = await effects.getViews();
   });
 
   async function onDeleteView(event: CustomEvent<{ viewId: number }>) {
     const { detail } = event;
     const { viewId } = detail;
-    const { message, nextView, success } = await req.deleteView(viewId);
+    const { message, nextView, success } = await effects.deleteView(viewId);
 
     if (success) {
       views = views.filter(v => v.id !== viewId);
@@ -41,7 +41,7 @@
 
   async function onLoadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await req.getView(query);
+    const newView = await effects.getView(query);
 
     if (view) {
       $view = { ...newView };

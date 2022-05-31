@@ -9,7 +9,7 @@
       };
     }
 
-    const { models = [], plans = [] } = await req.getPlansAndModels();
+    const { models = [], plans = [] } = await effects.getPlansAndModels();
 
     return {
       props: {
@@ -36,8 +36,8 @@
   import Nav from '../../components/app/Nav.svelte';
   import { simulationTemplates } from '../../stores/simulation';
   import { field } from '../../stores/form';
+  import effects from '../../utilities/effects';
   import { compare, removeQueryParam } from '../../utilities/generic';
-  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
   import { min, required, timestamp } from '../../utilities/validators';
 
@@ -91,14 +91,14 @@
     createButtonText = 'Creating...';
     error = null;
 
-    const newPlan = await req.createPlan(
+    const newPlan = await effects.createPlan(
       $endTimeField.value,
       $modelIdField.value,
       $nameField.value,
       $startTimeField.value,
     );
-    await req.createSimulation(newPlan.id, $simTemplateField.value);
-    await req.createSchedulingSpec({
+    await effects.createSimulation(newPlan.id, $simTemplateField.value);
+    await effects.createSchedulingSpec({
       horizon_end: $endTimeField.value,
       horizon_start: $startTimeField.value,
       plan_id: newPlan.id,
@@ -118,7 +118,7 @@
   async function deletePlan(event: CustomEvent<CreatePlan>): Promise<void> {
     const { detail: plan } = event;
     const { id } = plan;
-    const success = await req.deletePlan(id);
+    const success = await effects.deletePlan(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);

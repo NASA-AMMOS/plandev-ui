@@ -15,7 +15,7 @@
     expansionRulesColumns,
     savingExpansionRule,
   } from '../../stores/expansion';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
 
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
@@ -48,7 +48,7 @@
         authoring_mission_model_id: ruleModelId,
         expansion_logic: ruleLogic,
       };
-      const newRuleId = await req.createExpansionRule(newRule);
+      const newRuleId = await effects.createExpansionRule(newRule);
 
       if (newRuleId !== null) {
         goto(`/expansion/rules/edit/${newRuleId}`);
@@ -60,7 +60,7 @@
         authoring_mission_model_id: ruleModelId,
         expansion_logic: ruleLogic,
       };
-      await req.updateExpansionRule(ruleId, updatedRule);
+      await effects.updateExpansionRule(ruleId, updatedRule);
     }
   }
 </script>

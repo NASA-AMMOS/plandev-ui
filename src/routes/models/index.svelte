@@ -9,7 +9,7 @@
       };
     }
 
-    const models = await req.getModels();
+    const models = await effects.getModels();
 
     return {
       props: {
@@ -29,9 +29,9 @@
   import Panel from '../../components/ui/Panel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Nav from '../../components/app/Nav.svelte';
+  import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import req from '../../utilities/requests';
 
   export let models: ModelInput[] = [];
 
@@ -49,7 +49,7 @@
     error = null;
 
     const file = files[0];
-    const newModel = await req.createModel(name, version, file);
+    const newModel = await effects.createModel(name, version, file);
 
     if (newModel) {
       models = [...models, newModel];
@@ -63,7 +63,7 @@
   async function deleteModel(event: CustomEvent<ModelInput>) {
     const { detail: model } = event;
     const { id, jar_id } = model;
-    const success = await req.deleteModel(id, jar_id);
+    const success = await effects.deleteModel(id, jar_id);
 
     if (success) {
       models = models.filter(model => model.id !== id);

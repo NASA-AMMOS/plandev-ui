@@ -8,7 +8,7 @@
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
   import { selectedSpecGoal, schedulingTsExtraLibs, selectedGoalId } from '../../stores/scheduling';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { required } from '../../utilities/validators';
 
   export let gridId: number;
@@ -53,10 +53,10 @@
 
     if ($selectedSpecGoal) {
       const { goal } = $selectedSpecGoal;
-      req.updateSchedulingGoal(goal.id, { definition, description, name });
+      effects.updateSchedulingGoal(goal.id, { definition, description, name });
     } else {
       const { user } = $session;
-      req.createSchedulingGoal(definition, description, name, user.id);
+      effects.createSchedulingGoal(definition, description, name, user.id);
     }
   }
 </script>

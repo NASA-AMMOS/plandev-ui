@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import req from '../../utilities/requests';
+import effects from '../../utilities/effects';
 
 export const post: RequestHandler = async event => {
   const { locals } = event;
@@ -7,7 +7,7 @@ export const post: RequestHandler = async event => {
   const { ssoToken = '' } = user;
 
   try {
-    const logoutResponse: ReqLogoutResponse = await req.logout(ssoToken);
+    const logoutResponse: ReqLogoutResponse = await effects.logout(ssoToken);
     const { message, success } = logoutResponse;
 
     if (success) {

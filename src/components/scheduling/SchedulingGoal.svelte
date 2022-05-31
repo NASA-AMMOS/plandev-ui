@@ -9,7 +9,7 @@
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { selectedGoalId } from '../../stores/scheduling';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -51,7 +51,7 @@
   confirmText="Delete"
   message="Are you sure you want to delete this goal?"
   title="Delete Goal"
-  on:confirm={() => req.deleteSchedulingGoal(goal.id)}
+  on:confirm={() => effects.deleteSchedulingGoal(goal.id)}
 />
 
 <ContextMenu bind:this={contextMenu}>

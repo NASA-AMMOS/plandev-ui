@@ -7,7 +7,7 @@
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { activityPoints } from '../../stores/activities';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
   import { getDoyTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
@@ -97,7 +97,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        req.updateActivity(dragPoint.id, { children: [], startTime }, false);
+        effects.updateActivity(dragPoint.id, { children: [], startTime }, false);
       }
     }
   }
@@ -108,7 +108,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        req.updateActivity(dragPoint.id, { startTime });
+        effects.updateActivity(dragPoint.id, { startTime });
       }
       dragOffsetX = null;
       dragPoint = null;
@@ -150,7 +150,7 @@
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
       const startTime = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      req.createActivity({}, startTime, activityTypeName);
+      effects.createActivity({}, startTime, activityTypeName);
     }
   }
 

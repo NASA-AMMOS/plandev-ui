@@ -8,7 +8,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import { dictionaries, expansionSetsColumns, models, savingExpansionSet } from '../../stores/expansion';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
 
   export let mode: 'create' | 'edit' = 'create';
 
@@ -22,7 +22,7 @@
   let setDictionaryId: number | null = null;
   let setModelId: number | null = null;
 
-  $: req
+  $: effects
     .getActivityTypesExpansionRules(setModelId)
     .then(activityTypes => (activityTypesExpansionRules = activityTypes));
 
@@ -35,7 +35,7 @@
 
   async function saveSet() {
     if (mode === 'create') {
-      const newSetId = await req.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
+      const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
 
       if (newSetId !== null) {
         goto(`/expansion/sets`);

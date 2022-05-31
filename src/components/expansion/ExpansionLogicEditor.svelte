@@ -4,7 +4,7 @@
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
 
   export let readOnly: boolean = false;
   export let ruleActivityType: string | null = null;
@@ -17,8 +17,8 @@
   let commandTypeScript: string = '';
   let monaco: Monaco;
 
-  $: req.getCommandTypeScript(ruleDictionaryId).then(typeScript => (commandTypeScript = typeScript));
-  $: req.getActivityTypeScript(ruleActivityType, ruleModelId).then(typeScript => (activityTypeScript = typeScript));
+  $: effects.getCommandTypeScript(ruleDictionaryId).then(typeScript => (commandTypeScript = typeScript));
+  $: effects.getActivityTypeScript(ruleActivityType, ruleModelId).then(typeScript => (activityTypeScript = typeScript));
 
   $: if (monaco !== undefined && (commandTypeScript !== undefined || activityTypeScript !== undefined)) {
     const { languages } = monaco;

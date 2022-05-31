@@ -6,8 +6,8 @@
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
   import { plan } from '../../stores/plan';
+  import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
-  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -20,7 +20,7 @@
 
   async function createActivityAtPlanStart(activityType: ActivityType) {
     const { startTime } = $plan;
-    req.createActivity({}, startTime, activityType.name);
+    effects.createActivity({}, startTime, activityType.name);
   }
 
   function onDragEnd(): void {

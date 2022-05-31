@@ -4,7 +4,7 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { view, viewText } from '../../stores/views';
-  import req from '../../utilities/requests';
+  import effects from '../../utilities/effects';
 
   export let gridId: number;
 
@@ -26,12 +26,12 @@
 
   function saveAsView() {
     const newView = { ...$view, name };
-    req.createView(newView);
+    effects.createView(newView);
   }
 
   function saveView() {
     if ($view?.meta?.owner === $session.user.id) {
-      req.updateView($view);
+      effects.updateView($view);
     }
   }
 </script>

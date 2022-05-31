@@ -7,8 +7,8 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
-  import req from '../../utilities/requests';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import effects from '../../utilities/effects';
 
   export let gridId: number;
 
@@ -20,7 +20,7 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Scheduling" />
-    <StatusBadge status={$schedulingStatus} title="Schedule" on:click={() => req.schedule()} />
+    <StatusBadge status={$schedulingStatus} title="Schedule" on:click={() => effects.schedule()} />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

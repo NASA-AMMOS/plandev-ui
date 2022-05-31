@@ -2,14 +2,14 @@
 
 <script lang="ts" context="module">
   import type { Load } from '@sveltejs/kit';
-  import req from '../../../../utilities/requests';
+  import effects from '../../../../utilities/effects';
 
   export const load: Load = async ({ params }) => {
     const { id: ruleIdParam } = params;
 
     if (ruleIdParam !== null && ruleIdParam !== undefined) {
       const ruleIdAsNumber = parseFloat(ruleIdParam);
-      const initialRule = await req.getExpansionRule(ruleIdAsNumber);
+      const initialRule = await effects.getExpansionRule(ruleIdAsNumber);
 
       if (initialRule !== null) {
         return {

@@ -10,9 +10,9 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import { dictionaries } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import req from '../../utilities/requests';
 
   let confirmDeleteDictionaryModal: Modal;
   let createButtonText = 'Create';
@@ -26,7 +26,7 @@
     error = null;
 
     const file = files[0];
-    const newDictionaryId = await req.createCommandDictionary(file);
+    const newDictionaryId = await effects.createCommandDictionary(file);
 
     if (newDictionaryId === null) {
       error = 'Create dictionary failed.';
@@ -38,7 +38,7 @@
   async function deleteDictionary(event: CustomEvent<CommandDictionary>) {
     const { detail: dictionary } = event;
     const { id } = dictionary;
-    const success = await req.deleteCommandDictionary(id);
+    const success = await effects.deleteCommandDictionary(id);
 
     if (success) {
       sortedDictionaries = sortedDictionaries.filter(dictionary => dictionary.id !== id);

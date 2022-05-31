@@ -7,26 +7,28 @@
   import StatusBadge from '../ui/StatusBadge.svelte';
   import { plan } from '../../stores/plan';
   import { modelParametersMap, simulation, simulationStatus, simulationTemplates } from '../../stores/simulation';
+  import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
-  import req from '../../utilities/requests';
 
   export let gridId: number;
 
   let formParameters: FormParameter[] = [];
 
   $: {
-    req.getEffectiveModelArguments($plan.model.id, $simulation?.arguments).then(({ arguments: defaultArguments }) => {
-      // Displayed simulation arguments are either user input arguments,
-      // simulation template arguments, or default arguments.
-      // User input arguments take precedence over simulation template arguments,
-      // which take precedence over default arguments.
-      const defaultArgumentsMap = {
-        ...defaultArguments,
-        ...$simulation?.template?.arguments,
-      };
-      formParameters = getFormParameters($modelParametersMap, $simulation?.arguments, defaultArgumentsMap);
-    });
+    effects
+      .getEffectiveModelArguments($plan.model.id, $simulation?.arguments)
+      .then(({ arguments: defaultArguments }) => {
+        // Displayed simulation arguments are either user input arguments,
+        // simulation template arguments, or default arguments.
+        // User input arguments take precedence over simulation template arguments,
+        // which take precedence over default arguments.
+        const defaultArgumentsMap = {
+          ...defaultArguments,
+          ...$simulation?.template?.arguments,
+        };
+        formParameters = getFormParameters($modelParametersMap, $simulation?.arguments, defaultArgumentsMap);
+      });
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
@@ -38,7 +40,7 @@
       arguments: newArgumentsMap,
     };
 
-    req.updateSimulation(newSimulation, newFiles);
+    effects.updateSimulation(newSimulation, newFiles);
   }
 
   async function onChangeSimulationTemplate(event: Event) {
@@ -47,14 +49,14 @@
     const template = { ...$simulation?.template, id };
     const newSimulation: Simulation = { ...$simulation, template };
 
-    req.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation);
   }
 </script>
 
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Simulation" />
-    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => req.simulate()} />
+    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => effects.simulate()} />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

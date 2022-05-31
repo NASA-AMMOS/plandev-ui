@@ -11,8 +11,8 @@
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
-  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   let confirmDeleteSetModal: Modal;
@@ -25,7 +25,7 @@
   async function deleteSet(event: CustomEvent<ExpansionSet>) {
     const { detail: set } = event;
     const { id } = set;
-    const success = await req.deleteExpansionSet(id);
+    const success = await effects.deleteExpansionSet(id);
 
     if (success) {
       sortedSets = sortedSets.filter(set => set.id !== id);

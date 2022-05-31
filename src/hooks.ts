@@ -2,7 +2,7 @@ import type { GetSession, Handle } from '@sveltejs/kit';
 import { parse } from 'cookie';
 import { get } from 'svelte/store';
 import { env as envStore } from './stores/app';
-import req from './utilities/requests';
+import effects from './utilities/effects';
 
 export const handle: Handle = async ({ event, resolve }) => {
   const { AUTH_TYPE } = get<Env>(envStore);
@@ -18,7 +18,7 @@ export const handle: Handle = async ({ event, resolve }) => {
       const userStr = userBuffer.toString('utf-8');
       const user: User = JSON.parse(userStr);
 
-      const { success } = await req.session(user.ssoToken);
+      const { success } = await effects.session(user.ssoToken);
 
       if (success) {
         event.locals.user = user;

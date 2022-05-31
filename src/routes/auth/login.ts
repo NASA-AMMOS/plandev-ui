@@ -1,12 +1,12 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import req from '../../utilities/requests';
+import effects from '../../utilities/effects';
 
 export const post: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;
 
   try {
-    const loginResponse: ReqLoginResponse = await req.login(username, password);
+    const loginResponse: ReqLoginResponse = await effects.login(username, password);
     const { message, ssoToken, success, username: id } = loginResponse;
 
     if (success) {
