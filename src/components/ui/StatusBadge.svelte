@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getColorForStatus, Status, statusColors } from '../../utilities/status';
   import { createEventDispatcher } from 'svelte';
+  import { getColorForStatus, Status, statusColors } from '../../utilities/status';
 
   export let status: Status = Status.Clean;
   export let title: string = '';

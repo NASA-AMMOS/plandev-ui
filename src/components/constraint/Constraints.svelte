@@ -1,14 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import GridMenu from '../menus/GridMenu.svelte';
-  import ListItem from '../ui/ListItem.svelte';
-  import Panel from '../ui/Panel.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import { modelConstraints, planConstraints, selectedConstraint } from '../../stores/constraints';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
+  import GridMenu from '../menus/GridMenu.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
+  import ListItem from '../ui/ListItem.svelte';
+  import Panel from '../ui/Panel.svelte';
 
   export let gridId: number;
 

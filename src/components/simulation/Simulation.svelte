@@ -1,15 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import GridMenu from '../menus/GridMenu.svelte';
-  import Parameters from '../parameters/Parameters.svelte';
-  import Panel from '../ui/Panel.svelte';
-  import StatusBadge from '../ui/StatusBadge.svelte';
   import { plan } from '../../stores/plan';
   import { modelParametersMap, simulation, simulationStatus, simulationTemplates } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import GridMenu from '../menus/GridMenu.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
+  import Panel from '../ui/Panel.svelte';
+  import StatusBadge from '../ui/StatusBadge.svelte';
 
   export let gridId: number;
 

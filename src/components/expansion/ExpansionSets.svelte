@@ -2,7 +2,10 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+  import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
+  import { compare } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import Chip from '../ui/Chip.svelte';
@@ -10,10 +13,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
-  import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
-  import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
+  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   let confirmDeleteSetModal: Modal;
   let sortedSets: ExpansionSet[] = [];

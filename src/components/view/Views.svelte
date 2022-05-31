@@ -2,15 +2,15 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { view, viewLayout } from '../../stores/views';
+  import effects from '../../utilities/effects';
+  import { setQueryParam } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
-  import Table from '../ui/Table.svelte';
-  import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { view, viewLayout } from '../../stores/views';
-  import { setQueryParam } from '../../utilities/generic';
-  import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
+  import Panel from '../ui/Panel.svelte';
+  import Table from '../ui/Table.svelte';
 
   export let gridId: number;
 

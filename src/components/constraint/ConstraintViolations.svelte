@@ -1,11 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { violations } from '../../stores/constraints';
+  import { viewTimeRange } from '../../stores/plan';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { violations } from '../../stores/constraints';
-  import { viewTimeRange } from '../../stores/plan';
 
   export let gridId: number;
 

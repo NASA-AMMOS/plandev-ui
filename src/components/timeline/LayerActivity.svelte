@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { Quadtree } from 'd3-quadtree';
-  import { quadtree as d3Quadtree } from 'd3-quadtree';
+  import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';

@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import effects from '../../utilities/effects';
 
   export let readOnly: boolean = false;
   export let ruleActivityType: string | null = null;

@@ -1,17 +1,17 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
-  import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
+  import { selectedGoalId } from '../../stores/scheduling';
+  import effects from '../../utilities/effects';
+  import { tooltip } from '../../utilities/tooltip';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import effects from '../../utilities/effects';
-  import { selectedGoalId } from '../../stores/scheduling';
-  import { tooltip } from '../../utilities/tooltip';
+  import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
+  import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
   export let goal: SchedulingGoal;
   export let priority: number;

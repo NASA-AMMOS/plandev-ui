@@ -1,14 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ActivityDecomposition from './ActivityDecomposition.svelte';
-  import Field from '../form/Field.svelte';
-  import Input from '../form/Input.svelte';
-  import GridMenu from '../menus/GridMenu.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
-  import Parameters from '../parameters/Parameters.svelte';
-  import Panel from '../ui/Panel.svelte';
   import { selectedActivity } from '../../stores/activities';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
@@ -16,6 +8,14 @@
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
+  import Field from '../form/Field.svelte';
+  import Input from '../form/Input.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
+  import ConfirmModal from '../modals/ConfirmModal.svelte';
+  import type Modal from '../modals/Modal.svelte';
+  import Parameters from '../parameters/Parameters.svelte';
+  import Panel from '../ui/Panel.svelte';
+  import ActivityDecomposition from './ActivityDecomposition.svelte';
 
   export let gridId: number;
 

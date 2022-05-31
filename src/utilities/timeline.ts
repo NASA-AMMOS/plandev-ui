@@ -1,6 +1,5 @@
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
-import type { ScaleLinear, ScaleTime } from 'd3-scale';
-import { scaleLinear, scaleTime } from 'd3-scale';
+import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
 
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;

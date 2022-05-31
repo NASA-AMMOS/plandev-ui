@@ -1,6 +1,6 @@
 <script lang="ts">
-  import CssGrid from '../../ui/CssGrid.svelte';
   import { selectedLayer, viewActions } from '../../../stores/views';
+  import CssGrid from '../../ui/CssGrid.svelte';
 
   const colorSchemes = [
     { name: 'Accent', value: 'schemeAccent' },

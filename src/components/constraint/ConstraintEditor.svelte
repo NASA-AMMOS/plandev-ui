@@ -1,11 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
+  import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
-  import effects from '../../utilities/effects';
 
   export let gridId: number;
 

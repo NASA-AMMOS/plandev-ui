@@ -8,12 +8,12 @@
   import LayerActivity from './LayerActivity.svelte';
   import LayerLine from './LayerLine.svelte';
   import LayerXRange from './LayerXRange.svelte';
+  import RowDragHandleHeight from './RowDragHandleHeight.svelte';
+  import RowDragHandleMove from './RowDragHandleMove.svelte';
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
   import RowVerticalGuides from './RowVerticalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
-  import RowDragHandleHeight from './RowDragHandleHeight.svelte';
-  import RowDragHandleMove from './RowDragHandleMove.svelte';
 
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];

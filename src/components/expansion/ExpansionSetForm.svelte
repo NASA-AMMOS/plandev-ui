@@ -2,13 +2,13 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+  import { dictionaries, expansionSetsColumns, models, savingExpansionSet } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { dictionaries, expansionSetsColumns, models, savingExpansionSet } from '../../stores/expansion';
-  import effects from '../../utilities/effects';
+  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let mode: 'create' | 'edit' = 'create';
 

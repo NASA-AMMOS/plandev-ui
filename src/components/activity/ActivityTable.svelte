@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Table from '../ui/Table.svelte';
   import { activities, selectedActivityId } from '../../stores/activities';
   import { view } from '../../stores/views';
+  import Table from '../ui/Table.svelte';
 
   export let activityTableId: number;
 

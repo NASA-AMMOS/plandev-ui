@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { Status } from '../../utilities/status';
-  import { getColorForStatus } from '../../utilities/status';
+  import { getColorForStatus, type Status } from '../../utilities/status';
 
   export let icon: string = '';
   export let selected: boolean = false;

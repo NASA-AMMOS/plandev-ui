@@ -1,5 +1,17 @@
 <script lang="ts" context="module">
+  import { goto } from '$app/navigation';
   import type { Load } from '@sveltejs/kit';
+  import Nav from '../../components/app/Nav.svelte';
+  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
+  import type Modal from '../../components/modals/Modal.svelte';
+  import AlertError from '../../components/ui/AlertError.svelte';
+  import Chip from '../../components/ui/Chip.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
+  import Panel from '../../components/ui/Panel.svelte';
+  import Table from '../../components/ui/Table.svelte';
+  import effects from '../../utilities/effects';
+  import { compare } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
 
   export const load: Load = async ({ session }) => {
     if (!session.user) {
@@ -20,19 +32,6 @@
 </script>
 
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
-  import Table from '../../components/ui/Table.svelte';
-  import AlertError from '../../components/ui/AlertError.svelte';
-  import Panel from '../../components/ui/Panel.svelte';
-  import CssGrid from '../../components/ui/CssGrid.svelte';
-  import Nav from '../../components/app/Nav.svelte';
-  import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
-
   export let models: ModelInput[] = [];
 
   let confirmDeleteModelModal: Modal;

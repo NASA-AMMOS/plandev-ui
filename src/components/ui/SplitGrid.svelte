@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Split from 'split-grid';
-  import type { SplitInstance } from 'split-grid';
+  import Split, { type SplitInstance } from 'split-grid';
   import { createEventDispatcher, tick } from 'svelte';
 
   export let grid: Grid;

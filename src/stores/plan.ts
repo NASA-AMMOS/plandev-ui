@@ -1,6 +1,5 @@
 import { keyBy } from 'lodash-es';
-import type { Readable, Writable } from 'svelte/store';
-import { derived, writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 
 /* Stores. */
 

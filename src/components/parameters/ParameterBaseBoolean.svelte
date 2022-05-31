@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import ParameterName from './ParameterName.svelte';
   import ParameterBaseError from './ParameterBaseError.svelte';
+  import ParameterName from './ParameterName.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;

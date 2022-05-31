@@ -2,13 +2,13 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import SchedulingGoal from './SchedulingGoal.svelte';
+  import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
-  import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
-  import effects from '../../utilities/effects';
+  import SchedulingGoal from './SchedulingGoal.svelte';
 
   export let gridId: number;
 

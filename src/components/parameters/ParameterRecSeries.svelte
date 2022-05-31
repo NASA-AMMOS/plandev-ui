@@ -3,12 +3,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { getArgument } from '../../utilities/parameters';
+  import { tooltip } from '../../utilities/tooltip';
   import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
   import ParameterRecError from './ParameterRecError.svelte';
-  import { tooltip } from '../../utilities/tooltip';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter<ValueSchemaSeries>;

@@ -12,8 +12,8 @@
 </script>
 
 <script lang="ts">
-  import { hideAll as hideAllTooltips } from 'tippy.js';
   import { onDestroy, onMount } from 'svelte';
+  import { hideAll as hideAllTooltips } from 'tippy.js';
 
   export let hideAfterClick: boolean = true;
   export let shown = false;

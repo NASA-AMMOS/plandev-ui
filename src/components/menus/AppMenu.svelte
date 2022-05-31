@@ -1,13 +1,13 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
-  import { session } from '$app/stores';
   import { goto, prefetch } from '$app/navigation';
-  import Menu from './Menu.svelte';
-  import MenuItem from './MenuItem.svelte';
+  import { session } from '$app/stores';
+  import { env } from '../../stores/app';
   import AboutModal from '../modals/AboutModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { env } from '../../stores/app';
+  import Menu from './Menu.svelte';
+  import MenuItem from './MenuItem.svelte';
 
   let aboutModal: Modal;
   let appMenu: Menu;

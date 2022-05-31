@@ -1,5 +1,24 @@
 <script lang="ts" context="module">
+  import { goto, prefetch } from '$app/navigation';
+  import { page } from '$app/stores';
   import type { Load } from '@sveltejs/kit';
+  import { onMount } from 'svelte';
+  import Nav from '../../components/app/Nav.svelte';
+  import Field from '../../components/form/Field.svelte';
+  import Input from '../../components/form/Input.svelte';
+  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
+  import type Modal from '../../components/modals/Modal.svelte';
+  import AlertError from '../../components/ui/AlertError.svelte';
+  import Chip from '../../components/ui/Chip.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
+  import Panel from '../../components/ui/Panel.svelte';
+  import Table from '../../components/ui/Table.svelte';
+  import { field } from '../../stores/form';
+  import { simulationTemplates } from '../../stores/simulation';
+  import effects from '../../utilities/effects';
+  import { compare, removeQueryParam } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
+  import { min, required, timestamp } from '../../utilities/validators';
 
   export const load: Load = async ({ session }) => {
     if (!session.user) {
@@ -21,26 +40,6 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto, prefetch } from '$app/navigation';
-  import { page } from '$app/stores';
-  import Field from '../../components/form/Field.svelte';
-  import Input from '../../components/form/Input.svelte';
-  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
-  import AlertError from '../../components/ui/AlertError.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
-  import CssGrid from '../../components/ui/CssGrid.svelte';
-  import Panel from '../../components/ui/Panel.svelte';
-  import Table from '../../components/ui/Table.svelte';
-  import Nav from '../../components/app/Nav.svelte';
-  import { simulationTemplates } from '../../stores/simulation';
-  import { field } from '../../stores/form';
-  import effects from '../../utilities/effects';
-  import { compare, removeQueryParam } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
-  import { min, required, timestamp } from '../../utilities/validators';
-
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
 

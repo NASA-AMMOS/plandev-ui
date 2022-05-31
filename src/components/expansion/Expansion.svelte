@@ -1,15 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { expansionSets, sequences } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
+  import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
-  import { expansionSets, sequences } from '../../stores/expansion';
-  import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
 

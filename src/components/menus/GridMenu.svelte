@@ -1,9 +1,9 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  import { viewActions } from '../../stores/views';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
-  import { viewActions } from '../../stores/views';
 
   export let gridId: number;
   export let title: string = '';

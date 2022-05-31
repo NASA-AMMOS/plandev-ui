@@ -1,5 +1,4 @@
-import type { Writable } from 'svelte/store';
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { getGqlSubscribable } from './subscribable';

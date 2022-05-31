@@ -1,10 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { ScaleTime } from 'd3-scale';
-  import { select } from 'd3-selection';
-  import type { Selection } from 'd3-selection';
+  import { select, type Selection } from 'd3-selection';
+  import { createEventDispatcher } from 'svelte';
   import { getUnixEpochTime } from '../../utilities/time';
 
   export let drawHeight: number = 20;

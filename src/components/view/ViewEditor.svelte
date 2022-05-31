@@ -1,10 +1,10 @@
 <script lang="ts">
   import { session } from '$app/stores';
+  import { view, viewText } from '../../stores/views';
+  import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { view, viewText } from '../../stores/views';
-  import effects from '../../utilities/effects';
 
   export let gridId: number;
 

@@ -1,12 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { ScaleTime } from 'd3-scale';
+  import { createEventDispatcher } from 'svelte';
+  import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import XAxisBrush from './XAxisBrush.svelte';
   import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
-  import { tooltip } from '../../utilities/tooltip';
 
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 90;

@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { SplitInstance } from 'split-grid';
-  import Split from 'split-grid';
+  import Split, { type SplitInstance } from 'split-grid';
   import { onMount, tick } from 'svelte';
 
   export { className as class };

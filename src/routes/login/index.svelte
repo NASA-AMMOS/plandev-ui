@@ -1,5 +1,8 @@
 <script lang="ts" context="module">
+  import { session } from '$app/stores';
   import type { Load } from '@sveltejs/kit';
+  import { onMount } from 'svelte';
+  import AlertError from '../../components/ui/AlertError.svelte';
 
   export const load: Load = ({ session }) => {
     if (session.user) {
@@ -13,10 +16,6 @@
 </script>
 
 <script lang="ts">
-  import { session } from '$app/stores';
-  import { onMount } from 'svelte';
-  import AlertError from '../../components/ui/AlertError.svelte';
-
   let error = null;
   let loginButtonText = 'Login';
   let password = '';

@@ -2,6 +2,7 @@
 
 <script lang="ts" context="module">
   import type { Load } from '@sveltejs/kit';
+  import ExpansionRuleForm from '../../../../components/expansion/ExpansionRuleForm.svelte';
   import effects from '../../../../utilities/effects';
 
   export const load: Load = async ({ params }) => {
@@ -28,8 +29,6 @@
 </script>
 
 <script lang="ts">
-  import ExpansionRuleForm from '../../../../components/expansion/ExpansionRuleForm.svelte';
-
   export let initialRule: ExpansionRule | null;
 </script>
 

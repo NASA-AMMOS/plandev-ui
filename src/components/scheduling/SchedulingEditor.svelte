@@ -2,14 +2,14 @@
 
 <script lang="ts">
   import { session } from '$app/stores';
+  import { field } from '../../stores/form';
+  import { schedulingTsExtraLibs, selectedGoalId, selectedSpecGoal } from '../../stores/scheduling';
+  import effects from '../../utilities/effects';
+  import { required } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { field } from '../../stores/form';
-  import { selectedSpecGoal, schedulingTsExtraLibs, selectedGoalId } from '../../stores/scheduling';
-  import effects from '../../utilities/effects';
-  import { required } from '../../utilities/validators';
 
   export let gridId: number;
 

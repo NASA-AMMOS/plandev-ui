@@ -1,7 +1,7 @@
 <script lang="ts">
-  import CssGrid from '../../ui/CssGrid.svelte';
-  import { getTarget } from '../../../utilities/generic';
   import { selectedRow, selectedYAxis, viewActions } from '../../../stores/views';
+  import { getTarget } from '../../../utilities/generic';
+  import CssGrid from '../../ui/CssGrid.svelte';
 
   let axes: Axis[] = [];
   let idError: string | null = null;

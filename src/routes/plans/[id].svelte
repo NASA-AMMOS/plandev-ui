@@ -1,5 +1,54 @@
 <script lang="ts" context="module">
   import type { Load } from '@sveltejs/kit';
+  import { keyBy } from 'lodash-es';
+  import { onDestroy, onMount } from 'svelte';
+  import ActivityForm from '../../components/activity/ActivityForm.svelte';
+  import ActivityTable from '../../components/activity/ActivityTable.svelte';
+  import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
+  import Nav from '../../components/app/Nav.svelte';
+  import NavButton from '../../components/app/NavButton.svelte';
+  import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
+  import Constraints from '../../components/constraint/Constraints.svelte';
+  import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import Expansion from '../../components/expansion/Expansion.svelte';
+  import Scheduling from '../../components/scheduling/Scheduling.svelte';
+  import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
+  import Simulation from '../../components/simulation/Simulation.svelte';
+  import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
+  import Timeline from '../../components/timeline/Timeline.svelte';
+  import CssGrid from '../../components/ui/CssGrid.svelte';
+  import IFrame from '../../components/ui/IFrame.svelte';
+  import SplitGrid from '../../components/ui/SplitGrid.svelte';
+  import ViewEditor from '../../components/view/ViewEditor.svelte';
+  import Views from '../../components/view/Views.svelte';
+  import { activitiesMap, resetActivityStores } from '../../stores/activities';
+  import {
+    constraintsTsExtraLibs,
+    modelConstraints,
+    planConstraints,
+    resetConstraintStores,
+  } from '../../stores/constraints';
+  import {
+    maxTimeRange,
+    plan,
+    planEndTimeMs,
+    planStartTimeMs,
+    resetPlanStores,
+    viewTimeRange,
+  } from '../../stores/plan';
+  import { resetResourceStores } from '../../stores/resources';
+  import { resetSchedulingStores, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
+  import {
+    modelParametersMap,
+    resetSimulationStores,
+    simulation,
+    simulationStatus,
+    simulationTemplates,
+  } from '../../stores/simulation';
+  import { view, viewActions, viewLayout } from '../../stores/views';
+  import effects from '../../utilities/effects';
+  import { setQueryParam } from '../../utilities/generic';
+  import { getUnixEpochTime } from '../../utilities/time';
 
   export const load: Load = async ({ params, session, url }) => {
     if (!session.user) {
@@ -39,56 +88,6 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import { keyBy } from 'lodash-es';
-  import ActivityForm from '../../components/activity/ActivityForm.svelte';
-  import ActivityTable from '../../components/activity/ActivityTable.svelte';
-  import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
-  import Nav from '../../components/app/Nav.svelte';
-  import NavButton from '../../components/app/NavButton.svelte';
-  import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
-  import Constraints from '../../components/constraint/Constraints.svelte';
-  import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
-  import Expansion from '../../components/expansion/Expansion.svelte';
-  import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
-  import Scheduling from '../../components/scheduling/Scheduling.svelte';
-  import Simulation from '../../components/simulation/Simulation.svelte';
-  import Timeline from '../../components/timeline/Timeline.svelte';
-  import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
-  import CssGrid from '../../components/ui/CssGrid.svelte';
-  import IFrame from '../../components/ui/IFrame.svelte';
-  import SplitGrid from '../../components/ui/SplitGrid.svelte';
-  import ViewEditor from '../../components/view/ViewEditor.svelte';
-  import Views from '../../components/view/Views.svelte';
-  import { activitiesMap, resetActivityStores } from '../../stores/activities';
-  import {
-    constraintsTsExtraLibs,
-    modelConstraints,
-    planConstraints,
-    resetConstraintStores,
-  } from '../../stores/constraints';
-  import {
-    maxTimeRange,
-    plan,
-    planEndTimeMs,
-    planStartTimeMs,
-    resetPlanStores,
-    viewTimeRange,
-  } from '../../stores/plan';
-  import { resetResourceStores } from '../../stores/resources';
-  import { resetSchedulingStores, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
-  import {
-    modelParametersMap,
-    simulation,
-    simulationTemplates,
-    simulationStatus,
-    resetSimulationStores,
-  } from '../../stores/simulation';
-  import { viewActions, view, viewLayout } from '../../stores/views';
-  import effects from '../../utilities/effects';
-  import { setQueryParam } from '../../utilities/generic';
-  import { getUnixEpochTime } from '../../utilities/time';
-
   export let initialConstraintsTsExtraLibs: TypeScriptExtraLib[];
   export let initialPlan: Plan | null;
   export let initialSchedulingTsExtraLibs: TypeScriptExtraLib[];

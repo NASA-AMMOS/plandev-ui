@@ -1,6 +1,5 @@
 import { browser } from '$app/env';
-import type { Client, ClientOptions } from 'graphql-ws';
-import { createClient } from 'graphql-ws';
+import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
 import { get, type Subscriber, type Unsubscriber } from 'svelte/store';
 import { env as envStore } from '../stores/app';

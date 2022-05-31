@@ -1,5 +1,4 @@
-import type { Writable } from 'svelte/store';
-import { derived, get, writable } from 'svelte/store';
+import { derived, get, writable, type Writable } from 'svelte/store';
 import { getTarget } from '../utilities/generic';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
 

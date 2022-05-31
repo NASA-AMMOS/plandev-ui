@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { selectedLayer, viewActions } from '../../../stores/views';
   import CssGrid from '../../ui/CssGrid.svelte';
-  import { viewActions, selectedLayer } from '../../../stores/views';
 
   $: lineLayer = $selectedLayer as LineLayer | null;
 </script>

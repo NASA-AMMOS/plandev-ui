@@ -3,17 +3,16 @@
 <script lang="ts">
   import { afterUpdate, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
+  import { selectedActivityId } from '../../stores/activities';
+  import { violations } from '../../stores/constraints';
+  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
+  import { resources } from '../../stores/resources';
+  import { view, viewActions } from '../../stores/views';
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
-  import { selectedActivityId } from '../../stores/activities';
-  import { violations } from '../../stores/constraints';
-  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
-  import { resources } from '../../stores/resources';
-  import { viewActions } from '../../stores/views';
-  import { view } from '../../stores/views';
 
   export let timelineId: number;
 

@@ -2,25 +2,25 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import LayerLineForm from './LayerLineForm.svelte';
-  import LayerXRangeForm from './LayerXRangeForm.svelte';
-  import YAxisForm from './YAxisForm.svelte';
+  import {
+    selectedLayer,
+    selectedLayerId,
+    selectedRow,
+    selectedRowId,
+    selectedTimeline,
+    selectedTimelineId,
+    selectedYAxisId,
+    view,
+    viewActions,
+  } from '../../../stores/views';
+  import { getTarget } from '../../../utilities/generic';
   import GridMenu from '../../menus/GridMenu.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import Details from '../../ui/Details.svelte';
   import Panel from '../../ui/Panel.svelte';
-  import {
-    viewActions,
-    selectedLayerId,
-    selectedLayer,
-    selectedRowId,
-    selectedRow,
-    selectedTimeline,
-    selectedYAxisId,
-    view,
-    selectedTimelineId,
-  } from '../../../stores/views';
-  import { getTarget } from '../../../utilities/generic';
+  import LayerLineForm from './LayerLineForm.svelte';
+  import LayerXRangeForm from './LayerXRangeForm.svelte';
+  import YAxisForm from './YAxisForm.svelte';
 
   export let gridId: number;
 

@@ -1,11 +1,11 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  import { version } from '../../stores/app';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  import { version } from '../../stores/app';
 
   export let modal: Modal;
 </script>

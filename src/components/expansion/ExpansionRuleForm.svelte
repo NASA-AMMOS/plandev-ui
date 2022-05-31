@@ -2,20 +2,20 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+  import {
+    activityTypeNames,
+    dictionaries,
+    expansionRulesColumns,
+    models,
+    savingExpansionRule,
+  } from '../../stores/expansion';
+  import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
-  import {
-    activityTypeNames,
-    dictionaries,
-    models,
-    expansionRulesColumns,
-    savingExpansionRule,
-  } from '../../stores/expansion';
-  import effects from '../../utilities/effects';
+  import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDictionaryId: number | null = null;

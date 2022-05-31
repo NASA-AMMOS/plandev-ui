@@ -1,14 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Input from '../form/Input.svelte';
-  import GridMenu from '../menus/GridMenu.svelte';
-  import ListItem from '../ui/ListItem.svelte';
-  import Panel from '../ui/Panel.svelte';
   import { plan } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
+  import Input from '../form/Input.svelte';
+  import GridMenu from '../menus/GridMenu.svelte';
+  import ListItem from '../ui/ListItem.svelte';
+  import Panel from '../ui/Panel.svelte';
 
   export let gridId: number;
 

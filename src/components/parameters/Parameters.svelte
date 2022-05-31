@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { compare } from '../../utilities/generic';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterRec from './ParameterRec.svelte';
-  import { compare } from '../../utilities/generic';
 
   export let disabled: boolean = false;
   export let formParameters: FormParameter[] = [];

@@ -1,11 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { D3BrushEvent } from 'd3-brush';
-  import { brushX } from 'd3-brush';
+  import { brushX, type D3BrushEvent } from 'd3-brush';
   import type { ScaleTime } from 'd3-scale';
-  import { select } from 'd3-selection';
-  import type { Selection } from 'd3-selection';
+  import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
 
   export let brushOverlayColor: string = '#E8EAF6';
