@@ -6,14 +6,7 @@
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import { plan } from '../../stores/plan';
-  import {
-    modelParametersMap,
-    simulation,
-    simulationActions,
-    simulationStatus,
-    simulationTemplates,
-  } from '../../stores/simulation';
-  import { Status } from '../../utilities/status';
+  import { modelParametersMap, simulation, simulationStatus, simulationTemplates } from '../../stores/simulation';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import req from '../../utilities/requests';
@@ -45,8 +38,7 @@
       arguments: newArgumentsMap,
     };
 
-    simulationActions.updateSimulation(newSimulation, newFiles);
-    simulationStatus.update(Status.Dirty);
+    req.updateSimulation(newSimulation, newFiles);
   }
 
   async function onChangeSimulationTemplate(event: Event) {
@@ -55,15 +47,14 @@
     const template = { ...$simulation?.template, id };
     const newSimulation: Simulation = { ...$simulation, template };
 
-    simulationActions.updateSimulation(newSimulation);
-    simulationStatus.update(Status.Dirty);
+    req.updateSimulation(newSimulation);
   }
 </script>
 
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Simulation" />
-    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => simulationActions.runSimulation()} />
+    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => req.simulate()} />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

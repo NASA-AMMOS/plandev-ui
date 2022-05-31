@@ -62,20 +62,27 @@
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, resetActivityStores } from '../../stores/activities';
   import {
-    constraintActions,
     constraintsTsExtraLibs,
     modelConstraints,
     planConstraints,
+    resetConstraintStores,
   } from '../../stores/constraints';
-  import { maxTimeRange, plan, planActions, planEndTimeMs, planStartTimeMs, viewTimeRange } from '../../stores/plan';
-  import { resourceActions } from '../../stores/resources';
-  import { schedulingActions, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
+  import {
+    maxTimeRange,
+    plan,
+    planEndTimeMs,
+    planStartTimeMs,
+    resetPlanStores,
+    viewTimeRange,
+  } from '../../stores/plan';
+  import { resetResourceStores } from '../../stores/resources';
+  import { resetSchedulingStores, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
   import {
     modelParametersMap,
-    simulationActions,
     simulation,
     simulationTemplates,
     simulationStatus,
+    resetSimulationStores,
   } from '../../stores/simulation';
   import { viewActions, view, viewLayout } from '../../stores/views';
   import { setQueryParam } from '../../utilities/generic';
@@ -142,11 +149,11 @@
 
   onDestroy(() => {
     resetActivityStores();
-    constraintActions.reset();
-    planActions.reset();
-    resourceActions.reset();
-    schedulingActions.reset();
-    simulationActions.reset();
+    resetConstraintStores();
+    resetPlanStores();
+    resetResourceStores();
+    resetSchedulingStores();
+    resetSimulationStores();
   });
 
   function changeColumnSizes(event: CustomEvent<GridChangeSizesEvent>): void {
@@ -166,7 +173,7 @@
 
     if (metaKey && key === 's') {
       event.preventDefault();
-      simulationActions.runSimulation();
+      req.simulate();
     }
   }
 </script>

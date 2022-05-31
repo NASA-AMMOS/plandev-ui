@@ -1,18 +1,22 @@
-import { isNil } from 'lodash-es';
+import { isNil, keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { user as userStore } from '../stores/app';
+import { modelConstraints, planConstraints, selectedConstraint, violations } from '../stores/constraints';
 import { savingExpansionRule, savingExpansionSet } from '../stores/expansion';
-import { plan } from '../stores/plan';
-import { simulationStatus } from '../stores/simulation';
+import { plan, planStartTimeMs } from '../stores/plan';
+import { resources } from '../stores/resources';
+import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
+import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { toActivity } from './activities';
 import { gatewayUrl, hasuraUrl } from './app';
-import { setQueryParam } from './generic';
+import { setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
+import { offsetViolationWindows } from './violations';
 
 /* Helpers. */
 
@@ -127,15 +131,41 @@ const req = {
     }
   },
 
-  async createConstraint(constraint: ConstraintInsertInput): Promise<number | null> {
+  async createConstraint(
+    constraintType: ConstraintType,
+    definition: string,
+    description: string,
+    name: string,
+    summary: string,
+  ): Promise<void> {
     try {
-      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint });
+      const { id: planId, model } = get(plan);
+      const model_id = constraintType === 'model' ? model.id : null;
+      const plan_id = constraintType === 'plan' ? planId : null;
+      const constraintInsertInput: ConstraintInsertInput = {
+        definition,
+        description,
+        model_id,
+        name,
+        plan_id,
+        summary,
+      };
+      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput });
       const { createConstraint } = data;
       const { id } = createConstraint;
-      return id;
+      const constraint: Constraint = { ...constraintInsertInput, id };
+
+      if (constraintType === 'model') {
+        modelConstraints.update(constraints => [...constraints, constraint]);
+      } else if (constraintType === 'plan') {
+        planConstraints.update(constraints => [...constraints, constraint]);
+      }
+      selectedConstraint.set(constraint);
+      simulationStatus.update(Status.Dirty);
+      showSuccessToast('Constraint Created Successfully');
     } catch (e) {
       console.log(e);
-      return null;
+      showFailureToast('Constraint Creation Failed');
     }
   },
 
@@ -228,14 +258,31 @@ const req = {
     }
   },
 
-  async createSchedulingGoal(goal: SchedulingGoalInsertInput): Promise<SchedulingGoal> {
+  async createSchedulingGoal(definition: string, description: string, name: string, userId: string): Promise<void> {
     try {
-      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal });
-      const { createSchedulingGoal } = data;
-      return createSchedulingGoal;
+      const { model } = get(plan);
+      const goalInsertInput: SchedulingGoalInsertInput = {
+        author: userId,
+        definition,
+        description,
+        last_modified_by: userId,
+        model_id: model.id,
+        name,
+      };
+      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal: goalInsertInput });
+      const { createSchedulingGoal: newGoal } = data;
+
+      const specId = get(selectedSpecId);
+      const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
+        goal_id: newGoal.id,
+        specification_id: specId,
+      };
+      await req.createSchedulingSpecGoal(specGoalInsertInput);
+      selectedGoalId.set(null);
+      showSuccessToast('Scheduling Goal Created Successfully');
     } catch (e) {
       console.log(e);
-      return null;
+      showFailureToast('Scheduling Goal Create Failed');
     }
   },
 
@@ -343,13 +390,23 @@ const req = {
     }
   },
 
-  async deleteConstraint(id: number): Promise<boolean> {
+  async deleteConstraint(id: number): Promise<void> {
     try {
       await reqHasura(gql.DELETE_CONSTRAINT, { id });
-      return true;
+
+      modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+      planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+
+      const currentSelectedConstraint = get(selectedConstraint);
+      if (currentSelectedConstraint && currentSelectedConstraint.id === id) {
+        selectedConstraint.set(null);
+      }
+
+      simulationStatus.update(Status.Dirty);
+      showSuccessToast('Constraint Deleted Successfully');
     } catch (e) {
       console.log(e);
-      return false;
+      showFailureToast('Constraint Delete Failed');
     }
   },
 
@@ -410,13 +467,13 @@ const req = {
     }
   },
 
-  async deleteSchedulingGoal(id: number): Promise<boolean> {
+  async deleteSchedulingGoal(id: number): Promise<void> {
     try {
       await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
-      return true;
+      showSuccessToast('Scheduling Goal Deleted Successfully');
     } catch (e) {
       console.log(e);
-      return false;
+      showFailureToast('Scheduling Goal Delete Failed');
     }
   },
 
@@ -736,14 +793,46 @@ const req = {
     }
   },
 
-  async schedule(specificationId: number): Promise<SchedulingResponse> {
+  async schedule(): Promise<void> {
     try {
-      const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
-      const { schedule } = data;
-      return schedule;
+      const { id: planId } = get(plan);
+      const specificationId = get(selectedSpecId);
+
+      const plan_revision = await req.getPlanRevision(planId);
+      await req.updateSchedulingSpec(specificationId, { plan_revision });
+
+      let tries = 0;
+      schedulingStatus.set(Status.Executing);
+
+      do {
+        const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
+        const { schedule } = data;
+        const { reason, status } = schedule;
+
+        if (status === 'complete') {
+          const newActivities = await req.getActivitiesForPlan(planId);
+          activitiesMap.set(keyBy(newActivities, 'id'));
+          selectedActivityId.set(null);
+          simulationStatus.update(Status.Dirty);
+          schedulingStatus.set(Status.Complete);
+          return;
+        } else if (status === 'failed') {
+          schedulingStatus.set(Status.Failed);
+          console.log(reason);
+          return;
+        } else if (status === 'incomplete') {
+          schedulingStatus.set(Status.Incomplete);
+          console.log(reason);
+        }
+
+        await sleep();
+        ++tries;
+      } while (tries < 10); // Trying a max of 10 times.
+
+      schedulingStatus.set(Status.Incomplete);
     } catch (e) {
       console.log(e);
-      return { reason: e.message, status: 'failed' };
+      schedulingStatus.set(Status.Failed);
     }
   },
 
@@ -757,65 +846,78 @@ const req = {
     }
   },
 
-  async simulate(
-    modelId: number,
-    planId: number,
-  ): Promise<{
-    activitiesMap?: ActivitiesMap;
-    constraintViolations?: ConstraintViolation[];
-    resources?: Resource[];
-    status: SimulationStatus;
-  }> {
+  async simulate(): Promise<void> {
     try {
-      const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
-      const { simulate } = data;
-      const { results, status }: SimulationResponse = simulate;
+      const { id: planId, model } = get(plan);
 
-      if (status === 'complete') {
-        // Activities.
-        const activitiesMap: ActivitiesMap = {};
-        for (const [id, activity] of Object.entries(results.activities)) {
-          activitiesMap[id] = {
-            arguments: activity.arguments,
-            children: activity.children,
-            duration: activity.duration,
-            id: parseFloat(id),
-            parent: activity.parent,
-            startTime: activity.startTimestamp,
-            type: activity.type,
-          };
+      let tries = 0;
+      simulationStatus.update(Status.Executing);
+
+      do {
+        const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
+        const { simulate } = data;
+        const { results, status }: SimulationResponse = simulate;
+
+        if (status === 'complete') {
+          // Activities.
+          const newActivitiesMap: ActivitiesMap = {};
+          for (const [id, activity] of Object.entries(results.activities)) {
+            newActivitiesMap[id] = {
+              arguments: activity.arguments,
+              children: activity.children,
+              duration: activity.duration,
+              id: parseFloat(id),
+              parent: activity.parent,
+              startTime: activity.startTimestamp,
+              type: activity.type,
+            };
+          }
+          activitiesMap.set(newActivitiesMap);
+
+          // Resources.
+          const resourceTypes: ResourceType[] = await req.resourceTypes(model.id);
+          const resourceTypesMap = resourceTypes.reduce((map: Record<string, ValueSchema>, { name, schema }) => {
+            map[name] = schema;
+            return map;
+          }, {});
+          const newResources: Resource[] = Object.entries(results.resources).map(([name, values]) => ({
+            name,
+            schema: resourceTypesMap[name],
+            startTime: results.start,
+            values,
+          }));
+          resources.set(newResources);
+
+          // Constraint Violations.
+          const newViolations: ConstraintViolation[] = Object.entries(results.constraints).flatMap(
+            ([name, violations]) =>
+              violations.map(violation => ({
+                associations: violation.associations,
+                constraint: { name },
+                windows: violation.windows,
+              })),
+          );
+          violations.set(offsetViolationWindows(newViolations, get<number>(planStartTimeMs)));
+
+          simulationStatus.update(Status.Complete);
+          return;
+        } else if (status === 'failed') {
+          simulationStatus.update(Status.Failed);
+          return;
+        } else if (status === 'incomplete') {
+          simulationStatus.update(Status.Executing);
+        } else if (status === 'pending') {
+          simulationStatus.update(Status.Pending);
         }
 
-        // Resources.
-        const resourceTypes: ResourceType[] = await req.resourceTypes(modelId);
-        const resourceTypesMap = resourceTypes.reduce((map: Record<string, ValueSchema>, { name, schema }) => {
-          map[name] = schema;
-          return map;
-        }, {});
-        const resources: Resource[] = Object.entries(results.resources).map(([name, values]) => ({
-          name,
-          schema: resourceTypesMap[name],
-          startTime: results.start,
-          values,
-        }));
+        await sleep();
+        ++tries;
+      } while (tries < 10); // Trying a max of 10 times.
 
-        // Constraint Violations.
-        const constraintViolations: ConstraintViolation[] = Object.entries(results.constraints).flatMap(
-          ([name, violations]) =>
-            violations.map(violation => ({
-              associations: violation.associations,
-              constraint: { name },
-              windows: violation.windows,
-            })),
-        );
-
-        return { activitiesMap, constraintViolations, resources, status };
-      } else {
-        return { status };
-      }
+      simulationStatus.update(Status.Incomplete);
     } catch (e) {
       console.log(e);
-      return { status: 'failed' };
+      simulationStatus.update(Status.Failed);
     }
   },
 
@@ -852,13 +954,45 @@ const req = {
     simulationStatus.update(Status.Dirty);
   },
 
-  async updateConstraint(id: number, constraint: Partial<Constraint>): Promise<boolean> {
+  async updateConstraint(
+    constraintType: ConstraintType,
+    id: number,
+    definition: string,
+    description: string,
+    name: string,
+    summary: string,
+  ): Promise<void> {
     try {
+      const constraint: Partial<Constraint> = { definition, description, name, summary };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
-      return true;
+
+      if (constraintType === 'model') {
+        modelConstraints.update(constraints => {
+          constraints = constraints.map(currentConstraint => {
+            if (currentConstraint.id === id) {
+              return { ...currentConstraint, ...constraint };
+            }
+            return currentConstraint;
+          });
+          return constraints;
+        });
+      } else if (constraintType === 'plan') {
+        planConstraints.update(constraints => {
+          constraints = constraints.map(currentConstraint => {
+            if (currentConstraint.id === id) {
+              return { ...currentConstraint, ...constraint };
+            }
+            return currentConstraint;
+          });
+          return constraints;
+        });
+      }
+
+      simulationStatus.update(Status.Dirty);
+      showSuccessToast('Constraint Updated Successfully');
     } catch (e) {
       console.log(e);
-      return false;
+      showFailureToast('Constraint Update Failed');
     }
   },
 
@@ -877,13 +1011,13 @@ const req = {
     }
   },
 
-  async updateSchedulingGoal(id: number, goal: Partial<SchedulingGoal>): Promise<boolean> {
+  async updateSchedulingGoal(id: number, goal: Partial<SchedulingGoal>): Promise<void> {
     try {
       await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
-      return true;
+      showSuccessToast('Scheduling Goal Updated Successfully');
     } catch (e) {
       console.log(e);
-      return false;
+      showFailureToast('Scheduling Goal Update Failed');
     }
   },
 
@@ -895,20 +1029,23 @@ const req = {
     }
   },
 
-  async updateSimulation(simulation: Simulation): Promise<Simulation | null> {
+  async updateSimulation(simulationSetInput: Simulation, newFiles: File[] = []): Promise<void> {
     try {
       const data = await reqHasura<Simulation>(gql.UPDATE_SIMULATION, {
-        id: simulation.id,
+        id: simulationSetInput.id,
         simulation: {
-          arguments: simulation.arguments,
-          simulation_template_id: simulation?.template?.id ?? null,
+          arguments: simulationSetInput.arguments,
+          simulation_template_id: simulationSetInput?.template?.id ?? null,
         },
       });
-      const { updateSimulation } = data;
-      return updateSimulation;
+      const { updateSimulation: updatedSimulation } = data;
+      simulation.set(updatedSimulation);
+      await req.uploadFiles(newFiles);
+      simulationStatus.update(Status.Dirty);
+      showSuccessToast('Simulation Updated Successfully');
     } catch (e) {
       console.log(e);
-      return null;
+      showFailureToast('Simulation Update Failed');
     }
   },
 

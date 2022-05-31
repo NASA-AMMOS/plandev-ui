@@ -9,7 +9,8 @@
   import Input from '../form/Input.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { schedulingActions } from '../../stores/scheduling';
+  import req from '../../utilities/requests';
+  import { selectedGoalId } from '../../stores/scheduling';
   import { tooltip } from '../../utilities/tooltip';
 
   export let goal: SchedulingGoal;
@@ -50,12 +51,12 @@
   confirmText="Delete"
   message="Are you sure you want to delete this goal?"
   title="Delete Goal"
-  on:confirm={() => schedulingActions.deleteGoal(goal.id)}
+  on:confirm={() => req.deleteSchedulingGoal(goal.id)}
 />
 
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => schedulingActions.selectGoal(goal.id)}>Edit Goal</ContextMenuItem>
+  <ContextMenuItem on:click={() => ($selectedGoalId = goal.id)}>Edit Goal</ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
   <ContextMenuItem on:click={() => confirmDeleteGoalModal.show()}>Delete Goal</ContextMenuItem>
 </ContextMenu>

@@ -6,7 +6,8 @@
   import Panel from '../ui/Panel.svelte';
   import ConfirmModal from '../modals/ConfirmModal.svelte';
   import type Modal from '../modals/Modal.svelte';
-  import { constraintActions, modelConstraints, planConstraints } from '../../stores/constraints';
+  import { modelConstraints, planConstraints, selectedConstraint } from '../../stores/constraints';
+  import req from '../../utilities/requests';
   import { tooltip } from '../../utilities/tooltip';
 
   export let gridId: number;
@@ -30,7 +31,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => constraintActions.selectConstraint(constraint)}
+                  on:click|stopPropagation={() => ($selectedConstraint = constraint)}
                   use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />
@@ -61,7 +62,7 @@
               <span slot="suffix">
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => constraintActions.selectConstraint(constraint)}
+                  on:click|stopPropagation={() => ($selectedConstraint = constraint)}
                   use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-pencil" />
@@ -89,5 +90,5 @@
   confirmText="Delete"
   message="Are you sure you want to delete this constraint?"
   title="Delete Constraint"
-  on:confirm={({ detail: constraint }) => constraintActions.deleteConstraint(constraint.id)}
+  on:confirm={({ detail: constraint }) => req.deleteConstraint(constraint.id)}
 />

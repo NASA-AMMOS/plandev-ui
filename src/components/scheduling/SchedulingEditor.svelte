@@ -7,7 +7,8 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import { field } from '../../stores/form';
-  import { schedulingActions, selectedSpecGoal, schedulingTsExtraLibs } from '../../stores/scheduling';
+  import { selectedSpecGoal, schedulingTsExtraLibs, selectedGoalId } from '../../stores/scheduling';
+  import req from '../../utilities/requests';
   import { required } from '../../utilities/validators';
 
   export let gridId: number;
@@ -52,10 +53,10 @@
 
     if ($selectedSpecGoal) {
       const { goal } = $selectedSpecGoal;
-      schedulingActions.updateGoal(goal.id, { definition, description, name });
+      req.updateSchedulingGoal(goal.id, { definition, description, name });
     } else {
       const { user } = $session;
-      schedulingActions.createGoal(definition, description, name, user.id);
+      req.createSchedulingGoal(definition, description, name, user.id);
     }
   }
 </script>
@@ -71,7 +72,7 @@
       <button
         class="st-button secondary ellipsis"
         disabled={!$selectedSpecGoal}
-        on:click={() => schedulingActions.selectGoal()}
+        on:click={() => ($selectedGoalId = null)}
       >
         <i class="bi bi-plus-square" style="font-size: 0.8rem" />
         New

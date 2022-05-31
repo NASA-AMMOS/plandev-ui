@@ -4,7 +4,8 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { constraintActions, constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
+  import { constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
+  import req from '../../utilities/requests';
 
   export let gridId: number;
 
@@ -49,16 +50,9 @@
 
   function saveConstraint() {
     if ($selectedConstraint) {
-      constraintActions.updateConstraint(
-        constraintType,
-        $selectedConstraint.id,
-        definition,
-        description,
-        name,
-        summary,
-      );
+      req.updateConstraint(constraintType, $selectedConstraint.id, definition, description, name, summary);
     } else {
-      constraintActions.createConstraint(constraintType, definition, description, name, summary);
+      req.createConstraint(constraintType, definition, description, name, summary);
     }
   }
 </script>
@@ -71,7 +65,7 @@
         <i class="bi bi-save" style="font-size: 0.8rem" />
         Save
       </button>
-      <button class="st-button secondary ellipsis" on:click={() => constraintActions.selectConstraint(null)}>
+      <button class="st-button secondary ellipsis" on:click={() => ($selectedConstraint = null)}>
         <i class="bi bi-plus-square" style="font-size: 0.8rem" />
         New
       </button>

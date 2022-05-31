@@ -5,10 +5,8 @@ import { writable } from 'svelte/store';
 
 export const resources: Writable<Resource[]> = writable([]);
 
-/* Action Functions. */
+/* Helper Functions. */
 
-export const resourceActions = {
-  reset(): void {
-    resources.set([]);
-  },
-};
+export function resetResourceStores() {
+  resources.set([]);
+}

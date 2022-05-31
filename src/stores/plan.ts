@@ -24,14 +24,12 @@ export const viewTimeRange: Writable<TimeRange> = writable({
   start: 0,
 });
 
-/* Action Functions. */
+/* Helper Functions. */
 
-export const planActions = {
-  reset(): void {
-    plan.set(null);
-    planEndTimeMs.set(0);
-    planStartTimeMs.set(0);
-    maxTimeRange.set({ end: 0, start: 0 });
-    viewTimeRange.set({ end: 0, start: 0 });
-  },
-};
+export function resetPlanStores() {
+  plan.set(null);
+  planEndTimeMs.set(0);
+  planStartTimeMs.set(0);
+  maxTimeRange.set({ end: 0, start: 0 });
+  viewTimeRange.set({ end: 0, start: 0 });
+}
