@@ -22,7 +22,7 @@ export class ExpansionRules {
   readonly tableRowDeleteButton: Locator;
 
   readonly ruleActivityType = 'PeelBanana';
-  readonly ruleLogic: string = `export default (): ExpansionReturn => [FSW_CMD_0("ON", true, 1.0)]`;
+  readonly ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
 
   constructor(page: Page) {
     this.page = page;

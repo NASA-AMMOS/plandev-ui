@@ -6,7 +6,7 @@ import ConfirmModal from '../components/modals/ConfirmModal.svelte';
  */
 export function modalBodyClickListener() {
   const target: HtmlModalElement = document.querySelector('#svelte-modal');
-  if (target) {
+  if (target && target.resolve) {
     target.replaceChildren();
     target.resolve(false);
     target.resolve = null;
@@ -18,7 +18,7 @@ export function modalBodyClickListener() {
  */
 export function modalBodyKeyListener(event: KeyboardEvent) {
   const target: HtmlModalElement = document.querySelector('#svelte-modal');
-  if (target && event.key == 'Escape') {
+  if (target && target.resolve && event.key == 'Escape') {
     target.replaceChildren();
     target.resolve(false);
     target.resolve = null;
