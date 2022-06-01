@@ -6,6 +6,8 @@ type Env = {
   HASURA_SERVER_URL: string;
 };
 
+type HtmlModalElement = HTMLDivElement & { resolve: (value: boolean | PromiseLike<boolean>) => void };
+
 type User = {
   id: string;
   ssoToken: string;
