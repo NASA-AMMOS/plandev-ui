@@ -6,8 +6,6 @@
   import Nav from '../../components/app/Nav.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
-  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -43,7 +41,6 @@
   export let models: CreatePlanModel[] = [];
   export let plans: CreatePlan[] = [];
 
-  let confirmDeletePlanModal: Modal;
   let createButtonText = 'Create';
   let error: string | null = null;
   let filterText: string = '';
@@ -114,9 +111,7 @@
     createButtonText = 'Create';
   }
 
-  async function deletePlan(event: CustomEvent<CreatePlan>): Promise<void> {
-    const { detail: plan } = event;
-    const { id } = plan;
+  async function deletePlan(id: number): Promise<void> {
     const success = await effects.deletePlan(id);
 
     if (success) {
@@ -228,7 +223,7 @@
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() => confirmDeletePlanModal.show(currentRow)}
+              on:click|stopPropagation={() => deletePlan(currentRow.id)}
               use:tooltip={{ content: 'Delete Plan', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
@@ -241,11 +236,3 @@
     </Panel>
   </CssGrid>
 </CssGrid>
-
-<ConfirmModal
-  bind:modal={confirmDeletePlanModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this plan?"
-  title="Delete Plan"
-  on:confirm={deletePlan}
-/>

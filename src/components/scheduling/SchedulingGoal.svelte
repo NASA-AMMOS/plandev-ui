@@ -8,15 +8,12 @@
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import Input from '../form/Input.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
   export let goal: SchedulingGoal;
   export let priority: number;
 
-  let confirmDeleteGoalModal: Modal;
   let contextMenu: ContextMenu;
   let expanded = false;
 </script>
@@ -46,19 +43,11 @@
   </ul>
 {/if}
 
-<ConfirmModal
-  bind:modal={confirmDeleteGoalModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this goal?"
-  title="Delete Goal"
-  on:confirm={() => effects.deleteSchedulingGoal(goal.id)}
-/>
-
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
   <ContextMenuItem on:click={() => ($selectedGoalId = goal.id)}>Edit Goal</ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
-  <ContextMenuItem on:click={() => confirmDeleteGoalModal.show()}>Delete Goal</ContextMenuItem>
+  <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id)}>Delete Goal</ContextMenuItem>
 </ContextMenu>
 
 <style>

@@ -6,8 +6,6 @@
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -15,16 +13,13 @@
   import Table from '../ui/Table.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
-  let confirmDeleteSetModal: Modal;
   let sortedSets: ExpansionSet[] = [];
   let selectedExpansionRule: ExpansionRule | null = null;
   let selectedExpansionSet: ExpansionSet | null = null;
 
   $: sortedSets = $expansionSets.sort((a, b) => compare(a.id, b.id));
 
-  async function deleteSet(event: CustomEvent<ExpansionSet>) {
-    const { detail: set } = event;
-    const { id } = set;
+  async function deleteSet(id: number) {
     const success = await effects.deleteExpansionSet(id);
 
     if (success) {
@@ -89,7 +84,7 @@
             <div slot="actions-cell">
               <button
                 class="st-button icon"
-                on:click|stopPropagation={() => confirmDeleteSetModal.show(currentRow)}
+                on:click|stopPropagation={() => deleteSet(currentRow.id)}
                 use:tooltip={{ content: 'Delete Expansion Set', placement: 'bottom' }}
               >
                 <i class="bi bi-trash" />
@@ -140,11 +135,3 @@
     title="Expansion Rule - Logic Editor (Read-only)"
   />
 </CssGrid>
-
-<ConfirmModal
-  bind:modal={confirmDeleteSetModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this expansion set?"
-  title="Delete Expansion Set"
-  on:confirm={deleteSet}
-/>

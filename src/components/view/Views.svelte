@@ -7,24 +7,19 @@
   import { setQueryParam } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
 
   export let gridId: number;
 
-  let confirmDeleteViewModal: Modal;
   let views: View[] = [];
 
   onMount(async () => {
     views = await effects.getViews();
   });
 
-  async function onDeleteView(event: CustomEvent<{ viewId: number }>) {
-    const { detail } = event;
-    const { viewId } = detail;
-    const { message, nextView, success } = await effects.deleteView(viewId);
+  async function deleteView(viewId: number) {
+    const { nextView, success } = await effects.deleteView(viewId);
 
     if (success) {
       views = views.filter(v => v.id !== viewId);
@@ -34,12 +29,10 @@
         $viewLayout = { ...nextView.plan.layout };
         setQueryParam('viewId', `${nextView.id}`);
       }
-    } else {
-      console.log(message);
     }
   }
 
-  async function onLoadView(viewId: number) {
+  async function loadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
     const newView = await effects.getView(query);
 
@@ -70,13 +63,13 @@
         ]}
         rowActions
         rowData={views}
-        on:rowClick={({ detail }) => onLoadView(detail.id)}
+        on:rowClick={({ detail }) => loadView(detail.id)}
       >
         <span slot="actions-cell">
           {#if currentRow?.meta?.owner !== 'system'}
             <button
               class="st-button icon"
-              on:click|stopPropagation={() => confirmDeleteViewModal.show({ viewId: currentRow.id })}
+              on:click|stopPropagation={() => deleteView(currentRow.id)}
               use:tooltip={{ content: 'Delete View', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
@@ -89,11 +82,3 @@
     {/if}
   </svelte:fragment>
 </Panel>
-
-<ConfirmModal
-  bind:modal={confirmDeleteViewModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this view?"
-  title="Delete View"
-  on:confirm={onDeleteView}
-/>

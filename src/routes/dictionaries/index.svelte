@@ -2,8 +2,6 @@
 
 <script lang="ts">
   import Nav from '../../components/app/Nav.svelte';
-  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -14,7 +12,6 @@
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
-  let confirmDeleteDictionaryModal: Modal;
   let createButtonText = 'Create';
   let error: string | null = null;
   let files: FileList;
@@ -35,9 +32,7 @@
     createButtonText = 'Create';
   }
 
-  async function deleteDictionary(event: CustomEvent<CommandDictionary>) {
-    const { detail: dictionary } = event;
-    const { id } = dictionary;
+  async function deleteDictionary(id: number) {
     const success = await effects.deleteCommandDictionary(id);
 
     if (success) {
@@ -96,8 +91,8 @@
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() => confirmDeleteDictionaryModal.show(currentRow)}
-              use:tooltip={{ content: 'Delete Dictionary', placement: 'bottom' }}
+              on:click|stopPropagation={() => deleteDictionary(currentRow.id)}
+              use:tooltip={{ content: 'Delete Command Dictionary', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
             </button>
@@ -109,11 +104,3 @@
     </Panel>
   </CssGrid>
 </CssGrid>
-
-<ConfirmModal
-  bind:modal={confirmDeleteDictionaryModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this dictionary?"
-  title="Delete Dictionary"
-  on:confirm={deleteDictionary}
-/>

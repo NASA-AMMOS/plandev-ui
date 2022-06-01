@@ -29,8 +29,10 @@ export class ExpansionRules {
 
     this.cancelButton = page.locator(`button:has-text("Cancel")`);
     this.closeButton = page.locator(`button:has-text("Close")`);
-    this.confirmModal = page.locator(`.modal:has-text("Delete Rule")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Rule") >> button:has-text("Delete")`);
+    this.confirmModal = page.locator(`.modal:has-text("Delete Expansion Rule")`);
+    this.confirmModalDeleteButton = page.locator(
+      `.modal:has-text("Delete Expansion Rule") >> button:has-text("Delete")`,
+    );
     this.inputActivityType = page.locator(this.inputActivityTypeSelector);
     this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
     this.inputEditor = page.locator('.panel >> textarea.inputarea');

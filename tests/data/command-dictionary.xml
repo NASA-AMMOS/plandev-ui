@@ -58,22 +58,6 @@
           </range_of_values>
           <description>Some integer arg.</description>
         </integer_arg>
-        <repeat_arg name="repeat_arg_0" prefix_bit_length="8">
-          <description>Some repeat argument.</description>
-          <repeat min="1" max="10">
-            <arguments>
-              <enum_arg name="enum_arg_0" bit_length="8" enum_name="SomeEnum">
-                <description>Some repeated enum argument.</description>
-              </enum_arg>
-              <unsigned_arg name="unsigned_arg_0" bit_length="16" units="index">
-                <range_of_values>
-                  <include min="0" max="3999"/>
-                </range_of_values>
-                <description>Some repeated unsigned argument.</description>
-              </unsigned_arg>
-            </arguments>
-          </repeat>
-        </repeat_arg>
         <time_arg name="time_arg_0" bit_length="32" units="SCLK">
           <description><![CDATA[Some time argument.]]></description>
         </time_arg>

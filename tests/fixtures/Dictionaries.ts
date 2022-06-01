@@ -27,13 +27,15 @@ export class Dictionaries {
     const dictionaryXml = dictionaryFile.toString().replace(/GENERIC/, this.dictionaryName);
     this.dictionaryBuffer = Buffer.from(dictionaryXml);
 
-    this.confirmModal = page.locator(`.modal:has-text("Delete Dictionary")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Dictionary") >> button:has-text("Delete")`);
+    this.confirmModal = page.locator(`.modal:has-text("Delete Command Dictionary")`);
+    this.confirmModalDeleteButton = page.locator(
+      `.modal:has-text("Delete Command Dictionary") >> button:has-text("Delete")`,
+    );
     this.createButton = page.locator('text=Create');
     this.inputFile = page.locator('input[name="file"]');
     this.tableRow = page.locator(`tr:has-text("${this.dictionaryName}")`);
     this.tableRowDeleteButton = page.locator(
-      `tr:has-text("${this.dictionaryName}") >> button[aria-label="Delete Dictionary"]`,
+      `tr:has-text("${this.dictionaryName}") >> button[aria-label="Delete Command Dictionary"]`,
     );
   }
 

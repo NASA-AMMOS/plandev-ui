@@ -5,15 +5,12 @@
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import Table from '../ui/Table.svelte';
 
   export let gridId: number;
 
-  let confirmDeleteSequenceModal: Modal;
   let createButtonEnabled: boolean = false;
   let creatingSequence: boolean = false;
   let expandButtonEnabled: boolean = false;
@@ -28,12 +25,6 @@
     creatingSequence = true;
     await effects.createSequence(seqIdInput);
     creatingSequence = false;
-  }
-
-  async function deleteSequence(event: CustomEvent<Sequence>) {
-    const { detail: sequence } = event;
-    const { seq_id, simulation_dataset_id } = sequence;
-    await effects.deleteSequence(seq_id, simulation_dataset_id);
   }
 
   async function expandPlan() {
@@ -99,7 +90,7 @@
                 <button
                   class="st-button icon"
                   slot="actions-cell"
-                  on:click|stopPropagation={() => confirmDeleteSequenceModal.show(currentRow)}
+                  on:click|stopPropagation={() => effects.deleteSequence(currentRow)}
                   use:tooltip={{ content: 'Delete Sequence', placement: 'bottom' }}
                 >
                   <i class="bi bi-trash" />
@@ -114,11 +105,3 @@
     </fieldset>
   </svelte:fragment>
 </Panel>
-
-<ConfirmModal
-  bind:modal={confirmDeleteSequenceModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this sequence?"
-  title="Delete Sequence"
-  on:confirm={deleteSequence}
-/>

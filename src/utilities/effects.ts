@@ -11,6 +11,7 @@ import { view } from '../stores/views';
 import { toActivity } from './activities';
 import { setQueryParam, sleep } from './generic';
 import gql from './gql';
+import { showConfirmModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
@@ -18,7 +19,7 @@ import { showFailureToast, showSuccessToast } from './toast';
 import { offsetViolationWindows } from './violations';
 
 /**
- * Functions that have side-effects (e.g. HTTP requests, toasts, store updates, etc.).
+ * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
   async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string): Promise<void> {
@@ -304,13 +305,21 @@ const effects = {
 
   async deleteActivity(id: number): Promise<void> {
     try {
-      await reqHasura(gql.DELETE_ACTIVITY, { id });
-      activitiesMap.update(activities => {
-        delete activities[id];
-        return { ...activities };
-      });
-      simulationStatus.update(Status.Dirty);
-      showSuccessToast('Activity Deleted Successfully');
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this activity?',
+        'Delete Activity',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_ACTIVITY, { id });
+        activitiesMap.update(activities => {
+          delete activities[id];
+          return { ...activities };
+        });
+        simulationStatus.update(Status.Dirty);
+        showSuccessToast('Activity Deleted Successfully');
+      }
     } catch (e) {
       console.log(e);
       showFailureToast('Activity Delete Failed');
@@ -319,9 +328,19 @@ const effects = {
 
   async deleteCommandDictionary(id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
-      showSuccessToast('Command Dictionary Deleted Successfully');
-      return true;
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this command dictionary?',
+        'Delete Command Dictionary',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
+        showSuccessToast('Command Dictionary Deleted Successfully');
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Command Dictionary Delete Failed');
@@ -331,18 +350,26 @@ const effects = {
 
   async deleteConstraint(id: number): Promise<void> {
     try {
-      await reqHasura(gql.DELETE_CONSTRAINT, { id });
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this constraint?',
+        'Delete Constraint',
+      );
 
-      modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
-      planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+      if (confirm) {
+        await reqHasura(gql.DELETE_CONSTRAINT, { id });
 
-      const currentSelectedConstraint = get(selectedConstraint);
-      if (currentSelectedConstraint && currentSelectedConstraint.id === id) {
-        selectedConstraint.set(null);
+        modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+        planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
+
+        const currentSelectedConstraint = get(selectedConstraint);
+        if (currentSelectedConstraint && currentSelectedConstraint.id === id) {
+          selectedConstraint.set(null);
+        }
+
+        simulationStatus.update(Status.Dirty);
+        showSuccessToast('Constraint Deleted Successfully');
       }
-
-      simulationStatus.update(Status.Dirty);
-      showSuccessToast('Constraint Deleted Successfully');
     } catch (e) {
       console.log(e);
       showFailureToast('Constraint Delete Failed');
@@ -351,9 +378,19 @@ const effects = {
 
   async deleteExpansionRule(id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.DELETE_EXPANSION_RULE, { id });
-      showSuccessToast('Expansion Rule Deleted Successfully');
-      return true;
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this expansion rule?',
+        'Delete Expansion Rule',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_EXPANSION_RULE, { id });
+        showSuccessToast('Expansion Rule Deleted Successfully');
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Expansion Rule Delete Failed');
@@ -363,9 +400,19 @@ const effects = {
 
   async deleteExpansionSet(id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.DELETE_EXPANSION_SET, { id });
-      showSuccessToast('Expansion Set Deleted Successfully');
-      return true;
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this expansion set?',
+        'Delete Expansion Set',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_EXPANSION_SET, { id });
+        showSuccessToast('Expansion Set Deleted Successfully');
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Expansion Set Delete Failed');
@@ -385,10 +432,16 @@ const effects = {
 
   async deleteModel(id: number, jar_id: number): Promise<boolean> {
     try {
-      await effects.deleteFile(jar_id);
-      await reqHasura(gql.DELETE_MODEL, { id });
-      showSuccessToast('Model Deleted Successfully');
-      return true;
+      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this model?', 'Delete Model');
+
+      if (confirm) {
+        await effects.deleteFile(jar_id);
+        await reqHasura(gql.DELETE_MODEL, { id });
+        showSuccessToast('Model Deleted Successfully');
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Model Delete Failed');
@@ -398,8 +451,14 @@ const effects = {
 
   async deletePlan(id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.DELETE_PLAN, { id });
-      return true;
+      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this plan?', 'Delete Plan');
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_PLAN, { id });
+        return true;
+      }
+
+      return false;
     } catch (e) {
       console.log(e);
       return false;
@@ -408,30 +467,51 @@ const effects = {
 
   async deleteSchedulingGoal(id: number): Promise<void> {
     try {
-      await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
-      showSuccessToast('Scheduling Goal Deleted Successfully');
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this scheduling goal?',
+        'Delete Scheduling Goal',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
+        showSuccessToast('Scheduling Goal Deleted Successfully');
+      }
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Delete Failed');
     }
   },
 
-  async deleteSequence(seqId: string, datasetId: number): Promise<boolean> {
+  async deleteSequence(sequence: Sequence): Promise<void> {
     try {
-      await reqHasura(gql.DELETE_SEQUENCE, { datasetId, seqId });
-      showSuccessToast('Sequence Deleted Successfully');
-      return true;
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this sequence?',
+        'Delete Sequence',
+      );
+
+      if (confirm) {
+        const { seq_id: seqId, simulation_dataset_id: datasetId } = sequence;
+        await reqHasura(gql.DELETE_SEQUENCE, { datasetId, seqId });
+        showSuccessToast('Sequence Deleted Successfully');
+      }
     } catch (e) {
       console.log(e);
       showFailureToast('Sequence Delete Failed');
-      return false;
     }
   },
 
   async deleteView(id: number): Promise<DeleteViewResponse> {
     try {
-      const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE');
-      return data;
+      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
+
+      if (confirm) {
+        const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE');
+        return data;
+      }
+
+      return { message: 'Delete view canceled', nextView: null, success: false };
     } catch (e) {
       console.log(e);
       return { message: 'An unexpected error occurred', nextView: null, success: false };

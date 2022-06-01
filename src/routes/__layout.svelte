@@ -2,6 +2,7 @@
   import type { Load } from '@sveltejs/kit';
   import '../css/app.css';
   import { env as envStore, user as userStore, version as versionStore } from '../stores/app';
+  import { modalBodyClickListener, modalBodyKeyListener } from '../utilities/modal';
 
   export const load: Load = async ({ fetch, session }) => {
     // Set env store.
@@ -21,4 +22,8 @@
   };
 </script>
 
+<svelte:body on:click={modalBodyClickListener} on:keydown={modalBodyKeyListener} />
+
 <slot />
+
+<div id="svelte-modal" />

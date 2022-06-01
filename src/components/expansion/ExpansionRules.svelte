@@ -7,8 +7,6 @@
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -16,7 +14,6 @@
   import Table from '../ui/Table.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
-  let confirmDeleteRuleModal: Modal;
   let filteredRules: ExpansionRule[] = [];
   let filterText: string = '';
   let selectedExpansionRule: ExpansionRule | null = null;
@@ -30,9 +27,7 @@
   });
   $: sortedRules = filteredRules.sort((a, b) => compare(a.id, b.id));
 
-  async function deleteRule(event: CustomEvent<ExpansionRule>) {
-    const { detail: rule } = event;
-    const { id } = rule;
+  async function deleteRule(id: number) {
     const success = await effects.deleteExpansionRule(id);
 
     if (success) {
@@ -96,7 +91,7 @@
             </button>
             <button
               class="st-button icon"
-              on:click|stopPropagation={() => confirmDeleteRuleModal.show(currentRow)}
+              on:click|stopPropagation={() => deleteRule(currentRow.id)}
               use:tooltip={{ content: 'Delete Rule', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
@@ -120,11 +115,3 @@
     title="Expansion Rule - Logic Editor (Read-only)"
   />
 </CssGrid>
-
-<ConfirmModal
-  bind:modal={confirmDeleteRuleModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this rule?"
-  title="Delete Rule"
-  on:confirm={deleteRule}
-/>

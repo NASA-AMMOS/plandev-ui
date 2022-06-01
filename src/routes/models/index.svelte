@@ -2,8 +2,6 @@
   import { goto } from '$app/navigation';
   import type { Load } from '@sveltejs/kit';
   import Nav from '../../components/app/Nav.svelte';
-  import ConfirmModal from '../../components/modals/ConfirmModal.svelte';
-  import type Modal from '../../components/modals/Modal.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -34,7 +32,6 @@
 <script lang="ts">
   export let models: ModelInput[] = [];
 
-  let confirmDeleteModelModal: Modal;
   let createButtonText = 'Create';
   let error: string | null = null;
   let files: FileList;
@@ -59,8 +56,7 @@
     createButtonText = 'Create';
   }
 
-  async function deleteModel(event: CustomEvent<ModelInput>) {
-    const { detail: model } = event;
+  async function deleteModel(model: ModelInput) {
     const { id, jar_id } = model;
     const success = await effects.deleteModel(id, jar_id);
 
@@ -140,7 +136,7 @@
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() => confirmDeleteModelModal.show(currentRow)}
+              on:click|stopPropagation={() => deleteModel(currentRow)}
               use:tooltip={{ content: 'Delete Model', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
@@ -153,11 +149,3 @@
     </Panel>
   </CssGrid>
 </CssGrid>
-
-<ConfirmModal
-  bind:modal={confirmDeleteModelModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this model?"
-  title="Delete Model"
-  on:confirm={deleteModel}
-/>

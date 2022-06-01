@@ -4,12 +4,10 @@
   import { goto, prefetch } from '$app/navigation';
   import { session } from '$app/stores';
   import { env } from '../../stores/app';
-  import AboutModal from '../modals/AboutModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
+  import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
 
-  let aboutModal: Modal;
   let appMenu: Menu;
 
   async function logout() {
@@ -53,14 +51,12 @@
       <i class="bi bi-box-arrow-right" />
       Logout
     </MenuItem>
-    <MenuItem on:click={() => aboutModal.toggle()}>
+    <MenuItem on:click={() => showAboutModal()}>
       <i class="bi bi-info-circle" />
       About
     </MenuItem>
   </Menu>
 </div>
-
-<AboutModal bind:modal={aboutModal} />
 
 <style>
   .app-menu {

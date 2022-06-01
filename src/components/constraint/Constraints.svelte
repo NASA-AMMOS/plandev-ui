@@ -5,14 +5,10 @@
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
 
   export let gridId: number;
-
-  let confirmDeleteConstraintModal: Modal;
 </script>
 
 <Panel>
@@ -38,7 +34,7 @@
                 </button>
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
+                  on:click|stopPropagation={() => effects.deleteConstraint(constraint.id)}
                   use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-trash" />
@@ -69,7 +65,7 @@
                 </button>
                 <button
                   class="st-button icon"
-                  on:click|stopPropagation={() => confirmDeleteConstraintModal.show(constraint)}
+                  on:click|stopPropagation={() => effects.deleteConstraint(constraint.id)}
                   use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
                 >
                   <i class="bi bi-trash" />
@@ -84,11 +80,3 @@
     </details>
   </svelte:fragment>
 </Panel>
-
-<ConfirmModal
-  bind:modal={confirmDeleteConstraintModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this constraint?"
-  title="Delete Constraint"
-  on:confirm={({ detail: constraint }) => effects.deleteConstraint(constraint.id)}
-/>

@@ -11,8 +11,6 @@
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
-  import ConfirmModal from '../modals/ConfirmModal.svelte';
-  import type Modal from '../modals/Modal.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
   import ActivityDecomposition from './ActivityDecomposition.svelte';
@@ -30,7 +28,6 @@
 
   // Other vars.
   let model: Model;
-  let confirmDeleteActivityModal: Modal;
   let formParameters: FormParameter[] = [];
   let hasChildren: boolean;
   let isChild: boolean;
@@ -105,7 +102,7 @@
     <button
       class="st-button icon"
       disabled={isChild || !$selectedActivity}
-      on:click|stopPropagation={() => confirmDeleteActivityModal.show()}
+      on:click|stopPropagation={() => effects.deleteActivity(id)}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
     >
       <i class="bi bi-trash" />
@@ -184,11 +181,3 @@
     {/if}
   </svelte:fragment>
 </Panel>
-
-<ConfirmModal
-  bind:modal={confirmDeleteActivityModal}
-  confirmText="Delete"
-  message="Are you sure you want to delete this activity?"
-  title="Delete Activity"
-  on:confirm={() => effects.deleteActivity(id)}
-/>

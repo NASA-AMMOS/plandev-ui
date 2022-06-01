@@ -1,17 +1,18 @@
-<svelte:options accessors={true} immutable={true} />
+<svelte:options immutable={true} />
 
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import { version } from '../../stores/app';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let modal: Modal;
+  const dispatch = createEventDispatcher();
 </script>
 
-<Modal bind:this={modal} height={200}>
-  <ModalHeader on:close={modal.hide}>About</ModalHeader>
+<Modal height={200}>
+  <ModalHeader on:close>About</ModalHeader>
   <ModalContent>
     <div>Copyright 2021, by the California Institute of Technology.</div>
     <div>ALL RIGHTS RESERVED.</div>
@@ -29,6 +30,6 @@
     </div>
   </ModalContent>
   <ModalFooter>
-    <button class="st-button" on:click|stopPropagation={modal.hide}> Close </button>
+    <button class="st-button" on:click={() => dispatch('close')}> Close </button>
   </ModalFooter>
 </Modal>
