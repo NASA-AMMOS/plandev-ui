@@ -1,4 +1,5 @@
-import { writable, type Writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { getGqlSubscribable } from './subscribable';
 
@@ -22,6 +23,10 @@ export const sequences = getGqlSubscribable<ExpansionSet[]>(gql.SUB_SEQUENCES, {
 
 /* Writeable. */
 
+export const creatingDictionary: Writable<boolean> = writable(false);
+
+export const createDictionaryError: Writable<string | null> = writable(null);
+
 export const expansionRulesColumns: Writable<string> = writable('1fr 1px 1fr');
 
 export const expansionSetsColumns: Writable<string> = writable('1fr 1px 1fr');
@@ -29,3 +34,12 @@ export const expansionSetsColumns: Writable<string> = writable('1fr 1px 1fr');
 export const savingExpansionRule: Writable<boolean> = writable(false);
 
 export const savingExpansionSet: Writable<boolean> = writable(false);
+
+/* Derived. */
+
+export const sortedDictionaries: Readable<CommandDictionary[]> = derived(dictionaries, $dictionaries => {
+  if ($dictionaries) {
+    return $dictionaries.sort((a, b) => compare(a.version, b.version));
+  }
+  return [];
+});

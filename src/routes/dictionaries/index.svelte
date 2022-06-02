@@ -7,54 +7,27 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import Table from '../../components/ui/Table.svelte';
-  import { dictionaries } from '../../stores/expansion';
+  import { createDictionaryError, creatingDictionary, sortedDictionaries } from '../../stores/expansion';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
-  let createButtonText = 'Create';
-  let error: string | null = null;
   let files: FileList;
-
-  $: sortedDictionaries = $dictionaries.sort((a, b) => compare(a.version, b.version));
-
-  async function createDictionary() {
-    createButtonText = 'Creating...';
-    error = null;
-
-    const file = files[0];
-    const newDictionaryId = await effects.createCommandDictionary(file);
-
-    if (newDictionaryId === null) {
-      error = 'Create dictionary failed.';
-    }
-
-    createButtonText = 'Create';
-  }
-
-  async function deleteDictionary(id: number) {
-    const success = await effects.deleteCommandDictionary(id);
-
-    if (success) {
-      sortedDictionaries = sortedDictionaries.filter(dictionary => dictionary.id !== id);
-    }
-  }
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
   <Nav>
-    <span slot="title">Dictionaries</span>
+    <span slot="title">Command Dictionaries</span>
   </Nav>
 
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
-        <Chip>New Dictionary</Chip>
+        <Chip>New Command Dictionary</Chip>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={createDictionary}>
-          <AlertError class="m-2" {error} />
+        <form on:submit|preventDefault={() => effects.createCommandDictionary(files)}>
+          <AlertError class="m-2" error={$createDictionaryError} />
 
           <fieldset>
             <label for="file">AMPCS Command Dictionary XML File</label>
@@ -63,7 +36,7 @@
 
           <fieldset>
             <button class="st-button w-100" disabled={!files} type="submit">
-              {createButtonText}
+              {$creatingDictionary ? 'Creating...' : 'Create'}
             </button>
           </fieldset>
         </form>
@@ -72,11 +45,11 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <Chip>Dictionaries</Chip>
+        <Chip>Command Dictionaries</Chip>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if sortedDictionaries.length}
+        {#if $sortedDictionaries.length}
           <Table
             let:currentRow
             columnDefs={[
@@ -86,19 +59,19 @@
               { field: 'command_types_typescript_path', name: 'Types Path', sortable: true },
             ]}
             rowActions
-            rowData={sortedDictionaries}
+            rowData={$sortedDictionaries}
           >
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() => deleteDictionary(currentRow.id)}
+              on:click|stopPropagation={() => effects.deleteCommandDictionary(currentRow.id)}
               use:tooltip={{ content: 'Delete Command Dictionary', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />
             </button>
           </Table>
         {:else}
-          No Dictionaries Found
+          No Command Dictionaries Found
         {/if}
       </svelte:fragment>
     </Panel>

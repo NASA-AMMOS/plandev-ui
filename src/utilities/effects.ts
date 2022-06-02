@@ -2,7 +2,13 @@ import { isNil, keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { modelConstraints, planConstraints, selectedConstraint, violations } from '../stores/constraints';
-import { savingExpansionRule, savingExpansionSet } from '../stores/expansion';
+import {
+  createDictionaryError,
+  creatingDictionary,
+  dictionaries,
+  savingExpansionRule,
+  savingExpansionSet,
+} from '../stores/expansion';
 import { plan, planStartTimeMs } from '../stores/plan';
 import { resources } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
@@ -56,18 +62,23 @@ const effects = {
     }
   },
 
-  async createCommandDictionary(file: File) {
+  async createCommandDictionary(files: FileList): Promise<void> {
     try {
+      createDictionaryError.set(null);
+      creatingDictionary.set(true);
+
+      const file: File = files[0];
       const dictionary = await file.text();
-      const data = await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
-      const { createCommandDictionary } = data;
-      const { id } = createCommandDictionary;
+      await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+
       showSuccessToast('Command Dictionary Created Successfully');
-      return id;
+      createDictionaryError.set(null);
+      creatingDictionary.set(false);
     } catch (e) {
       console.log(e);
       showFailureToast('Command Dictionary Create Failed');
-      return null;
+      createDictionaryError.set(e.message);
+      creatingDictionary.set(false);
     }
   },
 
@@ -326,25 +337,22 @@ const effects = {
     }
   },
 
-  async deleteCommandDictionary(id: number): Promise<boolean> {
+  async deleteCommandDictionary(id: number): Promise<void> {
     try {
       const confirm = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this command dictionary?',
+        'Are you sure you want to delete this dictionary?',
         'Delete Command Dictionary',
       );
 
       if (confirm) {
         await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
         showSuccessToast('Command Dictionary Deleted Successfully');
-        return true;
+        dictionaries.filterValueById(id);
       }
-
-      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Command Dictionary Delete Failed');
-      return false;
     }
   },
 

@@ -1,7 +1,7 @@
 import { browser } from '$app/env';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import { get, type Subscriber, type Unsubscriber } from 'svelte/store';
+import { get, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
 import { env as envStore } from '../stores/app';
 
 /**
@@ -67,6 +67,14 @@ export function gqlSubscribable<T>(
     return unsubscribe;
   }
 
+  function filterValueById(id: number): void {
+    updateValue(currentValue => {
+      if (Array.isArray(currentValue)) {
+        return currentValue.filter(v => v?.id !== id) as unknown as T;
+      }
+    });
+  }
+
   function resubscribe() {
     subscribers.forEach(subscriber => {
       subscriber.unsubscribe();
@@ -103,8 +111,15 @@ export function gqlSubscribable<T>(
     };
   }
 
+  function updateValue(fn: Updater<T>): void {
+    value = fn(value);
+    subscribers.forEach(({ next }) => next(value));
+  }
+
   return {
+    filterValueById,
     setVariables,
     subscribe,
+    updateValue,
   };
 }
