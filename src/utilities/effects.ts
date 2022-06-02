@@ -296,7 +296,13 @@ const effects = {
 
   async createView(viewInput: View): Promise<void> {
     try {
-      const data = await reqGateway<CreateViewResponse>('/view', 'POST', JSON.stringify({ view: viewInput }));
+      const data = await reqGateway<CreateViewResponse>(
+        '/view',
+        'POST',
+        JSON.stringify({ view: viewInput }),
+        null,
+        false,
+      );
       const { errors, message, success, view: newView } = data;
 
       if (success) {
@@ -430,7 +436,7 @@ const effects = {
 
   async deleteFile(id: number): Promise<boolean> {
     try {
-      await reqGateway(`/file/${id}`, 'DELETE');
+      await reqGateway(`/file/${id}`, 'DELETE', null, null, false);
       return true;
     } catch (e) {
       console.log(e);
@@ -515,7 +521,7 @@ const effects = {
       const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
 
       if (confirm) {
-        const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE');
+        const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE', null, null, false);
         return data;
       }
 
@@ -765,7 +771,7 @@ const effects = {
   async getView(query: URLSearchParams): Promise<View | null> {
     try {
       const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
-      const data = await reqGateway<{ view: View }>(`/view/${viewId}`, 'GET');
+      const data = await reqGateway<{ view: View }>(`/view/${viewId}`, 'GET', null, null, false);
       const { view } = data;
       return view;
     } catch (e) {
@@ -776,7 +782,7 @@ const effects = {
 
   async getViews(): Promise<View[]> {
     try {
-      const data = await reqGateway<View[]>('/views', 'GET');
+      const data = await reqGateway<View[]>('/views', 'GET', null, null, false);
       return data;
     } catch (e) {
       console.log(e);
@@ -786,7 +792,13 @@ const effects = {
 
   async login(username: string, password: string): Promise<ReqLoginResponse> {
     try {
-      const data = await reqGateway<ReqLoginResponse>('/auth/login', 'POST', JSON.stringify({ password, username }));
+      const data = await reqGateway<ReqLoginResponse>(
+        '/auth/login',
+        'POST',
+        JSON.stringify({ password, username }),
+        null,
+        false,
+      );
       return data;
     } catch (e) {
       console.log(e);
@@ -801,7 +813,7 @@ const effects = {
 
   async logout(ssoToken: string): Promise<ReqLogoutResponse> {
     try {
-      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, ssoToken);
+      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, ssoToken, false);
       return data;
     } catch (e) {
       console.log(e);
@@ -865,7 +877,7 @@ const effects = {
 
   async session(ssoToken: string): Promise<ReqSessionResponse> {
     try {
-      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, ssoToken);
+      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, ssoToken, false);
       return data;
     } catch (e) {
       console.log(e);
@@ -1078,7 +1090,13 @@ const effects = {
 
   async updateView(view: View): Promise<void> {
     try {
-      const data = await reqGateway<UpdateViewResponse>(`/view/${view.id}`, 'PUT', JSON.stringify({ view }));
+      const data = await reqGateway<UpdateViewResponse>(
+        `/view/${view.id}`,
+        'PUT',
+        JSON.stringify({ view }),
+        null,
+        false,
+      );
       const { errors, message, success } = data;
 
       if (success) {
@@ -1098,7 +1116,7 @@ const effects = {
     try {
       const body = new FormData();
       body.append('file', file, file.name);
-      const data = await reqGateway<{ id: number }>('/file', 'POST', body, null, false);
+      const data = await reqGateway<{ id: number }>('/file', 'POST', body, null, true);
       const { id } = data;
       return id;
     } catch (e) {

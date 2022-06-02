@@ -8,22 +8,32 @@ import { env as envStore, user as userStore } from '../stores/app';
 export async function reqGateway<T = any>(
   url: string,
   method: string,
-  body?: any,
-  ssoToken?: string,
-  includeContentType: boolean = true,
+  body: any | null,
+  ssoToken: string | null,
+  excludeContentType: boolean,
 ): Promise<T> {
   const { GATEWAY_CLIENT_URL, GATEWAY_SERVER_URL } = get<Env>(envStore);
   const GATEWAY_URL = browser ? GATEWAY_CLIENT_URL : GATEWAY_SERVER_URL;
   const user = get<User | null>(userStore);
 
   const options: RequestInit = {
-    body,
-    headers: { 'x-auth-sso-token': user?.ssoToken ?? ssoToken ?? '' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-auth-sso-token': user?.ssoToken ?? '',
+    },
     method,
   };
 
-  if (includeContentType) {
-    options.headers['Content-Type'] = 'application/json';
+  if (body !== null) {
+    options.body = body;
+  }
+
+  if (ssoToken !== null) {
+    options.headers['x-auth-sso-token'] = ssoToken;
+  }
+
+  if (excludeContentType === true) {
+    delete options.headers['Content-Type'];
   }
 
   const response = await fetch(`${GATEWAY_URL}${url}`, options);
