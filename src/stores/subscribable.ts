@@ -72,6 +72,7 @@ export function gqlSubscribable<T>(
       if (Array.isArray(currentValue)) {
         return currentValue.filter(v => v?.id !== id) as unknown as T;
       }
+      return currentValue;
     });
   }
 
