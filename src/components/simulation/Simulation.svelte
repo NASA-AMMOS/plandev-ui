@@ -60,6 +60,21 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    <div class="mb-3">
+      <label for="id">Simulation ID</label>
+      <input value={$simulation.id} class="st-input w-100" disabled name="id" />
+    </div>
+
+    <div class="mb-3">
+      <label for="datasetId">Latest Simulation Dataset ID</label>
+      <input
+        class="st-input w-100"
+        disabled
+        name="datasetId"
+        value={$simulation.datasets.length ? $simulation.datasets[0].id : 'None'}
+      />
+    </div>
+
     <details open>
       <summary>Templates</summary>
       <div class="mt-3 mb-3">

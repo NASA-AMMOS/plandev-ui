@@ -293,7 +293,7 @@ const effects = {
   async createSequence(seqId: string): Promise<string | null> {
     try {
       const { id: planId } = get(plan);
-      let data = await reqHasura(gql.GET_SIMULATION_DATASET, { planId });
+      let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
       const { id: datasetId } = dataset;
@@ -572,7 +572,7 @@ const effects = {
   async expand(expansionSetId: number): Promise<boolean> {
     try {
       const { id: planId } = get(plan);
-      let data = await reqHasura(gql.GET_SIMULATION_DATASET, { planId });
+      let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
       const { id: datasetId } = dataset;
@@ -1112,7 +1112,7 @@ const effects = {
         },
       });
       const { updateSimulation: updatedSimulation } = data;
-      simulation.set(updatedSimulation);
+      simulation.updateValue(() => updatedSimulation);
       await effects.uploadFiles(newFiles);
       simulationStatus.update(Status.Dirty);
       showSuccessToast('Simulation Updated Successfully');

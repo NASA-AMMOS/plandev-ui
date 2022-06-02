@@ -11,6 +11,7 @@ export function getGqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
+  transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
   const HASURA_URL = browser ? HASURA_CLIENT_URL : HASURA_SERVER_URL;
@@ -18,7 +19,7 @@ export function getGqlSubscribable<T>(
   const url = `ws://${baseUrl}`;
   const clientOptions: ClientOptions = { url };
 
-  return gqlSubscribable<T>(clientOptions, query, initialVariables, initialValue);
+  return gqlSubscribable<T>(clientOptions, query, initialVariables, initialValue, transformer);
 }
 
 /**
@@ -29,6 +30,7 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
+  transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
 
@@ -56,7 +58,7 @@ export function gqlSubscribable<T>(
             const [key] = Object.keys(data);
             const { [key]: newValue } = data;
             if (!isEqual(value, newValue)) {
-              value = newValue;
+              value = transformer(newValue);
               subscribers.forEach(({ next }) => next(value));
             }
           },

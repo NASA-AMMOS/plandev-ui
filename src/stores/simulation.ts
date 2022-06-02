@@ -3,11 +3,20 @@ import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { getGqlSubscribable } from './subscribable';
 
-/* Stores. */
+/* Subscriptions. */
+
+export const simulation = getGqlSubscribable<Simulation | null>(
+  gql.SUB_SIMULATION,
+  { planId: -1 },
+  null,
+  (simulations: Simulation[]) => simulations[0],
+);
+
+export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(gql.SUB_SIM_TEMPLATES, { modelId: -1 }, []);
+
+/* Writeable. */
 
 export const modelParametersMap: Writable<ParametersMap> = writable({});
-
-export const simulation: Writable<Simulation | null> = writable(null);
 
 export const simulationStatus = (() => {
   const { set, subscribe, update: updateStore } = writable<Status>(Status.Clean);
@@ -32,12 +41,9 @@ export const simulationStatus = (() => {
   };
 })();
 
-export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(gql.SUB_SIM_TEMPLATES, { modelId: -1 }, []);
-
 /* Helper Functions. */
 
 export function resetSimulationStores() {
   modelParametersMap.set({});
-  simulation.set(null);
   simulationStatus.set(Status.Clean);
 }

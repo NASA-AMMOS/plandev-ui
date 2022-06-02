@@ -121,13 +121,14 @@
     $modelParametersMap = initialPlan.model.parameters.parameters;
     $plan = initialPlan;
     $planConstraints = initialPlan.constraints;
-    $simulation = initialPlan.simulations[0];
+    simulation.updateValue(() => initialPlan.simulations[0]);
 
     $planEndTimeMs = getUnixEpochTime(initialPlan.end_time);
     $planStartTimeMs = getUnixEpochTime(initialPlan.start_time);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $viewTimeRange = $maxTimeRange;
 
+    simulation.setVariables({ planId: initialPlan.id });
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }
 

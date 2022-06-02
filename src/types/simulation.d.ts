@@ -1,5 +1,6 @@
 type Simulation = {
   arguments: ArgumentsMap;
+  datasets: SimulationDataset[] | null;
   id: number;
   template: SimulationTemplate | null;
 };
@@ -31,6 +32,10 @@ type ResourceType = {
 type ResourceValue = {
   x: number;
   y: number | string;
+};
+
+type SimulationDataset = {
+  id: number;
 };
 
 type SimulationResponseActivity = Omit<Activity, 'id' | 'startTime'> & {

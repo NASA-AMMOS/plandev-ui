@@ -301,6 +301,16 @@ const gql = {
     }
   `,
 
+  GET_LATEST_SIMULATION_DATASET: `#graphql
+    query GetLatestSimulationDataset($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { dataset: { id: desc } }, limit: 1) {
+        dataset {
+          id
+        }
+      }
+    }
+  `,
+
   GET_MODELS: `#graphql
     query GetModels {
       models: mission_model {
@@ -358,6 +368,9 @@ const gql = {
         }
         simulations {
           arguments
+          datasets(order_by: { id: desc }, limit: 1) {
+            id
+          }
           id
           template: simulation_template {
             arguments
@@ -404,16 +417,6 @@ const gql = {
         typescriptFiles {
           content
           filePath
-        }
-      }
-    }
-  `,
-
-  GET_SIMULATION_DATASET: `#graphql
-    query GetSimulationDataset($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { dataset: { id: desc } }, limit: 1) {
-        dataset {
-          id
         }
       }
     }
@@ -543,6 +546,23 @@ const gql = {
     }
   `,
 
+  SUB_SIMULATION: `#graphql
+    subscription SubSimulation($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc } limit: 1) {
+        arguments
+        datasets(order_by: { id: desc }, limit: 1) {
+          id
+        }
+        id
+        template: simulation_template {
+          arguments
+          description
+          id
+        }
+      }
+    }
+  `,
+
   SUB_SIM_TEMPLATES: `#graphql
     subscription SubSimTemplates($modelId: Int!) {
       templates: simulation_template(where: { model_id: { _eq: $modelId } }) {
@@ -609,6 +629,9 @@ const gql = {
         pk_columns: { id: $id }, _set: $simulation
       ) {
         arguments
+        datasets(order_by: { id: desc }, limit: 1) {
+          id
+        }
         id
         template: simulation_template {
           arguments
