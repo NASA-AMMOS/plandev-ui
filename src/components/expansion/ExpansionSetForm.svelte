@@ -2,7 +2,8 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { dictionaries, expansionSetsColumns, models, savingExpansionSet } from '../../stores/expansion';
+  import { dictionaries, expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
+  import { sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -96,7 +97,7 @@
           on:change={() => (selectedExpansionRules = {})}
         >
           <option value={null} />
-          {#each $models as model}
+          {#each $sortedModels as model}
             <option value={model.id}>
               {model.name}
             </option>

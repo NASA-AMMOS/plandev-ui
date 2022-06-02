@@ -41,7 +41,7 @@
     duration = $selectedActivity.duration;
     id = $selectedActivity.id;
     parent = $selectedActivity.parent;
-    startTime = $selectedActivity.startTime;
+    startTime = $selectedActivity.start_time;
     type = $selectedActivity.type;
   } else {
     argumentsMap = null;
@@ -77,7 +77,7 @@
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      effects.updateActivity(id, { startTime: $startTimeField.value });
+      effects.updateActivity(id, { start_time: $startTimeField.value });
     }
   }
 

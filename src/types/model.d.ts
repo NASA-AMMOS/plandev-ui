@@ -1,4 +1,4 @@
-type ModelInput = {
+type ModelList = {
   id: number;
   jar_id: number;
   name: string;

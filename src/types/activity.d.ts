@@ -18,7 +18,7 @@ type Activity = {
   duration: number | null;
   id: ActivityId;
   parent: number | null;
-  startTime: string;
+  start_time: string;
   type: string;
 };
 

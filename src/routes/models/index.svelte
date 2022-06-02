@@ -1,14 +1,15 @@
 <script lang="ts" context="module">
   import { goto } from '$app/navigation';
   import type { Load } from '@sveltejs/kit';
+  import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import Table from '../../components/ui/Table.svelte';
+  import { createModelError, creatingModel, models, sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 
   export const load: Load = async ({ session }) => {
@@ -19,51 +20,29 @@
       };
     }
 
-    const models = await effects.getModels();
+    const initialModels = await effects.getModels();
 
     return {
       props: {
-        models,
+        initialModels,
       },
     };
   };
 </script>
 
 <script lang="ts">
-  export let models: ModelInput[] = [];
+  export let initialModels: ModelList[] = [];
 
-  let createButtonText = 'Create';
-  let error: string | null = null;
+  let createButtonDisabled: boolean = false;
   let files: FileList;
   let name = '';
   let version = '';
 
-  $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
+  $: createButtonDisabled = !files || name === '' || version === '';
 
-  async function createModel() {
-    createButtonText = 'Creating...';
-    error = null;
-
-    const file = files[0];
-    const newModel = await effects.createModel(name, version, file);
-
-    if (newModel) {
-      models = [...models, newModel];
-    } else {
-      error = 'Create model failed.';
-    }
-
-    createButtonText = 'Create';
-  }
-
-  async function deleteModel(model: ModelInput) {
-    const { id, jar_id } = model;
-    const success = await effects.deleteModel(id, jar_id);
-
-    if (success) {
-      models = models.filter(model => model.id !== id);
-    }
-  }
+  onMount(() => {
+    models.updateValue(() => initialModels);
+  });
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
@@ -78,8 +57,8 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={createModel}>
-          <AlertError class="m-2" {error} />
+        <form on:submit|preventDefault={() => effects.createModel(name, version, files)}>
+          <AlertError class="m-2" error={$createModelError} />
 
           <fieldset>
             <label for="name">Name</label>
@@ -104,8 +83,8 @@
           </fieldset>
 
           <fieldset>
-            <button class="st-button w-100" disabled={!files || name === '' || version === ''} type="submit">
-              {createButtonText}
+            <button class="st-button w-100" disabled={createButtonDisabled} type="submit">
+              {$creatingModel ? 'Creating...' : 'Create'}
             </button>
           </fieldset>
         </form>
@@ -121,7 +100,7 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if models.length}
+        {#if $sortedModels.length}
           <Table
             let:currentRow
             columnDefs={[
@@ -130,13 +109,13 @@
               { field: 'version', name: 'Version', sortable: true },
             ]}
             rowActions
-            rowData={sortedModels}
+            rowData={$sortedModels}
             on:rowClick={({ detail: model }) => goto(`plans?modelId=${model.id}`)}
           >
             <button
               class="st-button icon"
               slot="actions-cell"
-              on:click|stopPropagation={() => deleteModel(currentRow)}
+              on:click|stopPropagation={() => effects.deleteModel(currentRow)}
               use:tooltip={{ content: 'Delete Model', placement: 'bottom' }}
             >
               <i class="bi bi-trash" />

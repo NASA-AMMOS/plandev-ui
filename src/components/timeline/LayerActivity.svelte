@@ -94,9 +94,9 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const startTime = getDoyTime(new Date(unixEpochTime));
+      const start_time = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivity(dragPoint.id, { children: [], startTime }, false);
+        effects.updateActivity(dragPoint.id, { children: [], start_time }, false);
       }
     }
   }
@@ -105,9 +105,9 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const startTime = getDoyTime(new Date(unixEpochTime));
+      const start_time = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivity(dragPoint.id, { startTime });
+        effects.updateActivity(dragPoint.id, { start_time });
       }
       dragOffsetX = null;
       dragPoint = null;
@@ -147,9 +147,9 @@
       const { offsetX } = e;
       overlaySvgSelection.select('.activity-drag-guide').remove();
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
-      const startTime = getDoyTime(new Date(unixEpochTime));
+      const start_time = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      effects.createActivity({}, startTime, activityTypeName);
+      effects.createActivity({}, start_time, activityTypeName);
     }
   }
 

@@ -9,7 +9,15 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
-import { plan, planStartTimeMs } from '../stores/plan';
+import {
+  createModelError,
+  createPlanError,
+  creatingModel,
+  creatingPlan,
+  models,
+  plan,
+  planStartTimeMs,
+} from '../stores/plan';
 import { resources } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
@@ -28,10 +36,10 @@ import { offsetViolationWindows } from './violations';
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
-  async createActivity(argumentsMap: ArgumentsMap, startTime: string, type: string): Promise<void> {
+  async createActivity(argumentsMap: ArgumentsMap, start_time: string, type: string): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
-      const start_offset = getIntervalFromDoyRange(currentPlan.startTime, startTime);
+      const start_offset = getIntervalFromDoyRange(currentPlan.start_time, start_time);
       const activityInsertInput: ActivityInsertInput = {
         arguments: argumentsMap,
         plan_id: currentPlan.id,
@@ -47,7 +55,7 @@ const effects = {
         duration: 0,
         id,
         parent: null,
-        startTime,
+        start_time,
         type,
       };
 
@@ -154,8 +162,12 @@ const effects = {
     }
   },
 
-  async createModel(name: string, version: string, file: File): Promise<ModelInput | null> {
+  async createModel(name: string, version: string, files: FileList): Promise<void> {
     try {
+      createModelError.set(null);
+      creatingModel.set(true);
+
+      const file: File = files[0];
       const jar_id = await effects.uploadFile(file);
       const modelInsertInput: ModelInsertInput = {
         jar_id,
@@ -166,45 +178,70 @@ const effects = {
       const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput });
       const { createModel } = data;
       const { id } = createModel;
-      const model: ModelInput = {
-        id,
-        jar_id,
-        name,
-        version,
-      };
-      showSuccessToast('Model Created Successfully');
+      const model: ModelList = { id, jar_id, name, version };
 
-      return model;
+      showSuccessToast('Model Created Successfully');
+      createModelError.set(null);
+      creatingModel.set(false);
+      models.updateValue((currentModels: ModelList[]) => [...currentModels, model]);
     } catch (e) {
       console.log(e);
       showFailureToast('Model Create Failed');
-      return null;
+      createModelError.set(e.message);
+      creatingModel.set(false);
     }
   },
 
-  async createPlan(endTime: string, modelId: number, name: string, startTime: string): Promise<CreatePlan | null> {
+  async createPlan(
+    end_time: string,
+    model_id: number,
+    name: string,
+    start_time: string,
+    simulation_template_id: number | null,
+  ): Promise<PlanList | null> {
     try {
-      const planInput = {
-        duration: getIntervalFromDoyRange(startTime, endTime),
-        model_id: modelId,
+      createPlanError.set(null);
+      creatingPlan.set(true);
+
+      const planInsertInput: PlanInsertInput = {
+        duration: getIntervalFromDoyRange(start_time, end_time),
+        model_id,
         name,
-        start_time: startTime,
+        start_time,
       };
-      const data = await reqHasura(gql.CREATE_PLAN, { plan: planInput });
+      const data = await reqHasura(gql.CREATE_PLAN, { plan: planInsertInput });
       const { createPlan } = data;
       const { id, revision } = createPlan;
-      const plan: CreatePlan = {
-        endTime,
+
+      await effects.createSimulation(id, simulation_template_id);
+      await effects.createSchedulingSpec({
+        horizon_end: end_time,
+        horizon_start: start_time,
+        plan_id: id,
+        plan_revision: revision,
+        simulation_arguments: {},
+      });
+
+      const plan: PlanList = {
+        end_time,
         id,
-        modelId,
+        model_id,
         name,
         revision,
-        startTime,
+        start_time,
       };
+
+      showSuccessToast('Plan Created Successfully');
+      createPlanError.set(null);
+      creatingPlan.set(false);
 
       return plan;
     } catch (e) {
       console.log(e);
+      showFailureToast('Plan Create Failed');
+      createPlanError.set(e.message);
+      creatingPlan.set(false);
+
       return null;
     }
   },
@@ -444,22 +481,20 @@ const effects = {
     }
   },
 
-  async deleteModel(id: number, jar_id: number): Promise<boolean> {
+  async deleteModel(model: ModelList): Promise<void> {
     try {
       const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this model?', 'Delete Model');
 
       if (confirm) {
+        const { id, jar_id } = model;
         await effects.deleteFile(jar_id);
         await reqHasura(gql.DELETE_MODEL, { id });
         showSuccessToast('Model Deleted Successfully');
-        return true;
+        models.filterValueById(id);
       }
-
-      return false;
     } catch (e) {
       console.log(e);
       showFailureToast('Model Delete Failed');
-      return false;
     }
   },
 
@@ -469,12 +504,14 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_PLAN, { id });
+        showSuccessToast('Plan Deleted Successfully');
         return true;
       }
 
       return false;
     } catch (e) {
       console.log(e);
+      showFailureToast('Plan Delete Failed');
       return false;
     }
   },
@@ -557,8 +594,8 @@ const effects = {
     try {
       const data = await reqHasura(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
       const { activities = [], plan } = data;
-      const startTime = new Date(plan.startTime);
-      const newActivities = activities.map((activity: any) => toActivity(activity, startTime));
+      const start_time = new Date(plan.start_time);
+      const newActivities = activities.map((activity: any) => toActivity(activity, start_time));
 
       return newActivities;
     } catch (e) {
@@ -679,7 +716,7 @@ const effects = {
     }
   },
 
-  async getModels(): Promise<ModelInput[]> {
+  async getModels(): Promise<ModelList[]> {
     try {
       const data = await reqHasura(gql.GET_MODELS);
       const { models = [] } = data;
@@ -696,13 +733,13 @@ const effects = {
       const { plan } = data;
 
       if (plan) {
-        const startTime = new Date(plan.startTime);
+        const start_time = new Date(plan.start_time);
 
         return {
           ...plan,
-          activities: plan.activities.map((activity: any) => toActivity(activity, startTime)),
-          endTime: getDoyTimeFromDuration(startTime, plan.duration),
-          startTime: getDoyTime(startTime),
+          activities: plan.activities.map((activity: any) => toActivity(activity, start_time)),
+          end_time: getDoyTimeFromDuration(start_time, plan.duration),
+          start_time: getDoyTime(start_time),
         };
       } else {
         return null;
@@ -725,10 +762,7 @@ const effects = {
     }
   },
 
-  async getPlansAndModels(): Promise<{
-    models: CreatePlanModel[];
-    plans: CreatePlan[];
-  }> {
+  async getPlansAndModels(): Promise<{ models: ModelList[]; plans: PlanList[] }> {
     try {
       const data = await reqHasura(gql.GET_PLANS_AND_MODELS);
       const { models, plans } = data;
@@ -736,11 +770,11 @@ const effects = {
       return {
         models,
         plans: plans.map((plan: any) => {
-          const startTime = new Date(plan.startTime);
+          const start_time = new Date(plan.start_time);
           return {
             ...plan,
-            endTime: getDoyTimeFromDuration(startTime, plan.duration),
-            startTime: getDoyTime(startTime),
+            end_time: getDoyTimeFromDuration(start_time, plan.duration),
+            start_time: getDoyTime(start_time),
           };
         }),
       };
@@ -907,7 +941,7 @@ const effects = {
               duration: activity.duration,
               id: parseFloat(id),
               parent: activity.parent,
-              startTime: activity.startTimestamp,
+              start_time: activity.startTimestamp,
               type: activity.type,
             };
           }
@@ -968,9 +1002,9 @@ const effects = {
         activitySetInput.arguments = activity.arguments;
       }
 
-      if (activity.startTime) {
-        const planStartTime = get<Plan>(plan).startTime;
-        activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.startTime);
+      if (activity.start_time) {
+        const planStartTime = get<Plan>(plan).start_time;
+        activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
       }
 
       try {

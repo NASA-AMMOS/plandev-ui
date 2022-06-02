@@ -17,8 +17,6 @@ export const expansionRules = getGqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANS
 
 export const expansionSets = getGqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, []);
 
-export const models = getGqlSubscribable<ModelInput[]>(gql.SUB_MODELS, {}, []);
-
 export const sequences = getGqlSubscribable<ExpansionSet[]>(gql.SUB_SEQUENCES, {}, []);
 
 /* Writeable. */

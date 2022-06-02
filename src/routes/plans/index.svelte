@@ -12,6 +12,7 @@
   import Panel from '../../components/ui/Panel.svelte';
   import Table from '../../components/ui/Table.svelte';
   import { field } from '../../stores/form';
+  import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { compare, removeQueryParam } from '../../utilities/generic';
@@ -38,11 +39,9 @@
 </script>
 
 <script lang="ts">
-  export let models: CreatePlanModel[] = [];
-  export let plans: CreatePlan[] = [];
+  export let models: ModelList[] = [];
+  export let plans: PlanList[] = [];
 
-  let createButtonText = 'Create';
-  let error: string | null = null;
   let filterText: string = '';
   let nameInputField: HTMLInputElement;
 
@@ -60,11 +59,11 @@
   $: filteredPlans = plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
-      plan.endTime.includes(filterTextLowerCase) ||
+      plan.end_time.includes(filterTextLowerCase) ||
       `${plan.id}`.includes(filterTextLowerCase) ||
-      `${plan.modelId}`.includes(filterTextLowerCase) ||
+      `${plan.model_id}`.includes(filterTextLowerCase) ||
       plan.name.toLowerCase().includes(filterTextLowerCase) ||
-      plan.startTime.includes(filterTextLowerCase)
+      plan.start_time.includes(filterTextLowerCase)
     );
   });
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
@@ -84,31 +83,17 @@
   });
 
   async function createPlan() {
-    createButtonText = 'Creating...';
-    error = null;
-
     const newPlan = await effects.createPlan(
       $endTimeField.value,
       $modelIdField.value,
       $nameField.value,
       $startTimeField.value,
+      $simTemplateField.value,
     );
-    await effects.createSimulation(newPlan.id, $simTemplateField.value);
-    await effects.createSchedulingSpec({
-      horizon_end: $endTimeField.value,
-      horizon_start: $startTimeField.value,
-      plan_id: newPlan.id,
-      plan_revision: newPlan.revision,
-      simulation_arguments: {},
-    });
 
     if (newPlan) {
       plans = [...plans, newPlan];
-    } else {
-      error = 'Create plan failed.';
     }
-
-    createButtonText = 'Create';
   }
 
   async function deletePlan(id: number): Promise<void> {
@@ -133,7 +118,7 @@
 
       <svelte:fragment slot="body">
         <form on:submit|preventDefault={createPlan}>
-          <AlertError class="m-2" {error} />
+          <AlertError class="m-2" error={$createPlanError} />
 
           <Field field={modelIdField}>
             <label for="model" slot="label">Models</label>
@@ -185,7 +170,7 @@
 
           <fieldset>
             <button class="st-button w-100" disabled={!createButtonEnabled} type="submit">
-              {createButtonText}
+              {$creatingPlan ? 'Creating...' : 'Create'}
             </button>
           </fieldset>
         </form>
@@ -211,9 +196,9 @@
             columnDefs={[
               { field: 'name', name: 'Name', sortable: true },
               { field: 'id', name: 'Plan ID', sortable: true },
-              { field: 'modelId', name: 'Model ID', sortable: true },
-              { field: 'startTime', name: 'Start Time', sortable: true },
-              { field: 'endTime', name: 'End Time', sortable: true },
+              { field: 'model_id', name: 'Model ID', sortable: true },
+              { field: 'start_time', name: 'Start Time', sortable: true },
+              { field: 'end_time', name: 'End Time', sortable: true },
             ]}
             rowActions
             rowData={sortedPlans}

@@ -11,7 +11,10 @@
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
+  let createButtonDisabled: boolean = false;
   let files: FileList;
+
+  $: createButtonDisabled = !files;
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
@@ -35,7 +38,7 @@
           </fieldset>
 
           <fieldset>
-            <button class="st-button w-100" disabled={!files} type="submit">
+            <button class="st-button w-100" disabled={createButtonDisabled} type="submit">
               {$creatingDictionary ? 'Creating...' : 'Create'}
             </button>
           </fieldset>

@@ -209,11 +209,11 @@ const gql = {
       activities: activity(where: { plan_id: { _eq: $planId } }) {
         arguments
         id
-        startOffset: start_offset
+        start_offset
         type
       }
       plan: plan_by_pk(id: $planId) {
-        startTime: start_time
+        start_time
       }
     }
   `,
@@ -318,7 +318,7 @@ const gql = {
         activities {
           arguments
           id
-          startOffset: start_offset
+          start_offset
           type
         }
         constraints: conditions {
@@ -365,7 +365,7 @@ const gql = {
             id
           }
         }
-        startTime: start_time
+        start_time
       }
     }
   `,
@@ -374,14 +374,16 @@ const gql = {
     query GetPlansAndModels {
       models: mission_model {
         id
+        jar_id
         name
+        version
       }
       plans: plan {
         duration
         id
-        modelId: model_id
+        model_id
         name
-        startTime: start_time
+        start_time
       }
     }
   `,

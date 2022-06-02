@@ -1,27 +1,29 @@
-type CreatePlan = {
-  endTime: string;
+type PlanList = {
+  end_time: string;
   id: number;
-  modelId: number;
+  model_id: number;
   name: string;
   revision: number;
-  startTime: string;
-};
-
-type CreatePlanModel = {
-  id: number;
-  name: string;
+  start_time: string;
 };
 
 type Plan = {
   activities: Activity[];
   constraints: Constraint[];
   duration: string;
-  endTime: string;
+  end_time: string;
   id: number;
   model: Model;
   name: string;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
   simulations: Simulation[];
-  startTime: string;
+  start_time: string;
+};
+
+type PlanInsertInput = {
+  duration: string;
+  model_id: number;
+  name: string;
+  start_time: string;
 };

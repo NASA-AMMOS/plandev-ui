@@ -123,8 +123,8 @@
     $planConstraints = initialPlan.constraints;
     $simulation = initialPlan.simulations[0];
 
-    $planEndTimeMs = getUnixEpochTime(initialPlan.endTime);
-    $planStartTimeMs = getUnixEpochTime(initialPlan.startTime);
+    $planEndTimeMs = getUnixEpochTime(initialPlan.end_time);
+    $planStartTimeMs = getUnixEpochTime(initialPlan.start_time);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $viewTimeRange = $maxTimeRange;
 

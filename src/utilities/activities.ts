@@ -17,8 +17,8 @@ export function activityToPoint(
           const b = activitiesMap[bId];
 
           if (a && b) {
-            const aStartTime = getUnixEpochTime(a.startTime);
-            const bStartTime = getUnixEpochTime(b.startTime);
+            const aStartTime = getUnixEpochTime(a.start_time);
+            const bStartTime = getUnixEpochTime(b.start_time);
             return compare(aStartTime, bStartTime);
           }
 
@@ -45,7 +45,7 @@ export function activityToPoint(
     parent: activity?.parent || null,
     selected: selectedActivityId === activity.id,
     type: 'activity',
-    x: getUnixEpochTime(activity.startTime),
+    x: getUnixEpochTime(activity.start_time),
   };
 
   return point;
@@ -62,8 +62,8 @@ export function activitiesToPoints(
 ): ActivityPoint[] {
   return [...activities]
     .sort((a: Activity, b: Activity) => {
-      const aStartTime = getUnixEpochTime(a.startTime);
-      const bStartTime = getUnixEpochTime(b.startTime);
+      const aStartTime = getUnixEpochTime(a.start_time);
+      const bStartTime = getUnixEpochTime(b.start_time);
       return compare(aStartTime, bStartTime);
     })
     .map(activity => activityToPoint(activitiesMap, activity, selectedActivityId));
@@ -72,14 +72,14 @@ export function activitiesToPoints(
 /**
  * Converts any activity to an Activity.
  */
-export function toActivity(activity: any, startTime: Date): Activity {
+export function toActivity(activity: any, start_time: Date): Activity {
   return {
     arguments: activity.arguments,
     children: [],
     duration: 0,
     id: activity.id,
     parent: null,
-    startTime: getDoyTimeFromDuration(startTime, activity.startOffset),
+    start_time: getDoyTimeFromDuration(start_time, activity.start_offset),
     type: activity.type,
   };
 }

@@ -2,13 +2,8 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import {
-    activityTypeNames,
-    dictionaries,
-    expansionRulesColumns,
-    models,
-    savingExpansionRule,
-  } from '../../stores/expansion';
+  import { activityTypeNames, dictionaries, expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
+  import { sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
@@ -113,7 +108,7 @@
           on:change={() => (ruleActivityType = null)}
         >
           <option value={null} />
-          {#each $models as model}
+          {#each $sortedModels as model}
             <option value={model.id}>
               {model.name}
             </option>

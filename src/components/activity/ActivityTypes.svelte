@@ -19,8 +19,8 @@
   $: sortedActivityTypes = filteredActivityTypes.sort((a, b) => compare(a.name, b.name));
 
   async function createActivityAtPlanStart(activityType: ActivityType) {
-    const { startTime } = $plan;
-    effects.createActivity({}, startTime, activityType.name);
+    const { start_time } = $plan;
+    effects.createActivity({}, start_time, activityType.name);
   }
 
   function onDragEnd(): void {
