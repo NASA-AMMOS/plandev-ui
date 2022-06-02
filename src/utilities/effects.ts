@@ -802,6 +802,17 @@ const effects = {
     }
   },
 
+  async getSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string> {
+    try {
+      const data = await reqHasura<SeqJson>(gql.GET_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
+      const { seqJson } = data;
+      return JSON.stringify(seqJson, null, 2);
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getView(query: URLSearchParams): Promise<View | null> {
     try {
       const viewId = query.has('viewId') ? query.get('viewId') : 'latest';

@@ -422,6 +422,25 @@ const gql = {
     }
   `,
 
+  GET_SEQUENCE_SEQ_JSON: `#graphql
+    query GetSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
+      seqJson: getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
+        id
+        metadata
+        steps {
+          args
+          metadata
+          stem
+          time {
+            tag
+            type
+          }
+          type
+        }
+      }
+    }
+  `,
+
   RESOURCE_TYPES: `#graphql
     query ResourceTypes($modelId: ID!) {
       resourceTypes(missionModelId: $modelId) {

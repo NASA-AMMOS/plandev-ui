@@ -27,3 +27,5 @@ type Sequence = {
   seq_id: string;
   simulation_dataset_id: number;
 };
+
+type SeqJson = any;

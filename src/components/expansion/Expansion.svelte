@@ -3,6 +3,7 @@
 <script lang="ts">
   import { expansionSets, sequences } from '../../stores/expansion';
   import effects from '../../utilities/effects';
+  import { showSequenceModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -86,6 +87,7 @@
                 ]}
                 rowActions
                 rowData={$sequences}
+                on:rowClick={({ detail: sequence }) => showSequenceModal(sequence)}
               >
                 <button
                   class="st-button icon"

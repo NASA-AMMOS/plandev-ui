@@ -1,5 +1,6 @@
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
+import SequenceModal from '../components/modals/SequenceModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -66,6 +67,26 @@ export async function showConfirmModal(confirmText: string, message: string, tit
       });
 
       confirmModal.$on('confirm', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve(true);
+      });
+    }
+  });
+}
+
+/**
+ * Shows a SequenceModal with the supplied arguments.
+ */
+export async function showSequenceModal(sequence: Sequence) {
+  return new Promise(resolve => {
+    const target: HtmlModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const sequenceModal = new SequenceModal({ props: { sequence }, target });
+      target.resolve = resolve;
+
+      sequenceModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
         resolve(true);
