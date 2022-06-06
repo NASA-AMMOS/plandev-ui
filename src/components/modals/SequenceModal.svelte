@@ -13,9 +13,11 @@
 
   export let sequence: Sequence;
 
-  let seqJson: SeqJson | null = null;
+  let seqJsonStr: string | null = null;
 
-  $: effects.getSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id).then(result => (seqJson = result));
+  $: effects
+    .getSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id)
+    .then((result: string) => (seqJsonStr = result));
 </script>
 
 <Modal height={400} width={600}>
@@ -29,7 +31,7 @@
         minimap={{ enabled: false }}
         readOnly={true}
         scrollBeyondLastLine={false}
-        value={seqJson}
+        value={seqJsonStr}
       />
     </div>
   </ModalContent>
