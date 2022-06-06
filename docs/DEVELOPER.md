@@ -33,12 +33,13 @@ Before you can build aerie-ui, you must install and configure the following prod
 
 ## Code Editor
 
-The recommended editor for developing aerie-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate code formatting settings.
+The recommended editor for developing aerie-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate the code formatting settings.
 
 ### Settings.json
 
 ```json
 {
+  "editor.formatOnSave": true,
   "[svelte][typescript]": {
     "editor.codeActionsOnSave": ["source.fixAll", "source.organizeImports", "source.sortImports"],
     "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -82,4 +83,4 @@ Run `npm run build` to build the project. The build artifacts will be stored in 
 
 ## Before You Commit
 
-Run `npm run pre-commit` to execute formatting, linting, and static analysis.
+Run `npm run pre-commit` to execute formatting, linting, and static analysis. Run `npm test` after setting up your testing environment (see the [testing documentation](./TESTING.md)).

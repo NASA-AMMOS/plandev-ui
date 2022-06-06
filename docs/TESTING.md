@@ -8,7 +8,7 @@ All tests assume a production build of the project is available:
 npm run build
 ```
 
-All tests also assume all Aerie services are running and available on `localhost`. See the example [docker-compose-test.yml](../docker-compose-test.yml) for an example of how to run the complete Aerie system. You can reference the [Aerie deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for more detailed deployment information.
+All tests also assume all Aerie services are running and available on `localhost`. See the example [docker-compose-test.yml](../docker-compose-test.yml) for an example of how to run the complete Aerie system. Notice we disable authentication for simplicity when running our end-to-end tests. You can reference the [Aerie deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for more detailed deployment information.
 
 If this is your first time running the tests you may need to install the Playwright browser drivers:
 
