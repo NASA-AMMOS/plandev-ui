@@ -296,9 +296,9 @@ const effects = {
       let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
-      const { id: datasetId } = dataset;
+      const { id: simulationDatasetId } = dataset;
 
-      const sequence: Sequence = { metadata: {}, seq_id: seqId, simulation_dataset_id: datasetId };
+      const sequence: Sequence = { metadata: {}, seq_id: seqId, simulation_dataset_id: simulationDatasetId };
       data = await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
       const { createSequence } = data;
       const { seq_id } = createSequence;
@@ -543,8 +543,8 @@ const effects = {
       );
 
       if (confirm) {
-        const { seq_id: seqId, simulation_dataset_id: datasetId } = sequence;
-        await reqHasura(gql.DELETE_SEQUENCE, { datasetId, seqId });
+        const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
+        await reqHasura(gql.DELETE_SEQUENCE, { seqId, simulationDatasetId });
         showSuccessToast('Sequence Deleted Successfully');
       }
     } catch (e) {
@@ -575,9 +575,9 @@ const effects = {
       let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
-      const { id: datasetId } = dataset;
+      const { id: simulationDatasetId } = dataset;
 
-      data = await reqHasura(gql.EXPAND, { datasetId, expansionSetId });
+      data = await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
       const { expand } = data;
       console.log(expand);
       showSuccessToast('Plan Expanded Successfully');

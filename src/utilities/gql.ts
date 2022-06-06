@@ -189,16 +189,16 @@ const gql = {
   `,
 
   DELETE_SEQUENCE: `#graphql
-    mutation DeleteSequence($seqId: String!, $datasetId: Int!) {
-      deleteSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $datasetId) {
+    mutation DeleteSequence($seqId: String!, $simulationDatasetId: Int!) {
+      deleteSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
         seq_id
       }
     }
   `,
 
   EXPAND: `#graphql
-    mutation Expand($expansionSetId: Int!, $datasetId: Int!) {
-      expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $datasetId) {
+    mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
+      expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
         id
       }
     }

@@ -66,11 +66,11 @@
     </div>
 
     <div class="mb-3">
-      <label for="datasetId">Latest Simulation Dataset ID</label>
+      <label for="simulationDatasetId">Latest Simulation Dataset ID</label>
       <input
         class="st-input w-100"
         disabled
-        name="datasetId"
+        name="simulationDatasetId"
         value={$simulation.datasets.length ? $simulation.datasets[0].id : 'None'}
       />
     </div>
