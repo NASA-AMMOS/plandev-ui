@@ -34,9 +34,11 @@
 
 <ExpansionRuleForm
   initialRuleActivityType={initialRule.activity_type}
+  initialRuleCreatedAt={initialRule.created_at}
   initialRuleDictionaryId={initialRule.authoring_command_dict_id}
   initialRuleId={initialRule.id}
   initialRuleLogic={initialRule.expansion_logic}
   initialRuleModelId={initialRule.authoring_mission_model_id}
+  initialRuleUpdatedAt={initialRule.updated_at}
   mode="edit"
 />

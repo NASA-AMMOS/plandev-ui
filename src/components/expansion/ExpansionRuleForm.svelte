@@ -13,17 +13,21 @@
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let initialRuleActivityType: string | null = null;
+  export let initialRuleCreatedAt: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
   export let initialRuleId: number | null = null;
   export let initialRuleLogic: string = 'export default function(): ExpansionReturn {\n    return [];\n}\n';
   export let initialRuleModelId: number | null = null;
+  export let initialRuleUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
 
   let ruleActivityType: string | null = initialRuleActivityType;
+  let ruleCreatedAt: string | null = initialRuleCreatedAt;
   let ruleDictionaryId: number | null = initialRuleDictionaryId;
   let ruleId: number | null = initialRuleId;
   let ruleLogic: string = initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
+  let ruleUpdatedAt: string | null = initialRuleUpdatedAt;
   let saveButtonEnabled: boolean = false;
 
   $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
@@ -55,7 +59,10 @@
         authoring_mission_model_id: ruleModelId,
         expansion_logic: ruleLogic,
       };
-      await effects.updateExpansionRule(ruleId, updatedRule);
+      const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
+      if (updated_at !== null) {
+        ruleUpdatedAt = updated_at;
+      }
     }
   }
 </script>
@@ -81,6 +88,22 @@
           <label for="id">Rule ID</label>
           <Input>
             <input class="st-input w-100" disabled name="ruleId" value={ruleId} />
+            <i class="bi bi-lock-fill" slot="right" />
+          </Input>
+        </fieldset>
+
+        <fieldset>
+          <label for="createdAt">Created At</label>
+          <Input>
+            <input class="st-input w-100" disabled name="createdAt" value={ruleCreatedAt} />
+            <i class="bi bi-lock-fill" slot="right" />
+          </Input>
+        </fieldset>
+
+        <fieldset>
+          <label for="updatedAt">Updated At</label>
+          <Input>
+            <input class="st-input w-100" disabled name="updatedAt" value={ruleUpdatedAt} />
             <i class="bi bi-lock-fill" slot="right" />
           </Input>
         </fieldset>

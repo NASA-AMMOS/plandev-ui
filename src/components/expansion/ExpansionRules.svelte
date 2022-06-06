@@ -74,6 +74,8 @@
             { field: 'activity_type', name: 'Activity Type', sortable: true },
             { field: 'authoring_command_dict_id', name: 'Command Dictionary ID', sortable: true },
             { field: 'authoring_mission_model_id', name: 'Model ID', sortable: true },
+            { field: 'created_at', name: 'Created At', sortable: true },
+            { field: 'updated_at', name: 'Updated At', sortable: true },
           ]}
           rowActions
           rowData={sortedRules}

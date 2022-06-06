@@ -233,8 +233,10 @@ const gql = {
           activity_type
           authoring_command_dict_id
           authoring_mission_model_id
+          created_at
           expansion_logic
           id
+          updated_at
         }
         name
       }
@@ -295,8 +297,10 @@ const gql = {
         activity_type
         authoring_command_dict_id
         authoring_mission_model_id
+        created_at
         expansion_logic
         id
+        updated_at
       }
     }
   `,
@@ -480,6 +484,7 @@ const gql = {
     subscription SubCommandDictionaries {
       command_dictionary {
         command_types_typescript_path
+        created_at
         id
         mission
         version
@@ -493,8 +498,10 @@ const gql = {
         activity_type
         authoring_command_dict_id
         authoring_mission_model_id
+        created_at
         expansion_logic
         id
+        updated_at
       }
     }
   `,
@@ -503,6 +510,7 @@ const gql = {
     subscription SubExpansionSets {
       expansionSets: expansion_set {
         command_dict_id
+        created_at
         expansion_rules {
           activity_type
           authoring_command_dict_id
@@ -558,9 +566,11 @@ const gql = {
   SUB_SEQUENCES: `#graphql
     subscription SubSequences {
       sequence {
+        created_at
         metadata
         seq_id
         simulation_dataset_id
+        updated_at
       }
     }
   `,
@@ -617,7 +627,7 @@ const gql = {
       updateExpansionRule: update_expansion_rule_by_pk(
         pk_columns: { id: $id }, _set: $rule
       ) {
-        id
+        updated_at
       }
     }
   `,

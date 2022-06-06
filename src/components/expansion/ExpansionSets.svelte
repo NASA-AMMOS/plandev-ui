@@ -74,6 +74,7 @@
               { field: 'id', name: 'Set ID', sortable: true },
               { field: 'command_dict_id', name: 'Command Dictionary ID', sortable: true },
               { field: 'mission_model_id', name: 'Model ID', sortable: true },
+              { field: 'created_at', name: 'Created At', sortable: true },
             ]}
             rowActions
             rowData={sortedSets}

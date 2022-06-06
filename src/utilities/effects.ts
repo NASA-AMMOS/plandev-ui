@@ -290,25 +290,21 @@ const effects = {
     }
   },
 
-  async createSequence(seqId: string): Promise<string | null> {
+  async createSequence(seqId: string): Promise<void> {
     try {
       const { id: planId } = get(plan);
-      let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
+      const data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
       const { id: simulationDatasetId } = dataset;
 
-      const sequence: Sequence = { metadata: {}, seq_id: seqId, simulation_dataset_id: simulationDatasetId };
-      data = await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
-      const { createSequence } = data;
-      const { seq_id } = createSequence;
-      showSuccessToast('Sequence Created Successfully');
+      const sequence: SequenceInsertInput = { metadata: {}, seq_id: seqId, simulation_dataset_id: simulationDatasetId };
+      await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
 
-      return seq_id;
+      showSuccessToast('Sequence Created Successfully');
     } catch (e) {
       console.log(e);
       showFailureToast('Sequence Create Failed');
-      return null;
     }
   },
 
@@ -1080,18 +1076,20 @@ const effects = {
     }
   },
 
-  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<boolean> {
+  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<string | null> {
     try {
       savingExpansionRule.set(true);
-      await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule });
+      const data = await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule });
+      const { updateExpansionRule } = data;
+      const { updated_at } = updateExpansionRule;
       showSuccessToast('Expansion Rule Updated Successfully');
       savingExpansionRule.set(false);
-      return true;
+      return updated_at;
     } catch (e) {
       console.log(e);
       showFailureToast('Expansion Rule Update Failed');
       savingExpansionRule.set(false);
-      return false;
+      return null;
     }
   },
 

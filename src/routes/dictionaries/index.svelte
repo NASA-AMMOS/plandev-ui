@@ -60,6 +60,7 @@
               { field: 'mission', name: 'Mission', sortable: true },
               { field: 'version', name: 'Version', sortable: true },
               { field: 'command_types_typescript_path', name: 'Types Path', sortable: true },
+              { field: 'created_at', name: 'Created At', sortable: true },
             ]}
             rowActions
             rowData={$sortedDictionaries}

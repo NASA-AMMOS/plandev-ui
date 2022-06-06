@@ -31,7 +31,7 @@ export class Dictionaries {
     this.confirmModalDeleteButton = page.locator(
       `.modal:has-text("Delete Command Dictionary") >> button:has-text("Delete")`,
     );
-    this.createButton = page.locator('text=Create');
+    this.createButton = page.locator(`button:has-text("Create")`);
     this.inputFile = page.locator('input[name="file"]');
     this.tableRow = page.locator(`tr:has-text("${this.dictionaryName}")`);
     this.tableRowDeleteButton = page.locator(
