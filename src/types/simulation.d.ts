@@ -51,7 +51,6 @@ type SimulationResponse = {
   results?: {
     activities: Record<string, SimulationResponseActivity>;
     constraints: Record<string, SimulationResponseViolation[]>;
-    resources: Record<string, ResourceValue[]>;
     start: string;
   };
   status: SimulationStatus;
