@@ -445,6 +445,14 @@ const gql = {
     }
   `,
 
+  RESOURCE_SAMPLES: `#graphql
+    query ResourceSamples($planId: Int!) {
+      resourceSamples(planId: $planId) {
+        resourceSamples
+      }
+    }
+  `,
+
   RESOURCE_TYPES: `#graphql
     query ResourceTypes($modelId: ID!) {
       resourceTypes(missionModelId: $modelId) {

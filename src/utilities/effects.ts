@@ -862,6 +862,19 @@ const effects = {
     }
   },
 
+  async resourceSamples(planId: number): Promise<Record<string, ResourceValue[]>> {
+    try {
+      const data = await reqHasura<{ resourceSamples: Record<string, ResourceValue[]> }>(gql.RESOURCE_SAMPLES, {
+        planId,
+      });
+      const { resourceSamples } = data;
+      return resourceSamples.resourceSamples;
+    } catch (e) {
+      console.log(e);
+      return {};
+    }
+  },
+
   async resourceTypes(modelId: number): Promise<ResourceType[]> {
     try {
       const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, { modelId });
@@ -960,7 +973,8 @@ const effects = {
             map[name] = schema;
             return map;
           }, {});
-          const newResources: Resource[] = Object.entries(results.resources).map(([name, values]) => ({
+          const resourceSamples: Record<string, ResourceValue[]> = await effects.resourceSamples(planId);
+          const newResources: Resource[] = Object.entries(resourceSamples).map(([name, values]) => ({
             name,
             schema: resourceTypesMap[name],
             startTime: results.start,
