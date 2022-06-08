@@ -83,7 +83,7 @@
   function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
     if (points.length) {
       const [point] = points;
-      if (point.parent === null) {
+      if (point.parent_id === null) {
         dragOffsetX = offsetX - xScaleView(point.x);
         dragPoint = point;
       }
@@ -96,7 +96,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const start_time = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivity(dragPoint.id, { children: [], start_time }, false);
+        effects.updateActivity(dragPoint.id, { start_time }, false);
       }
     }
   }
@@ -226,7 +226,7 @@
       for (const point of $activityPoints) {
         const r = new RegExp(filter?.type);
         const includeActivity = r.test(point?.label?.text);
-        const isParentActivity = !point.parent;
+        const isParentActivity = !point.parent_id;
 
         if (
           isParentActivity &&

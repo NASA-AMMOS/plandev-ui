@@ -1,5 +1,5 @@
 import { compare } from './generic';
-import { getDoyTimeFromDuration, getUnixEpochTime } from './time';
+import { getDoyTimeFromDuration, getDurationInMs, getUnixEpochTime } from './time';
 
 /**
  * Recursively converts an Activity to an ActivityPoint.
@@ -10,8 +10,8 @@ export function activityToPoint(
   activity: Activity,
   selectedActivityId: number | null,
 ): ActivityPoint {
-  const children = activity?.children
-    ? [...activity.children]
+  const children = activity?.child_ids
+    ? [...activity.child_ids]
         .sort((aId: number, bId: number): number => {
           const a = activitiesMap[aId];
           const b = activitiesMap[bId];
@@ -38,11 +38,11 @@ export function activityToPoint(
 
   const point: ActivityPoint = {
     children,
-    duration: activity?.duration / 1000 || 0, // µs -> ms
+    duration: getDurationInMs(activity.duration),
     id: activity.id,
     label: { text: activity.type },
     name: `${activity.id}`,
-    parent: activity?.parent || null,
+    parent_id: activity.parent_id,
     selected: selectedActivityId === activity.id,
     type: 'activity',
     x: getUnixEpochTime(activity.start_time),
@@ -70,16 +70,91 @@ export function activitiesToPoints(
 }
 
 /**
- * Converts any activity to an Activity.
+ * Transforms directive activities to activities consumable in the UI.
  */
-export function toActivity(activity: any, start_time: Date): Activity {
+export function activityDirectiveToActivity(
+  plan_start_time: string,
+  activityDirective: ActivityDirective,
+  getChildIds: (activitySimulated: ActivitySimulated) => ActivitySimulatedId[] = () => [],
+): Activity {
+  const { simulated_activities } = activityDirective;
+  const activitySimulated = simulated_activities[0];
+
   return {
-    arguments: activity.arguments,
-    children: [],
-    duration: 0,
-    id: activity.id,
-    parent: null,
-    start_time: getDoyTimeFromDuration(start_time, activity.start_offset),
-    type: activity.type,
+    arguments: activityDirective.arguments,
+    child_ids: getChildIds(activitySimulated),
+    duration: activitySimulated?.duration ?? null,
+    id: activityDirective.id,
+    parent_id: null,
+    simulation_dataset_id: activitySimulated?.simulation_dataset_id ?? null,
+    start_time: getDoyTimeFromDuration(plan_start_time, activityDirective.start_offset),
+    type: activityDirective.type,
   };
+}
+
+/**
+ * Transforms simulated activities to activities consumable in the UI.
+ */
+export function activitySimulatedToActivity(
+  plan_start_time: string,
+  activitySimulated: ActivitySimulated,
+  getChildIds: (activitySimulated: ActivitySimulated) => ActivitySimulatedId[],
+  getParentId: (activitySimulated: ActivitySimulated) => ActivityDirectiveId | ActivitySimulatedId,
+): Activity {
+  return {
+    arguments: {},
+    child_ids: getChildIds(activitySimulated),
+    duration: activitySimulated.duration,
+    id: activitySimulated.id,
+    parent_id: getParentId(activitySimulated),
+    simulation_dataset_id: activitySimulated.simulation_dataset_id,
+    start_time: getDoyTimeFromDuration(plan_start_time, activitySimulated.start_offset),
+    type: activitySimulated.activity_type_name,
+  };
+}
+
+/**
+ * Returns a function that maps each simulated activity id to it's list of simulated activity child ids if they exist.
+ */
+export function getChildIdsFn(
+  simulated_activities: ActivitySimulated[],
+): (activitySimulated: ActivitySimulated) => ActivitySimulatedId[] {
+  const parentIdToChildIds = simulated_activities.reduce(
+    (map: Record<ActivitySimulatedId, ActivitySimulatedId[]>, activitySimulated) => {
+      if (map[activitySimulated.parent_id] === undefined) {
+        map[activitySimulated.parent_id] = [activitySimulated.id];
+      } else {
+        map[activitySimulated.parent_id].push(activitySimulated.id);
+      }
+      return map;
+    },
+    {},
+  );
+
+  return (activitySimulated: ActivitySimulated) => parentIdToChildIds[activitySimulated?.id] ?? [];
+}
+
+/**
+ * Returns a function that maps each simulated activity id to it's directive activity id if one such directive activity exists.
+ * If a directive activity does not exists for a given simulated activity, we just return the simulated activities parent id.
+ */
+export function getParentIdFn(
+  directive_activities: ActivityDirective[],
+): (activitySimulated: ActivitySimulated) => ActivityDirectiveId | ActivitySimulatedId {
+  const simulatedIdToDirectiveId = directive_activities.reduce(
+    (map: Record<ActivitySimulatedId, ActivityDirectiveId>, activityDirective) => {
+      const { simulated_activities } = activityDirective;
+      const activitySimulated = simulated_activities[0];
+
+      if (activitySimulated) {
+        map[activitySimulated.id] = activityDirective.id;
+      }
+
+      return map;
+    },
+    {},
+  );
+
+  return (activitySimulated: ActivitySimulated) =>
+    simulatedIdToDirectiveId[activitySimulated.parent_id] ?? activitySimulated.parent_id;
 }

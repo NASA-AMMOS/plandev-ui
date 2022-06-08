@@ -32,7 +32,7 @@ export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 })
 
 export const activityTypesMap: Readable<ActivityTypesMap> = derived(plan, $plan => {
   if ($plan) {
-    return keyBy($plan.model.activityTypes, 'name');
+    return keyBy($plan.model.activity_types, 'name');
   }
   return {};
 });

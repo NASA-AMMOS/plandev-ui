@@ -13,7 +13,7 @@ type ModelInsertInput = {
 };
 
 type Model = {
-  activityTypes: ActivityType[];
+  activity_types: ActivityType[];
   constraints: Constraint[];
   id: number;
   parameters: { parameters: ParametersMap };

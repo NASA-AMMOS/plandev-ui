@@ -22,7 +22,7 @@ import { resources } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
-import { toActivity } from './activities';
+import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
 import { setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal } from './modal';
@@ -49,12 +49,14 @@ const effects = {
       const data = await reqHasura(gql.CREATE_ACTIVITY, { activity: activityInsertInput });
       const { createActivity } = data;
       const { id } = createActivity;
+
       const activity: Activity = {
         arguments: argumentsMap,
-        children: [],
-        duration: 0,
+        child_ids: [],
+        duration: null,
         id,
-        parent: null,
+        parent_id: null,
+        simulation_dataset_id: null,
         start_time,
         type,
       };
@@ -588,12 +590,25 @@ const effects = {
 
   async getActivitiesForPlan(planId: number): Promise<Activity[]> {
     try {
-      const data = await reqHasura(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
-      const { activities = [], plan } = data;
-      const start_time = new Date(plan.start_time);
-      const newActivities = activities.map((activity: any) => toActivity(activity, start_time));
+      const data = await reqHasura<ActivitiesForPlanResponse>(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
+      const { plan } = data;
+      const { directive_activities, simulations, start_time } = plan;
+      const [{ datasets } = { datasets: [] }] = simulations;
+      const [{ simulated_activities } = { simulated_activities: [] }] = datasets;
 
-      return newActivities;
+      const getParentId = getParentIdFn(directive_activities);
+      const getChildIds = getChildIdsFn(simulated_activities);
+
+      const activities: Activity[] = [
+        ...directive_activities.map((activityDirective: ActivityDirective) =>
+          activityDirectiveToActivity(start_time, activityDirective, getChildIds),
+        ),
+        ...simulated_activities.map((activitySimulated: ActivitySimulated) =>
+          activitySimulatedToActivity(start_time, activitySimulated, getChildIds, getParentId),
+        ),
+      ];
+
+      return activities;
     } catch (e) {
       console.log(e);
       return [];
@@ -623,8 +638,8 @@ const effects = {
     if (!isNil(modelId)) {
       try {
         const data = await reqHasura<ActivityTypeExpansionRules[]>(gql.GET_ACTIVITY_TYPES_EXPANSION_RULES, { modelId });
-        const { activityTypes } = data;
-        return activityTypes;
+        const { activity_types } = data;
+        return activity_types;
       } catch (e) {
         console.log(e);
         return [];
@@ -725,17 +740,17 @@ const effects = {
 
   async getPlan(id: number): Promise<Plan | null> {
     try {
-      const data = await reqHasura<Plan | null>(gql.GET_PLAN, { id });
+      const data = await reqHasura(gql.GET_PLAN, { id });
       const { plan } = data;
 
       if (plan) {
-        const start_time = new Date(plan.start_time);
-
         return {
           ...plan,
-          activities: plan.activities.map((activity: any) => toActivity(activity, start_time)),
-          end_time: getDoyTimeFromDuration(start_time, plan.duration),
-          start_time: getDoyTime(start_time),
+          activities: plan.activities.map((activityDirective: ActivityDirective) =>
+            activityDirectiveToActivity(plan.start_time, activityDirective),
+          ),
+          end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
+          start_time: getDoyTime(new Date(plan.start_time)),
         };
       } else {
         return null;
@@ -766,11 +781,10 @@ const effects = {
       return {
         models,
         plans: plans.map((plan: any) => {
-          const start_time = new Date(plan.start_time);
           return {
             ...plan,
-            end_time: getDoyTimeFromDuration(start_time, plan.duration),
-            start_time: getDoyTime(start_time),
+            end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
+            start_time: getDoyTime(new Date(plan.start_time)),
           };
         }),
       };
@@ -915,7 +929,6 @@ const effects = {
           return;
         } else if (status === 'incomplete') {
           schedulingStatus.set(Status.Incomplete);
-          console.log(reason);
         }
 
         await sleep();
@@ -953,19 +966,8 @@ const effects = {
 
         if (status === 'complete') {
           // Activities.
-          const newActivitiesMap: ActivitiesMap = {};
-          for (const [id, activity] of Object.entries(results.activities)) {
-            newActivitiesMap[id] = {
-              arguments: activity.arguments,
-              children: activity.children,
-              duration: activity.duration,
-              id: parseFloat(id),
-              parent: activity.parent,
-              start_time: activity.startTimestamp,
-              type: activity.type,
-            };
-          }
-          activitiesMap.set(newActivitiesMap);
+          const newActivities = await effects.getActivitiesForPlan(planId);
+          activitiesMap.set(keyBy(newActivities, 'id'));
 
           // Resources.
           const resourceTypes: ResourceType[] = await effects.resourceTypes(model.id);

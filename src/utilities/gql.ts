@@ -206,13 +206,35 @@ const gql = {
 
   GET_ACTIVITIES_FOR_PLAN: `#graphql
     query GetActivitiesForPlan($planId: Int!) {
-      activities: activity(where: { plan_id: { _eq: $planId } }) {
-        arguments
-        id
-        start_offset
-        type
-      }
       plan: plan_by_pk(id: $planId) {
+        directive_activities: activities {
+          arguments
+          id
+          simulated_activities(order_by: { id: desc }, limit: 1) {
+            activity_type_name
+            attributes
+            duration
+            id
+            parent_id
+            simulation_dataset_id
+            start_offset
+          }
+          start_offset
+          type
+        }
+        simulations(limit: 1) {
+          datasets(order_by: { id: desc }, limit: 1) {
+            simulated_activities(where: { parent_id: {  _is_null: false } }) {
+              activity_type_name
+              attributes
+              duration
+              id
+              parent_id
+              simulation_dataset_id
+              start_offset
+            }
+          }
+        }
         start_time
       }
     }
@@ -228,7 +250,7 @@ const gql = {
 
   GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
     query GetActivityTypesExpansionRules($modelId: Int!) {
-      activityTypes: activity_type(where: { model_id: { _eq: $modelId } }) {
+      activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
         expansion_rules {
           activity_type
           authoring_command_dict_id
@@ -332,6 +354,9 @@ const gql = {
         activities {
           arguments
           id
+          simulated_activities(limit: 0) {
+            id
+          }
           start_offset
           type
         }
@@ -347,9 +372,11 @@ const gql = {
         duration
         id
         model: mission_model {
-          activityTypes: activity_types {
+          activity_types {
+            computed_attributes_value_schema
             name
             parameters
+            required_parameters
           }
           constraints: conditions {
             definition
@@ -481,8 +508,8 @@ const gql = {
   `,
 
   SUB_ACTIVITY_TYPE_NAMES: `#graphql
-    subscription SubActivityTypes($modelId: Int!) {
-      activityTypes: activity_type(where: { model_id: { _eq: $modelId } }) {
+    subscription SubActivityTypeNames($modelId: Int!) {
+      activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
         name
       }
     }

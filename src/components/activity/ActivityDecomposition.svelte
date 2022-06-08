@@ -3,11 +3,11 @@
 <script lang="ts">
   import { activitiesMap } from '../../stores/activities';
 
-  export let children: number[] | null = null;
+  export let child_ids: number[] | null = null;
   export let expanded = true;
   export let type: string = '';
 
-  $: hasChildren = children ? children.length > 0 : false;
+  $: hasChildren = child_ids ? child_ids.length > 0 : false;
 
   function toggle() {
     expanded = !expanded;
@@ -23,9 +23,9 @@
 
 {#if hasChildren && expanded}
   <ul>
-    {#each children as childId}
+    {#each child_ids as child_id}
       <li>
-        <svelte:self {...$activitiesMap[childId]} />
+        <svelte:self {...$activitiesMap[child_id]} />
       </li>
     {/each}
   </ul>

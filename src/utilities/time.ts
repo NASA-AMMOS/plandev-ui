@@ -35,18 +35,37 @@ export function getDoyTime(date: Date, includeMsecs = true): string {
 }
 
 /**
- * Get a day-of-year timestamp from a given JavaScript Date object, and
- * a duration in Postgres Interval format.
+ * Get a day-of-year timestamp from a given an ISO 8601 start time string, and a Postgres Interval duration.
  */
-export function getDoyTimeFromDuration(startDate: Date, duration: string, includeMsecs = true): string {
+export function getDoyTimeFromDuration(startTime: string, duration: string, includeMsecs = true): string {
+  const startDate = new Date(startTime);
   const interval = parse(duration);
-  const { hours, milliseconds, minutes, seconds } = interval;
+  const { days, hours, milliseconds, minutes, seconds } = interval;
   const endDate = new Date(startDate.getTime());
+  endDate.setUTCDate(endDate.getUTCDate() + days);
   endDate.setUTCHours(endDate.getUTCHours() + hours);
   endDate.setUTCMinutes(endDate.getUTCMinutes() + minutes);
   endDate.setUTCSeconds(endDate.getUTCSeconds() + seconds);
   endDate.setUTCMilliseconds(endDate.getUTCMilliseconds() + milliseconds);
   return getDoyTime(endDate, includeMsecs);
+}
+
+/**
+ * Returns a Postgres Interval duration in milliseconds.
+ * If duration is null, undefined, or empty string then we just return 0.
+ * @note This function assumes 24-hour days.
+ */
+export function getDurationInMs(duration: string | null | undefined): number {
+  if (duration !== null && duration !== undefined && duration !== '') {
+    const interval = parse(duration);
+    const { days, hours, milliseconds, minutes, seconds } = interval;
+    const daysInMs = days * 24 * 60 * 60 * 1000;
+    const hoursInMs = hours * 60 * 60 * 1000;
+    const minutesInMs = minutes * 60 * 1000;
+    const secondsInMs = seconds * 1000;
+    return daysInMs + hoursInMs + minutesInMs + secondsInMs + milliseconds;
+  }
+  return 0;
 }
 
 /**

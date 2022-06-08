@@ -25,7 +25,7 @@
 
   $: effects
     .getActivityTypesExpansionRules(setModelId)
-    .then(activityTypes => (activityTypesExpansionRules = activityTypes));
+    .then(activity_types => (activityTypesExpansionRules = activity_types));
 
   $: logicEditorRuleLogic = lastSelectedExpansionRule?.expansion_logic ?? 'No Expansion Rule Selected';
   $: logicEditorTitle = lastSelectedExpansionRule

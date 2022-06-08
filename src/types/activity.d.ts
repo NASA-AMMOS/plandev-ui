@@ -1,8 +1,14 @@
 type ActivityId = number;
 
+type ActivityDirectiveId = number;
+
+type ActivitySimulatedId = number;
+
 type ActivityType = {
+  computed_attributes_value_schema: ValueSchema;
   name: string;
   parameters: ParametersMap;
+  required_parameters: string[];
 };
 
 type ActivityTypeExpansionRules = {
@@ -14,15 +20,30 @@ type ActivityTypesMap = Record<string, ActivityType>;
 
 type Activity = {
   arguments: ArgumentsMap;
-  children: number[] | null;
-  duration: number | null;
+  child_ids: ActivityId[];
+  duration: string | null;
   id: ActivityId;
-  parent: number | null;
+  parent_id: ActivityId | null;
+  simulation_dataset_id: number | null;
   start_time: string;
   type: string;
 };
 
+type ActivitiesForPlanResponse = {
+  directive_activities: ActivityDirective[];
+  simulations: [{ datasets: [{ simulated_activities: ActivitySimulated[] }] }];
+  start_time: string;
+};
+
 type ActivitiesMap = Record<ActivityId, Activity>;
+
+type ActivityDirective = {
+  arguments: ArgumentsMap;
+  id: ActivityDirectiveId;
+  simulated_activities: [ActivitySimulated];
+  start_offset: string;
+  type: string;
+};
 
 type ActivityInsertInput = {
   arguments: ArgumentsMap;
@@ -32,3 +53,18 @@ type ActivityInsertInput = {
 };
 
 type ActivitySetInput = Partial<ActivityInsertInput>;
+
+type ActivitySimulatedAttributes = {
+  arguments: ArgumentsMap;
+  computedAttributes: any; // TODO: Strongly type.
+};
+
+type ActivitySimulated = {
+  activity_type_name: string;
+  attributes: ActivitySimulatedAttributes;
+  duration: string;
+  id: ActivitySimulatedId;
+  parent_id: number | null;
+  simulation_dataset_id: number;
+  start_offset: string;
+};

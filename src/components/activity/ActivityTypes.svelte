@@ -12,7 +12,7 @@
 
   export let gridId: number;
 
-  let activityTypes: ActivityType[] = $plan.model.activityTypes;
+  let activityTypes: ActivityType[] = $plan.model.activity_types;
   let filterText: string = '';
 
   $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));

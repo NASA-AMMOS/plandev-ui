@@ -19,10 +19,10 @@
 
   // Activity vars.
   let argumentsMap: ArgumentsMap | null = null;
-  let children: number[] | null = null;
-  let duration: number | null = null;
+  let child_ids: number[] | null = null;
+  let duration: string | null = null;
   let id: number | null = null;
-  let parent: number | null = null;
+  let parent_id: number | null = null;
   let startTime: string | null = null;
   let type: string | null = null;
 
@@ -32,32 +32,30 @@
   let hasChildren: boolean;
   let isChild: boolean;
   let parameterError: string | null = null;
-  let parentId: number | string | null = null;
   let startTimeField: FieldStore<string>;
 
   $: if ($selectedActivity) {
     argumentsMap = $selectedActivity.arguments;
-    children = $selectedActivity.children;
+    child_ids = $selectedActivity.child_ids;
     duration = $selectedActivity.duration;
     id = $selectedActivity.id;
-    parent = $selectedActivity.parent;
+    parent_id = $selectedActivity.parent_id;
     startTime = $selectedActivity.start_time;
     type = $selectedActivity.type;
   } else {
     argumentsMap = null;
-    children = null;
+    child_ids = null;
     duration = null;
     id = null;
-    parent = null;
+    parent_id = null;
     startTime = null;
     type = null;
   }
 
   $: model = $plan.model;
   $: activityType = $activityTypesMap[type] || null;
-  $: hasChildren = children ? children.length > 0 : false;
-  $: isChild = parent !== null;
-  $: parentId = isChild ? parent : 'None (Root Activity)';
+  $: hasChildren = child_ids ? child_ids.length > 0 : false;
+  $: isChild = parent_id !== null;
   $: startTimeField = field<string>(startTime, [required, timestamp]);
 
   $: if (activityType && argumentsMap) {
@@ -114,7 +112,7 @@
       <fieldset>
         <label for="id">Activity ID</label>
         <Input>
-          <input bind:value={id} class="st-input w-100" disabled name="id" />
+          <input class="st-input w-100" disabled name="id" value={id} />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -122,7 +120,7 @@
       <fieldset>
         <label for="activity-type">Activity Type</label>
         <Input>
-          <input bind:value={type} class="st-input w-100" disabled name="activity-type" />
+          <input class="st-input w-100" disabled name="activity-type" value={type} />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -130,7 +128,12 @@
       <fieldset>
         <label for="parent-id">Parent ID</label>
         <Input>
-          <input bind:value={parentId} class="st-input w-100" disabled name="parent-id" />
+          <input
+            class="st-input w-100"
+            disabled
+            name="parent-id"
+            value={isChild ? parent_id : 'None (Root Activity)'}
+          />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -138,7 +141,7 @@
       <fieldset>
         <label for="duration">Duration</label>
         <Input>
-          <input bind:value={duration} class="st-input w-100" disabled name="duration" />
+          <input class="st-input w-100" disabled name="duration" value={duration} />
           <i class="bi bi-lock-fill" slot="right" />
         </Input>
       </fieldset>
@@ -169,7 +172,7 @@
           <summary>Decomposition</summary>
           <div class="mt-2">
             {#if hasChildren}
-              <ActivityDecomposition {children} {type} />
+              <ActivityDecomposition {child_ids} {type} />
             {:else}
               <div class="p-1">This activity has no children</div>
             {/if}

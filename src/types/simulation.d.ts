@@ -38,18 +38,12 @@ type SimulationDataset = {
   id: number;
 };
 
-type SimulationResponseActivity = Omit<Activity, 'id' | 'startTime'> & {
-  computedAttributes: string;
-  startTimestamp: string;
-};
-
 type SimulationResponseViolation = Omit<ConstraintViolation, 'constraint'>;
 
 type SimulationStatus = 'complete' | 'failed' | 'incomplete' | 'pending';
 
 type SimulationResponse = {
   results?: {
-    activities: Record<string, SimulationResponseActivity>;
     constraints: Record<string, SimulationResponseViolation[]>;
     start: string;
   };
