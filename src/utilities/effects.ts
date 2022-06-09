@@ -18,7 +18,7 @@ import {
   plan,
   planStartTimeMs,
 } from '../stores/plan';
-import { resources } from '../stores/resources';
+import { resources, resourceTypesMap as resourceTypesMapStore } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
@@ -807,6 +807,17 @@ const effects = {
     }
   },
 
+  async getResourceTypes(modelId: number): Promise<ResourceType[]> {
+    try {
+      const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, { modelId });
+      const { resourceTypes } = data;
+      return resourceTypes;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
   async getSchedulingTsExtraLibs(model_id: number): Promise<TypeScriptExtraLib[]> {
     try {
       const data = await reqHasura<TypeScriptResponse>(gql.GET_SCHEDULING_TYPESCRIPT, { model_id });
@@ -943,17 +954,6 @@ const effects = {
     }
   },
 
-  async resourceTypes(modelId: number): Promise<ResourceType[]> {
-    try {
-      const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, { modelId });
-      const { resourceTypes } = data;
-      return resourceTypes;
-    } catch (e) {
-      console.log(e);
-      return [];
-    }
-  },
-
   async schedule(): Promise<void> {
     try {
       const { id: planId } = get(plan);
@@ -1008,7 +1008,7 @@ const effects = {
 
   async simulate(): Promise<void> {
     try {
-      const { id: planId, model } = get(plan);
+      const { id: planId } = get(plan);
 
       let tries = 0;
       simulationStatus.update(Status.Executing);
@@ -1024,11 +1024,7 @@ const effects = {
           activitiesMap.set(keyBy(newActivities, 'id'));
 
           // Resources.
-          const resourceTypes: ResourceType[] = await effects.resourceTypes(model.id);
-          const resourceTypesMap = resourceTypes.reduce((map: Record<string, ValueSchema>, { name, schema }) => {
-            map[name] = schema;
-            return map;
-          }, {});
+          const resourceTypesMap = get(resourceTypesMapStore);
           const resourceSamples: Record<string, ResourceValue[]> = await effects.resourceSamples(planId);
           const newResources: Resource[] = Object.entries(resourceSamples).map(([name, values]) => ({
             name,
