@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { expansionSets, sequences } from '../../stores/expansion';
-  import { simulation } from '../../stores/simulation';
+  import { creatingSequence, expandingPlan, expansionSets, filteredSequences } from '../../stores/expansion';
+  import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { showSequenceModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
@@ -14,28 +14,12 @@
   export let gridId: number;
 
   let createButtonEnabled: boolean = false;
-  let creatingSequence: boolean = false;
   let expandButtonEnabled: boolean = false;
-  let expandingPlan: boolean = false;
   let selectedExpansionSetId: number | null = null;
   let seqIdInput: string = '';
-  let simulation_dataset_id: number | null = null;
 
-  $: simulation_dataset_id = $simulation.datasets.length ? $simulation.datasets[0].id : null;
   $: createButtonEnabled = seqIdInput !== '';
   $: expandButtonEnabled = selectedExpansionSetId !== null;
-
-  async function createSequence() {
-    creatingSequence = true;
-    await effects.createSequence(seqIdInput);
-    creatingSequence = false;
-  }
-
-  async function expandPlan() {
-    expandingPlan = true;
-    await effects.expand(selectedExpansionSetId);
-    expandingPlan = false;
-  }
 </script>
 
 <Panel>
@@ -45,9 +29,9 @@
       <button
         class="st-button secondary ellipsis"
         disabled={!expandButtonEnabled}
-        on:click|stopPropagation={expandPlan}
+        on:click|stopPropagation={() => effects.expand(selectedExpansionSetId)}
       >
-        {expandingPlan ? 'Expanding... ' : 'Expand'}
+        {$expandingPlan ? 'Expanding... ' : 'Expand'}
       </button>
     </div>
   </svelte:fragment>
@@ -78,8 +62,13 @@
       <details open style:cursor="pointer">
         <summary>Sequences</summary>
 
-        <div class="mt-2">
-          {#if simulation_dataset_id === null}
+        <div class="pt-2 pb-3">
+          <label for="simulationDatasetId">Simulation Dataset ID</label>
+          <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
+        </div>
+
+        <div class="pb-3">
+          {#if $simulationDatasetId === null}
             <div class="pb-3">First run a simulation before creating a sequence</div>
           {:else}
             <CssGrid columns="3fr 1fr" gap="10px">
@@ -87,14 +76,14 @@
               <button
                 class="st-button secondary"
                 disabled={!createButtonEnabled}
-                on:click|stopPropagation={createSequence}
+                on:click|stopPropagation={() => effects.createSequence(seqIdInput)}
               >
-                {creatingSequence ? 'Creating... ' : 'Create'}
+                {$creatingSequence ? 'Creating... ' : 'Create'}
               </button>
             </CssGrid>
 
             <div class="mt-2">
-              {#if $sequences.length}
+              {#if $filteredSequences.length}
                 <Table
                   let:currentRow
                   columnDefs={[
@@ -102,7 +91,7 @@
                     { field: 'simulation_dataset_id', name: 'Simulation Dataset ID', sortable: true },
                   ]}
                   rowActions
-                  rowData={$sequences}
+                  rowData={$filteredSequences}
                   on:rowClick={({ detail: sequence }) => showSequenceModal(sequence)}
                 >
                   <button
@@ -115,7 +104,7 @@
                   </button>
                 </Table>
               {:else}
-                No Sequences Found
+                No Sequences for Simulation Dataset {$simulationDatasetId}
               {/if}
             </div>
           {/if}

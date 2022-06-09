@@ -2,7 +2,13 @@
 
 <script lang="ts">
   import { plan } from '../../stores/plan';
-  import { modelParametersMap, simulation, simulationStatus, simulationTemplates } from '../../stores/simulation';
+  import {
+    modelParametersMap,
+    simulation,
+    simulationDatasetId,
+    simulationStatus,
+    simulationTemplates,
+  } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -66,13 +72,8 @@
     </div>
 
     <div class="mb-3">
-      <label for="simulationDatasetId">Latest Simulation Dataset ID</label>
-      <input
-        class="st-input w-100"
-        disabled
-        name="simulationDatasetId"
-        value={$simulation.datasets.length ? $simulation.datasets[0].id : 'None'}
-      />
+      <label for="simulationDatasetId">Simulation Dataset ID</label>
+      <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
     </div>
 
     <details open>

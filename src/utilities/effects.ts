@@ -5,7 +5,9 @@ import { modelConstraints, planConstraints, selectedConstraint, violations } fro
 import {
   createDictionaryError,
   creatingDictionary,
+  creatingSequence,
   dictionaries,
+  expandingPlan,
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
@@ -295,6 +297,7 @@ const effects = {
 
   async createSequence(seqId: string): Promise<void> {
     try {
+      creatingSequence.set(true);
       const { id: planId } = get(plan);
       const data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
@@ -305,9 +308,11 @@ const effects = {
       await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
 
       showSuccessToast('Sequence Created Successfully');
+      creatingSequence.set(false);
     } catch (e) {
       console.log(e);
       showFailureToast('Sequence Create Failed');
+      creatingSequence.set(false);
     }
   },
 
@@ -580,24 +585,22 @@ const effects = {
     }
   },
 
-  async expand(expansionSetId: number): Promise<boolean> {
+  async expand(expansionSetId: number): Promise<void> {
     try {
+      expandingPlan.set(true);
       const { id: planId } = get(plan);
-      let data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
+      const data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
       const { simulation } = data;
       const [{ dataset }] = simulation;
       const { id: simulationDatasetId } = dataset;
 
-      data = await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
-      const { expand } = data;
-      console.log(expand);
+      await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
       showSuccessToast('Plan Expanded Successfully');
-
-      return true;
+      expandingPlan.set(false);
     } catch (e) {
       console.log(e);
       showFailureToast('Plan Expansion Failed');
-      return false;
+      expandingPlan.set(false);
     }
   },
 

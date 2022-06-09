@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { getGqlSubscribable } from './subscribable';
@@ -40,6 +40,15 @@ export const simulationStatus = (() => {
     },
   };
 })();
+
+/* Derived. */
+
+export const simulationDatasetId: Readable<number | null> = derived(simulation, $simulation => {
+  if ($simulation) {
+    return $simulation.datasets.length ? $simulation.datasets[0].id : null;
+  }
+  return null;
+});
 
 /* Helper Functions. */
 

@@ -2,10 +2,10 @@
 
 <script lang="ts">
   import { selectedActivity } from '../../stores/activities';
-  import { sequences } from '../../stores/expansion';
+  import { filteredSequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
-  import { simulation } from '../../stores/simulation';
+  import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
@@ -26,14 +26,12 @@
   let parent_id: number | null = null;
   let seq_id: string | null = null;
   let simulated_activity_id: number | null = null;
-  let simulation_dataset_id: number | null = null;
   let startTime: string | null = null;
   let type: string | null = null;
 
   // Other vars.
   let model: Model;
   let formParameters: FormParameter[] = [];
-  let filteredSequences: Sequence[] = [];
   let hasChildren: boolean;
   let isChild: boolean;
   let parameterError: string | null = null;
@@ -65,10 +63,6 @@
   $: hasChildren = child_ids ? child_ids.length > 0 : false;
   $: isChild = parent_id !== null;
   $: startTimeField = field<string>(startTime, [required, timestamp]);
-  $: simulation_dataset_id = $simulation.datasets.length
-    ? $simulation.datasets[0].id
-    : $selectedActivity?.simulation_dataset_id ?? null;
-  $: filteredSequences = $sequences.filter(sequence => sequence.simulation_dataset_id === simulation_dataset_id);
 
   $: if (activityType && argumentsMap) {
     effects
@@ -79,17 +73,17 @@
   }
   $: validateArguments(argumentsMap);
 
-  $: if (simulated_activity_id !== null && simulation_dataset_id !== null) {
-    effects.getSequenceId(simulated_activity_id, simulation_dataset_id).then(seqId => {
+  $: if (simulated_activity_id !== null && $simulationDatasetId !== null) {
+    effects.getSequenceId(simulated_activity_id, $simulationDatasetId).then(seqId => {
       seq_id = seqId;
     });
   }
 
   async function updateSequenceToActivity() {
     if (seq_id === null) {
-      await effects.deleteSequenceToActivity(simulation_dataset_id, simulated_activity_id);
+      await effects.deleteSequenceToActivity($simulationDatasetId, simulated_activity_id);
     } else {
-      await effects.insertSequenceToActivity(simulation_dataset_id, simulated_activity_id, seq_id);
+      await effects.insertSequenceToActivity($simulationDatasetId, simulated_activity_id, seq_id);
     }
   }
 
@@ -194,8 +188,8 @@
           <summary>Sequencing</summary>
 
           <div class="mt-2 mb-3">
-            <label for="simulationDatasetId">Latest Simulation Dataset ID</label>
-            <input class="st-input w-100" disabled name="simulationDatasetId" value={simulation_dataset_id ?? 'None'} />
+            <label for="simulationDatasetId">Simulation Dataset ID</label>
+            <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
           </div>
 
           <div class="mt-2">
@@ -204,14 +198,14 @@
               bind:value={seq_id}
               class="st-select w-100"
               name="sequences"
-              disabled={!filteredSequences.length}
+              disabled={!$filteredSequences.length}
               on:change={updateSequenceToActivity}
             >
-              {#if !filteredSequences.length}
-                <option value={null}>No Sequences for Simulation Dataset</option>
+              {#if !$filteredSequences.length}
+                <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId}</option>
               {:else}
                 <option value={null} />
-                {#each filteredSequences as sequence}
+                {#each $filteredSequences as sequence}
                   <option value={sequence.seq_id}>
                     {sequence.seq_id}
                   </option>
