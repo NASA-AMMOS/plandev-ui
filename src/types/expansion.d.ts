@@ -34,6 +34,12 @@ type Sequence = {
   updated_at: string;
 };
 
+type SeqId = Pick<Sequence, 'seq_id'>;
+
 type SequenceInsertInput = Omit<Sequence, 'created_at' | 'updated_at'>;
 
-type SeqJson = any;
+type SequenceToActivityInsertInput = {
+  seq_id: string;
+  simulated_activity_id: ActivitySimulatedId;
+  simulation_dataset_id: number;
+};

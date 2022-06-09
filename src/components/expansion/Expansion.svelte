@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { expansionSets, sequences } from '../../stores/expansion';
+  import { simulation } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { showSequenceModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
@@ -18,7 +19,9 @@
   let expandingPlan: boolean = false;
   let selectedExpansionSetId: number | null = null;
   let seqIdInput: string = '';
+  let simulation_dataset_id: number | null = null;
 
+  $: simulation_dataset_id = $simulation.datasets.length ? $simulation.datasets[0].id : null;
   $: createButtonEnabled = seqIdInput !== '';
   $: expandButtonEnabled = selectedExpansionSetId !== null;
 
@@ -52,56 +55,70 @@
   <svelte:fragment slot="body">
     <fieldset>
       <label for="expansionSet">Expansion Set</label>
-      <select bind:value={selectedExpansionSetId} class="st-select w-100" name="expansionSet">
-        <option value={null} />
-        {#each $expansionSets as set}
-          <option value={set.id}>
-            Expansion Set {set.id}
-          </option>
-        {/each}
+      <select
+        bind:value={selectedExpansionSetId}
+        class="st-select w-100"
+        disabled={!$expansionSets.length}
+        name="expansionSet"
+      >
+        {#if !$expansionSets.length}
+          <option value={null}>No Expansion Sets Found</option>
+        {:else}
+          <option value={null} />
+          {#each $expansionSets as set}
+            <option value={set.id}>
+              Expansion Set {set.id}
+            </option>
+          {/each}
+        {/if}
       </select>
     </fieldset>
 
     <fieldset>
       <details open style:cursor="pointer">
         <summary>Sequences</summary>
-        <div class="mt-2">
-          <CssGrid columns="3fr 1fr" gap="10px">
-            <input bind:value={seqIdInput} class="st-input" />
-            <button
-              class="st-button secondary"
-              disabled={!createButtonEnabled}
-              on:click|stopPropagation={createSequence}
-            >
-              {creatingSequence ? 'Creating... ' : 'Create'}
-            </button>
-          </CssGrid>
 
-          <div class="mt-2">
-            {#if $sequences.length}
-              <Table
-                let:currentRow
-                columnDefs={[
-                  { field: 'seq_id', name: 'Sequence ID', sortable: true },
-                  { field: 'simulation_dataset_id', name: 'Simulation Dataset ID', sortable: true },
-                ]}
-                rowActions
-                rowData={$sequences}
-                on:rowClick={({ detail: sequence }) => showSequenceModal(sequence)}
+        <div class="mt-2">
+          {#if simulation_dataset_id === null}
+            <div class="pb-3">First run a simulation before creating a sequence</div>
+          {:else}
+            <CssGrid columns="3fr 1fr" gap="10px">
+              <input bind:value={seqIdInput} class="st-input" />
+              <button
+                class="st-button secondary"
+                disabled={!createButtonEnabled}
+                on:click|stopPropagation={createSequence}
               >
-                <button
-                  class="st-button icon"
-                  slot="actions-cell"
-                  on:click|stopPropagation={() => effects.deleteSequence(currentRow)}
-                  use:tooltip={{ content: 'Delete Sequence', placement: 'bottom' }}
+                {creatingSequence ? 'Creating... ' : 'Create'}
+              </button>
+            </CssGrid>
+
+            <div class="mt-2">
+              {#if $sequences.length}
+                <Table
+                  let:currentRow
+                  columnDefs={[
+                    { field: 'seq_id', name: 'Sequence ID', sortable: true },
+                    { field: 'simulation_dataset_id', name: 'Simulation Dataset ID', sortable: true },
+                  ]}
+                  rowActions
+                  rowData={$sequences}
+                  on:rowClick={({ detail: sequence }) => showSequenceModal(sequence)}
                 >
-                  <i class="bi bi-trash" />
-                </button>
-              </Table>
-            {:else}
-              No Sequences Found
-            {/if}
-          </div>
+                  <button
+                    class="st-button icon"
+                    slot="actions-cell"
+                    on:click|stopPropagation={() => effects.deleteSequence(currentRow)}
+                    use:tooltip={{ content: 'Delete Sequence', placement: 'bottom' }}
+                  >
+                    <i class="bi bi-trash" />
+                  </button>
+                </Table>
+              {:else}
+                No Sequences Found
+              {/if}
+            </div>
+          {/if}
         </div>
       </details>
     </fieldset>

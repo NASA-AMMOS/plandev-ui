@@ -56,6 +56,7 @@ const effects = {
         duration: null,
         id,
         parent_id: null,
+        simulated_activity_id: null,
         simulation_dataset_id: null,
         start_time,
         type,
@@ -551,6 +552,18 @@ const effects = {
     }
   },
 
+  async deleteSequenceToActivity(simulation_dataset_id: number, simulated_activity_id: number): Promise<boolean> {
+    try {
+      await reqHasura<SeqId>(gql.DELETE_SEQUENCE_TO_ACTIVITY, { simulated_activity_id, simulation_dataset_id });
+      showSuccessToast('Sequence Deleted From Activity Successfully');
+      return true;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Delete Sequence From Activity Failed');
+      return false;
+    }
+  },
+
   async deleteView(id: number): Promise<DeleteViewResponse> {
     try {
       const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
@@ -812,9 +825,26 @@ const effects = {
     }
   },
 
+  async getSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
+    try {
+      const data = await reqHasura<SeqId>(gql.GET_SEQUENCE_ID, { simulated_activity_id, simulation_dataset_id });
+      const { sequence } = data;
+
+      if (sequence) {
+        const { seq_id } = sequence;
+        return seq_id;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string> {
     try {
-      const data = await reqHasura<SeqJson>(gql.GET_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
+      const data = await reqHasura(gql.GET_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
       const { seqJson } = data;
       return JSON.stringify(seqJson, null, 2);
     } catch (e) {
@@ -842,6 +872,30 @@ const effects = {
     } catch (e) {
       console.log(e);
       return [];
+    }
+  },
+
+  async insertSequenceToActivity(
+    simulation_dataset_id: number,
+    simulated_activity_id: number,
+    seq_id: string,
+  ): Promise<string | null> {
+    try {
+      const input: SequenceToActivityInsertInput = { seq_id, simulated_activity_id, simulation_dataset_id };
+      const data = await reqHasura<{ seq_id: string }>(gql.INSERT_SEQUENCE_TO_ACTIVITY, { input });
+      const { sequence } = data;
+
+      if (sequence) {
+        showSuccessToast('Sequence Added To Activity Successfully');
+        const { seq_id } = sequence;
+        return seq_id;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Add Sequence To Activity Failed');
+      return null;
     }
   },
 

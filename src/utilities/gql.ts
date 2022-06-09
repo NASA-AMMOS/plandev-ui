@@ -196,6 +196,17 @@ const gql = {
     }
   `,
 
+  DELETE_SEQUENCE_TO_ACTIVITY: `#graphql
+    mutation DeleteSequenceToActivity($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
+      sequence: delete_sequence_to_simulated_activity_by_pk(
+        simulation_dataset_id: $simulation_dataset_id,
+        simulated_activity_id: $simulated_activity_id
+      ) {
+        seq_id
+      }
+    }
+  `,
+
   EXPAND: `#graphql
     mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
       expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
@@ -354,8 +365,10 @@ const gql = {
         activities {
           arguments
           id
-          simulated_activities(limit: 0) {
+          simulated_activities(order_by: { id: desc }, limit: 1) {
             id
+            parent_id
+            simulation_dataset_id
           }
           start_offset
           type
@@ -453,6 +466,17 @@ const gql = {
     }
   `,
 
+  GET_SEQUENCE_ID: `#graphql
+    query GetSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
+      sequence: sequence_to_simulated_activity_by_pk(
+        simulation_dataset_id: $simulation_dataset_id,
+        simulated_activity_id: $simulated_activity_id
+      ) {
+        seq_id
+      }
+    }
+  `,
+
   GET_SEQUENCE_SEQ_JSON: `#graphql
     query GetSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
       seqJson: getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
@@ -468,6 +492,20 @@ const gql = {
           }
           type
         }
+      }
+    }
+  `,
+
+  INSERT_SEQUENCE_TO_ACTIVITY: `#graphql
+    mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
+      sequence: insert_sequence_to_simulated_activity_one(
+        object: $input,
+        on_conflict: {
+          constraint: sequence_to_simulated_activity_primary_key,
+          update_columns: [seq_id]
+        }
+      ) {
+        seq_id
       }
     }
   `,

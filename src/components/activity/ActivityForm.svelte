@@ -2,14 +2,15 @@
 
 <script lang="ts">
   import { selectedActivity } from '../../stores/activities';
+  import { sequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
+  import { simulation } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
-  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -23,12 +24,16 @@
   let duration: string | null = null;
   let id: number | null = null;
   let parent_id: number | null = null;
+  let seq_id: string | null = null;
+  let simulated_activity_id: number | null = null;
+  let simulation_dataset_id: number | null = null;
   let startTime: string | null = null;
   let type: string | null = null;
 
   // Other vars.
   let model: Model;
   let formParameters: FormParameter[] = [];
+  let filteredSequences: Sequence[] = [];
   let hasChildren: boolean;
   let isChild: boolean;
   let parameterError: string | null = null;
@@ -40,6 +45,7 @@
     duration = $selectedActivity.duration;
     id = $selectedActivity.id;
     parent_id = $selectedActivity.parent_id;
+    simulated_activity_id = $selectedActivity.simulated_activity_id;
     startTime = $selectedActivity.start_time;
     type = $selectedActivity.type;
   } else {
@@ -48,6 +54,8 @@
     duration = null;
     id = null;
     parent_id = null;
+    seq_id = null;
+    simulated_activity_id = null;
     startTime = null;
     type = null;
   }
@@ -57,6 +65,10 @@
   $: hasChildren = child_ids ? child_ids.length > 0 : false;
   $: isChild = parent_id !== null;
   $: startTimeField = field<string>(startTime, [required, timestamp]);
+  $: simulation_dataset_id = $simulation.datasets.length
+    ? $simulation.datasets[0].id
+    : $selectedActivity?.simulation_dataset_id ?? null;
+  $: filteredSequences = $sequences.filter(sequence => sequence.simulation_dataset_id === simulation_dataset_id);
 
   $: if (activityType && argumentsMap) {
     effects
@@ -66,6 +78,20 @@
       });
   }
   $: validateArguments(argumentsMap);
+
+  $: if (simulated_activity_id !== null && simulation_dataset_id !== null) {
+    effects.getSequenceId(simulated_activity_id, simulation_dataset_id).then(seqId => {
+      seq_id = seqId;
+    });
+  }
+
+  async function updateSequenceToActivity() {
+    if (seq_id === null) {
+      await effects.deleteSequenceToActivity(simulation_dataset_id, simulated_activity_id);
+    } else {
+      await effects.insertSequenceToActivity(simulation_dataset_id, simulated_activity_id, seq_id);
+    }
+  }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
@@ -111,39 +137,22 @@
     {#if $selectedActivity}
       <fieldset>
         <label for="id">Activity ID</label>
-        <Input>
-          <input class="st-input w-100" disabled name="id" value={id} />
-          <i class="bi bi-lock-fill" slot="right" />
-        </Input>
+        <input class="st-input w-100" disabled name="id" value={id} />
       </fieldset>
 
       <fieldset>
         <label for="activity-type">Activity Type</label>
-        <Input>
-          <input class="st-input w-100" disabled name="activity-type" value={type} />
-          <i class="bi bi-lock-fill" slot="right" />
-        </Input>
+        <input class="st-input w-100" disabled name="activity-type" value={type} />
       </fieldset>
 
       <fieldset>
         <label for="parent-id">Parent ID</label>
-        <Input>
-          <input
-            class="st-input w-100"
-            disabled
-            name="parent-id"
-            value={isChild ? parent_id : 'None (Root Activity)'}
-          />
-          <i class="bi bi-lock-fill" slot="right" />
-        </Input>
+        <input class="st-input w-100" disabled name="parent-id" value={isChild ? parent_id : 'None (Root Activity)'} />
       </fieldset>
 
       <fieldset>
         <label for="duration">Duration</label>
-        <Input>
-          <input class="st-input w-100" disabled name="duration" value={duration} />
-          <i class="bi bi-lock-fill" slot="right" />
-        </Input>
+        <input class="st-input w-100" disabled name="duration" value={duration ?? 'None (Run Simulation First)'} />
       </fieldset>
 
       <Field field={startTimeField} on:valid={onUpdateStartTime}>
@@ -176,6 +185,39 @@
             {:else}
               <div class="p-1">This activity has no children</div>
             {/if}
+          </div>
+        </details>
+      </fieldset>
+
+      <fieldset>
+        <details open style:cursor="pointer">
+          <summary>Sequencing</summary>
+
+          <div class="mt-2 mb-3">
+            <label for="simulationDatasetId">Latest Simulation Dataset ID</label>
+            <input class="st-input w-100" disabled name="simulationDatasetId" value={simulation_dataset_id ?? 'None'} />
+          </div>
+
+          <div class="mt-2">
+            <label for="expansionSet">Sequence ID</label>
+            <select
+              bind:value={seq_id}
+              class="st-select w-100"
+              name="sequences"
+              disabled={!filteredSequences.length}
+              on:change={updateSequenceToActivity}
+            >
+              {#if !filteredSequences.length}
+                <option value={null}>No Sequences for Simulation Dataset</option>
+              {:else}
+                <option value={null} />
+                {#each filteredSequences as sequence}
+                  <option value={sequence.seq_id}>
+                    {sequence.seq_id}
+                  </option>
+                {/each}
+              {/if}
+            </select>
           </div>
         </details>
       </fieldset>

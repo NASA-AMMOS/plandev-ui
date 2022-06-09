@@ -24,6 +24,7 @@ type Activity = {
   duration: string | null;
   id: ActivityId;
   parent_id: ActivityId | null;
+  simulated_activity_id: ActivitySimulatedId | null;
   simulation_dataset_id: number | null;
   start_time: string;
   type: string;
