@@ -31,6 +31,7 @@
 
   // Other vars.
   let model: Model;
+  let formParametersComputedAttributes: FormParameter[] = [];
   let formParameters: FormParameter[] = [];
   let hasChildren: boolean;
   let isChild: boolean;
@@ -79,6 +80,11 @@
     });
   }
 
+  $: setFormParametersComputedAttributes(
+    activityType?.computed_attributes_value_schema,
+    $selectedActivity?.attributes?.computedAttributes,
+  );
+
   async function updateSequenceToActivity() {
     if (seq_id === null) {
       await effects.deleteSequenceToActivity($simulationDatasetId, simulated_activity_id);
@@ -96,6 +102,21 @@
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
       effects.updateActivity(id, { start_time: $startTimeField.value });
+    }
+  }
+
+  /**
+   * Transforms computed attributes to conform to ParametersMap and ArgumentsMap
+   * so we can render computed attributs as form parameters.
+   */
+  function setFormParametersComputedAttributes(
+    schema: ValueSchema | undefined,
+    computedAttributes: ArgumentsMap | undefined,
+  ) {
+    if (schema) {
+      const parametersMap: ParametersMap = { Value: { order: 0, schema } };
+      const argumentsMap: ArgumentsMap = computedAttributes ? { Value: computedAttributes } : { Value: {} };
+      formParametersComputedAttributes = getFormParameters(parametersMap, argumentsMap);
     }
   }
 
@@ -166,6 +187,21 @@
           </summary>
           <div class="mt-2">
             <Parameters disabled={isChild} {formParameters} on:change={onChangeFormParameters} />
+          </div>
+        </details>
+      </fieldset>
+
+      <fieldset>
+        <details open style:cursor="pointer">
+          <summary>Computed Attributes</summary>
+          <div class="mt-2">
+            <Parameters
+              disabled={true}
+              expanded
+              formParameters={formParametersComputedAttributes}
+              levelPadding={0}
+              showName={false}
+            />
           </div>
         </details>
       </fieldset>

@@ -54,6 +54,7 @@ const effects = {
 
       const activity: Activity = {
         arguments: argumentsMap,
+        attributes: null,
         child_ids: [],
         duration: null,
         id,

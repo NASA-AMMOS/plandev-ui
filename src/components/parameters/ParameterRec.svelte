@@ -2,10 +2,12 @@
 
 <script lang="ts">
   export let disabled: boolean = false;
+  export let expanded: boolean = false;
   export let formParameter: FormParameter;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let showName: boolean = true;
 
   let component: any;
 
@@ -20,4 +22,14 @@
   }
 </script>
 
-<svelte:component this={component} {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
+<svelte:component
+  this={component}
+  {disabled}
+  {expanded}
+  {formParameter}
+  {labelColumnWidth}
+  {level}
+  {levelPadding}
+  {showName}
+  on:change
+/>

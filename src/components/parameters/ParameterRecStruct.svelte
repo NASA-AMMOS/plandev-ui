@@ -8,14 +8,14 @@
   import ParameterRecError from './ParameterRecError.svelte';
 
   export let disabled: boolean = false;
+  export let expanded: boolean = false;
   export let formParameter: FormParameter<ValueSchemaStruct>;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let showName: boolean = true;
 
   const dispatch = createEventDispatcher();
-
-  let expanded: boolean = false;
 
   $: subFormParameters = getSubFormParameters(formParameter);
 
@@ -53,14 +53,18 @@
   }
 </script>
 
-<div class="parameter-rec-struct" on:click={toggleExpanded}>
-  {#if !expanded}
-    <i class="bi bi-chevron-right" />
-  {:else}
-    <i class="bi bi-chevron-down" />
-  {/if}
-  <ParameterName {formParameter} />
-</div>
+{#if showName}
+  <div class="parameter-rec-struct" on:click={toggleExpanded}>
+    {#if !expanded}
+      <i class="bi bi-chevron-right" />
+    {:else}
+      <i class="bi bi-chevron-down" />
+    {/if}
+    <ParameterName {formParameter} />
+  </div>
+{:else}
+  <div class="parameter-rec-struct" />
+{/if}
 
 {#if expanded}
   <ul style="padding-inline-start: {levelPadding}px">

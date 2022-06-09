@@ -11,14 +11,14 @@
   import ParameterRecError from './ParameterRecError.svelte';
 
   export let disabled: boolean = false;
+  export let expanded: boolean = false;
   export let formParameter: FormParameter<ValueSchemaSeries>;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let showName: boolean = true;
 
   const dispatch = createEventDispatcher();
-
-  let expanded: boolean = false;
 
   $: subFormParameters = getSubFormParameters(formParameter);
 
@@ -55,7 +55,6 @@
     const { schema } = formParameter;
     const newValue = getArgument(null, schema.items);
     const value = [...formParameter.value, newValue];
-    console.log(value);
     dispatch('change', { ...formParameter, value });
   }
 
@@ -66,37 +65,41 @@
   }
 </script>
 
-<div class="parameter-rec-series">
-  <div class="series-left" on:click={toggleExpanded}>
-    <div class="arrow">
-      {#if !expanded}
-        <i class="bi bi-chevron-right" />
-      {:else}
-        <i class="bi bi-chevron-down" />
-      {/if}
+{#if showName}
+  <div class="parameter-rec-series">
+    <div class="series-left" on:click={toggleExpanded}>
+      <div class="arrow">
+        {#if !expanded}
+          <i class="bi bi-chevron-right" />
+        {:else}
+          <i class="bi bi-chevron-down" />
+        {/if}
+      </div>
+      <ParameterName {formParameter} />
     </div>
-    <ParameterName {formParameter} />
+    <div class="series-right">
+      <CssGrid gap="3px" columns="auto auto">
+        <button
+          class="st-button icon"
+          disabled={subFormParameters?.length === 0}
+          on:click|stopPropagation={valueRemove}
+          use:tooltip={{ content: 'Remove Value', placement: 'left' }}
+        >
+          <i class="bi bi-dash fs-6" />
+        </button>
+        <button
+          class="st-button icon"
+          on:click|stopPropagation={valueAdd}
+          use:tooltip={{ content: 'Add Value', placement: 'left' }}
+        >
+          <i class="bi bi-plus fs-6" />
+        </button>
+      </CssGrid>
+    </div>
   </div>
-  <div class="series-right">
-    <CssGrid gap="3px" columns="auto auto">
-      <button
-        class="st-button icon"
-        disabled={subFormParameters?.length === 0}
-        on:click|stopPropagation={valueRemove}
-        use:tooltip={{ content: 'Remove Value', placement: 'left' }}
-      >
-        <i class="bi bi-dash fs-6" />
-      </button>
-      <button
-        class="st-button icon"
-        on:click|stopPropagation={valueAdd}
-        use:tooltip={{ content: 'Add Value', placement: 'left' }}
-      >
-        <i class="bi bi-plus fs-6" />
-      </button>
-    </CssGrid>
-  </div>
-</div>
+{:else}
+  <div class="parameter-rec-series" />
+{/if}
 
 {#if expanded}
   <ul style="padding-inline-start: {levelPadding}px">
@@ -108,6 +111,7 @@
           {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
             <ParameterRec
               {disabled}
+              {expanded}
               formParameter={subFormParameter}
               {labelColumnWidth}
               level={++level}

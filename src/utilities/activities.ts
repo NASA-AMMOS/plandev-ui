@@ -82,6 +82,7 @@ export function activityDirectiveToActivity(
 
   return {
     arguments: activityDirective.arguments,
+    attributes: activitySimulated?.attributes ?? null,
     child_ids: getChildIds(activitySimulated),
     duration: activitySimulated?.duration ?? null,
     id: activityDirective.id,
@@ -104,6 +105,7 @@ export function activitySimulatedToActivity(
 ): Activity {
   return {
     arguments: {},
+    attributes: activitySimulated.attributes,
     child_ids: getChildIds(activitySimulated),
     duration: activitySimulated.duration,
     id: activitySimulated.id,

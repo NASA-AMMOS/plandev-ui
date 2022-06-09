@@ -6,11 +6,13 @@
   import ParameterRec from './ParameterRec.svelte';
 
   export let disabled: boolean = false;
+  export let expanded: boolean = false;
   export let formParameters: FormParameter[] = [];
+  export let levelPadding: number = 20;
+  export let showName: boolean = true;
 
   let clientWidth: number;
   let level: number = 0;
-  let levelPadding: number = 20;
 
   $: labelColumnWidth = clientWidth * 0.65;
   $: sortedFormParameters = formParameters.sort((a, b) => compare(a.name, b.name));
@@ -19,7 +21,16 @@
 {#each sortedFormParameters as formParameter (formParameter.name)}
   <div bind:clientWidth class="parameter">
     {#if formParameter.schema.type === 'series' || formParameter.schema.type === 'struct'}
-      <ParameterRec {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
+      <ParameterRec
+        {disabled}
+        {expanded}
+        {formParameter}
+        {labelColumnWidth}
+        {level}
+        {levelPadding}
+        {showName}
+        on:change
+      />
     {:else}
       <ParameterBase {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
     {/if}

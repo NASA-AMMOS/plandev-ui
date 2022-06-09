@@ -20,6 +20,7 @@ type ActivityTypesMap = Record<string, ActivityType>;
 
 type Activity = {
   arguments: ArgumentsMap;
+  attributes: ActivitySimulatedAttributes | null;
   child_ids: ActivityId[];
   duration: string | null;
   id: ActivityId;
@@ -57,7 +58,7 @@ type ActivitySetInput = Partial<ActivityInsertInput>;
 
 type ActivitySimulatedAttributes = {
   arguments: ArgumentsMap;
-  computedAttributes: any; // TODO: Strongly type.
+  computedAttributes: ArgumentsMap;
 };
 
 type ActivitySimulated = {
