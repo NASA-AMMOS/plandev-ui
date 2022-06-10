@@ -22,12 +22,17 @@ export class Plan {
 
   readonly scheduleButton: Locator;
   readonly schedulingGoalDifferenceBadge: Locator;
+  readonly schedulingGoalEnabledCheckbox: Locator;
   readonly schedulingGoalInputDescription: Locator;
   readonly schedulingGoalInputEditor: Locator;
   readonly schedulingGoalInputName: Locator;
   readonly schedulingGoalSaveButton: Locator;
-  readonly schedulingGoalListItemSelector: (goalName: string) => string;
+  readonly schedulingGoalListItemSelector: string;
   readonly schedulingStatusSelector: (status: string) => string;
+
+  readonly schedulingGoalName: string = 'Recurrence Goal';
+  readonly schedulingGoalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
+  readonly schedulingGoalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
 
   constructor(page: Page) {
     this.page = page;
@@ -50,32 +55,35 @@ export class Plan {
 
     this.scheduleButton = page.locator('.status-badge > .title:has-text("Schedule")');
     this.schedulingGoalDifferenceBadge = page.locator('.difference-badge');
+    this.schedulingGoalEnabledCheckbox = page.locator(
+      `.scheduling-goal:has-text("${this.schedulingGoalName}") >> input[type="checkbox"]`,
+    );
     this.schedulingGoalInputDescription = page.locator('[name="goal-description"]');
     this.schedulingGoalInputEditor = page.locator('[data-component-name="SchedulingEditor"] >> textarea.inputarea');
     this.schedulingGoalInputName = page.locator('[name="goal-name"]');
     this.schedulingGoalSaveButton = page.locator('[data-component-name="SchedulingEditor"] >> button:has-text("Save")');
-    this.schedulingGoalListItemSelector = (goalName: string) => `.scheduling-goal:has-text("${goalName}")`;
+    this.schedulingGoalListItemSelector = `.scheduling-goal:has-text("${this.schedulingGoalName}")`;
     this.schedulingStatusSelector = (status: string) => `.status-badge > .status:has-text("${status}")`;
   }
 
-  async createSchedulingGoal(goalName: string, goalDescription: string, goalDefinition: string) {
+  async createSchedulingGoal() {
     await expect(this.schedulingGoalSaveButton).toBeDisabled();
 
     await this.schedulingGoalInputName.focus();
-    await this.schedulingGoalInputName.fill(goalName);
+    await this.schedulingGoalInputName.fill(this.schedulingGoalName);
     await this.schedulingGoalInputName.evaluate(e => e.blur());
 
     await this.schedulingGoalInputDescription.focus();
-    await this.schedulingGoalInputDescription.fill(goalDescription);
+    await this.schedulingGoalInputDescription.fill(this.schedulingGoalDescription);
     await this.schedulingGoalInputDescription.evaluate(e => e.blur());
 
     await this.schedulingGoalInputEditor.focus();
-    await this.schedulingGoalInputEditor.fill(goalDefinition);
+    await this.schedulingGoalInputEditor.fill(this.schedulingGoalDefinition);
     await this.schedulingGoalInputEditor.evaluate(e => e.blur());
 
     await expect(this.schedulingGoalSaveButton).not.toBeDisabled();
     await this.schedulingGoalSaveButton.click();
-    await this.page.waitForSelector(this.schedulingGoalListItemSelector(goalName), { state: 'visible', strict: true });
+    await this.page.waitForSelector(this.schedulingGoalListItemSelector, { state: 'visible', strict: true });
   }
 
   /**

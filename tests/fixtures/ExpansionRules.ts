@@ -46,7 +46,7 @@ export class ExpansionRules {
     );
   }
 
-  async creatExpansionRule(baseURL: string, commandDictionaryName: string, modelName: string) {
+  async createExpansionRule(baseURL: string | undefined, commandDictionaryName: string, modelName: string) {
     await this.goto();
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();

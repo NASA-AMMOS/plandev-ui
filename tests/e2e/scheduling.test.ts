@@ -31,12 +31,23 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Scheduling', () => {
-  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
+  test('Create scheduling goal', async () => {
     await plan.showSchedulingLayout();
-    const goalName = 'Recurrence Goal';
-    const goalDescription = 'Add a BakeBananaBread activity every 12 hours';
-    const goalDefinition = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
-    await plan.createSchedulingGoal(goalName, goalDescription, goalDefinition);
+    await plan.createSchedulingGoal();
+  });
+
+  test('Disabling a scheduling goal should not include that goal in a scheduling run ', async () => {
+    await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
+    await plan.schedulingGoalEnabledCheckbox.uncheck();
+    await expect(plan.schedulingGoalEnabledCheckbox).not.toBeChecked();
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
+    await plan.schedulingGoalEnabledCheckbox.check();
+  });
+
+  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
     await plan.runScheduling();
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
     await plan.runScheduling();

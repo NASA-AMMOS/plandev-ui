@@ -36,11 +36,11 @@ test.afterAll(async () => {
 
 test.describe.serial('Expansion', () => {
   test('Create expansion rule', async ({ baseURL }) => {
-    await expansionRules.creatExpansionRule(baseURL, dictionaries.dictionaryName, models.modelName);
+    await expansionRules.createExpansionRule(baseURL, dictionaries.dictionaryName, models.modelName);
   });
 
   test('Create expansion set', async ({ baseURL }) => {
-    await expansionSets.creatExpansionSet(baseURL, dictionaries.dictionaryName, models.modelName);
+    await expansionSets.createExpansionSet(baseURL, dictionaries.dictionaryName, models.modelName);
   });
 
   test('Delete expansion rule', async () => {
