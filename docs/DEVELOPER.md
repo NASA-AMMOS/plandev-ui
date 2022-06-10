@@ -80,7 +80,7 @@ Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The ap
 
 ## Building For Production
 
-Run `npm run build` to build a production version the project. The build artifacts will be stored in the `build/` directory.
+Run `npm run build` to build a production version of the project. The build artifacts will be stored in the `build/` directory.
 
 ## Before You Commit
 
