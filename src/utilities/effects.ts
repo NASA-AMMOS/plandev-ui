@@ -632,31 +632,6 @@ const effects = {
     }
   },
 
-  async getActivityTsFiles(
-    activityTypeName: string | null | undefined,
-    modelId: number | null | undefined,
-  ): Promise<TypeScriptFile[]> {
-    if (activityTypeName !== null && activityTypeName !== undefined && modelId !== null && modelId !== undefined) {
-      try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
-        const { activity } = data;
-        const { reason, status, typescriptFiles } = activity;
-
-        if (status === 'success') {
-          return typescriptFiles;
-        } else {
-          console.log(reason);
-          return [];
-        }
-      } catch (e) {
-        console.log(e);
-        return [];
-      }
-    } else {
-      return [];
-    }
-  },
-
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {
@@ -668,46 +643,6 @@ const effects = {
         return [];
       }
     } else {
-      return [];
-    }
-  },
-
-  async getCommandTsFiles(commandDictionaryId: number | null | undefined): Promise<TypeScriptFile[]> {
-    if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
-      try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
-        const { command } = data;
-        const { reason, status, typescriptFiles } = command;
-
-        if (status === 'success') {
-          return typescriptFiles;
-        } else {
-          console.log(reason);
-          return [];
-        }
-      } catch (e) {
-        console.log(e);
-        return [];
-      }
-    } else {
-      return [];
-    }
-  },
-
-  async getConstraintsTsFiles(model_id: number): Promise<TypeScriptFile[]> {
-    try {
-      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_CONSTRAINTS_TYPESCRIPT, { model_id });
-      const { constraintsTypeScript } = data;
-      const { reason, status, typescriptFiles } = constraintsTypeScript;
-
-      if (status === 'success') {
-        return typescriptFiles;
-      } else {
-        console.log(reason);
-        return [];
-      }
-    } catch (e) {
-      console.log(e);
       return [];
     }
   },
@@ -834,24 +769,6 @@ const effects = {
     }
   },
 
-  async getSchedulingTsFiles(model_id: number): Promise<TypeScriptFile[]> {
-    try {
-      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_SCHEDULING_TYPESCRIPT, { model_id });
-      const { schedulingTypeScript } = data;
-      const { reason, status, typescriptFiles } = schedulingTypeScript;
-
-      if (status === 'success') {
-        return typescriptFiles;
-      } else {
-        console.log(reason);
-        return [];
-      }
-    } catch (e) {
-      console.log(e);
-      return [];
-    }
-  },
-
   async getSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
     try {
       const data = await reqHasura<SeqId>(gql.GET_SEQUENCE_ID, { simulated_activity_id, simulation_dataset_id });
@@ -877,6 +794,94 @@ const effects = {
     } catch (e) {
       console.log(e);
       return null;
+    }
+  },
+
+  async getTsFilesActivityType(
+    activityTypeName: string | null | undefined,
+    modelId: number | null | undefined,
+  ): Promise<TypeScriptFile[]> {
+    if (activityTypeName !== null && activityTypeName !== undefined && modelId !== null && modelId !== undefined) {
+      try {
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_ACTIVITY_TYPE, {
+          activityTypeName,
+          modelId,
+        });
+        const { dslTypeScriptResponse } = data;
+        const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
+      } catch (e) {
+        console.log(e);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  },
+
+  async getTsFilesCommandDictionary(commandDictionaryId: number | null | undefined): Promise<TypeScriptFile[]> {
+    if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
+      try {
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_COMMAND_DICTIONARY, {
+          commandDictionaryId,
+        });
+        const { dslTypeScriptResponse } = data;
+        const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
+      } catch (e) {
+        console.log(e);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  },
+
+  async getTsFilesConstraints(model_id: number): Promise<TypeScriptFile[]> {
+    try {
+      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id });
+      const { dslTypeScriptResponse } = data;
+      const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+
+      if (status === 'success') {
+        return typescriptFiles;
+      } else {
+        console.log(reason);
+        return [];
+      }
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
+  async getTsFilesScheduling(model_id: number): Promise<TypeScriptFile[]> {
+    try {
+      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id });
+      const { dslTypeScriptResponse } = data;
+      const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+
+      if (status === 'success') {
+        return typescriptFiles;
+      } else {
+        console.log(reason);
+        return [];
+      }
+    } catch (e) {
+      console.log(e);
+      return [];
     }
   },
 

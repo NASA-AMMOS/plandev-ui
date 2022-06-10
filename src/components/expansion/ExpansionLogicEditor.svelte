@@ -13,21 +13,21 @@
   export let ruleModelId: number | null = null;
   export let title: string = 'Expansion Rule - Logic Editor';
 
-  let activityTsFiles: TypeScriptFile[] = [];
-  let commandTsFiles: TypeScriptFile[] = [];
+  let activityTypeTsFiles: TypeScriptFile[] = [];
+  let commandDictionaryTsFiles: TypeScriptFile[] = [];
   let monaco: Monaco;
 
-  $: effects.getCommandTsFiles(ruleDictionaryId).then(tsFiles => (commandTsFiles = tsFiles));
-  $: effects.getActivityTsFiles(ruleActivityType, ruleModelId).then(tsFiles => (activityTsFiles = tsFiles));
+  $: effects.getTsFilesCommandDictionary(ruleDictionaryId).then(tsFiles => (commandDictionaryTsFiles = tsFiles));
+  $: effects.getTsFilesActivityType(ruleActivityType, ruleModelId).then(tsFiles => (activityTypeTsFiles = tsFiles));
 
-  $: if (monaco !== undefined && (commandTsFiles !== undefined || activityTsFiles !== undefined)) {
+  $: if (monaco !== undefined && (commandDictionaryTsFiles !== undefined || activityTypeTsFiles !== undefined)) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
-    typescriptDefaults.setExtraLibs([...commandTsFiles, ...activityTsFiles]);
+    typescriptDefaults.setExtraLibs([...commandDictionaryTsFiles, ...activityTypeTsFiles]);
   }
 </script>
 

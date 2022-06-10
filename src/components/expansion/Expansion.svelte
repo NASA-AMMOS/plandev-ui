@@ -104,7 +104,7 @@
                   </button>
                 </Table>
               {:else}
-                No Sequences for Simulation Dataset {$simulationDatasetId}
+                No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
               {/if}
             </div>
           {/if}

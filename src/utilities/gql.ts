@@ -251,19 +251,6 @@ const gql = {
     }
   `,
 
-  GET_ACTIVITY_TYPESCRIPT: `#graphql
-    query GetActivityTypeScript($activityTypeName: String!, $modelId: Int!) {
-      activity: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
-      }
-    }
-  `,
-
   GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
     query GetActivityTypesExpansionRules($modelId: Int!) {
       activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
@@ -277,32 +264,6 @@ const gql = {
           updated_at
         }
         name
-      }
-    }
-  `,
-
-  GET_COMMAND_TYPESCRIPT: `#graphql
-    query GetCommandTypeScript($commandDictionaryId: Int!) {
-      command: getCommandTypeScript(commandDictionaryId: $commandDictionaryId) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
-      }
-    }
-  `,
-
-  GET_CONSTRAINTS_TYPESCRIPT: `#graphql
-    query GetConstraintsTypeScript($model_id: ID!) {
-      constraintsTypeScript: constraintsDslTypescript(missionModelId: $model_id) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
       }
     }
   `,
@@ -463,19 +424,6 @@ const gql = {
     }
   `,
 
-  GET_SCHEDULING_TYPESCRIPT: `#graphql
-    query GetSchedulingTypeScript($model_id: Int!) {
-      schedulingTypeScript: schedulingDslTypescript(missionModelId: $model_id) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
-      }
-    }
-  `,
-
   GET_SEQUENCE_ID: `#graphql
     query GetSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
       sequence: sequence_to_simulated_activity_by_pk(
@@ -501,6 +449,58 @@ const gql = {
             type
           }
           type
+        }
+      }
+    }
+  `,
+
+  GET_TYPESCRIPT_ACTIVITY_TYPE: `#graphql
+    query GetTypeScriptActivityType($activityTypeName: String!, $modelId: Int!) {
+      dslTypeScriptResponse: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
+      }
+    }
+  `,
+
+  GET_TYPESCRIPT_COMMAND_DICTIONARY: `#graphql
+    query GetTypeScriptCommandDictionary($commandDictionaryId: Int!) {
+      dslTypeScriptResponse: getCommandTypeScript(commandDictionaryId: $commandDictionaryId) {
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
+      }
+    }
+  `,
+
+  GET_TYPESCRIPT_CONSTRAINTS: `#graphql
+    query GetTypeScriptConstraints($model_id: ID!) {
+      dslTypeScriptResponse: constraintsDslTypescript(missionModelId: $model_id) {
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
+      }
+    }
+  `,
+
+  GET_TYPESCRIPT_SCHEDULING: `#graphql
+    query GetTypeScriptScheduling($model_id: Int!) {
+      dslTypeScriptResponse: schedulingDslTypescript(missionModelId: $model_id) {
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
         }
       }
     }

@@ -65,17 +65,17 @@
       const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialConstraintsTsFiles = await effects.getConstraintsTsFiles(initialPlan.model.id);
         const initialResourceTypes = await effects.getResourceTypes(initialPlan.model.id);
-        const initialSchedulingTsFiles = await effects.getSchedulingTsFiles(initialPlan.model.id);
+        const initialTsFilesConstraints = await effects.getTsFilesConstraints(initialPlan.model.id);
+        const initialTsFilesScheduling = await effects.getTsFilesScheduling(initialPlan.model.id);
         const initialView = await effects.getView(url.searchParams);
 
         return {
           props: {
-            initialConstraintsTsFiles,
             initialPlan,
             initialResourceTypes,
-            initialSchedulingTsFiles,
+            initialTsFilesConstraints,
+            initialTsFilesScheduling,
             initialView,
           },
         };
@@ -90,10 +90,10 @@
 </script>
 
 <script lang="ts">
-  export let initialConstraintsTsFiles: TypeScriptFile[];
   export let initialPlan: Plan | null;
   export let initialResourceTypes: ResourceType[];
-  export let initialSchedulingTsFiles: TypeScriptFile[];
+  export let initialTsFilesConstraints: TypeScriptFile[];
+  export let initialTsFilesScheduling: TypeScriptFile[];
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
@@ -114,10 +114,6 @@
     Views,
   };
 
-  $: if (initialConstraintsTsFiles) {
-    $constraintsTsFiles = initialConstraintsTsFiles;
-  }
-
   $: if (initialPlan) {
     $activitiesMap = keyBy(initialPlan.activities, 'id');
     $modelConstraints = initialPlan.model.constraints;
@@ -136,8 +132,12 @@
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }
 
-  $: if (initialSchedulingTsFiles) {
-    $schedulingTsFiles = initialSchedulingTsFiles;
+  $: if (initialTsFilesConstraints) {
+    $constraintsTsFiles = initialTsFilesConstraints;
+  }
+
+  $: if (initialTsFilesScheduling) {
+    $schedulingTsFiles = initialTsFilesScheduling;
   }
 
   $: if (initialView) {

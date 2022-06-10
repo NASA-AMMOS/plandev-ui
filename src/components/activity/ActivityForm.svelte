@@ -238,7 +238,7 @@
               on:change={updateSequenceToActivity}
             >
               {#if !$filteredSequences.length}
-                <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId}</option>
+                <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
               {:else}
                 <option value={null} />
                 {#each $filteredSequences as sequence}
