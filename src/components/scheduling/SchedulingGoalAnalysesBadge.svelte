@@ -4,6 +4,7 @@
   import { difference } from 'lodash-es';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
+  export let enabled: boolean;
 
   let currentAnalysis: SchedulingGoalAnalysis | null = null;
   let previousAnalysis: SchedulingGoalAnalysis | null = null;
@@ -24,17 +25,17 @@
 </script>
 
 {#if currentAnalysis}
-  <div class="scheduling-goal-analyses-badge">
+  <div class="scheduling-goal-analyses-badge" class:disabled={!enabled}>
     {#if satisfyingActivitiesDifference !== null}
-      <div class="difference-badge">
+      <div class="difference-badge" class:disabled={!enabled}>
         +{satisfyingActivitiesDifference}
       </div>
     {/if}
     {currentAnalysis.satisfying_activities.length}
     {#if currentAnalysis.satisfied}
-      <i class="bi bi-check-circle-fill" style:color="var(--st-primary-50)" />
+      <i class="bi bi-check-circle-fill satisfied" class:disabled={!enabled} />
     {:else}
-      <i class="bi bi-x-circle-fill" style:color="var(--st-red)" />
+      <i class="bi bi-x-circle-fill unsatisfied" class:disabled={!enabled} />
     {/if}
   </div>
 {/if}
@@ -68,5 +69,20 @@
     display: inline-flex;
     justify-content: center;
     padding: 2px;
+  }
+
+  .satisfied {
+    color: var(--st-primary-50);
+  }
+
+  .unsatisfied {
+    color: var(--st-red);
+  }
+
+  .difference-badge.disabled,
+  .satisfied.disabled,
+  .scheduling-goal-analyses-badge.disabled,
+  .unsatisfied.disabled {
+    color: var(--st-gray-30);
   }
 </style>

@@ -42,12 +42,14 @@ type SchedulingSpec = {
 type SchedulingSpecInsertInput = Omit<SchedulingSpec, 'id' | 'revision'>;
 
 type SchedulingSpecGoal = {
+  enabled: boolean;
   goal: SchedulingGoal;
   priority: number;
   specification_id: number;
 };
 
 type SchedulingSpecGoalInsertInput = {
+  enabled: boolean;
   goal_id: number;
   specification_id: number;
 };

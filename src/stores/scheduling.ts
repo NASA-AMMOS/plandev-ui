@@ -1,5 +1,6 @@
 import { derived, writable, type Writable } from 'svelte/store';
 import { plan } from '../stores/plan';
+import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { getGqlSubscribable } from './subscribable';
@@ -10,6 +11,8 @@ export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
   gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: -1 },
   [],
+  (specGoals: SchedulingSpecGoal[]) =>
+    specGoals.sort((specGoalA, specGoalB) => compare(specGoalA.priority, specGoalB.priority)),
 );
 
 export const schedulingStatus: Writable<Status> = writable(Status.Clean);

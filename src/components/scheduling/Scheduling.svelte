@@ -32,7 +32,12 @@
       <div class="pt-1">No scheduling goals found</div>
     {:else}
       {#each $schedulingSpecGoals as specGoal}
-        <SchedulingGoal goal={specGoal.goal} priority={specGoal.priority} />
+        <SchedulingGoal
+          enabled={specGoal.enabled}
+          goal={specGoal.goal}
+          priority={specGoal.priority}
+          specificationId={specGoal.specification_id}
+        />
       {/each}
     {/if}
   </svelte:fragment>

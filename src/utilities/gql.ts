@@ -91,6 +91,7 @@ const gql = {
   CREATE_SCHEDULING_SPEC_GOAL: `#graphql
     mutation CreateSchedulingSpecGoal($spec_goal: scheduling_specification_goals_insert_input!) {
       createSchedulingSpecGoal: insert_scheduling_specification_goals_one(object: $spec_goal) {
+        enabled
         goal_id
         priority
         specification_id
@@ -621,6 +622,7 @@ const gql = {
   SUB_SCHEDULING_SPEC_GOALS: `#graphql
     subscription SubSchedulingSpecGoals($specification_id: Int!) {
       specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
+        enabled
         goal {
           analyses(order_by: { request: { specification_revision: desc } }, limit: 2) {
             satisfied
@@ -731,6 +733,22 @@ const gql = {
         pk_columns: { id: $id }, _set: $spec
       ) {
         id
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_SPEC_GOAL: `#graphql
+    mutation UpdateSchedulingSpecGoal(
+      $goal_id: Int!,
+      $specification_id: Int!,
+      $spec_goal: scheduling_specification_goals_set_input!
+    ) {
+      updateSchedulingSpecGoal: update_scheduling_specification_goals_by_pk(
+        pk_columns: { goal_id: $goal_id, specification_id:$specification_id },
+        _set: $spec_goal
+      ) {
+        goal_id
+        specification_id
       }
     }
   `,

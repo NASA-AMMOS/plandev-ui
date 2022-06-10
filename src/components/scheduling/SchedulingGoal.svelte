@@ -11,15 +11,17 @@
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
+  export let enabled: boolean;
   export let goal: SchedulingGoal;
   export let priority: number;
+  export let specificationId: number;
 
   let contextMenu: ContextMenu;
   let expanded = false;
 </script>
 
 <div class="scheduling-goal" on:contextmenu|preventDefault={e => contextMenu.show(e)}>
-  <div class="left">
+  <div class="left" class:disabled={!enabled}>
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="bi-calendar-range" />
     <span class="scheduling-goal-name" use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}>
@@ -27,16 +29,30 @@
     </span>
   </div>
   <div class="right">
-    <SchedulingGoalAnalysesBadge analyses={goal.analyses} />
+    <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
     <Input>
-      <input class="st-input" disabled style:width="50px" value={priority} />
-      <input checked disabled type="checkbox" slot="right" />
+      <input
+        bind:value={priority}
+        class="st-input"
+        disabled={!enabled}
+        min="0"
+        style:width="65px"
+        type="number"
+        on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority })}
+      />
+      <input
+        bind:checked={enabled}
+        slot="right"
+        style:cursor="pointer"
+        type="checkbox"
+        on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled })}
+      />
     </Input>
   </div>
 </div>
 
 {#if expanded}
-  <ul>
+  <ul class:disabled={!enabled}>
     <li>
       <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
     </li>
@@ -82,6 +98,11 @@
     flex-grow: 1;
     gap: 10px;
     overflow: hidden;
+  }
+
+  ul.disabled *,
+  .left.disabled {
+    color: var(--st-gray-30);
   }
 
   .left > i:first-child {

@@ -268,6 +268,7 @@ const effects = {
 
       const specId = get(selectedSpecId);
       const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
+        enabled: true,
         goal_id: newGoal.id,
         specification_id: specId,
       };
@@ -1195,6 +1196,20 @@ const effects = {
       await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec });
     } catch (e) {
       console.log(e);
+    }
+  },
+
+  async updateSchedulingSpecGoal(
+    goal_id: number,
+    specification_id: number,
+    spec_goal: Partial<SchedulingSpecGoal>,
+  ): Promise<void> {
+    try {
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_GOAL, { goal_id, spec_goal, specification_id });
+      showSuccessToast('Scheduling Spec Goal Updated Successfully');
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Scheduling Spec Goal Update Failed');
     }
   },
 
