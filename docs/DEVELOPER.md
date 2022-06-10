@@ -8,7 +8,7 @@ This document describes how to set up your development environment to build and 
 - [Getting the Sources](#getting-the-sources)
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
-- [Building](#building)
+- [Building For Production](#building-for-production)
 - [Before You Commit](#before-you-commit)
 
 ## Prerequisite Knowledge
@@ -53,6 +53,7 @@ The recommended editor for developing aerie-ui is [VS Code](https://code.visuals
 1. [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 1. [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 1. [EditorConfig for VS Code](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig)
+1. [GraphQL](https://marketplace.visualstudio.com/items?itemName=GraphQL.vscode-graphql)
 1. [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense)
 1. [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
@@ -77,9 +78,9 @@ npm install
 
 Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The app will automatically reload if you change any of the source files.
 
-## Building
+## Building For Production
 
-Run `npm run build` to build the project. The build artifacts will be stored in the `build/` directory.
+Run `npm run build` to build a production version the project. The build artifacts will be stored in the `build/` directory.
 
 ## Before You Commit
 
