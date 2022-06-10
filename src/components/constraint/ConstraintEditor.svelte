@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { constraintsTsExtraLibs, selectedConstraint } from '../../stores/constraints';
+  import { constraintsTsFiles, selectedConstraint } from '../../stores/constraints';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -32,14 +32,14 @@
 
   $: valid = definition !== '';
 
-  $: if (monaco !== undefined && $constraintsTsExtraLibs !== undefined) {
+  $: if (monaco !== undefined && $constraintsTsFiles !== undefined) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
-    typescriptDefaults.setExtraLibs($constraintsTsExtraLibs);
+    typescriptDefaults.setExtraLibs($constraintsTsFiles);
   }
 
   async function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {

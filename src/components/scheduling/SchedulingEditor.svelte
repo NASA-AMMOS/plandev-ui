@@ -3,7 +3,7 @@
 <script lang="ts">
   import { session } from '$app/stores';
   import { field } from '../../stores/form';
-  import { schedulingTsExtraLibs, selectedGoalId, selectedSpecGoal } from '../../stores/scheduling';
+  import { schedulingTsFiles, selectedGoalId, selectedSpecGoal } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
   import { required } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
@@ -30,14 +30,14 @@
 
   $: saveButtonEnabled = $definitionField.dirtyAndValid && $nameField.dirtyAndValid;
 
-  $: if (monaco !== undefined && $schedulingTsExtraLibs !== undefined) {
+  $: if (monaco !== undefined && $schedulingTsFiles !== undefined) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
-    typescriptDefaults.setExtraLibs($schedulingTsExtraLibs);
+    typescriptDefaults.setExtraLibs($schedulingTsFiles);
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {

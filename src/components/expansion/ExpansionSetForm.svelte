@@ -15,6 +15,7 @@
 
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
   let lastSelectedExpansionRule: ExpansionRule | null = null;
+  let logicEditorActivityType: string | null = null;
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
   let logicEditorTitle: string = 'Expansion Rule - Logic Editor (Read-only)';
   let saveButtonEnabled: boolean = false;
@@ -27,6 +28,7 @@
     .getActivityTypesExpansionRules(setModelId)
     .then(activity_types => (activityTypesExpansionRules = activity_types));
 
+  $: logicEditorActivityType = lastSelectedExpansionRule?.activity_type ?? null;
   $: logicEditorRuleLogic = lastSelectedExpansionRule?.expansion_logic ?? 'No Expansion Rule Selected';
   $: logicEditorTitle = lastSelectedExpansionRule
     ? `Expansion Rule - Logic Editor - ${lastSelectedExpansionRule.activity_type} - Rule ${lastSelectedExpansionRule.id} (Read-only)`
@@ -150,7 +152,14 @@
 
   <CssGridGutter track={1} type="column" />
 
-  <ExpansionLogicEditor readOnly={true} ruleLogic={logicEditorRuleLogic} title={logicEditorTitle} />
+  <ExpansionLogicEditor
+    readOnly={true}
+    ruleActivityType={logicEditorActivityType}
+    ruleDictionaryId={setDictionaryId}
+    ruleLogic={logicEditorRuleLogic}
+    ruleModelId={setModelId}
+    title={logicEditorTitle}
+  />
 </CssGrid>
 
 <style>

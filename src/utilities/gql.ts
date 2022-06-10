@@ -254,7 +254,12 @@ const gql = {
   GET_ACTIVITY_TYPESCRIPT: `#graphql
     query GetActivityTypeScript($activityTypeName: String!, $modelId: Int!) {
       activity: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
-        typescript
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
       }
     }
   `,
@@ -279,7 +284,12 @@ const gql = {
   GET_COMMAND_TYPESCRIPT: `#graphql
     query GetCommandTypeScript($commandDictionaryId: Int!) {
       command: getCommandTypeScript(commandDictionaryId: $commandDictionaryId) {
-        typescript
+        reason
+        status
+        typescriptFiles {
+          content
+          filePath
+        }
       }
     }
   `,

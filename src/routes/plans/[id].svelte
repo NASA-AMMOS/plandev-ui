@@ -23,7 +23,7 @@
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, resetActivityStores } from '../../stores/activities';
   import {
-    constraintsTsExtraLibs,
+    constraintsTsFiles,
     modelConstraints,
     planConstraints,
     resetConstraintStores,
@@ -37,7 +37,7 @@
     viewTimeRange,
   } from '../../stores/plan';
   import { resetResourceStores, resourceTypes } from '../../stores/resources';
-  import { resetSchedulingStores, schedulingStatus, schedulingTsExtraLibs } from '../../stores/scheduling';
+  import { resetSchedulingStores, schedulingStatus, schedulingTsFiles } from '../../stores/scheduling';
   import {
     modelParametersMap,
     resetSimulationStores,
@@ -65,17 +65,17 @@
       const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialConstraintsTsExtraLibs = await effects.getConstraintsTsExtraLibs(initialPlan.model.id);
+        const initialConstraintsTsFiles = await effects.getConstraintsTsFiles(initialPlan.model.id);
         const initialResourceTypes = await effects.getResourceTypes(initialPlan.model.id);
-        const initialSchedulingTsExtraLibs = await effects.getSchedulingTsExtraLibs(initialPlan.model.id);
+        const initialSchedulingTsFiles = await effects.getSchedulingTsFiles(initialPlan.model.id);
         const initialView = await effects.getView(url.searchParams);
 
         return {
           props: {
-            initialConstraintsTsExtraLibs,
+            initialConstraintsTsFiles,
             initialPlan,
             initialResourceTypes,
-            initialSchedulingTsExtraLibs,
+            initialSchedulingTsFiles,
             initialView,
           },
         };
@@ -90,10 +90,10 @@
 </script>
 
 <script lang="ts">
-  export let initialConstraintsTsExtraLibs: TypeScriptExtraLib[];
+  export let initialConstraintsTsFiles: TypeScriptFile[];
   export let initialPlan: Plan | null;
   export let initialResourceTypes: ResourceType[];
-  export let initialSchedulingTsExtraLibs: TypeScriptExtraLib[];
+  export let initialSchedulingTsFiles: TypeScriptFile[];
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
@@ -114,8 +114,8 @@
     Views,
   };
 
-  $: if (initialConstraintsTsExtraLibs) {
-    $constraintsTsExtraLibs = initialConstraintsTsExtraLibs;
+  $: if (initialConstraintsTsFiles) {
+    $constraintsTsFiles = initialConstraintsTsFiles;
   }
 
   $: if (initialPlan) {
@@ -136,8 +136,8 @@
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }
 
-  $: if (initialSchedulingTsExtraLibs) {
-    $schedulingTsExtraLibs = initialSchedulingTsExtraLibs;
+  $: if (initialSchedulingTsFiles) {
+    $schedulingTsFiles = initialSchedulingTsFiles;
   }
 
   $: if (initialView) {

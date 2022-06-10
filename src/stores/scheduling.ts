@@ -14,7 +14,7 @@ export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
 
 export const schedulingStatus: Writable<Status> = writable(Status.Clean);
 
-export const schedulingTsExtraLibs: Writable<TypeScriptExtraLib[]> = writable([]);
+export const schedulingTsFiles: Writable<TypeScriptFile[]> = writable([]);
 
 export const selectedGoalId: Writable<number | null> = writable(null);
 
@@ -36,6 +36,6 @@ export const selectedSpecGoal = derived(
 
 export function resetSchedulingStores() {
   schedulingStatus.set(Status.Clean);
-  schedulingTsExtraLibs.set([]);
+  schedulingTsFiles.set([]);
   selectedGoalId.set(null);
 }

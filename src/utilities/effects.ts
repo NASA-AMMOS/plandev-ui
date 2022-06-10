@@ -1,4 +1,4 @@
-import { isNil, keyBy } from 'lodash-es';
+import { keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { modelConstraints, planConstraints, selectedConstraint, violations } from '../stores/constraints';
@@ -632,27 +632,33 @@ const effects = {
     }
   },
 
-  async getActivityTypeScript(
+  async getActivityTsFiles(
     activityTypeName: string | null | undefined,
     modelId: number | null | undefined,
-  ): Promise<string> {
-    if (!isNil(activityTypeName) && !isNil(modelId)) {
+  ): Promise<TypeScriptFile[]> {
+    if (activityTypeName !== null && activityTypeName !== undefined && modelId !== null && modelId !== undefined) {
       try {
-        const data = await reqHasura(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_ACTIVITY_TYPESCRIPT, { activityTypeName, modelId });
         const { activity } = data;
-        const { typescript } = activity;
-        return typescript;
+        const { reason, status, typescriptFiles } = activity;
+
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
       } catch (e) {
         console.log(e);
-        return '';
+        return [];
       }
     } else {
-      return '';
+      return [];
     }
   },
 
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
-    if (!isNil(modelId)) {
+    if (modelId !== null && modelId !== undefined) {
       try {
         const data = await reqHasura<ActivityTypeExpansionRules[]>(gql.GET_ACTIVITY_TYPES_EXPANSION_RULES, { modelId });
         const { activity_types } = data;
@@ -666,30 +672,36 @@ const effects = {
     }
   },
 
-  async getCommandTypeScript(commandDictionaryId: number | null | undefined): Promise<string> {
-    if (!isNil(commandDictionaryId)) {
+  async getCommandTsFiles(commandDictionaryId: number | null | undefined): Promise<TypeScriptFile[]> {
+    if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
       try {
-        const data = await reqHasura(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_COMMAND_TYPESCRIPT, { commandDictionaryId });
         const { command } = data;
-        const { typescript } = command;
-        return typescript;
+        const { reason, status, typescriptFiles } = command;
+
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
       } catch (e) {
         console.log(e);
-        return '';
+        return [];
       }
     } else {
-      return '';
+      return [];
     }
   },
 
-  async getConstraintsTsExtraLibs(model_id: number): Promise<TypeScriptExtraLib[]> {
+  async getConstraintsTsFiles(model_id: number): Promise<TypeScriptFile[]> {
     try {
-      const data = await reqHasura<TypeScriptResponse>(gql.GET_CONSTRAINTS_TYPESCRIPT, { model_id });
+      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_CONSTRAINTS_TYPESCRIPT, { model_id });
       const { constraintsTypeScript } = data;
-      const { reason, status, typescriptFiles: tsExtraLibs } = constraintsTypeScript;
+      const { reason, status, typescriptFiles } = constraintsTypeScript;
 
       if (status === 'success') {
-        return tsExtraLibs;
+        return typescriptFiles;
       } else {
         console.log(reason);
         return [];
@@ -822,14 +834,14 @@ const effects = {
     }
   },
 
-  async getSchedulingTsExtraLibs(model_id: number): Promise<TypeScriptExtraLib[]> {
+  async getSchedulingTsFiles(model_id: number): Promise<TypeScriptFile[]> {
     try {
-      const data = await reqHasura<TypeScriptResponse>(gql.GET_SCHEDULING_TYPESCRIPT, { model_id });
+      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_SCHEDULING_TYPESCRIPT, { model_id });
       const { schedulingTypeScript } = data;
-      const { reason, status, typescriptFiles: tsExtraLibs } = schedulingTypeScript;
+      const { reason, status, typescriptFiles } = schedulingTypeScript;
 
       if (status === 'success') {
-        return tsExtraLibs;
+        return typescriptFiles;
       } else {
         console.log(reason);
         return [];

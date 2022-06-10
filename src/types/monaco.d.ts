@@ -4,13 +4,13 @@ interface Window {
   MonacoEnvironment: Monaco.Environment;
 }
 
-type TypeScriptResponse = {
+type DslTypeScriptResponse = {
   reason: string;
   status: 'failure' | 'success';
-  typescriptFiles: TypeScriptExtraLib[];
+  typescriptFiles: TypeScriptFile[];
 };
 
-type TypeScriptExtraLib = {
+type TypeScriptFile = {
   content: string;
   filePath: string;
 };
