@@ -31,6 +31,29 @@ Before you can build aerie-ui, you must install and configure the following prod
   brew install node
   ```
 
+- [Docker](https://www.docker.com/) which is used to run the Aerie services.
+
+- [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download and build Aerie:
+
+  ```sh
+  git clone https://github.com/NASA-AMMOS/aerie.git
+  cd aerie
+  ./gradlew assemble
+
+  # Notice we exclude the aerie_ui since we run it locally (i.e. not in Docker) for development.
+  docker-compose up --build --detach aerie_commanding aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 hasura postgres
+  ```
+
+  To stop and clean the Aerie services do:
+
+  ```sh
+  cd aerie
+  docker-compose down
+  docker rmi aerie_commanding aerie_merlin aerie_scheduler aerie_aerie_merlin_worker_1 aerie_aerie_merlin_worker_2
+  docker volume prune --force
+  ./gradlew clean
+  ```
+
 ## Code Editor
 
 The recommended editor for developing aerie-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate the code formatting settings.
