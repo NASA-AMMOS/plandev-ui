@@ -4,7 +4,7 @@
   import { afterUpdate, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
   import { selectedActivityId } from '../../stores/activities';
-  import { violations } from '../../stores/constraints';
+  import { constraintViolations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
   import { view, viewActions } from '../../stores/views';
@@ -112,7 +112,7 @@
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
-      constraintViolations={$violations}
+      constraintViolations={$constraintViolations}
       drawHeight={xAxisDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
@@ -139,7 +139,7 @@
     {#each rows as row (row.id)}
       <TimelineRow
         autoAdjustHeight={row.autoAdjustHeight}
-        constraintViolations={$violations}
+        constraintViolations={$constraintViolations}
         drawHeight={row.height}
         {drawWidth}
         horizontalGuides={row.horizontalGuides}

@@ -13,15 +13,17 @@ type ConstraintInsertInput = Omit<Constraint, 'id'>;
 type ConstraintType = 'model' | 'plan';
 
 type ConstraintViolationAssociations = {
-  activityIds?: number[];
-  resourceIds?: string[];
+  activityInstanceIds: number[];
+  resourceIds: string[];
 };
 
 type ConstraintViolation = {
   associations: ConstraintViolationAssociations;
-  constraint: Pick<Constraint, 'name'>;
+  constraintName: Constraint['name'];
   windows: TimeRange[];
 };
+
+type ConstraintViolationsMap = Record<Constraint['name'], Omit<ConstraintViolation, 'constraintName'>[]>;
 
 type MouseOverViolations = {
   e: MouseEvent;

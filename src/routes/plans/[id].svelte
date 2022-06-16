@@ -23,6 +23,7 @@
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, resetActivityStores } from '../../stores/activities';
   import {
+    checkConstraintsStatus,
     constraintsTsFiles,
     modelConstraints,
     planConstraints,
@@ -198,6 +199,7 @@
       <NavButton
         icon="bi bi-braces-asterisk"
         selected={$view.plan.layout?.gridName === 'Constraints'}
+        status={$checkConstraintsStatus}
         title="Constraints"
         on:click={() => viewActions.setLayout('Constraints')}
       />

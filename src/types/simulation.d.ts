@@ -38,14 +38,8 @@ type SimulationDataset = {
   id: number;
 };
 
-type SimulationResponseViolation = Omit<ConstraintViolation, 'constraint'>;
-
 type SimulationStatus = 'complete' | 'failed' | 'incomplete' | 'pending';
 
 type SimulationResponse = {
-  results?: {
-    constraints: Record<string, SimulationResponseViolation[]>;
-    start: string;
-  };
   status: SimulationStatus;
 };

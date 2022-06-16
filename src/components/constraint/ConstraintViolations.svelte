@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { violations } from '../../stores/constraints';
+  import { constraintViolations } from '../../stores/constraints';
   import { viewTimeRange } from '../../stores/plan';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
@@ -22,17 +22,17 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if $violations.length}
-      {#each $violations as violation}
+    {#if $constraintViolations.length}
+      {#each $constraintViolations as violation}
         <ListItem style="cursor: pointer" on:click={() => zoomToViolation(violation)}>
-          {violation.constraint.name}
+          {violation.constraintName}
           <span slot="suffix">
             <i class="bi bi-exclamation-triangle" />
           </span>
         </ListItem>
       {/each}
     {:else}
-      No Violations Found
+      No Constraint Violations Found
     {/if}
   </svelte:fragment>
 </Panel>

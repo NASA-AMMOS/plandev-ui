@@ -1,7 +1,13 @@
 import { keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
-import { modelConstraints, planConstraints, selectedConstraint, violations } from '../stores/constraints';
+import {
+  checkConstraintsStatus,
+  constraintViolationsMap,
+  modelConstraints,
+  planConstraints,
+  selectedConstraint,
+} from '../stores/constraints';
 import {
   createDictionaryError,
   creatingDictionary,
@@ -11,15 +17,7 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
-import {
-  createModelError,
-  createPlanError,
-  creatingModel,
-  creatingPlan,
-  models,
-  plan,
-  planStartTimeMs,
-} from '../stores/plan';
+import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
 import { resources, resourceTypesMap as resourceTypesMapStore } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
@@ -32,12 +30,29 @@ import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
-import { offsetViolationWindows } from './violations';
 
 /**
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
  */
 const effects = {
+  async checkConstraints(): Promise<void> {
+    try {
+      checkConstraintsStatus.set(Status.Executing);
+      const { id: planId } = get(plan);
+      const data = await reqHasura<{ violationsMap: ConstraintViolationsMap }>(gql.CHECK_CONSTRAINTS, { planId });
+      const { checkConstraintsResponse } = data;
+      const { violationsMap } = checkConstraintsResponse;
+
+      constraintViolationsMap.set(violationsMap);
+      checkConstraintsStatus.set(Status.Complete);
+      showSuccessToast('Check Constraints Complete');
+    } catch (e) {
+      console.log(e);
+      checkConstraintsStatus.set(Status.Failed);
+      showFailureToast('Check Constraints Failed');
+    }
+  },
+
   async createActivity(argumentsMap: ArgumentsMap, start_time: string, type: string): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
@@ -67,6 +82,7 @@ const effects = {
 
       activitiesMap.update(activities => ({ ...activities, [id]: activity }));
       selectedActivityId.set(id);
+      checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
 
       showSuccessToast('Activity Created Successfully');
@@ -126,6 +142,7 @@ const effects = {
         planConstraints.update(constraints => [...constraints, constraint]);
       }
       selectedConstraint.set(constraint);
+      checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
       showSuccessToast('Constraint Created Successfully');
     } catch (e) {
@@ -377,6 +394,7 @@ const effects = {
           delete activities[id];
           return { ...activities };
         });
+        checkConstraintsStatus.set(Status.Dirty);
         simulationStatus.update(Status.Dirty);
         showSuccessToast('Activity Deleted Successfully');
       }
@@ -424,6 +442,7 @@ const effects = {
           selectedConstraint.set(null);
         }
 
+        checkConstraintsStatus.set(Status.Dirty);
         simulationStatus.update(Status.Dirty);
         showSuccessToast('Constraint Deleted Successfully');
       }
@@ -996,6 +1015,7 @@ const effects = {
           const newActivities = await effects.getActivitiesForPlan(planId);
           activitiesMap.set(keyBy(newActivities, 'id'));
           selectedActivityId.set(null);
+          checkConstraintsStatus.set(Status.Dirty);
           simulationStatus.update(Status.Dirty);
           schedulingStatus.set(Status.Complete);
           return;
@@ -1030,7 +1050,7 @@ const effects = {
 
   async simulate(): Promise<void> {
     try {
-      const { id: planId } = get(plan);
+      const { id: planId, start_time } = get(plan);
 
       let tries = 0;
       simulationStatus.update(Status.Executing);
@@ -1038,7 +1058,7 @@ const effects = {
       do {
         const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
         const { simulate } = data;
-        const { results, status }: SimulationResponse = simulate;
+        const { status }: SimulationResponse = simulate;
 
         if (status === 'complete') {
           // Activities.
@@ -1051,22 +1071,12 @@ const effects = {
           const newResources: Resource[] = Object.entries(resourceSamples).map(([name, values]) => ({
             name,
             schema: resourceTypesMap[name],
-            startTime: results.start,
+            startTime: start_time,
             values,
           }));
           resources.set(newResources);
 
-          // Constraint Violations.
-          const newViolations: ConstraintViolation[] = Object.entries(results.constraints).flatMap(
-            ([name, violations]) =>
-              violations.map(violation => ({
-                associations: violation.associations,
-                constraint: { name },
-                windows: violation.windows,
-              })),
-          );
-          violations.set(offsetViolationWindows(newViolations, get<number>(planStartTimeMs)));
-
+          checkConstraintsStatus.set(Status.Dirty);
           simulationStatus.update(Status.Complete);
           return;
         } else if (status === 'failed') {
@@ -1119,6 +1129,7 @@ const effects = {
       },
     }));
 
+    checkConstraintsStatus.set(Status.Dirty);
     simulationStatus.update(Status.Dirty);
   },
 
@@ -1156,6 +1167,7 @@ const effects = {
         });
       }
 
+      checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
       showSuccessToast('Constraint Updated Successfully');
     } catch (e) {
@@ -1225,6 +1237,7 @@ const effects = {
       const { updateSimulation: updatedSimulation } = data;
       simulation.updateValue(() => updatedSimulation);
       await effects.uploadFiles(newFiles);
+      checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
       showSuccessToast('Simulation Updated Successfully');
     } catch (e) {

@@ -2,6 +2,14 @@
  * GraphQL Query, Mutation, and Subscription strings.
  */
 const gql = {
+  CHECK_CONSTRAINTS: `#graphql
+    query CheckConstraints($planId: Int!) {
+      checkConstraintsResponse: constraintViolations(planId: $planId) {
+        violationsMap: constraintViolations
+      }
+    }
+  `,
+
   CREATE_ACTIVITY: `#graphql
     mutation CreateActivity($activity: activity_insert_input!) {
       createActivity: insert_activity_one(object: $activity) {
@@ -550,7 +558,6 @@ const gql = {
   SIMULATE: `#graphql
     query Simulate($planId: Int!) {
       simulate(planId: $planId) {
-        results
         status
       }
     }

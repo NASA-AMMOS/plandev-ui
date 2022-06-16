@@ -149,14 +149,13 @@
     let tooltipText = '';
 
     violations.forEach((violation: ConstraintViolation, i: number) => {
-      const { name } = violation.constraint;
       const text = `
-          <div>
-            Constraint Violation
-            <br>
-            Name: ${name}
-          </div>
-        `;
+        <div>
+          Constraint Violation
+          <br>
+          Name: ${violation.constraintName}
+        </div>
+      `;
       tooltipText = `${tooltipText} ${text}`;
       if (i !== violations.length - 1) {
         tooltipText += `<hr>`;
