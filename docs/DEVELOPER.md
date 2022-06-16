@@ -33,7 +33,7 @@ Before you can build aerie-ui, you must install and configure the following prod
 
 - [Docker](https://www.docker.com/) which is used to run the Aerie services.
 
-- [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download and build Aerie:
+- [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download, build, and run Aerie:
 
   ```sh
   git clone https://github.com/NASA-AMMOS/aerie.git
