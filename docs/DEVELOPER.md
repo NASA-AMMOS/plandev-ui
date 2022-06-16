@@ -21,7 +21,7 @@ Before getting started with developing in this repository read/watch all of the 
 
 ## Prerequisite Software
 
-Before you can build aerie-ui, you must install and configure the following products on your development machine:
+Before you can run aerie-ui you must install and configure the following products on your development machine:
 
 - [Git](http://git-scm.com) and/or the [GitHub app](https://desktop.github.com/); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
 
