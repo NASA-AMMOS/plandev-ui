@@ -16,8 +16,8 @@
     schemeTableau10,
   } from 'd3-scale-chromatic';
   import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { planStartTimeMs } from '../../stores/plan';
   import { clamp } from '../../utilities/generic';
-  import { getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
@@ -208,7 +208,7 @@
     let id = 0;
 
     for (const resource of resources) {
-      const { name, schema, startTime, values } = resource;
+      const { name, schema, values } = resource;
       const r = new RegExp(filter?.name);
       const includeResource = r.test(name);
 
@@ -224,7 +224,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: getUnixEpochTime(startTime) + x / 1000,
+              x: $planStartTimeMs + x / 1000,
             });
           }
         } else if (schema.type === 'string') {
@@ -238,7 +238,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: getUnixEpochTime(startTime) + x / 1000,
+              x: $planStartTimeMs + x / 1000,
             });
             domainMap[text] = text;
           }
@@ -254,7 +254,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: getUnixEpochTime(startTime) + x / 1000,
+              x: $planStartTimeMs + x / 1000,
             });
           }
         }

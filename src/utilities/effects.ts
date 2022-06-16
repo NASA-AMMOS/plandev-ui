@@ -18,7 +18,7 @@ import {
   savingExpansionSet,
 } from '../stores/expansion';
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
-import { resources, resourceTypesMap as resourceTypesMapStore } from '../stores/resources';
+import { resourceSamplesMap } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
@@ -1050,7 +1050,7 @@ const effects = {
 
   async simulate(): Promise<void> {
     try {
-      const { id: planId, start_time } = get(plan);
+      const { id: planId } = get(plan);
 
       let tries = 0;
       simulationStatus.update(Status.Executing);
@@ -1066,15 +1066,8 @@ const effects = {
           activitiesMap.set(keyBy(newActivities, 'id'));
 
           // Resources.
-          const resourceTypesMap = get(resourceTypesMapStore);
           const resourceSamples: Record<string, ResourceValue[]> = await effects.resourceSamples(planId);
-          const newResources: Resource[] = Object.entries(resourceSamples).map(([name, values]) => ({
-            name,
-            schema: resourceTypesMap[name],
-            startTime: start_time,
-            values,
-          }));
-          resources.set(newResources);
+          resourceSamplesMap.set(resourceSamples);
 
           checkConstraintsStatus.set(Status.Dirty);
           simulationStatus.update(Status.Complete);

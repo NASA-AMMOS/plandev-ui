@@ -20,7 +20,6 @@ type SimulationTemplate = {
 type Resource = {
   name: string;
   schema: ValueSchema;
-  startTime: string;
   values: ResourceValue[];
 };
 
