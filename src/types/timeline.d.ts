@@ -12,6 +12,7 @@ interface ActivityPoint extends Point {
   duration: number;
   label: Label;
   parent_id: number | null;
+  unfinished: boolean;
 }
 
 type Axis = {

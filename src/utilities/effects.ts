@@ -78,6 +78,7 @@ const effects = {
         simulation_dataset_id: null,
         start_time,
         type,
+        unfinished: false,
       };
 
       activitiesMap.update(activities => ({ ...activities, [id]: activity }));

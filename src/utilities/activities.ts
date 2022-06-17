@@ -40,11 +40,15 @@ export function activityToPoint(
     children,
     duration: getDurationInMs(activity.duration),
     id: activity.id,
-    label: { text: activity.type },
+    label: {
+      color: activity.unfinished ? '#ff7760' : null,
+      text: activity.unfinished ? `${activity.type} (Unfinished)` : activity.type,
+    },
     name: `${activity.id}`,
     parent_id: activity.parent_id,
     selected: selectedActivityId === activity.id,
     type: 'activity',
+    unfinished: activity.unfinished,
     x: getUnixEpochTime(activity.start_time),
   };
 
@@ -91,6 +95,7 @@ export function activityDirectiveToActivity(
     simulation_dataset_id: activitySimulated?.simulation_dataset_id ?? null,
     start_time: getDoyTimeFromDuration(plan_start_time, activityDirective.start_offset),
     type: activityDirective.type,
+    unfinished: activitySimulated?.duration === null,
   };
 }
 
@@ -114,6 +119,7 @@ export function activitySimulatedToActivity(
     simulation_dataset_id: activitySimulated.simulation_dataset_id,
     start_time: getDoyTimeFromDuration(plan_start_time, activitySimulated.start_offset),
     type: activitySimulated.activity_type_name,
+    unfinished: activitySimulated.duration === null,
   };
 }
 

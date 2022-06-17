@@ -28,6 +28,7 @@
   let simulated_activity_id: number | null = null;
   let startTime: string | null = null;
   let type: string | null = null;
+  let unfinished: boolean | null = null;
 
   // Other vars.
   let model: Model;
@@ -47,6 +48,7 @@
     simulated_activity_id = $selectedActivity.simulated_activity_id;
     startTime = $selectedActivity.start_time;
     type = $selectedActivity.type;
+    unfinished = $selectedActivity.unfinished;
   } else {
     argumentsMap = null;
     child_ids = null;
@@ -57,6 +59,7 @@
     simulated_activity_id = null;
     startTime = null;
     type = null;
+    unfinished = null;
   }
 
   $: model = $plan.model;
@@ -167,7 +170,17 @@
 
       <fieldset>
         <label for="duration">Duration</label>
-        <input class="st-input w-100" disabled name="duration" value={duration ?? 'None (Run Simulation First)'} />
+        <input class="st-input w-100" disabled name="duration" value={duration ?? 'None'} />
+      </fieldset>
+
+      <fieldset>
+        <label for="simulationStatus">Simulation Status</label>
+        <input
+          class="st-input w-100"
+          disabled
+          name="simulationStatus"
+          value={unfinished ? 'Unfinished' : duration ? 'Finished' : 'None'}
+        />
       </fieldset>
 
       <Field field={startTimeField} on:valid={onUpdateStartTime}>

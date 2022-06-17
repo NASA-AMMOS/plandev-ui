@@ -14,6 +14,7 @@
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
   export let activitySelectedColor: string = '#81D4FA';
+  export let activityUnfinishedColor: string = '#ff7760';
   export let dragenter: DragEvent | undefined;
   export let dragleave: DragEvent | undefined;
   export let dragover: DragEvent | undefined;
@@ -304,6 +305,8 @@
 
     if (point.selected) {
       ctx.fillStyle = activitySelectedColor;
+    } else if (point.unfinished) {
+      ctx.fillStyle = activityUnfinishedColor;
     } else {
       ctx.fillStyle = activityColor;
     }

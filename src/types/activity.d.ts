@@ -29,6 +29,7 @@ type Activity = {
   simulation_dataset_id: number | null;
   start_time: string;
   type: string;
+  unfinished: boolean;
 };
 
 type ActivitiesForPlanResponse = {
