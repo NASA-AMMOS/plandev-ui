@@ -4,12 +4,12 @@ const config: PlaywrightTestConfig = {
   forbidOnly: !!process***REMOVED***.CI,
   reporter: [
     [process***REMOVED***.CI ? 'github' : 'list'],
-    ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'test-results' }],
-    ['json', { outputFile: 'test-results/json-results.json' }],
-    ['junit', { outputFile: 'test-results/junit-results.xml' }],
+    ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'e2e-test-results' }],
+    ['json', { outputFile: 'e2e-test-results/json-results.json' }],
+    ['junit', { outputFile: 'e2e-test-results/junit-results.xml' }],
   ],
   retries: 0,
-  testDir: './tests',
+  testDir: './tests/e2e',
   use: {
     baseURL: 'http://localhost:3000',
     browserName: 'chromium',

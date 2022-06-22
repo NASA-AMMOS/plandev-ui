@@ -55,7 +55,9 @@ export class Plans {
     await expect(this.tableRow).toBeVisible();
     await expect(this.tableRowPlanId).toBeVisible();
     const el = await this.tableRowPlanId.elementHandle();
-    this.planId = await el.textContent();
+    if (el) {
+      this.planId = (await el.textContent()) as string;
+    }
   }
 
   async deletePlan() {

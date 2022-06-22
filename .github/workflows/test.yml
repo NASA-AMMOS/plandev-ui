@@ -44,16 +44,24 @@ jobs:
         run: npm ci
       - name: Build (UI)
         run: npm run build
-      - name: Install Playwright Dependencies (Test)
+      - name: Install Playwright Dependencies (Test - e2e)
         run: npx playwright install chromium --with-deps
-      - name: Test
-        run: npm test
-      - name: Upload Results (Test)
+      - name: Test (e2e)
+        run: npm run test:e2e
+      - name: Test (unit)
+        run: npm run test:unit
+      - name: Upload Results (Test - e2e)
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: 🎭 Playwright Run Results
-          path: test-results
+          path: e2e-test-results
+      - name: Upload Results (Test - unit)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ⚡ Vitest Run Results
+          path: unit-test-results
       - name: Print Logs for Services (Aerie)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t

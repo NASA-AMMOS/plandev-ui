@@ -22,7 +22,7 @@ test.beforeAll(async ({ browser }) => {
   await models.goto();
   await models.createModel();
   await dictionaries.goto();
-  await dictionaries.creatDictionary();
+  await dictionaries.createDictionary();
   await expansionRules.goto();
 });
 

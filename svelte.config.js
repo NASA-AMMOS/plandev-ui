@@ -5,6 +5,14 @@ import preprocess from 'svelte-preprocess';
 const config = {
   kit: {
     adapter: adapterNode(),
+    vite: {
+      test: {
+        environment: 'jsdom',
+        include: ['./tests/unit/**/*.test.ts'],
+        outputFile: 'unit-test-results/json-results.json',
+        reporters: 'json',
+      },
+    },
   },
   preprocess: preprocess(),
 };
