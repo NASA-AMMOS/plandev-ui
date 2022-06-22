@@ -1,3 +1,23 @@
+type ProfilesForPlanResponse = {
+  duration: string;
+  simulations: [{ datasets: [{ dataset: { profiles: Profile[] } }] }];
+  start_time: string;
+};
+
+type Profile = {
+  name: string;
+  profile_segments: ProfileSegment[];
+  type: {
+    schema?: ValueSchema;
+    type: 'discrete' | 'real';
+  };
+};
+
+type ProfileSegment = {
+  dynamics: any;
+  start_offset: string;
+};
+
 type Simulation = {
   arguments: ArgumentsMap;
   datasets: SimulationDataset[] | null;

@@ -18,7 +18,7 @@ import {
   savingExpansionSet,
 } from '../stores/expansion';
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
-import { resourceSamplesMap } from '../stores/resources';
+import { resources } from '../stores/resources';
 import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
@@ -28,7 +28,7 @@ import gql from './gql';
 import { showConfirmModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
-import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
+import { getDoyTime, getDoyTimeFromDuration, getDurationInMs, getIntervalFromDoyRange, getUnixEpochTime } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
 
 /**
@@ -779,11 +779,59 @@ const effects = {
     }
   },
 
-  async getResourceTypes(modelId: number): Promise<ResourceType[]> {
+  async getSampledResourcesForPlan(planId: number): Promise<Resource[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.RESOURCE_TYPES, { modelId });
-      const { resourceTypes } = data;
-      return resourceTypes;
+      const data = await reqHasura<ProfilesForPlanResponse>(gql.GET_PROFILES_FOR_PLAN, { planId });
+      const { plan } = data;
+      const { duration, simulations, start_time } = plan;
+      const [{ datasets }] = simulations;
+      const [{ dataset }] = datasets;
+      const { profiles } = dataset;
+
+      const planStart = getUnixEpochTime(getDoyTime(new Date(start_time)));
+      const planDuration = getDurationInMs(duration);
+      const sampledResources: Resource[] = [];
+
+      for (const profile of profiles) {
+        const { name, profile_segments, type: profileType } = profile;
+        const { type } = profileType;
+        const values: ResourceValue[] = [];
+        const schema = profileType?.schema ?? (profileType as ValueSchema);
+
+        for (let i = 0; i < profile_segments.length; ++i) {
+          const segment = profile_segments[i];
+          const nextSegment = profile_segments[i + 1];
+
+          const segmentOffset = getDurationInMs(segment.start_offset);
+          const nextSegmentOffset = nextSegment ? getDurationInMs(nextSegment.start_offset) : planDuration;
+
+          const { dynamics } = segment;
+
+          if (type === 'discrete') {
+            values.push({
+              x: planStart + segmentOffset,
+              y: dynamics,
+            });
+            values.push({
+              x: planStart + nextSegmentOffset,
+              y: dynamics,
+            });
+          } else if (type === 'real') {
+            values.push({
+              x: planStart + segmentOffset,
+              y: dynamics.initial,
+            });
+            values.push({
+              x: planStart + nextSegmentOffset,
+              y: dynamics.initial + dynamics.rate * (nextSegmentOffset / 1000),
+            });
+          }
+        }
+
+        sampledResources.push({ name, schema, values });
+      }
+
+      return sampledResources;
     } catch (e) {
       console.log(e);
       return [];
@@ -983,19 +1031,6 @@ const effects = {
     }
   },
 
-  async resourceSamples(planId: number): Promise<Record<string, ResourceValue[]>> {
-    try {
-      const data = await reqHasura<{ resourceSamples: Record<string, ResourceValue[]> }>(gql.RESOURCE_SAMPLES, {
-        planId,
-      });
-      const { resourceSamples } = data;
-      return resourceSamples.resourceSamples;
-    } catch (e) {
-      console.log(e);
-      return {};
-    }
-  },
-
   async schedule(): Promise<void> {
     try {
       const { id: planId } = get(plan);
@@ -1067,8 +1102,8 @@ const effects = {
           activitiesMap.set(keyBy(newActivities, 'id'));
 
           // Resources.
-          const resourceSamples: Record<string, ResourceValue[]> = await effects.resourceSamples(planId);
-          resourceSamplesMap.set(resourceSamples);
+          const sampledResources: Resource[] = await effects.getSampledResourcesForPlan(planId);
+          resources.set(sampledResources);
 
           checkConstraintsStatus.set(Status.Dirty);
           simulationStatus.update(Status.Complete);

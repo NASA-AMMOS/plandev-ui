@@ -433,6 +433,29 @@ const gql = {
     }
   `,
 
+  GET_PROFILES_FOR_PLAN: `#graphql
+    query GetProfilesForPlan($planId: Int!) {
+      plan: plan_by_pk(id: $planId) {
+        duration
+        simulations(limit: 1) {
+          datasets(order_by: { id: desc }, limit: 1) {
+            dataset {
+              profiles {
+                name
+                profile_segments {
+                  dynamics
+                  start_offset
+                }
+                type
+              }
+            }
+          }
+        }
+        start_time
+      }
+    }
+  `,
+
   GET_SEQUENCE_ID: `#graphql
     query GetSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
       sequence: sequence_to_simulated_activity_by_pk(
@@ -525,23 +548,6 @@ const gql = {
         }
       ) {
         seq_id
-      }
-    }
-  `,
-
-  RESOURCE_SAMPLES: `#graphql
-    query ResourceSamples($planId: Int!) {
-      resourceSamples(planId: $planId) {
-        resourceSamples
-      }
-    }
-  `,
-
-  RESOURCE_TYPES: `#graphql
-    query ResourceTypes($modelId: ID!) {
-      resourceTypes(missionModelId: $modelId) {
-        name
-        schema
       }
     }
   `,

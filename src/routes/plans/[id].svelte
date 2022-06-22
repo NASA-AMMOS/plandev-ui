@@ -37,7 +37,7 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../stores/plan';
-  import { resetResourceStores, resourceTypes } from '../../stores/resources';
+  import { resetResourceStores } from '../../stores/resources';
   import { resetSchedulingStores, schedulingStatus, schedulingTsFiles } from '../../stores/scheduling';
   import {
     modelParametersMap,
@@ -66,7 +66,6 @@
       const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialResourceTypes = await effects.getResourceTypes(initialPlan.model.id);
         const initialTsFilesConstraints = await effects.getTsFilesConstraints(initialPlan.model.id);
         const initialTsFilesScheduling = await effects.getTsFilesScheduling(initialPlan.model.id);
         const initialView = await effects.getView(url.searchParams);
@@ -74,7 +73,6 @@
         return {
           props: {
             initialPlan,
-            initialResourceTypes,
             initialTsFilesConstraints,
             initialTsFilesScheduling,
             initialView,
@@ -92,7 +90,6 @@
 
 <script lang="ts">
   export let initialPlan: Plan | null;
-  export let initialResourceTypes: ResourceType[];
   export let initialTsFilesConstraints: TypeScriptFile[];
   export let initialTsFilesScheduling: TypeScriptFile[];
   export let initialView: View | null;
@@ -121,7 +118,6 @@
     $modelParametersMap = initialPlan.model.parameters.parameters;
     $plan = initialPlan;
     $planConstraints = initialPlan.constraints;
-    $resourceTypes = initialResourceTypes;
     simulation.updateValue(() => initialPlan.simulations[0]);
 
     $planEndTimeMs = getUnixEpochTime(initialPlan.end_time);

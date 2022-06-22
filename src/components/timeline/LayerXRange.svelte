@@ -16,7 +16,6 @@
     schemeTableau10,
   } from 'd3-scale-chromatic';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { planStartTimeMs } from '../../stores/plan';
   import { clamp } from '../../utilities/generic';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
@@ -224,7 +223,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: $planStartTimeMs + x / 1000,
+              x,
             });
           }
         } else if (schema.type === 'string') {
@@ -238,7 +237,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: $planStartTimeMs + x / 1000,
+              x,
             });
             domainMap[text] = text;
           }
@@ -254,7 +253,7 @@
               name,
               selected: false,
               type: 'x-range',
-              x: $planStartTimeMs + x / 1000,
+              x,
             });
           }
         }

@@ -5,7 +5,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { curveLinear, line as d3Line } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { planStartTimeMs } from '../../stores/plan';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
@@ -156,7 +155,7 @@
               radius,
               selected: false,
               type: 'line',
-              x: $planStartTimeMs + x / 1000,
+              x,
               y,
             });
           }
@@ -175,7 +174,7 @@
               radius,
               selected: false,
               type: 'line',
-              x: $planStartTimeMs + x / 1000,
+              x,
               y,
             });
           }
