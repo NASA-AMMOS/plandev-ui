@@ -1,6 +1,107 @@
 import parse from 'postgres-interval';
 
 /**
+ * Get a formatted duration string given a duration in microseconds.
+ * @example convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us') -> 90577779200000
+ * @note inverse of convertUsToDurationString
+ */
+export function convertDurationStringToUs(durationString: string): number | never {
+  const usPeryear = 3.154e13;
+  const usPerDay = 8.64e10;
+  const usPerHour = 3.6e9;
+  const usPerMinute = 6e7;
+  const usPerSecond = 1000000;
+  const usPerMillisecond = 1000;
+
+  const validDurationValueRegex = `-?\\d+(?:\\.\\d+)?`;
+  const validYearsDurationRegex = `(?:\\s*(?<years>${validDurationValueRegex})y)`;
+  const validDaysDurationRegex = `(?:\\s*(?<days>${validDurationValueRegex})d)`;
+  const validHoursDurationRegex = `(?:\\s*(?<hours>${validDurationValueRegex})h)`;
+  const validMinutesDurationRegex = `(?:\\s*(?<minutes>${validDurationValueRegex})m(?!s))`;
+  const validSecondsDurationRegex = `(?:\\s*(?<seconds>${validDurationValueRegex})s)`;
+  const validMillisecondsDurationRegex = `(?:\\s*(?<milliseconds>${validDurationValueRegex})ms)`;
+  const validMicrosecondsDurationRegex = `(?:\\s*(?<microseconds>${validDurationValueRegex})us)`;
+
+  const fullValidDurationRegex = new RegExp(
+    `^${validYearsDurationRegex}?${validDaysDurationRegex}?${validHoursDurationRegex}?${validMinutesDurationRegex}?${validSecondsDurationRegex}?${validMillisecondsDurationRegex}?${validMicrosecondsDurationRegex}?$`,
+  );
+
+  const matches = durationString.match(fullValidDurationRegex);
+
+  if (matches !== null) {
+    let durationUs = 0;
+
+    const {
+      groups: {
+        years = '0',
+        days = '0',
+        hours = '0',
+        minutes = '0',
+        seconds = '0',
+        milliseconds = '0',
+        microseconds = '0',
+      } = {},
+    } = matches;
+
+    durationUs += parseFloat(years) * usPeryear;
+    durationUs += parseFloat(days) * usPerDay;
+    durationUs += parseFloat(hours) * usPerHour;
+    durationUs += parseFloat(minutes) * usPerMinute;
+    durationUs += parseFloat(seconds) * usPerSecond;
+    durationUs += parseFloat(milliseconds) * usPerMillisecond;
+    durationUs += parseFloat(microseconds);
+
+    return durationUs;
+  }
+
+  const fullMicrosecondsRegex = new RegExp(`^${validDurationValueRegex}$`);
+
+  if (fullMicrosecondsRegex.test(durationString)) return parseFloat(durationString);
+
+  throw Error('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
+}
+
+/**
+ * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
+ * @example convertUsToDurationString(90577779200000) -> '2y 318d 6h 16m 19s 200ms 0us'
+ * @note inverse of convertDurationStringToUs
+ */
+export function convertUsToDurationString(durationUs: number): string {
+  const usPeryear = 3.154e13;
+  const usPerDay = 8.64e10;
+  const usPerHour = 3.6e9;
+  const usPerMinute = 6e7;
+  const usPerSecond = 1000000;
+  const usPerMillisecond = 1000;
+
+  const hoursPerDay = 24;
+  const minutesPerHour = 60;
+  const secondsPerMinute = 60;
+
+  const years = Math.floor(durationUs / usPeryear);
+  durationUs -= years * usPeryear;
+
+  const days = Math.floor(durationUs / usPerDay);
+  durationUs -= days * usPerDay;
+
+  const hours = Math.floor(durationUs / usPerHour) % hoursPerDay;
+  durationUs -= hours * usPerHour;
+
+  const minutes = Math.floor(durationUs / usPerMinute) % minutesPerHour;
+  durationUs -= minutes * usPerMinute;
+
+  const seconds = Math.floor(durationUs / usPerSecond) % secondsPerMinute;
+  durationUs -= seconds * usPerSecond;
+
+  const milliseconds = Math.floor(durationUs / usPerMillisecond);
+  durationUs -= milliseconds * usPerMillisecond;
+
+  const microseconds = durationUs;
+
+  return `${years}y ${days}d ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms ${microseconds}us`;
+}
+
+/**
  * Get the day-of-year for a given date.
  * @example getDoy(new Date('1/3/2019')) -> 3
  * @see https://stackoverflow.com/a/8619946
