@@ -9,7 +9,7 @@ const config: PlaywrightTestConfig = {
     ['junit', { outputFile: 'e2e-test-results/junit-results.xml' }],
   ],
   retries: 0,
-  testDir: './tests/e2e',
+  testDir: './e2e-tests',
   use: {
     baseURL: 'http://localhost:3000',
     browserName: 'chromium',

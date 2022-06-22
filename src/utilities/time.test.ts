@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { getDoy } from '../../src/utilities/time';
+import { getDoy } from './time';
 
 test('getDoy', () => {
   const doy = getDoy(new Date('1/3/2019'));
