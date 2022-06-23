@@ -54,13 +54,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: 🎭 Playwright Run Results
+          name: 🎭 End-to-end Test Results
           path: e2e-test-results
       - name: Upload Results (Test - unit)
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: ⚡ Vitest Run Results
+          name: ⚡ Unit Test Results
           path: unit-test-results
       - name: Print Logs for Services (Aerie)
         if: always()
