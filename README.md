@@ -14,6 +14,7 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 .
 ├── .github         # GitHub metadata
 ├── docs            # Documentation
+├── e2e-tests       # End-to-end tests
 ├── scripts         # Helper build scripts
 └── src             # The source code
     ├── components  # Svelte components
@@ -23,7 +24,6 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
     ├── types       # Global TypeScript types
     └── utilities   # Functions and constant values
 └── static          # Statically served files
-└── tests           # End-to-end tests
 ```
 
 ## Want to help?
