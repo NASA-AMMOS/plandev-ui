@@ -107,4 +107,4 @@ Run `npm run build` to build a production version of the project. The build arti
 
 ## Before You Commit
 
-Run `npm run pre-commit` to execute formatting, linting, and static analysis. Run `npm test` after setting up your testing environment (see the [testing documentation](./TESTING.md)).
+Run `npm run pre-commit` to execute formatting, linting, and static analysis. Run `npm run test:e2e` and `npm run test:unit` after setting up your testing environment (see the [testing documentation](./TESTING.md)).
