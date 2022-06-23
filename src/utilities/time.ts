@@ -6,7 +6,7 @@ import parse from 'postgres-interval';
  * @note inverse of convertUsToDurationString
  */
 export function convertDurationStringToUs(durationString: string): number | never {
-  const usPeryear = 3.154e13;
+  const usPerYear = 3.154e13;
   const usPerDay = 8.64e10;
   const usPerHour = 3.6e9;
   const usPerMinute = 6e7;
@@ -43,7 +43,7 @@ export function convertDurationStringToUs(durationString: string): number | neve
       } = {},
     } = matches;
 
-    durationUs += parseFloat(years) * usPeryear;
+    durationUs += parseFloat(years) * usPerYear;
     durationUs += parseFloat(days) * usPerDay;
     durationUs += parseFloat(hours) * usPerHour;
     durationUs += parseFloat(minutes) * usPerMinute;
@@ -67,7 +67,7 @@ export function convertDurationStringToUs(durationString: string): number | neve
  * @note inverse of convertDurationStringToUs
  */
 export function convertUsToDurationString(durationUs: number): string {
-  const usPeryear = 3.154e13;
+  const usPerYear = 3.154e13;
   const usPerDay = 8.64e10;
   const usPerHour = 3.6e9;
   const usPerMinute = 6e7;
@@ -78,8 +78,8 @@ export function convertUsToDurationString(durationUs: number): string {
   const minutesPerHour = 60;
   const secondsPerMinute = 60;
 
-  const years = Math.floor(durationUs / usPeryear);
-  durationUs -= years * usPeryear;
+  const years = Math.floor(durationUs / usPerYear);
+  durationUs -= years * usPerYear;
 
   const days = Math.floor(durationUs / usPerDay);
   durationUs -= days * usPerDay;
