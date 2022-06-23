@@ -2,11 +2,11 @@ import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
-import { getGqlSubscribable } from './subscribable';
+import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const models = getGqlSubscribable<ModelList[]>(gql.SUB_MODELS, {}, []);
+export const models = gqlSubscribable<ModelList[]>(gql.SUB_MODELS, {}, []);
 
 /* Writeable. */
 

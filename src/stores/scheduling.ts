@@ -3,11 +3,11 @@ import { plan } from '../stores/plan';
 import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
-import { getGqlSubscribable } from './subscribable';
+import { gqlSubscribable } from './subscribable';
 
 /* Stores. */
 
-export const schedulingSpecGoals = getGqlSubscribable<SchedulingSpecGoal[]>(
+export const schedulingSpecGoals = gqlSubscribable<SchedulingSpecGoal[]>(
   gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: -1 },
   [],

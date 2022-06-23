@@ -5,28 +5,9 @@ import { get, type Subscriber, type Unsubscriber, type Updater } from 'svelte/st
 import { env as envStore } from '../stores/app';
 
 /**
- * Aerie UI specific wrapper around gqlSubscribable.
- */
-export function getGqlSubscribable<T>(
-  query: string,
-  initialVariables: QueryVariables | null = null,
-  initialValue: T | null = null,
-  transformer: (v: any) => T = v => v,
-): GqlSubscribable<T> {
-  const { HASURA_CLIENT_URL, HASURA_SERVER_URL } = get<Env>(envStore);
-  const HASURA_URL = browser ? HASURA_CLIENT_URL : HASURA_SERVER_URL;
-  const [, baseUrl] = HASURA_URL.split('http://');
-  const url = `ws://${baseUrl}`;
-  const clientOptions: ClientOptions = { url };
-
-  return gqlSubscribable<T>(clientOptions, query, initialVariables, initialValue, transformer);
-}
-
-/**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
  */
 export function gqlSubscribable<T>(
-  clientOptions: ClientOptions,
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
@@ -95,6 +76,10 @@ export function gqlSubscribable<T>(
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
     if (browser && !client) {
+      const { HASURA_CLIENT_URL } = get<Env>(envStore);
+      const [, baseUrl] = HASURA_CLIENT_URL.split('http://');
+      const url = `ws://${baseUrl}`;
+      const clientOptions: ClientOptions = { url };
       client = createClient(clientOptions);
     }
 

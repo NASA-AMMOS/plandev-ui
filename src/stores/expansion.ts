@@ -2,23 +2,23 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { simulationDatasetId } from './simulation';
-import { getGqlSubscribable } from './subscribable';
+import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const activityTypeNames = getGqlSubscribable<Pick<ActivityType, 'name'>[]>(
+export const activityTypeNames = gqlSubscribable<Pick<ActivityType, 'name'>[]>(
   gql.SUB_ACTIVITY_TYPE_NAMES,
   { modelId: -1 },
   [],
 );
 
-export const dictionaries = getGqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND_DICTIONARIES, {}, []);
+export const dictionaries = gqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND_DICTIONARIES, {}, []);
 
-export const expansionRules = getGqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
+export const expansionRules = gqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
-export const expansionSets = getGqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, []);
+export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, []);
 
-export const sequences = getGqlSubscribable<Sequence[]>(gql.SUB_SEQUENCES, {}, []);
+export const sequences = gqlSubscribable<Sequence[]>(gql.SUB_SEQUENCES, {}, []);
 
 /* Writeable. */
 

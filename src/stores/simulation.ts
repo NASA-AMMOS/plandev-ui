@@ -1,18 +1,18 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
-import { getGqlSubscribable } from './subscribable';
+import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const simulation = getGqlSubscribable<Simulation | null>(
+export const simulation = gqlSubscribable<Simulation | null>(
   gql.SUB_SIMULATION,
   { planId: -1 },
   null,
   (simulations: Simulation[]) => simulations[0],
 );
 
-export const simulationTemplates = getGqlSubscribable<SimulationTemplate[]>(gql.SUB_SIM_TEMPLATES, { modelId: -1 }, []);
+export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(gql.SUB_SIM_TEMPLATES, { modelId: -1 }, []);
 
 /* Writeable. */
 
