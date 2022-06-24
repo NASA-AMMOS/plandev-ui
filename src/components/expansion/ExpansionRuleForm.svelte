@@ -16,7 +16,8 @@
   export let initialRuleCreatedAt: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
   export let initialRuleId: number | null = null;
-  export let initialRuleLogic: string = 'export default function(): ExpansionReturn {\n    return [];\n}\n';
+  export let initialRuleLogic: string =
+    'export default function MyExpansion(props: {\n  activityInstance: ActivityType\n}): ExpansionReturn {\n  const { activityInstance } = props;\n  return [];\n}\n';
   export let initialRuleModelId: number | null = null;
   export let initialRuleUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
