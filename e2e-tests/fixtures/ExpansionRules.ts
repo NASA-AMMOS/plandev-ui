@@ -2,31 +2,27 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 
 export class ExpansionRules {
-  readonly page: Page;
-
   readonly cancelButton: Locator;
   readonly closeButton: Locator;
   readonly confirmModal: Locator;
   readonly confirmModalDeleteButton: Locator;
-  readonly inputActivityTypeSelector: string = 'select[name="activityType"]';
   readonly inputActivityType: Locator;
-  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
+  readonly inputActivityTypeSelector: string = 'select[name="activityType"]';
   readonly inputCommandDictionary: Locator;
+  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   readonly inputEditor: Locator;
-  readonly inputModelSelector: string = 'select[name="modelId"]';
   readonly inputModel: Locator;
+  readonly inputModelSelector: string = 'select[name="modelId"]';
   readonly newButton: Locator;
+  readonly page: Page;
+  readonly ruleActivityType = 'PeelBanana';
+  readonly ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
   readonly rulesNavButton: Locator;
   readonly saveButton: Locator;
   readonly tableRow: Locator;
   readonly tableRowDeleteButton: Locator;
 
-  readonly ruleActivityType = 'PeelBanana';
-  readonly ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
-
   constructor(page: Page) {
-    this.page = page;
-
     this.cancelButton = page.locator(`button:has-text("Cancel")`);
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Expansion Rule")`);
@@ -38,6 +34,7 @@ export class ExpansionRules {
     this.inputEditor = page.locator('.panel >> textarea.inputarea');
     this.inputModel = page.locator(this.inputModelSelector);
     this.newButton = page.locator(`button:has-text("New")`);
+    this.page = page;
     this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
     this.saveButton = page.locator(`button:has-text("Save")`);
     this.tableRow = page.locator(`tr:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.

@@ -4,22 +4,20 @@ import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText, getSelectedOption } from '../utilities/selectors.js';
 
 export class Plans {
-  readonly page: Page;
-
-  readonly endTime: string;
-  readonly planName: string;
-  public planId: string;
-  readonly startTime: string;
-
   readonly alertError: Locator;
   readonly confirmModal: Locator;
   readonly confirmModalDeleteButton: Locator;
   readonly createButton: Locator;
+  readonly endTime: string;
   readonly inputEndTime: Locator;
   readonly inputModel: Locator;
   readonly inputModelSelector: string = 'select[name="model"]';
   readonly inputName: Locator;
   readonly inputStartTime: Locator;
+  readonly page: Page;
+  public planId: string;
+  readonly planName: string;
+  readonly startTime: string;
   readonly tableRow: Locator;
   readonly tableRowDeleteButton: Locator;
   readonly tableRowPlanId: Locator;

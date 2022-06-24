@@ -19,8 +19,8 @@ type ValueSchemaReal = {
 };
 
 type ValueSchemaSeries = {
-  type: 'series';
   items: ValueSchema;
+  type: 'series';
 };
 
 type ValueSchemaString = {
@@ -33,8 +33,8 @@ type ValueSchemaStruct = {
 };
 
 type ValueSchemaVariant = {
-  variants: Variant[];
   type: 'variant';
+  variants: Variant[];
 };
 
 type ValueSchema =

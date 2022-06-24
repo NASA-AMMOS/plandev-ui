@@ -1,7 +1,7 @@
 type GqlSubscribable<T> = {
-  filterValueById(id: number): void;
   setVariables: (newVariables: QueryVariables) => void;
   subscribe: (next: import('svelte/store').Subscriber<T>) => Unsubscriber;
+  filterValueById(id: number): void;
   updateValue(fn: Updater<T>): void;
 };
 

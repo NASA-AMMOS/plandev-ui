@@ -3,26 +3,24 @@ import { getOptionValueFromText } from '../utilities/selectors.js';
 import { ExpansionRules } from './ExpansionRules.js';
 
 export class ExpansionSets {
-  readonly page: Page;
-
-  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   readonly inputCommandDictionary: Locator;
-  readonly inputModelSelector: string = 'select[name="modelId"]';
+  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   readonly inputModel: Locator;
-  readonly inputRuleSelector: string;
+  readonly inputModelSelector: string = 'select[name="modelId"]';
   readonly inputRule: Locator;
+  readonly inputRuleSelector: string;
   readonly newButton: Locator;
+  readonly page: Page;
   readonly saveButton: Locator;
   readonly setsNavButton: Locator;
 
   constructor(page: Page, expansionRules: ExpansionRules) {
-    this.page = page;
-
     this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputRuleSelector = `input[name="${expansionRules.ruleActivityType}"]`;
     this.inputRule = page.locator(this.inputRuleSelector);
     this.newButton = page.locator(`button:has-text("New")`);
+    this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
     this.setsNavButton = page.locator(`.nav-button:has-text("Sets")`);
   }

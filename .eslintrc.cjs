@@ -16,6 +16,15 @@ module.exports = {
   plugins: ['svelte3', '@typescript-eslint'],
   root: true,
   rules: {
+    '@typescript-eslint/member-ordering': [
+      'error',
+      {
+        default: {
+          memberTypes: ['call-signature', 'field', 'constructor', 'get', 'method', 'set', 'signature'],
+          order: 'alphabetically',
+        },
+      },
+    ],
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     'no-undef': 'off',

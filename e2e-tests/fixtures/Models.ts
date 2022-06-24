@@ -3,12 +3,6 @@ import { expect } from '@playwright/test';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Models {
-  readonly page: Page;
-
-  readonly jarPath: string;
-  readonly modelName: string;
-  readonly modelVersion: string;
-
   readonly alertError: Locator;
   readonly confirmModal: Locator;
   readonly confirmModalDeleteButton: Locator;
@@ -16,6 +10,10 @@ export class Models {
   readonly inputFile: Locator;
   readonly inputName: Locator;
   readonly inputVersion: Locator;
+  readonly jarPath: string;
+  readonly modelName: string;
+  readonly modelVersion: string;
+  readonly page: Page;
   readonly tableRow: Locator;
   readonly tableRowDeleteButton: Locator;
 

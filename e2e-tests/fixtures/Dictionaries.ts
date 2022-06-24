@@ -4,16 +4,14 @@ import { readFileSync } from 'fs';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Dictionaries {
-  readonly page: Page;
-
-  readonly dictionaryBuffer: Buffer;
-  readonly dictionaryName: string;
-  readonly dictionaryPath: string;
-
   readonly confirmModal: Locator;
   readonly confirmModalDeleteButton: Locator;
   readonly createButton: Locator;
+  readonly dictionaryBuffer: Buffer;
+  readonly dictionaryName: string;
+  readonly dictionaryPath: string;
   readonly inputFile: Locator;
+  readonly page: Page;
   readonly tableRow: Locator;
   readonly tableRowDeleteButton: Locator;
 

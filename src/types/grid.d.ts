@@ -15,10 +15,10 @@ type GridComponent = {
 };
 
 type GridColumns = {
+  columnSizes: string;
+  columns: Grid[];
   gridName?: string;
   id: number;
-  columns: Grid[];
-  columnSizes: string;
   type: 'columns';
 };
 
@@ -32,8 +32,8 @@ type GridGutter = {
 type GridRows = {
   gridName?: string;
   id: number;
-  rows: Grid[];
   rowSizes: string;
+  rows: Grid[];
   type: 'rows';
 };
 

@@ -2,37 +2,32 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 export class Plan {
-  readonly page: Page;
-
-  readonly appError: Locator;
-  readonly planTitle: (planName: string) => Locator;
-
+  readonly activitiesNavButton: Locator;
   readonly activityFormComponent: Locator;
   readonly activityTableComponent: Locator;
   readonly activityTypesComponent: Locator;
+  readonly appError: Locator;
+  readonly constraintsNavButton: Locator;
+  readonly page: Page;
+  readonly planTitle: (planName: string) => Locator;
+  readonly scheduleButton: Locator;
   readonly schedulingComponent: Locator;
   readonly schedulingEditorComponent: Locator;
-  readonly timelineComponent: Locator;
-
-  readonly activitiesNavButton: Locator;
-  readonly constraintsNavButton: Locator;
-  readonly schedulingNavButton: Locator;
-  readonly simulationNavButton: Locator;
-  readonly viewNavButton: Locator;
-
-  readonly scheduleButton: Locator;
+  readonly schedulingGoalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
+  readonly schedulingGoalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
   readonly schedulingGoalDifferenceBadge: Locator;
   readonly schedulingGoalEnabledCheckbox: Locator;
   readonly schedulingGoalInputDescription: Locator;
   readonly schedulingGoalInputEditor: Locator;
   readonly schedulingGoalInputName: Locator;
-  readonly schedulingGoalSaveButton: Locator;
   readonly schedulingGoalListItemSelector: string;
-  readonly schedulingStatusSelector: (status: string) => string;
-
   readonly schedulingGoalName: string = 'Recurrence Goal';
-  readonly schedulingGoalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
-  readonly schedulingGoalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
+  readonly schedulingGoalSaveButton: Locator;
+  readonly schedulingNavButton: Locator;
+  readonly schedulingStatusSelector: (status: string) => string;
+  readonly simulationNavButton: Locator;
+  readonly timelineComponent: Locator;
+  readonly viewNavButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
