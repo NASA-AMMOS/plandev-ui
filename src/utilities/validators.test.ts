@@ -5,13 +5,13 @@ describe('min', () => {
   const value = 5;
   const error = `Field cannot be less than ${value}`;
 
-  test('should return an error message if input is less than the min value', async () => {
+  test('Should return an error message if input is less than the min value', async () => {
     const minValidator = min(value, error);
     const invalidMsg = await minValidator(3);
     expect(invalidMsg).toEqual(error);
   });
 
-  test('should return null if input is greater than than the min value', async () => {
+  test('Should return null if input is greater than than the min value', async () => {
     const minValidator = min(value, error);
     const invalidMsg = await minValidator(6);
     expect(invalidMsg).toEqual(null);
@@ -46,7 +46,7 @@ describe('timestamp', () => {
   const doyError = 'DOY format required: YYYY-DDDThh:mm:ss';
   const rangeError = 'Day-of-year must be between 0 and 365';
 
-  test('Should return an error message if input not in DOY format', async () => {
+  test('Should return an error message if input is not in DOY format', async () => {
     const invalidMsg = await timestamp('2020-001');
     expect(invalidMsg).toEqual(doyError);
   });
@@ -56,7 +56,7 @@ describe('timestamp', () => {
     expect(invalidMsg).toEqual(rangeError);
   });
 
-  test('Should return null if input is input is a valid DOY string', async () => {
+  test('Should return null if input is a valid DOY string', async () => {
     const invalidMsg = await timestamp('2020-001T00:00:00.000');
     expect(invalidMsg).toEqual(null);
   });
