@@ -2,6 +2,10 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
   forbidOnly: !!process***REMOVED***.CI,
+  reportSlowTests: {
+    max: 0,
+    threshold: 60000,
+  },
   reporter: [
     [process***REMOVED***.CI ? 'github' : 'list'],
     ['html', { open: 'never', outputFile: 'index.html', outputFolder: 'e2e-test-results' }],

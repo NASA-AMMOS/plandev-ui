@@ -10,7 +10,7 @@ const config = {
         environment: 'jsdom',
         include: ['./src/**/*.test.ts'],
         outputFile: 'unit-test-results/json-results.json',
-        reporters: ['default', 'json'],
+        reporters: ['verbose', 'json'],
       },
     },
   },
