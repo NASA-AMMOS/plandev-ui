@@ -170,9 +170,8 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    const { key, metaKey } = event;
-
-    if (metaKey && key === 's') {
+    const { key, ctrlKey, metaKey } = event;
+    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
       event.preventDefault();
       effects.simulate();
     }
