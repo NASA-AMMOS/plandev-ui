@@ -37,6 +37,9 @@
       editor.setScrollPosition({ scrollTop });
     }
   }
+  $: if (editor && readOnly !== undefined) {
+    editor.updateOptions({ readOnly });
+  }
 
   onMount(async () => {
     self.MonacoEnvironment = self.MonacoEnvironment ?? {
