@@ -5,7 +5,6 @@
   import { activityTypeNames, dictionaries, expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
   import { sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
-  import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -86,27 +85,18 @@
     <svelte:fragment slot="body">
       {#if mode === 'edit'}
         <fieldset>
-          <label for="id">Rule ID</label>
-          <Input>
-            <input class="st-input w-100" disabled name="ruleId" value={ruleId} />
-            <i class="bi bi-lock-fill" slot="right" />
-          </Input>
+          <label for="ruleId">Rule ID</label>
+          <input class="st-input w-100" disabled name="ruleId" value={ruleId} />
         </fieldset>
 
         <fieldset>
           <label for="createdAt">Created At</label>
-          <Input>
-            <input class="st-input w-100" disabled name="createdAt" value={ruleCreatedAt} />
-            <i class="bi bi-lock-fill" slot="right" />
-          </Input>
+          <input class="st-input w-100" disabled name="createdAt" value={ruleCreatedAt} />
         </fieldset>
 
         <fieldset>
           <label for="updatedAt">Updated At</label>
-          <Input>
-            <input class="st-input w-100" disabled name="updatedAt" value={ruleUpdatedAt} />
-            <i class="bi bi-lock-fill" slot="right" />
-          </Input>
+          <input class="st-input w-100" disabled name="updatedAt" value={ruleUpdatedAt} />
         </fieldset>
       {/if}
 
