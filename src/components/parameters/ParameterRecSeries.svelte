@@ -31,6 +31,7 @@
         error: null,
         index: i,
         name: `[${i}]`,
+        order: i,
         schema: schema.items,
         value: getArgument(value[i], schema.items),
       };

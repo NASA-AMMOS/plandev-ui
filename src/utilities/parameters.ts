@@ -35,7 +35,7 @@ export function getFormParameters(
   argumentsMap: ArgumentsMap,
   defaultArgumentsMap: ArgumentsMap = {},
 ): FormParameter[] {
-  const formParameters = Object.entries(parametersMap).map(([name, { schema }]) => {
+  const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const arg: Argument = argumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
     const value = getArgument(arg, schema, defaultArg);
@@ -43,6 +43,7 @@ export function getFormParameters(
     const formParameter: FormParameter = {
       error: null,
       name,
+      order,
       schema,
       value,
     };

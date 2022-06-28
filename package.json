@@ -25,7 +25,7 @@
     "prebuild": "npm run version",
     "predev": "node ./scripts/check-node.cjs",
     "preview": "svelte-kit preview",
-    "test": "npm run test:unit",
+    "test": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "test:e2e:debug": "PWDEBUG=1 playwright test",

@@ -15,7 +15,7 @@
   let level: number = 0;
 
   $: labelColumnWidth = clientWidth * 0.65;
-  $: sortedFormParameters = formParameters.sort((a, b) => compare(a.name, b.name));
+  $: sortedFormParameters = formParameters.sort((a, b) => compare(a.order, b.order));
 </script>
 
 {#each sortedFormParameters as formParameter (formParameter.name)}

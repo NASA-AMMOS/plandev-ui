@@ -20,21 +20,22 @@
   $: subFormParameters = getSubFormParameters(formParameter);
 
   function getSubFormParameters(formParameter: FormParameter<ValueSchemaStruct>): FormParameter[] {
-    const subFormParameters = [];
     const { schema, value = [] } = formParameter;
     const { items: keys } = schema;
     const structKeys = Object.keys(keys).sort();
 
-    for (const key of structKeys) {
+    const subFormParameters = structKeys.map((key, index) => {
       const subFormParameter: FormParameter = {
         error: null,
         key,
         name: key,
+        order: index,
         schema: schema.items[key],
         value: value ? value[key] || null : null,
       };
-      subFormParameters.push(subFormParameter);
-    }
+
+      return subFormParameter;
+    });
 
     return subFormParameters;
   }

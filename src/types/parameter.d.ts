@@ -10,6 +10,7 @@ type FormParameter<T = ValueSchema> = {
   index?: number;
   key?: string;
   name: string;
+  order: number;
   schema: T;
   value: Argument;
 };
