@@ -31,6 +31,7 @@
         minimap={{ enabled: false }}
         readOnly={true}
         scrollBeyondLastLine={false}
+        tabSize={2}
         value={seqJsonStr}
       />
     </div>

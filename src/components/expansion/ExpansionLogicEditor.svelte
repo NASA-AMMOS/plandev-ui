@@ -50,6 +50,7 @@
       minimap={{ enabled: false }}
       {readOnly}
       scrollBeyondLastLine={false}
+      tabSize={2}
       value={ruleLogic}
       on:didChangeModelContent
     />

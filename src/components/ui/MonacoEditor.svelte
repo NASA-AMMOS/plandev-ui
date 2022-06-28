@@ -19,6 +19,7 @@
   export let override: Editor.IEditorOverrideServices | undefined = undefined;
   export let readOnly: boolean | undefined = undefined;
   export let scrollBeyondLastLine: boolean | undefined = undefined;
+  export let tabSize: number | undefined = undefined;
   export let theme: string | undefined = undefined;
   export let value: string | undefined = undefined;
 
@@ -42,7 +43,7 @@
   }
 
   onMount(async () => {
-    self.MonacoEnvironment = self.MonacoEnvironment ?? {
+    self.MonacoEnvironment = {
       getWorker(_moduleId: unknown, label: string): Worker {
         if (label === 'json') {
           return new jsonWorker();
@@ -63,6 +64,7 @@
       model,
       readOnly,
       scrollBeyondLastLine,
+      tabSize,
       theme,
       value,
     };

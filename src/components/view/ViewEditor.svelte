@@ -63,6 +63,7 @@
       lineNumbers="on"
       minimap={{ enabled: false }}
       scrollBeyondLastLine={false}
+      tabSize={2}
       value={$viewText}
       on:didChangeModelContent={onDidChangeModelContent}
     />
