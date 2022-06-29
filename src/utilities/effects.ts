@@ -1072,7 +1072,6 @@ const effects = {
         if (status === 'complete') {
           const newActivities = await effects.getActivitiesForPlan(planId);
           activitiesMap.set(keyBy(newActivities, 'id'));
-          selectedActivityId.set(null);
           checkConstraintsStatus.set(Status.Dirty);
           simulationStatus.update(Status.Dirty);
           schedulingStatus.set(Status.Complete);
