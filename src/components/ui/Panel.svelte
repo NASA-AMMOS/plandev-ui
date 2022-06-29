@@ -2,7 +2,7 @@
   export let borderLeft: boolean = false;
   export let borderRight: boolean = false;
   export let borderTop: boolean = false;
-  export let overflowYBody: 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' = 'scroll';
+  export let overflowYBody: 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' = 'auto';
   export let padBody: boolean = true;
   export let padHeader: boolean = true;
 </script>

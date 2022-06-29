@@ -85,13 +85,13 @@
 <style>
   .split-grid {
     display: grid;
-    overflow: scroll;
+    overflow: auto;
   }
 
   .split-grid-component {
     display: grid;
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     width: 100%;
   }
 

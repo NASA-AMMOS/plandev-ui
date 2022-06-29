@@ -170,7 +170,7 @@
   .rows {
     min-height: 100px;
     overflow-x: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 
   .timeline {
