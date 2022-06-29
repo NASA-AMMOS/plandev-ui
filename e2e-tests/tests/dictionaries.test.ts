@@ -1,8 +1,8 @@
 import { test, type Page } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 
-let page: Page;
 let dictionaries: Dictionaries;
+let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();

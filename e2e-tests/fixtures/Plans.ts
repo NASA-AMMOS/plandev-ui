@@ -2,49 +2,34 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText, getSelectedOption } from '../utilities/selectors.js';
+import { Models } from './Models.js';
 
 export class Plans {
-  readonly alertError: Locator;
-  readonly confirmModal: Locator;
-  readonly confirmModalDeleteButton: Locator;
-  readonly createButton: Locator;
-  readonly endTime: string;
-  readonly inputEndTime: Locator;
-  readonly inputModel: Locator;
-  readonly inputModelSelector: string = 'select[name="model"]';
-  readonly inputName: Locator;
-  readonly inputStartTime: Locator;
-  readonly page: Page;
-  public planId: string;
-  readonly planName: string;
-  readonly startTime: string;
-  readonly tableRow: Locator;
-  readonly tableRowDeleteButton: Locator;
-  readonly tableRowPlanId: Locator;
+  alertError: Locator;
+  confirmModal: Locator;
+  confirmModalDeleteButton: Locator;
+  createButton: Locator;
+  endTime: string = '2022-006T00:00:00';
+  inputEndTime: Locator;
+  inputModel: Locator;
+  inputModelSelector: string = 'select[name="model"]';
+  inputName: Locator;
+  inputStartTime: Locator;
+  planId: string;
+  planName: string;
+  startTime: string = '2022-001T00:00:00';
+  tableRow: Locator;
+  tableRowDeleteButton: Locator;
+  tableRowPlanId: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
-
-    this.endTime = '2022-006T00:00:00';
+  constructor(public page: Page, public models: Models) {
     this.planName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
-    this.startTime = '2022-001T00:00:00';
-
-    this.alertError = page.locator('.alert-error');
-    this.confirmModal = page.locator(`.modal:has-text("Delete Plan")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Plan") >> button:has-text("Delete")`);
-    this.createButton = page.locator('text=Create');
-    this.inputEndTime = page.locator('input[name="end-time"]');
-    this.inputModel = page.locator(this.inputModelSelector);
-    this.inputName = page.locator('input[name="name"]');
-    this.inputStartTime = page.locator('input[name="start-time"]');
-    this.tableRow = page.locator(`tr:has-text("${this.planName}")`);
-    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`);
-    this.tableRowPlanId = page.locator(`tr:has-text("${this.planName}") > td >> nth=1`);
+    this.updatePage(page);
   }
 
-  async createPlan(modelName: string) {
+  async createPlan() {
     await expect(this.tableRow).not.toBeVisible();
-    await this.selectInputModel(modelName);
+    await this.selectInputModel();
     await this.fillInputName();
     await this.fillInputStartTime();
     await this.fillInputEndTime();
@@ -99,8 +84,8 @@ export class Plans {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
   }
 
-  async selectInputModel(modelName: string) {
-    const value = await getOptionValueFromText(this.page, this.inputModelSelector, modelName);
+  async selectInputModel() {
+    const value = await getOptionValueFromText(this.page, this.inputModelSelector, this.models.modelName);
     await this.inputModel.focus();
     await this.inputModel.selectOption(value);
     await this.inputModel.evaluate(e => e.blur());
@@ -108,5 +93,20 @@ export class Plans {
 
   async selectedModel() {
     return await getSelectedOption(this.page, this.inputModelSelector);
+  }
+
+  updatePage(page: Page): void {
+    this.alertError = page.locator('.alert-error');
+    this.confirmModal = page.locator(`.modal:has-text("Delete Plan")`);
+    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Plan") >> button:has-text("Delete")`);
+    this.createButton = page.locator('text=Create');
+    this.inputEndTime = page.locator('input[name="end-time"]');
+    this.inputModel = page.locator(this.inputModelSelector);
+    this.inputName = page.locator('input[name="name"]');
+    this.inputStartTime = page.locator('input[name="start-time"]');
+    this.page = page;
+    this.tableRow = page.locator(`tr:has-text("${this.planName}")`);
+    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`);
+    this.tableRowPlanId = page.locator(`tr:has-text("${this.planName}") > td >> nth=1`);
   }
 }

@@ -2,15 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
 import { Plans } from '../fixtures/Plans.js';
 
-let page: Page;
 let models: Models;
+let page: Page;
 let plans: Plans;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
 
   models = new Models(page);
-  plans = new Plans(page);
+  plans = new Plans(page, models);
 
   await models.goto();
   await models.createModel();
@@ -73,7 +73,7 @@ test.describe.serial('Plans', () => {
   });
 
   test('Create button should be enabled after selecting a model, entering a name, entering a start time, and entering an end time ', async () => {
-    await plans.selectInputModel(models.modelName);
+    await plans.selectInputModel();
     await plans.fillInputName();
     await plans.fillInputStartTime();
     await plans.fillInputEndTime();
@@ -81,7 +81,7 @@ test.describe.serial('Plans', () => {
   });
 
   test('Create plan', async () => {
-    await plans.createPlan(models.modelName);
+    await plans.createPlan();
   });
 
   test('Delete plan', async () => {

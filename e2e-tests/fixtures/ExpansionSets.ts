@@ -1,38 +1,38 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { getOptionValueFromText } from '../utilities/selectors.js';
+import { Dictionaries } from './Dictionaries.js';
 import { ExpansionRules } from './ExpansionRules.js';
+import { Models } from './Models.js';
 
 export class ExpansionSets {
-  readonly inputCommandDictionary: Locator;
-  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
-  readonly inputModel: Locator;
-  readonly inputModelSelector: string = 'select[name="modelId"]';
-  readonly inputRule: Locator;
-  readonly inputRuleSelector: string;
-  readonly newButton: Locator;
-  readonly page: Page;
-  readonly saveButton: Locator;
-  readonly setsNavButton: Locator;
+  inputCommandDictionary: Locator;
+  inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
+  inputModel: Locator;
+  inputModelSelector: string = 'select[name="modelId"]';
+  inputRule: Locator;
+  inputRuleSelector: string;
+  newButton: Locator;
+  saveButton: Locator;
+  setsNavButton: Locator;
 
-  constructor(page: Page, expansionRules: ExpansionRules) {
-    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
-    this.inputModel = page.locator(this.inputModelSelector);
+  constructor(
+    public page: Page,
+    public dictionaries: Dictionaries,
+    public models: Models,
+    public expansionRules: ExpansionRules,
+  ) {
     this.inputRuleSelector = `input[name="${expansionRules.ruleActivityType}"]`;
-    this.inputRule = page.locator(this.inputRuleSelector);
-    this.newButton = page.locator(`button:has-text("New")`);
-    this.page = page;
-    this.saveButton = page.locator(`button:has-text("Save")`);
-    this.setsNavButton = page.locator(`.nav-button:has-text("Sets")`);
+    this.updatePage(page);
   }
 
-  async createExpansionSet(baseURL: string | undefined, commandDictionaryName: string, modelName: string) {
+  async createExpansionSet(baseURL: string | undefined) {
     await this.goto();
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/sets/new`);
     await expect(this.saveButton).toBeDisabled();
-    await this.selectCommandDictionary(commandDictionaryName);
-    await this.selectModel(modelName);
+    await this.selectCommandDictionary();
+    await this.selectModel();
     await this.selectRule();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
@@ -45,15 +45,17 @@ export class ExpansionSets {
     await expect(this.setsNavButton).toHaveClass(/selected/);
   }
 
-  async selectCommandDictionary(commandDictionaryName: string) {
-    await this.page.waitForSelector(`option:has-text("${commandDictionaryName} - 1.0.0")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, commandDictionaryName);
+  async selectCommandDictionary() {
+    const { dictionaryName } = this.dictionaries;
+    await this.page.waitForSelector(`option:has-text("${dictionaryName} - 1.0.0")`, { state: 'attached' });
+    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, dictionaryName);
     await this.inputCommandDictionary.focus();
     await this.inputCommandDictionary.selectOption(value);
     await this.inputCommandDictionary.evaluate(e => e.blur());
   }
 
-  async selectModel(modelName: string) {
+  async selectModel() {
+    const { modelName } = this.models;
     await this.page.waitForSelector(`option:has-text("${modelName}")`, { state: 'attached' });
     const value = await getOptionValueFromText(this.page, this.inputModelSelector, modelName);
     await this.inputModel.focus();
@@ -64,5 +66,15 @@ export class ExpansionSets {
   async selectRule() {
     await this.page.waitForSelector(this.inputRuleSelector, { state: 'attached' });
     await this.inputRule.click();
+  }
+
+  updatePage(page: Page): void {
+    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
+    this.inputModel = page.locator(this.inputModelSelector);
+    this.inputRule = page.locator(this.inputRuleSelector);
+    this.newButton = page.locator(`button:has-text("New")`);
+    this.page = page;
+    this.saveButton = page.locator(`button:has-text("Save")`);
+    this.setsNavButton = page.locator(`.nav-button:has-text("Sets")`);
   }
 }

@@ -19,7 +19,7 @@ import {
 } from '../stores/expansion';
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
 import { resources } from '../stores/resources';
-import { schedulingStatus, selectedGoalId, selectedSpecId } from '../stores/scheduling';
+import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
@@ -270,32 +270,31 @@ const effects = {
     }
   },
 
-  async createSchedulingGoal(definition: string, description: string, name: string, userId: string): Promise<void> {
+  async createSchedulingGoal(
+    definition: string,
+    description: string,
+    name: string,
+    userId: string,
+    modelId: number,
+  ): Promise<SchedulingGoal | null> {
     try {
-      const { model } = get(plan);
       const goalInsertInput: SchedulingGoalInsertInput = {
         author: userId,
         definition,
         description,
         last_modified_by: userId,
-        model_id: model.id,
+        model_id: modelId,
         name,
       };
       const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal: goalInsertInput });
       const { createSchedulingGoal: newGoal } = data;
 
-      const specId = get(selectedSpecId);
-      const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
-        enabled: true,
-        goal_id: newGoal.id,
-        specification_id: specId,
-      };
-      await effects.createSchedulingSpecGoal(specGoalInsertInput);
-      selectedGoalId.set(null);
       showSuccessToast('Scheduling Goal Created Successfully');
+      return newGoal;
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Create Failed');
+      return null;
     }
   },
 
@@ -542,7 +541,7 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoal(id: number): Promise<void> {
+  async deleteSchedulingGoal(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal(
         'Delete',
@@ -553,10 +552,14 @@ const effects = {
       if (confirm) {
         await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
         showSuccessToast('Scheduling Goal Deleted Successfully');
+        return true;
+      } else {
+        return false;
       }
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Delete Failed');
+      return false;
     }
   },
 
@@ -838,6 +841,21 @@ const effects = {
     }
   },
 
+  async getSchedulingGoal(id: number | null | undefined): Promise<SchedulingGoal | null> {
+    if (id !== null && id !== undefined) {
+      try {
+        const data = await reqHasura<SchedulingGoal>(gql.GET_SCHEDULING_GOAL, { id });
+        const { goal } = data;
+        return goal;
+      } catch (e) {
+        console.log(e);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  },
+
   async getSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
     try {
       const data = await reqHasura<SeqId>(gql.GET_SEQUENCE_ID, { simulated_activity_id, simulation_dataset_id });
@@ -936,20 +954,24 @@ const effects = {
     }
   },
 
-  async getTsFilesScheduling(model_id: number): Promise<TypeScriptFile[]> {
-    try {
-      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id });
-      const { dslTypeScriptResponse } = data;
-      const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+  async getTsFilesScheduling(model_id: number | null | undefined): Promise<TypeScriptFile[]> {
+    if (model_id !== null && model_id !== undefined) {
+      try {
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id });
+        const { dslTypeScriptResponse } = data;
+        const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
-      if (status === 'success') {
-        return typescriptFiles;
-      } else {
-        console.log(reason);
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
+      } catch (e) {
+        console.log(e);
         return [];
       }
-    } catch (e) {
-      console.log(e);
+    } else {
       return [];
     }
   },
@@ -1222,13 +1244,20 @@ const effects = {
     }
   },
 
-  async updateSchedulingGoal(id: number, goal: Partial<SchedulingGoal>): Promise<void> {
+  async updateSchedulingGoal(
+    id: number,
+    goal: Partial<SchedulingGoal>,
+  ): Promise<Pick<SchedulingGoal, 'id' | 'last_modified_by' | 'modified_date'> | null> {
     try {
-      await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
+      const data = await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
+      const { updateSchedulingGoal: updatedGoal } = data;
+
       showSuccessToast('Scheduling Goal Updated Successfully');
+      return updatedGoal;
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Update Failed');
+      return null;
     }
   },
 

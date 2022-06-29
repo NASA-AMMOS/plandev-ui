@@ -69,29 +69,20 @@ export const constraintsGrid: Grid = {
 export const schedulingGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
+    { componentName: 'Scheduling', id: 1, type: 'component' },
+    { id: 2, track: 1, type: 'gutter' },
     {
-      id: 1,
-      rowSizes: '1fr 3px 2fr',
-      rows: [
-        { componentName: 'Scheduling', id: 2, type: 'component' },
-        { id: 3, track: 1, type: 'gutter' },
-        { componentName: 'SchedulingEditor', id: 4, type: 'component' },
-      ],
-      type: 'rows',
-    },
-    { id: 5, track: 1, type: 'gutter' },
-    {
-      id: 6,
+      id: 3,
       rowSizes: '2fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 7, timelineId: 0, type: 'component' },
-        { id: 8, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 9, type: 'component' },
+        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
+        { id: 5, track: 1, type: 'gutter' },
+        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
       ],
       type: 'rows',
     },
-    { id: 10, track: 3, type: 'gutter' },
-    { componentName: 'ActivityForm', id: 11, type: 'component' },
+    { id: 7, track: 3, type: 'gutter' },
+    { componentName: 'ActivityForm', id: 8, type: 'component' },
   ],
   gridName: 'Scheduling',
   id: 0,

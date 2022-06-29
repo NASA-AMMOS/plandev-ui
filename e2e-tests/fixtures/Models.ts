@@ -3,37 +3,22 @@ import { expect } from '@playwright/test';
 import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Models {
-  readonly alertError: Locator;
-  readonly confirmModal: Locator;
-  readonly confirmModalDeleteButton: Locator;
-  readonly createButton: Locator;
-  readonly inputFile: Locator;
-  readonly inputName: Locator;
-  readonly inputVersion: Locator;
-  readonly jarPath: string;
-  readonly modelName: string;
-  readonly modelVersion: string;
-  readonly page: Page;
-  readonly tableRow: Locator;
-  readonly tableRowDeleteButton: Locator;
+  alertError: Locator;
+  confirmModal: Locator;
+  confirmModalDeleteButton: Locator;
+  createButton: Locator;
+  inputFile: Locator;
+  inputName: Locator;
+  inputVersion: Locator;
+  jarPath: string = 'e2e-tests/data/banananation-develop.jar'; // TODO: Pull .jar from aerie project.
+  modelName: string;
+  modelVersion: string = '1.0.0';
+  tableRow: Locator;
+  tableRowDeleteButton: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
-
-    // TODO: Pull .jar file directly from built aerie project.
-    this.jarPath = 'e2e-tests/data/banananation-develop.jar';
+  constructor(public page: Page) {
     this.modelName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
-    this.modelVersion = '1.0.0';
-
-    this.alertError = page.locator('.alert-error');
-    this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
-    this.createButton = page.locator('text=Create');
-    this.inputFile = page.locator('input[name="file"]');
-    this.inputName = page.locator('input[name="name"]');
-    this.inputVersion = page.locator('input[name="version"]');
-    this.tableRow = page.locator(`tr:has-text("${this.modelName}")`);
-    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`);
+    this.updatePage(page);
   }
 
   async createModel() {
@@ -86,5 +71,18 @@ export class Models {
   async goto() {
     await this.page.goto('/plans');
     await this.page.goto('/models', { waitUntil: 'networkidle' });
+  }
+
+  updatePage(page: Page): void {
+    this.alertError = page.locator('.alert-error');
+    this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
+    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
+    this.createButton = page.locator('text=Create');
+    this.inputFile = page.locator('input[name="file"]');
+    this.inputName = page.locator('input[name="name"]');
+    this.inputVersion = page.locator('input[name="version"]');
+    this.page = page;
+    this.tableRow = page.locator(`tr:has-text("${this.modelName}")`);
+    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`);
   }
 }

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
 
-let page: Page;
 let models: Models;
+let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();

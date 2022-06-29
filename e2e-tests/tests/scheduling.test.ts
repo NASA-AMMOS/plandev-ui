@@ -2,24 +2,26 @@ import { expect, test, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
+import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
-let page: Page;
 let models: Models;
+let page: Page;
 let plan: Plan;
 let plans: Plans;
+let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
 
   models = new Models(page);
-  plans = new Plans(page);
-  plan = new Plan(page);
+  plans = new Plans(page, models);
+  schedulingGoals = new SchedulingGoals(page, models);
+  plan = new Plan(page, plans, schedulingGoals);
 
   await models.goto();
   await models.createModel();
   await plans.goto();
-  await plans.createPlan(models.modelName);
-  await plan.goto(plans.planId);
+  await plans.createPlan();
 });
 
 test.afterAll(async () => {
@@ -31,9 +33,13 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Scheduling', () => {
-  test('Create scheduling goal', async () => {
+  test('Navigate to the plan page and show the scheduling layout', async () => {
+    await plan.goto();
     await plan.showSchedulingLayout();
-    await plan.createSchedulingGoal();
+  });
+
+  test('Create scheduling goal from the plan page', async ({ baseURL }) => {
+    await plan.createSchedulingGoal(baseURL);
   });
 
   test('Disabling a scheduling goal should not include that goal in a scheduling run ', async () => {
@@ -52,5 +58,10 @@ test.describe.serial('Scheduling', () => {
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
     await plan.runScheduling();
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
+
+  test('Delete scheduling goal', async () => {
+    await schedulingGoals.goto();
+    await schedulingGoals.deleteSchedulingGoal();
   });
 });

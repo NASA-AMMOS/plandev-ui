@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { AppNav } from '../fixtures/AppNav.js';
 
-let page: Page;
 let appNav: AppNav;
+let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
@@ -66,6 +66,15 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemExpansion.click();
     await expect(page).toHaveURL(`${baseURL}/expansion/rules`);
+  });
+
+  test(`Clicking on the app menu 'Scheduling' option should route to the scheduling/goals page`, async ({
+    baseURL,
+  }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    await appNav.appMenuItemScheduling.click();
+    await expect(page).toHaveURL(`${baseURL}/scheduling/goals`);
   });
 
   test(`Clicking on the app menu 'Gateway' option should open a new tab to the gateway page`, async () => {

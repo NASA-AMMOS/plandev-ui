@@ -44,10 +44,6 @@
       <i class="bi bi-calendar3" />
       Scheduling
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('SchedulingEditor')}>
-      <i class="bi bi-code" />
-      Scheduling Editor
-    </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityForm')}>
       <i class="si si-activity" />
       Selected Activity

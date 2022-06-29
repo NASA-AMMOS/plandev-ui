@@ -6,6 +6,7 @@
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import SchedulingGoal from './SchedulingGoal.svelte';
@@ -24,10 +25,19 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <Input>
-      <i class="bi bi-search" slot="left" />
-      <input class="st-input w-100" name="search" placeholder="Find scheduling goals" />
-    </Input>
+    <CssGrid columns="4fr 1fr" gap="5px">
+      <Input>
+        <i class="bi bi-search" slot="left" />
+        <input class="st-input w-100" name="search" placeholder="Find scheduling goals" />
+      </Input>
+      <button
+        class="st-button secondary"
+        name="new-scheduling-goal"
+        on:click={() => window.open(`/scheduling/goals/new?specId=${$selectedSpecId}`, '_blank')}
+      >
+        New
+      </button>
+    </CssGrid>
     {#if !$schedulingSpecGoals.length}
       <div class="pt-1">No scheduling goals found</div>
     {:else}

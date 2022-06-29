@@ -4,20 +4,19 @@ import { ExpansionRules } from '../fixtures/ExpansionRules.js';
 import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Models } from '../fixtures/Models.js';
 
-let page: Page;
-
 let dictionaries: Dictionaries;
 let expansionRules: ExpansionRules;
 let expansionSets: ExpansionSets;
 let models: Models;
+let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
 
-  dictionaries = new Dictionaries(page);
-  expansionRules = new ExpansionRules(page);
-  expansionSets = new ExpansionSets(page, expansionRules);
   models = new Models(page);
+  dictionaries = new Dictionaries(page);
+  expansionRules = new ExpansionRules(page, dictionaries, models);
+  expansionSets = new ExpansionSets(page, dictionaries, models, expansionRules);
 
   await models.goto();
   await models.createModel();
@@ -36,11 +35,11 @@ test.afterAll(async () => {
 
 test.describe.serial('Expansion', () => {
   test('Create expansion rule', async ({ baseURL }) => {
-    await expansionRules.createExpansionRule(baseURL, dictionaries.dictionaryName, models.modelName);
+    await expansionRules.createExpansionRule(baseURL);
   });
 
   test('Create expansion set', async ({ baseURL }) => {
-    await expansionSets.createExpansionSet(baseURL, dictionaries.dictionaryName, models.modelName);
+    await expansionSets.createExpansionSet(baseURL);
   });
 
   test('Delete expansion rule', async () => {

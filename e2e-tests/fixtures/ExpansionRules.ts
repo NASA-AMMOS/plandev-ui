@@ -1,56 +1,40 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { getOptionValueFromText } from '../utilities/selectors.js';
+import { Dictionaries } from './Dictionaries.js';
+import { Models } from './Models.js';
 
 export class ExpansionRules {
-  readonly cancelButton: Locator;
-  readonly closeButton: Locator;
-  readonly confirmModal: Locator;
-  readonly confirmModalDeleteButton: Locator;
-  readonly inputActivityType: Locator;
-  readonly inputActivityTypeSelector: string = 'select[name="activityType"]';
-  readonly inputCommandDictionary: Locator;
-  readonly inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
-  readonly inputEditor: Locator;
-  readonly inputModel: Locator;
-  readonly inputModelSelector: string = 'select[name="modelId"]';
-  readonly newButton: Locator;
-  readonly page: Page;
-  readonly ruleActivityType = 'PeelBanana';
-  readonly ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
-  readonly rulesNavButton: Locator;
-  readonly saveButton: Locator;
-  readonly tableRow: Locator;
-  readonly tableRowDeleteButton: Locator;
+  cancelButton: Locator;
+  closeButton: Locator;
+  confirmModal: Locator;
+  confirmModalDeleteButton: Locator;
+  inputActivityType: Locator;
+  inputActivityTypeSelector: string = 'select[name="activityType"]';
+  inputCommandDictionary: Locator;
+  inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
+  inputEditor: Locator;
+  inputModel: Locator;
+  inputModelSelector: string = 'select[name="modelId"]';
+  newButton: Locator;
+  ruleActivityType = 'PeelBanana';
+  ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
+  rulesNavButton: Locator;
+  saveButton: Locator;
+  tableRow: Locator;
+  tableRowDeleteButton: Locator;
 
-  constructor(page: Page) {
-    this.cancelButton = page.locator(`button:has-text("Cancel")`);
-    this.closeButton = page.locator(`button:has-text("Close")`);
-    this.confirmModal = page.locator(`.modal:has-text("Delete Expansion Rule")`);
-    this.confirmModalDeleteButton = page.locator(
-      `.modal:has-text("Delete Expansion Rule") >> button:has-text("Delete")`,
-    );
-    this.inputActivityType = page.locator(this.inputActivityTypeSelector);
-    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
-    this.inputEditor = page.locator('.panel >> textarea.inputarea');
-    this.inputModel = page.locator(this.inputModelSelector);
-    this.newButton = page.locator(`button:has-text("New")`);
-    this.page = page;
-    this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
-    this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`tr:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.
-    this.tableRowDeleteButton = page.locator(
-      `tr:has-text("${this.ruleActivityType}") >> button[aria-label="Delete Rule"]`,
-    );
+  constructor(public page: Page, public dictionaries: Dictionaries, public models: Models) {
+    this.updatePage(page);
   }
 
-  async createExpansionRule(baseURL: string | undefined, commandDictionaryName: string, modelName: string) {
+  async createExpansionRule(baseURL: string | undefined) {
     await this.goto();
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/new`);
     await expect(this.saveButton).toBeDisabled();
-    await this.selectCommandDictionary(commandDictionaryName);
-    await this.selectModel(modelName);
+    await this.selectCommandDictionary();
+    await this.selectModel();
     await this.selectActivityType();
     await this.fillInputEditor();
     await expect(this.saveButton).not.toBeDisabled();
@@ -102,19 +86,42 @@ export class ExpansionRules {
     await this.inputActivityType.evaluate(e => e.blur());
   }
 
-  async selectCommandDictionary(commandDictionaryName: string) {
-    await this.page.waitForSelector(`option:has-text("${commandDictionaryName} - 1.0.0")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, commandDictionaryName);
+  async selectCommandDictionary() {
+    const { dictionaryName } = this.dictionaries;
+    await this.page.waitForSelector(`option:has-text("${dictionaryName} - 1.0.0")`, { state: 'attached' });
+    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, dictionaryName);
     await this.inputCommandDictionary.focus();
     await this.inputCommandDictionary.selectOption(value);
     await this.inputCommandDictionary.evaluate(e => e.blur());
   }
 
-  async selectModel(modelName: string) {
+  async selectModel() {
+    const { modelName } = this.models;
     await this.page.waitForSelector(`option:has-text("${modelName}")`, { state: 'attached' });
     const value = await getOptionValueFromText(this.page, this.inputModelSelector, modelName);
     await this.inputModel.focus();
     await this.inputModel.selectOption(value);
     await this.inputModel.evaluate(e => e.blur());
+  }
+
+  updatePage(page: Page): void {
+    this.cancelButton = page.locator(`button:has-text("Cancel")`);
+    this.closeButton = page.locator(`button:has-text("Close")`);
+    this.confirmModal = page.locator(`.modal:has-text("Delete Expansion Rule")`);
+    this.confirmModalDeleteButton = page.locator(
+      `.modal:has-text("Delete Expansion Rule") >> button:has-text("Delete")`,
+    );
+    this.inputActivityType = page.locator(this.inputActivityTypeSelector);
+    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
+    this.inputEditor = page.locator('.panel >> textarea.inputarea');
+    this.inputModel = page.locator(this.inputModelSelector);
+    this.newButton = page.locator(`button:has-text("New")`);
+    this.page = page;
+    this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
+    this.saveButton = page.locator(`button:has-text("Save")`);
+    this.tableRow = page.locator(`tr:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.
+    this.tableRowDeleteButton = page.locator(
+      `tr:has-text("${this.ruleActivityType}") >> button[aria-label="Delete Rule"]`,
+    );
   }
 }

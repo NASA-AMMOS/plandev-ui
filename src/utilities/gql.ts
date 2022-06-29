@@ -456,6 +456,26 @@ const gql = {
     }
   `,
 
+  GET_SCHEDULING_GOAL: `#graphql
+    query GetSchedulingGoal($id: Int!) {
+      goal: scheduling_goal_by_pk(id: $id) {
+        analyses(limit: 0) {
+          analysis_id
+        }
+        author
+        created_date
+        definition
+        description
+        id
+        last_modified_by
+        model_id
+        modified_date
+        name
+        revision
+      }
+    }
+  `,
+
   GET_SEQUENCE_ID: `#graphql
     query GetSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
       sequence: sequence_to_simulated_activity_by_pk(
@@ -632,6 +652,26 @@ const gql = {
     }
   `,
 
+  SUB_SCHEDULING_GOALS: `#graphql
+    subscription SubSchedulingGoals {
+      goals: scheduling_goal {
+        analyses(limit: 0) {
+          analysis_id
+        }
+        author
+        created_date
+        definition
+        description
+        id
+        last_modified_by
+        model_id
+        modified_date
+        name
+        revision
+      }
+    }
+  `,
+
   SUB_SCHEDULING_SPEC_GOALS: `#graphql
     subscription SubSchedulingSpecGoals($specification_id: Int!) {
       specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
@@ -736,6 +776,8 @@ const gql = {
         pk_columns: { id: $id }, _set: $goal
       ) {
         id
+        last_modified_by
+        modified_date
       }
     }
   `,

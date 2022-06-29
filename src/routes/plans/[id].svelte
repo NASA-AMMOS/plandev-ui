@@ -12,7 +12,6 @@
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import Expansion from '../../components/expansion/Expansion.svelte';
   import Scheduling from '../../components/scheduling/Scheduling.svelte';
-  import SchedulingEditor from '../../components/scheduling/SchedulingEditor.svelte';
   import Simulation from '../../components/simulation/Simulation.svelte';
   import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
@@ -38,7 +37,7 @@
     viewTimeRange,
   } from '../../stores/plan';
   import { resetResourceStores } from '../../stores/resources';
-  import { resetSchedulingStores, schedulingStatus, schedulingTsFiles } from '../../stores/scheduling';
+  import { resetSchedulingStores, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
     resetSimulationStores,
@@ -67,14 +66,12 @@
 
       if (initialPlan) {
         const initialTsFilesConstraints = await effects.getTsFilesConstraints(initialPlan.model.id);
-        const initialTsFilesScheduling = await effects.getTsFilesScheduling(initialPlan.model.id);
         const initialView = await effects.getView(url.searchParams);
 
         return {
           props: {
             initialPlan,
             initialTsFilesConstraints,
-            initialTsFilesScheduling,
             initialView,
           },
         };
@@ -91,7 +88,6 @@
 <script lang="ts">
   export let initialPlan: Plan | null;
   export let initialTsFilesConstraints: TypeScriptFile[];
-  export let initialTsFilesScheduling: TypeScriptFile[];
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
@@ -104,7 +100,6 @@
     Expansion,
     IFrame,
     Scheduling,
-    SchedulingEditor,
     Simulation,
     Timeline,
     TimelineForm,
@@ -131,10 +126,6 @@
 
   $: if (initialTsFilesConstraints) {
     $constraintsTsFiles = initialTsFilesConstraints;
-  }
-
-  $: if (initialTsFilesScheduling) {
-    $schedulingTsFiles = initialTsFilesScheduling;
   }
 
   $: if (initialView) {

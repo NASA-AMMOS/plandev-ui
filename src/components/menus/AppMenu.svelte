@@ -39,6 +39,10 @@
       <i class="bi bi-code-square" />
       Expansion
     </MenuItem>
+    <MenuItem on:click={() => goto('/scheduling/goals')} on:pointerenter={() => prefetch('/scheduling/goals')}>
+      <i class="bi bi-calendar3" />
+      Scheduling
+    </MenuItem>
     <MenuItem on:click={() => window.open($env.GATEWAY_CLIENT_URL, '_newtab')}>
       <i class="bi bi-diagram-3" />
       Gateway

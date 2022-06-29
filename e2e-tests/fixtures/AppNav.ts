@@ -1,21 +1,25 @@
 import type { Locator, Page } from '@playwright/test';
 
 export class AppNav {
-  readonly aboutModal: Locator;
-  readonly aboutModalCloseButton: Locator;
-  readonly appMenu: Locator;
-  readonly appMenuButton: Locator;
-  readonly appMenuItemAbout: Locator;
-  readonly appMenuItemDictionaries: Locator;
-  readonly appMenuItemExpansion: Locator;
-  readonly appMenuItemGateway: Locator;
-  readonly appMenuItemLogout: Locator;
-  readonly appMenuItemModels: Locator;
-  readonly appMenuItemPlans: Locator;
-  readonly appMenuItemPlayground: Locator;
-  readonly page: Page;
+  aboutModal: Locator;
+  aboutModalCloseButton: Locator;
+  appMenu: Locator;
+  appMenuButton: Locator;
+  appMenuItemAbout: Locator;
+  appMenuItemDictionaries: Locator;
+  appMenuItemExpansion: Locator;
+  appMenuItemGateway: Locator;
+  appMenuItemLogout: Locator;
+  appMenuItemModels: Locator;
+  appMenuItemPlans: Locator;
+  appMenuItemPlayground: Locator;
+  appMenuItemScheduling: Locator;
 
-  constructor(page: Page) {
+  constructor(public page: Page) {
+    this.updatePage(page);
+  }
+
+  updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
     this.appMenu = page.locator('.app-menu > .menu > .menu-slot');
@@ -30,6 +34,7 @@ export class AppNav {
     this.appMenuItemPlayground = page.locator(
       `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Playground")`,
     );
+    this.appMenuItemScheduling = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Scheduling")`);
     this.page = page;
   }
 }

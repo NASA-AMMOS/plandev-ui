@@ -30,8 +30,7 @@ export function getTarget(event: Event) {
     const select = target as HTMLSelectElement;
     const type = select.getAttribute('data-type') ?? 'text';
     const { name, value: valueAsString } = select;
-    const valueAsFloat = parseFloat(valueAsString);
-    const valueAsNumber = Number.isNaN(valueAsFloat) ? null : valueAsFloat;
+    const valueAsNumber = parseFloatOrNull(valueAsString);
     const value = type === 'number' ? valueAsNumber : valueAsString;
 
     return { name, value, valueAsNumber };
@@ -47,6 +46,14 @@ export function getTarget(event: Event) {
  */
 export function isEmpty(value: any): boolean {
   return value === null || value === undefined || value === '' || Number.isNaN(value);
+}
+
+/**
+ * Parses a string into a number. If string cannot be parsed just returns null.
+ */
+export function parseFloatOrNull(value: string | null): number | null {
+  const valueAsNumber: number = parseFloat(value);
+  return Number.isNaN(valueAsNumber) ? null : valueAsNumber;
 }
 
 /**
