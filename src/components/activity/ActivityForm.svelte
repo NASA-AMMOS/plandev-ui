@@ -184,7 +184,7 @@
       </fieldset>
 
       <Field field={startTimeField} on:valid={onUpdateStartTime}>
-        <label for="start-time" slot="label">Start Time</label>
+        <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
         <input autocomplete="off" class="st-input w-100" disabled={isChild} name="start-time" />
       </Field>
 

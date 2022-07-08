@@ -138,13 +138,13 @@
           </Field>
 
           <Field field={startTimeField}>
-            <label for="start-time" slot="label">Start Time</label>
-            <input autocomplete="off" class="st-input w-100" name="start-time" placeholder="YYYY-DDDThh:mm:ss" />
+            <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
+            <input autocomplete="off" class="st-input w-100" name="start-time" />
           </Field>
 
           <Field field={endTimeField}>
-            <label for="end-time" slot="label">End Time</label>
-            <input autocomplete="off" class="st-input w-100" name="end-time" placeholder="YYYY-DDDThh:mm:ss" />
+            <label for="end-time" slot="label">End Time - YYYY-DDDThh:mm:ss</label>
+            <input autocomplete="off" class="st-input w-100" name="end-time" />
           </Field>
 
           <Field field={simTemplateField}>
