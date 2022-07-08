@@ -9,7 +9,6 @@ This document describes how to set up your development environment to build and 
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
 - [Building For Production](#building-for-production)
-- [Before You Commit](#before-you-commit)
 
 ## Prerequisite Knowledge
 
@@ -104,7 +103,3 @@ Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The ap
 ## Building For Production
 
 Run `npm run build` to build a production version of the project. The build artifacts will be stored in the `build/` directory.
-
-## Before You Commit
-
-Run `npm run pre-commit` to execute formatting, linting, and static analysis. Run `npm run test:e2e` and `npm run test:unit` after setting up your testing environment (see the [testing documentation](./TESTING.md)).

@@ -27,10 +27,6 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```
 1. Create your patch.
 1. Follow our [Coding Rules](#rules).
-1. Run the pre-commit script which runs formatting, linting, and static analysis.
-   ```shell
-   npm run pre-commit
-   ```
 1. Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit). Adherence to these conventions is necessary because release notes are automatically generated from these messages.
    ```shell
    git commit -a
@@ -45,7 +41,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 - If we suggest changes then:
 
   - Make the required updates.
-  - Re-run the aerie-ui pre-commit script.
+  - Follow our [Coding Rules](#rules).
   - [Rebase your branch][rebase] and force push to your branch to GitHub (this will update your Pull Request):
 
     ```shell
@@ -81,14 +77,15 @@ After your pull request is merged, you can safely delete your branch and pull th
 
 ## <a name="rules"></a> Coding Rules
 
-To ensure consistency throughout the source code, keep these rules in mind as you are working:
+Run the following commands to execute formatting, linting, static analysis, and testing:
 
-- We use [Prettier][prettier] and [ESLint](../.eslintrc.cjs) to keep code formatted.
-  ```shell
-  npm run format
-  npm run lint
-  npm run check
-  ```
+1. `npm run format:write`
+1. `npm run lint`
+1. `npm run check`
+1. `npm run test:unit`
+1. `npm run test:e2e`
+
+To setup your testing environment see the [testing documentation](./TESTING.md).
 
 ## <a name="commit"></a> Commit Message Guidelines
 
