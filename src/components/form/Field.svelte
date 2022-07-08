@@ -79,9 +79,11 @@
   });
 
   async function onBlur(event: FocusEvent) {
+    event.preventDefault();
+
     const { value } = getTarget(event);
     const valid = await field.validateAndSet(value);
-    if (valid) dispatch('valid');
+    dispatch('blur', { valid });
   }
 
   function onInput(event: InputEvent) {
@@ -96,7 +98,7 @@
       event.preventDefault();
       const { value } = getTarget(event);
       const valid = await field.validateAndSet(value);
-      if (valid) dispatch('valid');
+      dispatch('keydown', { valid });
     }
   }
 </script>

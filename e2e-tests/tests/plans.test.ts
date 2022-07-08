@@ -72,6 +72,26 @@ test.describe.serial('Plans', () => {
     await expect(plans.createButton).toBeDisabled();
   });
 
+  test('Entering a valid start and end time should display the appropriate duration text', async () => {
+    await plans.fillInputStartTime();
+    await plans.fillInputEndTime();
+    await expect(plans.durationDisplay).toHaveValue('0y 5d 0h 0m 0s 0ms 0us');
+  });
+
+  test('Entering an invalid start time should display "None" in the duration text', async () => {
+    await plans.inputStartTime.fill('2022-');
+    await plans.inputStartTime.evaluate(e => e.blur());
+    await plans.fillInputEndTime();
+    await expect(plans.durationDisplay).toHaveValue('None');
+  });
+
+  test('Entering an invalid end time should display "None" in the duration text', async () => {
+    await plans.fillInputStartTime();
+    await plans.inputEndTime.fill('2022-');
+    await plans.inputEndTime.evaluate(e => e.blur());
+    await expect(plans.durationDisplay).toHaveValue('None');
+  });
+
   test('Create button should be enabled after selecting a model, entering a name, entering a start time, and entering an end time ', async () => {
     await plans.selectInputModel();
     await plans.fillInputName();

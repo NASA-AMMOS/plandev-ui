@@ -9,6 +9,7 @@ export class Plans {
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
   createButton: Locator;
+  durationDisplay: Locator;
   endTime: string = '2022-006T00:00:00';
   inputEndTime: Locator;
   inputModel: Locator;
@@ -100,6 +101,7 @@ export class Plans {
     this.confirmModal = page.locator(`.modal:has-text("Delete Plan")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Plan") >> button:has-text("Delete")`);
     this.createButton = page.locator('text=Create');
+    this.durationDisplay = page.locator('input[name="duration"]');
     this.inputEndTime = page.locator('input[name="end-time"]');
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator('input[name="name"]');

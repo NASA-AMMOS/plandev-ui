@@ -16,6 +16,7 @@
   import { simulationTemplates } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { compare, removeQueryParam } from '../../utilities/generic';
+  import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { min, required, timestamp } from '../../utilities/validators';
 
@@ -44,6 +45,7 @@
 
   let filterText: string = '';
   let nameInputField: HTMLInputElement;
+  let durationString: string = 'None';
 
   let endTimeField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
@@ -103,6 +105,14 @@
       plans = plans.filter(plan => plan.id !== id);
     }
   }
+
+  function updateDurationString() {
+    if ($startTimeField.valid && $endTimeField.valid) {
+      durationString = convertUsToDurationString(
+        (getUnixEpochTime($endTimeField.value) - getUnixEpochTime($startTimeField.value)) * 1000,
+      );
+    } else durationString = 'None';
+  }
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
@@ -137,15 +147,20 @@
             <input bind:this={nameInputField} autocomplete="off" class="st-input w-100" name="name" />
           </Field>
 
-          <Field field={startTimeField}>
+          <Field field={startTimeField} on:blur={updateDurationString} on:keydown={updateDurationString}>
             <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
             <input autocomplete="off" class="st-input w-100" name="start-time" />
           </Field>
 
-          <Field field={endTimeField}>
+          <Field field={endTimeField} on:blur={updateDurationString} on:keydown={updateDurationString}>
             <label for="end-time" slot="label">End Time - YYYY-DDDThh:mm:ss</label>
             <input autocomplete="off" class="st-input w-100" name="end-time" />
           </Field>
+
+          <fieldset>
+            <label for="plan-duration">Plan Duration</label>
+            <input class="st-input w-100" disabled id="plan-duration" name="duration" value={durationString} />
+          </fieldset>
 
           <Field field={simTemplateField}>
             <label for="simulation-templates" slot="label"> Simulation Templates </label>
