@@ -3,17 +3,7 @@ import preprocess from 'svelte-preprocess';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  kit: {
-    adapter: adapterNode(),
-    vite: {
-      test: {
-        environment: 'jsdom',
-        include: ['./src/**/*.test.ts'],
-        outputFile: 'unit-test-results/json-results.json',
-        reporters: ['verbose', 'json'],
-      },
-    },
-  },
+  kit: { adapter: adapterNode() },
   preprocess: preprocess(),
 };
 
