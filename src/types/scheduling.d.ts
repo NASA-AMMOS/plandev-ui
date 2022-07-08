@@ -30,6 +30,7 @@ type SchedulingResponse = {
 };
 
 type SchedulingSpec = {
+  analysis_only: boolean;
   horizon_end: string;
   horizon_start: string;
   id: number;

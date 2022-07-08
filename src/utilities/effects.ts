@@ -239,6 +239,7 @@ const effects = {
 
       await effects.createSimulation(id, simulation_template_id);
       await effects.createSchedulingSpec({
+        analysis_only: false,
         horizon_end: end_time,
         horizon_start: start_time,
         plan_id: id,
