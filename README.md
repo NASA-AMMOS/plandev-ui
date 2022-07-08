@@ -1,4 +1,3 @@
-![ci](https://github.com/NASA-AMMOS/aerie-ui/actions/workflows/ci.yml/badge.svg)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/aerie-ui.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NASA-AMMOS/aerie-ui/context:javascript)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/NASA-AMMOS/aerie-ui?color=brightgreen)
 
