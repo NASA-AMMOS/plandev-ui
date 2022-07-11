@@ -256,7 +256,9 @@ export const viewActions = {
                     ...row,
                     yAxes: row.yAxes.map(yAxis => {
                       if (yAxis.id === yAxisId) {
-                        if (prop === 'id') selectedYAxisId.set(value);
+                        if (prop === 'id') {
+                          selectedYAxisId.set(value);
+                        }
                         return {
                           ...yAxis,
                           [prop]: value,

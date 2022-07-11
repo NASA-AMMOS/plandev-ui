@@ -35,7 +35,9 @@
   async function setSplit() {
     await tick();
 
-    if (split) split.destroy();
+    if (split) {
+      split.destroy();
+    }
     split = Split({ onDragEnd });
 
     if (div) {

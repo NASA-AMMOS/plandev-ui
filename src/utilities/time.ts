@@ -56,7 +56,9 @@ export function convertDurationStringToUs(durationString: string): number | neve
 
   const fullMicrosecondsRegex = new RegExp(`^${validDurationValueRegex}$`);
 
-  if (fullMicrosecondsRegex.test(durationString)) return parseFloat(durationString);
+  if (fullMicrosecondsRegex.test(durationString)) {
+    return parseFloat(durationString);
+  }
 
   throw Error('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
 }

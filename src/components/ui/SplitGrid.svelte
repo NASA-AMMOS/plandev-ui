@@ -12,7 +12,9 @@
   let splitGridDiv: HTMLDivElement;
   let split: SplitInstance;
 
-  $: if (splitGridDiv && grid) setSplit();
+  $: if (splitGridDiv && grid) {
+    setSplit();
+  }
 
   function onDragEnd(): void {
     if (splitGridDiv) {
@@ -29,7 +31,9 @@
   async function setSplit() {
     await tick();
 
-    if (split) split.destroy();
+    if (split) {
+      split.destroy();
+    }
     split = Split({ onDragEnd });
 
     if (splitGridDiv) {

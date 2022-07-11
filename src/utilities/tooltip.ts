@@ -15,7 +15,9 @@ export function tooltip(node: Element, params: any = {}): any {
   // Let's make sure the "aria-label" attribute
   // is set so our element is accessible:
   // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques/Using_the_aria-label_attribute
-  if (!label) node.setAttribute('aria-label', content);
+  if (!label) {
+    node.setAttribute('aria-label', content);
+  }
 
   // Clear out the HTML title attribute since
   // we don't want the default behavior of it

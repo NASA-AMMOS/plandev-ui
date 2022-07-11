@@ -111,7 +111,9 @@
       durationString = convertUsToDurationString(
         (getUnixEpochTime($endTimeField.value) - getUnixEpochTime($startTimeField.value)) * 1000,
       );
-    } else durationString = 'None';
+    } else {
+      durationString = 'None';
+    }
   }
 </script>
 

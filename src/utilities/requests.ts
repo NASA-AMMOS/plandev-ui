@@ -37,7 +37,9 @@ export async function reqGateway<T = any>(
   }
 
   const response = await fetch(`${GATEWAY_URL}${url}`, options);
-  if (!response.ok) throw new Error(response.statusText);
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
   const data = await response.json();
 
   return data;
