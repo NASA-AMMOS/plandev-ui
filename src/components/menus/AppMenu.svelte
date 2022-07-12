@@ -31,6 +31,10 @@
       <i class="bi bi-bar-chart" />
       Models
     </MenuItem>
+    <MenuItem on:click={() => goto('/constraints')} on:pointerenter={() => prefetch('/constraints')}>
+      <i class="bi bi-braces-asterisk" />
+      Constraints
+    </MenuItem>
     <MenuItem on:click={() => goto('/dictionaries')} on:pointerenter={() => prefetch('/dictionaries')}>
       <i class="bi bi-journal-text" />
       Dictionaries

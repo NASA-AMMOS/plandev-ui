@@ -24,13 +24,9 @@
       <i class="bi bi-book" />
       Activity Types
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('Constraints')}>
+    <MenuItem on:click={() => updateGridComponent('ConstraintsGrid')}>
       <i class="bi bi-braces-asterisk" />
       Constraints
-    </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ConstraintEditor')}>
-      <i class="bi bi-code" />
-      Constraint Editor
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ConstraintViolations')}>
       <i class="bi bi-file-earmark-excel" />

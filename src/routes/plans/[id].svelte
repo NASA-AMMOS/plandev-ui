@@ -7,8 +7,7 @@
   import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
-  import ConstraintEditor from '../../components/constraint/ConstraintEditor.svelte';
-  import Constraints from '../../components/constraint/Constraints.svelte';
+  import ConstraintsGrid from '../../components/constraint/ConstraintsGrid.svelte';
   import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
   import Expansion from '../../components/expansion/Expansion.svelte';
   import Scheduling from '../../components/scheduling/Scheduling.svelte';
@@ -21,13 +20,7 @@
   import ViewEditor from '../../components/view/ViewEditor.svelte';
   import Views from '../../components/view/Views.svelte';
   import { activitiesMap, resetActivityStores } from '../../stores/activities';
-  import {
-    checkConstraintsStatus,
-    constraintsTsFiles,
-    modelConstraints,
-    planConstraints,
-    resetConstraintStores,
-  } from '../../stores/constraints';
+  import { checkConstraintsStatus, resetConstraintStores } from '../../stores/constraints';
   import {
     maxTimeRange,
     plan,
@@ -65,13 +58,11 @@
       const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialTsFilesConstraints = await effects.getTsFilesConstraints(initialPlan.model.id);
         const initialView = await effects.getView(url.searchParams);
 
         return {
           props: {
             initialPlan,
-            initialTsFilesConstraints,
             initialView,
           },
         };
@@ -87,16 +78,14 @@
 
 <script lang="ts">
   export let initialPlan: Plan | null;
-  export let initialTsFilesConstraints: TypeScriptFile[];
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
     ActivityForm,
     ActivityTable,
     ActivityTypes,
-    ConstraintEditor,
     ConstraintViolations,
-    Constraints,
+    ConstraintsGrid,
     Expansion,
     IFrame,
     Scheduling,
@@ -109,10 +98,8 @@
 
   $: if (initialPlan) {
     $activitiesMap = keyBy(initialPlan.activities, 'id');
-    $modelConstraints = initialPlan.model.constraints;
     $modelParametersMap = initialPlan.model.parameters.parameters;
     $plan = initialPlan;
-    $planConstraints = initialPlan.constraints;
     simulation.updateValue(() => initialPlan.simulations[0]);
 
     $planEndTimeMs = getUnixEpochTime(initialPlan.end_time);
@@ -122,10 +109,6 @@
 
     simulation.setVariables({ planId: initialPlan.id });
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
-  }
-
-  $: if (initialTsFilesConstraints) {
-    $constraintsTsFiles = initialTsFilesConstraints;
   }
 
   $: if (initialView) {

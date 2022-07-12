@@ -277,6 +277,20 @@ const gql = {
     }
   `,
 
+  GET_CONSTRAINT: `#graphql
+    query GetConstraint($id: Int!) {
+      constraint: condition_by_pk(id: $id) {
+        definition
+        description
+        id
+        model_id
+        name
+        plan_id
+        summary
+      }
+    }
+  `,
+
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS: `#graphql
     query GetEffectiveActivityArguments($modelId: ID!, $activityTypeName: String!, $arguments: ActivityArguments!) {
       effectiveActivityArguments: getActivityEffectiveArguments(
@@ -353,15 +367,6 @@ const gql = {
           start_offset
           type
         }
-        constraints: conditions {
-          definition
-          description
-          id
-          model_id
-          name
-          plan_id
-          summary
-        }
         duration
         id
         model: mission_model {
@@ -370,15 +375,6 @@ const gql = {
             name
             parameters
             required_parameters
-          }
-          constraints: conditions {
-            definition
-            description
-            id
-            model_id
-            name
-            plan_id
-            summary
           }
           id
           parameters {
@@ -605,6 +601,39 @@ const gql = {
         id
         mission
         version
+      }
+    }
+  `,
+
+  SUB_CONSTRAINTS: `#graphql
+    subscription SubConstraints($modelId: Int!, $planId: Int!) {
+      constraints: condition(where: {
+        _or: [
+          { model_id: { _eq: $modelId } },
+          { plan_id: { _eq: $planId } }
+        ]
+      }) {
+        definition
+        description
+        id
+        model_id
+        name
+        plan_id
+        summary
+      }
+    }
+  `,
+
+  SUB_CONSTRAINTS_ALL: `#graphql
+    subscription SubConstraintsAll {
+      constraints: condition {
+        definition
+        description
+        id
+        model_id
+        name
+        plan_id
+        summary
       }
     }
   `,

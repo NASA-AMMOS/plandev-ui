@@ -1,119 +1,50 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { constraintsTsFiles, selectedConstraint } from '../../stores/constraints';
   import effects from '../../utilities/effects';
-  import GridMenu from '../menus/GridMenu.svelte';
+  import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
 
-  export let gridId: number;
+  export let constraintDefinition: string = '';
+  export let constraintModelId: number | null = null;
+  export let readOnly: boolean = false;
+  export let title: string = 'Constraint - Definition Editor';
 
-  let constraintType: ConstraintType = 'model';
-  let definition: string = '';
-  let description: string = '';
+  let constraintsTsFiles: TypeScriptFile[];
   let monaco: Monaco;
-  let name: string = '';
-  let summary: string = '';
 
-  $: if ($selectedConstraint) {
-    constraintType = $selectedConstraint.model_id ? 'model' : 'plan';
-    definition = $selectedConstraint.definition;
-    description = $selectedConstraint.description;
-    name = $selectedConstraint.name;
-    summary = $selectedConstraint.summary;
-  } else {
-    constraintType = 'model';
-    definition = `export default (): Constraint => {\n\n}`;
-    description = '';
-    name = '';
-    summary = '';
-  }
+  $: effects.getTsFilesConstraints(constraintModelId).then(tsFiles => (constraintsTsFiles = tsFiles));
 
-  $: valid = definition !== '';
-
-  $: if (monaco !== undefined && $constraintsTsFiles !== undefined) {
+  $: if (monaco !== undefined && constraintsTsFiles !== undefined) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
-    typescriptDefaults.setExtraLibs($constraintsTsFiles);
-  }
-
-  async function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
-    const { detail } = event;
-    const { value } = detail;
-    definition = value;
-  }
-
-  function saveConstraint() {
-    if ($selectedConstraint) {
-      effects.updateConstraint(constraintType, $selectedConstraint.id, definition, description, name, summary);
-    } else {
-      effects.createConstraint(constraintType, definition, description, name, summary);
-    }
+    typescriptDefaults.setExtraLibs(constraintsTsFiles);
   }
 </script>
 
 <Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Constraint Editor" />
-    <div class="right">
-      <button class="st-button secondary ellipsis" disabled={!valid} on:click={() => saveConstraint()}>
-        <i class="bi bi-save" style="font-size: 0.8rem" />
-        Save
-      </button>
-      <button class="st-button secondary ellipsis" on:click={() => ($selectedConstraint = null)}>
-        <i class="bi bi-plus-square" style="font-size: 0.8rem" />
-        New
-      </button>
-    </div>
+    <Chip>{title}</Chip>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <fieldset>
-      <label for="type">Type</label>
-      <select bind:value={constraintType} class="st-select w-100" name="type">
-        <option value="model">Model</option>
-        <option value="plan">Plan</option>
-      </select>
-    </fieldset>
-
-    <fieldset>
-      <label for="name">Name</label>
-      <input bind:value={name} autocomplete="off" class="st-input w-100" name="name" required />
-    </fieldset>
-
-    <fieldset>
-      <label for="description">Description</label>
-      <input bind:value={description} autocomplete="off" class="st-input w-100" name="description" />
-    </fieldset>
-
-    <fieldset>
-      <label for="summary">Summary</label>
-      <input bind:value={summary} autocomplete="off" class="st-input w-100" name="summary" />
-    </fieldset>
-
     <MonacoEditor
       bind:monaco
       automaticLayout={true}
+      fixedOverflowWidgets={true}
       language="typescript"
       lineNumbers="on"
       minimap={{ enabled: false }}
+      {readOnly}
       scrollBeyondLastLine={false}
       tabSize={2}
-      value={definition}
-      on:didChangeModelContent={onDidChangeModelContent}
+      value={constraintDefinition}
+      on:didChangeModelContent
     />
   </svelte:fragment>
 </Panel>
-
-<style>
-  .right {
-    align-items: center;
-    display: inline-flex;
-    gap: 5px;
-  }
-</style>

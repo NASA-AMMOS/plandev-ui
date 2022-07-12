@@ -5,7 +5,6 @@
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -47,10 +46,7 @@
 
   <svelte:fragment slot="body">
     <fieldset class="w-100 m-0 p-0 pb-2">
-      <Input>
-        <i class="bi bi-search" slot="left" />
-        <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter activity types" />
-      </Input>
+      <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter activity types" />
     </fieldset>
 
     {#if sortedActivityTypes.length}

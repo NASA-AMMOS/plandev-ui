@@ -1,94 +1,117 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    checkConstraintsStatus,
-    modelConstraints,
-    planConstraints,
-    selectedConstraint,
-  } from '../../stores/constraints';
+  import { goto } from '$app/navigation';
+  import { constraintsAll, constraintsColumns } from '../../stores/constraints';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
-  import GridMenu from '../menus/GridMenu.svelte';
-  import ListItem from '../ui/ListItem.svelte';
+  import Input from '../form/Input.svelte';
+  import Chip from '../ui/Chip.svelte';
+  import CssGrid from '../ui/CssGrid.svelte';
+  import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
-  import StatusBadge from '../ui/StatusBadge.svelte';
+  import Table from '../ui/Table.svelte';
+  import ConstraintEditor from './ConstraintEditor.svelte';
 
-  export let gridId: number;
+  let filterText: string = '';
+  let filteredConstraints: Constraint[] = [];
+  let selectedConstraint: Constraint | null = null;
+
+  $: filteredConstraints = $constraintsAll.filter(constraint => {
+    const filterTextLowerCase = filterText.toLowerCase();
+    const includesId = `${constraint.id}`.includes(filterTextLowerCase);
+    const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
+    return includesId || includesName;
+  });
+  $: if (selectedConstraint !== null) {
+    const found = $constraintsAll.findIndex(constraint => constraint.id === selectedConstraint.id);
+    if (found === -1) {
+      selectedConstraint = null;
+    }
+  }
+
+  async function deleteConstraint(id: number) {
+    const success = await effects.deleteConstraint(id);
+
+    if (success) {
+      filteredConstraints = filteredConstraints.filter(constraint => constraint.id !== id);
+
+      if (id === selectedConstraint?.id) {
+        selectedConstraint = null;
+      }
+    }
+  }
+
+  function toggleConstraint(event: CustomEvent<Constraint>) {
+    const { detail: clickedConstraint } = event;
+
+    if (selectedConstraint?.id === clickedConstraint.id) {
+      selectedConstraint = null;
+    } else {
+      selectedConstraint = clickedConstraint;
+    }
+  }
 </script>
 
-<Panel>
-  <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Constraints" />
-    <StatusBadge
-      status={$checkConstraintsStatus}
-      title="Check Constraints"
-      titleWidth="135px"
-      on:click={() => effects.checkConstraints()}
-    />
-  </svelte:fragment>
+<CssGrid bind:columns={$constraintsColumns}>
+  <Panel>
+    <svelte:fragment slot="header">
+      <Chip>Constraints</Chip>
 
-  <svelte:fragment slot="body">
-    <details open>
-      <summary class="p-1">Model Constraints</summary>
-      <div class="m-1">
-        {#if $modelConstraints.length}
-          {#each $modelConstraints as constraint}
-            <ListItem>
-              {constraint.name}
-              <span slot="suffix">
-                <button
-                  class="st-button icon"
-                  on:click|stopPropagation={() => ($selectedConstraint = constraint)}
-                  use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
-                >
-                  <i class="bi bi-pencil" />
-                </button>
-                <button
-                  class="st-button icon"
-                  on:click|stopPropagation={() => effects.deleteConstraint(constraint.id)}
-                  use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
-                >
-                  <i class="bi bi-trash" />
-                </button>
-              </span>
-            </ListItem>
-          {/each}
-        {:else}
-          <div class="p-2">No Model Constraints Found</div>
-        {/if}
-      </div>
-    </details>
+      <Input>
+        <input bind:value={filterText} class="st-input" placeholder="Filter constraints" style="width: 300px" />
+      </Input>
 
-    <details open>
-      <summary class="p-1">Plan Constraints</summary>
-      <div class="m-1">
-        {#if $planConstraints.length}
-          {#each $planConstraints as constraint}
-            <ListItem>
-              {constraint.name}
-              <span slot="suffix">
-                <button
-                  class="st-button icon"
-                  on:click|stopPropagation={() => ($selectedConstraint = constraint)}
-                  use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
-                >
-                  <i class="bi bi-pencil" />
-                </button>
-                <button
-                  class="st-button icon"
-                  on:click|stopPropagation={() => effects.deleteConstraint(constraint.id)}
-                  use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
-                >
-                  <i class="bi bi-trash" />
-                </button>
-              </span>
-            </ListItem>
-          {/each}
-        {:else}
-          <div class="p-2">No Plan Constraints Found</div>
-        {/if}
+      <div class="right">
+        <button class="st-button secondary ellipsis" on:click={() => goto('/constraints/new')}> New </button>
       </div>
-    </details>
-  </svelte:fragment>
-</Panel>
+    </svelte:fragment>
+
+    <svelte:fragment slot="body">
+      {#if filteredConstraints.length}
+        <Table
+          let:currentRow
+          columnDefs={[
+            { field: 'id', name: 'ID', sortable: true },
+            { field: 'name', name: 'Name', sortable: true },
+            { field: 'model_id', name: 'Model ID', sortable: true },
+            { field: 'plan_id', name: 'Plan ID', sortable: true },
+          ]}
+          rowActions
+          rowData={filteredConstraints}
+          rowSelectionMode="single"
+          selectedRowId={selectedConstraint?.id}
+          on:rowClick={toggleConstraint}
+        >
+          <div slot="actions-cell">
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={() => goto(`/constraints/edit/${currentRow.id}`)}
+              use:tooltip={{ content: 'Edit Constraint', placement: 'bottom' }}
+            >
+              <i class="bi bi-pencil" />
+            </button>
+            <button
+              class="st-button icon"
+              on:click|stopPropagation={() => deleteConstraint(currentRow.id)}
+              use:tooltip={{ content: 'Delete Constraint', placement: 'bottom' }}
+            >
+              <i class="bi bi-trash" />
+            </button>
+          </div>
+        </Table>
+      {:else}
+        No Constraints Found
+      {/if}
+    </svelte:fragment>
+  </Panel>
+
+  <CssGridGutter track={1} type="column" />
+
+  <ConstraintEditor
+    constraintDefinition={selectedConstraint?.definition ?? 'No Constraint Selected'}
+    constraintModelId={selectedConstraint?.model_id}
+    readOnly={true}
+    title="Constraint - Definition Editor (Read-only)"
+  />
+</CssGrid>

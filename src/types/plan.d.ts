@@ -9,7 +9,6 @@ type PlanList = {
 
 type Plan = {
   activities: Activity[];
-  constraints: Constraint[];
   duration: string;
   end_time: string;
   id: number;

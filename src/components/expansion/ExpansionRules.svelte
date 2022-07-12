@@ -56,7 +56,6 @@
       <Chip>Expansion Rules</Chip>
 
       <Input>
-        <i class="bi bi-search" slot="left" />
         <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 300px" />
       </Input>
 

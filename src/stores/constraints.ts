@@ -1,6 +1,14 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { planStartTimeMs } from './plan';
+import { gqlSubscribable } from './subscribable';
+
+/* Subscriptions. */
+
+export const constraints = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS, { modelId: -1, planId: -1 }, []);
+
+export const constraintsAll = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS_ALL, {}, []);
 
 /* Writeable. */
 
@@ -8,13 +16,7 @@ export const checkConstraintsStatus: Writable<Status> = writable(Status.Clean);
 
 export const constraintViolationsMap: Writable<ConstraintViolationsMap> = writable({});
 
-export const constraintsTsFiles: Writable<TypeScriptFile[]> = writable([]);
-
-export const modelConstraints: Writable<Constraint[]> = writable([]);
-
-export const planConstraints: Writable<Constraint[]> = writable([]);
-
-export const selectedConstraint: Writable<Constraint | null> = writable(null);
+export const constraintsColumns: Writable<string> = writable('1fr 1px 2fr');
 
 /* Derived. */
 
@@ -38,8 +40,4 @@ export const constraintViolations: Readable<ConstraintViolation[]> = derived(
 export function resetConstraintStores(): void {
   checkConstraintsStatus.set(Status.Clean);
   constraintViolationsMap.set({});
-  constraintsTsFiles.set([]);
-  modelConstraints.set([]);
-  planConstraints.set([]);
-  selectedConstraint.set(null);
 }

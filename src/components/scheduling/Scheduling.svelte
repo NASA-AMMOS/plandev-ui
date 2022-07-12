@@ -4,7 +4,6 @@
   import { onMount } from 'svelte';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
-  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -12,6 +11,15 @@
   import SchedulingGoal from './SchedulingGoal.svelte';
 
   export let gridId: number;
+
+  let filterText: string = '';
+  let filteredSchedulingSpecGoals: SchedulingSpecGoal[] = [];
+
+  $: filteredSchedulingSpecGoals = $schedulingSpecGoals.filter(spec => {
+    const filterTextLowerCase = filterText.toLowerCase();
+    const includesName = spec.goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
+    return includesName;
+  });
 
   onMount(() => {
     schedulingSpecGoals.setVariables({ specification_id: $selectedSpecId });
@@ -26,10 +34,7 @@
 
   <svelte:fragment slot="body">
     <CssGrid columns="4fr 1fr" gap="5px">
-      <Input>
-        <i class="bi bi-search" slot="left" />
-        <input class="st-input w-100" name="search" placeholder="Find scheduling goals" />
-      </Input>
+      <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter scheduling goals" />
       <button
         class="st-button secondary"
         name="new-scheduling-goal"
@@ -38,10 +43,10 @@
         New
       </button>
     </CssGrid>
-    {#if !$schedulingSpecGoals.length}
+    {#if !filteredSchedulingSpecGoals.length}
       <div class="pt-1">No scheduling goals found</div>
     {:else}
-      {#each $schedulingSpecGoals as specGoal}
+      {#each filteredSchedulingSpecGoals as specGoal}
         <SchedulingGoal
           enabled={specGoal.enabled}
           goal={specGoal.goal}

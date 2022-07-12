@@ -1,13 +1,7 @@
 import { keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
-import {
-  checkConstraintsStatus,
-  constraintViolationsMap,
-  modelConstraints,
-  planConstraints,
-  selectedConstraint,
-} from '../stores/constraints';
+import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
 import {
   createDictionaryError,
   creatingDictionary,
@@ -114,20 +108,18 @@ const effects = {
   },
 
   async createConstraint(
-    constraintType: ConstraintType,
     definition: string,
     description: string,
+    model_id: number | null,
     name: string,
+    plan_id: number | null,
     summary: string,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
-      const { id: planId, model } = get(plan);
-      const model_id = constraintType === 'model' ? model.id : null;
-      const plan_id = constraintType === 'plan' ? planId : null;
       const constraintInsertInput: ConstraintInsertInput = {
         definition,
         description,
-        model_id,
+        model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
         summary,
@@ -135,20 +127,16 @@ const effects = {
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput });
       const { createConstraint } = data;
       const { id } = createConstraint;
-      const constraint: Constraint = { ...constraintInsertInput, id };
 
-      if (constraintType === 'model') {
-        modelConstraints.update(constraints => [...constraints, constraint]);
-      } else if (constraintType === 'plan') {
-        planConstraints.update(constraints => [...constraints, constraint]);
-      }
-      selectedConstraint.set(constraint);
       checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
       showSuccessToast('Constraint Created Successfully');
+
+      return id;
     } catch (e) {
       console.log(e);
       showFailureToast('Constraint Creation Failed');
+      return null;
     }
   },
 
@@ -424,7 +412,7 @@ const effects = {
     }
   },
 
-  async deleteConstraint(id: number): Promise<void> {
+  async deleteConstraint(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal(
         'Delete',
@@ -435,21 +423,15 @@ const effects = {
       if (confirm) {
         await reqHasura(gql.DELETE_CONSTRAINT, { id });
 
-        modelConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
-        planConstraints.update(constraints => constraints.filter(constraint => constraint.id !== id));
-
-        const currentSelectedConstraint = get(selectedConstraint);
-        if (currentSelectedConstraint && currentSelectedConstraint.id === id) {
-          selectedConstraint.set(null);
-        }
-
         checkConstraintsStatus.set(Status.Dirty);
         simulationStatus.update(Status.Dirty);
         showSuccessToast('Constraint Deleted Successfully');
+        return true;
       }
     } catch (e) {
       console.log(e);
       showFailureToast('Constraint Delete Failed');
+      return false;
     }
   },
 
@@ -669,6 +651,17 @@ const effects = {
       }
     } else {
       return [];
+    }
+  },
+
+  async getConstraint(id: number): Promise<Constraint | null> {
+    try {
+      const data = await reqHasura<Constraint>(gql.GET_CONSTRAINT, { id });
+      const { constraint } = data;
+      return constraint;
+    } catch (e) {
+      console.log(e);
+      return null;
     }
   },
 
@@ -938,19 +931,23 @@ const effects = {
   },
 
   async getTsFilesConstraints(model_id: number): Promise<TypeScriptFile[]> {
-    try {
-      const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id });
-      const { dslTypeScriptResponse } = data;
-      const { reason, status, typescriptFiles } = dslTypeScriptResponse;
+    if (model_id !== null && model_id !== undefined) {
+      try {
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id });
+        const { dslTypeScriptResponse } = data;
+        const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
-      if (status === 'success') {
-        return typescriptFiles;
-      } else {
-        console.log(reason);
+        if (status === 'success') {
+          return typescriptFiles;
+        } else {
+          console.log(reason);
+          return [];
+        }
+      } catch (e) {
+        console.log(e);
         return [];
       }
-    } catch (e) {
-      console.log(e);
+    } else {
       return [];
     }
   },
@@ -1185,38 +1182,24 @@ const effects = {
   },
 
   async updateConstraint(
-    constraintType: ConstraintType,
     id: number,
     definition: string,
     description: string,
+    model_id: number,
     name: string,
+    plan_id: number,
     summary: string,
   ): Promise<void> {
     try {
-      const constraint: Partial<Constraint> = { definition, description, name, summary };
+      const constraint: Partial<Constraint> = {
+        definition,
+        description,
+        model_id: plan_id !== null ? null : model_id,
+        name,
+        plan_id,
+        summary,
+      };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
-
-      if (constraintType === 'model') {
-        modelConstraints.update(constraints => {
-          constraints = constraints.map(currentConstraint => {
-            if (currentConstraint.id === id) {
-              return { ...currentConstraint, ...constraint };
-            }
-            return currentConstraint;
-          });
-          return constraints;
-        });
-      } else if (constraintType === 'plan') {
-        planConstraints.update(constraints => {
-          constraints = constraints.map(currentConstraint => {
-            if (currentConstraint.id === id) {
-              return { ...currentConstraint, ...constraint };
-            }
-            return currentConstraint;
-          });
-          return constraints;
-        });
-      }
 
       checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
