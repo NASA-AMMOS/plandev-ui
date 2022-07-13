@@ -76,6 +76,7 @@
     "postgres-interval": "^4.0.0",
     "prettier": "^2.7.1",
     "prettier-plugin-svelte": "^2.7.0",
+    "semver": "^7.3.7",
     "split-grid": "^1.0.11",
     "svelte": "^3.49.0",
     "svelte-check": "^2.8.0",
@@ -86,7 +87,7 @@
     "tslib": "^2.4.0",
     "typescript": "^4.7.4",
     "unique-names-generator": "^4.7.1",
-    "vitest": "^0.17.1",
-    "vite": "^2.9.14"
+    "vite": "^2.9.14",
+    "vitest": "^0.17.1"
   }
 }
