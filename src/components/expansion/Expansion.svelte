@@ -29,7 +29,7 @@
       <button
         class="st-button secondary ellipsis"
         disabled={!expandButtonEnabled}
-        on:click|stopPropagation={() => effects.expand(selectedExpansionSetId)}
+        on:click|stopPropagation={() => effects.expand(selectedExpansionSetId, $simulationDatasetId)}
       >
         {$expandingPlan ? 'Expanding... ' : 'Expand'}
       </button>
@@ -76,7 +76,7 @@
               <button
                 class="st-button secondary"
                 disabled={!createButtonEnabled}
-                on:click|stopPropagation={() => effects.createSequence(seqIdInput)}
+                on:click|stopPropagation={() => effects.createSequence(seqIdInput, $simulationDatasetId)}
               >
                 {$creatingSequence ? 'Creating... ' : 'Create'}
               </button>

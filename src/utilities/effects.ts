@@ -303,18 +303,11 @@ const effects = {
     }
   },
 
-  async createSequence(seqId: string): Promise<void> {
+  async createSequence(seqId: string, simulationDatasetId: number): Promise<void> {
     try {
       creatingSequence.set(true);
-      const { id: planId } = get(plan);
-      const data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
-      const { simulation } = data;
-      const [{ dataset }] = simulation;
-      const { id: simulationDatasetId } = dataset;
-
       const sequence: SequenceInsertInput = { metadata: {}, seq_id: seqId, simulation_dataset_id: simulationDatasetId };
       await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
-
       showSuccessToast('Sequence Created Successfully');
       creatingSequence.set(false);
     } catch (e) {
@@ -593,15 +586,9 @@ const effects = {
     }
   },
 
-  async expand(expansionSetId: number): Promise<void> {
+  async expand(expansionSetId: number, simulationDatasetId: number): Promise<void> {
     try {
       expandingPlan.set(true);
-      const { id: planId } = get(plan);
-      const data = await reqHasura(gql.GET_LATEST_SIMULATION_DATASET, { planId });
-      const { simulation } = data;
-      const [{ dataset }] = simulation;
-      const { id: simulationDatasetId } = dataset;
-
       await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
       showSuccessToast('Plan Expanded Successfully');
       expandingPlan.set(false);

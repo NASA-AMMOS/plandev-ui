@@ -332,16 +332,6 @@ const gql = {
     }
   `,
 
-  GET_LATEST_SIMULATION_DATASET: `#graphql
-    query GetLatestSimulationDataset($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { dataset: { id: desc } }, limit: 1) {
-        dataset {
-          id
-        }
-      }
-    }
-  `,
-
   GET_MODELS: `#graphql
     query GetModels {
       models: mission_model {
