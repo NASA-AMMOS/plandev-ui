@@ -15,7 +15,7 @@ test.afterAll(async () => {
 
 test.describe.serial('App Nav', () => {
   test.beforeEach(async () => {
-    await page.goto('/plans');
+    await page.goto('/plans', { waitUntil: 'networkidle' });
   });
 
   test('Initially the app menu should hidden', async () => {
@@ -40,7 +40,7 @@ test.describe.serial('App Nav', () => {
   });
 
   test(`Clicking on the app menu 'Plans' option should route to the plans page`, async ({ baseURL }) => {
-    await page.goto('/models');
+    await page.goto('/models', { waitUntil: 'networkidle' });
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemPlans.click();

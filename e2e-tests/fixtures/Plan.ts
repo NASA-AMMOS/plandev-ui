@@ -45,10 +45,12 @@ export class Plan {
   /**
    * Wait for Hasura events to finish seeding the database after a model is created.
    * If we do not wait then navigation to the plan will fail because the data is not there yet.
+   * If your tests fail then the timeout might be too short.
+   * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto() {
     await this.page.goto('/plans');
-    await this.page.waitForTimeout(1000);
+    await this.page.waitForTimeout(1200);
     await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
   }
 

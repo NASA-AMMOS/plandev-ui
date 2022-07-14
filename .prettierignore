@@ -3,3 +3,4 @@ static/**
 build/**
 node_modules/**
 src/css/utilities.css
+unit-test-results/**
