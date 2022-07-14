@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Constraints from '../../components/constraint/Constraints.svelte';
+  import Constraints from '../../components/constraints/Constraints.svelte';
 </script>
 
 <Constraints />

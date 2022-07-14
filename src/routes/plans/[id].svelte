@@ -7,8 +7,8 @@
   import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
-  import ConstraintsGrid from '../../components/constraint/ConstraintsGrid.svelte';
-  import ConstraintViolations from '../../components/constraint/ConstraintViolations.svelte';
+  import ConstraintsGrid from '../../components/constraints/ConstraintsGrid.svelte';
+  import ConstraintViolations from '../../components/constraints/ConstraintViolations.svelte';
   import Expansion from '../../components/expansion/Expansion.svelte';
   import Scheduling from '../../components/scheduling/Scheduling.svelte';
   import Simulation from '../../components/simulation/Simulation.svelte';

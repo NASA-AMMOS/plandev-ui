@@ -2,7 +2,7 @@
 
 <script lang="ts" context="module">
   import type { Load } from '@sveltejs/kit';
-  import ConstraintForm from '../../components/constraint/ConstraintForm.svelte';
+  import ConstraintForm from '../../components/constraints/ConstraintForm.svelte';
   import effects from '../../utilities/effects';
 
   export const load: Load = async () => {
