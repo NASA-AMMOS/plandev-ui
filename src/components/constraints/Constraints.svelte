@@ -13,6 +13,9 @@
   import Table from '../ui/Table.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
+  export let initialPlans: PlanList[] = [];
+
+  let constraintModelId: number | null = null;
   let filterText: string = '';
   let filteredConstraints: Constraint[] = [];
   let selectedConstraint: Constraint | null = null;
@@ -29,6 +32,7 @@
       selectedConstraint = null;
     }
   }
+  $: constraintModelId = getConstraintModelId(selectedConstraint);
 
   async function deleteConstraint(id: number) {
     const success = await effects.deleteConstraint(id);
@@ -40,6 +44,23 @@
         selectedConstraint = null;
       }
     }
+  }
+
+  function getConstraintModelId(selectedConstraint: Constraint | null): number | null {
+    if (selectedConstraint !== null) {
+      const { model_id, plan_id } = selectedConstraint;
+
+      if (plan_id !== null) {
+        const plan = initialPlans.find(plan => plan.id === plan_id);
+        if (plan) {
+          return plan.model_id;
+        }
+      } else if (model_id !== null) {
+        return model_id;
+      }
+    }
+
+    return null;
   }
 
   function toggleConstraint(event: CustomEvent<Constraint>) {
@@ -110,7 +131,7 @@
 
   <ConstraintEditor
     constraintDefinition={selectedConstraint?.definition ?? 'No Constraint Selected'}
-    constraintModelId={selectedConstraint?.model_id}
+    {constraintModelId}
     readOnly={true}
     title="Constraint - Definition Editor (Read-only)"
   />
