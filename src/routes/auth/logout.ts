@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import effects from '../../utilities/effects';
 
-export const post: RequestHandler = async event => {
+export const POST: RequestHandler = async event => {
   const { locals } = event;
   const { user } = locals;
   const { ssoToken = '' } = user;

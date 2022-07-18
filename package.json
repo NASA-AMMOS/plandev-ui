@@ -38,9 +38,9 @@
   "dependencies": {
     "@nasa-jpl/stellar": "^1.0.3",
     "@sveltejs/adapter-node": "1.0.0-next.81",
-    "@sveltejs/kit": "1.0.0-next.374",
+    "@sveltejs/kit": "1.0.0-next.377",
     "bootstrap": "^5.1.3",
-    "bootstrap-icons": "^1.9.0",
+    "bootstrap-icons": "^1.9.1",
     "cookie": "^0.5.0",
     "d3-axis": "^3.0.0",
     "d3-brush": "^3.0.0",
@@ -62,7 +62,7 @@
     "toastify-js": "^1.11.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.23.3",
+    "@playwright/test": "^1.23.4",
     "@testing-library/svelte": "^3.1.3",
     "@types/cookie": "^0.5.1",
     "@types/d3-axis": "^3.0.1",
@@ -78,7 +78,7 @@
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
     "cloc": "^2.10.0",
-    "eslint": "^8.19.0",
+    "eslint": "^8.20.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-svelte3": "^4.0.0",
     "jsdom": "^20.0.0",
@@ -90,7 +90,7 @@
     "tslib": "^2.4.0",
     "typescript": "^4.7.4",
     "unique-names-generator": "^4.7.1",
-    "vite": "^3.0.0",
-    "vitest": "^0.18.0"
+    "vite": "^3.0.2",
+    "vitest": "^0.18.1"
   }
 }

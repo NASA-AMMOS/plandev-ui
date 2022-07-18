@@ -1,4 +1,4 @@
-export async function get(): Promise<{ body: { success: boolean } }> {
+export async function GET(): Promise<{ body: { success: boolean } }> {
   return {
     body: {
       success: true,

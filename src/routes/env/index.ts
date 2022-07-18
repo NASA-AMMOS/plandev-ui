@@ -1,6 +1,6 @@
 import { defaultEnv } from '../../stores/app';
 
-export async function get(): Promise<{ body: Env }> {
+export async function GET(): Promise<{ body: Env }> {
   const { env } = process;
 
   const AUTH_TYPE = env['AUTH_TYPE'] ?? defaultEnv.AUTH_TYPE;

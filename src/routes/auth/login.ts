@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import effects from '../../utilities/effects';
 
-export const post: RequestHandler = async event => {
+export const POST: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();
   const { password, username } = body;
 
