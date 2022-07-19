@@ -40,10 +40,58 @@ test.describe.serial('Plan', () => {
   });
 
   test('Initially the View layout should be displayed', async () => {
-    await expect(plan.activityFormComponent).toBeVisible();
-    await expect(plan.activityTableComponent).toBeVisible();
-    await expect(plan.activityTypesComponent).toBeVisible();
-    await expect(plan.timelineComponent).toBeVisible();
+    await expect(plan.panelActivityForm).toBeVisible();
+    await expect(plan.activityTable).toBeVisible();
+    await expect(plan.panelActivityTypes).toBeVisible();
+    await expect(plan.timeline).toBeVisible();
     await expect(plan.viewNavButton).toHaveClass(/selected/);
+  });
+
+  test(`Clicking on 'Constraints' in the grid menu should show the constraints panel`, async () => {
+    await expect(plan.panelConstraints).not.toBeVisible();
+    await plan.showPanel('Constraints');
+    await expect(plan.panelConstraints).toBeVisible();
+  });
+
+  test(`Clicking on 'Constraint Violations' in the grid menu should show the constraint violations panel`, async () => {
+    await expect(plan.panelConstraintViolations).not.toBeVisible();
+    await plan.showPanel('Constraint Violations');
+    await expect(plan.panelConstraintViolations).toBeVisible();
+  });
+
+  test(`Clicking on 'Expansion' in the grid menu should show the expansion panel`, async () => {
+    await expect(plan.panelExpansion).not.toBeVisible();
+    await plan.showPanel('Expansion');
+    await expect(plan.panelExpansion).toBeVisible();
+  });
+
+  test(`Clicking on 'Scheduling' in the grid menu should show the scheduling panel`, async () => {
+    await expect(plan.panelScheduling).not.toBeVisible();
+    await plan.showPanel('Scheduling');
+    await expect(plan.panelScheduling).toBeVisible();
+  });
+
+  test(`Clicking on 'Simulation' in the grid menu should show the simulation panel`, async () => {
+    await expect(plan.panelSimulation).not.toBeVisible();
+    await plan.showPanel('Simulation');
+    await expect(plan.panelSimulation).toBeVisible();
+  });
+
+  test(`Clicking on 'Timeline' in the grid menu should show the timeline form panel`, async () => {
+    await expect(plan.panelTimelineForm).not.toBeVisible();
+    await plan.showPanel('Timeline');
+    await expect(plan.panelTimelineForm).toBeVisible();
+  });
+
+  test(`Clicking on 'Views' in the grid menu should show the views panel`, async () => {
+    await expect(plan.panelViews).not.toBeVisible();
+    await plan.showPanel('Views');
+    await expect(plan.panelViews).toBeVisible();
+  });
+
+  test(`Clicking on 'View Editor' in the grid menu should show the view editor panel`, async () => {
+    await expect(plan.panelViewEditor).not.toBeVisible();
+    await plan.showPanel('View Editor');
+    await expect(plan.panelViewEditor).toBeVisible();
   });
 });

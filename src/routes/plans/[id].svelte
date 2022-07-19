@@ -2,23 +2,23 @@
   import type { Load } from '@sveltejs/kit';
   import { keyBy } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
-  import ActivityForm from '../../components/activity/ActivityForm.svelte';
+  import ActivityFormPanel from '../../components/activity/ActivityFormPanel.svelte';
   import ActivityTable from '../../components/activity/ActivityTable.svelte';
-  import ActivityTypes from '../../components/activity/ActivityTypes.svelte';
+  import ActivityTypesPanel from '../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
-  import ConstraintsGrid from '../../components/constraints/ConstraintsGrid.svelte';
-  import ConstraintViolations from '../../components/constraints/ConstraintViolations.svelte';
-  import Expansion from '../../components/expansion/Expansion.svelte';
-  import Scheduling from '../../components/scheduling/Scheduling.svelte';
-  import Simulation from '../../components/simulation/Simulation.svelte';
-  import TimelineForm from '../../components/timeline/form/TimelineForm.svelte';
+  import ConstraintsPanel from '../../components/constraints/ConstraintsPanel.svelte';
+  import ConstraintViolationsPanel from '../../components/constraints/ConstraintViolationsPanel.svelte';
+  import ExpansionPanel from '../../components/expansion/ExpansionPanel.svelte';
+  import SchedulingPanel from '../../components/scheduling/SchedulingPanel.svelte';
+  import SimulationPanel from '../../components/simulation/SimulationPanel.svelte';
+  import TimelineFormPanel from '../../components/timeline/form/TimelineFormPanel.svelte';
   import Timeline from '../../components/timeline/Timeline.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import IFrame from '../../components/ui/IFrame.svelte';
   import SplitGrid from '../../components/ui/SplitGrid.svelte';
-  import ViewEditor from '../../components/view/ViewEditor.svelte';
-  import Views from '../../components/view/Views.svelte';
+  import ViewEditorPanel from '../../components/view/ViewEditorPanel.svelte';
+  import ViewsPanel from '../../components/view/ViewsPanel.svelte';
   import { activitiesMap, resetActivityStores } from '../../stores/activities';
   import { checkConstraintsStatus, resetConstraintStores } from '../../stores/constraints';
   import {
@@ -81,19 +81,19 @@
   export let initialView: View | null;
 
   const gridComponentsByName: Record<string, unknown> = {
-    ActivityForm,
+    ActivityFormPanel,
     ActivityTable,
-    ActivityTypes,
-    ConstraintViolations,
-    ConstraintsGrid,
-    Expansion,
+    ActivityTypesPanel,
+    ConstraintViolationsPanel,
+    ConstraintsPanel,
+    ExpansionPanel,
     IFrame,
-    Scheduling,
-    Simulation,
+    SchedulingPanel,
+    SimulationPanel,
     Timeline,
-    TimelineForm,
-    ViewEditor,
-    Views,
+    TimelineFormPanel,
+    ViewEditorPanel,
+    ViewsPanel,
   };
 
   $: if (initialPlan) {

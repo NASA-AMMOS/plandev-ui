@@ -5,7 +5,7 @@
 export const activitiesGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
-    { componentName: 'ActivityTypes', id: 1, type: 'component' },
+    { componentName: 'ActivityTypesPanel', id: 1, type: 'component' },
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
@@ -18,7 +18,7 @@ export const activitiesGrid: Grid = {
       type: 'rows',
     },
     { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'ActivityForm', id: 8, type: 'component' },
+    { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
   ],
   gridName: 'Activities',
   id: 0,
@@ -28,7 +28,7 @@ export const activitiesGrid: Grid = {
 export const constraintsGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
-    { componentName: 'ConstraintsGrid', id: 1, type: 'component' },
+    { componentName: 'ConstraintsPanel', id: 1, type: 'component' },
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
@@ -45,9 +45,9 @@ export const constraintsGrid: Grid = {
       id: 8,
       rowSizes: '1fr 3px 1fr',
       rows: [
-        { componentName: 'ActivityForm', id: 9, type: 'component' },
+        { componentName: 'ActivityFormPanel', id: 9, type: 'component' },
         { id: 10, track: 1, type: 'gutter' },
-        { componentName: 'ConstraintViolations', id: 11, type: 'component' },
+        { componentName: 'ConstraintViolationsPanel', id: 11, type: 'component' },
       ],
       type: 'rows',
     },
@@ -60,7 +60,7 @@ export const constraintsGrid: Grid = {
 export const schedulingGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
-    { componentName: 'Scheduling', id: 1, type: 'component' },
+    { componentName: 'SchedulingPanel', id: 1, type: 'component' },
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
@@ -73,7 +73,7 @@ export const schedulingGrid: Grid = {
       type: 'rows',
     },
     { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'ActivityForm', id: 8, type: 'component' },
+    { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
   ],
   gridName: 'Scheduling',
   id: 0,
@@ -83,7 +83,7 @@ export const schedulingGrid: Grid = {
 export const simulationGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
-    { componentName: 'Simulation', id: 1, type: 'component' },
+    { componentName: 'SimulationPanel', id: 1, type: 'component' },
     { id: 2, track: 1, type: 'gutter' },
     {
       id: 3,
@@ -96,7 +96,7 @@ export const simulationGrid: Grid = {
       type: 'rows',
     },
     { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'ActivityForm', id: 8, type: 'component' },
+    { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
   ],
   gridName: 'Simulation',
   id: 0,

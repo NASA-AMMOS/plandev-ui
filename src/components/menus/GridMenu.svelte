@@ -20,43 +20,43 @@
   <i class="bi bi-chevron-down" style="font-size: 12px;" />
 
   <Menu bind:this={gridMenu}>
-    <MenuItem on:click={() => updateGridComponent('ActivityTypes')}>
+    <MenuItem on:click={() => updateGridComponent('ActivityTypesPanel')}>
       <i class="bi bi-book" />
       Activity Types
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ConstraintsGrid')}>
+    <MenuItem on:click={() => updateGridComponent('ConstraintsPanel')}>
       <i class="bi bi-braces-asterisk" />
       Constraints
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ConstraintViolations')}>
+    <MenuItem on:click={() => updateGridComponent('ConstraintViolationsPanel')}>
       <i class="bi bi-file-earmark-excel" />
       Constraint Violations
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('Expansion')}>
+    <MenuItem on:click={() => updateGridComponent('ExpansionPanel')}>
       <i class="bi bi-code-square" />
       Expansion
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('Scheduling')}>
+    <MenuItem on:click={() => updateGridComponent('SchedulingPanel')}>
       <i class="bi bi-calendar3" />
       Scheduling
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ActivityForm')}>
+    <MenuItem on:click={() => updateGridComponent('ActivityFormPanel')}>
       <i class="si si-activity" />
       Selected Activity
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('Simulation')}>
+    <MenuItem on:click={() => updateGridComponent('SimulationPanel')}>
       <i class="bi bi-gear-wide-connected" />
       Simulation
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('TimelineForm')}>
+    <MenuItem on:click={() => updateGridComponent('TimelineFormPanel')}>
       <i class="bi bi-calendar2-range" />
       Timeline
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('Views')}>
+    <MenuItem on:click={() => updateGridComponent('ViewsPanel')}>
       <i class="bi bi-columns" />
       Views
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ViewEditor')}>
+    <MenuItem on:click={() => updateGridComponent('ViewEditorPanel')}>
       <i class="bi bi-code" />
       View Editor
     </MenuItem>
