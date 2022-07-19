@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { session } from '$app/stores';
   import { onMount } from 'svelte';
   import { view, viewLayout } from '../../stores/views';
   import effects from '../../utilities/effects';
@@ -19,14 +20,14 @@
   });
 
   async function deleteView(viewId: number) {
-    const { nextView, success } = await effects.deleteView(viewId);
+    const success = await effects.deleteView(viewId);
 
     if (success) {
       views = views.filter(v => v.id !== viewId);
       if ($view.id === viewId) {
-        // If we deleted the view we are viewing, switch to the next view.
+        const nextView = await effects.getView($session?.user?.id, null);
         $view = { ...nextView };
-        $viewLayout = { ...nextView.plan.layout };
+        $viewLayout = { ...nextView.definition.plan.layout };
         setQueryParam('viewId', `${nextView.id}`);
       }
     }
@@ -34,11 +35,11 @@
 
   async function loadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await effects.getView(query);
+    const newView = await effects.getView($session?.user?.id, query);
 
     if (view) {
       $view = { ...newView };
-      $viewLayout = { ...newView.plan.layout };
+      $viewLayout = { ...newView.definition.plan.layout };
       setQueryParam('viewId', `${newView.id}`);
     } else {
       console.log(`No view found for ID: ${viewId}`);
@@ -58,15 +59,15 @@
         columnDefs={[
           { field: 'id', name: 'ID', sortable: true },
           { field: 'name', name: 'Name', sortable: true },
-          { field: 'meta.owner', name: 'Owner', sortable: true },
-          { field: 'meta.timeUpdated', name: 'Last Updated', sortable: true },
+          { field: 'owner', name: 'Owner', sortable: true },
+          { field: 'updated_at', name: 'Last Updated', sortable: true },
         ]}
         rowActions
         rowData={views}
         on:rowClick={({ detail }) => loadView(detail.id)}
       >
         <span slot="actions-cell">
-          {#if currentRow?.meta?.owner !== 'system'}
+          {#if currentRow?.owner !== 'system'}
             <button
               class="st-button icon"
               on:click|stopPropagation={() => deleteView(currentRow.id)}

@@ -7,7 +7,7 @@
   import { constraintViolations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/resources';
-  import { view, viewActions } from '../../stores/views';
+  import { view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
@@ -27,7 +27,7 @@
   let xAxisDiv: HTMLDivElement;
   let xAxisDrawHeight: number = 90;
 
-  $: timeline = $view?.plan.timelines.find(timeline => timeline.id === timelineId);
+  $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
   $: setRowsMaxHeight(timelineDiv, xAxisDiv);
@@ -63,7 +63,7 @@
     if (source === SOURCES.POINTER) {
       rowDragMoveDisabled = true;
     }
-    viewActions.updateTimeline('rows', rows, timelineId);
+    viewUpdateTimeline('rows', rows, timelineId);
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
@@ -90,7 +90,7 @@
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (newHeight < MAX_CANVAS_SIZE) {
-      viewActions.updateRow('height', newHeight, timelineId, rowId);
+      viewUpdateRow('height', newHeight, timelineId, rowId);
     }
   }
 

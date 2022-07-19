@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectedRow, selectedYAxis, viewActions } from '../../../stores/views';
+  import { selectedRow, selectedYAxis, viewUpdateYAxis } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import CssGrid from '../../ui/CssGrid.svelte';
 
@@ -14,7 +14,7 @@
 
   function updateAxis(event: Event) {
     const { name: prop, value } = getTarget(event);
-    viewActions.updateYAxis(prop, value);
+    viewUpdateYAxis(prop, value);
   }
 
   function updateId(event: Event) {
@@ -26,7 +26,7 @@
       } else if (value === axesIdsMap[value]) {
         idError = `Y-Axis with id=${value} already exists`;
       } else {
-        viewActions.updateYAxis('id', value);
+        viewUpdateYAxis('id', value);
         idError = null;
       }
     } else {
@@ -37,7 +37,7 @@
   function updateLabel(event: Event) {
     const { name, value } = getTarget(event);
     const label: Label = { ...$selectedYAxis.label, [name]: value };
-    viewActions.updateYAxis('label', label);
+    viewUpdateYAxis('label', label);
   }
 
   function updateScaleDomain(event: Event) {
@@ -56,9 +56,9 @@
 
     const [min, max] = scaleDomain;
     if (min === null && max === null) {
-      viewActions.updateYAxis('scaleDomain', []);
+      viewUpdateYAxis('scaleDomain', []);
     } else {
-      viewActions.updateYAxis('scaleDomain', scaleDomain);
+      viewUpdateYAxis('scaleDomain', scaleDomain);
     }
   }
 </script>

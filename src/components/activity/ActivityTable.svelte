@@ -9,7 +9,7 @@
 
   let activityTable: ViewActivityTable;
 
-  $: activityTable = $view?.plan.activityTables.find(table => table.id === activityTableId);
+  $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
 </script>
 
 <Table

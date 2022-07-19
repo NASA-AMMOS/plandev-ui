@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectedLayer, viewActions } from '../../../stores/views';
+  import { selectedLayer, viewUpdateLayer } from '../../../stores/views';
   import CssGrid from '../../ui/CssGrid.svelte';
 
   const colorSchemes = [
@@ -22,12 +22,7 @@
   <CssGrid columns="50% 50%">
     <fieldset>
       <label for="colorScheme">Color Scheme</label>
-      <select
-        class="st-select w-100"
-        name="colorScheme"
-        value={lineLayer.colorScheme}
-        on:change={viewActions.updateLayer}
-      >
+      <select class="st-select w-100" name="colorScheme" value={lineLayer.colorScheme} on:change={viewUpdateLayer}>
         {#each colorSchemes as colorScheme}
           <option value={colorScheme.value}>
             {colorScheme.name}
@@ -38,13 +33,7 @@
 
     <fieldset>
       <label for="opacity">Opacity</label>
-      <input
-        class="st-input w-100"
-        name="opacity"
-        type="number"
-        value={lineLayer.opacity}
-        on:input={viewActions.updateLayer}
-      />
+      <input class="st-input w-100" name="opacity" type="number" value={lineLayer.opacity} on:input={viewUpdateLayer} />
     </fieldset>
   </CssGrid>
 {/if}

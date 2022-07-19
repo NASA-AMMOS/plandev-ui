@@ -7,7 +7,7 @@
 
   let iFrame: ViewIFrame;
 
-  $: iFrame = $view?.plan.iFrames.find(iFrame => iFrame.id === iFrameId);
+  $: iFrame = $view?.definition.plan.iFrames.find(iFrame => iFrame.id === iFrameId);
 </script>
 
 <iframe allow="fullscreen" src={iFrame?.src} title="iframe-{iFrame?.title}" />

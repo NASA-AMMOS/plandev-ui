@@ -17,7 +17,7 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
-import { setQueryParam, sleep } from './generic';
+import { parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
@@ -336,26 +336,15 @@ const effects = {
     }
   },
 
-  async createView(viewInput: View): Promise<void> {
+  async createView(name: string, owner: string, definition: ViewDefinition): Promise<void> {
     try {
-      const data = await reqGateway<CreateViewResponse>(
-        '/view',
-        'POST',
-        JSON.stringify({ view: viewInput }),
-        null,
-        false,
-      );
-      const { errors, message, success, view: newView } = data;
+      const viewInsertInput: ViewInsertInput = { definition, name, owner };
+      const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
+      const { newView } = data;
 
-      if (success) {
-        view.update(() => newView);
-        setQueryParam('viewId', `${newView.id}`);
-        showSuccessToast('View Created Successfully');
-      } else {
-        console.log(errors);
-        console.log(message);
-        showFailureToast('View Create Failed');
-      }
+      view.update(() => newView);
+      setQueryParam('viewId', `${newView.id}`);
+      showSuccessToast('View Created Successfully');
     } catch (e) {
       console.log(e);
       showFailureToast('View Create Failed');
@@ -570,19 +559,17 @@ const effects = {
     }
   },
 
-  async deleteView(id: number): Promise<DeleteViewResponse> {
+  async deleteView(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
 
       if (confirm) {
-        const data = await reqGateway<DeleteViewResponse>(`/view/${id}`, 'DELETE', null, null, false);
-        return data;
+        await reqHasura(gql.DELETE_VIEW, { id });
+        return true;
       }
-
-      return { message: 'Delete view canceled', nextView: null, success: false };
     } catch (e) {
       console.log(e);
-      return { message: 'An unexpected error occurred', nextView: null, success: false };
+      return false;
     }
   },
 
@@ -961,12 +948,30 @@ const effects = {
     }
   },
 
-  async getView(query: URLSearchParams): Promise<View | null> {
+  async getView(owner: string, query: URLSearchParams | null): Promise<View | null> {
     try {
-      const viewId = query.has('viewId') ? query.get('viewId') : 'latest';
-      const data = await reqGateway<{ view: View }>(`/view/${viewId}`, 'GET', null, null, false);
-      const { view } = data;
-      return view;
+      if (query !== null) {
+        const viewId = query.has('viewId') ? query.get('viewId') : null;
+        const viewIdAsNumber = parseFloatOrNull(viewId);
+
+        if (viewIdAsNumber !== null) {
+          const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber });
+          const { view } = data;
+
+          if (view !== null) {
+            return view;
+          }
+        }
+      }
+
+      const data = await reqHasura<View[]>(gql.GET_VIEW_LATEST, { owner });
+      const { views } = data;
+
+      if (views.length) {
+        return views[0];
+      } else {
+        return null;
+      }
     } catch (e) {
       console.log(e);
       return null;
@@ -975,8 +980,9 @@ const effects = {
 
   async getViews(): Promise<View[]> {
     try {
-      const data = await reqGateway<View[]>('/views', 'GET', null, null, false);
-      return data;
+      const data = await reqHasura<View[]>(gql.GET_VIEWS);
+      const { views } = data;
+      return views;
     } catch (e) {
       console.log(e);
       return [];
@@ -1274,27 +1280,15 @@ const effects = {
     }
   },
 
-  async updateView(view: View): Promise<void> {
+  async updateView(id: number, view: Partial<View>): Promise<boolean> {
     try {
-      const data = await reqGateway<UpdateViewResponse>(
-        `/view/${view.id}`,
-        'PUT',
-        JSON.stringify({ view }),
-        null,
-        false,
-      );
-      const { errors, message, success } = data;
-
-      if (success) {
-        showSuccessToast('View Updated Successfully');
-      } else {
-        console.log(errors);
-        console.log(message);
-        showFailureToast('View Update Failed');
-      }
+      await reqHasura<Pick<View, 'id'>>(gql.UPDATE_VIEW, { id, view });
+      showSuccessToast('View Updated Successfully');
+      return true;
     } catch (e) {
       console.log(e);
       showFailureToast('View Update Failed');
+      return false;
     }
   },
 

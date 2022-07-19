@@ -123,6 +123,19 @@ const gql = {
     }
   `,
 
+  CREATE_VIEW: `#graphql
+    mutation CreateView($view: view_insert_input!) {
+      newView: insert_view_one(object: $view) {
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
   DELETE_ACTIVITY: `#graphql
     mutation DeleteActivity($id: Int!) {
       deleteActivity: delete_activity_by_pk(id: $id) {
@@ -212,6 +225,14 @@ const gql = {
         simulated_activity_id: $simulated_activity_id
       ) {
         seq_id
+      }
+    }
+  `,
+
+  DELETE_VIEW: `#graphql
+    mutation DeleteView($id: Int!) {
+      deletedView: delete_view_by_pk(id: $id) {
+        id
       }
     }
   `,
@@ -544,6 +565,48 @@ const gql = {
     }
   `,
 
+  GET_VIEW: `#graphql
+    query GetView($id: Int!) {
+      view: view_by_pk(id: $id) {
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  GET_VIEWS: `#graphql
+    query GetViews {
+      views: view {
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  GET_VIEW_LATEST: `#graphql
+    query GetViewLatest($owner: String!) {
+      views: view(
+        where: { _or: [{ owner: { _eq: $owner } }, { owner: { _eq: "system" } }] },
+        order_by: { updated_at: desc }
+      ) {
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
   INSERT_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
       sequence: insert_sequence_to_simulated_activity_one(
@@ -842,6 +905,16 @@ const gql = {
           description
           id
         }
+      }
+    }
+  `,
+
+  UPDATE_VIEW: `#graphql
+    mutation UpdateView($id: Int!, $view: view_set_input!) {
+      updatedView: update_view_by_pk(
+        pk_columns: { id: $id }, _set: $view
+      ) {
+        id
       }
     }
   `,

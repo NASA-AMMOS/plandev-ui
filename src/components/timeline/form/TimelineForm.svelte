@@ -11,7 +11,11 @@
     selectedTimelineId,
     selectedYAxisId,
     view,
-    viewActions,
+    viewSetSelectedRow,
+    viewSetSelectedTimeline,
+    viewUpdateLayer,
+    viewUpdateRow,
+    viewUpdateTimeline,
   } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import GridMenu from '../../menus/GridMenu.svelte';
@@ -27,20 +31,20 @@
   function updateRowEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    viewActions.updateRow(name, value);
+    viewUpdateRow(name, value);
   }
 
   function updateTimelineEvent(event: Event) {
     event.stopPropagation();
     const { name, value } = getTarget(event);
-    viewActions.updateTimeline(name, value);
+    viewUpdateTimeline(name, value);
   }
 
   onMount(() => {
     if ($selectedTimelineId === null) {
-      const firstTimeline = $view.plan.timelines[0];
+      const firstTimeline = $view.definition.plan.timelines[0];
       if (firstTimeline) {
-        viewActions.setSelectedTimeline(firstTimeline.id);
+        viewSetSelectedTimeline(firstTimeline.id);
       }
     }
   });
@@ -61,10 +65,10 @@
         value={$selectedTimelineId}
         on:change={e => {
           const { valueAsNumber: id } = getTarget(e);
-          viewActions.setSelectedTimeline(id);
+          viewSetSelectedTimeline(id);
         }}
       >
-        {#each $view.plan.timelines as timeline}
+        {#each $view.definition.plan.timelines as timeline}
           <option value={timeline.id}>
             Timeline {timeline.id}
           </option>
@@ -114,7 +118,7 @@
               value={$selectedRowId}
               on:change={e => {
                 const { valueAsNumber: id } = getTarget(e);
-                viewActions.setSelectedRow(id);
+                viewSetSelectedRow(id);
               }}
             >
               {#each $selectedTimeline.rows as row}
@@ -202,12 +206,7 @@
         <!-- Layer Chart Type. -->
         <fieldset>
           <label for="chartType">Chart Type</label>
-          <select
-            class="st-select w-100"
-            name="chartType"
-            value={$selectedLayer.chartType}
-            on:change={viewActions.updateLayer}
-          >
+          <select class="st-select w-100" name="chartType" value={$selectedLayer.chartType} on:change={viewUpdateLayer}>
             <option value="activity"> Activity </option>
             <option value="line"> Line </option>
             <option value="x-range"> X-Range </option>

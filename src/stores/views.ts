@@ -2,28 +2,27 @@ import { derived, get, writable, type Writable } from 'svelte/store';
 import { getTarget } from '../utilities/generic';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
 
-/* Stores. */
+/* Writeable. */
 
-/**
- * Current user-defined view.
- */
 export const view: Writable<View | null> = writable(null);
 
-/**
- * Current user-defined layout.
- */
 export const viewLayout: Writable<Grid | null> = writable(null);
 
-/**
- * Formatted JSON string of the current view.
- */
-export const viewText = derived(view, $view => ($view ? JSON.stringify($view, null, 2) : ''));
+export const selectedLayerId: Writable<number | null> = writable(null);
+
+export const selectedRowId: Writable<number | null> = writable(null);
 
 export const selectedTimelineId: Writable<number | null> = writable(null);
 
+export const selectedYAxisId: Writable<number | null> = writable(null);
+
+/* Derived. */
+
+export const viewDefinitionText = derived(view, $view => ($view ? JSON.stringify($view.definition, null, 2) : ''));
+
 export const selectedTimeline = derived([view, selectedTimelineId], ([$view, $selectedTimelineId]) => {
   if ($view !== null && $selectedTimelineId !== null) {
-    for (const timeline of $view.plan.timelines) {
+    for (const timeline of $view.definition.plan.timelines) {
       if (timeline && timeline.id === $selectedTimelineId) {
         return timeline;
       }
@@ -31,8 +30,6 @@ export const selectedTimeline = derived([view, selectedTimelineId], ([$view, $se
   }
   return null;
 });
-
-export const selectedRowId: Writable<number | null> = writable(null);
 
 export const selectedRow = derived([selectedTimeline, selectedRowId], ([$selectedTimeline, $selectedRowId]) => {
   if ($selectedTimeline !== null) {
@@ -45,8 +42,6 @@ export const selectedRow = derived([selectedTimeline, selectedRowId], ([$selecte
   return null;
 });
 
-export const selectedYAxisId: Writable<number | null> = writable(null);
-
 export const selectedYAxis = derived([selectedRow, selectedYAxisId], ([$selectedRow, $selectedYAxisId]) => {
   if ($selectedRow !== null) {
     for (const yAxis of $selectedRow.yAxes) {
@@ -57,8 +52,6 @@ export const selectedYAxis = derived([selectedRow, selectedYAxisId], ([$selected
   }
   return null;
 });
-
-export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selectedRow, $selectedLayerId]) => {
   if ($selectedRow !== null) {
@@ -71,85 +64,89 @@ export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selected
   return null;
 });
 
-/* Action Functions. */
+/* Helper Functions. */
 
-export const viewActions = {
-  setLayout(title: string) {
-    let layout: Grid;
+export function viewSetLayout(title: string) {
+  let layout: Grid;
 
-    if (title === 'Activities') {
-      layout = activitiesGrid;
-    } else if (title === 'Constraints') {
-      layout = constraintsGrid;
-    } else if (title === 'Scheduling') {
-      layout = schedulingGrid;
-    } else if (title === 'Simulation') {
-      layout = simulationGrid;
-    } else if (title === 'View') {
-      const viewGrid = get(viewLayout);
-      layout = viewGrid;
-    } else {
-      layout = activitiesGrid;
-    }
+  if (title === 'Activities') {
+    layout = activitiesGrid;
+  } else if (title === 'Constraints') {
+    layout = constraintsGrid;
+  } else if (title === 'Scheduling') {
+    layout = schedulingGrid;
+  } else if (title === 'Simulation') {
+    layout = simulationGrid;
+  } else if (title === 'View') {
+    const viewGrid = get(viewLayout);
+    layout = viewGrid;
+  } else {
+    layout = activitiesGrid;
+  }
 
-    view.update(currentView => ({
-      ...currentView,
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
+        ...currentView.definition.plan,
         layout,
       },
-    }));
-  },
+    },
+  }));
+}
 
-  setSelectedRow(rowId: number | null): void {
-    selectedRowId.set(rowId);
-    const currentRow = get(selectedRow);
+export function viewSetSelectedRow(rowId: number | null): void {
+  selectedRowId.set(rowId);
+  const currentRow = get(selectedRow);
 
-    if (currentRow) {
-      const firstLayer = currentRow.layers[0];
-      if (firstLayer) {
-        selectedLayerId.set(firstLayer.id);
-      } else {
-        selectedLayerId.set(null);
-      }
-
-      const firstYAxis = currentRow.yAxes[0];
-      if (firstYAxis) {
-        selectedYAxisId.set(firstYAxis.id);
-      } else {
-        selectedYAxisId.set(null);
-      }
+  if (currentRow) {
+    const firstLayer = currentRow.layers[0];
+    if (firstLayer) {
+      selectedLayerId.set(firstLayer.id);
     } else {
-      selectedRowId.set(null);
+      selectedLayerId.set(null);
     }
-  },
 
-  setSelectedTimeline(timelineId: number | null): void {
-    selectedTimelineId.set(timelineId);
-    const currentTimeline = get(selectedTimeline);
-
-    if (currentTimeline) {
-      const firstRow = currentTimeline.rows[0];
-
-      if (firstRow) {
-        viewActions.setSelectedRow(firstRow.id);
-      }
+    const firstYAxis = currentRow.yAxes[0];
+    if (firstYAxis) {
+      selectedYAxisId.set(firstYAxis.id);
+    } else {
+      selectedYAxisId.set(null);
     }
-  },
+  } else {
+    selectedRowId.set(null);
+  }
+}
 
-  updateLayer(event: Event) {
-    event.stopPropagation();
-    const { name: prop, value } = getTarget(event);
+export function viewSetSelectedTimeline(timelineId: number | null): void {
+  selectedTimelineId.set(timelineId);
+  const currentTimeline = get(selectedTimeline);
 
-    const timelineId = get<number | null>(selectedTimelineId);
-    const rowId = get<number | null>(selectedRowId);
-    const layerId = get<number | null>(selectedLayerId);
+  if (currentTimeline) {
+    const firstRow = currentTimeline.rows[0];
 
-    view.update(currentView => ({
-      ...currentView,
+    if (firstRow) {
+      viewSetSelectedRow(firstRow.id);
+    }
+  }
+}
+
+export function viewUpdateLayer(event: Event) {
+  event.stopPropagation();
+  const { name: prop, value } = getTarget(event);
+
+  const timelineId = get<number | null>(selectedTimelineId);
+  const rowId = get<number | null>(selectedRowId);
+  const layerId = get<number | null>(selectedLayerId);
+
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
-        timelines: currentView.plan.timelines.map(timeline => {
+        ...currentView.definition.plan,
+        timelines: currentView.definition.plan.timelines.map(timeline => {
           if (timeline && timeline.id === timelineId) {
             return {
               ...timeline,
@@ -175,28 +172,34 @@ export const viewActions = {
           return timeline;
         }),
       },
-    }));
-  },
+    },
+  }));
+}
 
-  updateLayout(id: number, prop: string, value: any) {
-    view.update(currentView => ({
-      ...currentView,
+export function viewUpdateLayout(id: number, prop: string, value: any) {
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
-        layout: updateGrid(currentView.plan.layout, id, prop, value),
+        ...currentView.definition.plan,
+        layout: updateGrid(currentView.definition.plan.layout, id, prop, value),
       },
-    }));
-  },
+    },
+  }));
+}
 
-  updateRow(prop: string, value: any, timelineId?: number, rowId?: number) {
-    timelineId = timelineId ?? get<number | null>(selectedTimelineId);
-    rowId = rowId ?? get<number | null>(selectedRowId);
+export function viewUpdateRow(prop: string, value: any, timelineId?: number, rowId?: number) {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+  rowId = rowId ?? get<number | null>(selectedRowId);
 
-    view.update(currentView => ({
-      ...currentView,
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
-        timelines: currentView.plan.timelines.map(timeline => {
+        ...currentView.definition.plan,
+        timelines: currentView.definition.plan.timelines.map(timeline => {
           if (timeline && timeline.id === timelineId) {
             return {
               ...timeline,
@@ -214,17 +217,20 @@ export const viewActions = {
           return timeline;
         }),
       },
-    }));
-  },
+    },
+  }));
+}
 
-  updateTimeline(prop: string, value: any, timelineId?: number) {
-    timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+export function viewUpdateTimeline(prop: string, value: any, timelineId?: number) {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
 
-    view.update(currentView => ({
-      ...currentView,
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
-        timelines: currentView.plan.timelines.map(timeline => {
+        ...currentView.definition.plan,
+        timelines: currentView.definition.plan.timelines.map(timeline => {
           if (timeline && timeline.id === timelineId) {
             return {
               ...timeline,
@@ -234,19 +240,22 @@ export const viewActions = {
           return timeline;
         }),
       },
-    }));
-  },
+    },
+  }));
+}
 
-  updateYAxis(prop: string, value: any) {
-    const timelineId = get<number | null>(selectedTimelineId);
-    const rowId = get<number | null>(selectedRowId);
-    const yAxisId = get<number | null>(selectedYAxisId);
+export function viewUpdateYAxis(prop: string, value: any) {
+  const timelineId = get<number | null>(selectedTimelineId);
+  const rowId = get<number | null>(selectedRowId);
+  const yAxisId = get<number | null>(selectedYAxisId);
 
-    view.update(currentView => ({
-      ...currentView,
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
       plan: {
-        ...currentView.plan,
-        timelines: currentView.plan.timelines.map(timeline => {
+        ...currentView.definition.plan,
+        timelines: currentView.definition.plan.timelines.map(timeline => {
           if (timeline && timeline.id === timelineId) {
             return {
               ...timeline,
@@ -275,6 +284,6 @@ export const viewActions = {
           return timeline;
         }),
       },
-    }));
-  },
-};
+    },
+  }));
+}

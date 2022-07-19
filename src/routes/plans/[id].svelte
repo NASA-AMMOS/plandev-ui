@@ -38,7 +38,7 @@
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
-  import { view, viewActions, viewLayout } from '../../stores/views';
+  import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
   import { getUnixEpochTime } from '../../utilities/time';
@@ -58,7 +58,7 @@
       const initialPlan = await effects.getPlan(planId);
 
       if (initialPlan) {
-        const initialView = await effects.getView(url.searchParams);
+        const initialView = await effects.getView(session.user.id, url.searchParams);
 
         return {
           props: {
@@ -113,7 +113,7 @@
 
   $: if (initialView) {
     $view = { ...initialView };
-    $viewLayout = { ...initialView.plan.layout };
+    $viewLayout = { ...initialView.definition.plan.layout };
   }
 
   onMount(() => {
@@ -134,13 +134,13 @@
   function changeColumnSizes(event: CustomEvent<GridChangeSizesEvent>): void {
     const { detail } = event;
     const { gridId, newSizes } = detail;
-    viewActions.updateLayout(gridId, 'columnSizes', newSizes);
+    viewUpdateLayout(gridId, 'columnSizes', newSizes);
   }
 
   function changeRowSizes(event: CustomEvent<GridChangeSizesEvent>): void {
     const { detail } = event;
     const { gridId, newSizes } = detail;
-    viewActions.updateLayout(gridId, 'rowSizes', newSizes);
+    viewUpdateLayout(gridId, 'rowSizes', newSizes);
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -163,42 +163,42 @@
     <svelte:fragment slot="right">
       <NavButton
         icon="si si-activity"
-        selected={$view.plan.layout?.gridName === 'Activities'}
+        selected={$view.definition.plan.layout?.gridName === 'Activities'}
         title="Activities"
-        on:click={() => viewActions.setLayout('Activities')}
+        on:click={() => viewSetLayout('Activities')}
       />
       <NavButton
         icon="bi bi-braces-asterisk"
-        selected={$view.plan.layout?.gridName === 'Constraints'}
+        selected={$view.definition.plan.layout?.gridName === 'Constraints'}
         status={$checkConstraintsStatus}
         title="Constraints"
-        on:click={() => viewActions.setLayout('Constraints')}
+        on:click={() => viewSetLayout('Constraints')}
       />
       <NavButton
         icon="bi bi-calendar3"
-        selected={$view.plan.layout?.gridName === 'Scheduling'}
+        selected={$view.definition.plan.layout?.gridName === 'Scheduling'}
         status={$schedulingStatus}
         title="Scheduling"
-        on:click={() => viewActions.setLayout('Scheduling')}
+        on:click={() => viewSetLayout('Scheduling')}
       />
       <NavButton
         icon="bi bi-gear-wide-connected"
-        selected={$view.plan.layout?.gridName === 'Simulation'}
+        selected={$view.definition.plan.layout?.gridName === 'Simulation'}
         status={$simulationStatus}
         title="Simulation"
-        on:click={() => viewActions.setLayout('Simulation')}
+        on:click={() => viewSetLayout('Simulation')}
       />
       <NavButton
         icon="bi bi-columns"
-        selected={$view.plan.layout?.gridName === 'View'}
+        selected={$view.definition.plan.layout?.gridName === 'View'}
         title="View"
-        on:click={() => viewActions.setLayout('View')}
+        on:click={() => viewSetLayout('View')}
       />
     </svelte:fragment>
   </Nav>
 
   <SplitGrid
-    grid={$view?.plan.layout}
+    grid={$view?.definition.plan.layout}
     {gridComponentsByName}
     on:changeColumnSizes={changeColumnSizes}
     on:changeRowSizes={changeRowSizes}

@@ -1,7 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import { viewActions } from '../../stores/views';
+  import { viewUpdateLayout } from '../../stores/views';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
 
@@ -11,7 +11,7 @@
   let gridMenu: Menu;
 
   function updateGridComponent(name: string) {
-    viewActions.updateLayout(gridId, 'componentName', name);
+    viewUpdateLayout(gridId, 'componentName', name);
   }
 </script>
 
