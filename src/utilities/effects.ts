@@ -964,7 +964,7 @@ const effects = {
         }
       }
 
-      const data = await reqHasura<View[]>(gql.GET_VIEW_LATEST, { owner });
+      const data = await reqHasura<View[]>(gql.GET_VIEWS_LATEST, { owner });
       const { views } = data;
 
       if (views.length) {

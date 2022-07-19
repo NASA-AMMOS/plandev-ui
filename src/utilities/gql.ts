@@ -591,8 +591,8 @@ const gql = {
     }
   `,
 
-  GET_VIEW_LATEST: `#graphql
-    query GetViewLatest($owner: String!) {
+  GET_VIEWS_LATEST: `#graphql
+    query GetViewsLatest($owner: String!) {
       views: view(
         where: { _or: [{ owner: { _eq: $owner } }, { owner: { _eq: "system" } }] },
         order_by: { updated_at: desc }
