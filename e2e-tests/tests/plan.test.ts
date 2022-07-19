@@ -1,9 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
+import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
+let constraints: Constraints;
 let models: Models;
 let page: Page;
 let plan: Plan;
@@ -15,8 +17,9 @@ test.beforeAll(async ({ browser }) => {
 
   models = new Models(page);
   plans = new Plans(page, models);
+  constraints = new Constraints(page, models);
   schedulingGoals = new SchedulingGoals(page, models);
-  plan = new Plan(page, plans, schedulingGoals);
+  plan = new Plan(page, plans, constraints, schedulingGoals);
 
   await models.goto();
   await models.createModel();
@@ -44,7 +47,7 @@ test.describe.serial('Plan', () => {
     await expect(plan.activityTable).toBeVisible();
     await expect(plan.panelActivityTypes).toBeVisible();
     await expect(plan.timeline).toBeVisible();
-    await expect(plan.viewNavButton).toHaveClass(/selected/);
+    await expect(plan.navButtonView).toHaveClass(/selected/);
   });
 
   test(`Clicking on 'Constraints' in the grid menu should show the constraints panel`, async () => {
