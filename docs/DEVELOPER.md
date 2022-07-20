@@ -30,6 +30,18 @@ Before you can run aerie-ui you must install and configure the following product
   brew install node
   ```
 
+- [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based Aerie services. If you're on OSX you can use [brew](https://brew.sh/):
+
+  ```shell
+  brew install --cask temurin
+  ```
+
+  Make sure you update your `JAVA_HOME` environment variable. For example with [Zsh](https://www.zsh.org/) you can set your `.zshrc` to:
+
+  ```shell
+  export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home"
+  ```
+
 - [Docker](https://www.docker.com/) which is used to run the Aerie services.
 
 - [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download, build, and run Aerie:
