@@ -37,7 +37,7 @@
   "dependencies": {
     "@nasa-jpl/stellar": "^1.0.3",
     "@sveltejs/adapter-node": "1.0.0-next.82",
-    "@sveltejs/kit": "1.0.0-next.381",
+    "@sveltejs/kit": "1.0.0-next.385",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
     "cookie": "^0.5.0",
@@ -70,7 +70,7 @@
     "@types/d3-quadtree": "^3.0.2",
     "@types/d3-scale": "^4.0.2",
     "@types/d3-scale-chromatic": "^3.0.0",
-    "@types/d3-selection": "^3.0.2",
+    "@types/d3-selection": "^3.0.3",
     "@types/d3-shape": "^3.1.0",
     "@types/lodash-es": "^4.17.6",
     "@types/toastify-js": "^1.11.1",
