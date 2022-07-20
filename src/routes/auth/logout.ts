@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import effects from '../../utilities/effects';
 
@@ -17,7 +18,7 @@ export const POST: RequestHandler = async event => {
           success: true,
         },
         headers: {
-          'set-cookie': 'user=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
+          'set-cookie': `user=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         },
       };
     } else {

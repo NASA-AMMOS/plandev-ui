@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+  import { base } from '$app/paths';
   import { session } from '$app/stores';
   import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
@@ -7,7 +8,7 @@
   export const load: Load = ({ session }) => {
     if (session.user) {
       return {
-        redirect: '/plans',
+        redirect: `${base}/plans`,
         status: 302,
       };
     }
@@ -38,7 +39,7 @@
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       };
-      const response = await fetch('/auth/login', options);
+      const response = await fetch(`${base}/auth/login`, options);
       const loginResponse: LoginResponseBody = await response.json();
       const { message, success, user = null } = loginResponse;
 

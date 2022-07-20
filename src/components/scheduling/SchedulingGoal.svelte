@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
@@ -60,7 +61,7 @@
 
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => window.open(`/scheduling/goals/edit/${goal.id}`, '_blank')}>
+  <ContextMenuItem on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}>
     Edit Goal
   </ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>

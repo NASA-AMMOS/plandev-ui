@@ -3,7 +3,12 @@ import preprocess from 'svelte-preprocess';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  kit: { adapter: adapterNode() },
+  kit: {
+    adapter: adapterNode(),
+    paths: {
+      base: '',
+    },
+  },
   preprocess: preprocess(),
 };
 

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
@@ -60,7 +61,7 @@
       </Input>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules/new')}> New </button>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/rules/new`)}> New </button>
       </div>
     </svelte:fragment>
 
@@ -85,7 +86,7 @@
           <div slot="actions-cell">
             <button
               class="st-button icon"
-              on:click|stopPropagation={() => goto(`/expansion/rules/edit/${currentRow.id}`)}
+              on:click|stopPropagation={() => goto(`${base}/expansion/rules/edit/${currentRow.id}`)}
               use:tooltip={{ content: 'Edit Rule', placement: 'bottom' }}
             >
               <i class="bi bi-pencil" />

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { activityTypeNames, dictionaries, expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
   import { sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
@@ -50,7 +51,7 @@
       const newRuleId = await effects.createExpansionRule(newRule);
 
       if (newRuleId !== null) {
-        goto(`/expansion/rules/edit/${newRuleId}`);
+        goto(`${base}/expansion/rules/edit/${newRuleId}`);
       }
     } else if (mode === 'edit') {
       const updatedRule: Partial<ExpansionRule> = {
@@ -73,7 +74,7 @@
       <Chip>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</Chip>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/rules')}>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/rules`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>

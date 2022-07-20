@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts" context="module">
+  import { base } from '$app/paths';
   import type { Load } from '@sveltejs/kit';
   import SchedulingGoalForm from '../../../../components/scheduling/SchedulingGoalForm.svelte';
   import effects from '../../../../utilities/effects';
@@ -25,7 +26,7 @@
     }
 
     return {
-      redirect: '/scheduling/goals',
+      redirect: `${base}/scheduling/goals`,
       status: 302,
     };
   };

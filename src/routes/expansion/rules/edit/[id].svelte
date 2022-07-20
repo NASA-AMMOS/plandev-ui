@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts" context="module">
+  import { base } from '$app/paths';
   import type { Load } from '@sveltejs/kit';
   import ExpansionRuleForm from '../../../../components/expansion/ExpansionRuleForm.svelte';
   import effects from '../../../../utilities/effects';
@@ -22,7 +23,7 @@
     }
 
     return {
-      redirect: '/expansion/rules',
+      redirect: `${base}/expansion/rules`,
       status: 302,
     };
   };

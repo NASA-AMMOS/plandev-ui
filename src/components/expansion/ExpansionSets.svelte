@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
@@ -62,7 +63,9 @@
         <Chip>Expansion Sets</Chip>
 
         <div class="right">
-          <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/sets/new')}> New </button>
+          <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/sets/new`)}>
+            New
+          </button>
         </div>
       </svelte:fragment>
 

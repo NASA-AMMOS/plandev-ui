@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+  import { base } from '$app/paths';
   import type { Load } from '@sveltejs/kit';
   import { keyBy } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
@@ -46,7 +47,7 @@
   export const load: Load = async ({ params, session, url }) => {
     if (!session.user) {
       return {
-        redirect: '/login',
+        redirect: `${base}/login`,
         status: 302,
       };
     }
@@ -70,7 +71,7 @@
     }
 
     return {
-      redirect: '/plans',
+      redirect: `${base}/plans`,
       status: 302,
     };
   };

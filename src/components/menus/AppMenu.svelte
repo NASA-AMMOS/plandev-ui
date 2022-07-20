@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto, prefetch } from '$app/navigation';
+  import { base } from '$app/paths';
   import { session } from '$app/stores';
   import { env } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
@@ -11,9 +12,9 @@
   let appMenu: Menu;
 
   async function logout() {
-    await fetch('/auth/logout', { method: 'POST' });
+    await fetch(`${base}/auth/logout`, { method: 'POST' });
     $session.user = null; // Triggers redirect.
-    goto('/login');
+    goto(`${base}/login`);
   }
 </script>
 
@@ -23,27 +24,33 @@
   <i class="bi bi-chevron-down" />
 
   <Menu bind:this={appMenu}>
-    <MenuItem on:click={() => goto('/plans')} on:pointerenter={() => prefetch('/plans')}>
+    <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => prefetch(`${base}/plans`)}>
       <i class="bi bi-calendar-range" />
       Plans
     </MenuItem>
-    <MenuItem on:click={() => goto('/models')} on:pointerenter={() => prefetch('/models')}>
+    <MenuItem on:click={() => goto(`${base}/models`)} on:pointerenter={() => prefetch(`${base}/models`)}>
       <i class="bi bi-bar-chart" />
       Models
     </MenuItem>
-    <MenuItem on:click={() => goto('/constraints')} on:pointerenter={() => prefetch('/constraints')}>
+    <MenuItem on:click={() => goto(`${base}/constraints`)} on:pointerenter={() => prefetch(`${base}/constraints`)}>
       <i class="bi bi-braces-asterisk" />
       Constraints
     </MenuItem>
-    <MenuItem on:click={() => goto('/dictionaries')} on:pointerenter={() => prefetch('/dictionaries')}>
+    <MenuItem on:click={() => goto(`${base}/dictionaries`)} on:pointerenter={() => prefetch(`${base}/dictionaries`)}>
       <i class="bi bi-journal-text" />
       Dictionaries
     </MenuItem>
-    <MenuItem on:click={() => goto('/expansion/rules')} on:pointerenter={() => prefetch('/expansion/rules')}>
+    <MenuItem
+      on:click={() => goto(`${base}/expansion/rules`)}
+      on:pointerenter={() => prefetch(`${base}/expansion/rules`)}
+    >
       <i class="bi bi-code-square" />
       Expansion
     </MenuItem>
-    <MenuItem on:click={() => goto('/scheduling/goals')} on:pointerenter={() => prefetch('/scheduling/goals')}>
+    <MenuItem
+      on:click={() => goto(`${base}/scheduling/goals`)}
+      on:pointerenter={() => prefetch(`${base}/scheduling/goals`)}
+    >
       <i class="bi bi-calendar3" />
       Scheduling
     </MenuItem>

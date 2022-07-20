@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
@@ -17,13 +18,13 @@
         icon="bi bi-code-square"
         selected={$page.url.pathname.includes('rules')}
         title="Rules"
-        on:click={() => goto('/expansion/rules')}
+        on:click={() => goto(`${base}/expansion/rules`)}
       />
       <NavButton
         icon="bi bi-card-list"
         selected={$page.url.pathname.includes('sets')}
         title="Sets"
-        on:click={() => goto('/expansion/sets')}
+        on:click={() => goto(`${base}/expansion/sets`)}
       />
     </svelte:fragment>
   </Nav>

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -19,7 +20,7 @@
   <div class="constraint-actions">
     <button
       class="st-button icon"
-      on:click|stopPropagation={() => window.open(`/constraints/edit/${constraint.id}`, '_blank')}
+      on:click|stopPropagation={() => window.open(`${base}/constraints/edit/${constraint.id}`, '_blank')}
       use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
     >
       <i class="bi bi-pencil" />

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { schedulingGoals, schedulingGoalsColumns } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
@@ -66,7 +67,9 @@
       </Input>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/scheduling/goals/new')}> New </button>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals/new`)}>
+          New
+        </button>
       </div>
     </svelte:fragment>
 
@@ -88,7 +91,7 @@
           <div slot="actions-cell">
             <button
               class="st-button icon"
-              on:click|stopPropagation={() => goto(`/scheduling/goals/edit/${currentRow.id}`)}
+              on:click|stopPropagation={() => goto(`${base}/scheduling/goals/edit/${currentRow.id}`)}
               use:tooltip={{ content: 'Edit Goal', placement: 'bottom' }}
             >
               <i class="bi bi-pencil" />

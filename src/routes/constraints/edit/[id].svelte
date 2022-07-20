@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts" context="module">
+  import { base } from '$app/paths';
   import type { Load } from '@sveltejs/kit';
   import ConstraintForm from '../../../components/constraints/ConstraintForm.svelte';
   import effects from '../../../utilities/effects';
@@ -26,7 +27,7 @@
     }
 
     return {
-      redirect: '/constraints',
+      redirect: `${base}/constraints`,
       status: 302,
     };
   };

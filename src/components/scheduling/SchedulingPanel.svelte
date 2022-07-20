@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
@@ -38,7 +39,7 @@
       <button
         class="st-button secondary"
         name="new-scheduling-goal"
-        on:click={() => window.open(`/scheduling/goals/new?specId=${$selectedSpecId}`, '_blank')}
+        on:click={() => window.open(`${base}/scheduling/goals/new?specId=${$selectedSpecId}`, '_blank')}
       >
         New
       </button>

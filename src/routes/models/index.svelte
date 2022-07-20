@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
@@ -15,7 +16,7 @@
   export const load: Load = async ({ session }) => {
     if (!session.user) {
       return {
-        redirect: '/login',
+        redirect: `${base}/login`,
         status: 302,
       };
     }
@@ -110,7 +111,7 @@
             ]}
             rowActions
             rowData={$sortedModels}
-            on:rowClick={({ detail: model }) => goto(`plans?modelId=${model.id}`)}
+            on:rowClick={({ detail: model }) => goto(`${base}/plans?modelId=${model.id}`)}
           >
             <button
               class="st-button icon"

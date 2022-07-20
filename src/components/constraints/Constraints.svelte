@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { constraintsAll, constraintsColumns } from '../../stores/constraints';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
@@ -84,7 +85,7 @@
       </Input>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/constraints/new')}> New </button>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/constraints/new`)}> New </button>
       </div>
     </svelte:fragment>
 
@@ -107,7 +108,7 @@
           <div slot="actions-cell">
             <button
               class="st-button icon"
-              on:click|stopPropagation={() => goto(`/constraints/edit/${currentRow.id}`)}
+              on:click|stopPropagation={() => goto(`${base}/constraints/edit/${currentRow.id}`)}
               use:tooltip={{ content: 'Edit Constraint', placement: 'bottom' }}
             >
               <i class="bi bi-pencil" />

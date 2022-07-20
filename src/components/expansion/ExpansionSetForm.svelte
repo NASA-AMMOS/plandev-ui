@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { dictionaries, expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
   import { sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
@@ -41,7 +42,7 @@
       const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
 
       if (newSetId !== null) {
-        goto(`/expansion/sets`);
+        goto(`${base}/expansion/sets`);
       }
     }
   }
@@ -67,7 +68,7 @@
       <Chip>New Expansion Set</Chip>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/expansion/sets')}>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/sets`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveSet}>

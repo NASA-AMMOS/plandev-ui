@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
 
   const comics = [
@@ -29,7 +30,7 @@
   <div class="app-error">
     <div class="app-error-title">
       <div>Uh O! Sorry, we can't find that page.</div>
-      <button class="st-button" on:click={() => goto('/')}> Return Home </button>
+      <button class="st-button" on:click={() => goto(`${base}/`)}> Return Home </button>
     </div>
 
     <a href={xkcdUrl} target="_blank" rel="noopener noreferrer">

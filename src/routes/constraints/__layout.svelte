@@ -9,6 +9,5 @@
   <Nav>
     <span class="constraints-title" slot="title">Constraints</span>
   </Nav>
-
   <slot />
 </CssGrid>

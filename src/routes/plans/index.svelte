@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
   import { goto, prefetch } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
@@ -23,7 +24,7 @@
   export const load: Load = async ({ session }) => {
     if (!session.user) {
       return {
-        redirect: '/login',
+        redirect: `${base}/login`,
         status: 302,
       };
     }
@@ -218,8 +219,8 @@
             ]}
             rowActions
             rowData={sortedPlans}
-            on:rowClick={({ detail: plan }) => goto(`plans/${plan.id}`)}
-            on:pointerEnter={({ detail: plan }) => prefetch(`plans/${plan.id}`)}
+            on:rowClick={({ detail: plan }) => goto(`${base}/plans/${plan.id}`)}
+            on:pointerEnter={({ detail: plan }) => prefetch(`${base}/plans/${plan.id}`)}
           >
             <button
               class="st-button icon"

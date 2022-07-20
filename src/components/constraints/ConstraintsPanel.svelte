@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { checkConstraintsStatus, constraints } from '../../stores/constraints';
   import { plan } from '../../stores/plan';
@@ -44,7 +45,7 @@
       <button
         class="st-button secondary"
         name="new-constraint"
-        on:click={() => window.open(`/constraints/new`, '_blank')}
+        on:click={() => window.open(`${base}/constraints/new`, '_blank')}
       >
         New
       </button>

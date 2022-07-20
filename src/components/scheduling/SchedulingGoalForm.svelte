@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { session } from '$app/stores';
   import { schedulingGoalsColumns } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
@@ -66,7 +67,7 @@
           await effects.createSchedulingSpecGoal(specGoalInsertInput);
         }
 
-        goto(`/scheduling/goals/edit/${newGoalId}`);
+        goto(`${base}/scheduling/goals/edit/${newGoalId}`);
       }
     } else if (mode === 'edit') {
       const goal: Partial<SchedulingGoal> = {
@@ -89,7 +90,7 @@
       <Chip>{mode === 'create' ? 'New Scheduling Goal' : 'Edit Scheduling Goal'}</Chip>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/scheduling/goals')}>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveGoal}> Save </button>

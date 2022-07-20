@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
@@ -17,7 +18,7 @@
         icon="bi bi-calendar3"
         selected={$page.url.pathname.includes('goals')}
         title="Goals"
-        on:click={() => goto('/scheduling/goals')}
+        on:click={() => goto(`${base}/scheduling/goals`)}
       />
     </svelte:fragment>
   </Nav>

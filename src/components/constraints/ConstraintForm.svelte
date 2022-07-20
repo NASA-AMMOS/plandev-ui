@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { constraintsColumns } from '../../stores/constraints';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
@@ -60,7 +61,7 @@
       );
 
       if (newConstraintId !== null) {
-        goto(`/constraints/edit/${newConstraintId}`);
+        goto(`${base}/constraints/edit/${newConstraintId}`);
       }
     } else if (mode === 'edit') {
       await effects.updateConstraint(
@@ -82,7 +83,7 @@
       <Chip>{mode === 'create' ? 'New Constraint' : 'Edit Constraint'}</Chip>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto('/constraints')}>
+        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/constraints`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
         <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveConstraint}>
