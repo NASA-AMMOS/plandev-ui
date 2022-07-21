@@ -8,6 +8,7 @@ export const defaultEnv: Env = {
   GATEWAY_SERVER_URL: 'http://localhost:9000',
   HASURA_CLIENT_URL: 'http://localhost:8080/v1/graphql',
   HASURA_SERVER_URL: 'http://localhost:8080/v1/graphql',
+  HASURA_WEB_SOCKET_URL: 'ws://localhost:8080/v1/graphql',
 };
 
 export const defaultVersion: Version = {

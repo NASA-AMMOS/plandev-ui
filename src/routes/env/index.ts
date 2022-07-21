@@ -8,6 +8,7 @@ export async function GET(): Promise<{ body: Env }> {
   const GATEWAY_SERVER_URL = env['GATEWAY_SERVER_URL'] ?? defaultEnv.GATEWAY_SERVER_URL;
   const HASURA_CLIENT_URL = env['HASURA_CLIENT_URL'] ?? defaultEnv.HASURA_CLIENT_URL;
   const HASURA_SERVER_URL = env['HASURA_SERVER_URL'] ?? defaultEnv.HASURA_SERVER_URL;
+  const HASURA_WEB_SOCKET_URL = env['HASURA_WEB_SOCKET_URL'] ?? defaultEnv.HASURA_WEB_SOCKET_URL;
 
   return {
     body: {
@@ -16,6 +17,7 @@ export async function GET(): Promise<{ body: Env }> {
       GATEWAY_SERVER_URL,
       HASURA_CLIENT_URL,
       HASURA_SERVER_URL,
+      HASURA_WEB_SOCKET_URL,
     },
   };
 }
