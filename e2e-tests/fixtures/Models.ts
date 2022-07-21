@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Models {
   alertError: Locator;
@@ -17,7 +17,7 @@ export class Models {
   tableRowDeleteButton: Locator;
 
   constructor(public page: Page) {
-    this.modelName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
+    this.modelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 

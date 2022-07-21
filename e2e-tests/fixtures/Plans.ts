@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText, getSelectedOption } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
@@ -24,7 +24,7 @@ export class Plans {
   tableRowPlanId: Locator;
 
   constructor(public page: Page, public models: Models) {
-    this.planName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
+    this.planName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 

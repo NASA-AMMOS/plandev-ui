@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Dictionaries {
   confirmModal: Locator;
@@ -15,7 +15,7 @@ export class Dictionaries {
   tableRowDeleteButton: Locator;
 
   constructor(public page: Page) {
-    this.dictionaryName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
+    this.dictionaryName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
     const dictionaryFile = readFileSync(this.dictionaryPath);
     const dictionaryXml = dictionaryFile.toString().replace(/GENERIC/, this.dictionaryName);

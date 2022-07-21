@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
@@ -22,7 +22,7 @@ export class Constraints {
   tableRowDeleteButton: Locator;
 
   constructor(public page: Page, public models: Models) {
-    this.constraintName = uniqueNamesGenerator({ dictionaries: [colors, animals] });
+    this.constraintName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 
