@@ -18,6 +18,8 @@ To execute end-to-end tests normally (i.e. not in debug mode), use the following
 npm run test:e2e
 ```
 
+### Troubleshooting
+
 If this is your first time running the tests you may need to install the Playwright browser drivers:
 
 ```sh
@@ -25,6 +27,14 @@ npx playwright install
 ```
 
 If something fails read the Playwright error carefully as it usually describes a quick fix. You can also look for the error in the [Playwright GitHub Issues](https://github.com/microsoft/playwright/issues) if you need more help.
+
+If you continue to get unexplained failures another thing you can try is [limit the number of workers](https://playwright.dev/docs/test-parallel#limit-workers) in [playwright.config.ts](../playwright.config.ts):
+
+```json
+{
+  "workers": 1
+}
+```
 
 ### Debug
 
