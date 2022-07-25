@@ -107,7 +107,9 @@ export class SchedulingGoals {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`tr:has-text("${this.goalName}")`);
-    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.goalName}") >> button[aria-label="Delete Goal"]`);
+    this.tableRow = page.locator(`.ag-row:has-text("${this.goalName}")`);
+    this.tableRowDeleteButton = page.locator(
+      `.ag-row:has-text("${this.goalName}") >> button[aria-label="Delete Goal"]`,
+    );
   }
 }

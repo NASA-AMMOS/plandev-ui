@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activities, selectedActivityId } from '../../stores/activities';
+  import { activities, selectedActivityId, selectedActivityIds } from '../../stores/activities';
   import { view } from '../../stores/views';
-  import Table from '../ui/Table.svelte';
+  import DataGrid from '../ui/DataGrid.svelte';
 
   export let activityTableId: number;
 
@@ -12,10 +12,20 @@
   $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
 </script>
 
-<Table
-  columnDefs={activityTable?.columnDefs}
+<DataGrid
+  columnDefs={Object.keys(activityTable?.columnDefs).map(columnKey => {
+    const columnDef = activityTable?.columnDefs[columnKey];
+    return {
+      field: columnDef.field,
+      filter: 'agTextColumnFilter',
+      floatingFilter: true,
+      headerName: columnDef.name,
+      resizable: true,
+      sortable: columnDef.sortable,
+    };
+  })}
+  selectedRowIds={$selectedActivityIds}
+  rowSelection="single"
   rowData={$activities}
-  rowSelectionMode="single"
-  selectedRowId={$selectedActivityId}
-  on:rowClick={({ detail }) => ($selectedActivityId = detail.id)}
+  on:rowSelected={({ detail }) => ($selectedActivityId = detail.data.id)}
 />

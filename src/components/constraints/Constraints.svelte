@@ -5,16 +5,62 @@
   import { base } from '$app/paths';
   import { constraintsAll, constraintsColumns } from '../../stores/constraints';
   import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Table from '../ui/Table.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
+  type CellRendererParams = {
+    deleteConstraint: (constraint: Constraint) => void;
+    editConstraint: (constraint: Constraint) => void;
+  };
+  type ConstraintsCellRendererParams = ICellRendererParams & CellRendererParams;
+
   export let initialPlans: PlanList[] = [];
+
+  const columnDefs: DataGridColumnDef[] = [
+    { field: 'id', headerName: 'ID', sortable: true, suppressAutoSize: true, width: 60 },
+    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
+    { field: 'plan_id', headerName: 'Plan ID', sortable: true, width: 110 },
+    {
+      cellRenderer: (params: ConstraintsCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteConstraint,
+            deleteTooltip: {
+              content: 'Delete Constraint',
+              placement: 'bottom',
+            },
+            editCallback: params.editConstraint,
+            editTooltip: {
+              content: 'Edit Constraint',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteConstraint,
+        editConstraint,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      width: 90,
+    },
+  ];
 
   let constraintModelId: number | null = null;
   let filterText: string = '';
@@ -35,7 +81,7 @@
   }
   $: constraintModelId = getConstraintModelId(selectedConstraint);
 
-  async function deleteConstraint(id: number) {
+  async function deleteConstraint({ id }: Constraint) {
     const success = await effects.deleteConstraint(id);
 
     if (success) {
@@ -64,9 +110,11 @@
     return null;
   }
 
-  function toggleConstraint(event: CustomEvent<Constraint>) {
-    const { detail: clickedConstraint } = event;
+  function editConstraint({ id }: Constraint) {
+    goto(`${base}/constraints/edit/${id}`);
+  }
 
+  function toggleConstraint(clickedConstraint: Constraint) {
     if (selectedConstraint?.id === clickedConstraint.id) {
       selectedConstraint = null;
     } else {
@@ -91,37 +139,12 @@
 
     <svelte:fragment slot="body">
       {#if filteredConstraints.length}
-        <Table
-          let:currentRow
-          columnDefs={[
-            { field: 'id', name: 'ID', sortable: true },
-            { field: 'name', name: 'Name', sortable: true },
-            { field: 'model_id', name: 'Model ID', sortable: true },
-            { field: 'plan_id', name: 'Plan ID', sortable: true },
-          ]}
-          rowActions
+        <DataGrid
+          {columnDefs}
           rowData={filteredConstraints}
-          rowSelectionMode="single"
-          selectedRowId={selectedConstraint?.id}
-          on:rowClick={toggleConstraint}
-        >
-          <div slot="actions-cell">
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => goto(`${base}/constraints/edit/${currentRow.id}`)}
-              use:tooltip={{ content: 'Edit Constraint', placement: 'bottom' }}
-            >
-              <i class="bi bi-pencil" />
-            </button>
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => deleteConstraint(currentRow.id)}
-              use:tooltip={{ content: 'Delete Constraint', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          </div>
-        </Table>
+          rowSelection="single"
+          on:rowSelected={({ detail }) => toggleConstraint(detail.data)}
+        />
       {:else}
         No Constraints Found
       {/if}

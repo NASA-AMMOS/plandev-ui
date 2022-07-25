@@ -38,6 +38,7 @@
     "@nasa-jpl/stellar": "^1.0.3",
     "@sveltejs/adapter-node": "1.0.0-next.82",
     "@sveltejs/kit": "1.0.0-next.385",
+    "ag-grid-community": "^28.0.2",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
     "cookie": "^0.5.0",

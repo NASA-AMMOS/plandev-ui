@@ -36,6 +36,13 @@ export const activityPoints = derived(
     activitiesToPoints($activitiesMap, $activities, $selectedActivityId),
 );
 
+/**
+ * Derived store that converts the selected activity id to a list of selected activity ids.
+ */
+export const selectedActivityIds: Readable<ActivityId[]> = derived(selectedActivityId, $selectedActivityId => [
+  $selectedActivityId,
+]);
+
 /* Helper Functions. */
 
 export function resetActivityStores() {

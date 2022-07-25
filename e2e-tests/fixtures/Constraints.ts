@@ -110,9 +110,9 @@ export class Constraints {
     this.inputConstraintSummary = page.locator('textarea[name="constraint-summary"]');
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`tr:has-text("${this.constraintName}")`);
+    this.tableRow = page.locator(`.ag-row:has-text("${this.constraintName}")`);
     this.tableRowDeleteButton = page.locator(
-      `tr:has-text("${this.constraintName}") >> button[aria-label="Delete Constraint"]`,
+      `.ag-row:has-text("${this.constraintName}") >> button[aria-label="Delete Constraint"]`,
     );
   }
 }
