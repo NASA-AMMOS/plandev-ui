@@ -1,6 +1,8 @@
 import { get, writable } from 'svelte/store';
 import { validateField } from '../utilities/validators';
 
+/* Initializer. */
+
 function initialField<T>(initialValue: T, initialValidators: ValidatorFn<T>[] = []): Field<T> {
   return {
     dirty: false,
@@ -15,6 +17,8 @@ function initialField<T>(initialValue: T, initialValidators: ValidatorFn<T>[] = 
     value: initialValue,
   };
 }
+
+/* Field Store. */
 
 export function field<T>(initialValue: T, initialValidators: ValidatorFn<T>[] = []): FieldStore<T> {
   const field: Field<T> = initialField(initialValue, initialValidators);

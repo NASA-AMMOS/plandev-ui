@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-/** Data. */
+/* Data. */
 
 export const defaultEnv: Env = {
   AUTH_TYPE: 'cam',
@@ -19,8 +19,10 @@ export const defaultVersion: Version = {
   name: 'aerie-ui',
 };
 
-/** Stores. */
+/* Writeable. */
 
 export const env = writable<Env>(defaultEnv);
+
 export const user = writable<User | null>(null);
+
 export const version = writable<Version>(defaultVersion);
