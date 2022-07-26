@@ -10,7 +10,7 @@ module.exports = {
   overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2019,
+    ecmaVersion: 2020,
     sourceType: 'module',
   },
   plugins: ['svelte3', '@typescript-eslint'],
