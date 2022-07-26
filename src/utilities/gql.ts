@@ -440,8 +440,8 @@ const gql = {
     }
   `,
 
-  GET_PROFILES_FOR_PLAN: `#graphql
-    query GetProfilesForPlan($planId: Int!) {
+  GET_PROFILES_SIMULATION: `#graphql
+    query GetProfilesSimulation($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
         duration
         simulations(limit: 1) {
@@ -730,6 +730,28 @@ const gql = {
         jar_id,
         name
         version
+      }
+    }
+  `,
+
+  SUB_PROFILES_EXTERNAL: `#graphql
+    subscription SubProfilesExternal($planId: Int!) {
+      plan: plan_by_pk(id: $planId) {
+        datasets {
+          dataset {
+            profiles {
+              name
+              profile_segments {
+                dynamics
+                start_offset
+              }
+              type
+            }
+          }
+          offset_from_plan_start
+        }
+        duration
+        start_time
       }
     }
   `,

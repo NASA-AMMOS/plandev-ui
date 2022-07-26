@@ -30,7 +30,7 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../stores/plan';
-  import { resetResourceStores } from '../../stores/resources';
+  import { externalResources, resetResourceStores } from '../../stores/resources';
   import { resetSchedulingStores, schedulingStatus } from '../../stores/scheduling';
   import {
     modelParametersMap,
@@ -108,6 +108,7 @@
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $viewTimeRange = $maxTimeRange;
 
+    externalResources.setVariables({ planId: initialPlan.id });
     simulation.setVariables({ planId: initialPlan.id });
     simulationTemplates.setVariables({ modelId: initialPlan.model.id });
   }

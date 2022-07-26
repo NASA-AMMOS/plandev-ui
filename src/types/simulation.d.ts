@@ -1,4 +1,10 @@
-type ProfilesForPlanResponse = {
+type ProfilesExternalResponse = {
+  datasets: [{ dataset: { profiles: Profile[] }; offset_from_plan_start: string }];
+  duration: string;
+  start_time: string;
+};
+
+type ProfilesSimulationResponse = {
   duration: string;
   simulations: [{ datasets: [{ dataset: { profiles: Profile[] } }] }];
   start_time: string;
