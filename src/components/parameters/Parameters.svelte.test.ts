@@ -34,4 +34,32 @@ describe('Parameters component', () => {
     expect((getAllByRole('textbox')[0] as HTMLInputElement).value).toEqual('value 1');
     expect((getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('value 2');
   });
+
+  it('Should render a star next to a required parameter', () => {
+    const formParameters: FormParameter[] = [
+      {
+        error: null,
+        name: 'bar',
+        order: 1,
+        schema: {
+          type: 'string',
+        },
+        value: 'value 2',
+      },
+      {
+        error: null,
+        name: 'foo',
+        order: 0,
+        required: true,
+        schema: {
+          type: 'string',
+        },
+        value: 'value 1',
+      },
+    ];
+    const { getByText } = render(Parameters, { formParameters });
+
+    expect(getByText('foo').getElementsByClassName('required').length).to.equals(1);
+    expect(getByText('bar').getElementsByClassName('required').length).to.equals(0);
+  });
 });

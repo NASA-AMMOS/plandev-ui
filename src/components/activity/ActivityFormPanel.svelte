@@ -72,7 +72,12 @@
     effects
       .getEffectiveActivityArguments(model.id, activityType.name, argumentsMap)
       .then(({ arguments: defaultArgumentsMap }) => {
-        formParameters = getFormParameters(activityType.parameters, argumentsMap, defaultArgumentsMap);
+        formParameters = getFormParameters(
+          activityType.parameters,
+          argumentsMap,
+          activityType.required_parameters,
+          defaultArgumentsMap,
+        );
       });
   }
   $: validateArguments(argumentsMap);
@@ -110,7 +115,7 @@
 
   /**
    * Transforms computed attributes to conform to ParametersMap and ArgumentsMap
-   * so we can render computed attributs as form parameters.
+   * so we can render computed attributes as form parameters.
    */
   function setFormParametersComputedAttributes(
     schema: ValueSchema | undefined,
@@ -119,7 +124,7 @@
     if (schema) {
       const parametersMap: ParametersMap = { Value: { order: 0, schema } };
       const argumentsMap: ArgumentsMap = computedAttributes ? { Value: computedAttributes } : { Value: {} };
-      formParametersComputedAttributes = getFormParameters(parametersMap, argumentsMap);
+      formParametersComputedAttributes = getFormParameters(parametersMap, argumentsMap, []);
     }
   }
 

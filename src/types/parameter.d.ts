@@ -11,6 +11,7 @@ type FormParameter<T = ValueSchema> = {
   key?: string;
   name: string;
   order: number;
+  required?: boolean;
   schema: T;
   value: Argument;
 };
@@ -26,6 +27,8 @@ type ParameterError = { message: string; schema: ValueSchema };
 type ParametersErrorMap = Record<ParameterName, ParameterError>;
 
 type ParameterName = string;
+
+type RequiredParametersList = ParameterName[];
 
 type ParametersMap = Record<ParameterName, Parameter>;
 
