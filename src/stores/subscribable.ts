@@ -1,8 +1,8 @@
 import { browser } from '$app/env';
+import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import { get, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
-import { env as envStore } from '../stores/app';
+import type { Subscriber, Unsubscriber, Updater } from 'svelte/store';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -76,8 +76,7 @@ export function gqlSubscribable<T>(
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
     if (browser && !client) {
-      const { HASURA_WEB_SOCKET_URL: url } = get<Env>(envStore);
-      const clientOptions: ClientOptions = { url };
+      const clientOptions: ClientOptions = { url: env.HASURA_WEB_SOCKET_URL };
       client = createClient(clientOptions);
     }
 

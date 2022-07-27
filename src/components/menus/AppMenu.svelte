@@ -4,7 +4,7 @@
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { session } from '$app/stores';
-  import { env } from '../../stores/app';
+  import { env } from '$env/dynamic/public';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -54,11 +54,11 @@
       <i class="bi bi-calendar3" />
       Scheduling
     </MenuItem>
-    <MenuItem on:click={() => window.open($env.GATEWAY_CLIENT_URL, '_newtab')}>
+    <MenuItem on:click={() => window.open(env.GATEWAY_CLIENT_URL, '_newtab')}>
       <i class="bi bi-diagram-3" />
       Gateway
     </MenuItem>
-    <MenuItem on:click={() => window.open(`${$env.GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
+    <MenuItem on:click={() => window.open(`${env.GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
       <i class="si si-graphql" />
       GraphQL Playground
     </MenuItem>

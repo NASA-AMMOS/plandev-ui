@@ -21,11 +21,7 @@ const config: PlaywrightTestConfig = {
     video: process***REMOVED***.CI ? 'retain-on-failure' : 'off',
   },
   webServer: {
-    command: 'node build',
-    env: {
-      AUTH_TYPE: 'none',
-      ORIGIN: 'http://localhost:3000',
-    },
+    command: 'npm run preview',
     port: 3000,
   },
 };

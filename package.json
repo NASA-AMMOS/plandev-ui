@@ -25,12 +25,11 @@
     "optimize": "vite optimize",
     "prebuild": "npm run version",
     "predev": "node ./scripts/check-node.cjs",
-    "preview": "vite preview",
+    "preview": "vite preview --port 3000",
     "test": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "test:e2e:debug": "PWDEBUG=1 playwright test",
-    "test:e2e:dev": "AUTH_TYPE=none ORIGIN=http://localhost:3000 node build",
     "test:unit": "vitest run",
     "version": "node ./scripts/version.js"
   },

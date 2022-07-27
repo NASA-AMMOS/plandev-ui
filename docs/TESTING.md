@@ -49,7 +49,7 @@ npm run test:e2e:debug
 The codegen test script runs the [Playwright test generator](https://playwright.dev/docs/codegen), which automatically generates [locators](https://playwright.dev/docs/locators) as you click elements on the page. It can greatly save test development time. The generator requires an instance of the application already running to select against.
 
 ```sh
-npm run test:e2e:dev     # Starts aerie-ui
+npm run preview          # Starts production build of aerie-ui
 npm run test:e2e:codegen # Starts codegen
 ```
 

@@ -1,4 +1,4 @@
-/* eslint @typescript-eslint/no-unused-vars: 0, @typescript-eslint/no-empty-interface: 0 */
+/* eslint @typescript-eslint/no-unused-vars: 0 */
 
 /// <reference types="@sveltejs/kit" />
 
@@ -7,13 +7,19 @@ declare namespace App {
     user: User | null;
   }
 
-  interface Platform {}
+  interface PublicEnv {
+    AUTH_TYPE: string;
+    GATEWAY_CLIENT_URL: string;
+    GATEWAY_SERVER_URL: string;
+    HASURA_CLIENT_URL: string;
+    HASURA_SERVER_URL: string;
+    HASURA_WEB_SOCKET_URL: string;
+    ORIGIN: string;
+  }
 
   interface Session {
     user: User | null;
   }
-
-  interface Stuff {}
 }
 
 /**

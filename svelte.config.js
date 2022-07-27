@@ -5,6 +5,9 @@ import preprocess from 'svelte-preprocess';
 const config = {
   kit: {
     adapter: adapterNode(),
+    env: {
+      publicPrefix: '',
+    },
     paths: {
       base: '',
     },

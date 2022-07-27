@@ -1,13 +1,10 @@
+import { env } from '$env/dynamic/public';
 import type { GetSession, Handle } from '@sveltejs/kit';
 import { parse } from 'cookie';
-import { get } from 'svelte/store';
-import { env as envStore } from './stores/app';
 import effects from './utilities/effects';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const { AUTH_TYPE } = get<Env>(envStore);
-
-  if (AUTH_TYPE === 'none') {
+  if (env.AUTH_TYPE === 'none') {
     event.locals.user = { id: 'unknown', ssoToken: 'unknown' };
   } else {
     const cookies = parse(event.request.headers.get('cookie') || '');
