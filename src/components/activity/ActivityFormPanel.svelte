@@ -196,7 +196,7 @@
         />
       </fieldset>
 
-      <Field field={startTimeField} on:valid={onUpdateStartTime}>
+      <Field field={startTimeField} on:blur={onUpdateStartTime} on:keydown={onUpdateStartTime}>
         <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
         <input autocomplete="off" class="st-input w-100" disabled={isChild} name="start-time" />
       </Field>
