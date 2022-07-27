@@ -9,6 +9,7 @@ This document describes how to set up your development environment to build and 
 - [Installing NPM Modules](#installing-npm-modules)
 - [Start Development Server](#start-development-server)
 - [Building For Production](#building-for-production)
+- [Cleaning](#cleaning)
 
 ## Prerequisite Knowledge
 
@@ -65,6 +66,8 @@ Before you can run aerie-ui you must install and configure the following product
   ./gradlew clean
   ```
 
+  You should stop and clean the Aerie services after each use (e.g. at the end of the day), or right after pulling down the latest changes.
+
 ## Code Editor
 
 The recommended editor for developing aerie-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate the code formatting settings.
@@ -116,3 +119,16 @@ Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The ap
 ## Building For Production
 
 Run `npm run build` to build a production version of the project. The build artifacts will be stored in the `build/` directory.
+
+## Cleaning
+
+Run the following commands to clean dependencies and build artifacts of aerie-ui. To be safe you should do this anytime you pull down the latest changes.
+
+```sh
+cd aerie-ui
+rm -rf node_modules
+rm -rf .svelte-kit
+rm -rf build
+```
+
+After cleaning you can [re-install NPM modules](#installing-npm-modules) and start development.
