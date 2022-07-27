@@ -8,6 +8,7 @@
   import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import { getDoyTimeFromDuration, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
   import Field from '../form/Field.svelte';
@@ -38,6 +39,7 @@
   let isChild: boolean;
   let parameterError: string | null = null;
   let startTimeField: FieldStore<string>;
+  let endTime: string | null = null;
 
   $: if ($selectedActivity) {
     argumentsMap = $selectedActivity.arguments;
@@ -67,6 +69,12 @@
   $: hasChildren = child_ids ? child_ids.length > 0 : false;
   $: isChild = parent_id !== null;
   $: startTimeField = field<string>(startTime, [required, timestamp]);
+  $: if (duration) {
+    const startTimeISO = new Date(getUnixEpochTime(startTime)).toISOString();
+    endTime = `${getDoyTimeFromDuration(startTimeISO, duration)}`;
+  } else {
+    endTime = null;
+  }
 
   $: if (activityType && argumentsMap) {
     effects
@@ -192,6 +200,13 @@
         <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
         <input autocomplete="off" class="st-input w-100" disabled={isChild} name="start-time" />
       </Field>
+
+      {#if duration !== null}
+        <fieldset>
+          <label for="endTime">End Time</label>
+          <input class="st-input w-100" disabled name="endTime" value={endTime} />
+        </fieldset>
+      {/if}
 
       <fieldset>
         <details open style:cursor="pointer">
