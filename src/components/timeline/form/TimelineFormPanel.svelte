@@ -52,7 +52,7 @@
 
 <Panel borderLeft>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Timeline" />
+    <GridMenu {gridId} title="Timeline Form" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

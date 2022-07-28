@@ -44,9 +44,9 @@ test.describe.serial('Plan', () => {
 
   test('Initially the View layout should be displayed', async () => {
     await expect(plan.panelActivityForm).toBeVisible();
-    await expect(plan.activityTable).toBeVisible();
+    await expect(plan.panelActivityTable).toBeVisible();
     await expect(plan.panelActivityTypes).toBeVisible();
-    await expect(plan.timeline).toBeVisible();
+    await expect(plan.panelTimeline).toBeVisible();
     await expect(plan.navButtonView).toHaveClass(/selected/);
   });
 
@@ -80,9 +80,9 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelSimulation).toBeVisible();
   });
 
-  test(`Clicking on 'Timeline' in the grid menu should show the timeline form panel`, async () => {
+  test(`Clicking on 'Timeline Form' in the grid menu should show the timeline form panel`, async () => {
     await expect(plan.panelTimelineForm).not.toBeVisible();
-    await plan.showPanel('Timeline');
+    await plan.showPanel('Timeline Form');
     await expect(plan.panelTimelineForm).toBeVisible();
   });
 

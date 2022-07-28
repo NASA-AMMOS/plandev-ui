@@ -11,7 +11,15 @@
   let gridMenu: Menu;
 
   function updateGridComponent(name: string) {
-    viewUpdateLayout(gridId, 'componentName', name);
+    const update: Record<string, any> = { componentName: name };
+
+    if (name === 'ActivityTablePanel') {
+      update.activityTableId = 0;
+    } else if (name === 'TimelinePanel') {
+      update.timelineId = 0;
+    }
+
+    viewUpdateLayout(gridId, update);
   }
 </script>
 
@@ -20,6 +28,10 @@
   <i class="bi bi-chevron-down" style="font-size: 12px;" />
 
   <Menu bind:this={gridMenu}>
+    <MenuItem on:click={() => updateGridComponent('ActivityTablePanel')}>
+      <i class="bi bi-table" />
+      Activity Table
+    </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityTypesPanel')}>
       <i class="bi bi-book" />
       Activity Types
@@ -48,9 +60,13 @@
       <i class="bi bi-gear-wide-connected" />
       Simulation
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('TimelineFormPanel')}>
+    <MenuItem on:click={() => updateGridComponent('TimelinePanel')}>
       <i class="bi bi-calendar2-range" />
       Timeline
+    </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('TimelineFormPanel')}>
+      <i class="bi bi-ui-checks" />
+      Timeline Form
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ViewsPanel')}>
       <i class="bi bi-columns" />

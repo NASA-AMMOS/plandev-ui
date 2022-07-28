@@ -5,7 +5,6 @@ import { Plans } from './Plans.js';
 import { SchedulingGoals } from './SchedulingGoals.js';
 
 export class Plan {
-  activityTable: Locator;
   appError: Locator;
   constraintListItemSelector: string;
   constraintNewButton: Locator;
@@ -18,12 +17,14 @@ export class Plan {
   navButtonSimulation: Locator;
   navButtonView: Locator;
   panelActivityForm: Locator;
+  panelActivityTable: Locator;
   panelActivityTypes: Locator;
   panelConstraintViolations: Locator;
   panelConstraints: Locator;
   panelExpansion: Locator;
   panelScheduling: Locator;
   panelSimulation: Locator;
+  panelTimeline: Locator;
   panelTimelineForm: Locator;
   panelViewEditor: Locator;
   panelViews: Locator;
@@ -34,7 +35,6 @@ export class Plan {
   schedulingGoalListItemSelector: string;
   schedulingGoalNewButton: Locator;
   schedulingStatusSelector: (status: string) => string;
-  timeline: Locator;
 
   constructor(
     public page: Page,
@@ -92,15 +92,15 @@ export class Plan {
   async showConstraintsLayout() {
     await this.navButtonConstraints.click();
     await this.panelConstraints.waitFor({ state: 'visible' });
-    await this.timeline.waitFor({ state: 'visible' });
-    await this.activityTable.waitFor({ state: 'visible' });
     await this.panelActivityForm.waitFor({ state: 'visible' });
+    await this.panelActivityTable.waitFor({ state: 'visible' });
     await this.panelConstraintViolations.waitFor({ state: 'visible' });
+    await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelConstraints).toBeVisible();
-    await expect(this.timeline).toBeVisible();
-    await expect(this.activityTable).toBeVisible();
     await expect(this.panelActivityForm).toBeVisible();
+    await expect(this.panelActivityTable).toBeVisible();
     await expect(this.panelConstraintViolations).toBeVisible();
+    await expect(this.panelTimeline).toBeVisible();
     await expect(this.navButtonConstraints).toHaveClass(/selected/);
   }
 
@@ -114,18 +114,17 @@ export class Plan {
   async showSchedulingLayout() {
     await this.navButtonScheduling.click();
     await this.panelScheduling.waitFor({ state: 'visible' });
-    await this.timeline.waitFor({ state: 'visible' });
-    await this.activityTable.waitFor({ state: 'visible' });
     await this.panelActivityForm.waitFor({ state: 'visible' });
+    await this.panelActivityTable.waitFor({ state: 'visible' });
+    await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelScheduling).toBeVisible();
-    await expect(this.timeline).toBeVisible();
-    await expect(this.activityTable).toBeVisible();
     await expect(this.panelActivityForm).toBeVisible();
+    await expect(this.panelActivityTable).toBeVisible();
+    await expect(this.panelTimeline).toBeVisible();
     await expect(this.navButtonScheduling).toHaveClass(/selected/);
   }
 
   updatePage(page: Page): void {
-    this.activityTable = page.locator('[data-component-name="ActivityTable"]');
     this.appError = page.locator('.app-error');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.gridMenu = page.locator('.grid-menu > .menu > .menu-slot');
@@ -139,12 +138,14 @@ export class Plan {
     this.navButtonView = page.locator(`.nav-button:has-text("View")`);
     this.page = page;
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
+    this.panelActivityTable = page.locator('[data-component-name="ActivityTablePanel"]');
     this.panelActivityTypes = page.locator('[data-component-name="ActivityTypesPanel"]');
     this.panelConstraintViolations = page.locator('[data-component-name="ConstraintViolationsPanel"]');
     this.panelConstraints = page.locator('[data-component-name="ConstraintsPanel"]');
     this.panelExpansion = page.locator('[data-component-name="ExpansionPanel"]');
     this.panelScheduling = page.locator('[data-component-name="SchedulingPanel"]');
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
+    this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineForm = page.locator('[data-component-name="TimelineFormPanel"]');
     this.panelViewEditor = page.locator('[data-component-name="ViewEditorPanel"]');
     this.panelViews = page.locator('[data-component-name="ViewsPanel"]');
@@ -155,6 +156,5 @@ export class Plan {
       `.scheduling-goal:has-text("${this.schedulingGoals.goalName}") >> input[type="checkbox"]`,
     );
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
-    this.timeline = page.locator('[data-component-name="Timeline"]');
   }
 }

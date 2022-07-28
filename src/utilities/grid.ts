@@ -11,9 +11,9 @@ export const activitiesGrid: Grid = {
       id: 3,
       rowSizes: '2fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
+        { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
+        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
       ],
       type: 'rows',
     },
@@ -34,9 +34,9 @@ export const constraintsGrid: Grid = {
       id: 3,
       rowSizes: '2fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
+        { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
+        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
       ],
       type: 'rows',
     },
@@ -66,9 +66,9 @@ export const schedulingGrid: Grid = {
       id: 3,
       rowSizes: '2fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
+        { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
+        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
       ],
       type: 'rows',
     },
@@ -89,9 +89,9 @@ export const simulationGrid: Grid = {
       id: 3,
       rowSizes: '2fr 3px 1fr',
       rows: [
-        { componentName: 'Timeline', id: 4, timelineId: 0, type: 'component' },
+        { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
         { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTable', id: 6, type: 'component' },
+        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
       ],
       type: 'rows',
     },
@@ -110,23 +110,23 @@ export const simulationGrid: Grid = {
 /**
  * Recursively updates a grid prop/value by id.
  */
-export function updateGrid(grid: Grid, id: number, prop: string, value: any): Grid {
+export function updateGrid(grid: Grid, id: number, update: Record<string, any>): Grid {
   if (grid.type === 'component' && grid.id === id) {
-    return { ...grid, [prop]: value };
+    return { ...grid, ...update };
   }
 
   if (grid.type === 'columns') {
     if (id === grid.id) {
-      return { ...grid, [prop]: value };
+      return { ...grid, ...update };
     }
 
     return {
       ...grid,
       columns: grid.columns.map(column => {
         if (column.type === 'columns' && id === column.id) {
-          return { ...column, [prop]: value };
+          return { ...column, ...update };
         } else {
-          return updateGrid(column, id, prop, value);
+          return updateGrid(column, id, update);
         }
       }),
     };
@@ -134,16 +134,16 @@ export function updateGrid(grid: Grid, id: number, prop: string, value: any): Gr
 
   if (grid.type === 'rows') {
     if (id === grid.id) {
-      return { ...grid, [prop]: value };
+      return { ...grid, ...update };
     }
 
     return {
       ...grid,
       rows: grid.rows.map(row => {
         if (row.type === 'rows' && id === row.id) {
-          return { ...row, [prop]: value };
+          return { ...row, ...update };
         } else {
-          return updateGrid(row, id, prop, value);
+          return updateGrid(row, id, update);
         }
       }),
     };

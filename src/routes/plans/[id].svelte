@@ -4,7 +4,7 @@
   import { keyBy } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import ActivityFormPanel from '../../components/activity/ActivityFormPanel.svelte';
-  import ActivityTable from '../../components/activity/ActivityTable.svelte';
+  import ActivityTablePanel from '../../components/activity/ActivityTablePanel.svelte';
   import ActivityTypesPanel from '../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
@@ -14,7 +14,7 @@
   import SchedulingPanel from '../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../components/simulation/SimulationPanel.svelte';
   import TimelineFormPanel from '../../components/timeline/form/TimelineFormPanel.svelte';
-  import Timeline from '../../components/timeline/Timeline.svelte';
+  import TimelinePanel from '../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import IFrame from '../../components/ui/IFrame.svelte';
   import SplitGrid from '../../components/ui/SplitGrid.svelte';
@@ -83,7 +83,7 @@
 
   const gridComponentsByName: Record<string, unknown> = {
     ActivityFormPanel,
-    ActivityTable,
+    ActivityTablePanel,
     ActivityTypesPanel,
     ConstraintViolationsPanel,
     ConstraintsPanel,
@@ -91,8 +91,8 @@
     IFrame,
     SchedulingPanel,
     SimulationPanel,
-    Timeline,
     TimelineFormPanel,
+    TimelinePanel,
     ViewEditorPanel,
     ViewsPanel,
   };
@@ -136,13 +136,13 @@
   function changeColumnSizes(event: CustomEvent<GridChangeSizesEvent>): void {
     const { detail } = event;
     const { gridId, newSizes } = detail;
-    viewUpdateLayout(gridId, 'columnSizes', newSizes);
+    viewUpdateLayout(gridId, { columnSizes: newSizes });
   }
 
   function changeRowSizes(event: CustomEvent<GridChangeSizesEvent>): void {
     const { detail } = event;
     const { gridId, newSizes } = detail;
-    viewUpdateLayout(gridId, 'rowSizes', newSizes);
+    viewUpdateLayout(gridId, { rowSizes: newSizes });
   }
 
   function onKeydown(event: KeyboardEvent): void {

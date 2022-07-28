@@ -176,14 +176,14 @@ export function viewUpdateLayer(event: Event) {
   }));
 }
 
-export function viewUpdateLayout(id: number, prop: string, value: any) {
+export function viewUpdateLayout(id: number, update: Record<string, any>) {
   view.update(currentView => ({
     ...currentView,
     definition: {
       ...currentView.definition,
       plan: {
         ...currentView.definition.plan,
-        layout: updateGrid(currentView.definition.plan.layout, id, prop, value),
+        layout: updateGrid(currentView.definition.plan.layout, id, update),
       },
     },
   }));
