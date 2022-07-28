@@ -11,7 +11,7 @@
     gap: 5px;
     height: 24px;
     justify-content: center;
-    padding: 3px;
+    padding: 4px 8px;
     white-space: nowrap;
   }
 </style>
