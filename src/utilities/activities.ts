@@ -168,3 +168,17 @@ export function getParentIdFn(
   return (activitySimulated: ActivitySimulated) =>
     simulatedIdToDirectiveId[activitySimulated.parent_id] ?? activitySimulated.parent_id;
 }
+
+/**
+ * Returns the root activity for an activity id.
+ */
+export function getActivityRootParent(activitiesMap: ActivitiesMap, activityId: number): Activity | null {
+  const activity = activitiesMap[activityId];
+  if (!activity) {
+    return null;
+  }
+  if (!activity.parent_id) {
+    return activity;
+  }
+  return getActivityRootParent(activitiesMap, activity.parent_id);
+}

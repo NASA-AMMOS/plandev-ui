@@ -34,7 +34,7 @@
     "version": "node ./scripts/version.js"
   },
   "dependencies": {
-    "@nasa-jpl/stellar": "^1.0.3",
+    "@nasa-jpl/stellar": "^1.0.5",
     "@sveltejs/adapter-node": "1.0.0-next.85",
     "@sveltejs/kit": "1.0.0-next.396",
     "ag-grid-community": "^28.0.2",

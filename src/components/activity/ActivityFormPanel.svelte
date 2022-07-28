@@ -1,11 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { selectedActivity } from '../../stores/activities';
+  import { activitiesMap, selectedActivity } from '../../stores/activities';
   import { filteredSequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
+  import { getActivityRootParent } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { getDoyTimeFromDuration, getUnixEpochTime } from '../../utilities/time';
@@ -21,10 +22,10 @@
 
   // Activity vars.
   let argumentsMap: ArgumentsMap | null = null;
-  let child_ids: number[] | null = null;
   let duration: string | null = null;
   let id: number | null = null;
   let parent_id: number | null = null;
+  let root_activity: Activity | null = null;
   let seq_id: string | null = null;
   let simulated_activity_id: number | null = null;
   let startTime: string | null = null;
@@ -35,7 +36,7 @@
   let model: Model;
   let formParametersComputedAttributes: FormParameter[] = [];
   let formParameters: FormParameter[] = [];
-  let hasChildren: boolean;
+  let rootActivityHasChildren: boolean;
   let isChild: boolean;
   let parameterError: string | null = null;
   let startTimeField: FieldStore<string>;
@@ -43,20 +44,20 @@
 
   $: if ($selectedActivity) {
     argumentsMap = $selectedActivity.arguments;
-    child_ids = $selectedActivity.child_ids;
     duration = $selectedActivity.duration;
     id = $selectedActivity.id;
     parent_id = $selectedActivity.parent_id;
+    root_activity = getActivityRootParent($activitiesMap, id);
     simulated_activity_id = $selectedActivity.simulated_activity_id;
     startTime = $selectedActivity.start_time;
     type = $selectedActivity.type;
     unfinished = $selectedActivity.unfinished;
   } else {
     argumentsMap = null;
-    child_ids = null;
     duration = null;
     id = null;
     parent_id = null;
+    root_activity = null;
     seq_id = null;
     simulated_activity_id = null;
     startTime = null;
@@ -66,7 +67,7 @@
 
   $: model = $plan.model;
   $: activityType = $activityTypesMap[type] || null;
-  $: hasChildren = child_ids ? child_ids.length > 0 : false;
+  $: rootActivityHasChildren = root_activity?.child_ids ? root_activity.child_ids.length > 0 : false;
   $: isChild = parent_id !== null;
   $: startTimeField = field<string>(startTime, [required, timestamp]);
   $: if (duration) {
@@ -240,11 +241,11 @@
       </fieldset>
 
       <fieldset>
-        <details open={hasChildren} style:cursor="pointer">
+        <details open={rootActivityHasChildren} style:cursor="pointer">
           <summary>Decomposition</summary>
           <div class="mt-2">
-            {#if hasChildren}
-              <ActivityDecomposition {child_ids} {type} />
+            {#if rootActivityHasChildren}
+              <ActivityDecomposition id={root_activity.id} selected_id={id} />
             {:else}
               <div class="p-1">This activity has no children</div>
             {/if}

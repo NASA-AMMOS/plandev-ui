@@ -52,7 +52,7 @@
   --ag-row-hover-color: var(--st-gray-10);
   --ag-secondary-border-color: #dde2eb;
   --ag-secondary-foreground-color: var(--ag-foreground-color);
-  --ag-selected-row-background-color: rgba(33, 150, 243, 0.3);
+  --ag-selected-row-background-color: #e3effd;
   --ag-selected-tab-underline-color: var(--ag-stellar-active-color);
   --ag-selected-tab-underline-transition-speed: 0.3s;
   --ag-selected-tab-underline-width: 2px;
