@@ -26,7 +26,7 @@
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
 
-    typescriptDefaults.setCompilerOptions({ ...options, lib: ['ESNext'], strictNullChecks: true });
+    typescriptDefaults.setCompilerOptions({ ...options, lib: ['esnext'], strictNullChecks: true });
     typescriptDefaults.setExtraLibs([...commandDictionaryTsFiles, ...activityTypeTsFiles]);
   }
 </script>
