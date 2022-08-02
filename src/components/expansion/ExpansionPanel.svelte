@@ -1,15 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    creatingExpansionSequence,
-    expandingPlan,
-    expansionSets,
-    filteredExpansionSequences,
-  } from '../../stores/expansion';
+  import { creatingSequence, expandingPlan, expansionSets, filteredSequences } from '../../stores/expansion';
   import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
-  import { showExpansionSequenceModal } from '../../utilities/modal';
+  import { showSequenceModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -81,14 +76,14 @@
               <button
                 class="st-button secondary"
                 disabled={!createButtonEnabled}
-                on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
+                on:click|stopPropagation={() => effects.createSequence(seqIdInput, $simulationDatasetId)}
               >
-                {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+                {$creatingSequence ? 'Creating... ' : 'Create'}
               </button>
             </CssGrid>
 
             <div class="mt-2">
-              {#if $filteredExpansionSequences.length}
+              {#if $filteredSequences.length}
                 <Table
                   let:currentRow
                   columnDefs={[
@@ -96,13 +91,13 @@
                     { field: 'simulation_dataset_id', name: 'Simulation Dataset ID', sortable: true },
                   ]}
                   rowActions
-                  rowData={$filteredExpansionSequences}
-                  on:rowClick={({ detail: sequence }) => showExpansionSequenceModal(sequence)}
+                  rowData={$filteredSequences}
+                  on:rowClick={({ detail: sequence }) => showSequenceModal(sequence)}
                 >
                   <button
                     class="st-button icon"
                     slot="actions-cell"
-                    on:click|stopPropagation={() => effects.deleteExpansionSequence(currentRow)}
+                    on:click|stopPropagation={() => effects.deleteSequence(currentRow)}
                     use:tooltip={{ content: 'Delete Sequence', placement: 'bottom' }}
                   >
                     <i class="bi bi-trash" />

@@ -11,17 +11,17 @@
 
   const dispatch = createEventDispatcher();
 
-  export let expansionSequence: ExpansionSequence;
+  export let sequence: Sequence;
 
   let seqJsonStr: string | null = null;
 
   $: effects
-    .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id)
+    .getSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id)
     .then((result: string) => (seqJsonStr = result));
 </script>
 
 <Modal height={400} width={600}>
-  <ModalHeader on:close>Sequence ID: {expansionSequence.seq_id}</ModalHeader>
+  <ModalHeader on:close>Sequence: {sequence.seq_id}</ModalHeader>
   <ModalContent>
     <div style:height="300px">
       <MonacoEditor

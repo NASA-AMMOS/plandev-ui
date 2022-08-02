@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { activitiesMap, selectedActivity } from '../../stores/activities';
-  import { filteredExpansionSequences } from '../../stores/expansion';
+  import { filteredSequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
@@ -92,7 +92,7 @@
   $: validateArguments(argumentsMap);
 
   $: if (simulated_activity_id !== null && $simulationDatasetId !== null) {
-    effects.getExpansionSequenceId(simulated_activity_id, $simulationDatasetId).then(seqId => {
+    effects.getSequenceId(simulated_activity_id, $simulationDatasetId).then(seqId => {
       seq_id = seqId;
     });
   }
@@ -102,11 +102,11 @@
     $selectedActivity?.attributes?.computedAttributes,
   );
 
-  async function updateExpansionSequenceToActivity() {
+  async function updateSequenceToActivity() {
     if (seq_id === null) {
-      await effects.deleteExpansionSequenceToActivity($simulationDatasetId, simulated_activity_id);
+      await effects.deleteSequenceToActivity($simulationDatasetId, simulated_activity_id);
     } else {
-      await effects.insertExpansionSequenceToActivity($simulationDatasetId, simulated_activity_id, seq_id);
+      await effects.insertSequenceToActivity($simulationDatasetId, simulated_activity_id, seq_id);
     }
   }
 
@@ -268,14 +268,14 @@
               bind:value={seq_id}
               class="st-select w-100"
               name="sequences"
-              disabled={!$filteredExpansionSequences.length}
-              on:change={updateExpansionSequenceToActivity}
+              disabled={!$filteredSequences.length}
+              on:change={updateSequenceToActivity}
             >
-              {#if !$filteredExpansionSequences.length}
+              {#if !$filteredSequences.length}
                 <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
               {:else}
                 <option value={null} />
-                {#each $filteredExpansionSequences as sequence}
+                {#each $filteredSequences as sequence}
                   <option value={sequence.seq_id}>
                     {sequence.seq_id}
                   </option>

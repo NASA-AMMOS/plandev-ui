@@ -42,14 +42,6 @@ const gql = {
     }
   `,
 
-  CREATE_EXPANSION_SEQUENCE: `#graphql
-    mutation CreateExpansionSequence($sequence: sequence_insert_input!) {
-      createExpansionSequence: insert_sequence_one(object: $sequence) {
-        seq_id
-      }
-    }
-  `,
-
   CREATE_EXPANSION_SET: `#graphql
     mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!) {
       createExpansionSet(
@@ -115,6 +107,14 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE: `#graphql
+    mutation CreateSequence($sequence: sequence_insert_input!) {
+      createSequence: insert_sequence_one(object: $sequence) {
+        seq_id
+      }
+    }
+  `,
+
   CREATE_SIMULATION: `#graphql
     mutation CreateSimulation($simulation: simulation_insert_input!) {
       createSimulation: insert_simulation_one(object: $simulation) {
@@ -168,25 +168,6 @@ const gql = {
     }
   `,
 
-  DELETE_EXPANSION_SEQUENCE: `#graphql
-    mutation DeleteExpansionSequence($seqId: String!, $simulationDatasetId: Int!) {
-      deleteExpansionSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
-        seq_id
-      }
-    }
-  `,
-
-  DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
-    mutation DeleteExpansionSequenceToActivity($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
-      expansionSequence: delete_sequence_to_simulated_activity_by_pk(
-        simulation_dataset_id: $simulation_dataset_id,
-        simulated_activity_id: $simulated_activity_id
-      ) {
-        seq_id
-      }
-    }
-  `,
-
   DELETE_EXPANSION_SET: `#graphql
     mutation DeleteExpansionSet($id: Int!) {
       deleteExpansionSet: delete_expansion_set_by_pk(id: $id) {
@@ -225,6 +206,25 @@ const gql = {
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
         id
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE: `#graphql
+    mutation DeleteSequence($seqId: String!, $simulationDatasetId: Int!) {
+      deleteSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
+        seq_id
+      }
+    }
+  `,
+
+  DELETE_SEQUENCE_TO_ACTIVITY: `#graphql
+    mutation DeleteSequenceToActivity($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
+      sequence: delete_sequence_to_simulated_activity_by_pk(
+        simulation_dataset_id: $simulation_dataset_id,
+        simulated_activity_id: $simulated_activity_id
+      ) {
+        seq_id
       }
     }
   `,
@@ -349,36 +349,6 @@ const gql = {
         expansion_logic
         id
         updated_at
-      }
-    }
-  `,
-
-  GET_EXPANSION_SEQUENCE_ID: `#graphql
-    query GetExpansionSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
-      expansionSequence: sequence_to_simulated_activity_by_pk(
-        simulation_dataset_id: $simulation_dataset_id,
-        simulated_activity_id: $simulated_activity_id
-      ) {
-        seq_id
-      }
-    }
-  `,
-
-  GET_EXPANSION_SEQUENCE_SEQ_JSON: `#graphql
-    query GetExpansionSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
-      seqJson: getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
-        id
-        metadata
-        steps {
-          args
-          metadata
-          stem
-          time {
-            tag
-            type
-          }
-          type
-        }
       }
     }
   `,
@@ -513,6 +483,36 @@ const gql = {
     }
   `,
 
+  GET_SEQUENCE_ID: `#graphql
+    query GetSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
+      sequence: sequence_to_simulated_activity_by_pk(
+        simulation_dataset_id: $simulation_dataset_id,
+        simulated_activity_id: $simulated_activity_id
+      ) {
+        seq_id
+      }
+    }
+  `,
+
+  GET_SEQUENCE_SEQ_JSON: `#graphql
+    query GetSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
+      seqJson: getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
+        id
+        metadata
+        steps {
+          args
+          metadata
+          stem
+          time {
+            tag
+            type
+          }
+          type
+        }
+      }
+    }
+  `,
+
   GET_TYPESCRIPT_ACTIVITY_TYPE: `#graphql
     query GetTypeScriptActivityType($activityTypeName: String!, $modelId: Int!) {
       dslTypeScriptResponse: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
@@ -607,7 +607,7 @@ const gql = {
     }
   `,
 
-  INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
+  INSERT_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
       sequence: insert_sequence_to_simulated_activity_one(
         object: $input,
@@ -700,18 +700,6 @@ const gql = {
         created_at
         expansion_logic
         id
-        updated_at
-      }
-    }
-  `,
-
-  SUB_EXPANSION_SEQUENCES: `#graphql
-    subscription SubExpansionSequences {
-      sequence {
-        created_at
-        metadata
-        seq_id
-        simulation_dataset_id
         updated_at
       }
     }
@@ -813,6 +801,18 @@ const gql = {
         }
         priority
         specification_id
+      }
+    }
+  `,
+
+  SUB_SEQUENCES: `#graphql
+    subscription SubSequences {
+      sequence {
+        created_at
+        metadata
+        seq_id
+        simulation_dataset_id
+        updated_at
       }
     }
   `,

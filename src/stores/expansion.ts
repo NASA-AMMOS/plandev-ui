@@ -16,9 +16,9 @@ export const dictionaries = gqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND
 
 export const expansionRules = gqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
-export const expansionSequences = gqlSubscribable<ExpansionSequence[]>(gql.SUB_EXPANSION_SEQUENCES, {}, []);
-
 export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_SETS, {}, []);
+
+export const sequences = gqlSubscribable<Sequence[]>(gql.SUB_SEQUENCES, {}, []);
 
 /* Writeable. */
 
@@ -26,7 +26,7 @@ export const creatingDictionary: Writable<boolean> = writable(false);
 
 export const createDictionaryError: Writable<string | null> = writable(null);
 
-export const creatingExpansionSequence: Writable<boolean> = writable(false);
+export const creatingSequence: Writable<boolean> = writable(false);
 
 export const expansionRulesColumns: Writable<string> = writable('1fr 1px 2fr');
 
@@ -40,10 +40,10 @@ export const expandingPlan: Writable<boolean> = writable(false);
 
 /* Derived. */
 
-export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived(
-  [expansionSequences, simulationDatasetId],
-  ([$expansionSequences, $simulationDatasetId]) =>
-    $expansionSequences.filter(sequence => sequence.simulation_dataset_id === $simulationDatasetId),
+export const filteredSequences: Readable<Sequence[]> = derived(
+  [sequences, simulationDatasetId],
+  ([$sequences, $simulationDatasetId]) =>
+    $sequences.filter(sequence => sequence.simulation_dataset_id === $simulationDatasetId),
 );
 
 export const sortedDictionaries: Readable<CommandDictionary[]> = derived(dictionaries, $dictionaries => {
