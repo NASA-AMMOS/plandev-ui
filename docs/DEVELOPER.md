@@ -114,7 +114,7 @@ npm install
 
 ## Start Development Server
 
-Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The app will automatically reload if you change any of the source files.
+Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The app will automatically reload if you change any of the source files. Since we have observed some issues using [monaco-editor](https://microsoft.github.io/monaco-editor/) with the dev server on Firefox, we recommend using Chrome for development.
 
 ## Building For Production
 
