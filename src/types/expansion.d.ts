@@ -18,6 +18,22 @@ type ExpansionRule = {
 
 type ExpansionRuleInsertInput = Omit<ExpansionRule, 'created_at' | 'id' | 'updated_at'>;
 
+type ExpansionSequenceToActivityInsertInput = {
+  seq_id: string;
+  simulated_activity_id: ActivitySimulatedId;
+  simulation_dataset_id: number;
+};
+
+type ExpansionSequence = {
+  created_at: string;
+  metadata: any;
+  seq_id: string;
+  simulation_dataset_id: number;
+  updated_at: string;
+};
+
+type ExpansionSequenceInsertInput = Omit<ExpansionSequence, 'created_at' | 'updated_at'>;
+
 type ExpansionSet = {
   command_dict_id: number;
   created_at: string;
@@ -26,20 +42,4 @@ type ExpansionSet = {
   mission_model_id: number;
 };
 
-type Sequence = {
-  created_at: string;
-  metadata: any;
-  seq_id: string;
-  simulation_dataset_id: number;
-  updated_at: string;
-};
-
-type SeqId = Pick<Sequence, 'seq_id'>;
-
-type SequenceInsertInput = Omit<Sequence, 'created_at' | 'updated_at'>;
-
-type SequenceToActivityInsertInput = {
-  seq_id: string;
-  simulated_activity_id: ActivitySimulatedId;
-  simulation_dataset_id: number;
-};
+type SeqId = Pick<ExpandedSequence, 'seq_id'>;
