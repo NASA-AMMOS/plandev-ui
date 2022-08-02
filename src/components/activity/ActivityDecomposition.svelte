@@ -80,7 +80,6 @@
     height: 24px;
     display: flex;
     align-items: center;
-    /* gap: 4px; */
     position: relative;
   }
 

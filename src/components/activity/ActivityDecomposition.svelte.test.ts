@@ -1,4 +1,3 @@
-/* eslint-disable sort-keys */
 import { cleanup, getByText, render } from '@testing-library/svelte';
 import { keyBy } from 'lodash-es';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
