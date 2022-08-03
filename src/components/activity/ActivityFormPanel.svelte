@@ -198,6 +198,7 @@
       </fieldset>
 
       <DatePickerField
+        disabled={isChild}
         field={startTimeField}
         label="Start Time - YYYY-DDDThh:mm:ss"
         name="start-time"

@@ -5,6 +5,7 @@
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import FieldError from './FieldError.svelte';
 
+  export let disabled: boolean = false;
   export let field: FieldStore<any>;
   export let name: string = '';
   export let label: string = '';
@@ -20,6 +21,6 @@
 
 <fieldset>
   <label class={$field.invalid ? 'error' : ''} for={name}>{label}</label>
-  <DatePicker {name} dateString={$field.value} hasError={$field.invalid} on:change={onChange} />
+  <DatePicker dateString={$field.value} {disabled} hasError={$field.invalid} {name} on:change={onChange} />
   <FieldError {field} />
 </fieldset>

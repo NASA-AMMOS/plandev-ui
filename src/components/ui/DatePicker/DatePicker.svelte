@@ -17,6 +17,7 @@
   const currentYear = currentDate.getUTCFullYear();
 
   export let dateString: string = '';
+  export let disabled: boolean = false;
   export let hasError: boolean = false;
   export let name: string = '';
   export let maxDate: Date = new Date(Date.UTC(currentYear + 20, 11)); // add 20 years;
@@ -226,10 +227,11 @@
 
 <div class="date-picker" bind:this={datePickerContainer}>
   <input
+    autocomplete="off"
     class="st-input w-100"
     class:error={!isValid || hasError}
+    {disabled}
     {name}
-    autocomplete="off"
     bind:value={dateString}
     use:popperRef
     on:change={autoCompleteDate}
