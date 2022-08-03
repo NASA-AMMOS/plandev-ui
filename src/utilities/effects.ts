@@ -5,7 +5,7 @@ import { checkConstraintsStatus, constraintViolationsMap } from '../stores/const
 import {
   createDictionaryError,
   creatingDictionary,
-  creatingSequence,
+  creatingExpansionSequence,
   dictionaries,
   expandingPlan,
   savingExpansionRule,
@@ -158,6 +158,24 @@ const effects = {
     }
   },
 
+  async createExpansionSequence(seqId: string, simulationDatasetId: number): Promise<void> {
+    try {
+      creatingExpansionSequence.set(true);
+      const sequence: ExpansionSequenceInsertInput = {
+        metadata: {},
+        seq_id: seqId,
+        simulation_dataset_id: simulationDatasetId,
+      };
+      await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence });
+      showSuccessToast('Sequence Created Successfully');
+      creatingExpansionSequence.set(false);
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Sequence Create Failed');
+      creatingExpansionSequence.set(false);
+    }
+  },
+
   async createExpansionSet(dictionaryId: number, modelId: number, expansionRuleIds: number[]): Promise<number | null> {
     try {
       savingExpansionSet.set(true);
@@ -304,20 +322,6 @@ const effects = {
     }
   },
 
-  async createSequence(seqId: string, simulationDatasetId: number): Promise<void> {
-    try {
-      creatingSequence.set(true);
-      const sequence: SequenceInsertInput = { metadata: {}, seq_id: seqId, simulation_dataset_id: simulationDatasetId };
-      await reqHasura<Pick<Sequence, 'seq_id'>>(gql.CREATE_SEQUENCE, { sequence });
-      showSuccessToast('Sequence Created Successfully');
-      creatingSequence.set(false);
-    } catch (e) {
-      console.log(e);
-      showFailureToast('Sequence Create Failed');
-      creatingSequence.set(false);
-    }
-  },
-
   async createSimulation(
     plan_id: number,
     simulation_template_id: number | null = null,
@@ -440,6 +444,43 @@ const effects = {
     }
   },
 
+  async deleteExpansionSequence(sequence: ExpansionSequence): Promise<void> {
+    try {
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this sequence?',
+        'Delete Sequence',
+      );
+
+      if (confirm) {
+        const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
+        await reqHasura(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId });
+        showSuccessToast('Sequence Deleted Successfully');
+      }
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Sequence Delete Failed');
+    }
+  },
+
+  async deleteExpansionSequenceToActivity(
+    simulation_dataset_id: number,
+    simulated_activity_id: number,
+  ): Promise<boolean> {
+    try {
+      await reqHasura<SeqId>(gql.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY, {
+        simulated_activity_id,
+        simulation_dataset_id,
+      });
+      showSuccessToast('Sequence Deleted From Activity Successfully');
+      return true;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Delete Sequence From Activity Failed');
+      return false;
+    }
+  },
+
   async deleteExpansionSet(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal(
@@ -525,37 +566,6 @@ const effects = {
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Delete Failed');
-      return false;
-    }
-  },
-
-  async deleteSequence(sequence: Sequence): Promise<void> {
-    try {
-      const confirm = await showConfirmModal(
-        'Delete',
-        'Are you sure you want to delete this sequence?',
-        'Delete Sequence',
-      );
-
-      if (confirm) {
-        const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
-        await reqHasura(gql.DELETE_SEQUENCE, { seqId, simulationDatasetId });
-        showSuccessToast('Sequence Deleted Successfully');
-      }
-    } catch (e) {
-      console.log(e);
-      showFailureToast('Sequence Delete Failed');
-    }
-  },
-
-  async deleteSequenceToActivity(simulation_dataset_id: number, simulated_activity_id: number): Promise<boolean> {
-    try {
-      await reqHasura<SeqId>(gql.DELETE_SEQUENCE_TO_ACTIVITY, { simulated_activity_id, simulation_dataset_id });
-      showSuccessToast('Sequence Deleted From Activity Successfully');
-      return true;
-    } catch (e) {
-      console.log(e);
-      showFailureToast('Delete Sequence From Activity Failed');
       return false;
     }
   },
@@ -684,6 +694,37 @@ const effects = {
     }
   },
 
+  async getExpansionSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
+    try {
+      const data = await reqHasura<SeqId>(gql.GET_EXPANSION_SEQUENCE_ID, {
+        simulated_activity_id,
+        simulation_dataset_id,
+      });
+      const { expansionSequence } = data;
+
+      if (expansionSequence) {
+        const { seq_id } = expansionSequence;
+        return seq_id;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async getExpansionSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string> {
+    try {
+      const data = await reqHasura(gql.GET_EXPANSION_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
+      const { seqJson } = data;
+      return JSON.stringify(seqJson, null, 2);
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getModels(): Promise<ModelList[]> {
     try {
       const data = await reqHasura(gql.GET_MODELS);
@@ -762,34 +803,6 @@ const effects = {
         return null;
       }
     } else {
-      return null;
-    }
-  },
-
-  async getSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
-    try {
-      const data = await reqHasura<SeqId>(gql.GET_SEQUENCE_ID, { simulated_activity_id, simulation_dataset_id });
-      const { sequence } = data;
-
-      if (sequence) {
-        const { seq_id } = sequence;
-        return seq_id;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
-  },
-
-  async getSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string> {
-    try {
-      const data = await reqHasura(gql.GET_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
-      const { seqJson } = data;
-      return JSON.stringify(seqJson, null, 2);
-    } catch (e) {
-      console.log(e);
       return null;
     }
   },
@@ -947,14 +960,14 @@ const effects = {
     }
   },
 
-  async insertSequenceToActivity(
+  async insertExpansionSequenceToActivity(
     simulation_dataset_id: number,
     simulated_activity_id: number,
     seq_id: string,
   ): Promise<string | null> {
     try {
-      const input: SequenceToActivityInsertInput = { seq_id, simulated_activity_id, simulation_dataset_id };
-      const data = await reqHasura<{ seq_id: string }>(gql.INSERT_SEQUENCE_TO_ACTIVITY, { input });
+      const input: ExpansionSequenceToActivityInsertInput = { seq_id, simulated_activity_id, simulation_dataset_id };
+      const data = await reqHasura<{ seq_id: string }>(gql.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY, { input });
       const { sequence } = data;
 
       if (sequence) {
