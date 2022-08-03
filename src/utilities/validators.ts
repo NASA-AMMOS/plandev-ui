@@ -1,18 +1,3 @@
-export async function validateField<T>(field: Field<T>): Promise<string[]> {
-  const { validators, value } = field;
-  const errors: string[] = [];
-
-  for (const validator of validators) {
-    const error = await validator(value);
-
-    if (error !== null) {
-      errors.push(error);
-    }
-  }
-
-  return errors;
-}
-
 export function min(min: number, errorMessage?: string): (value: number) => Promise<ValidationResult> {
   return (value: number): Promise<ValidationResult> =>
     new Promise(resolve => {
@@ -53,4 +38,19 @@ export function timestamp(value: string): Promise<ValidationResult> {
       return resolve(error);
     }
   });
+}
+
+export async function validateField<T>(field: Field<T>): Promise<string[]> {
+  const { validators, value } = field;
+  const errors: string[] = [];
+
+  for (const validator of validators) {
+    const error = await validator(value);
+
+    if (error !== null) {
+      errors.push(error);
+    }
+  }
+
+  return errors;
 }

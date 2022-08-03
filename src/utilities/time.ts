@@ -1,7 +1,7 @@
 import parse from 'postgres-interval';
 
 /**
- * Get a formatted duration string given a duration in microseconds.
+ * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
  * @example convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us') -> 90577779200000
  * @note inverse of convertUsToDurationString
  */
@@ -64,11 +64,11 @@ export function convertDurationStringToUs(durationString: string): number | neve
 }
 
 /**
- * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
- * @example convertUsToDurationString(90577779200000) -> '2y 318d 6h 16m 19s 200ms 0us'
+ * Get a formatted duration string given a duration in microseconds.
+ * @example convertUsToDurationString(90577779200000) -> '2y 318d 6h 16m 19s 200ms'
  * @note inverse of convertDurationStringToUs
  */
-export function convertUsToDurationString(durationUs: number): string {
+export function convertUsToDurationString(durationUs: number, includeZeros: boolean = false): string {
   const usPerYear = 3.154e13;
   const usPerDay = 8.64e10;
   const usPerHour = 3.6e9;
@@ -100,7 +100,21 @@ export function convertUsToDurationString(durationUs: number): string {
 
   const microseconds = durationUs;
 
-  return `${years}y ${days}d ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms ${microseconds}us`;
+  if (includeZeros) {
+    return `${years}y ${days}d ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms ${microseconds}us`;
+  }
+
+  const yearsString = years ? `${years}y` : '';
+  const daysString = days ? `${days}d` : '';
+  const hoursString = hours ? `${hours}h` : '';
+  const minutesString = minutes ? `${minutes}m` : '';
+  const secondsString = seconds ? `${seconds}s` : '';
+  const millisecondsString = milliseconds ? `${milliseconds}ms` : '';
+  const microsecondsString = microseconds ? `${microseconds}us` : '';
+
+  return [yearsString, daysString, hoursString, minutesString, secondsString, millisecondsString, microsecondsString]
+    .filter(Boolean)
+    .join(' ');
 }
 
 /**
@@ -198,4 +212,46 @@ export function getUnixEpochTime(doyTimestamp: string): number {
   }
 
   return 0;
+}
+
+/**
+ * Parses a date string (YYYY-MM-DDTHH:mm:ss) or DOY string (YYYY-DDDDTHH:mm:ss) into its separate components
+ */
+export function parseDoyOrYmdTime(dateString: string, numDecimals = 6): null | ParsedDoyString | ParsedYmdString {
+  const matches = (dateString ?? '').match(
+    new RegExp(
+      `^(?<year>\\d{4})-(?:(?<month>(?:[0]?[0-9])|(?:[1][1-2]))-(?<day>(?:[0-2]?[0-9])|(?:[3][0-1]))|(?<doy>\\d{1,3}))(?:T(?<time>(?<hour>[0-9]|[0-2][0-9])(?::(?<min>[0-9]|(?:[0-5][0-9])))?(?::(?<sec>[0-9]|(?:[0-5][0-9]))(?<dec>\\.\\d{1,${numDecimals}})?)?)?)?$`,
+      'i',
+    ),
+  );
+  if (matches) {
+    const msPerSecond = 1000;
+
+    const { groups: { year, month, day, doy, time = '00:00:00', hour = '0', min = '0', sec = '0', dec = '.0' } = {} } =
+      matches;
+
+    const partialReturn = {
+      hour: parseInt(hour),
+      min: parseInt(min),
+      ms: parseFloat((parseFloat(dec) * msPerSecond).toFixed(numDecimals)),
+      sec: parseInt(sec),
+      time: time,
+      year: parseInt(year),
+    };
+
+    if (doy !== undefined) {
+      return {
+        ...partialReturn,
+        doy: parseInt(doy),
+      };
+    }
+
+    return {
+      ...partialReturn,
+      day: parseInt(day),
+      month: parseInt(month),
+    };
+  }
+
+  return null;
 }

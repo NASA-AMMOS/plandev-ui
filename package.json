@@ -57,6 +57,7 @@
     "split-grid": "^1.0.11",
     "svelte": "^3.49.0",
     "svelte-dnd-action": "^0.9.19",
+    "svelte-popperjs": "^1.2.11",
     "tippy.js": "^6.3.7",
     "toastify-js": "^1.12.0"
   },

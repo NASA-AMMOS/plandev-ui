@@ -5,6 +5,7 @@
   import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
+  import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -112,6 +113,10 @@
       durationString = convertUsToDurationString(
         (getUnixEpochTime($endTimeField.value) - getUnixEpochTime($startTimeField.value)) * 1000,
       );
+
+      if (!durationString) {
+        durationString = 'None';
+      }
     } else {
       durationString = 'None';
     }
@@ -150,15 +155,21 @@
             <input bind:this={nameInputField} autocomplete="off" class="st-input w-100" name="name" />
           </Field>
 
-          <Field field={startTimeField} on:blur={updateDurationString} on:keydown={updateDurationString}>
-            <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
-            <input autocomplete="off" class="st-input w-100" name="start-time" />
-          </Field>
+          <DatePickerField
+            field={startTimeField}
+            label="Start Time - YYYY-DDDThh:mm:ss"
+            name="start-time"
+            on:change={updateDurationString}
+            on:keydown={updateDurationString}
+          />
 
-          <Field field={endTimeField} on:blur={updateDurationString} on:keydown={updateDurationString}>
-            <label for="end-time" slot="label">End Time - YYYY-DDDThh:mm:ss</label>
-            <input autocomplete="off" class="st-input w-100" name="end-time" />
-          </Field>
+          <DatePickerField
+            field={endTimeField}
+            label="End Time - YYYY-DDDThh:mm:ss"
+            name="end-time"
+            on:change={updateDurationString}
+            on:keydown={updateDurationString}
+          />
 
           <fieldset>
             <label for="plan-duration">Plan Duration</label>

@@ -20,7 +20,7 @@
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 
-  $: durationString = convertUsToDurationString(formParameter.value);
+  $: durationString = convertUsToDurationString(formParameter.value, true);
 </script>
 
 <div class="parameter-base-duration" style="grid-template-columns: {columns}">

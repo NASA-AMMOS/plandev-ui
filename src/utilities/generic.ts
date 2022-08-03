@@ -14,6 +14,19 @@ export function clamp(num: number, min: number, max: number): number {
 }
 
 /**
+ * Helper function for conditionally generating a complete classList string
+ * @example classNames('foo', { bar: true, baz: false }) returns 'foo bar'
+ */
+export function classNames(baseClass: string, conditionalClasses?: Record<string, boolean>): string {
+  return Object.keys(conditionalClasses).reduce((partialClassName: string, className: string) => {
+    if (conditionalClasses[className]) {
+      return `${partialClassName} ${className}`;
+    }
+    return partialClassName;
+  }, baseClass);
+}
+
+/**
  * Returns a target based on an Event.
  */
 export function getTarget(event: Event) {

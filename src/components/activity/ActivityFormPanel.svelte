@@ -12,7 +12,7 @@
   import { getDoyTimeFromDuration, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
-  import Field from '../form/Field.svelte';
+  import DatePickerField from '../form/DatePickerField.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -197,10 +197,13 @@
         />
       </fieldset>
 
-      <Field field={startTimeField} on:blur={onUpdateStartTime} on:keydown={onUpdateStartTime}>
-        <label for="start-time" slot="label">Start Time - YYYY-DDDThh:mm:ss</label>
-        <input autocomplete="off" class="st-input w-100" disabled={isChild} name="start-time" />
-      </Field>
+      <DatePickerField
+        field={startTimeField}
+        label="Start Time - YYYY-DDDThh:mm:ss"
+        name="start-time"
+        on:change={onUpdateStartTime}
+        on:keydown={onUpdateStartTime}
+      />
 
       {#if duration !== null}
         <fieldset>
