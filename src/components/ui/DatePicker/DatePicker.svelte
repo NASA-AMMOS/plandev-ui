@@ -137,8 +137,6 @@
   function closeDatePicker() {
     isOpen = false;
     isTouched = true;
-
-    dispatch('change', { value: dateString });
   }
 
   function decrementMonth() {
@@ -195,14 +193,19 @@
 
   function onInputKeydown(event: KeyboardEvent) {
     const { key } = event;
+    openDatePicker();
 
     if (key === 'Enter') {
+      event.preventDefault();
+
       autoCompleteDate(event);
+      closeDatePicker();
     }
   }
 
   function onSelect({ detail }: CustomEvent) {
     setDateString(getDoyTime(detail as Date, false));
+    closeDatePicker();
   }
 
   function openDatePicker() {
@@ -222,6 +225,9 @@
 
   function setToday() {
     setDateString(getDoyTime(currentDate));
+
+    viewMonth = currentDate.getUTCMonth();
+    viewYear = currentYear;
   }
 </script>
 
@@ -260,13 +266,13 @@
       <Month {maxDate} {minDate} month={viewMonth} year={viewYear} {selectedDate} on:select={onSelect} />
       <div class="date-picker-actions">
         <div>
-          <div class="action button" on:click={setToday}>
+          <div class="action button" on:mousedown={setToday}>
             <div class="action-icon"><Calendar /></div>
             <div class="action-label">Today</div>
           </div>
         </div>
         <div>
-          <div class="action button" on:click={clearDate}>
+          <div class="action button" on:mousedown={clearDate}>
             <div class="action-icon"><i class="bi bi-magic" /></div>
             <div class="action-label">Clear</div>
           </div>
@@ -285,6 +291,7 @@
     background: #ffffff;
     border: 1px solid var(--st-gray-20);
     border-radius: 10px;
+    box-shadow: 0px 8px 16px 0px var(--st-gray-20);
     min-width: 150px;
     min-height: 100px;
     z-index: 99999;

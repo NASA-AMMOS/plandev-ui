@@ -67,7 +67,7 @@ export class Plans {
     await this.inputEndTime.focus();
     await this.inputEndTime.fill(this.endTime);
     await this.inputEndTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await this.inputEndTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await this.inputEndTime.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
   }
 
   async fillInputName() {
@@ -80,7 +80,7 @@ export class Plans {
     await this.inputStartTime.focus();
     await this.inputStartTime.fill(this.startTime);
     await this.inputStartTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await this.inputEndTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await this.inputStartTime.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
   }
 
   async goto() {

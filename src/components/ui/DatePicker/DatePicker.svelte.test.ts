@@ -41,6 +41,27 @@ describe('DatePicker DatePicker Component', () => {
     expect(queryByText('April')).toBeNull();
   });
 
+  it('Should close the datepicker when the user confirms their typing changes', async () => {
+    const { getByRole, queryByText } = render(DatePicker);
+
+    await fireEvent.focus(getByRole('textbox'));
+    await fireEvent.change(getByRole('textbox'), { target: { value: '2022-100' } });
+    await fireEvent.keyDown(getByRole('textbox'), { key: 'Enter' });
+
+    expect(queryByText('April')).toBeNull();
+  });
+
+  it('Should close the datepicker when the user confirms their day selection', async () => {
+    const { getByRole, getByText, queryByText } = render(DatePicker, {
+      dateString: '2021-360T00:00:00',
+    });
+
+    await fireEvent.focus(getByRole('textbox'));
+    await fireEvent.click(getByText('359'));
+
+    expect(queryByText('April')).toBeNull();
+  });
+
   it('Should autocomplete the date when partially valid', async () => {
     const { getByDisplayValue, getByRole } = render(DatePicker);
 

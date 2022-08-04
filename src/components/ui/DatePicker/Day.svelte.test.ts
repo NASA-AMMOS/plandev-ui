@@ -29,9 +29,10 @@ describe('DatePicker Day Component', () => {
       selectedDate: null,
     });
 
-    expect(container.querySelector('.selected')).toBeNull();
-    expect(container.querySelector('.today')).toBeNull();
-    expect(container.querySelector('.disabled')).toBeNull();
+    expect(container.querySelector('.isSelected')).toBeNull();
+    expect(container.querySelector('.isToday')).toBeNull();
+    expect(container.querySelector('.isOutsideCurrentMonth')).toBeNull();
+    expect(container.querySelector('.isOutsideBounds')).toBeNull();
   });
 
   it('Should indicate that the day is the current selected date', () => {
@@ -43,7 +44,7 @@ describe('DatePicker Day Component', () => {
       selectedDate: new Date(Date.UTC(2020, 2, 15)),
     });
 
-    expect(container.querySelector('.selected')).not.toBeNull();
+    expect(container.querySelector('.isSelected')).not.toBeNull();
   });
 
   it('Should indicate that the day is today', () => {
@@ -54,17 +55,28 @@ describe('DatePicker Day Component', () => {
       month: 2,
     });
 
-    expect(container.querySelector('.today')).not.toBeNull();
+    expect(container.querySelector('.isToday')).not.toBeNull();
+  });
+
+  it('Should indicate that the day is outside the current month', () => {
+    const { container } = render(Day, {
+      date: new Date(Date.UTC(2020, 2, 15)),
+      maxDate: new Date(Date.UTC(2023, 1, 1)),
+      minDate: new Date(Date.UTC(2018, 1, 1)),
+      month: 3,
+    });
+
+    expect(container.querySelector('.isOutsideCurrentMonth')).not.toBeNull();
   });
 
   it('Should be disabled if outside of the min/max range', () => {
     const { container } = render(Day, {
-      date: new Date(),
+      date: new Date(Date.UTC(2020, 2, 15)),
       maxDate: new Date(Date.UTC(2019, 1, 1)),
       minDate: new Date(Date.UTC(2018, 1, 1)),
       month: 2,
     });
 
-    expect(container.querySelector('.disabled')).not.toBeNull();
+    expect(container.querySelector('.isOutsideBounds')).not.toBeNull();
   });
 });

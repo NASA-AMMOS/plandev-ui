@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { classNames } from '../../../utilities/generic';
   import { getDoy } from '../../../utilities/time';
 
   export let date: Date;
@@ -12,12 +11,12 @@
   const dispatch = createEventDispatcher();
 
   let isSelected: boolean = false;
-  let isWithinBounds: boolean = true;
+  let isOutsideBounds: boolean = false;
   let isToday: boolean = false;
 
   $: isToday = isSameDay(date, new Date());
   $: isSelected = isSameDay(date, selectedDate);
-  $: isWithinBounds = minDate.getTime() <= date.getTime() && date.getTime() <= maxDate.getTime();
+  $: isOutsideBounds = minDate.getTime() > date.getTime() || date.getTime() > maxDate.getTime();
   $: isOutsideCurrentMonth = month !== date.getUTCMonth();
 
   function isSameDay(date1: Date, date2: Date) {
@@ -32,19 +31,18 @@
   }
 
   function onSelect() {
-    if (isWithinBounds) {
+    if (!isOutsideBounds) {
       dispatch('select', date);
     }
   }
 </script>
 
 <div
-  class={classNames('date-picker-day', {
-    disabled: !isWithinBounds,
-    outside: isOutsideCurrentMonth,
-    selected: isSelected,
-    today: isToday,
-  })}
+  class="date-picker-day"
+  class:isOutsideBounds
+  class:isOutsideCurrentMonth
+  class:isSelected
+  class:isToday
   on:click|stopPropagation={onSelect}
 >
   <div class="doy">{getDoy(date)}</div>
@@ -74,27 +72,27 @@
     font-weight: 500;
   }
 
-  .date-picker-day.selected {
+  .date-picker-day.isSelected {
     background-color: var(--st-primary-50);
   }
 
-  .date-picker-day.selected .doy {
+  .date-picker-day.isSelected .doy {
     color: var(--st-gray-10);
   }
 
-  .date-picker-day.selected .date {
+  .date-picker-day.isSelected .date {
     color: var(--st-gray-30);
   }
 
-  .today {
+  .isToday {
     background-color: var(--st-gray-20);
   }
 
-  .outside {
+  .isOutsideCurrentMonth {
     opacity: 0.4;
   }
 
-  .disabled {
+  .isOutsideBounds {
     opacity: 0.3;
     cursor: not-allowed;
   }
