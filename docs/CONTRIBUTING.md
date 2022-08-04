@@ -81,6 +81,7 @@ Run the following commands to execute formatting, linting, static analysis, and 
 
 1. `npm run format:write`
 1. `npm run lint`
+1. `npm run lint:css`
 1. `npm run check`
 1. `npm run test:unit`
 1. `npm run test:e2e`

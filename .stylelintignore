@@ -1,0 +1,7 @@
+.svelte-kit/**
+build/**
+e2e-test-results/**
+node_modules/**
+src/css/utilities.css
+static/**
+unit-test-results/**
