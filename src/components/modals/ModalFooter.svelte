@@ -9,8 +9,8 @@
     border-radius: 0px 0px 4px 4px;
     color: var(--st-gray-100);
     display: flex;
-    justify-content: flex-end;
     height: 40px;
+    justify-content: flex-end;
     padding: 1rem;
     width: 100%;
   }

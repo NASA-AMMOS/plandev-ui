@@ -76,8 +76,8 @@
 <style>
   .app-menu {
     align-items: center;
-    display: flex;
     cursor: pointer;
+    display: flex;
     gap: 5px;
     justify-content: center;
     position: relative;
@@ -85,8 +85,8 @@
 
   .app-icon {
     align-items: center;
-    border-radius: 4px;
     background-color: white;
+    border-radius: 4px;
     color: black;
     display: flex;
     font-size: 16px;

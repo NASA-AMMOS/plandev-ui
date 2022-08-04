@@ -36,8 +36,8 @@
     align-items: center;
     color: var(--st-gray-20);
     font-family: 'Inter';
-    font-style: normal;
     font-size: 12px;
+    font-style: normal;
     font-weight: 500;
     letter-spacing: 0.025em;
     line-height: 16px;

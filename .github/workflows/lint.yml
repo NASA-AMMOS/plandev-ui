@@ -30,5 +30,7 @@ jobs:
         run: npm run format:check
       - name: ESLint
         run: npm run lint
+      - name: Stylelint
+        run: npm run lint:css
       - name: Svelte Check
         run: npm run check

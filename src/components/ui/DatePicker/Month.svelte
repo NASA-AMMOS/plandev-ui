@@ -38,15 +38,15 @@
 <style>
   .date-picker-month {
     display: grid;
-    row-gap: 7px;
     margin-bottom: 7px;
+    row-gap: 7px;
   }
 
   .date-picker-month .week-header {
+    border-bottom: 1px solid var(--st-gray-20);
+    column-gap: 3px;
     display: grid;
     grid-template-columns: repeat(7, 38px);
-    column-gap: 3px;
-    border-bottom: 1px solid var(--st-gray-20);
     padding: 0 12px 7px;
   }
 

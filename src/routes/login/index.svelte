@@ -93,7 +93,6 @@
 <style>
   form {
     background-color: var(--st-primary-background-color);
-
     border: 1px solid var(--st-gray-20);
     width: 300px;
   }

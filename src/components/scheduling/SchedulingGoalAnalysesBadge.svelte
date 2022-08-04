@@ -52,8 +52,8 @@
     font-weight: var(--st-typography-bold-font-weight);
     gap: 8px;
     justify-content: space-evenly;
-    line-height: var(--st-typography-body-line-height);
     letter-spacing: var(--st-typography-body-letter-spacing);
+    line-height: var(--st-typography-body-line-height);
     padding: 2px 5px;
   }
 

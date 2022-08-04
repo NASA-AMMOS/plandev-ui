@@ -61,8 +61,8 @@
 
   .date-picker-dropdown .display-value {
     display: inline-block;
-    position: relative;
     min-width: 0;
+    position: relative;
   }
 
   .display-value .value {
@@ -70,9 +70,9 @@
   }
 
   .date-picker-dropdown select {
-    position: absolute;
+    cursor: pointer;
     left: 0;
     opacity: 0;
-    cursor: pointer;
+    position: absolute;
   }
 </style>

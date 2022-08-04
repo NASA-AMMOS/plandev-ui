@@ -51,12 +51,12 @@
 
 <style>
   .date-picker-day {
-    position: relative;
-    text-align: center;
-    cursor: pointer;
     border-radius: 5px;
+    cursor: pointer;
     font-weight: 400;
     padding: 2px 0;
+    position: relative;
+    text-align: center;
   }
 
   .date-picker-day:hover {
@@ -93,7 +93,7 @@
   }
 
   .isOutsideBounds {
-    opacity: 0.3;
     cursor: not-allowed;
+    opacity: 0.3;
   }
 </style>

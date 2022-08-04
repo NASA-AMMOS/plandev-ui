@@ -18,8 +18,8 @@
     border-radius: 4px 4px 0px 0px;
     color: var(--st-gray-100);
     display: flex;
-    font-weight: 700;
     font-size: 1rem;
+    font-weight: 700;
     height: 40px;
     justify-content: space-between;
     padding: 1rem;

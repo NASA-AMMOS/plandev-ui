@@ -76,16 +76,16 @@
   }
 
   .activity-decomposition {
-    cursor: default;
-    height: 24px;
-    display: flex;
     align-items: center;
+    cursor: default;
+    display: flex;
+    height: 24px;
     position: relative;
   }
 
   .activity-decomposition-not-found {
-    cursor: pointer;
     color: var(--st-red);
+    cursor: pointer;
   }
 
   .activity-decomposition-unselected {
@@ -97,13 +97,13 @@
   }
 
   .activity-decomposition-node {
+    align-items: center;
+    border-radius: 2px;
+    cursor: pointer;
     display: flex;
     flex: 1;
     height: inherit;
-    align-items: center;
     padding-left: 4px;
-    border-radius: 2px;
-    cursor: pointer;
     user-select: none;
   }
 
@@ -112,13 +112,13 @@
   }
 
   .activity-decomposition-node {
+    align-items: center;
+    border-radius: 2px;
+    cursor: pointer;
     display: flex;
     flex: 1;
     height: inherit;
-    align-items: center;
     padding-left: 4px;
-    border-radius: 2px;
-    cursor: pointer;
     user-select: none;
   }
 

@@ -21,8 +21,8 @@
     color: var(--st-gray-20);
     cursor: pointer;
     display: inline-flex;
-    font-weight: 500;
     font-size: 13px;
+    font-weight: 500;
     gap: 8px;
     height: 42px;
     line-height: 14px;

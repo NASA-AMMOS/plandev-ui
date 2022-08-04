@@ -31,9 +31,9 @@
 
 <style>
   .date-picker-week {
+    column-gap: 3px;
     display: grid;
     grid-template-columns: repeat(7, 38px);
-    column-gap: 3px;
     padding: 0 12px;
   }
 </style>

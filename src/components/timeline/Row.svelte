@@ -224,8 +224,8 @@
 
   .row-hover-menu {
     color: var(--st-gray-50);
-    font-size: 1.2rem;
     display: none;
+    font-size: 1.2rem;
     position: absolute;
     z-index: 2;
   }

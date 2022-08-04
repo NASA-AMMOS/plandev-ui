@@ -292,26 +292,26 @@
     border: 1px solid var(--st-gray-20);
     border-radius: 10px;
     box-shadow: 0px 8px 16px 0px var(--st-gray-20);
-    min-width: 150px;
     min-height: 100px;
-    z-index: 99999;
+    min-width: 150px;
     user-select: none;
+    z-index: 99999;
   }
 
   .date-picker .date-picker-portal .date-picker-inputs {
-    display: grid;
-    grid-template-columns: min-content auto auto min-content;
     column-gap: 0.5rem;
-    padding: 12px 17px 5px;
-    font-weight: 300;
+    display: grid;
     font-size: 1.01rem;
+    font-weight: 300;
+    grid-template-columns: min-content auto auto min-content;
+    padding: 12px 17px 5px;
   }
 
   .date-picker-inputs .chevron-button {
-    display: grid;
-    cursor: pointer;
-    padding: 4px;
     border-radius: 3px;
+    cursor: pointer;
+    display: grid;
+    padding: 4px;
   }
 
   .button:hover {
@@ -327,26 +327,26 @@
   }
 
   .date-picker-actions {
-    display: grid;
-    row-gap: 7px;
     border-top: 1px solid var(--st-gray-20);
+    display: grid;
     margin-top: 7px;
     padding: 15px 16px;
+    row-gap: 7px;
   }
 
   .date-picker-actions .action {
-    display: inline-flex;
+    border-radius: 4px;
     color: var(--st-gray-70);
     cursor: pointer;
-    border-radius: 4px;
+    display: inline-flex;
     padding: 4px;
   }
 
   .date-picker-actions .action .action-icon {
     display: inline-block;
+    margin-right: 7px;
     text-align: right;
     width: 16px;
-    margin-right: 7px;
   }
 
   .date-picker-actions .action .action-label {

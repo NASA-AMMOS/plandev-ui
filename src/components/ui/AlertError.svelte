@@ -30,8 +30,8 @@
     border: 1px solid #f5c6cb;
     border-radius: 4px;
     color: #721c24;
-    overflow: hidden;
     font-size: 0.8rem;
+    overflow: hidden;
     padding: 0.3rem;
     text-overflow: ellipsis;
     white-space: nowrap;
