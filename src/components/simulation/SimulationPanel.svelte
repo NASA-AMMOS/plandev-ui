@@ -15,7 +15,8 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
-  import StatusBadge from '../ui/StatusBadge.svelte';
+  import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
+  import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
   export let gridId: number;
 
@@ -62,7 +63,9 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Simulation" />
-    <StatusBadge status={$simulationStatus} title="Simulate" on:click={() => effects.simulate()} />
+    <PanelHeaderActions status={$simulationStatus}>
+      <PanelHeaderActionButton title="Simulate" showLabel on:click={() => effects.simulate()} />
+    </PanelHeaderActions>
   </svelte:fragment>
 
   <svelte:fragment slot="body">

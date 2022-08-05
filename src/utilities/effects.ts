@@ -1015,13 +1015,13 @@ const effects = {
     }
   },
 
-  async schedule(): Promise<void> {
+  async schedule(analysis_only: boolean = false): Promise<void> {
     try {
       const { id: planId } = get(plan);
       const specificationId = get(selectedSpecId);
 
       const plan_revision = await effects.getPlanRevision(planId);
-      await effects.updateSchedulingSpec(specificationId, { plan_revision });
+      await effects.updateSchedulingSpec(specificationId, { analysis_only, plan_revision });
 
       let tries = 0;
       schedulingStatus.set(Status.Executing);

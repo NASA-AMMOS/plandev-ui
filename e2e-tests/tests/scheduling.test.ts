@@ -63,6 +63,14 @@ test.describe.serial('Scheduling', () => {
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
   });
 
+  test('Running analyze-only should show +0 in that goals badge', async () => {
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
+    await plan.runAnalysis();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await plan.runAnalysis();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
+
   test('Delete scheduling goal', async () => {
     await schedulingGoals.deleteSchedulingGoal();
   });
