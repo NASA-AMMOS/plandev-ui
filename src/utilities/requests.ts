@@ -70,10 +70,21 @@ export async function reqHasura<T = any>(query: string, variables: QueryVariable
     throw new Error(response.statusText);
   }
 
-  if (json.errors) {
+  if (json?.errors && json.errors.length) {
     console.log(response);
     console.log(json);
-    throw new Error(json.errors[0].message);
+
+    const defaultError = 'An unexpected error occurred';
+    const [error] = json.errors;
+    const code = error?.extensions?.code;
+
+    if (code === 'unexpected') {
+      // This is often thrown when a Postgres exception is raised for a Hasura query.
+      // @see https://github.com/hasura/graphql-engine/issues/3658
+      throw new Error(error?.extensions?.internal?.error?.message ?? defaultError);
+    } else {
+      throw new Error(error?.message ?? defaultError);
+    }
   }
 
   const { data } = json;
