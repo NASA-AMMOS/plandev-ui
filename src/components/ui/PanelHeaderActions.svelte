@@ -1,12 +1,8 @@
 <script lang="ts">
-  import { getColorForStatus, Status, statusColors } from '../../utilities/status';
+  import type { Status } from '../../utilities/status';
   import StatusBadge from './StatusBadge.svelte';
 
   export let status: Status | null = null;
-
-  let color: string = statusColors.blue;
-
-  $: color = getColorForStatus(status);
 </script>
 
 <span class="header-actions">
