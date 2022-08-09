@@ -53,7 +53,7 @@ Before you can run aerie-ui you must install and configure the following product
   cp ***REMOVED***.template ***REMOVED***
   ```
 
-  Fill out the [***REMOVED***](https://github.com/NASA-AMMOS/aerie/blob/develop/***REMOVED***.template) file with the following default environment:
+  Fill out the `***REMOVED***` file with the following default environment variables:
 
   ```sh
   AERIE_PASSWORD=aerie
