@@ -50,6 +50,22 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   git clone https://github.com/NASA-AMMOS/aerie.git
   cd aerie
+  cp ***REMOVED***.template ***REMOVED***
+  ```
+
+  Fill out the [***REMOVED***](https://github.com/NASA-AMMOS/aerie/blob/develop/***REMOVED***.template) file with the following default environment:
+
+  ```sh
+  AERIE_PASSWORD=aerie
+  AERIE_USERNAME=aerie
+  POSTGRES_DB=postgres
+  POSTGRES_PASSWORD=postgres
+  POSTGRES_USER=postgres
+  ```
+
+  Next build Aerie, and start the services via Docker:
+
+  ```sh
   ./gradlew assemble
 
   # Notice we exclude the aerie_ui since we run it locally (i.e. not in Docker) for development.

@@ -38,11 +38,11 @@ jobs:
           docker images
           docker ps -a
         env:
-          AERIE_USERNAME: '${{secrets.AERIE_USERNAME}}'
           AERIE_PASSWORD: '${{secrets.AERIE_PASSWORD}}'
+          AERIE_USERNAME: '${{secrets.AERIE_USERNAME}}'
           POSTGRES_DB: '${{secrets.POSTGRES_DB}}'
-          POSTGRES_USER: '${{secrets.POSTGRES_USER}}'
           POSTGRES_PASSWORD: '${{secrets.POSTGRES_PASSWORD}}'
+          POSTGRES_USER: '${{secrets.POSTGRES_USER}}'
       - name: Setup Node (UI)
         uses: actions/setup-node@v2
         with:
