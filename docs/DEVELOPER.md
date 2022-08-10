@@ -90,17 +90,7 @@ The recommended editor for developing aerie-ui is [VS Code](https://code.visuals
 
 ### Settings.json
 
-```json
-{
-  "editor.formatOnSave": true,
-  "eslint.validate": ["javascript", "typescript", "svelte"],
-  "[svelte][typescript]": {
-    "editor.codeActionsOnSave": ["source.fixAll", "source.organizeImports", "source.sortImports"],
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "stylelint.validate": ["css", "less", "postcss", "svelte"]
-}
-```
+Your editor should follow the same settings found in [.vscode/settings.json](../.vscode/settings.json).
 
 ### Extensions
 
