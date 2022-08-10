@@ -12,6 +12,7 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 ```sh
 .
 ├── .github         # GitHub metadata
+├── .vscode         # VS Code settings
 ├── docs            # Documentation
 ├── e2e-tests       # End-to-end tests
 ├── scripts         # Helper build scripts
