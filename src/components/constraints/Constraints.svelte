@@ -23,11 +23,20 @@
   export let initialPlans: PlanList[] = [];
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'id', headerName: 'ID', sortable: true, suppressAutoSize: true, width: 60 },
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    {
+      field: 'id',
+      headerName: 'ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 40,
+    },
+    { field: 'name', filter: 'agTextColumnFilter', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
     { field: 'plan_id', headerName: 'Plan ID', sortable: true, width: 110 },
     {
+      cellClass: 'action-cell-container',
       cellRenderer: (params: ConstraintsCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
@@ -58,7 +67,9 @@
       headerName: '',
       resizable: false,
       sortable: false,
-      width: 90,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
     },
   ];
 
@@ -129,7 +140,12 @@
       <Chip>Constraints</Chip>
 
       <Input>
-        <input bind:value={filterText} class="st-input" placeholder="Filter constraints" style="width: 300px" />
+        <input
+          bind:value={filterText}
+          class="st-input"
+          placeholder="Filter constraints"
+          style="max-width: 300px; width: 100%;"
+        />
       </Input>
 
       <div class="right">

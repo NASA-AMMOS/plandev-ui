@@ -22,10 +22,19 @@
   type SchedulingGoalsCellRendererParams = ICellRendererParams & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'id', headerName: 'Goal ID', sortable: true, suppressAutoSize: true, width: 100 },
+    {
+      field: 'id',
+      headerName: 'Goal ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
     { field: 'name', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
     {
+      cellClass: 'action-cell-container',
       cellRenderer: (params: SchedulingGoalsCellRendererParams) => {
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
@@ -51,12 +60,14 @@
       cellRendererParams: {
         deleteGoal,
         editGoal,
-      },
+      } as CellRendererParams,
       field: 'actions',
       headerName: '',
       resizable: false,
       sortable: false,
-      width: 90,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
     },
   ];
 
@@ -110,7 +121,12 @@
       <Chip>Scheduling Goals</Chip>
 
       <Input>
-        <input bind:value={filterText} class="st-input" placeholder="Filter goals" style="width: 300px" />
+        <input
+          bind:value={filterText}
+          class="st-input"
+          placeholder="Filter goals"
+          style="max-width: 300px; width: 100%;"
+        />
       </Input>
 
       <div class="right">

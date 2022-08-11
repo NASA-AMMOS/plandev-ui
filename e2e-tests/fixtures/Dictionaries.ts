@@ -77,9 +77,9 @@ export class Dictionaries {
     this.createButton = page.locator(`button:has-text("Create")`);
     this.inputFile = page.locator('input[name="file"]');
     this.page = page;
-    this.tableRow = page.locator(`tr:has-text("${this.dictionaryName}")`);
+    this.tableRow = page.locator(`.ag-row:has-text("${this.dictionaryName}")`);
     this.tableRowDeleteButton = page.locator(
-      `tr:has-text("${this.dictionaryName}") >> button[aria-label="Delete Command Dictionary"]`,
+      `.ag-row:has-text("${this.dictionaryName}") >> button[aria-label="Delete Command Dictionary"]`,
     );
   }
 }

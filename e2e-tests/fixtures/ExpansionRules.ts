@@ -119,9 +119,9 @@ export class ExpansionRules {
     this.page = page;
     this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`tr:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.
+    this.tableRow = page.locator(`.ag-row:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.
     this.tableRowDeleteButton = page.locator(
-      `tr:has-text("${this.ruleActivityType}") >> button[aria-label="Delete Rule"]`,
+      `.ag-row:has-text("${this.ruleActivityType}") >> button[aria-label="Delete Rule"]`,
     );
   }
 }

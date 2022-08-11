@@ -7,11 +7,11 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import DataGrid from '../../components/ui/DataGrid.svelte';
+  import DataGridActions from '../../components/ui/DataGridActions.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import Table from '../../components/ui/Table.svelte';
   import { createModelError, creatingModel, models, sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
 
   export const load: Load = async ({ session }) => {
     if (!session.user) {
@@ -34,6 +34,55 @@
 <script lang="ts">
   export let initialModels: ModelList[] = [];
 
+  type CellRendererParams = {
+    deleteModel: (model: ModelList) => void;
+  };
+  type ModelCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    {
+      field: 'id',
+      headerName: 'Model ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
+    { field: 'version', headerName: 'Version', sortable: true, width: 120 },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ModelCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteModel,
+            deleteTooltip: {
+              content: 'Delete Model',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteModel,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 25,
+    },
+  ];
+
   let createButtonDisabled: boolean = false;
   let files: FileList;
   let name = '';
@@ -44,6 +93,14 @@
   onMount(() => {
     models.updateValue(() => initialModels);
   });
+
+  function deleteModel(model: ModelList) {
+    effects.deleteModel(model);
+  }
+
+  function showModel(model: ModelList) {
+    goto(`${base}/plans?modelId=${model.id}`);
+  }
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
@@ -102,26 +159,13 @@
 
       <svelte:fragment slot="body">
         {#if $sortedModels.length}
-          <Table
-            let:currentRow
-            columnDefs={[
-              { field: 'name', name: 'Name', sortable: true },
-              { field: 'id', name: 'Model ID', sortable: true },
-              { field: 'version', name: 'Version', sortable: true },
-            ]}
-            rowActions
+          <DataGrid
+            {columnDefs}
+            highlightOnSelection={false}
             rowData={$sortedModels}
-            on:rowClick={({ detail: model }) => goto(`${base}/plans?modelId=${model.id}`)}
-          >
-            <button
-              class="st-button icon"
-              slot="actions-cell"
-              on:click|stopPropagation={() => effects.deleteModel(currentRow)}
-              use:tooltip={{ content: 'Delete Model', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          </Table>
+            rowSelection="single"
+            on:rowSelected={({ detail }) => showModel(detail.data)}
+          />
         {:else}
           No Models Found
         {/if}

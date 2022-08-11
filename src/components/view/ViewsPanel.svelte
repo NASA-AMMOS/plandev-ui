@@ -6,12 +6,62 @@
   import { view, viewLayout } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
+  import DataGrid from '../ui/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Table from '../ui/Table.svelte';
 
   export let gridId: number;
+
+  type CellRendererParams = {
+    deleteView: (view: View) => void;
+  };
+  type ViewCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    {
+      field: 'id',
+      headerName: 'ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 40,
+    },
+    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'owner', headerName: 'Owner', resizable: true, sortable: true },
+    { field: 'updated_at', headerName: 'Last Updated', resizable: true, sortable: true },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ViewCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteView,
+            deleteTooltip: {
+              content: 'Delete View',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteView,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 25,
+    },
+  ];
 
   let views: View[] = [];
 
@@ -19,7 +69,7 @@
     views = await effects.getViews();
   });
 
-  async function deleteView(viewId: number) {
+  async function deleteView({ id: viewId }: View) {
     const success = await effects.deleteView(viewId);
 
     if (success) {
@@ -54,30 +104,12 @@
 
   <svelte:fragment slot="body">
     {#if views.length}
-      <Table
-        let:currentRow
-        columnDefs={[
-          { field: 'id', name: 'ID', sortable: true },
-          { field: 'name', name: 'Name', sortable: true },
-          { field: 'owner', name: 'Owner', sortable: true },
-          { field: 'updated_at', name: 'Last Updated', sortable: true },
-        ]}
-        rowActions
+      <DataGrid
+        {columnDefs}
         rowData={views}
-        on:rowClick={({ detail }) => loadView(detail.id)}
-      >
-        <span slot="actions-cell">
-          {#if currentRow?.owner !== 'system'}
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => deleteView(currentRow.id)}
-              use:tooltip={{ content: 'Delete View', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          {/if}
-        </span>
-      </Table>
+        rowSelection="single"
+        on:rowSelected={({ detail }) => loadView(detail.data.id)}
+      />
     {:else}
       No Views Found
     {/if}

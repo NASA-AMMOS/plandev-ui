@@ -11,15 +11,15 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import DataGrid from '../../components/ui/DataGrid.svelte';
+  import DataGridActions from '../../components/ui/DataGridActions.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import Table from '../../components/ui/Table.svelte';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { compare, removeQueryParam } from '../../utilities/generic';
   import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';
-  import { tooltip } from '../../utilities/tooltip';
   import { min, required, timestamp } from '../../utilities/validators';
 
   export const load: Load = async ({ session }) => {
@@ -44,6 +44,57 @@
 <script lang="ts">
   export let models: ModelList[] = [];
   export let plans: PlanList[] = [];
+
+  type CellRendererParams = {
+    deletePlan: (plan: Plan) => void;
+  };
+  type PlanCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    {
+      field: 'id',
+      headerName: 'Plan ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
+    { field: 'model_id', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
+    { field: 'start_time', headerName: 'Start Time', resizable: true, sortable: true },
+    { field: 'end_time', headerName: 'End Time', resizable: true, sortable: true },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: PlanCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deletePlan,
+            deleteTooltip: {
+              content: 'Delete Plan',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deletePlan,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 25,
+    },
+  ];
 
   let filterText: string = '';
   let nameInputField: HTMLInputElement;
@@ -100,12 +151,20 @@
     }
   }
 
-  async function deletePlan(id: number): Promise<void> {
+  async function deletePlan({ id }: Plan): Promise<void> {
     const success = await effects.deletePlan(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
     }
+  }
+
+  function prefetchPlan(plan: Plan) {
+    prefetch(`${base}/plans/${plan.id}`);
+  }
+
+  function showPlan(plan: Plan) {
+    goto(`${base}/plans/${plan.id}`);
   }
 
   function updateDurationString() {
@@ -219,29 +278,14 @@
 
       <svelte:fragment slot="body">
         {#if sortedPlans.length}
-          <Table
-            let:currentRow
-            columnDefs={[
-              { field: 'name', name: 'Name', sortable: true },
-              { field: 'id', name: 'Plan ID', sortable: true },
-              { field: 'model_id', name: 'Model ID', sortable: true },
-              { field: 'start_time', name: 'Start Time', sortable: true },
-              { field: 'end_time', name: 'End Time', sortable: true },
-            ]}
-            rowActions
+          <DataGrid
+            {columnDefs}
+            highlightOnSelection={false}
             rowData={sortedPlans}
-            on:rowClick={({ detail: plan }) => goto(`${base}/plans/${plan.id}`)}
-            on:pointerEnter={({ detail: plan }) => prefetch(`${base}/plans/${plan.id}`)}
-          >
-            <button
-              class="st-button icon"
-              slot="actions-cell"
-              on:click|stopPropagation={() => deletePlan(currentRow.id)}
-              use:tooltip={{ content: 'Delete Plan', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          </Table>
+            rowSelection="single"
+            on:rowSelected={({ detail }) => showPlan(detail.data)}
+            on:cellMouseOver={({ detail }) => prefetchPlan(detail.data)}
+          />
         {:else}
           No Plans Found
         {/if}

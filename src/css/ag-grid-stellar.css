@@ -7,7 +7,7 @@
 .ag-theme-stellar,
 .ag-theme-stellar-dark {
   --ag-background-color: #fff;
-  --ag-border-color: #babfc7;
+  --ag-border-color: #e0e0e0;
   --ag-border-radius: 3px;
   --ag-borders-side-button: none;
   --ag-borders: solid 1px;
@@ -23,7 +23,7 @@
   --ag-control-panel-background-color: #f8f8f8;
   --ag-disabled-foreground-color: rgba(24, 29, 31, 0.5);
   --ag-font-family: var(--st-typography-font-family);
-  --ag-font-size: 13px;
+  --ag-font-size: var(--st-table-td-font-size);
   --ag-foreground-color: #181d1f;
   --ag-grid-size: 4px;
   --ag-header-background-color: var(--st-table-th-background);
@@ -103,7 +103,8 @@
 }
 .ag-theme-stellar .ag-row,
 .ag-theme-stellar-dark .ag-row {
-  font-size: calc(var(--ag-font-size) + 1px);
+  font-size: calc(var(--ag-font-size));
+  font-weight: 400;
 }
 .ag-theme-stellar input[class^='ag-']:not([type]),
 .ag-theme-stellar input[class^='ag-'][type='text'],
@@ -415,14 +416,17 @@
   color-scheme: dark;
 }
 
-.ag-row .actions-cell {
+.ag-row .action-cell-container {
+  padding: 0;
+}
+
+.ag-row .action-cell-container .actions-cell {
   align-items: center;
   display: flex;
   gap: 0.5rem;
   height: 100%;
   justify-content: flex-end;
-  min-width: 60px;
-  width: 60px;
+  min-width: 24px;
 }
 
 .ag-row .actions-cell .st-button {
@@ -438,4 +442,13 @@
 
 .ag-theme-stellar.ag-selectable-rows .ag-row {
   cursor: pointer;
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected::before,
+.ag-theme-stellar .ag-row.ag-row-selected.ag-row-hover::before {
+  background: var(--ag-row-hover-color);
+}
+
+.ag-theme-stellar.highlightOnSelection .ag-row.ag-row-selected::before {
+  background: var(--ag-selected-row-background-color);
 }

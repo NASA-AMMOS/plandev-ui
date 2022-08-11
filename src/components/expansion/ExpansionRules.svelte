@@ -6,14 +6,78 @@
   import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Table from '../ui/Table.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+
+  type CellRendererParams = {
+    deleteRule: (rule: ExpansionRule) => void;
+    editRule: (rule: ExpansionRule) => void;
+  };
+  type ExpansionRuleCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    {
+      field: 'id',
+      headerName: 'Rule ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 65,
+    },
+    { field: 'activity_type', headerName: 'Activity Type', resizable: true, sortable: true },
+    {
+      field: 'authoring_command_dict_id',
+      headerName: 'Command Dictionary ID',
+      resizable: true,
+      sortable: true,
+    },
+    { field: 'authoring_mission_model_id', headerName: 'Model ID', sortable: true },
+    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'updated_at', headerName: 'Updated At', resizable: true, sortable: true },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ExpansionRuleCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteRule,
+            deleteTooltip: {
+              content: 'Delete Rule',
+              placement: 'bottom',
+            },
+            editCallback: params.editRule,
+            editTooltip: {
+              content: 'Edit Rule',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteRule,
+        editRule,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
+    },
+  ];
 
   let filteredRules: ExpansionRule[] = [];
   let filterText: string = '';
@@ -28,7 +92,7 @@
   });
   $: sortedRules = filteredRules.sort((a, b) => compare(a.id, b.id));
 
-  async function deleteRule(id: number) {
+  async function deleteRule({ id }: ExpansionRule) {
     const success = await effects.deleteExpansionRule(id);
 
     if (success) {
@@ -40,9 +104,11 @@
     }
   }
 
-  function toggleRule(event: CustomEvent<ExpansionRule>) {
-    const { detail: clickedRule } = event;
+  function editRule({ id }: ExpansionRule) {
+    goto(`${base}/expansion/rules/edit/${id}`);
+  }
 
+  function toggleRule(clickedRule: ExpansionRule) {
     if (selectedExpansionRule?.id === clickedRule.id) {
       selectedExpansionRule = null;
     } else {
@@ -57,7 +123,12 @@
       <Chip>Expansion Rules</Chip>
 
       <Input>
-        <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 300px" />
+        <input
+          bind:value={filterText}
+          class="st-input"
+          placeholder="Filter rules"
+          style="max-width: 300px; width: 100%;"
+        />
       </Input>
 
       <div class="right">
@@ -67,39 +138,12 @@
 
     <svelte:fragment slot="body">
       {#if sortedRules.length}
-        <Table
-          let:currentRow
-          columnDefs={[
-            { field: 'id', name: 'Rule ID', sortable: true },
-            { field: 'activity_type', name: 'Activity Type', sortable: true },
-            { field: 'authoring_command_dict_id', name: 'Command Dictionary ID', sortable: true },
-            { field: 'authoring_mission_model_id', name: 'Model ID', sortable: true },
-            { field: 'created_at', name: 'Created At', sortable: true },
-            { field: 'updated_at', name: 'Updated At', sortable: true },
-          ]}
-          rowActions
+        <DataGrid
+          {columnDefs}
           rowData={sortedRules}
-          rowSelectionMode="single"
-          selectedRowId={selectedExpansionRule?.id}
-          on:rowClick={toggleRule}
-        >
-          <div slot="actions-cell">
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => goto(`${base}/expansion/rules/edit/${currentRow.id}`)}
-              use:tooltip={{ content: 'Edit Rule', placement: 'bottom' }}
-            >
-              <i class="bi bi-pencil" />
-            </button>
-            <button
-              class="st-button icon"
-              on:click|stopPropagation={() => deleteRule(currentRow.id)}
-              use:tooltip={{ content: 'Delete Rule', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          </div>
-        </Table>
+          rowSelection="single"
+          on:rowSelected={({ detail }) => toggleRule(detail.data)}
+        />
       {:else}
         No Rules Found
       {/if}

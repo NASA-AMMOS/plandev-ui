@@ -5,16 +5,71 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import DataGrid from '../../components/ui/DataGrid.svelte';
+  import DataGridActions from '../../components/ui/DataGridActions.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import Table from '../../components/ui/Table.svelte';
   import { createDictionaryError, creatingDictionary, sortedDictionaries } from '../../stores/expansion';
   import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
+
+  type CellRendererParams = {
+    deleteCommandDictionary: (dictionary: CommandDictionary) => void;
+  };
+  type CommandDictionaryCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    {
+      field: 'id',
+      headerName: 'Dictionary ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
+    { field: 'mission', headerName: 'Mission', sortable: true, width: 100 },
+    { field: 'version', headerName: 'Version', sortable: true, suppressAutoSize: true, width: 100 },
+    { field: 'command_types_typescript_path', headerName: 'Types Path', resizable: true, sortable: true, width: 220 },
+    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: CommandDictionaryCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteCommandDictionary,
+            deleteTooltip: {
+              content: 'Delete Command Dictionary',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteCommandDictionary,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 25,
+    },
+  ];
 
   let createButtonDisabled: boolean = false;
   let files: FileList;
 
   $: createButtonDisabled = !files;
+
+  function deleteCommandDictionary({ id }: CommandDictionary) {
+    effects.deleteCommandDictionary(id);
+  }
 </script>
 
 <CssGrid rows="42px calc(100vh - 42px)">
@@ -53,27 +108,7 @@
 
       <svelte:fragment slot="body">
         {#if $sortedDictionaries.length}
-          <Table
-            let:currentRow
-            columnDefs={[
-              { field: 'id', name: 'Dictionary ID', sortable: true },
-              { field: 'mission', name: 'Mission', sortable: true },
-              { field: 'version', name: 'Version', sortable: true },
-              { field: 'command_types_typescript_path', name: 'Types Path', sortable: true },
-              { field: 'created_at', name: 'Created At', sortable: true },
-            ]}
-            rowActions
-            rowData={$sortedDictionaries}
-          >
-            <button
-              class="st-button icon"
-              slot="actions-cell"
-              on:click|stopPropagation={() => effects.deleteCommandDictionary(currentRow.id)}
-              use:tooltip={{ content: 'Delete Command Dictionary', placement: 'bottom' }}
-            >
-              <i class="bi bi-trash" />
-            </button>
-          </Table>
+          <DataGrid {columnDefs} rowData={$sortedDictionaries} suppressRowClickSelection />
         {:else}
           No Command Dictionaries Found
         {/if}

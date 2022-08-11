@@ -1,10 +1,19 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Grid, type ColDef, type GridOptions, type RowClickedEvent, type RowSelectedEvent } from 'ag-grid-community';
+  import {
+    Grid,
+    type CellContextMenuEvent,
+    type CellMouseOverEvent,
+    type ColDef,
+    type GridOptions,
+    type RowClickedEvent,
+    type RowSelectedEvent,
+  } from 'ag-grid-community';
   import { createEventDispatcher, onMount } from 'svelte';
 
   export let columnDefs: ColDef[];
+  export let highlightOnSelection: boolean = true;
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let selectedRowIds: number[] = [];
@@ -32,7 +41,7 @@
      *  deleting the shared ids from the `selectedRowIdsSet` will yield the new ids that need to be selected
      */
     for (let i = currentSelectedRowIds.length; i >= 0; --i) {
-      const currentId = currentSelectedRowIdsSet[i];
+      const currentId = currentSelectedRowIds[i];
       if (selectedRowIdsSet.has(currentId)) {
         currentSelectedRowIdsSet.delete(currentId);
         selectedRowIdsSet.delete(currentId);
@@ -58,13 +67,20 @@
       // each entry here represents one column
       columnDefs,
       getRowId,
+      onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
+        dispatch('cellContextMenu', event);
+      },
+      onCellMouseOver(event: CellMouseOverEvent<TRowData>) {
+        dispatch('cellMouseOver', event);
+      },
       onRowClicked(event: RowClickedEvent<TRowData>) {
         dispatch('rowClicked', event);
       },
       onRowSelected(event: RowSelectedEvent<TRowData>) {
-        if (event.node.isSelected()) {
-          dispatch('rowSelected', event);
-        }
+        dispatch('rowSelected', {
+          data: event.data,
+          isSelected: event.node.isSelected(),
+        });
       },
       rowData,
       rowSelection,
@@ -75,7 +91,12 @@
   });
 </script>
 
-<div bind:this={gridDiv} class={`ag-theme-stellar ${rowSelection !== undefined ? 'ag-selectable-rows ' : ''}table`} />
+<div
+  bind:this={gridDiv}
+  class="ag-theme-stellar table"
+  class:ag-selectable-rows={rowSelection !== undefined}
+  class:highlightOnSelection
+/>
 
 <style>
   .table {

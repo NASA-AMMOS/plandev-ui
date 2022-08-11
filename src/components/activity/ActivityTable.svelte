@@ -10,6 +10,17 @@
   let activityTable: ViewActivityTable;
 
   $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
+
+  function onRowSelected({
+    detail: {
+      data: { id },
+      isSelected,
+    },
+  }) {
+    if (isSelected) {
+      $selectedActivityId = id;
+    }
+  }
 </script>
 
 <DataGrid
@@ -24,8 +35,8 @@
       sortable: columnDef.sortable,
     };
   })}
-  selectedRowIds={$selectedActivityIds}
   rowSelection="single"
   rowData={$activities}
-  on:rowSelected={({ detail }) => ($selectedActivityId = detail.data.id)}
+  selectedRowIds={$selectedActivityIds}
+  on:rowSelected={onRowSelected}
 />

@@ -109,8 +109,10 @@ export class Plans {
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');
     this.page = page;
-    this.tableRow = page.locator(`tr:has-text("${this.planName}")`);
-    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`);
-    this.tableRowPlanId = page.locator(`tr:has-text("${this.planName}") > td >> nth=1`);
+    this.tableRow = page.locator(`.ag-row:has-text("${this.planName}")`);
+    this.tableRowDeleteButton = page.locator(
+      `.ag-row:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`,
+    );
+    this.tableRowPlanId = page.locator(`.ag-row:has-text("${this.planName}") > div >> nth=1`);
   }
 }

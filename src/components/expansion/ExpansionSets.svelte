@@ -6,21 +6,73 @@
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
-  import { tooltip } from '../../utilities/tooltip';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
-  import Table from '../ui/Table.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+
+  type CellRendererParams = {
+    deleteSet: (sequence: ExpansionSet) => void;
+  };
+  type ExpansionSetCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const columnDefs: DataGridColumnDef[] = [
+    {
+      field: 'id',
+      headerName: 'Set ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 100,
+    },
+    { field: 'command_dict_id', headerName: 'Command Dictionary ID', resizable: true, sortable: true },
+    { field: 'mission_model_id', headerName: 'Model ID', resizable: true, sortable: true },
+    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ExpansionSetCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteSet,
+            deleteTooltip: {
+              content: 'Delete Expansion Set',
+              placement: 'bottom',
+            },
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteSet,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 25,
+    },
+  ];
 
   let sortedSets: ExpansionSet[] = [];
   let selectedExpansionRule: ExpansionRule | null = null;
+  let selectedExpansionRuleIds: number[] = [];
   let selectedExpansionSet: ExpansionSet | null = null;
 
   $: sortedSets = $expansionSets.sort((a, b) => compare(a.id, b.id));
+  $: selectedExpansionRuleIds = selectedExpansionRule ? [selectedExpansionRule.id] : [];
 
-  async function deleteSet(id: number) {
+  async function deleteSet({ id }: ExpansionSet) {
     const success = await effects.deleteExpansionSet(id);
 
     if (success) {
@@ -33,24 +85,20 @@
     }
   }
 
-  function toggleRule(event: CustomEvent<ExpansionRule>) {
-    const { detail: clickedRule } = event;
-
+  function toggleRule(clickedRule: ExpansionRule, isSelected: boolean) {
     if (selectedExpansionRule?.id === clickedRule.id) {
       selectedExpansionRule = null;
-    } else {
+    } else if (isSelected) {
       selectedExpansionRule = clickedRule;
     }
   }
 
-  function toggleSet(event: CustomEvent<ExpansionSet>) {
-    const { detail: clickedSet } = event;
-
+  function toggleSet(clickedSet: ExpansionSet, isSelected: boolean) {
     selectedExpansionRule = null;
 
     if (selectedExpansionSet?.id === clickedSet.id) {
       selectedExpansionSet = null;
-    } else {
+    } else if (isSelected) {
       selectedExpansionSet = clickedSet;
     }
   }
@@ -71,30 +119,12 @@
 
       <svelte:fragment slot="body">
         {#if sortedSets.length}
-          <Table
-            let:currentRow
-            columnDefs={[
-              { field: 'id', name: 'Set ID', sortable: true },
-              { field: 'command_dict_id', name: 'Command Dictionary ID', sortable: true },
-              { field: 'mission_model_id', name: 'Model ID', sortable: true },
-              { field: 'created_at', name: 'Created At', sortable: true },
-            ]}
-            rowActions
+          <DataGrid
+            {columnDefs}
             rowData={sortedSets}
-            rowSelectionMode="single"
-            selectedRowId={selectedExpansionSet?.id}
-            on:rowClick={toggleSet}
-          >
-            <div slot="actions-cell">
-              <button
-                class="st-button icon"
-                on:click|stopPropagation={() => deleteSet(currentRow.id)}
-                use:tooltip={{ content: 'Delete Expansion Set', placement: 'bottom' }}
-              >
-                <i class="bi bi-trash" />
-              </button>
-            </div>
-          </Table>
+            rowSelection="single"
+            on:rowSelected={({ detail }) => toggleSet(detail.data, detail.isSelected)}
+          />
         {:else}
           No Expansion Sets Found
         {/if}
@@ -110,16 +140,25 @@
 
       <svelte:fragment slot="body">
         {#if selectedExpansionSet}
-          <Table
-            let:currentRow
+          <DataGrid
             columnDefs={[
-              { field: 'id', name: 'Rule ID', sortable: true },
-              { field: 'activity_type', name: 'Activity Type', sortable: true },
+              {
+                field: 'id',
+                headerName: 'Rule ID',
+                resizable: true,
+                sortable: true,
+                suppressAutoSize: true,
+                suppressSizeToFit: true,
+                width: 65,
+              },
+              { field: 'activity_type', headerName: 'Activity Type', sortable: true },
             ]}
             rowData={selectedExpansionSet?.expansion_rules}
-            rowSelectionMode="single"
-            selectedRowId={selectedExpansionRule?.id}
-            on:rowClick={toggleRule}
+            rowSelection="single"
+            selectedRowIds={selectedExpansionRuleIds}
+            on:rowSelected={({ detail }) => {
+              toggleRule(detail.data, detail.isSelected);
+            }}
           />
         {:else}
           No Expansion Set Selected

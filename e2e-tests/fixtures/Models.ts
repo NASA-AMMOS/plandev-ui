@@ -82,7 +82,9 @@ export class Models {
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
     this.page = page;
-    this.tableRow = page.locator(`tr:has-text("${this.modelName}")`);
-    this.tableRowDeleteButton = page.locator(`tr:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`);
+    this.tableRow = page.locator(`.ag-row:has-text("${this.modelName}")`);
+    this.tableRowDeleteButton = page.locator(
+      `.ag-row:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`,
+    );
   }
 }
