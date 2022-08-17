@@ -299,7 +299,7 @@
   }
 
   .date-picker .date-picker-portal .date-picker-inputs {
-    column-gap: 0.5rem;
+    column-gap: 0.25rem;
     display: grid;
     font-size: 1.01rem;
     font-weight: 300;

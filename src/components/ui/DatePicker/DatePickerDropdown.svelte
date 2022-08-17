@@ -66,7 +66,13 @@
   }
 
   .display-value .value {
+    border-radius: 4px;
     font-weight: bold;
+    padding: 0.25rem;
+  }
+
+  .display-value:hover .value {
+    background-color: var(--st-gray-15);
   }
 
   .date-picker-dropdown select {
