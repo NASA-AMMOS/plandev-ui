@@ -14,7 +14,7 @@ type Profile = {
   name: string;
   profile_segments: ProfileSegment[];
   type: {
-    schema?: ValueSchema;
+    schema: ValueSchema;
     type: 'discrete' | 'real';
   };
 };

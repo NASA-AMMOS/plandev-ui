@@ -11,9 +11,8 @@ export function sampleProfiles(profiles: Profile[], startTime: string, duration:
 
   for (const profile of profiles) {
     const { name, profile_segments, type: profileType } = profile;
-    const { type } = profileType;
+    const { schema, type } = profileType;
     const values: ResourceValue[] = [];
-    const schema = profileType?.schema ?? (profileType as ValueSchema);
 
     for (let i = 0; i < profile_segments.length; ++i) {
       const segment = profile_segments[i];
