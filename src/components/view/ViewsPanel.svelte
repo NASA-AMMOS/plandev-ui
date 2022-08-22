@@ -7,8 +7,8 @@
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
   import GridMenu from '../menus/GridMenu.svelte';
-  import DataGrid from '../ui/DataGrid.svelte';
-  import DataGridActions from '../ui/DataGridActions.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
 
   export let gridId: number;

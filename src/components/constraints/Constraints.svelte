@@ -9,8 +9,8 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid.svelte';
-  import DataGridActions from '../ui/DataGridActions.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
@@ -125,11 +125,15 @@
     goto(`${base}/constraints/edit/${id}`);
   }
 
-  function toggleConstraint(clickedConstraint: Constraint) {
-    if (selectedConstraint?.id === clickedConstraint.id) {
-      selectedConstraint = null;
-    } else {
+  function toggleConstraint(event: CustomEvent<DataGridRowSelection<Constraint>>) {
+    const {
+      detail: { data: clickedConstraint, isSelected },
+    } = event;
+
+    if (isSelected) {
       selectedConstraint = clickedConstraint;
+    } else if (selectedConstraint?.id === clickedConstraint.id) {
+      selectedConstraint = null;
     }
   }
 </script>
@@ -159,7 +163,7 @@
           {columnDefs}
           rowData={filteredConstraints}
           rowSelection="single"
-          on:rowSelected={({ detail }) => toggleConstraint(detail.data)}
+          on:rowSelected={event => toggleConstraint(event)}
         />
       {:else}
         No Constraints Found

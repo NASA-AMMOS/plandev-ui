@@ -20,7 +20,7 @@
   let expanded = false;
 </script>
 
-<div class="scheduling-goal" on:contextmenu|preventDefault={e => contextMenu.show(e)}>
+<div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
   <div class="left" class:disabled={!enabled}>
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="bi-calendar-range" />

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { Placement } from 'tippy.js';
-  import { tooltip } from '../../utilities/tooltip';
+  import { tooltip } from '../../../utilities/tooltip';
 
   type Tooltip = {
     content: string;

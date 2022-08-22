@@ -1,42 +1,92 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activities, selectedActivityId, selectedActivityIds } from '../../stores/activities';
+  import { activities, selectedActivityId } from '../../stores/activities';
   import { view } from '../../stores/views';
-  import DataGrid from '../ui/DataGrid.svelte';
+  import effects from '../../utilities/effects';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
+  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
   export let activityTableId: number;
 
+  type CellRendererParams = {
+    deleteActivity: (activity: Activity) => void;
+  };
+  type ActivityCellRendererParams = ICellRendererParams & CellRendererParams;
+
+  const activityActionColumnDef: DataGridColumnDef = {
+    cellClass: 'action-cell-container',
+    cellRenderer: (params: ActivityCellRendererParams) => {
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'actions-cell';
+      new DataGridActions({
+        props: {
+          deleteCallback: params.deleteActivity,
+          deleteTooltip: {
+            content: 'Delete Activity',
+            placement: 'bottom',
+          },
+          rowData: params.data,
+        },
+        target: actionsDiv,
+      });
+
+      return actionsDiv;
+    },
+    cellRendererParams: {
+      deleteActivity,
+    } as CellRendererParams,
+    field: 'actions',
+    headerName: '',
+    resizable: false,
+    sortable: false,
+    suppressAutoSize: true,
+    suppressSizeToFit: true,
+    width: 55,
+  };
+
   let activityTable: ViewActivityTable;
+  let previousSelectedActivityId: number | null = null;
+  let selectedActivityIds: number[] = [];
 
   $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
-
-  function onRowSelected({
-    detail: {
-      data: { id },
-      isSelected,
-    },
-  }) {
-    if (isSelected) {
-      $selectedActivityId = id;
+  $: {
+    if (previousSelectedActivityId !== $selectedActivityId) {
+      selectedActivityIds = [$selectedActivityId];
     }
+    previousSelectedActivityId = $selectedActivityId;
+  }
+
+  async function deleteActivity({ id }: Activity) {
+    const success = await effects.deleteActivity(id);
+
+    if (success) {
+      selectedActivityIds = selectedActivityIds.filter(selectedId => selectedId !== id);
+    }
+  }
+
+  function deleteActivities({ detail: ids }: CustomEvent<number[]>) {
+    effects.deleteActivities(ids);
   }
 </script>
 
-<DataGrid
-  columnDefs={Object.keys(activityTable?.columnDefs).map(columnKey => {
-    const columnDef = activityTable?.columnDefs[columnKey];
-    return {
-      field: columnDef.field,
-      filter: 'agTextColumnFilter',
-      floatingFilter: true,
-      headerName: columnDef.name,
-      resizable: true,
-      sortable: columnDef.sortable,
-    };
-  })}
-  rowSelection="single"
-  rowData={$activities}
-  selectedRowIds={$selectedActivityIds}
-  on:rowSelected={onRowSelected}
+<BulkActionDataGrid
+  columnDefs={[
+    ...Object.keys(activityTable?.columnDefs).map(columnKey => {
+      const columnDef = activityTable?.columnDefs[columnKey];
+      return {
+        field: columnDef.field,
+        filter: 'agTextColumnFilter',
+        headerName: columnDef.name,
+        resizable: true,
+        sortable: columnDef.sortable,
+      };
+    }),
+    activityActionColumnDef,
+  ]}
+  items={$activities}
+  pluralItemDisplayText="Activities"
+  singleItemDisplayText="Activity"
+  selectedItemId={$selectedActivityId}
+  on:bulkDeleteItems={deleteActivities}
 />

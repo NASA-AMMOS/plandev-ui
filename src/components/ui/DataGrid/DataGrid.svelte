@@ -3,6 +3,7 @@
 <script lang="ts">
   import {
     Grid,
+    RowNode,
     type CellContextMenuEvent,
     type CellMouseOverEvent,
     type ColDef,
@@ -12,8 +13,14 @@
   } from 'ag-grid-community';
   import { createEventDispatcher, onMount } from 'svelte';
 
+  // expose ag-grid function to select all visible rows
+  export function selectAllVisible() {
+    gridOptions?.api?.selectAllFiltered();
+  }
+
   export let columnDefs: ColDef[];
   export let highlightOnSelection: boolean = true;
+  export let preventDefaultOnContextMenu: boolean | undefined = undefined;
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let selectedRowIds: number[] = [];
@@ -22,16 +29,20 @@
 
   const dispatch = createEventDispatcher();
 
-  let gridOptions: GridOptions;
+  let gridOptions: GridOptions<TRowData>;
   let gridDiv: HTMLDivElement;
 
   $: gridOptions?.api?.setRowData(rowData);
   $: gridOptions?.api?.sizeColumnsToFit();
 
   $: {
-    const currentSelectedRowIds: number[] =
-      gridOptions?.api?.getSelectedNodes().map(node => parseInt(getRowId(node))) || [];
-
+    const currentSelectedRowIds: number[] = [];
+    // get all currently selected nodes. we cannot use `getSelectedNodes` because that does not include filtered rows
+    gridOptions?.api?.forEachNode((rowNode: RowNode<TRowData>) => {
+      if (rowNode.isSelected()) {
+        currentSelectedRowIds.push(parseInt(getRowId(rowNode)));
+      }
+    });
     const currentSelectedRowIdsSet: Set<number> = new Set(currentSelectedRowIds);
     const selectedRowIdsSet: Set<number> = new Set(selectedRowIds);
 
@@ -73,15 +84,40 @@
       onCellMouseOver(event: CellMouseOverEvent<TRowData>) {
         dispatch('cellMouseOver', event);
       },
+      onFilterChanged() {
+        const selectedRows: TRowData[] = [];
+
+        gridOptions?.api?.forEachNodeAfterFilter((rowNode: RowNode<TRowData>) => {
+          if (rowNode.isSelected()) {
+            selectedRows.push(rowNode.data);
+          }
+        });
+
+        dispatch('filterChanged', gridOptions?.api?.getFilterModel());
+
+        // re-throw `selectionChanged` with only the visible rows after filtering
+        dispatch('selectionChanged', selectedRows);
+      },
       onRowClicked(event: RowClickedEvent<TRowData>) {
         dispatch('rowClicked', event);
       },
       onRowSelected(event: RowSelectedEvent<TRowData>) {
-        dispatch('rowSelected', {
-          data: event.data,
-          isSelected: event.node.isSelected(),
-        });
+        const selectedNodes = gridOptions?.api?.getSelectedNodes();
+
+        // only dispatch `rowSelected` for single row selections
+        if (selectedNodes.length <= 1) {
+          dispatch('rowSelected', {
+            data: event.data,
+            isSelected: event.node.isSelected(),
+          } as DataGridRowSelection<TRowData>);
+        }
       },
+      onSelectionChanged() {
+        const selectedRows = gridOptions?.api?.getSelectedRows();
+
+        dispatch('selectionChanged', selectedRows);
+      },
+      preventDefaultOnContextMenu,
       rowData,
       rowSelection,
       suppressCellFocus,

@@ -356,7 +356,35 @@ const effects = {
     }
   },
 
-  async deleteActivity(id: number): Promise<void> {
+  async deleteActivities(ids: number[]): Promise<boolean> {
+    try {
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete the selected activities?',
+        'Delete Activities',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_ACTIVITIES, { ids });
+        activitiesMap.update(activities => {
+          ids.forEach(id => {
+            delete activities[id];
+          });
+          return { ...activities };
+        });
+        checkConstraintsStatus.set(Status.Dirty);
+        simulationStatus.update(Status.Dirty);
+        showSuccessToast('Activities Deleted Successfully');
+        return true;
+      }
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Activities Delete Failed');
+      return false;
+    }
+  },
+
+  async deleteActivity(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal(
         'Delete',
@@ -373,10 +401,12 @@ const effects = {
         checkConstraintsStatus.set(Status.Dirty);
         simulationStatus.update(Status.Dirty);
         showSuccessToast('Activity Deleted Successfully');
+        return true;
       }
     } catch (e) {
       console.log(e);
       showFailureToast('Activity Delete Failed');
+      return false;
     }
   },
 

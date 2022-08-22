@@ -5,8 +5,8 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import DataGrid from '../../components/ui/DataGrid.svelte';
-  import DataGridActions from '../../components/ui/DataGridActions.svelte';
+  import DataGrid from '../../components/ui/DataGrid/DataGrid.svelte';
+  import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { createDictionaryError, creatingDictionary, sortedDictionaries } from '../../stores/expansion';
   import effects from '../../utilities/effects';

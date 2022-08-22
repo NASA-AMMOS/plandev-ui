@@ -136,6 +136,16 @@ const gql = {
     }
   `,
 
+  DELETE_ACTIVITIES: `#graphql
+    mutation DeleteActivities($ids: [Int!]!) {
+      delete_activity(where: { id: { _in: $ids } }) {
+        returning {
+          id
+        }
+      }
+    }
+  `,
+
   DELETE_ACTIVITY: `#graphql
     mutation DeleteActivity($id: Int!) {
       deleteActivity: delete_activity_by_pk(id: $id) {

@@ -12,6 +12,7 @@
   }
 
   export function show(e: MouseEvent): void {
+    e.preventDefault();
     shown = true;
     x = e.clientX;
     y = e.clientY;
