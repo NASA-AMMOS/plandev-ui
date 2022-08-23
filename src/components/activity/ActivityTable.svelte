@@ -42,27 +42,15 @@
     sortable: false,
     suppressAutoSize: true,
     suppressSizeToFit: true,
-    width: 55,
+    width: 25,
   };
 
   let activityTable: ViewActivityTable;
-  let previousSelectedActivityId: number | null = null;
-  let selectedActivityIds: number[] = [];
 
   $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
-  $: {
-    if (previousSelectedActivityId !== $selectedActivityId) {
-      selectedActivityIds = [$selectedActivityId];
-    }
-    previousSelectedActivityId = $selectedActivityId;
-  }
 
-  async function deleteActivityDirective({ id }: Activity) {
-    const success = await effects.deleteActivityDirective(id);
-
-    if (success) {
-      selectedActivityIds = selectedActivityIds.filter(selectedId => selectedId !== id);
-    }
+  function deleteActivityDirective({ id }: Activity) {
+    effects.deleteActivityDirective(id);
   }
 
   function deleteActivityDirectives({ detail: ids }: CustomEvent<number[]>) {
@@ -87,6 +75,6 @@
   items={$activities}
   pluralItemDisplayText="Activities"
   singleItemDisplayText="Activity"
-  selectedItemId={$selectedActivityId}
+  bind:selectedItemId={$selectedActivityId}
   on:bulkDeleteItems={deleteActivityDirectives}
 />
