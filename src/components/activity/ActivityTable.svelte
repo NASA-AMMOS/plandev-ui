@@ -10,7 +10,7 @@
   export let activityTableId: number;
 
   type CellRendererParams = {
-    deleteActivity: (activity: Activity) => void;
+    deleteActivityDirective: (activity: Activity) => void;
   };
   type ActivityCellRendererParams = ICellRendererParams & CellRendererParams;
 
@@ -21,7 +21,7 @@
       actionsDiv.className = 'actions-cell';
       new DataGridActions({
         props: {
-          deleteCallback: params.deleteActivity,
+          deleteCallback: params.deleteActivityDirective,
           deleteTooltip: {
             content: 'Delete Activity',
             placement: 'bottom',
@@ -34,7 +34,7 @@
       return actionsDiv;
     },
     cellRendererParams: {
-      deleteActivity,
+      deleteActivityDirective,
     } as CellRendererParams,
     field: 'actions',
     headerName: '',
@@ -57,16 +57,16 @@
     previousSelectedActivityId = $selectedActivityId;
   }
 
-  async function deleteActivity({ id }: Activity) {
-    const success = await effects.deleteActivity(id);
+  async function deleteActivityDirective({ id }: Activity) {
+    const success = await effects.deleteActivityDirective(id);
 
     if (success) {
       selectedActivityIds = selectedActivityIds.filter(selectedId => selectedId !== id);
     }
   }
 
-  function deleteActivities({ detail: ids }: CustomEvent<number[]>) {
-    effects.deleteActivities(ids);
+  function deleteActivityDirectives({ detail: ids }: CustomEvent<number[]>) {
+    effects.deleteActivityDirectives(ids);
   }
 </script>
 
@@ -88,5 +88,5 @@
   pluralItemDisplayText="Activities"
   singleItemDisplayText="Activity"
   selectedItemId={$selectedActivityId}
-  on:bulkDeleteItems={deleteActivities}
+  on:bulkDeleteItems={deleteActivityDirectives}
 />

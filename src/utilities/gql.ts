@@ -10,9 +10,9 @@ const gql = {
     }
   `,
 
-  CREATE_ACTIVITY: `#graphql
-    mutation CreateActivity($activity: activity_insert_input!) {
-      createActivity: insert_activity_one(object: $activity) {
+  CREATE_ACTIVITY_DIRECTIVE: `#graphql
+    mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
+      createActivityDirective: insert_activity_directive_one(object: $activityDirectiveInsertInput) {
         id
       }
     }
@@ -136,20 +136,20 @@ const gql = {
     }
   `,
 
-  DELETE_ACTIVITIES: `#graphql
-    mutation DeleteActivities($ids: [Int!]!) {
-      delete_activity(where: { id: { _in: $ids } }) {
-        returning {
-          id
-        }
+  DELETE_ACTIVITY_DIRECTIVE: `#graphql
+    mutation DeleteActivityDirective($id: Int!) {
+      deleteActivityDirective: delete_activity_directive_by_pk(id: $id) {
+        id
       }
     }
   `,
 
-  DELETE_ACTIVITY: `#graphql
-    mutation DeleteActivity($id: Int!) {
-      deleteActivity: delete_activity_by_pk(id: $id) {
-        id
+  DELETE_ACTIVITY_DIRECTIVES: `#graphql
+    mutation DeleteActivityDirectives($ids: [Int!]!) {
+      deleteActivityDirectives: delete_activity_directive(where: { id: { _in: $ids } }) {
+        returning {
+          id
+        }
       }
     }
   `,
@@ -258,7 +258,7 @@ const gql = {
   GET_ACTIVITIES_FOR_PLAN: `#graphql
     query GetActivitiesForPlan($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
-        directive_activities: activities {
+        activity_directives {
           arguments
           id
           simulated_activities(order_by: { id: desc }, limit: 1) {
@@ -407,7 +407,7 @@ const gql = {
   GET_PLAN: `#graphql
     query GetPlan($id: Int!) {
       plan: plan_by_pk(id: $id) {
-        activities {
+        activity_directives {
           arguments
           id
           simulated_activities(order_by: { id: desc }, limit: 1) {
@@ -854,10 +854,10 @@ const gql = {
     }
   `,
 
-  UPDATE_ACTIVITY: `#graphql
-    mutation UpdateActivity($id: Int!, $activity: activity_set_input!) {
-      updateActivity: update_activity_by_pk(
-        pk_columns: { id: $id }, _set: $activity
+  UPDATE_ACTIVITY_DIRECTIVE: `#graphql
+    mutation UpdateActivityDirective($id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
+      updateActivityDirective: update_activity_directive_by_pk(
+        pk_columns: { id: $id }, _set: $activityDirectiveSetInput
       ) {
         id
       }

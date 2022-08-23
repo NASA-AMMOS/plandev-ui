@@ -113,12 +113,12 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    effects.updateActivity(id, { arguments: newArguments });
+    effects.updateActivityDirective(id, { arguments: newArguments });
   }
 
   function onUpdateStartTime() {
     if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      effects.updateActivity(id, { start_time: $startTimeField.value });
+      effects.updateActivityDirective(id, { start_time: $startTimeField.value });
     }
   }
 
@@ -158,7 +158,7 @@
     <button
       class="st-button icon"
       disabled={isChild || !$selectedActivity}
-      on:click|stopPropagation={() => effects.deleteActivity(id)}
+      on:click|stopPropagation={() => effects.deleteActivityDirective(id)}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
     >
       <i class="bi bi-trash" />

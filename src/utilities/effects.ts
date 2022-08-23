@@ -48,19 +48,19 @@ const effects = {
     }
   },
 
-  async createActivity(argumentsMap: ArgumentsMap, start_time: string, type: string): Promise<void> {
+  async createActivityDirective(argumentsMap: ArgumentsMap, start_time: string, type: string): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
       const start_offset = getIntervalFromDoyRange(currentPlan.start_time, start_time);
-      const activityInsertInput: ActivityInsertInput = {
+      const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
         arguments: argumentsMap,
         plan_id: currentPlan.id,
         start_offset,
         type,
       };
-      const data = await reqHasura(gql.CREATE_ACTIVITY, { activity: activityInsertInput });
-      const { createActivity } = data;
-      const { id } = createActivity;
+      const data = await reqHasura(gql.CREATE_ACTIVITY_DIRECTIVE, { activityDirectiveInsertInput });
+      const { createActivityDirective } = data;
+      const { id } = createActivityDirective;
 
       const activity: Activity = {
         arguments: argumentsMap,
@@ -81,10 +81,10 @@ const effects = {
       checkConstraintsStatus.set(Status.Dirty);
       simulationStatus.update(Status.Dirty);
 
-      showSuccessToast('Activity Created Successfully');
+      showSuccessToast('Activity Directive Created Successfully');
     } catch (e) {
       console.log(e);
-      showFailureToast('Activity Create Failed');
+      showFailureToast('Activity Directive Create Failed');
     }
   },
 
@@ -356,16 +356,42 @@ const effects = {
     }
   },
 
-  async deleteActivities(ids: number[]): Promise<boolean> {
+  async deleteActivityDirective(id: number): Promise<boolean> {
     try {
       const confirm = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete the selected activities?',
+        'Are you sure you want to delete this activity directive?',
+        'Delete Activity',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id });
+        activitiesMap.update(activities => {
+          delete activities[id];
+          return { ...activities };
+        });
+        checkConstraintsStatus.set(Status.Dirty);
+        simulationStatus.update(Status.Dirty);
+        showSuccessToast('Activity Directive Deleted Successfully');
+        return true;
+      }
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Activity Directive Delete Failed');
+      return false;
+    }
+  },
+
+  async deleteActivityDirectives(ids: number[]): Promise<boolean> {
+    try {
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete the selected activity directives?',
         'Delete Activities',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITIES, { ids });
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids });
         activitiesMap.update(activities => {
           ids.forEach(id => {
             delete activities[id];
@@ -374,38 +400,12 @@ const effects = {
         });
         checkConstraintsStatus.set(Status.Dirty);
         simulationStatus.update(Status.Dirty);
-        showSuccessToast('Activities Deleted Successfully');
+        showSuccessToast('Activity Directives Deleted Successfully');
         return true;
       }
     } catch (e) {
       console.log(e);
-      showFailureToast('Activities Delete Failed');
-      return false;
-    }
-  },
-
-  async deleteActivity(id: number): Promise<boolean> {
-    try {
-      const confirm = await showConfirmModal(
-        'Delete',
-        'Are you sure you want to delete this activity?',
-        'Delete Activity',
-      );
-
-      if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY, { id });
-        activitiesMap.update(activities => {
-          delete activities[id];
-          return { ...activities };
-        });
-        checkConstraintsStatus.set(Status.Dirty);
-        simulationStatus.update(Status.Dirty);
-        showSuccessToast('Activity Deleted Successfully');
-        return true;
-      }
-    } catch (e) {
-      console.log(e);
-      showFailureToast('Activity Delete Failed');
+      showFailureToast('Activity Directives Delete Failed');
       return false;
     }
   },
@@ -631,15 +631,15 @@ const effects = {
     try {
       const data = await reqHasura<ActivitiesForPlanResponse>(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
       const { plan } = data;
-      const { directive_activities, simulations, start_time } = plan;
+      const { activity_directives, simulations, start_time } = plan;
       const [{ datasets } = { datasets: [] }] = simulations;
       const [{ simulated_activities } = { simulated_activities: [] }] = datasets;
 
-      const getParentId = getParentIdFn(directive_activities);
+      const getParentId = getParentIdFn(activity_directives);
       const getChildIds = getChildIdsFn(simulated_activities);
 
       const activities: Activity[] = [
-        ...directive_activities.map((activityDirective: ActivityDirective) =>
+        ...activity_directives.map((activityDirective: ActivityDirective) =>
           activityDirectiveToActivity(start_time, activityDirective, getChildIds),
         ),
         ...simulated_activities.map((activitySimulated: ActivitySimulated) =>
@@ -774,7 +774,7 @@ const effects = {
       if (plan) {
         return {
           ...plan,
-          activities: plan.activities.map((activityDirective: ActivityDirective) =>
+          activities: plan.activity_directives.map((activityDirective: ActivityDirective) =>
             activityDirectiveToActivity(plan.start_time, activityDirective),
           ),
           end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
@@ -1141,25 +1141,25 @@ const effects = {
     }
   },
 
-  async updateActivity(id: number, activity: Partial<Activity>, doRequest: boolean = true): Promise<void> {
+  async updateActivityDirective(id: number, activity: Partial<Activity>, doRequest: boolean = true): Promise<void> {
     if (doRequest) {
-      const activitySetInput: ActivitySetInput = {};
+      const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
 
       if (activity.arguments) {
-        activitySetInput.arguments = activity.arguments;
+        activityDirectiveSetInput.arguments = activity.arguments;
       }
 
       if (activity.start_time) {
         const planStartTime = get<Plan>(plan).start_time;
-        activitySetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
+        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
       }
 
       try {
-        await reqHasura(gql.UPDATE_ACTIVITY, { activity: activitySetInput, id });
-        showSuccessToast('Activity Updated Successfully');
+        await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id });
+        showSuccessToast('Activity Directive Updated Successfully');
       } catch (e) {
         console.log(e);
-        showFailureToast('Activity Update Failed');
+        showFailureToast('Activity Directive Update Failed');
       }
     }
 

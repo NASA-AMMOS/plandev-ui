@@ -33,7 +33,7 @@ type Activity = {
 };
 
 type ActivitiesForPlanResponse = {
-  directive_activities: ActivityDirective[];
+  activity_directives: ActivityDirective[];
   simulations: [{ datasets: [{ simulated_activities: ActivitySimulated[] }] }];
   start_time: string;
 };
@@ -48,14 +48,14 @@ type ActivityDirective = {
   type: string;
 };
 
-type ActivityInsertInput = {
+type ActivityDirectiveInsertInput = {
   arguments: ArgumentsMap;
   plan_id: number;
   start_offset: string;
   type: string;
 };
 
-type ActivitySetInput = Partial<ActivityInsertInput>;
+type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
 
 type ActivitySimulatedAttributes = {
   arguments: ArgumentsMap;

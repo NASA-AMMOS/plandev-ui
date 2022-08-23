@@ -17,9 +17,9 @@
   $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
   $: sortedActivityTypes = filteredActivityTypes.sort((a, b) => compare(a.name, b.name));
 
-  async function createActivityAtPlanStart(activityType: ActivityType) {
+  async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
     const { start_time } = $plan;
-    effects.createActivity({}, start_time, activityType.name);
+    effects.createActivityDirective({}, start_time, activityType.name);
   }
 
   function onDragEnd(): void {
@@ -61,7 +61,7 @@
           <span slot="suffix">
             <button
               class="st-button icon fs-6"
-              on:click={() => createActivityAtPlanStart(activityType)}
+              on:click={() => createActivityDirectiveAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <i class="bi bi-plus" />
