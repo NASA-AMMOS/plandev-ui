@@ -1,6 +1,7 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
 import { getTarget } from '../utilities/generic';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
+import { TimelineLockStatus } from '../utilities/timeline';
 
 /* Writeable. */
 
@@ -15,6 +16,8 @@ export const selectedRowId: Writable<number | null> = writable(null);
 export const selectedTimelineId: Writable<number | null> = writable(null);
 
 export const selectedYAxisId: Writable<number | null> = writable(null);
+
+export const timelineLockStatus: Writable<TimelineLockStatus> = writable(TimelineLockStatus.Locked);
 
 /* Derived. */
 

@@ -6,9 +6,10 @@
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { activityPoints } from '../../stores/activities';
+  import { timelineLockStatus } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { getDoyTime } from '../../utilities/time';
-  import { searchQuadtreeRect } from '../../utilities/timeline';
+  import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
 
   export let activityColor: string = '';
   export let activityHeight: number = 20;
@@ -57,6 +58,8 @@
   $: overlaySvgSelection = select(overlaySvg);
   $: rowHeight = activityHeight + activityRowPadding;
 
+  $: timelineLocked = $timelineLockStatus === TimelineLockStatus.Locked;
+
   $: if (
     $activityPoints !== undefined &&
     activityColor &&
@@ -79,10 +82,10 @@
   });
 
   /**
-   * @note We only allow dragging parent activities.
+   * @note We only allow dragging parent activities. Disable dragging all activities if timeline is "locked"
    */
   function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
-    if (points.length) {
+    if (!timelineLocked && points.length) {
       const [point] = points;
       if (point.parent_id === null) {
         dragOffsetX = offsetX - xScaleView(point.x);

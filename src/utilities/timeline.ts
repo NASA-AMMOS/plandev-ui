@@ -1,6 +1,12 @@
 import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
 import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
 
+export enum TimelineLockStatus {
+  Locked = 'Locked',
+  Unlocked = 'Unlocked',
+  TemporaryUnlock = 'TemporaryUnlock',
+}
+
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
