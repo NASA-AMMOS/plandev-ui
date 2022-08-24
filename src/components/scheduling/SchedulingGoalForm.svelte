@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { session } from '$app/stores';
+  import { user as userStore } from '../../stores/app';
   import { schedulingGoalsColumns } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
@@ -46,12 +46,11 @@
 
   async function saveGoal() {
     if (mode === 'create') {
-      const { user } = $session;
       const newGoal = await effects.createSchedulingGoal(
         goalDefinition,
         goalDescription,
         goalName,
-        user.id,
+        $userStore?.id,
         goalModelId,
       );
 

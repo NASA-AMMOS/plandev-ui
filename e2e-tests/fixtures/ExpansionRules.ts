@@ -32,6 +32,7 @@ export class ExpansionRules {
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/new`);
+    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).toBeDisabled();
     await this.selectCommandDictionary();
     await this.selectModel();
@@ -40,10 +41,12 @@ export class ExpansionRules {
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/edit/*`);
+    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules`);
+    await this.page.waitForTimeout(1000);
   }
 
   async deleteExpansionRule() {
@@ -73,8 +76,9 @@ export class ExpansionRules {
   }
 
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/expansion/rules', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
     await expect(this.rulesNavButton).toHaveClass(/selected/);
   }
 

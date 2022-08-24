@@ -15,10 +15,6 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Models', () => {
-  test.beforeEach(async () => {
-    await page.reload();
-  });
-
   test('Create model button should be disabled with no errors', async () => {
     await expect(models.alertError).not.toBeVisible();
     await expect(models.createButton).toBeDisabled();
@@ -27,11 +23,13 @@ test.describe.serial('Models', () => {
   test('Create model button should be disabled after only entering a name', async () => {
     await models.fillInputName();
     await expect(models.createButton).toBeDisabled();
+    await models.fillInputName('');
   });
 
   test('Create model button should be disabled after only entering a version', async () => {
     await models.fillInputVersion();
     await expect(models.createButton).toBeDisabled();
+    await models.fillInputVersion('');
   });
 
   test('Create model button should be disabled after only adding a file', async () => {
@@ -42,7 +40,6 @@ test.describe.serial('Models', () => {
   test('Create button should be enabled after entering a name, version, and file', async () => {
     await models.fillInputName();
     await models.fillInputVersion();
-    await models.fillInputFile();
     await expect(models.createButton).not.toBeDisabled();
   });
 

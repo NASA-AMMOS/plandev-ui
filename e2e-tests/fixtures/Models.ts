@@ -50,27 +50,28 @@ export class Models {
     await expect(this.tableRow).not.toBeVisible();
   }
 
-  async fillInputFile() {
+  async fillInputFile(jarPath: string = this.jarPath) {
     await this.inputFile.focus();
-    await this.inputFile.setInputFiles(this.jarPath);
+    await this.inputFile.setInputFiles(jarPath);
     await this.inputFile.evaluate(e => e.blur());
   }
 
-  async fillInputName() {
+  async fillInputName(modelName: string = this.modelName) {
     await this.inputName.focus();
-    await this.inputName.fill(this.modelName);
+    await this.inputName.fill(modelName);
     await this.inputName.evaluate(e => e.blur());
   }
 
-  async fillInputVersion() {
+  async fillInputVersion(modelVersion: string = this.modelVersion) {
     await this.inputVersion.focus();
-    await this.inputVersion.fill(this.modelVersion);
+    await this.inputVersion.fill(modelVersion);
     await this.inputVersion.evaluate(e => e.blur());
   }
 
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/models', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
   }
 
   updatePage(page: Page): void {

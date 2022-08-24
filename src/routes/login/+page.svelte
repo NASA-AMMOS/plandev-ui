@@ -1,22 +1,12 @@
-<script lang="ts" context="module">
-  import { base } from '$app/paths';
-  import { session } from '$app/stores';
-  import type { Load } from '@sveltejs/kit';
-  import { onMount } from 'svelte';
-  import AlertError from '../../components/ui/AlertError.svelte';
-
-  export const load: Load = ({ session }) => {
-    if (session.user) {
-      return {
-        redirect: `${base}/plans`,
-        status: 302,
-      };
-    }
-    return {};
-  };
-</script>
+<svelte:options immutable={true} />
 
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
+  import { onMount } from 'svelte';
+  import AlertError from '../../components/ui/AlertError.svelte';
+  import { user as userStore } from '../../stores/app';
+
   let error = null;
   let loginButtonText = 'Login';
   let password = '';
@@ -44,7 +34,8 @@
       const { message, success, user = null } = loginResponse;
 
       if (success) {
-        $session.user = user; // Triggers redirect.
+        $userStore = user;
+        goto(`${base}/plans`);
       } else {
         console.log(message);
         error = message;

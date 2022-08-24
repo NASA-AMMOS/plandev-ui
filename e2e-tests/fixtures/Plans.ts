@@ -85,6 +85,7 @@ export class Plans {
 
   async goto() {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
   }
 
   async selectInputModel() {

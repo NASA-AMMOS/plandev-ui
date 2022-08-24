@@ -1,8 +1,9 @@
-<script lang="ts" context="module">
+<svelte:options immutable={true} />
+
+<script lang="ts">
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
@@ -21,29 +22,9 @@
   import { compare, removeQueryParam } from '../../utilities/generic';
   import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';
   import { min, required, timestamp } from '../../utilities/validators';
+  import type { PageData } from './$types';
 
-  export const load: Load = async ({ session }) => {
-    if (!session.user) {
-      return {
-        redirect: `${base}/login`,
-        status: 302,
-      };
-    }
-
-    const { models = [], plans = [] } = await effects.getPlansAndModels();
-
-    return {
-      props: {
-        models,
-        plans,
-      },
-    };
-  };
-</script>
-
-<script lang="ts">
-  export let models: ModelList[] = [];
-  export let plans: PlanList[] = [];
+  export let data: PageData;
 
   type CellRendererParams = {
     deletePlan: (plan: Plan) => void;
@@ -96,9 +77,11 @@
     },
   ];
 
-  let filterText: string = '';
-  let nameInputField: HTMLInputElement;
   let durationString: string = 'None';
+  let filterText: string = '';
+  let models: ModelList[];
+  let nameInputField: HTMLInputElement;
+  let plans: PlanList[];
 
   let endTimeField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
@@ -106,6 +89,8 @@
   let simTemplateField = field<number | null>(null);
   let startTimeField = field<string>('', [required, timestamp]);
 
+  $: plans = data.plans;
+  $: models = data.models;
   $: createButtonEnabled =
     $endTimeField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&

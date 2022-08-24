@@ -20,7 +20,7 @@
     };
   });
 
-  function onKeydown(e) {
+  function onKeydown(e: KeyboardEvent & { target: HTMLInputElement }) {
     // If user holds shift while not focused on an input then activate the temporary unlock.
     // If an input is focused, we assume they're holding shift to capitalize instead.
     if (e.key === 'Shift' && e.target.tagName !== 'INPUT' && $timelineLockStatus !== TimelineLockStatus.Unlocked) {
@@ -28,7 +28,7 @@
     }
   }
 
-  function onKeyup(e) {
+  function onKeyup(e: KeyboardEvent) {
     if (e.key === 'Shift' && $timelineLockStatus === TimelineLockStatus.TemporaryUnlock) {
       $timelineLockStatus = TimelineLockStatus.Locked;
     }

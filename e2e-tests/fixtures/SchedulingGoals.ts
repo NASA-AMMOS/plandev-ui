@@ -35,10 +35,12 @@ export class SchedulingGoals {
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling/goals/edit/*`);
+    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling/goals`);
+    await this.page.waitForTimeout(1000);
   }
 
   async deleteSchedulingGoal() {
@@ -80,8 +82,9 @@ export class SchedulingGoals {
   }
 
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
     await expect(this.goalsNavButton).toHaveClass(/selected/);
   }
 

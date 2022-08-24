@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import type { GetSession, Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit';
 import { parse } from 'cookie';
 import effects from './utilities/effects';
 
@@ -28,12 +28,4 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   return await resolve(event);
-};
-
-export const getSession: GetSession = event => {
-  const { locals } = event;
-  const { user = null } = locals;
-  return {
-    user,
-  };
 };

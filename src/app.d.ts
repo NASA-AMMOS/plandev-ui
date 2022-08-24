@@ -16,10 +16,6 @@ declare namespace App {
     HASURA_WEB_SOCKET_URL: string;
     ORIGIN: string;
   }
-
-  interface Session {
-    user: User | null;
-  }
 }
 
 /**

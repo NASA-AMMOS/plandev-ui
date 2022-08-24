@@ -1,6 +1,7 @@
 import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
-import effects from '../../utilities/effects';
+import { json } from '@sveltejs/kit';
+import effects from '../../../utilities/effects';
 
 export const POST: RequestHandler = async event => {
   const body: LoginRequestBody = await event.request.json();
@@ -15,30 +16,12 @@ export const POST: RequestHandler = async event => {
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
 
-      return {
-        body: {
-          success: true,
-          user,
-        },
-        headers: {
-          'set-cookie': `user=${userCookie}; Path=${base}/`,
-        },
-      };
+      return json({ success: true, user }, { headers: { 'set-cookie': `user=${userCookie}; Path=${base}/` } });
     } else {
-      return {
-        body: {
-          message,
-          success: false,
-        },
-      };
+      return json({ message, success: false });
     }
   } catch (e) {
     console.log(e);
-    return {
-      body: {
-        message: e.message,
-        success: false,
-      },
-    };
+    return json({ message: e.message, success: false });
   }
 };

@@ -36,10 +36,12 @@ export class Constraints {
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/constraints/edit/*`);
+    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/constraints`);
+    await this.page.waitForTimeout(1000);
   }
 
   async deleteConstraint() {
@@ -87,8 +89,9 @@ export class Constraints {
   }
 
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
   }
 
   async selectModel() {

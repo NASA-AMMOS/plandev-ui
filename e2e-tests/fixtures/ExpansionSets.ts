@@ -30,6 +30,7 @@ export class ExpansionSets {
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/sets/new`);
+    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).toBeDisabled();
     await this.selectCommandDictionary();
     await this.selectModel();
@@ -37,11 +38,13 @@ export class ExpansionSets {
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/sets`);
+    await this.page.waitForTimeout(1000);
   }
 
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/expansion/sets', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
     await expect(this.setsNavButton).toHaveClass(/selected/);
   }
 

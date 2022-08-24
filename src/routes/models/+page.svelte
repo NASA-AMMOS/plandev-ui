@@ -1,7 +1,8 @@
-<script lang="ts" context="module">
+<svelte:options immutable={true} />
+
+<script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { Load } from '@sveltejs/kit';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -12,27 +13,9 @@
   import Panel from '../../components/ui/Panel.svelte';
   import { createModelError, creatingModel, models, sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
+  import type { PageData } from './$types';
 
-  export const load: Load = async ({ session }) => {
-    if (!session.user) {
-      return {
-        redirect: `${base}/login`,
-        status: 302,
-      };
-    }
-
-    const initialModels = await effects.getModels();
-
-    return {
-      props: {
-        initialModels,
-      },
-    };
-  };
-</script>
-
-<script lang="ts">
-  export let initialModels: ModelList[] = [];
+  export let data: PageData;
 
   type CellRendererParams = {
     deleteModel: (model: ModelList) => void;
@@ -91,7 +74,7 @@
   $: createButtonDisabled = !files || name === '' || version === '';
 
   onMount(() => {
-    models.updateValue(() => initialModels);
+    models.updateValue(() => data.initialModels);
   });
 
   function deleteModel(model: ModelList) {

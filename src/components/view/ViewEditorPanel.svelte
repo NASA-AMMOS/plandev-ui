@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { session } from '$app/stores';
+  import { user as userStore } from '../../stores/app';
   import { view, viewDefinitionText } from '../../stores/views';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -12,7 +12,7 @@
   let saveViewDisabled: boolean = true;
 
   $: saveAsViewDisabled = $view?.name === '';
-  $: saveViewDisabled = $view?.name === '' || $view?.owner !== $session?.user?.id;
+  $: saveViewDisabled = $view?.name === '' || $view?.owner !== $userStore?.id;
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>): void {
     const { detail } = event;
@@ -28,12 +28,12 @@
 
   function saveAsView() {
     if ($view && !saveAsViewDisabled) {
-      effects.createView($view.name, $session?.user?.id, $view.definition);
+      effects.createView($view.name, $userStore?.id, $view.definition);
     }
   }
 
   function saveView() {
-    if ($view && $view.owner === $session.user.id && !saveViewDisabled) {
+    if ($view && $view.owner === $userStore?.id && !saveViewDisabled) {
       effects.updateView($view.id, { definition: $view.definition, name: $view.name });
     }
   }

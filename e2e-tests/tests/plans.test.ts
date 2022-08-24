@@ -25,7 +25,7 @@ test.afterAll(async () => {
 
 test.describe.serial('Plans', () => {
   test.beforeEach(async () => {
-    await page.reload();
+    await page.reload({ waitUntil: 'networkidle' });
   });
 
   test('Create plan button should be disabled with no errors', async () => {

@@ -3,8 +3,8 @@
 <script lang="ts">
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
-  import { session } from '$app/stores';
   import { env } from '$env/dynamic/public';
+  import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -13,7 +13,7 @@
 
   async function logout() {
     await fetch(`${base}/auth/logout`, { method: 'POST' });
-    $session.user = null; // Triggers redirect.
+    $userStore = null;
     goto(`${base}/login`);
   }
 </script>

@@ -53,6 +53,7 @@ export class Plan {
     const [newConstraintPage] = await Promise.all([this.page.waitForEvent('popup'), this.constraintNewButton.click()]);
     this.constraints.updatePage(newConstraintPage);
     await newConstraintPage.waitForURL(`${baseURL}/constraints/new`);
+    await this.page.waitForTimeout(1000);
     await this.constraints.createConstraint(baseURL);
     await newConstraintPage.close();
     this.constraints.updatePage(this.page);
@@ -66,6 +67,7 @@ export class Plan {
     ]);
     this.schedulingGoals.updatePage(newSchedulingGoalPage);
     await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?specId=*`);
+    await this.page.waitForTimeout(1000);
     await this.schedulingGoals.createSchedulingGoal(baseURL);
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
@@ -79,9 +81,10 @@ export class Plan {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto() {
-    await this.page.goto('/plans');
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(1200);
     await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(1000);
   }
 
   async runAnalysis() {

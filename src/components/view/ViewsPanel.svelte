@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { session } from '$app/stores';
   import { onMount } from 'svelte';
+  import { user as userStore } from '../../stores/app';
   import { view, viewLayout } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
@@ -75,7 +75,7 @@
     if (success) {
       views = views.filter(v => v.id !== viewId);
       if ($view.id === viewId) {
-        const nextView = await effects.getView($session?.user?.id, null);
+        const nextView = await effects.getView($userStore?.id, null);
         $view = { ...nextView };
         $viewLayout = { ...nextView.definition.plan.layout };
         setQueryParam('viewId', `${nextView.id}`);
@@ -85,7 +85,7 @@
 
   async function loadView(viewId: number) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await effects.getView($session?.user?.id, query);
+    const newView = await effects.getView($userStore?.id, query);
 
     if (view) {
       $view = { ...newView };
