@@ -65,7 +65,7 @@ export class Plan {
       this.schedulingGoalNewButton.click(),
     ]);
     this.schedulingGoals.updatePage(newSchedulingGoalPage);
-    await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?specId=*`);
+    await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?modelId=*&&specId=*`);
     await this.schedulingGoals.createSchedulingGoal(baseURL);
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);

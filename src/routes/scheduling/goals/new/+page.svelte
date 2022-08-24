@@ -7,4 +7,9 @@
   export let data: PageData;
 </script>
 
-<SchedulingGoalForm initialModels={data.initialModels} initialSpecId={data.initialSpecId} mode="create" />
+<SchedulingGoalForm
+  initialGoalModelId={data.initialModelId}
+  initialModels={data.initialModels}
+  initialSpecId={data.initialSpecId}
+  mode="create"
+/>

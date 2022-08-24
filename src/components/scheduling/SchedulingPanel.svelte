@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
+  import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -43,7 +44,8 @@
       <button
         class="st-button secondary"
         name="new-scheduling-goal"
-        on:click={() => window.open(`${base}/scheduling/goals/new?specId=${$selectedSpecId}`, '_blank')}
+        on:click={() =>
+          window.open(`${base}/scheduling/goals/new?modelId=${$plan.model.id}&&specId=${$selectedSpecId}`, '_blank')}
       >
         New
       </button>

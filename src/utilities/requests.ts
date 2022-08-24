@@ -56,7 +56,7 @@ export async function reqHasura<T = any>(query: string, variables: QueryVariable
     body: JSON.stringify({ query, variables }),
     headers: {
       'Content-Type': 'application/json',
-      'x-auth-sso-token': user.ssoToken ?? '',
+      'x-auth-sso-token': user?.ssoToken ?? '',
     },
     method: 'POST',
   };
