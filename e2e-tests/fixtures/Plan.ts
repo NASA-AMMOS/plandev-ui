@@ -45,7 +45,7 @@ export class Plan {
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
     this.schedulingGoalListItemSelector = `.scheduling-goal:has-text("${schedulingGoals.goalName}")`;
-    this.schedulingStatusSelector = (status: string) => `.status-badge:has-text("${status}")`;
+    this.schedulingStatusSelector = (status: string) => `.status-badge.${status}`;
     this.updatePage(page);
   }
 

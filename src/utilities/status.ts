@@ -11,6 +11,7 @@ export enum Status {
 
 export const statusColors: Record<string, string> = {
   blue: '#007bff',
+  gray: '#545F64',
   green: '#28a745',
   red: '#dc3545',
   yellow: '#ffc107',
@@ -27,13 +28,13 @@ export function getColorForStatus(status: Status): string {
   } else if (status === Status.Dirty) {
     return statusColors.red;
   } else if (status === Status.Executing) {
-    return statusColors.yellow;
+    return statusColors.gray;
   } else if (status === Status.Failed) {
     return statusColors.red;
   } else if (Status.Incomplete) {
-    return statusColors.yellow;
+    return statusColors.gray;
   } else if (Status.Pending) {
-    return statusColors.yellow;
+    return statusColors.gray;
   } else {
     return statusColors.red;
   }
