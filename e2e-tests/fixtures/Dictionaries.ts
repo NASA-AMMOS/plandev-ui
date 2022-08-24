@@ -29,6 +29,7 @@ export class Dictionaries {
     await this.fillInputFile();
     await this.createButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
+    await this.tableRow.waitFor({ state: 'visible' });
     await expect(this.tableRow).toBeVisible();
   }
 
@@ -40,17 +41,20 @@ export class Dictionaries {
     await expect(this.tableRowDeleteButton).not.toBeVisible();
 
     await this.tableRow.hover();
+    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
     await this.tableRowDeleteButton.click();
     await this.confirmModal.waitFor({ state: 'attached' });
+    await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
     await this.tableRow.waitFor({ state: 'detached' });
+    await this.tableRow.waitFor({ state: 'hidden' });
     await expect(this.tableRow).not.toBeVisible();
   }
 
@@ -67,7 +71,6 @@ export class Dictionaries {
   async goto() {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/dictionaries', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(1000);
   }
 
   updatePage(page: Page): void {

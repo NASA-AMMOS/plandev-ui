@@ -32,7 +32,6 @@ export class ExpansionRules {
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/new`);
-    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).toBeDisabled();
     await this.selectCommandDictionary();
     await this.selectModel();
@@ -41,12 +40,10 @@ export class ExpansionRules {
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/edit/*`);
-    await this.page.waitForTimeout(1000);
     await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules`);
-    await this.page.waitForTimeout(1000);
   }
 
   async deleteExpansionRule() {
@@ -55,17 +52,20 @@ export class ExpansionRules {
     await expect(this.tableRowDeleteButton).not.toBeVisible();
 
     await this.tableRow.hover();
+    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
     await this.tableRowDeleteButton.click();
     await this.confirmModal.waitFor({ state: 'attached' });
+    await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
     await this.tableRow.waitFor({ state: 'detached' });
+    await this.tableRow.waitFor({ state: 'hidden' });
     await expect(this.tableRow).not.toBeVisible();
   }
 
@@ -78,7 +78,6 @@ export class ExpansionRules {
   async goto() {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
     await this.page.goto('/expansion/rules', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(1000);
     await expect(this.rulesNavButton).toHaveClass(/selected/);
   }
 
