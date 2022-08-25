@@ -153,7 +153,7 @@
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
       const start_time = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      effects.createActivityDirective({}, start_time, activityTypeName);
+      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {});
     }
   }
 

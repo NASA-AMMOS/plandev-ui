@@ -1,4 +1,15 @@
 /**
+ * Returns the string version of an object of unknown type or returns null if this operation fails.
+ */
+export function attemptStringConversion(x: any) {
+  try {
+    return x.toString();
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
  * Comparator function for numbers or strings.
  * Defaults to ascending order.
  */
@@ -24,6 +35,13 @@ export function classNames(baseClass: string, conditionalClasses?: Record<string
     }
     return partialClassName;
   }, baseClass);
+}
+
+/**
+ * Returns a string formatted in the Hasura string array format of '{1,2,...n}'.
+ */
+export function formatHasuraStringArray(stringArray: string[]): string {
+  return `{${stringArray.join(',')}}`;
 }
 
 /**

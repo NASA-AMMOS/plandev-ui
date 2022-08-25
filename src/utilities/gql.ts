@@ -260,7 +260,11 @@ const gql = {
       plan: plan_by_pk(id: $planId) {
         activity_directives {
           arguments
+          created_at
           id
+          last_modified_at
+          metadata
+          name
           simulated_activities(order_by: { id: desc }, limit: 1) {
             activity_type_name
             attributes
@@ -270,7 +274,9 @@ const gql = {
             simulation_dataset_id
             start_offset
           }
+          source_scheduling_goal_id
           start_offset
+          tags
           type
         }
         simulations(limit: 1) {
@@ -287,6 +293,15 @@ const gql = {
           }
         }
         start_time
+      }
+    }
+  `,
+
+  GET_ACTIVITY_DIRECTIVE_METADATA_SCHEMA: `#graphql
+    query GetActivityDirectiveMetadataSchema {
+      activity_directive_metadata_schema {
+        key
+        schema
       }
     }
   `,
@@ -409,13 +424,19 @@ const gql = {
       plan: plan_by_pk(id: $id) {
         activity_directives {
           arguments
+          created_at
           id
+          last_modified_at
+          metadata
+          name
           simulated_activities(order_by: { id: desc }, limit: 1) {
             id
             parent_id
             simulation_dataset_id
           }
+          source_scheduling_goal_id
           start_offset
+          tags
           type
         }
         duration

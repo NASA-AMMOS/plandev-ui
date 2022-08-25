@@ -22,12 +22,18 @@ type Activity = {
   arguments: ArgumentsMap;
   attributes: ActivitySimulatedAttributes | null;
   child_ids: ActivityId[];
+  created_at: string;
   duration: string | null;
   id: ActivityId;
+  last_modified_at: string;
+  metadata: ActivityMetadata;
+  name: string;
   parent_id: ActivityId | null;
   simulated_activity_id: ActivitySimulatedId | null;
   simulation_dataset_id: number | null;
+  source_scheduling_goal_id: number;
   start_time: string;
+  tags: string[];
   type: string;
   unfinished: boolean;
 };
@@ -42,16 +48,25 @@ type ActivitiesMap = Record<ActivityId, Activity>;
 
 type ActivityDirective = {
   arguments: ArgumentsMap;
+  created_at: string;
   id: ActivityDirectiveId;
+  last_modified_at: string;
+  metadata: ActivityMetadata;
+  name: string;
   simulated_activities: [ActivitySimulated];
+  source_scheduling_goal_id: number;
   start_offset: string;
+  tags: string[];
   type: string;
 };
 
 type ActivityDirectiveInsertInput = {
   arguments: ArgumentsMap;
+  metadata: ActivityMetadata;
+  name: string;
   plan_id: number;
   start_offset: string;
+  tags: string; // Hasura does not accept arrays so this must be in the form of "{1,2,3,...,n}"
   type: string;
 };
 

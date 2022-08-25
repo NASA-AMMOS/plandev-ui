@@ -28,6 +28,14 @@ export const selectedActivityIds: Readable<ActivityId[]> = derived(selectedActiv
   $selectedActivityId,
 ]);
 
+export const allPlanTags: Readable<string[]> = derived(activities, $activities => {
+  const tagMap = $activities.reduce((map: Record<string, boolean>, activity: Activity) => {
+    activity.tags.forEach(tag => (map[tag] = true));
+    return map;
+  }, {});
+  return Object.keys(tagMap).sort();
+});
+
 /* Helper Functions. */
 
 export function resetActivityStores() {

@@ -60,6 +60,7 @@
     "svelte-dnd-action": "^0.9.19",
     "svelte-popperjs": "^1.2.11",
     "svelte-preprocess": "^4.10.7",
+    "svelte-tags-input": "^2.9.2",
     "tippy.js": "^6.3.7",
     "toastify-js": "^1.12.0"
   },

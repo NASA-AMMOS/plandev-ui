@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { clamp, classNames } from './generic';
+import { attemptStringConversion, clamp, classNames, formatHasuraStringArray } from './generic';
 
 describe('clamp', () => {
   test('Should clamp a number already in the correct range to the number itself', () => {
@@ -40,5 +40,35 @@ describe('classNames', () => {
         baz: false,
       }),
     ).toEqual('foo');
+  });
+});
+
+describe('formatHasuraStringArray', () => {
+  test('Should generate the correct string given a string array', () => {
+    expect(formatHasuraStringArray(['foo', 'bar'])).toEqual('{foo,bar}');
+  });
+  test('Should generate the correct string given an empty string array', () => {
+    expect(formatHasuraStringArray([])).toEqual('{}');
+  });
+});
+
+describe('attemptStringConversion', () => {
+  test('Should convert strings to strings', () => {
+    expect(attemptStringConversion('')).toEqual('');
+    expect(attemptStringConversion('Foo')).toEqual('Foo');
+  });
+  test('Should convert numbers to strings', () => {
+    expect(attemptStringConversion(1.0101)).toEqual('1.0101');
+  });
+  test('Should convert arrays to strings', () => {
+    expect(attemptStringConversion([1.0101, 'Foo'])).toEqual('1.0101,Foo');
+  });
+  test('Should convert booleans to strings', () => {
+    expect(attemptStringConversion(true)).toEqual('true');
+    expect(attemptStringConversion(false)).toEqual('false');
+  });
+  test('Should return null when attempting to convert non-stringable values', () => {
+    expect(attemptStringConversion(null)).toEqual(null);
+    expect(attemptStringConversion(undefined)).toEqual(null);
   });
 });

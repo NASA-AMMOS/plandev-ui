@@ -19,7 +19,7 @@
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
     const { start_time } = $plan;
-    effects.createActivityDirective({}, start_time, activityType.name);
+    effects.createActivityDirective({}, start_time, activityType.name, activityType.name, [], {});
   }
 
   function onDragEnd(): void {

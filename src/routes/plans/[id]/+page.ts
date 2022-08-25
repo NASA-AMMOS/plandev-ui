@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import { user as userStore } from '../../../stores/app';
 import effects from '../../../utilities/effects';
+import { compare } from '../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ params, url }) => {
@@ -20,8 +21,11 @@ export const load: PageLoad = async ({ params, url }) => {
 
     if (initialPlan) {
       const initialView = await effects.getView(user.id, url.searchParams);
+      const initialMetadataDefinitions = await effects.getActivityMetadataDefinitions();
+      initialMetadataDefinitions.sort((a, b) => compare(a.key, b.key));
 
       return {
+        initialMetadataDefinitions,
         initialPlan,
         initialView,
       };

@@ -1,4 +1,5 @@
-import { compare } from './generic';
+import { omitBy } from 'lodash-es';
+import { compare, isEmpty } from './generic';
 import { getDoyTimeFromDuration, getDurationInMs, getUnixEpochTime } from './time';
 
 /**
@@ -88,12 +89,18 @@ export function activityDirectiveToActivity(
     arguments: activityDirective.arguments,
     attributes: activitySimulated?.attributes ?? null,
     child_ids: getChildIds(activitySimulated),
+    created_at: activityDirective.created_at, // TODO how much checking should we do for these new metadata fields?
     duration: activitySimulated?.duration ?? null,
     id: activityDirective.id,
+    last_modified_at: activityDirective.last_modified_at,
+    metadata: activityDirective.metadata,
+    name: activityDirective.name,
     parent_id: null,
     simulated_activity_id: activitySimulated?.id ?? null,
     simulation_dataset_id: activitySimulated?.simulation_dataset_id ?? null,
+    source_scheduling_goal_id: activityDirective.source_scheduling_goal_id,
     start_time: getDoyTimeFromDuration(plan_start_time, activityDirective.start_offset),
+    tags: activityDirective.tags,
     type: activityDirective.type,
     unfinished: activitySimulated?.duration === null,
   };
@@ -112,15 +119,44 @@ export function activitySimulatedToActivity(
     arguments: {},
     attributes: activitySimulated.attributes,
     child_ids: getChildIds(activitySimulated),
+    created_at: '',
     duration: activitySimulated.duration,
     id: activitySimulated.id,
+    last_modified_at: '',
+    metadata: {},
+    name: '',
     parent_id: getParentId(activitySimulated),
     simulated_activity_id: activitySimulated.id,
     simulation_dataset_id: activitySimulated.simulation_dataset_id,
+    source_scheduling_goal_id: null,
     start_time: getDoyTimeFromDuration(plan_start_time, activitySimulated.start_offset),
+    tags: [],
     type: activitySimulated.activity_type_name,
     unfinished: activitySimulated.duration === null,
   };
+}
+
+export function getActivityMetadata(
+  activityMetadata: ActivityMetadata,
+  key: ActivityMetadataKey,
+  value: ActivityMetadataValue,
+): ActivityMetadata {
+  const newActivityMetadataEntry = { [key]: value };
+  return omitBy({ ...activityMetadata, ...newActivityMetadataEntry }, isEmpty);
+}
+
+/**
+ * Returns the root activity for an activity id.
+ */
+export function getActivityRootParent(activitiesMap: ActivitiesMap, activityId: number): Activity | null {
+  const activity = activitiesMap[activityId];
+  if (!activity) {
+    return null;
+  }
+  if (!activity.parent_id) {
+    return activity;
+  }
+  return getActivityRootParent(activitiesMap, activity.parent_id);
 }
 
 /**
@@ -167,18 +203,4 @@ export function getParentIdFn(
 
   return (activitySimulated: ActivitySimulated) =>
     simulatedIdToDirectiveId[activitySimulated.parent_id] ?? activitySimulated.parent_id;
-}
-
-/**
- * Returns the root activity for an activity id.
- */
-export function getActivityRootParent(activitiesMap: ActivitiesMap, activityId: number): Activity | null {
-  const activity = activitiesMap[activityId];
-  if (!activity) {
-    return null;
-  }
-  if (!activity.parent_id) {
-    return activity;
-  }
-  return getActivityRootParent(activitiesMap, activity.parent_id);
 }

@@ -17,7 +17,7 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
-import { parseFloatOrNull, setQueryParam, sleep } from './generic';
+import { formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
@@ -48,14 +48,25 @@ const effects = {
     }
   },
 
-  async createActivityDirective(argumentsMap: ArgumentsMap, start_time: string, type: string): Promise<void> {
+  async createActivityDirective(
+    argumentsMap: ArgumentsMap,
+    start_time: string,
+    type: string,
+    name: string,
+    tags: string[],
+    metadata: ActivityMetadata,
+  ): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
       const start_offset = getIntervalFromDoyRange(currentPlan.start_time, start_time);
+      const tagsString = formatHasuraStringArray(tags);
       const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
         arguments: argumentsMap,
+        metadata,
+        name,
         plan_id: currentPlan.id,
         start_offset,
+        tags: tagsString,
         type,
       };
       const data = await reqHasura(gql.CREATE_ACTIVITY_DIRECTIVE, { activityDirectiveInsertInput });
@@ -66,12 +77,18 @@ const effects = {
         arguments: argumentsMap,
         attributes: null,
         child_ids: [],
+        created_at: null,
         duration: null,
         id,
+        last_modified_at: null,
+        metadata,
+        name,
         parent_id: null,
         simulated_activity_id: null,
         simulation_dataset_id: null,
+        source_scheduling_goal_id: null,
         start_time,
+        tags,
         type,
         unfinished: false,
       };
@@ -654,6 +671,17 @@ const effects = {
     }
   },
 
+  async getActivityMetadataDefinitions(): Promise<ActivityMetadataDefinition[]> {
+    try {
+      const data = await reqHasura<ActivityMetadataDefinition[]>(gql.GET_ACTIVITY_DIRECTIVE_METADATA_SCHEMA);
+      const { activity_directive_metadata_schema } = data;
+      return activity_directive_metadata_schema;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {
@@ -1152,6 +1180,18 @@ const effects = {
       if (activity.start_time) {
         const planStartTime = get<Plan>(plan).start_time;
         activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
+      }
+
+      if (activity.tags) {
+        activityDirectiveSetInput.tags = formatHasuraStringArray(activity.tags);
+      }
+
+      if (activity.name) {
+        activityDirectiveSetInput.name = activity.name;
+      }
+
+      if (activity.metadata) {
+        activityDirectiveSetInput.metadata = activity.metadata;
       }
 
       try {
