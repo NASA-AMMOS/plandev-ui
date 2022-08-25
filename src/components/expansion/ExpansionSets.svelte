@@ -17,7 +17,7 @@
   type CellRendererParams = {
     deleteSet: (sequence: ExpansionSet) => void;
   };
-  type ExpansionSetCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ExpansionSetCellRendererParams = ICellRendererParams<ExpansionSet> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {

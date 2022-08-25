@@ -12,7 +12,7 @@
   type CellRendererParams = {
     deleteActivityDirective: (activity: Activity) => void;
   };
-  type ActivityCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ActivityCellRendererParams = ICellRendererParams<Activity> & CellRendererParams;
 
   const activityActionColumnDef: DataGridColumnDef = {
     cellClass: 'action-cell-container',

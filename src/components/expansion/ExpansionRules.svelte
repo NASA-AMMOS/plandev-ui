@@ -19,7 +19,7 @@
     deleteRule: (rule: ExpansionRule) => void;
     editRule: (rule: ExpansionRule) => void;
   };
-  type ExpansionRuleCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ExpansionRuleCellRendererParams = ICellRendererParams<ExpansionRule> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {

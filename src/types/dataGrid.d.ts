@@ -7,8 +7,8 @@ interface DataGridRowSelection<TRowData> {
 
 type DataGridRowsSelection<TRowData> = TRowData[];
 
-interface ICellRendererParams {
-  data: TRowData;
+interface ICellRendererParams<T> {
+  data: T;
 }
 
 interface TRowData {

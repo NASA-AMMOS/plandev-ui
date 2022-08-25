@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ColDef } from 'ag-grid-community';
+  import type { ColDef, RowNode } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -14,6 +14,8 @@
   export let selectedItemId: number | null = null;
   export let singleItemDisplayText: string;
 
+  export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
+
   const dispatch = createEventDispatcher();
 
   let contextMenu: ContextMenu;
@@ -21,7 +23,7 @@
   let isFiltered: boolean = false;
   let selectedItemIds: number[] = [];
 
-  $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId !== null) {
+  $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
     selectedItemIds = [selectedItemId];
   }
 
@@ -32,7 +34,7 @@
   function onCellContextMenu(event: CustomEvent) {
     const { detail } = event;
     const { data: clickedRow } = detail;
-    if (selectedItemIds.length <= 1) {
+    if (selectedItemIds.length <= 1 && isRowSelectable(detail)) {
       selectedItemId = clickedRow.id;
     }
 
@@ -54,6 +56,7 @@
   bind:this={dataGrid}
   {columnDefs}
   bind:currentSelectedRowId={selectedItemId}
+  {isRowSelectable}
   rowSelection="multiple"
   rowData={items}
   bind:selectedRowIds={selectedItemIds}
@@ -71,8 +74,10 @@
   <ContextMenuItem on:click={selectAllItems}>
     Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
   </ContextMenuItem>
-  <ContextMenuItem on:click={bulkDeleteItems}>
-    Delete {selectedItemIds.length}
-    {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-  </ContextMenuItem>
+  {#if selectedItemIds.length}
+    <ContextMenuItem on:click={bulkDeleteItems}>
+      Delete {selectedItemIds.length}
+      {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+    </ContextMenuItem>
+  {/if}
 </ContextMenu>

@@ -14,7 +14,7 @@
   type CellRendererParams = {
     deleteCommandDictionary: (dictionary: CommandDictionary) => void;
   };
-  type CommandDictionaryCellRendererParams = ICellRendererParams & CellRendererParams;
+  type CommandDictionaryCellRendererParams = ICellRendererParams<CommandDictionary> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {

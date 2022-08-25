@@ -19,7 +19,7 @@
     deleteGoal: (goal: SchedulingGoal) => void;
     editGoal: (goal: SchedulingGoal) => void;
   };
-  type SchedulingGoalsCellRendererParams = ICellRendererParams & CellRendererParams;
+  type SchedulingGoalsCellRendererParams = ICellRendererParams<SchedulingGoal> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {

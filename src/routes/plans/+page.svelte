@@ -29,7 +29,7 @@
   type CellRendererParams = {
     deletePlan: (plan: Plan) => void;
   };
-  type PlanCellRendererParams = ICellRendererParams & CellRendererParams;
+  type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     { field: 'name', headerName: 'Name', resizable: true, sortable: true },

@@ -20,7 +20,7 @@
   type CellRendererParams = {
     deleteModel: (model: ModelList) => void;
   };
-  type ModelCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ModelCellRendererParams = ICellRendererParams<ModelList> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     { field: 'name', headerName: 'Name', resizable: true, sortable: true },

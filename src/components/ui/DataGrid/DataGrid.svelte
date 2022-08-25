@@ -28,8 +28,14 @@
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let selectedRowIds: number[] = [];
+  export let shouldAutoGenerateId: boolean = false;
   export let suppressCellFocus: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+
+  export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
+    return parseInt(data[idKey]);
+  };
+  export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -92,15 +98,21 @@
   }
 
   function getRowClass(params: RowClassParams<TRowData>) {
-    if (currentSelectedRowId === getRowId(params.data)) {
-      return 'ag-first-row-selected';
+    const rowClass: string[] = [];
+
+    if (isRowSelectable) {
+      if (isRowSelectable(params.node)) {
+        rowClass.push('ag-selectable-row');
+      }
+    } else if (rowSelection !== undefined) {
+      rowClass.push('ag-selectable-row');
     }
 
-    return '';
-  }
+    if (currentSelectedRowId === getRowId(params.data)) {
+      rowClass.push('ag-current-row-selected');
+    }
 
-  function getRowId(data: TRowData): number {
-    return parseInt(data[idKey]);
+    return rowClass.join(' ');
   }
 
   onMount(() => {
@@ -108,7 +120,8 @@
       // each entry here represents one column
       columnDefs,
       getRowClass,
-      getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}`,
+      ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}` }),
+      isRowSelectable,
       onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
         dispatch('cellContextMenu', event);
       },
@@ -175,12 +188,7 @@
   });
 </script>
 
-<div
-  bind:this={gridDiv}
-  class="ag-theme-stellar table"
-  class:ag-selectable-rows={rowSelection !== undefined}
-  class:highlightOnSelection
-/>
+<div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection />
 
 <style>
   .table {

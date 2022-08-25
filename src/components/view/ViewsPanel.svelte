@@ -16,7 +16,7 @@
     deleteView: (view: View) => void;
     openView: (view: View) => void;
   };
-  type ViewCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ViewCellRendererParams = ICellRendererParams<View> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {
@@ -34,15 +34,20 @@
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ViewCellRendererParams) => {
+        const isEditable = params.data.owner !== 'system';
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteView,
-            deleteTooltip: {
-              content: 'Delete View',
-              placement: 'bottom',
-            },
+            ...(isEditable
+              ? {
+                  deleteCallback: params.deleteView,
+                  deleteTooltip: {
+                    content: 'Delete View',
+                    placement: 'bottom',
+                  },
+                }
+              : {}),
             rowData: params.data,
             viewCallback: params.openView,
             viewTooltip: {
@@ -109,6 +114,7 @@
     {#if $views.length}
       <BulkActionDataGrid
         {columnDefs}
+        isRowSelectable={rowData => rowData.data.owner !== 'system'}
         items={$views}
         pluralItemDisplayText="Views"
         singleItemDisplayText="View"

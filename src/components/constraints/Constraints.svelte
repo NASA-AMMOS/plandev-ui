@@ -18,7 +18,7 @@
     deleteConstraint: (constraint: Constraint) => void;
     editConstraint: (constraint: Constraint) => void;
   };
-  type ConstraintsCellRendererParams = ICellRendererParams & CellRendererParams;
+  type ConstraintsCellRendererParams = ICellRendererParams<Constraint> & CellRendererParams;
 
   export let initialPlans: PlanList[] = [];
 
