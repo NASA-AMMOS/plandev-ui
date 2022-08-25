@@ -273,7 +273,7 @@
         </div>
         <div>
           <div class="action button" on:mousedown={clearDate}>
-            <div class="action-icon"><i class="bi bi-magic" /></div>
+            <div class="action-icon"><i class="si si-magic_eraser" /></div>
             <div class="action-label">Clear</div>
           </div>
         </div>
