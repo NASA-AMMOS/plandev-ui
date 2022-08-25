@@ -34,7 +34,7 @@
   function onCellContextMenu(event: CustomEvent) {
     const { detail } = event;
     const { data: clickedRow } = detail;
-    if (selectedItemIds.length <= 1 && isRowSelectable(detail)) {
+    if (selectedItemIds.length <= 1 && (!isRowSelectable || isRowSelectable(detail))) {
       selectedItemId = clickedRow.id;
     }
 
