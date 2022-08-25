@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
-import Tags from '../ui/Tags.svelte';
+import Tags from './Tags.svelte';
 
 describe('Tags component', () => {
   afterEach(() => {

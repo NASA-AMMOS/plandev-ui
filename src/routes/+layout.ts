@@ -11,7 +11,7 @@ export const load: LayoutLoad = async ({ data, fetch }) => {
   versionStore.set(version);
 
   // Set user store.
-  userStore.set(data.user);
+  userStore.set(data?.user);
 
   return { ...data };
 };
