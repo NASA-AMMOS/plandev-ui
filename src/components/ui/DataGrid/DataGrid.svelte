@@ -8,7 +8,9 @@
     type CellMouseOverEvent,
     type ColDef,
     type GridOptions,
+    type RowClassParams,
     type RowClickedEvent,
+    type RowDoubleClickedEvent,
     type RowSelectedEvent,
   } from 'ag-grid-community';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -19,7 +21,9 @@
   }
 
   export let columnDefs: ColDef[];
+  export let currentSelectedRowId: number | null = null;
   export let highlightOnSelection: boolean = true;
+  export let idKey: keyof TRowData = 'id';
   export let preventDefaultOnContextMenu: boolean | undefined = undefined;
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
@@ -31,19 +35,20 @@
 
   let gridOptions: GridOptions<TRowData>;
   let gridDiv: HTMLDivElement;
+  let previousSelectedRowId: number | null = null;
 
   $: gridOptions?.api?.setRowData(rowData);
   $: gridOptions?.api?.sizeColumnsToFit();
 
   $: {
-    const currentSelectedRowIds: number[] = [];
+    const previousSelectedRowIds: number[] = [];
     // get all currently selected nodes. we cannot use `getSelectedNodes` because that does not include filtered rows
     gridOptions?.api?.forEachNode((rowNode: RowNode<TRowData>) => {
       if (rowNode.isSelected()) {
-        currentSelectedRowIds.push(parseInt(getRowId(rowNode)));
+        previousSelectedRowIds.push(getRowId(rowNode.data));
       }
     });
-    const currentSelectedRowIdsSet: Set<number> = new Set(currentSelectedRowIds);
+    const previousSelectedRowIdsSet: Set<number> = new Set(previousSelectedRowIds);
     const selectedRowIdsSet: Set<number> = new Set(selectedRowIds);
 
     /**
@@ -51,33 +56,59 @@
      *  deleting the shared ids from the `currentSelectedRowIdsSet` will yield ids that need to be deselected
      *  deleting the shared ids from the `selectedRowIdsSet` will yield the new ids that need to be selected
      */
-    for (let i = currentSelectedRowIds.length; i >= 0; --i) {
-      const currentId = currentSelectedRowIds[i];
+    for (let i = previousSelectedRowIds.length; i >= 0; --i) {
+      const currentId = previousSelectedRowIds[i];
       if (selectedRowIdsSet.has(currentId)) {
-        currentSelectedRowIdsSet.delete(currentId);
+        previousSelectedRowIdsSet.delete(currentId);
         selectedRowIdsSet.delete(currentId);
       }
     }
 
-    currentSelectedRowIdsSet.forEach(deselectedRowId => {
+    previousSelectedRowIdsSet.forEach(deselectedRowId => {
       const selectedRow = gridOptions?.api?.getRowNode(`${deselectedRowId}`);
       selectedRow?.setSelected(false);
     });
+
     selectedRowIds.forEach(selectedRowId => {
       const selectedRow = gridOptions?.api?.getRowNode(`${selectedRowId}`);
       selectedRow?.setSelected(true);
     });
   }
 
-  function getRowId(params: { data: TRowData }) {
-    return `${params.data.id}`;
+  $: if (!selectedRowIds.length) {
+    currentSelectedRowId = null;
+  } else if (selectedRowIds.length === 1) {
+    currentSelectedRowId = selectedRowIds[0];
+  }
+
+  $: {
+    gridOptions?.api?.redrawRows({
+      rowNodes: [
+        gridOptions?.api?.getRowNode(`${currentSelectedRowId}`),
+        gridOptions?.api?.getRowNode(`${previousSelectedRowId}`),
+      ],
+    });
+    previousSelectedRowId = currentSelectedRowId;
+  }
+
+  function getRowClass(params: RowClassParams<TRowData>) {
+    if (currentSelectedRowId === getRowId(params.data)) {
+      return 'ag-first-row-selected';
+    }
+
+    return '';
+  }
+
+  function getRowId(data: TRowData): number {
+    return parseInt(data[idKey]);
   }
 
   onMount(() => {
     gridOptions = {
       // each entry here represents one column
       columnDefs,
-      getRowId,
+      getRowClass,
+      getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}`,
       onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
         dispatch('cellContextMenu', event);
       },
@@ -99,7 +130,17 @@
         dispatch('selectionChanged', selectedRows);
       },
       onRowClicked(event: RowClickedEvent<TRowData>) {
-        dispatch('rowClicked', event);
+        dispatch('rowClicked', {
+          data: event.data,
+          isSelected: event.node.isSelected(),
+        } as DataGridRowSelection<TRowData>);
+
+        if (event.node.isSelected()) {
+          currentSelectedRowId = getRowId(event.data);
+        }
+      },
+      onRowDoubleClicked(event: RowDoubleClickedEvent<TRowData>) {
+        dispatch('rowDoubleClicked', event.data);
       },
       onRowSelected(event: RowSelectedEvent<TRowData>) {
         const selectedNodes = gridOptions?.api?.getSelectedNodes();
@@ -114,6 +155,13 @@
       },
       onSelectionChanged() {
         const selectedRows = gridOptions?.api?.getSelectedRows();
+        selectedRowIds = selectedRows.map((selectedRow: TRowData) => getRowId(selectedRow));
+
+        if (selectedRows.length === 1) {
+          currentSelectedRowId = getRowId(selectedRows[0]);
+        } else if (!selectedRowIds.includes(currentSelectedRowId)) {
+          currentSelectedRowId = selectedRowIds[0];
+        }
 
         dispatch('selectionChanged', selectedRows);
       },

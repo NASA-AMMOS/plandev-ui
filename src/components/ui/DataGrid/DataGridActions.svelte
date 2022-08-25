@@ -12,11 +12,24 @@
   export let rowData: TRowData;
   export let editTooltip: Tooltip = undefined;
   export let deleteTooltip: Tooltip = undefined;
+  export let viewTooltip: Tooltip = undefined;
 
   export let editCallback: (data: TRowData) => void = undefined;
   export let deleteCallback: (data: TRowData) => void = undefined;
+  export let viewCallback: (data: TRowData) => void = undefined;
 </script>
 
+{#if viewCallback}
+  <button
+    class="st-button icon"
+    on:click|stopPropagation={() => {
+      viewCallback(rowData);
+    }}
+    use:tooltip={viewTooltip}
+  >
+    <i class="si si-maximize" />
+  </button>
+{/if}
 {#if editCallback}
   <button
     class="st-button icon"

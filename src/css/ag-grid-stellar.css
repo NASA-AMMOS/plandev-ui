@@ -53,6 +53,9 @@
   --ag-secondary-border-color: #dde2eb;
   --ag-secondary-foreground-color: var(--ag-foreground-color);
   --ag-selected-row-background-color: #e3effd;
+  --ag-selected-row-first-background-color: #d2e1f1;
+  --ag-selected-row-first-hover-background-color: #dae5f2;
+  --ag-selected-row-hover-background-color: #dbe7f5;
   --ag-selected-tab-underline-color: var(--ag-stellar-active-color);
   --ag-selected-tab-underline-transition-speed: 0.3s;
   --ag-selected-tab-underline-width: 2px;
@@ -423,15 +426,12 @@
 .ag-row .action-cell-container .actions-cell {
   align-items: center;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.2rem;
   height: 100%;
   justify-content: flex-end;
   min-width: 24px;
 }
 
-.ag-row .actions-cell .st-button {
-  font-size: 1rem;
-}
 .ag-row .actions-cell {
   visibility: hidden;
 }
@@ -440,15 +440,38 @@
   visibility: visible;
 }
 
+.ag-row .actions-cell .st-button {
+  font-size: 1rem;
+}
+
 .ag-theme-stellar.ag-selectable-rows .ag-row {
   cursor: pointer;
 }
 
-.ag-theme-stellar .ag-row.ag-row-selected::before,
-.ag-theme-stellar .ag-row.ag-row-selected.ag-row-hover::before {
+.ag-theme-stellar .ag-row.ag-row-selected::before {
   background: var(--ag-row-hover-color);
 }
 
-.ag-theme-stellar.highlightOnSelection .ag-row.ag-row-selected::before {
+.ag-theme-stellar .ag-row.ag-row-selected::before {
+  background: var(--ag-selected-row-background-color);
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected.ag-row-hover::before {
+  background: var(--ag-selected-row-hover-background-color);
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected.ag-first-row-selected::before {
+  background: var(--ag-selected-row-first-background-color);
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected.ag-first-row-selected.ag-row-hover::before {
+  background: var(--ag-selected-row-first-hover-background-color);
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected.ag-first-row-selected .actions-cell .st-button.icon:hover {
+  background: var(--ag-selected-row-background-color);
+}
+
+.ag-theme-stellar .ag-row.ag-row-selected .actions-cell .st-button.icon:hover {
   background: var(--ag-selected-row-background-color);
 }

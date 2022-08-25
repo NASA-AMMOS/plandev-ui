@@ -247,6 +247,16 @@ const gql = {
     }
   `,
 
+  DELETE_VIEWS: `#graphql
+    mutation DeleteViews($ids: [Int!]!) {
+      delete_view(where: { id: { _in: $ids } }) {
+        returning {
+          id
+        }
+      }
+    }
+  `,
+
   EXPAND: `#graphql
     mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
       expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
@@ -609,19 +619,6 @@ const gql = {
     }
   `,
 
-  GET_VIEWS: `#graphql
-    query GetViews {
-      views: view {
-        created_at
-        definition
-        id
-        name
-        owner
-        updated_at
-      }
-    }
-  `,
-
   GET_VIEWS_LATEST: `#graphql
     query GetViewsLatest($owner: String!) {
       views: view(
@@ -871,6 +868,19 @@ const gql = {
         arguments
         description
         id
+      }
+    }
+  `,
+
+  SUB_VIEWS: `#graphql
+    subscription SubViews {
+      views: view {
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
       }
     }
   `,

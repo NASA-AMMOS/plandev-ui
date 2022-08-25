@@ -11,7 +11,7 @@
   export let columnDefs: ColDef[];
   export let items: TRowData[];
   export let pluralItemDisplayText: string;
-  export let selectedItemId: number;
+  export let selectedItemId: number | null = null;
   export let singleItemDisplayText: string;
 
   const dispatch = createEventDispatcher();
@@ -19,14 +19,10 @@
   let contextMenu: ContextMenu;
   let dataGrid: DataGrid;
   let isFiltered: boolean = false;
-  let previousSelectedItemId: number | null = null;
   let selectedItemIds: number[] = [];
 
-  $: {
-    if (previousSelectedItemId !== selectedItemId) {
-      selectedItemIds = [selectedItemId];
-    }
-    previousSelectedItemId = selectedItemId;
+  $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId !== null) {
+    selectedItemIds = [selectedItemId];
   }
 
   function bulkDeleteItems() {
@@ -49,29 +45,6 @@
     isFiltered = Object.keys(filterModel).length > 0;
   }
 
-  function onRowSelected(event: CustomEvent<DataGridRowSelection<TRowData>>) {
-    const {
-      detail: {
-        data: { id },
-        isSelected,
-      },
-    } = event;
-
-    if (isSelected) {
-      selectedItemId = id;
-    } else if (selectedItemId === id) {
-      selectedItemId = null;
-    }
-  }
-
-  function onSelectionChanged({ detail: selectedRows }: CustomEvent<DataGridRowsSelection<TRowData>>) {
-    selectedItemIds = selectedRows.map(selectedRow => selectedRow.id);
-
-    if (selectedItemIds.length === 1) {
-      selectedItemId = selectedItemIds[0];
-    }
-  }
-
   function selectAllItems() {
     dataGrid.selectAllVisible();
   }
@@ -80,14 +53,18 @@
 <DataGrid
   bind:this={dataGrid}
   {columnDefs}
+  bind:currentSelectedRowId={selectedItemId}
   rowSelection="multiple"
   rowData={items}
-  selectedRowIds={selectedItemIds}
+  bind:selectedRowIds={selectedItemIds}
   preventDefaultOnContextMenu
   on:filterChanged={onFilterChanged}
   on:cellContextMenu={onCellContextMenu}
-  on:rowSelected={onRowSelected}
-  on:selectionChanged={onSelectionChanged}
+  on:cellMouseOver
+  on:rowClicked
+  on:rowDoubleClicked
+  on:rowSelected
+  on:selectionChanged
 />
 <ContextMenu bind:this={contextMenu}>
   <ContextMenuHeader>Bulk Actions</ContextMenuHeader>

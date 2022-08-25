@@ -1,7 +1,13 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
 import { getTarget } from '../utilities/generic';
+import gql from '../utilities/gql';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
 import { TimelineLockStatus } from '../utilities/timeline';
+import { gqlSubscribable } from './subscribable';
+
+/* Subscriptions. */
+
+export const views = gqlSubscribable<View[]>(gql.SUB_VIEWS, {}, []);
 
 /* Writeable. */
 

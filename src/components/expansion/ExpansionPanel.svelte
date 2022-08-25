@@ -25,16 +25,15 @@
 
   const columnDefs: DataGridColumnDef[] = [
     {
-      field: 'id',
-      headerName: 'Goal ID',
+      field: 'simulation_dataset_id',
+      headerName: 'Simulation ID',
       resizable: true,
       sortable: true,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
       width: 100,
     },
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
+    { field: 'seq_id', headerName: 'Seq ID', resizable: true, sortable: true, suppressSizeToFit: true, width: 70 },
+    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'updated_at', headerName: 'Updated At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionSequenceCellRendererParams) => {
@@ -95,66 +94,102 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <fieldset>
-      <label for="expansionSet">Expansion Set</label>
-      <select
-        bind:value={selectedExpansionSetId}
-        class="st-select w-100"
-        disabled={!$expansionSets.length}
-        name="expansionSet"
-      >
-        {#if !$expansionSets.length}
-          <option value={null}>No Expansion Sets Found</option>
-        {:else}
-          <option value={null} />
-          {#each $expansionSets as set}
-            <option value={set.id}>
-              Expansion Set {set.id}
-            </option>
-          {/each}
-        {/if}
-      </select>
-    </fieldset>
-
-    <fieldset>
-      <details open style:cursor="pointer">
-        <summary>Sequences</summary>
-
-        <div class="pt-2 pb-3">
-          <label for="simulationDatasetId">Simulation Dataset ID</label>
-          <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
-        </div>
-
-        <div class="pb-3">
-          {#if $simulationDatasetId === null}
-            <div class="pb-3">First run a simulation before creating a sequence</div>
+    <div class="expansion-panel-body">
+      <fieldset>
+        <label for="expansionSet">Expansion Set</label>
+        <select
+          bind:value={selectedExpansionSetId}
+          class="st-select w-100"
+          disabled={!$expansionSets.length}
+          name="expansionSet"
+        >
+          {#if !$expansionSets.length}
+            <option value={null}>No Expansion Sets Found</option>
           {:else}
-            <CssGrid columns="3fr 1fr" gap="10px">
-              <input bind:value={seqIdInput} class="st-input" />
-              <button
-                class="st-button secondary"
-                disabled={!createButtonEnabled}
-                on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
-              >
-                {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-              </button>
-            </CssGrid>
+            <option value={null} />
+            {#each $expansionSets as set}
+              <option value={set.id}>
+                Expansion Set {set.id}
+              </option>
+            {/each}
+          {/if}
+        </select>
+      </fieldset>
 
-            <div class="mt-2">
-              {#if $filteredExpansionSequences.length}
-                <DataGrid
-                  {columnDefs}
-                  rowData={$filteredExpansionSequences}
-                  rowSelection="single"
-                  on:rowSelected={({ detail }) => showExpansionSequenceModal(detail.data)}
-                />
+      <fieldset>
+        <details class="details-container" open style:cursor="pointer">
+          <summary class="details-label">Sequences</summary>
+          <div class="details-body">
+            <div class="pt-2 pb-3">
+              <label for="simulationDatasetId">Simulation Dataset ID</label>
+              <input
+                class="st-input w-100"
+                disabled
+                name="simulationDatasetId"
+                value={$simulationDatasetId ?? 'None'}
+              />
+            </div>
+
+            <div>
+              {#if $simulationDatasetId === null}
+                <div class="pb-3">First run a simulation before creating a sequence</div>
               {:else}
-                No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
+                <CssGrid class="expansion-form" rows="min-content auto">
+                  <CssGrid columns="3fr 1fr" gap="10px">
+                    <input bind:value={seqIdInput} class="st-input" />
+                    <button
+                      class="st-button secondary"
+                      disabled={!createButtonEnabled}
+                      on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
+                    >
+                      {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+                    </button>
+                  </CssGrid>
+                  <div class="mt-2">
+                    {#if $filteredExpansionSequences.length}
+                      <DataGrid
+                        idKey="seq_id"
+                        {columnDefs}
+                        rowData={$filteredExpansionSequences}
+                        rowSelection="single"
+                        on:rowSelected={({ detail }) => showExpansionSequenceModal(detail.data)}
+                      />
+                    {:else}
+                      No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
+                    {/if}
+                  </div>
+                </CssGrid>
               {/if}
             </div>
-          {/if}
-        </div>
-      </details>
-    </fieldset>
+          </div>
+        </details>
+      </fieldset>
+    </div>
   </svelte:fragment>
 </Panel>
+
+<style>
+  .expansion-panel-body {
+    display: grid;
+    grid-template-rows: min-content auto;
+    height: 100%;
+  }
+
+  .details-container {
+    height: 100%;
+  }
+
+  .details-container .details-label {
+    height: 18px;
+  }
+
+  .details-body {
+    display: grid;
+    grid-template-rows: min-content auto;
+    height: calc(100% - 18px);
+  }
+
+  .expansion-panel-body .details-container .details-body :global(.expansion-form) {
+    height: 100%;
+  }
+</style>

@@ -631,6 +631,24 @@ const effects = {
     }
   },
 
+  async deleteViews(ids: number[]): Promise<boolean> {
+    try {
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete the selected views?',
+        'Delete Views',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_VIEWS, { ids });
+        return true;
+      }
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+
   async expand(expansionSetId: number, simulationDatasetId: number): Promise<void> {
     try {
       expandingPlan.set(true);
@@ -1004,17 +1022,6 @@ const effects = {
     } catch (e) {
       console.log(e);
       return null;
-    }
-  },
-
-  async getViews(): Promise<View[]> {
-    try {
-      const data = await reqHasura<View[]>(gql.GET_VIEWS);
-      const { views } = data;
-      return views;
-    } catch (e) {
-      console.log(e);
-      return [];
     }
   },
 
