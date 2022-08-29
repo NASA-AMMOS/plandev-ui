@@ -1,4 +1,4 @@
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { get } from 'svelte/store';
 import { user as userStore } from '../stores/app';
