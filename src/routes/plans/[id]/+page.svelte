@@ -118,8 +118,6 @@
 
   function onKeydown(event: KeyboardEvent): void {
     const { key, ctrlKey, metaKey } = event;
-    // `navigator.platform` is marked as deprecated, but the alternative `navigator.userAgentData.platform` is not yet widely available.
-    // If this shows up as a hint in the check, it is safe to ignore
     if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
       event.preventDefault();
       effects.simulate();
