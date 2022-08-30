@@ -52,54 +52,38 @@
     select = container.querySelector('select');
 
     if (input && field) {
-      input.addEventListener('blur', onBlur);
       input.addEventListener('input', onInput);
-      input.addEventListener('keydown', onKeyDown);
+      input.addEventListener('change', onChange);
       input.value = $field.value;
     }
 
     if (select && field) {
-      select.addEventListener('blur', onBlur);
-      select.addEventListener('input', onInput);
+      select.addEventListener('change', onChange);
       select.value = $field.value;
     }
   });
 
   onDestroy(() => {
     if (input) {
-      input.removeEventListener('blur', onBlur);
       input.removeEventListener('input', onInput);
-      input.removeEventListener('keydown', onKeyDown);
+      input.removeEventListener('change', onChange);
     }
 
     if (select) {
-      select.removeEventListener('blur', onBlur);
-      select.removeEventListener('input', onInput);
+      select.removeEventListener('change', onChange);
     }
   });
-
-  async function onBlur(event: FocusEvent) {
-    event.preventDefault();
-
-    const { value } = getTarget(event);
-    const valid = await field.validateAndSet(value);
-    dispatch('blur', { valid });
-  }
 
   function onInput(event: InputEvent) {
     const { value } = getTarget(event);
     $field.value = value;
   }
 
-  async function onKeyDown(event: KeyboardEvent) {
-    const { key } = event;
-
-    if (key === 'Enter') {
-      event.preventDefault();
-      const { value } = getTarget(event);
-      const valid = await field.validateAndSet(value);
-      dispatch('keydown', { valid });
-    }
+  async function onChange(event: InputEvent) {
+    const { value } = getTarget(event);
+    $field.value = value;
+    const valid = await field.validateAndSet(value);
+    dispatch('change', { valid });
   }
 </script>
 

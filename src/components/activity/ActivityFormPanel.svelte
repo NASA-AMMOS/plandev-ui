@@ -268,7 +268,7 @@
                 <PenIcon />
               </button>
             {:else}
-              <Field field={activityNameField} on:keydown={onUpdateActivityName} on:blur={onUpdateActivityName}>
+              <Field field={activityNameField} on:change={onUpdateActivityName}>
                 <input
                   on:keyup={onActivityNameKeyup}
                   autocomplete="off"
