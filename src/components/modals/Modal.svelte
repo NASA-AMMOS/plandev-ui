@@ -6,7 +6,12 @@
 </script>
 
 <div class="modal-container">
-  <div class="modal" style:height={`${height}px`} style:width={`${width}px`} on:click|stopPropagation>
+  <div
+    class="modal st-typography-body"
+    style:height={`${height}px`}
+    style:width={`${width}px`}
+    on:click|stopPropagation
+  >
     <slot />
   </div>
 </div>
@@ -28,12 +33,8 @@
   .modal {
     background-color: var(--st-primary-background-color);
     border-radius: 4px;
-    color: var(--st-primary-text-color);
     display: flex;
     flex-direction: column;
-    font-family: Inter, Roboto;
-    font-size: 12px;
-    font-weight: 300;
     justify-content: space-evenly;
     min-height: 150px;
     text-align: left;

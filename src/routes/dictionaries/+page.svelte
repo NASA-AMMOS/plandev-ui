@@ -89,7 +89,7 @@
 
           <fieldset>
             <label for="file">AMPCS Command Dictionary XML File</label>
-            <input class="w-100" name="file" required type="file" bind:files />
+            <input class="w-100 st-typography-body" name="file" required type="file" bind:files />
           </fieldset>
 
           <fieldset>

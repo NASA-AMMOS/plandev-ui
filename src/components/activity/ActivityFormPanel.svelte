@@ -394,7 +394,7 @@
           <summary>Annotations</summary>
           <div class="mt-2 annotations">
             {#if $activityMetadataDefinitions.length === 0 || isChild}
-              <div class="p-1">No Annotations Found</div>
+              <div class="p-1 st-typography-label">No Annotations Found</div>
             {/if}
             {#if !isChild}
               {#each $activityMetadataDefinitions as definition}
@@ -447,7 +447,7 @@
             {#if rootActivityHasChildren}
               <ActivityDecomposition id={root_activity.id} selected_id={id} />
             {:else}
-              <div class="p-1">This activity has no children</div>
+              <div class="p-1 st-typography-label">This activity has no children</div>
             {/if}
           </div>
         </details>
@@ -486,7 +486,7 @@
         </details>
       </fieldset>
     {:else}
-      <div class="p-2">No Activity Selected</div>
+      <div class="p-2 st-typography-label">No Activity Selected</div>
     {/if}
   </svelte:fragment>
 </Panel>

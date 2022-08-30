@@ -144,7 +144,7 @@
       {#if sortedRules.length}
         <DataGrid {columnDefs} rowData={sortedRules} rowSelection="single" on:rowSelected={toggleRule} />
       {:else}
-        No Rules Found
+        <div class="st-typography-label">No Rules Found</div>
       {/if}
     </svelte:fragment>
   </Panel>

@@ -12,7 +12,7 @@
   export let height: number = 150;
   export let message: string = 'Are you sure you want to do this?';
   export let title: string = 'Confirm';
-  export let width: number = 350;
+  export let width: number = 380;
 
   const dispatch = createEventDispatcher();
 

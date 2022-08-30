@@ -6,7 +6,7 @@
   <div class="left">
     <AppMenu />
     <div class="divider">|</div>
-    <div class="title">
+    <div class="title st-typography-medium">
       <slot name="title" />
     </div>
     <slot name="left" />
@@ -35,12 +35,6 @@
   .title {
     align-items: center;
     color: var(--st-gray-20);
-    font-family: 'Inter';
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    line-height: 16px;
     opacity: 0.7;
   }
 

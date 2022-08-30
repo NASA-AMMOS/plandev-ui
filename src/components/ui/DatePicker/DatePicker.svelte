@@ -268,13 +268,13 @@
         <div>
           <div class="action button" on:mousedown={setToday}>
             <div class="action-icon"><Calendar /></div>
-            <div class="action-label">Today</div>
+            <div class="action-label st-typography-body">Today</div>
           </div>
         </div>
         <div>
           <div class="action button" on:mousedown={clearDate}>
             <div class="action-icon"><i class="si si-magic_eraser" /></div>
-            <div class="action-label">Clear</div>
+            <div class="action-label st-typography-body">Clear</div>
           </div>
         </div>
       </div>
@@ -284,6 +284,7 @@
 
 <style>
   .date-picker {
+    cursor: auto;
     position: inherit;
   }
 
@@ -343,7 +344,7 @@
   }
 
   .date-picker-actions .action .action-icon {
-    display: inline-block;
+    display: flex;
     margin-right: 7px;
     text-align: right;
     width: 16px;
@@ -351,7 +352,5 @@
 
   .date-picker-actions .action .action-label {
     display: inline-block;
-    font-weight: 400;
-    line-height: 1.1rem;
   }
 </style>

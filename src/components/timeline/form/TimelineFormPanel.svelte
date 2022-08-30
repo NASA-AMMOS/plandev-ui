@@ -78,7 +78,7 @@
 
     <!-- Timeline. -->
     <Details class="pb-3">
-      <span slot="summary-left"> Timeline </span>
+      <span class="st-typography-medium" slot="summary-left"> Timeline </span>
 
       {#if !$selectedTimeline}
         <fieldset>No timeline selected</fieldset>
@@ -134,7 +134,7 @@
 
     <!-- Row. -->
     <Details class="pb-3">
-      <span slot="summary-left"> Row </span>
+      <span class="st-typography-medium" slot="summary-left"> Row </span>
 
       {#if !$selectedRow}
         <fieldset>No row selected</fieldset>
@@ -191,14 +191,14 @@
 
     <!-- Y-Axis. -->
     <Details class="pb-3">
-      <span slot="summary-left"> Y-Axis </span>
+      <span class="st-typography-medium" slot="summary-left"> Y-Axis </span>
 
       <YAxisForm />
     </Details>
 
     <!-- Layer. -->
     <Details>
-      <span slot="summary-left"> Layer </span>
+      <span class="st-typography-medium" slot="summary-left"> Layer </span>
 
       {#if !$selectedLayer}
         <fieldset>No layer selected</fieldset>

@@ -21,10 +21,13 @@
 </script>
 
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
-  <div class="left" class:disabled={!enabled}>
+  <div class="left st-typography-body" class:disabled={!enabled}>
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="bi-calendar-range" />
-    <span class="scheduling-goal-name" use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}>
+    <span
+      class="scheduling-goal-name st-typography-body"
+      use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}
+    >
       {goal.name}
     </span>
   </div>
@@ -103,8 +106,10 @@
   }
 
   ul.disabled *,
-  .left.disabled {
-    color: var(--st-gray-30);
+  ul.disabled :global(.st-typography-body),
+  .left.disabled,
+  .left.disabled :global(.st-typography-body) {
+    color: var(--st-gray-30) !important;
   }
 
   .left > i:first-child {

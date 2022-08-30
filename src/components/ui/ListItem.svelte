@@ -12,7 +12,7 @@
 </script>
 
 <div
-  class="list-item {className}"
+  class="list-item st-typography-body {className}"
   {draggable}
   style={styleName}
   on:click={e => dispatch('click', e)}

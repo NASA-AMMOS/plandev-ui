@@ -14,7 +14,7 @@
 </script>
 
 <div class="scheduling-goal-analysis-activities">
-  <div class="left">
+  <div class="left st-typography-body">
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
     <i class="si si-activity_group" />
     Activities
@@ -29,7 +29,7 @@
           {#if $activitiesMap[activity.activity_id]}
             <li>
               <div
-                class="satisfied-activity"
+                class="satisfied-activity st-typography-body"
                 class:selected={$selectedActivityId === activity.activity_id}
                 on:click={() => ($selectedActivityId = activity.activity_id)}
               >
@@ -40,10 +40,10 @@
           {/if}
         {/each}
       {:else}
-        <li>No Satisfied Activities</li>
+        <li class="st-typography-label">No Satisfied Activities</li>
       {/if}
     {:else}
-      <li>No Satisfied Activities</li>
+      <li class="st-typography-label">No Satisfied Activities</li>
     {/if}
   </ul>
 {/if}

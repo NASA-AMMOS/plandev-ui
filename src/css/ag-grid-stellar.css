@@ -475,3 +475,7 @@
 .ag-theme-stellar .ag-row.ag-row-selected .actions-cell .st-button.icon:hover {
   background: var(--ag-selected-row-background-color);
 }
+
+.ag-theme-stellar .ag-cell-value {
+  letter-spacing: var(--st-table-th-letter-spacing);
+}

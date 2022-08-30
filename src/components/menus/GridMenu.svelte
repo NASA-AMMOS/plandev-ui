@@ -23,7 +23,7 @@
   }
 </script>
 
-<div class="grid-menu" on:click|stopPropagation={() => gridMenu.toggle()}>
+<div class="grid-menu st-typography-body" on:click|stopPropagation={() => gridMenu.toggle()}>
   <div class="title">{title}</div>
   <i class="bi bi-chevron-down" style="font-size: 12px;" />
 

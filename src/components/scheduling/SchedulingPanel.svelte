@@ -51,7 +51,7 @@
       </button>
     </CssGrid>
     {#if !filteredSchedulingSpecGoals.length}
-      <div class="pt-1">No scheduling goals found</div>
+      <div class="pt-1 st-typography-label">No scheduling goals found</div>
     {:else}
       {#each filteredSchedulingSpecGoals as specGoal}
         <SchedulingGoal

@@ -10,7 +10,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<div class="nav-button" class:selected on:click|preventDefault={() => dispatch('click')}>
+<div class="nav-button st-typography-medium" class:selected on:click|preventDefault={() => dispatch('click')}>
   <i class={icon} style="color: {status !== null ? getColorForStatus(status) : 'unset'}" />
   {title}
 </div>
@@ -22,7 +22,6 @@
     cursor: pointer;
     display: inline-flex;
     font-size: 13px;
-    font-weight: 500;
     gap: 8px;
     height: 42px;
     line-height: 14px;

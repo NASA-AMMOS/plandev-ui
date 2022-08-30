@@ -4,7 +4,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<div class="modal-header">
+<div class="modal-header st-typography-header">
   <slot />
   <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
     <i class="bi bi-x" />
@@ -14,15 +14,14 @@
 <style>
   .modal-header {
     align-items: center;
-    background-color: var(--st-gray-20);
+    background: var(--st-white);
+    border-bottom: 1px solid var(--st-gray-15);
     border-radius: 4px 4px 0px 0px;
-    color: var(--st-gray-100);
     display: flex;
-    font-size: 1rem;
-    font-weight: 700;
     height: 40px;
     justify-content: space-between;
     padding: 1rem;
+    padding-right: 8px;
     width: 100%;
   }
 </style>

@@ -155,7 +155,9 @@
                         on:rowSelected={({ detail }) => showExpansionSequenceModal(detail.data)}
                       />
                     {:else}
-                      No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
+                      <div class="st-typography-label">
+                        No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
+                      </div>
                     {/if}
                   </div>
                 </CssGrid>

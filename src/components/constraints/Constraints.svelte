@@ -166,7 +166,7 @@
           on:rowSelected={event => toggleConstraint(event)}
         />
       {:else}
-        No Constraints Found
+        <div class="p1 st-typography-label">No Constraints Found</div>
       {/if}
     </svelte:fragment>
   </Panel>

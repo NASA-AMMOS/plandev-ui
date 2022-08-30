@@ -17,10 +17,10 @@
     align-items: center;
     display: grid;
     font-size: 0.8rem;
-    font-weight: 300;
     gap: 0.5rem;
     grid-template-columns: 1rem auto;
     justify-content: flex-start;
+    line-height: 24px;
     overflow: hidden;
     padding: 8px;
     text-overflow: ellipsis;

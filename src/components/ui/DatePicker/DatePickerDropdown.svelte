@@ -44,7 +44,7 @@
     [className]: !!className,
   })}
 >
-  <div class="display-value">
+  <div class="display-value st-typography-header">
     <span class="value">{displayValue}</span>
     <select class="hidden" data-type="number" {value} tabindex="-1" on:change>
       {#each options as option}
@@ -61,6 +61,7 @@
 
   .date-picker-dropdown .display-value {
     display: inline-block;
+    line-height: 25px;
     min-width: 0;
     position: relative;
   }

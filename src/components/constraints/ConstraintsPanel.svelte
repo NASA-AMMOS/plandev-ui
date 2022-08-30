@@ -49,7 +49,7 @@
       </button>
     </CssGrid>
     {#if !filteredConstraints.length}
-      <div class="pt-1">No constraints found</div>
+      <div class="pt-1 st-typography-label">No Constraints Found</div>
     {:else}
       <div class="pt-2">
         {#each filteredConstraints as constraint}
