@@ -141,6 +141,27 @@ export function viewSetSelectedTimeline(timelineId: number | null): void {
   }
 }
 
+export function viewUpdateActivityTables(update: Partial<ViewActivityTable>, activityTableId: number): void {
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
+      plan: {
+        ...currentView.definition.plan,
+        activityTables: currentView.definition.plan.activityTables.map((table: ViewActivityTable) => {
+          if (table.id === activityTableId) {
+            return {
+              ...table,
+              ...update,
+            };
+          }
+          return table;
+        }),
+      },
+    },
+  }));
+}
+
 export function viewUpdateLayer(event: Event) {
   event.stopPropagation();
   const { name: prop, value } = getTarget(event);

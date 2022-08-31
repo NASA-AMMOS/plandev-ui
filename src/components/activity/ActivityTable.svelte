@@ -1,8 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ColumnState } from 'ag-grid-community';
   import { activities, selectedActivityId } from '../../stores/activities';
-  import { view } from '../../stores/views';
+  import { view, viewUpdateActivityTables } from '../../stores/views';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -56,25 +57,22 @@
   function deleteActivityDirectives({ detail: ids }: CustomEvent<number[]>) {
     effects.deleteActivityDirectives(ids);
   }
+
+  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[]>) {
+    viewUpdateActivityTables(
+      { columnStates: columnStates.filter(columnState => columnState.colId !== 'actions') },
+      activityTableId,
+    );
+  }
 </script>
 
 <BulkActionDataGrid
-  columnDefs={[
-    ...Object.keys(activityTable?.columnDefs).map(columnKey => {
-      const columnDef = activityTable?.columnDefs[columnKey];
-      return {
-        field: columnDef.field,
-        filter: 'agTextColumnFilter',
-        headerName: columnDef.name,
-        resizable: true,
-        sortable: columnDef.sortable,
-      };
-    }),
-    activityActionColumnDef,
-  ]}
+  columnDefs={[...(activityTable?.columnDefs ?? []), activityActionColumnDef]}
+  columnStates={activityTable?.columnStates}
   items={$activities}
   pluralItemDisplayText="Activities"
   singleItemDisplayText="Activity"
   bind:selectedItemId={$selectedActivityId}
   on:bulkDeleteItems={deleteActivityDirectives}
+  on:columnStateChange={onColumnStateChange}
 />

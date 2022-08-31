@@ -1,5 +1,6 @@
 type ViewActivityTable = {
-  columnDefs: ColumnDef[];
+  columnDefs: import('ag-grid-community').ColDef[];
+  columnStates: import('ag-grid-community').ColumnState[];
   id: number;
 };
 

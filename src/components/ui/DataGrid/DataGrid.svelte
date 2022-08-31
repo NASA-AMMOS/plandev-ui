@@ -7,12 +7,18 @@
     type CellContextMenuEvent,
     type CellMouseOverEvent,
     type ColDef,
+    type ColumnMovedEvent,
+    type ColumnPinnedEvent,
+    type ColumnResizedEvent,
+    type ColumnState,
     type GridOptions,
     type RowClassParams,
     type RowClickedEvent,
     type RowDoubleClickedEvent,
     type RowSelectedEvent,
+    type SortChangedEvent,
   } from 'ag-grid-community';
+  import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
 
   // expose ag-grid function to select all visible rows
@@ -21,6 +27,7 @@
   }
 
   export let columnDefs: ColDef[];
+  export let columnStates: ColumnState[] = [];
   export let currentSelectedRowId: number | null = null;
   export let highlightOnSelection: boolean = true;
   export let idKey: keyof TRowData = 'id';
@@ -30,6 +37,7 @@
   export let selectedRowIds: number[] = [];
   export let shouldAutoGenerateId: boolean = false;
   export let suppressCellFocus: boolean = true;
+  export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
@@ -41,10 +49,12 @@
 
   let gridOptions: GridOptions<TRowData>;
   let gridDiv: HTMLDivElement;
+  let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   let previousSelectedRowId: number | null = null;
 
   $: gridOptions?.api?.setRowData(rowData);
   $: gridOptions?.api?.sizeColumnsToFit();
+  $: gridOptions?.columnApi?.applyColumnState({ applyOrder: true, state: columnStates });
 
   $: {
     const previousSelectedRowIds: number[] = [];
@@ -115,6 +125,10 @@
     return rowClass.join(' ');
   }
 
+  function onColumnStateChange() {
+    dispatch('columnStateChange', gridOptions?.columnApi?.getColumnState());
+  }
+
   onMount(() => {
     gridOptions = {
       // each entry here represents one column
@@ -127,6 +141,18 @@
       },
       onCellMouseOver(event: CellMouseOverEvent<TRowData>) {
         dispatch('cellMouseOver', event);
+      },
+      onColumnMoved(event: ColumnMovedEvent<TRowData>) {
+        dispatch('columnMoved', event);
+        onColumnStateChangeDebounced();
+      },
+      onColumnPinned(event: ColumnPinnedEvent<TRowData>) {
+        dispatch('columnPinned', event);
+        onColumnStateChangeDebounced();
+      },
+      onColumnResized(event: ColumnResizedEvent<TRowData>) {
+        dispatch('columnResized', event);
+        onColumnStateChangeDebounced();
       },
       onFilterChanged() {
         const selectedRows: TRowData[] = [];
@@ -178,10 +204,15 @@
 
         dispatch('selectionChanged', selectedRows);
       },
+      onSortChanged(event: SortChangedEvent<TRowData>) {
+        dispatch('sortChanged', event);
+        onColumnStateChangeDebounced();
+      },
       preventDefaultOnContextMenu,
       rowData,
       rowSelection,
       suppressCellFocus,
+      suppressDragLeaveHidesColumns,
       suppressRowClickSelection,
     };
     new Grid(gridDiv, gridOptions);

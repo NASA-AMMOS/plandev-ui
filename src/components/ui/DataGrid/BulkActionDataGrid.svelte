@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ColDef, RowNode } from 'ag-grid-community';
+  import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -9,6 +9,7 @@
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
   export let columnDefs: ColDef[];
+  export let columnStates: ColumnState[] = [];
   export let items: TRowData[];
   export let pluralItemDisplayText: string;
   export let selectedItemId: number | null = null;
@@ -55,6 +56,7 @@
 <DataGrid
   bind:this={dataGrid}
   {columnDefs}
+  {columnStates}
   bind:currentSelectedRowId={selectedItemId}
   {isRowSelectable}
   rowSelection="multiple"
@@ -64,6 +66,10 @@
   on:filterChanged={onFilterChanged}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
+  on:columnMoved
+  on:columnPinned
+  on:columnResized
+  on:columnStateChange
   on:rowClicked
   on:rowDoubleClicked
   on:rowSelected
