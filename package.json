@@ -23,6 +23,7 @@
     "format:write": "prettier --write --plugin-search-dir=. .",
     "lint": "eslint --ignore-path .gitignore .",
     "lint:css": "stylelint **/*.{css,svelte}",
+    "lint:css:fix": "stylelint **/*.{css,svelte} --fix",
     "prebuild": "npm run version",
     "predev": "node ./scripts/check-node.cjs",
     "preview": "vite preview --port 3000",
