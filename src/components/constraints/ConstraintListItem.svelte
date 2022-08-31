@@ -2,6 +2,9 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -11,7 +14,7 @@
 <div class="constraint-list-item">
   <div class="constraint-title">
     {#if constraint.plan_id !== null}
-      <i class="bi bi-calendar-range" />
+      <PlanIcon />
     {:else}
       <i class="bi bi-bar-chart" />
     {/if}
@@ -23,14 +26,14 @@
       on:click|stopPropagation={() => window.open(`${base}/constraints/edit/${constraint.id}`, '_blank')}
       use:tooltip={{ content: 'Edit Constraint', placement: 'left' }}
     >
-      <i class="bi bi-pencil" />
+      <PenIcon />
     </button>
     <button
       class="st-button icon"
       on:click|stopPropagation={() => effects.deleteConstraint(constraint.id)}
       use:tooltip={{ content: 'Delete Constraint', placement: 'left' }}
     >
-      <i class="bi bi-trash" />
+      <TrashIcon />
     </button>
   </div>
 </div>

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
@@ -23,7 +24,7 @@
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
   <div class="left st-typography-body" class:disabled={!enabled}>
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
-    <i class="bi-calendar-range" />
+    <PlanIcon />
     <span
       class="scheduling-goal-name st-typography-body"
       use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}

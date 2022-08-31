@@ -3,6 +3,7 @@
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/svg/check.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
   import { activitiesMap, allPlanTags, selectedActivity } from '../../stores/activities';
   import { activityMetadataDefinitions } from '../../stores/activityMetadata';
   import { filteredExpansionSequences } from '../../stores/expansion';
@@ -242,12 +243,12 @@
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Selected Activity" />
     <button
-      class="st-button icon"
+      class="st-button icon activity-header-delete"
       disabled={isChild || !$selectedActivity}
       on:click|stopPropagation={() => effects.deleteActivityDirective(id)}
       use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
     >
-      <i class="bi bi-trash" />
+      <TrashIcon />
     </button>
   </svelte:fragment>
 
@@ -570,6 +571,10 @@
   .activity-header-title--editing .st-input {
     background-color: var(--st-white);
     font-style: normal;
+  }
+
+  .activity-header-delete {
+    border: 1px solid var(--st-gray-30);
   }
 
   .annotations {

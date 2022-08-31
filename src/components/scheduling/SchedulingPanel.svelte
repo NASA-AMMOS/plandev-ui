@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import ChecklistIcon from '@nasa-jpl/stellar/icons/svg/checklist.svg?component';
   import { onMount } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
@@ -33,7 +34,9 @@
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Scheduling" />
     <PanelHeaderActions status={$schedulingStatus}>
-      <PanelHeaderActionButton title="Analyze" icon="bi bi-card-checklist" on:click={() => effects.schedule(true)} />
+      <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)}>
+        <ChecklistIcon />
+      </PanelHeaderActionButton>
       <PanelHeaderActionButton title="Schedule" on:click={() => effects.schedule()} />
     </PanelHeaderActions>
   </svelte:fragment>

@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
+  import ActivityGroupIcon from '@nasa-jpl/stellar/icons/svg/activity_group.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
@@ -16,7 +18,7 @@
 <div class="scheduling-goal-analysis-activities">
   <div class="left st-typography-body">
     <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
-    <i class="si si-activity_group" />
+    <ActivityGroupIcon />
     Activities
   </div>
 </div>
@@ -33,7 +35,7 @@
                 class:selected={$selectedActivityId === activity.activity_id}
                 on:click={() => ($selectedActivityId = activity.activity_id)}
               >
-                <i class="si si-activity" />
+                <ActivityIcon />
                 {$activitiesMap[activity.activity_id].type}
               </div>
             </li>
@@ -67,9 +69,20 @@
     padding-top: 5px;
   }
 
+  .scheduling-goal-analysis-activities .left {
+    align-items: center;
+    cursor: default;
+    display: flex;
+    gap: 8px;
+  }
+
   .left > i:first-child {
     color: var(--st-gray-40);
     cursor: pointer;
+  }
+
+  .left :global(.st-icon) {
+    width: 16px;
   }
 
   .satisfied-activity {

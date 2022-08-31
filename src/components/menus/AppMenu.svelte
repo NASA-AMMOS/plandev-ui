@@ -4,6 +4,10 @@
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
+  import GraphQLIcon from '@nasa-jpl/stellar/icons/svg/graphql.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
   import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
@@ -21,11 +25,11 @@
 <div class="app-menu" on:click|stopPropagation={() => appMenu.toggle()}>
   <div class="app-icon">A</div>
 
-  <i class="bi bi-chevron-down" />
+  <ChevronDownIcon />
 
   <Menu bind:this={appMenu}>
     <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => prefetch(`${base}/plans`)}>
-      <i class="bi bi-calendar-range" />
+      <PlanIcon />
       Plans
     </MenuItem>
     <MenuItem on:click={() => goto(`${base}/models`)} on:pointerenter={() => prefetch(`${base}/models`)}>
@@ -51,7 +55,7 @@
       on:click={() => goto(`${base}/scheduling/goals`)}
       on:pointerenter={() => prefetch(`${base}/scheduling/goals`)}
     >
-      <i class="bi bi-calendar3" />
+      <CalendarIcon />
       Scheduling
     </MenuItem>
     <MenuItem on:click={() => window.open(env.GATEWAY_CLIENT_URL, '_newtab')}>
@@ -59,7 +63,7 @@
       Gateway
     </MenuItem>
     <MenuItem on:click={() => window.open(`${env.GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
-      <i class="si si-graphql" />
+      <GraphQLIcon />
       GraphQL Playground
     </MenuItem>
     <MenuItem on:click={() => logout()}>
@@ -81,6 +85,10 @@
     gap: 5px;
     justify-content: center;
     position: relative;
+  }
+
+  .app-menu .bi {
+    font-size: 1rem;
   }
 
   .app-icon {

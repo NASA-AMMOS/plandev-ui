@@ -1,6 +1,12 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
+  import BookIcon from '@nasa-jpl/stellar/icons/svg/book.svg?component';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
+  import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/svg/checklist_on_page.svg?component';
+  import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/svg/table_with_header.svg?component';
+  import TimelineIcon from '@nasa-jpl/stellar/icons/svg/timeline.svg?component';
   import { viewUpdateLayout } from '../../stores/views';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -29,11 +35,11 @@
 
   <Menu bind:this={gridMenu}>
     <MenuItem on:click={() => updateGridComponent('ActivityTablePanel')}>
-      <i class="bi bi-table" />
+      <TableWithHeaderIcon />
       Activity Table
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityTypesPanel')}>
-      <i class="bi bi-book" />
+      <BookIcon />
       Activity Types
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ConstraintsPanel')}>
@@ -49,11 +55,11 @@
       Expansion
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('SchedulingPanel')}>
-      <i class="bi bi-calendar3" />
+      <CalendarIcon />
       Scheduling
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityFormPanel')}>
-      <i class="si si-activity" />
+      <ActivityIcon />
       Selected Activity
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('SimulationPanel')}>
@@ -61,11 +67,11 @@
       Simulation
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('TimelinePanel')}>
-      <i class="bi bi-calendar2-range" />
+      <TimelineIcon />
       Timeline
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('TimelineFormPanel')}>
-      <i class="bi bi-ui-checks" />
+      <ChecklistOnPageIcon />
       Timeline Form
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ViewsPanel')}>
