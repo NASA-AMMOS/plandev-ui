@@ -20,6 +20,6 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <Timeline {timelineId} />
+    <Timeline {gridId} {timelineId} />
   </svelte:fragment>
 </Panel>

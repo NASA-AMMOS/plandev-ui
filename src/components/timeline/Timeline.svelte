@@ -14,6 +14,7 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
+  export let gridId: number;
   export let timelineId: number;
 
   let clientWidth: number = 0;
@@ -29,6 +30,7 @@
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: rows = timeline?.rows || [];
+  $: timeline.gridId = gridId;
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
   $: setRowsMaxHeight(timelineDiv, xAxisDiv);
   $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
@@ -89,7 +91,7 @@
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
-    if (newHeight < MAX_CANVAS_SIZE) {
+    if (timeline.gridId === gridId && newHeight < MAX_CANVAS_SIZE) {
       viewUpdateRow('height', newHeight, timelineId, rowId);
     }
   }
@@ -130,6 +132,7 @@
     style="max-height: {rowsMaxHeight}px"
     on:consider={handleDndConsiderRows}
     on:finalize={handleDndFinalizeRows}
+    on:mouseenter={() => (timeline.gridId = gridId)}
     use:dndzone={{
       dragDisabled: rowDragMoveDisabled,
       items: rows,

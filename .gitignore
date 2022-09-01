@@ -6,3 +6,5 @@ unit-test-results
 /.svelte-kit
 /package
 /static/version.json
+aerie/
+.idea/
