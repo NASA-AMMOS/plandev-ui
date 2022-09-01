@@ -58,7 +58,6 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   AERIE_PASSWORD=aerie
   AERIE_USERNAME=aerie
-  POSTGRES_DB=postgres
   POSTGRES_PASSWORD=postgres
   POSTGRES_USER=postgres
   ```
