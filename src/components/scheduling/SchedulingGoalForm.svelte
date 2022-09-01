@@ -27,6 +27,7 @@
   let goalAuthor: string | null = initialGoalAuthor;
   let goalCreatedDate: string | null = initialGoalCreatedDate;
   let goalDefinition: string = initialGoalDefinition;
+  let savedGoalDefinition: string = mode === 'create' ? '' : initialGoalDefinition;
   let goalDescription: string = initialGoalDescription;
   let goalId: number | null = initialGoalId;
   let goalModelId: number | null = initialGoalModelId;
@@ -37,6 +38,9 @@
   let specId: number | null = initialSpecId;
 
   $: saveButtonEnabled = goalDefinition !== '' && goalModelId !== null && goalName !== '';
+  $: goalModified = goalDefinition !== savedGoalDefinition;
+  $: saveButtonText = mode === 'edit' && !goalModified ? 'Saved' : 'Save';
+  $: saveButtonClass = goalModified && saveButtonEnabled ? 'primary' : 'secondary';
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
@@ -78,6 +82,7 @@
       const updatedGoal = await effects.updateSchedulingGoal(goalId, goal);
       if (updatedGoal) {
         goalModifiedDate = updatedGoal.modified_date;
+        savedGoalDefinition = goalDefinition;
       }
     }
   }
@@ -92,7 +97,9 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveGoal}> Save </button>
+        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveGoal}>
+          {saveButtonText}
+        </button>
       </div>
     </svelte:fragment>
 

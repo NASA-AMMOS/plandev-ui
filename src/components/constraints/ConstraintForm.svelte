@@ -23,6 +23,7 @@
   export let mode: 'create' | 'edit' = 'create';
 
   let constraintDefinition: string = initialConstraintDefinition;
+  let savedConstraintDefinition: string = mode === 'create' ? '' : initialConstraintDefinition;
   let constraintDescription: string = initialConstraintDescription;
   let constraintId: number | null = initialConstraintId;
   let constraintName: string = initialConstraintName;
@@ -35,6 +36,9 @@
 
   $: saveButtonEnabled =
     constraintDefinition !== '' && constraintName !== '' && (constraintModelId !== null || constraintPlanId !== null);
+  $: constraintModified = constraintDefinition !== savedConstraintDefinition;
+  $: saveButtonText = mode === 'edit' && !constraintModified ? 'Saved' : 'Save';
+  $: saveButtonClass = saveButtonEnabled && constraintModified ? 'primary' : 'secondary';
 
   $: if (constraintPlanId !== null) {
     const plan = initialPlans.find(plan => plan.id === constraintPlanId);
@@ -73,6 +77,8 @@
         constraintPlanId,
         constraintSummary,
       );
+
+      savedConstraintDefinition = constraintDefinition;
     }
   }
 </script>
@@ -86,8 +92,8 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/constraints`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveConstraint}>
-          Save
+        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveConstraint}>
+          {saveButtonText}
         </button>
       </div>
     </svelte:fragment>

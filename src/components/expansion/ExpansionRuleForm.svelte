@@ -28,12 +28,16 @@
   let ruleDictionaryId: number | null = initialRuleDictionaryId;
   let ruleId: number | null = initialRuleId;
   let ruleLogic: string = initialRuleLogic;
+  let savedRuleLogic: string = mode === 'create' ? '' : initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
   let ruleUpdatedAt: string | null = initialRuleUpdatedAt;
   let saveButtonEnabled: boolean = false;
 
   $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
   $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
+  $: ruleModified = ruleLogic !== savedRuleLogic;
+  $: saveButtonText = mode === 'edit' && !ruleModified ? 'Saved' : 'Save';
+  $: saveButtonClass = ruleModified && saveButtonEnabled ? 'primary' : 'secondary';
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
@@ -64,6 +68,7 @@
       const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
       if (updated_at !== null) {
         ruleUpdatedAt = updated_at;
+        savedRuleLogic = ruleLogic;
       }
     }
   }
@@ -78,8 +83,8 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/rules`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>
-          {$savingExpansionRule ? 'Saving...' : 'Save'}
+        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveRule}>
+          {$savingExpansionRule ? 'Saving...' : saveButtonText}
         </button>
       </div>
     </svelte:fragment>

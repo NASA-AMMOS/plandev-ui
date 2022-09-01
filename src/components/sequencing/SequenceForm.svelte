@@ -21,6 +21,7 @@
   export let initialSequenceUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
 
+  let savedSequenceDefinition: string = mode === 'create' ? '' : initialSequenceDefinition;
   let sequenceCreatedAt: string | null = initialSequenceCreatedAt;
   let sequenceDefinition: string = initialSequenceDefinition;
   let sequenceCommandDictionaryId: number | null = initialSequenceCommandDictionaryId;
@@ -32,6 +33,9 @@
   let savingSequence: boolean = false;
 
   $: saveButtonEnabled = sequenceCommandDictionaryId !== null && sequenceDefinition !== '' && sequenceName !== '';
+  $: sequenceModified = sequenceDefinition !== savedSequenceDefinition;
+  $: saveButtonText = mode === 'edit' && !sequenceModified ? 'Saved' : 'Save';
+  $: saveButtonClass = sequenceModified && saveButtonEnabled ? 'primary' : 'secondary';
 
   onMount(() => {
     if (mode === 'edit') {
@@ -84,6 +88,7 @@
           sequenceUpdatedAt = updated_at;
         }
         await getUserSequenceSeqJson();
+        savedSequenceDefinition = sequenceDefinition;
       }
       savingSequence = false;
     }
@@ -101,8 +106,8 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/sequencing`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveSequence}>
-          {savingSequence ? 'Saving...' : 'Save'}
+        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveSequence}>
+          {savingSequence ? 'Saving...' : saveButtonText}
         </button>
       </div>
     </svelte:fragment>
