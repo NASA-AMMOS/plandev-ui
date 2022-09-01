@@ -2,6 +2,9 @@
 
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { classNames } from '../../utilities/generic';
+
+  export let layout: 'inline' | 'stacked' | null = 'stacked';
 
   let container: HTMLDivElement;
   let input: HTMLInputElement | null;
@@ -24,6 +27,11 @@
     input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
     setChildrenStyles([right]);
   }
+
+  $: inputClasses = classNames('input', {
+    'input-inline': layout === 'inline',
+    'input-stacked': layout === 'stacked',
+  });
 
   onMount(() => {
     input = container.querySelector('input');
@@ -73,7 +81,7 @@
   }
 </script>
 
-<div bind:this={container} class="input">
+<div bind:this={container} class={inputClasses}>
   {#if $$slots.left}
     <div bind:this={left} class="left">
       <slot name="left" />
@@ -100,5 +108,21 @@
   .input > .left,
   .input > .right {
     position: absolute;
+  }
+
+  .input-inline {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 40% auto;
+  }
+
+  .input-inline :global(label) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .input-stacked {
+    display: inherit;
   }
 </style>

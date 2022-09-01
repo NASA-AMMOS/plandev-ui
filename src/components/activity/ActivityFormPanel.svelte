@@ -20,6 +20,7 @@
   import ActivityMetadataField from '../activityMetadata/ActivityMetadataField.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
+  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -256,11 +257,7 @@
     {#if $selectedActivity}
       <div class="activity-header">
         {#if activityName}
-          <div
-            class={classNames('activity-header-title', {
-              'activity-header-title--editing': editingActivityName,
-            })}
-          >
+          <div class={classNames('activity-header-title', { 'activity-header-title--editing': editingActivityName })}>
             {#if !editingActivityName}
               <button class="icon st-button activity-header-title-edit-button" on:click={editActivityName}>
                 <div class="activity-header-title-value st-typography-medium">
@@ -293,44 +290,59 @@
         <details open style:cursor="pointer">
           <summary>Definition</summary>
           <fieldset>
-            <label for="id">Activity ID</label>
-            <input class="st-input w-100" disabled name="id" value={id} />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Activity ID', placement: 'left' }} for="id"> Activity ID </label>
+              <input class="st-input w-100" disabled name="id" value={id} />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="activity-type">Activity Type</label>
-            <input class="st-input w-100" disabled name="activity-type" value={type} />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Activity Type', placement: 'left' }} for="activity-type">
+                Activity Type
+              </label>
+              <input class="st-input w-100" disabled name="activity-type" value={type} />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="parent-id">Parent ID</label>
-            <input
-              class="st-input w-100"
-              disabled
-              name="parent-id"
-              value={isChild ? parent_id : 'None (Root Activity)'}
-            />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Parent ID', placement: 'left' }} for="parent-id">Parent ID</label>
+              <input
+                class="st-input w-100"
+                disabled
+                name="parent-id"
+                value={isChild ? parent_id : 'None (Root Activity)'}
+              />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="duration">Duration</label>
-            <input class="st-input w-100" disabled name="duration" value={duration ?? 'None'} />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Duration', placement: 'left' }} for="duration">Duration</label>
+              <input class="st-input w-100" disabled name="duration" value={duration ?? 'None'} />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="simulationStatus">Simulation Status</label>
-            <input
-              class="st-input w-100"
-              disabled
-              name="simulationStatus"
-              value={unfinished ? 'Unfinished' : duration ? 'Finished' : 'None'}
-            />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Simulation Status', placement: 'left' }} for="simulationStatus">
+                Simulation Status
+              </label>
+              <input
+                class="st-input w-100"
+                disabled
+                name="simulationStatus"
+                value={unfinished ? 'Unfinished' : duration ? 'Finished' : 'None'}
+              />
+            </Input>
           </fieldset>
 
           <DatePickerField
             disabled={isChild}
             field={startTimeField}
             label="Start Time - YYYY-DDDThh:mm:ss"
+            layout="inline"
             name="start-time"
             on:change={onUpdateStartTime}
             on:keydown={onUpdateStartTime}
@@ -338,54 +350,75 @@
 
           {#if duration !== null}
             <fieldset>
-              <label for="endTime">End Time</label>
-              <input class="st-input w-100" disabled name="endTime" value={endTime} />
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'End Time', placement: 'left' }} for="endTime">End Time</label>
+                <input class="st-input w-100" disabled name="endTime" value={endTime} />
+              </Input>
             </fieldset>
           {/if}
 
           <fieldset>
-            <label for="creationTime">Creation Time</label>
-            <input class="st-input w-100" disabled name="creationTime" value={creationTime ?? 'None'} />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Creation Time', placement: 'left' }} for="creationTime">
+                Creation Time
+              </label>
+              <input class="st-input w-100" disabled name="creationTime" value={creationTime ?? 'None'} />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="lastModifiedTime">Last Modified Time</label>
-            <input class="st-input w-100" disabled name="lastModifiedTime" value={lastModifiedTime ?? 'None'} />
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Last Modified Time', placement: 'left' }} for="lastModifiedTime">
+                Last Modified Time
+              </label>
+              <input class="st-input w-100" disabled name="lastModifiedTime" value={lastModifiedTime ?? 'None'} />
+            </Input>
           </fieldset>
 
           <fieldset>
-            <label for="sourceSchedulingGoalId">Source Scheduling Goal ID</label>
-            <input
-              class="st-input w-100"
-              disabled
-              name="sourceSchedulingGoalId"
-              value={sourceSchedulingGoalId ?? 'None'}
-            />
+            <Input layout="inline">
+              <label
+                use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'left' }}
+                for="sourceSchedulingGoalId"
+              >
+                Source Scheduling Goal ID
+              </label>
+              <input
+                class="st-input w-100"
+                disabled
+                name="sourceSchedulingGoalId"
+                value={sourceSchedulingGoalId ?? 'None'}
+              />
+            </Input>
           </fieldset>
 
           {#if duration !== null}
             <fieldset>
-              <label for="endTime">End Time</label>
-              <input class="st-input w-100" disabled name="endTime" value={endTime} />
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'End Time', placement: 'left' }} for="endTime">End Time</label>
+                <input class="st-input w-100" disabled name="endTime" value={endTime} />
+              </Input>
             </fieldset>
           {/if}
 
           <fieldset>
-            <label for="activityTags">Tags</label>
-            <!--
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Tags', placement: 'left' }} for="activityTags">Tags</label>
+              <!--
               Make use of svelte's 'key' here and switch on activity ID in order to clear the
               text input in the tags component which would otherwise remain populated with
               dirty input when a user switches to a new activity.
              -->
-            {#key id}
-              <Tags
-                disabled={isChild}
-                autocompleteValues={planTags}
-                name="activityTags"
-                on:change={onUpdateTags}
-                {tags}
-              />
-            {/key}
+              {#key id}
+                <Tags
+                  disabled={isChild}
+                  autocompleteValues={planTags}
+                  name="activityTags"
+                  on:change={onUpdateTags}
+                  {tags}
+                />
+              {/key}
+            </Input>
           </fieldset>
         </details>
       </div>
@@ -458,31 +491,42 @@
         <details open style:cursor="pointer">
           <summary>Sequencing</summary>
 
-          <div class="mt-2 mb-3">
-            <label for="simulationDatasetId">Simulation Dataset ID</label>
-            <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
+          <div class="p-2">
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'left' }} for="simulationDatasetId">
+                Simulation Dataset ID
+              </label>
+              <input
+                class="st-input w-100"
+                disabled
+                name="simulationDatasetId"
+                value={$simulationDatasetId ?? 'None'}
+              />
+            </Input>
           </div>
 
-          <div class="mt-2">
-            <label for="expansionSet">Sequence ID</label>
-            <select
-              bind:value={seq_id}
-              class="st-select w-100"
-              name="sequences"
-              disabled={!$filteredExpansionSequences.length}
-              on:change={updateExpansionSequenceToActivity}
-            >
-              {#if !$filteredExpansionSequences.length}
-                <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
-              {:else}
-                <option value={null} />
-                {#each $filteredExpansionSequences as sequence}
-                  <option value={sequence.seq_id}>
-                    {sequence.seq_id}
-                  </option>
-                {/each}
-              {/if}
-            </select>
+          <div class="p-2">
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Sequence ID', placement: 'left' }} for="expansionSet">Sequence ID</label>
+              <select
+                bind:value={seq_id}
+                class="st-select w-100"
+                name="sequences"
+                disabled={!$filteredExpansionSequences.length}
+                on:change={updateExpansionSequenceToActivity}
+              >
+                {#if !$filteredExpansionSequences.length}
+                  <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
+                {:else}
+                  <option value={null} />
+                  {#each $filteredExpansionSequences as sequence}
+                    <option value={sequence.seq_id}>
+                      {sequence.seq_id}
+                    </option>
+                  {/each}
+                {/if}
+              </select>
+            </Input>
           </div>
         </details>
       </fieldset>

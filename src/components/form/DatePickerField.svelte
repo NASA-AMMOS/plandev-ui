@@ -2,13 +2,16 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { tooltip } from '../../utilities/tooltip';
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import FieldError from './FieldError.svelte';
+  import Input from './Input.svelte';
 
   export let disabled: boolean = false;
   export let field: FieldStore<any>;
   export let name: string = '';
   export let label: string = '';
+  export let layout: 'inline' | 'stacked' | null = 'stacked';
 
   const dispatch = createEventDispatcher();
 
@@ -19,8 +22,20 @@
   }
 </script>
 
-<fieldset>
-  <label class:error={$field.invalid} for={name}>{label}</label>
-  <DatePicker dateString={$field.value} {disabled} hasError={$field.invalid} {name} on:change={onChange} />
-  <FieldError {field} />
+<fieldset class="date-picker-field">
+  <Input {layout}>
+    {#if layout === 'inline'}
+      <label use:tooltip={{ content: label, placement: 'left' }} class:error={$field.invalid} for={name}>{label}</label>
+    {:else}
+      <label class:error={$field.invalid} for={name}>{label}</label>
+    {/if}
+    <DatePicker dateString={$field.value} {disabled} hasError={$field.invalid} {name} on:change={onChange} />
+    <FieldError {field} />
+  </Input>
 </fieldset>
+
+<style>
+  .date-picker-field :global(.input) {
+    position: inherit;
+  }
+</style>
