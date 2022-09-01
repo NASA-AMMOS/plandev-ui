@@ -48,7 +48,11 @@ export async function reqGateway<T = any>(
 /**
  * Function to make HTTP POST requests to the Hasura GraphQL API.
  */
-export async function reqHasura<T = any>(query: string, variables: QueryVariables = {}): Promise<Record<string, T>> {
+export async function reqHasura<T = any>(
+  query: string,
+  variables: QueryVariables = {},
+  signal: AbortSignal = undefined,
+): Promise<Record<string, T>> {
   const HASURA_URL = browser ? env.HASURA_CLIENT_URL : env.HASURA_SERVER_URL;
   const user = get<User | null>(userStore);
 
@@ -59,6 +63,7 @@ export async function reqHasura<T = any>(query: string, variables: QueryVariable
       'x-auth-sso-token': user?.ssoToken ?? '',
     },
     method: 'POST',
+    signal,
   };
 
   const response: Response = await fetch(HASURA_URL, options);
@@ -81,7 +86,7 @@ export async function reqHasura<T = any>(query: string, variables: QueryVariable
     if (code === 'unexpected') {
       // This is often thrown when a Postgres exception is raised for a Hasura query.
       // @see https://github.com/hasura/graphql-engine/issues/3658
-      throw new Error(error?.extensions?.internal?.error?.message ?? defaultError);
+      throw new Error(error?.extensions?.internal?.error?.message ?? error?.message ?? defaultError);
     } else {
       throw new Error(error?.message ?? defaultError);
     }

@@ -1,11 +1,3 @@
-type CommandDictionary = {
-  command_types_typescript_path: string;
-  created_at: string;
-  id: number;
-  mission: string;
-  version: string;
-};
-
 type ExpansionRule = {
   activity_type: string;
   authoring_command_dict_id: number;

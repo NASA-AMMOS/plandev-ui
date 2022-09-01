@@ -42,7 +42,7 @@
     </MenuItem>
     <MenuItem on:click={() => goto(`${base}/dictionaries`)} on:pointerenter={() => prefetch(`${base}/dictionaries`)}>
       <i class="bi bi-journal-text" />
-      Dictionaries
+      Command Dictionaries
     </MenuItem>
     <MenuItem
       on:click={() => goto(`${base}/expansion/rules`)}
@@ -57,6 +57,10 @@
     >
       <CalendarIcon />
       Scheduling
+    </MenuItem>
+    <MenuItem on:click={() => goto(`${base}/sequencing`)} on:pointerenter={() => prefetch(`${base}/sequencing`)}>
+      <i class="bi bi-journal-code" />
+      Sequencing
     </MenuItem>
     <MenuItem on:click={() => window.open(env.GATEWAY_CLIENT_URL, '_newtab')}>
       <i class="bi bi-diagram-3" />

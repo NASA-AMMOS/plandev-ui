@@ -113,8 +113,6 @@
 
     if (isSelected) {
       selectedGoal = clickedGoal;
-    } else if (selectedGoal?.id === clickedGoal.id) {
-      selectedGoal = null;
     }
   }
 </script>

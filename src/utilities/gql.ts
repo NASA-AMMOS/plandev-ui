@@ -21,7 +21,11 @@ const gql = {
   CREATE_COMMAND_DICTIONARY: `#graphql
     mutation CreateCommandDictionary($dictionary: String!) {
       createCommandDictionary: uploadDictionary(dictionary: $dictionary) {
+        created_at
         id
+        mission
+        updated_at
+        version
       }
     }
   `,
@@ -118,6 +122,14 @@ const gql = {
   CREATE_SIMULATION: `#graphql
     mutation CreateSimulation($simulation: simulation_insert_input!) {
       createSimulation: insert_simulation_one(object: $simulation) {
+        id
+      }
+    }
+  `,
+
+  CREATE_USER_SEQUENCE: `#graphql
+    mutation CreateUserSequence($sequence: user_sequence_insert_input!) {
+      createUserSequence: insert_user_sequence_one(object: $sequence) {
         id
       }
     }
@@ -234,6 +246,14 @@ const gql = {
   DELETE_SCHEDULING_GOAL: `#graphql
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_USER_SEQUENCE: `#graphql
+    mutation DeleteUserSequence($id: Int!) {
+      deleteUserSequence: delete_user_sequence_by_pk(id: $id) {
         id
       }
     }
@@ -606,6 +626,39 @@ const gql = {
     }
   `,
 
+  GET_USER_SEQUENCE: `#graphql
+    query GetUserSequence($id: Int!) {
+      userSequence: user_sequence_by_pk(id: $id) {
+        authoring_command_dict_id
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  GET_USER_SEQUENCE_SEQ_JSON: `#graphql
+    query GetUserSequenceSeqJson($commandDictionaryId: Int!, $sequenceDefinition: String!) {
+      seqJson: getUserSequenceSeqJson(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {
+        id
+        metadata
+        steps {
+          args
+          metadata
+          stem
+          time {
+            tag
+            type
+          }
+          type
+        }
+      }
+    }
+  `,
+
   GET_VIEW: `#graphql
     query GetView($id: Int!) {
       view: view_by_pk(id: $id) {
@@ -681,6 +734,7 @@ const gql = {
         created_at
         id
         mission
+        updated_at
         version
       }
     }
@@ -872,6 +926,20 @@ const gql = {
     }
   `,
 
+  SUB_USER_SEQUENCES: `#graphql
+    subscription SubUserSequences {
+      user_sequence {
+        authoring_command_dict_id
+        created_at
+        definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
   SUB_VIEWS: `#graphql
     subscription SubViews {
       views: view {
@@ -968,6 +1036,17 @@ const gql = {
           description
           id
         }
+      }
+    }
+  `,
+
+  UPDATE_USER_SEQUENCE: `#graphql
+    mutation UpdateUserSequence($id: Int!, $sequence: user_sequence_set_input!) {
+      updateUserSequence: update_user_sequence_by_pk(
+        pk_columns: { id: $id }, _set: $sequence
+      ) {
+        id
+        updated_at
       }
     }
   `,

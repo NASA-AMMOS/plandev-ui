@@ -3,8 +3,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { dictionaries, expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
+  import { expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
   import { sortedModels } from '../../stores/plan';
+  import { sortedCommandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -82,10 +83,10 @@
         <label for="commandDictionary">Command Dictionary</label>
         <select bind:value={setDictionaryId} class="st-select w-100" name="commandDictionary">
           <option value={null} />
-          {#each $dictionaries as dictionary}
-            <option value={dictionary.id}>
-              {dictionary.mission} -
-              {dictionary.version}
+          {#each $sortedCommandDictionaries as commandDictionary}
+            <option value={commandDictionary.id}>
+              {commandDictionary.mission} -
+              {commandDictionary.version}
             </option>
           {/each}
         </select>

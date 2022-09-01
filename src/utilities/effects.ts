@@ -6,7 +6,6 @@ import {
   createDictionaryError,
   creatingDictionary,
   creatingExpansionSequence,
-  dictionaries,
   expandingPlan,
   savingExpansionRule,
   savingExpansionSet,
@@ -14,6 +13,7 @@ import {
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
 import { simulationResources } from '../stores/resources';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
+import { commandDictionaries } from '../stores/sequencing';
 import { simulation, simulationStatus } from '../stores/simulation';
 import { view } from '../stores/views';
 import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
@@ -184,11 +184,11 @@ const effects = {
         simulation_dataset_id: simulationDatasetId,
       };
       await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence });
-      showSuccessToast('Sequence Created Successfully');
+      showSuccessToast('Expansion Sequence Created Successfully');
       creatingExpansionSequence.set(false);
     } catch (e) {
       console.log(e);
-      showFailureToast('Sequence Create Failed');
+      showFailureToast('Expansion Sequence Create Failed');
       creatingExpansionSequence.set(false);
     }
   },
@@ -358,6 +358,20 @@ const effects = {
     }
   },
 
+  async createUserSequence(sequence: UserSequenceInsertInput): Promise<number | null> {
+    try {
+      const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence });
+      const { createUserSequence } = data;
+      const { id } = createUserSequence;
+      showSuccessToast('User Sequence Created Successfully');
+      return id;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('User Sequence Create Failed');
+      return null;
+    }
+  },
+
   async createView(name: string, owner: string, definition: ViewDefinition): Promise<void> {
     try {
       const viewInsertInput: ViewInsertInput = { definition, name, owner };
@@ -438,7 +452,7 @@ const effects = {
       if (confirm) {
         await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
         showSuccessToast('Command Dictionary Deleted Successfully');
-        dictionaries.filterValueById(id);
+        commandDictionaries.filterValueById(id);
       }
     } catch (e) {
       console.log(e);
@@ -495,18 +509,18 @@ const effects = {
     try {
       const confirm = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this sequence?',
-        'Delete Sequence',
+        'Are you sure you want to delete this expansion sequence?',
+        'Delete Expansion Sequence',
       );
 
       if (confirm) {
         const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
         await reqHasura(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId });
-        showSuccessToast('Sequence Deleted Successfully');
+        showSuccessToast('Expansion Sequence Deleted Successfully');
       }
     } catch (e) {
       console.log(e);
-      showFailureToast('Sequence Delete Failed');
+      showFailureToast('Expansion Sequence Delete Failed');
     }
   },
 
@@ -519,11 +533,11 @@ const effects = {
         simulated_activity_id,
         simulation_dataset_id,
       });
-      showSuccessToast('Sequence Deleted From Activity Successfully');
+      showSuccessToast('Expansion Sequence Deleted From Activity Successfully');
       return true;
     } catch (e) {
       console.log(e);
-      showFailureToast('Delete Sequence From Activity Failed');
+      showFailureToast('Delete Expansion Sequence From Activity Failed');
       return false;
     }
   },
@@ -613,6 +627,28 @@ const effects = {
     } catch (e) {
       console.log(e);
       showFailureToast('Scheduling Goal Delete Failed');
+      return false;
+    }
+  },
+
+  async deleteUserSequence(id: number): Promise<boolean> {
+    try {
+      const confirm = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this user sequence?',
+        'Delete User Sequence',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_USER_SEQUENCE, { id });
+        showSuccessToast('User Sequence Deleted Successfully');
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('User Sequence Delete Failed');
       return false;
     }
   },
@@ -995,6 +1031,31 @@ const effects = {
     }
   },
 
+  async getUserSequence(id: number): Promise<UserSequence | null> {
+    try {
+      const data = await reqHasura<UserSequence>(gql.GET_USER_SEQUENCE, { id });
+      const { userSequence } = data;
+      return userSequence;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
+  async getUserSequenceSeqJson(
+    commandDictionaryId: number | null,
+    sequenceDefinition: string | null,
+    signal: AbortSignal = undefined,
+  ): Promise<string> {
+    try {
+      const data = await reqHasura(gql.GET_USER_SEQUENCE_SEQ_JSON, { commandDictionaryId, sequenceDefinition }, signal);
+      const { seqJson } = data;
+      return JSON.stringify(seqJson, null, 2);
+    } catch (e) {
+      return e.message;
+    }
+  },
+
   async getView(owner: string, query: URLSearchParams | null): Promise<View | null> {
     try {
       if (query !== null) {
@@ -1036,7 +1097,7 @@ const effects = {
       const { sequence } = data;
 
       if (sequence) {
-        showSuccessToast('Sequence Added To Activity Successfully');
+        showSuccessToast('Expansion Sequence Added To Activity Successfully');
         const { seq_id } = sequence;
         return seq_id;
       } else {
@@ -1044,7 +1105,7 @@ const effects = {
       }
     } catch (e) {
       console.log(e);
-      showFailureToast('Add Sequence To Activity Failed');
+      showFailureToast('Add Expansion Sequence To Activity Failed');
       return null;
     }
   },
@@ -1325,6 +1386,20 @@ const effects = {
     } catch (e) {
       console.log(e);
       showFailureToast('Simulation Update Failed');
+    }
+  },
+
+  async updateUserSequence(id: number, sequence: Partial<UserSequence>): Promise<string | null> {
+    try {
+      const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(gql.UPDATE_USER_SEQUENCE, { id, sequence });
+      const { updateUserSequence } = data;
+      const { updated_at } = updateUserSequence;
+      showSuccessToast('User Sequence Updated Successfully');
+      return updated_at;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('User Sequence Update Failed');
+      return null;
     }
   },
 

@@ -8,7 +8,8 @@
   import DataGrid from '../../components/ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import { createDictionaryError, creatingDictionary, sortedDictionaries } from '../../stores/expansion';
+  import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
+  import { sortedCommandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
 
   type CellRendererParams = {
@@ -107,8 +108,8 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if $sortedDictionaries.length}
-          <DataGrid {columnDefs} rowData={$sortedDictionaries} suppressRowClickSelection />
+        {#if $sortedCommandDictionaries.length}
+          <DataGrid {columnDefs} rowData={$sortedCommandDictionaries} suppressRowClickSelection />
         {:else}
           No Command Dictionaries Found
         {/if}

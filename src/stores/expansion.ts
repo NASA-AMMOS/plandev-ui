@@ -1,5 +1,4 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';
@@ -11,8 +10,6 @@ export const activityTypeNames = gqlSubscribable<Pick<ActivityType, 'name'>[]>(
   { modelId: -1 },
   [],
 );
-
-export const dictionaries = gqlSubscribable<CommandDictionary[]>(gql.SUB_COMMAND_DICTIONARIES, {}, []);
 
 export const expansionRules = gqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
@@ -45,10 +42,3 @@ export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived
   ([$expansionSequences, $simulationDatasetId]) =>
     $expansionSequences.filter(sequence => sequence.simulation_dataset_id === $simulationDatasetId),
 );
-
-export const sortedDictionaries: Readable<CommandDictionary[]> = derived(dictionaries, $dictionaries => {
-  if ($dictionaries) {
-    return $dictionaries.sort((a, b) => compare(a.version, b.version));
-  }
-  return [];
-});
