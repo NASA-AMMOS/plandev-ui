@@ -23,9 +23,10 @@
   type ModelCellRendererParams = ICellRendererParams<ModelList> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Model ID',
       resizable: true,
       sortable: true,
@@ -33,7 +34,7 @@
       suppressSizeToFit: true,
       width: 100,
     },
-    { field: 'version', headerName: 'Version', sortable: true, width: 120 },
+    { field: 'version', filter: 'number', headerName: 'Version', sortable: true, width: 120 },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ModelCellRendererParams) => {

@@ -20,17 +20,25 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Dictionary ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 120,
     },
-    { field: 'mission', headerName: 'Mission', sortable: true, width: 100 },
-    { field: 'version', headerName: 'Version', sortable: true, suppressAutoSize: true, width: 100 },
-    { field: 'command_types_typescript_path', headerName: 'Types Path', resizable: true, sortable: true, width: 220 },
-    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'mission', filter: 'text', headerName: 'Mission', sortable: true, width: 100 },
+    { field: 'version', filter: 'text', headerName: 'Version', sortable: true, suppressAutoSize: true, width: 100 },
+    {
+      field: 'command_types_typescript_path',
+      filter: 'text',
+      headerName: 'Types Path',
+      resizable: true,
+      sortable: true,
+      width: 220,
+    },
+    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: CommandDictionaryCellRendererParams) => {

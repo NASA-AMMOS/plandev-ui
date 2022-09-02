@@ -33,9 +33,10 @@
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Plan ID',
       resizable: true,
       sortable: true,
@@ -43,9 +44,9 @@
       suppressSizeToFit: true,
       width: 100,
     },
-    { field: 'model_id', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
-    { field: 'start_time', headerName: 'Start Time', resizable: true, sortable: true },
-    { field: 'end_time', headerName: 'End Time', resizable: true, sortable: true },
+    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
+    { field: 'start_time', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
+    { field: 'end_time', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: PlanCellRendererParams) => {

@@ -22,6 +22,7 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Set ID',
       resizable: true,
       sortable: true,
@@ -29,9 +30,15 @@
       suppressSizeToFit: true,
       width: 100,
     },
-    { field: 'command_dict_id', headerName: 'Command Dictionary ID', resizable: true, sortable: true },
-    { field: 'mission_model_id', headerName: 'Model ID', resizable: true, sortable: true },
-    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
+    {
+      field: 'command_dict_id',
+      filter: 'number',
+      headerName: 'Command Dictionary ID',
+      resizable: true,
+      sortable: true,
+    },
+    { field: 'mission_model_id', filter: 'number', headerName: 'Model ID', resizable: true, sortable: true },
+    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionSetCellRendererParams) => {
@@ -147,14 +154,15 @@
             columnDefs={[
               {
                 field: 'id',
+                filter: 'number',
                 headerName: 'Rule ID',
                 resizable: true,
                 sortable: true,
                 suppressAutoSize: true,
                 suppressSizeToFit: true,
-                width: 65,
+                width: 80,
               },
-              { field: 'activity_type', headerName: 'Activity Type', sortable: true },
+              { field: 'activity_type', filter: 'text', headerName: 'Activity Type', sortable: true },
             ]}
             rowData={selectedExpansionSet?.expansion_rules}
             rowSelection="single"

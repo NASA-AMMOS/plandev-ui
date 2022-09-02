@@ -24,6 +24,7 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Goal ID',
       resizable: true,
       sortable: true,
@@ -31,8 +32,8 @@
       suppressSizeToFit: true,
       width: 100,
     },
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SchedulingGoalsCellRendererParams) => {

@@ -24,23 +24,25 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'Rule ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 65,
+      width: 80,
     },
-    { field: 'activity_type', headerName: 'Activity Type', resizable: true, sortable: true },
+    { field: 'activity_type', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
     {
       field: 'authoring_command_dict_id',
+      filter: 'number',
       headerName: 'Command Dictionary ID',
       resizable: true,
       sortable: true,
     },
-    { field: 'authoring_mission_model_id', headerName: 'Model ID', sortable: true },
-    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
-    { field: 'updated_at', headerName: 'Updated At', resizable: true, sortable: true },
+    { field: 'authoring_mission_model_id', filter: 'number', headerName: 'Model ID', sortable: true },
+    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'updated_at', filter: 'text', headerName: 'Updated At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionRuleCellRendererParams) => {

@@ -25,16 +25,33 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 40,
+      width: 60,
     },
-    { field: 'name', filter: 'agTextColumnFilter', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', headerName: 'Model ID', sortable: true, width: 120 },
-    { field: 'plan_id', headerName: 'Plan ID', sortable: true, width: 110 },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    {
+      field: 'model_id',
+      filter: 'number',
+      headerName: 'Model ID',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 95,
+    },
+    {
+      field: 'plan_id',
+      filter: 'number',
+      headerName: 'Plan ID',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
+    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ConstraintsCellRendererParams) => {

@@ -24,17 +24,24 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'text',
       headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 60,
     },
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'authoring_command_dict_id', headerName: 'Command Dictionary ID', resizable: true, sortable: true },
-    { field: 'created_at', headerName: 'Created At', resizable: true, sortable: true },
-    { field: 'updated_at', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    {
+      field: 'authoring_command_dict_id',
+      filter: 'number',
+      headerName: 'Command Dictionary ID',
+      resizable: true,
+      sortable: true,
+    },
+    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'updated_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SequencesCellRendererParams) => {

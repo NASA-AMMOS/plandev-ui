@@ -21,16 +21,17 @@
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
+      filter: 'number',
       headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 40,
+      width: 60,
     },
-    { field: 'name', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'owner', headerName: 'Owner', resizable: true, sortable: true },
-    { field: 'updated_at', headerName: 'Last Updated', resizable: true, sortable: true },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
+    { field: 'updated_at', filter: 'text', headerName: 'Last Updated', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ViewCellRendererParams) => {
