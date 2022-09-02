@@ -1,4 +1,5 @@
 <script lang="ts">
+  import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { createEventDispatcher } from 'svelte';
 
   const dispatch = createEventDispatcher();
@@ -7,7 +8,7 @@
 <div class="modal-header st-typography-header">
   <slot />
   <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
-    <i class="bi bi-x" />
+    <XIcon />
   </button>
 </div>
 

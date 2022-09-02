@@ -85,10 +85,6 @@
     rowDragMoveDisabled = false;
   }
 
-  function onResetViewTimeRange() {
-    $viewTimeRange = $maxTimeRange;
-  }
-
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (timeline.gridId === gridId && newHeight < MAX_CANVAS_SIZE) {
@@ -123,7 +119,6 @@
       {xScaleMax}
       {xScaleView}
       {xTicksView}
-      on:resetViewTimeRange={onResetViewTimeRange}
       on:viewTimeRangeChanged={onViewTimeRangeChanged}
     />
   </div>

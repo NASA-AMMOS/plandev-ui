@@ -1,6 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
+  import ChevronRightIcon from '@nasa-jpl/stellar/icons/svg/chevron_right.svg?component';
+  import DashIcon from 'bootstrap-icons/icons/dash.svg?component';
+  import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { getArgument } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
@@ -71,9 +75,9 @@
     <div class="series-left" on:click={toggleExpanded}>
       <div class="arrow">
         {#if !expanded}
-          <i class="bi bi-chevron-right" />
+          <ChevronRightIcon />
         {:else}
-          <i class="bi bi-chevron-down" />
+          <ChevronDownIcon />
         {/if}
       </div>
       <ParameterName {formParameter} />
@@ -86,14 +90,14 @@
           on:click|stopPropagation={valueRemove}
           use:tooltip={{ content: 'Remove Value', placement: 'left' }}
         >
-          <i class="bi bi-dash fs-6" />
+          <DashIcon />
         </button>
         <button
           class="st-button icon"
           on:click|stopPropagation={valueAdd}
           use:tooltip={{ content: 'Add Value', placement: 'left' }}
         >
-          <i class="bi bi-plus fs-6" />
+          <PlusIcon />
         </button>
       </CssGrid>
     </div>

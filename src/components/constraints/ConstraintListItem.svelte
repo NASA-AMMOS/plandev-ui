@@ -5,6 +5,7 @@
   import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
+  import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -16,7 +17,7 @@
     {#if constraint.plan_id !== null}
       <PlanIcon />
     {:else}
-      <i class="bi bi-bar-chart" />
+      <BarChartIcon />
     {/if}
     {constraint.name}
   </div>

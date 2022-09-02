@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ExclamationTriangleIcon from 'bootstrap-icons/icons/exclamation-triangle.svg?component';
   import { constraintViolations } from '../../stores/constraints';
   import { viewTimeRange } from '../../stores/plan';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -27,7 +28,7 @@
         <ListItem style="cursor: pointer" on:click={() => zoomToViolation(violation)}>
           {violation.constraintName}
           <span slot="suffix">
-            <i class="bi bi-exclamation-triangle" />
+            <ExclamationTriangleIcon />
           </span>
         </ListItem>
       {/each}

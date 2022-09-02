@@ -2,7 +2,6 @@
   import { createEventDispatcher } from 'svelte';
   import { getColorForStatus, type Status } from '../../utilities/status';
 
-  export let icon: string = '';
   export let selected: boolean = false;
   export let status: Status | null = null;
   export let title: string;
@@ -11,7 +10,9 @@
 </script>
 
 <div class="nav-button st-typography-medium" class:selected on:click|preventDefault={() => dispatch('click')}>
-  <i class={icon} style="color: {status !== null ? getColorForStatus(status) : 'unset'}" />
+  <span style="color: {status !== null ? getColorForStatus(status) : 'unset'}">
+    <slot />
+  </span>
   {title}
 </div>
 

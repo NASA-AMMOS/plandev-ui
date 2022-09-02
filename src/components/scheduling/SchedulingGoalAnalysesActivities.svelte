@@ -3,6 +3,8 @@
 <script lang="ts">
   import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
   import ActivityGroupIcon from '@nasa-jpl/stellar/icons/svg/activity_group.svg?component';
+  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
+  import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
@@ -17,7 +19,13 @@
 
 <div class="scheduling-goal-analysis-activities">
   <div class="left st-typography-body">
-    <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
+    <span on:click={() => (expanded = !expanded)}>
+      {#if !expanded}
+        <CaretRightFillIcon />
+      {:else}
+        <CaretDownFillIcon />
+      {/if}
+    </span>
     <ActivityGroupIcon />
     Activities
   </div>
@@ -76,9 +84,10 @@
     gap: 8px;
   }
 
-  .left > i:first-child {
+  .left > span:first-child {
     color: var(--st-gray-40);
     cursor: pointer;
+    display: flex;
   }
 
   .left :global(.st-icon) {

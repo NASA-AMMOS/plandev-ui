@@ -2,8 +2,6 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
-  import { createEventDispatcher } from 'svelte';
-  import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import XAxisBrush from './XAxisBrush.svelte';
   import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
@@ -18,8 +16,6 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
 
-  const dispatch = createEventDispatcher();
-
   let axisOffset = 55;
   let violationsOffset = 20;
   let verticalGuidesOffset = 35;
@@ -27,17 +23,6 @@
 
 <svg style="height: {drawHeight}px">
   <g transform="translate({marginLeft}, 0)">
-    <g transform="translate(0, 0)">
-      <g transform="translate(-14, 22)">
-        <text
-          class="reset-view-time-range-icon"
-          on:click={() => dispatch('resetViewTimeRange')}
-          use:tooltip={{ content: 'Reset Time', placement: 'left' }}
-        >
-          &#xf117;
-        </text>
-      </g>
-    </g>
     <g transform="translate(0, 0)">
       <XAxisBrush
         drawHeight={20}
@@ -100,21 +85,5 @@
   text {
     pointer-events: none;
     user-select: none;
-  }
-
-  .reset-view-time-range-icon {
-    cursor: pointer;
-    fill: var(--st-gray-50);
-    font-family: bootstrap-icons;
-    font-size: 12px;
-    pointer-events: all;
-  }
-
-  .reset-view-time-range-icon:focus {
-    outline: 0;
-  }
-
-  .reset-view-time-range-icon:hover {
-    fill: var(--st-gray-70);
   }
 </style>

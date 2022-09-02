@@ -37,7 +37,6 @@
         disabled
         type="text"
       />
-      <i class="bi bi-lock-fill" slot="right" />
     </Input>
     <input type="file" on:change={onChange} />
   </div>

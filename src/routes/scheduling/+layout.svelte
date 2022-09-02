@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import CalendarIcon from 'bootstrap-icons/icons/calendar3.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import NavButton from '../../components/app/NavButton.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -15,11 +16,12 @@
 
     <svelte:fragment slot="right">
       <NavButton
-        icon="bi bi-calendar3"
         selected={$page.url.pathname.includes('goals')}
         title="Goals"
         on:click={() => goto(`${base}/scheduling/goals`)}
-      />
+      >
+        <CalendarIcon />
+      </NavButton>
     </svelte:fragment>
   </Nav>
 

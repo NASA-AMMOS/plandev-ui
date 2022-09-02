@@ -1,10 +1,8 @@
 @import 'bootstrap/dist/css/bootstrap-utilities.min.css';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
 @import 'tippy.js/dist/tippy.css';
 @import 'toastify-js/src/toastify.css';
 @import 'ag-grid-community/styles/ag-grid.min.css';
 
-@import '@nasa-jpl/stellar/icons/stellar-icons.css';
 @import '@nasa-jpl/stellar/font/inter/inter.css';
 @import '@nasa-jpl/stellar/css/variables.css';
 @import '@nasa-jpl/stellar/css/typography.css';

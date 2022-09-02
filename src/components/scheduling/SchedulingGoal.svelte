@@ -3,6 +3,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+  import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
+  import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
@@ -23,7 +25,13 @@
 
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
   <div class="left st-typography-body" class:disabled={!enabled}>
-    <i class={expanded ? 'bi bi-caret-down-fill' : 'bi bi-caret-right-fill'} on:click={() => (expanded = !expanded)} />
+    <span on:click={() => (expanded = !expanded)}>
+      {#if !expanded}
+        <CaretRightFillIcon />
+      {:else}
+        <CaretDownFillIcon />
+      {/if}
+    </span>
     <PlanIcon />
     <span
       class="scheduling-goal-name st-typography-body"
@@ -113,9 +121,10 @@
     color: var(--st-gray-30) !important;
   }
 
-  .left > i:first-child {
+  .left > span:first-child {
     color: var(--st-gray-40);
     cursor: pointer;
+    display: flex;
   }
 
   .right {

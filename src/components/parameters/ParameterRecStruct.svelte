@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ChevronDownIcon from 'bootstrap-icons/icons/chevron-down.svg?component';
+  import ChevronRightIcon from 'bootstrap-icons/icons/chevron-right.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -57,9 +59,9 @@
 {#if showName}
   <div class="parameter-rec-struct" on:click={toggleExpanded}>
     {#if !expanded}
-      <i class="bi bi-chevron-right" />
+      <ChevronRightIcon />
     {:else}
-      <i class="bi bi-chevron-down" />
+      <ChevronDownIcon />
     {/if}
     <ParameterName {formParameter} />
   </div>

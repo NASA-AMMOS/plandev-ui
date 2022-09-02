@@ -1,6 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
+  import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
+  import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
+  import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { keyBy } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
@@ -133,38 +138,43 @@
 
     <svelte:fragment slot="right">
       <NavButton
-        icon="si si-activity"
         selected={$view.definition.plan.layout?.gridName === 'Activities'}
         title="Activities"
         on:click={() => viewSetLayout('Activities')}
-      />
+      >
+        <ActivityIcon />
+      </NavButton>
       <NavButton
-        icon="bi bi-braces-asterisk"
         selected={$view.definition.plan.layout?.gridName === 'Constraints'}
         status={$checkConstraintsStatus}
         title="Constraints"
         on:click={() => viewSetLayout('Constraints')}
-      />
+      >
+        <BracesAsteriskIcon />
+      </NavButton>
       <NavButton
-        icon="bi bi-calendar3"
         selected={$view.definition.plan.layout?.gridName === 'Scheduling'}
         status={$schedulingStatus}
         title="Scheduling"
         on:click={() => viewSetLayout('Scheduling')}
-      />
+      >
+        <CalendarIcon />
+      </NavButton>
       <NavButton
-        icon="bi bi-gear-wide-connected"
         selected={$view.definition.plan.layout?.gridName === 'Simulation'}
         status={$simulationStatus}
         title="Simulation"
         on:click={() => viewSetLayout('Simulation')}
-      />
+      >
+        <GearWideConnectedIcon />
+      </NavButton>
       <NavButton
-        icon="bi bi-columns"
         selected={$view.definition.plan.layout?.gridName === 'View'}
         title="View"
         on:click={() => viewSetLayout('View')}
-      />
+      >
+        <ColumnsIcon />
+      </NavButton>
     </svelte:fragment>
   </Nav>
 

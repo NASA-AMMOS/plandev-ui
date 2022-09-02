@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { plan } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
@@ -60,11 +61,11 @@
           {activityType.name}
           <span slot="suffix">
             <button
-              class="st-button icon fs-6"
+              class="st-button icon"
               on:click={() => createActivityDirectiveAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
-              <i class="bi bi-plus" />
+              <PlusIcon />
             </button>
           </span>
         </ListItem>

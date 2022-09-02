@@ -5,8 +5,15 @@
   import BookIcon from '@nasa-jpl/stellar/icons/svg/book.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
   import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/svg/checklist_on_page.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/svg/table_with_header.svg?component';
   import TimelineIcon from '@nasa-jpl/stellar/icons/svg/timeline.svg?component';
+  import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
+  import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
+  import CodeIcon from 'bootstrap-icons/icons/code.svg?component';
+  import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
+  import FileEarmarkExcelIcon from 'bootstrap-icons/icons/file-earmark-excel.svg?component';
+  import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { viewUpdateLayout } from '../../stores/views';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -31,7 +38,7 @@
 
 <div class="grid-menu st-typography-body" on:click|stopPropagation={() => gridMenu.toggle()}>
   <div class="title">{title}</div>
-  <i class="bi bi-chevron-down" style="font-size: 12px;" />
+  <ChevronDownIcon />
 
   <Menu bind:this={gridMenu}>
     <MenuItem on:click={() => updateGridComponent('ActivityTablePanel')}>
@@ -43,15 +50,15 @@
       Activity Types
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ConstraintsPanel')}>
-      <i class="bi bi-braces-asterisk" />
+      <BracesAsteriskIcon />
       Constraints
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ConstraintViolationsPanel')}>
-      <i class="bi bi-file-earmark-excel" />
+      <FileEarmarkExcelIcon />
       Constraint Violations
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ExpansionPanel')}>
-      <i class="bi bi-code-square" />
+      <CodeSquareIcon />
       Expansion
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('SchedulingPanel')}>
@@ -63,7 +70,7 @@
       Selected Activity
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('SimulationPanel')}>
-      <i class="bi bi-gear-wide-connected" />
+      <GearWideConnectedIcon />
       Simulation
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('TimelinePanel')}>
@@ -75,21 +82,17 @@
       Timeline Form
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ViewsPanel')}>
-      <i class="bi bi-columns" />
+      <ColumnsIcon />
       Views
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ViewEditorPanel')}>
-      <i class="bi bi-code" />
+      <CodeIcon />
       View Editor
     </MenuItem>
   </Menu>
 </div>
 
 <style>
-  .bi-chevron-down {
-    color: var(--st-gray-60);
-  }
-
   .grid-menu {
     align-items: center;
     border: 1px solid var(--st-gray-30);

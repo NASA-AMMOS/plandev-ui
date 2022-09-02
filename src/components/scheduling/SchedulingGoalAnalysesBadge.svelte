@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CheckCircleFillIcon from 'bootstrap-icons/icons/check-circle-fill.svg?component';
+  import XCircleFillIcon from 'bootstrap-icons/icons/x-circle-fill.svg?component';
   import { difference } from 'lodash-es';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
@@ -33,9 +35,13 @@
     {/if}
     {currentAnalysis.satisfying_activities.length}
     {#if currentAnalysis.satisfied}
-      <i class="bi bi-check-circle-fill satisfied" class:disabled={!enabled} />
+      <span class="icon satisfied" class:disabled={!enabled}>
+        <CheckCircleFillIcon />
+      </span>
     {:else}
-      <i class="bi bi-x-circle-fill unsatisfied" class:disabled={!enabled} />
+      <span class="icon unsatisfied" class:disabled={!enabled}>
+        <XCircleFillIcon />
+      </span>
     {/if}
   </div>
 {/if}
@@ -57,10 +63,6 @@
     padding: 2px 5px;
   }
 
-  .bi {
-    font-size: 1rem;
-  }
-
   .difference-badge {
     align-items: center;
     background-color: var(--st-primary-20);
@@ -69,6 +71,10 @@
     display: inline-flex;
     justify-content: center;
     padding: 2px;
+  }
+
+  .icon {
+    display: flex;
   }
 
   .satisfied {

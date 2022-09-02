@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -136,7 +137,7 @@
     <Panel>
       <svelte:fragment slot="header">
         <Chip>
-          <i class="bi bi-bar-chart" />
+          <BarChartIcon />
           Models
         </Chip>
       </svelte:fragment>

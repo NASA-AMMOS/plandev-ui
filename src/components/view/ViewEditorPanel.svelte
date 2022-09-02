@@ -43,12 +43,8 @@
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="View Editor" />
     <div class="right">
-      <button class="st-button secondary ellipsis" disabled={saveViewDisabled} on:click={saveView}>
-        <i class="bi bi-save" style="font-size: 0.8rem" />
-        Save
-      </button>
+      <button class="st-button secondary ellipsis" disabled={saveViewDisabled} on:click={saveView}> Save </button>
       <button class="st-button secondary ellipsis" disabled={saveAsViewDisabled} on:click={saveAsView}>
-        <i class="bi bi-save-fill" style="font-size: 0.8rem" />
         Save As
       </button>
     </div>

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
+  import ChevronRightIcon from '@nasa-jpl/stellar/icons/svg/chevron_right.svg?component';
+
   export { className as class };
   export { styleName as style };
   export let open: boolean = true;
@@ -9,11 +12,11 @@
 
 <div class={className} style={styleName}>
   <div class="summary p-1" on:click|stopPropagation={() => (open = !open)}>
-    <span>
+    <span style:display="flex">
       {#if !open}
-        <i class="bi bi-caret-right-fill" />
+        <ChevronRightIcon />
       {:else}
-        <i class="bi bi-caret-down-fill" />
+        <ChevronDownIcon />
       {/if}
       <slot name="summary-left" />
     </span>
