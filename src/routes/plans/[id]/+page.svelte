@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
+  import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';

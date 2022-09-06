@@ -1,6 +1,6 @@
 <script lang="ts">
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
-  import ChevronRightIcon from '@nasa-jpl/stellar/icons/svg/chevron_right.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
 
   export { className as class };
   export { styleName as style };

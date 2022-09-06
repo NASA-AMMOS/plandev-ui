@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import effects from '../../utilities/effects';

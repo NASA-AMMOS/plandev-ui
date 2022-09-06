@@ -2,9 +2,9 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
+  import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';

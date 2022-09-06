@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CheckIcon from '@nasa-jpl/stellar/icons/svg/check.svg?component';
-  import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
+  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import { activitiesMap, allPlanTags, selectedActivity } from '../../stores/activities';
   import { activityMetadataDefinitions } from '../../stores/activityMetadata';
   import { filteredExpansionSequences } from '../../stores/expansion';

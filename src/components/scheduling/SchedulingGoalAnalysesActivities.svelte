@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
-  import ActivityGroupIcon from '@nasa-jpl/stellar/icons/svg/activity_group.svg?component';
+  import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
+  import ActivityGroupIcon from '@nasa-jpl/stellar/icons/activity_group.svg?component';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';

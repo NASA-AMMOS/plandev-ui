@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Calendar from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
-  import ChevronLeft from '@nasa-jpl/stellar/icons/svg/chevron_left.svg?component';
-  import ChevronRight from '@nasa-jpl/stellar/icons/svg/chevron_right.svg?component';
-  import MagicEraser from '@nasa-jpl/stellar/icons/svg/magic_eraser.svg?component';
+  import Calendar from '@nasa-jpl/stellar/icons/calendar.svg?component';
+  import ChevronLeft from '@nasa-jpl/stellar/icons/chevron_left.svg?component';
+  import ChevronRight from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
+  import MagicEraser from '@nasa-jpl/stellar/icons/magic_eraser.svg?component';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
   import { getTarget } from '../../../utilities/generic';

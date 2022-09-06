@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ExpandIcon from '@nasa-jpl/stellar/icons/svg/expand.svg?component';
-  import PenIcon from '@nasa-jpl/stellar/icons/svg/pen.svg?component';
-  import TrashIcon from '@nasa-jpl/stellar/icons/svg/trash.svg?component';
+  import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
+  import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import type { Placement } from 'tippy.js';
   import { tooltip } from '../../../utilities/tooltip';
 

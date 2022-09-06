@@ -4,10 +4,10 @@
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
-  import GraphQLIcon from '@nasa-jpl/stellar/icons/svg/graphql.svg?component';
-  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import BoxArrowRightIcon from 'bootstrap-icons/icons/box-arrow-right.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';

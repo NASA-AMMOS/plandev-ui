@@ -1,4 +1,4 @@
-import ActivityIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+import ActivityIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 

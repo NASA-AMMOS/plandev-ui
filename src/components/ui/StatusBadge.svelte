@@ -1,10 +1,10 @@
 <script lang="ts">
-  import CheckIcon from '@nasa-jpl/stellar/icons/svg/check.svg?component';
-  import EditingIcon from '@nasa-jpl/stellar/icons/svg/editing.svg?component';
-  import MinusIcon from '@nasa-jpl/stellar/icons/svg/minus.svg?component';
-  import QuestionIcon from '@nasa-jpl/stellar/icons/svg/question.svg?component';
-  import ThreeDotsIcon from '@nasa-jpl/stellar/icons/svg/three_dot_horizontal.svg?component';
-  import WarningIcon from '@nasa-jpl/stellar/icons/svg/warning.svg?component';
+  import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import EditingIcon from '@nasa-jpl/stellar/icons/editing.svg?component';
+  import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
+  import QuestionIcon from '@nasa-jpl/stellar/icons/question.svg?component';
+  import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot_horizontal.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { getColorForStatus, Status, statusColors } from '../../utilities/status';
   import { tooltip } from '../../utilities/tooltip';
 

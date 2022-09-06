@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import ChecklistIcon from '@nasa-jpl/stellar/icons/svg/checklist.svg?component';
+  import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
   import { onMount } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';

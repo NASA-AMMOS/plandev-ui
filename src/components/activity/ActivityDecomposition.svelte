@@ -1,11 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CaretDownIcon from '@nasa-jpl/stellar/icons/svg/caret_down.svg?component';
-  import CaretRightIcon from '@nasa-jpl/stellar/icons/svg/caret_right.svg?component';
-  import TreeLeafIcon from '@nasa-jpl/stellar/icons/svg/tree_leaf.svg?component';
-  import TreeParentCollapsedIcon from '@nasa-jpl/stellar/icons/svg/tree_parent_collapsed.svg?component';
-  import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/svg/tree_parent_expanded.svg?component';
+  import CaretDownIcon from '@nasa-jpl/stellar/icons/caret_down.svg?component';
+  import CaretRightIcon from '@nasa-jpl/stellar/icons/caret_right.svg?component';
+  import TreeLeafIcon from '@nasa-jpl/stellar/icons/tree_leaf.svg?component';
+  import TreeParentCollapsedIcon from '@nasa-jpl/stellar/icons/tree_parent_collapsed.svg?component';
+  import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/tree_parent_expanded.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
 
   export let selected_id: number | null = null;

@@ -1,13 +1,13 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import ActivityIcon from '@nasa-jpl/stellar/icons/svg/activity.svg?component';
-  import BookIcon from '@nasa-jpl/stellar/icons/svg/book.svg?component';
-  import CalendarIcon from '@nasa-jpl/stellar/icons/svg/calendar.svg?component';
-  import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/svg/checklist_on_page.svg?component';
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/svg/chevron_down.svg?component';
-  import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/svg/table_with_header.svg?component';
-  import TimelineIcon from '@nasa-jpl/stellar/icons/svg/timeline.svg?component';
+  import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
+  import BookIcon from '@nasa-jpl/stellar/icons/book.svg?component';
+  import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
+  import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/checklist_on_page.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
+  import TimelineIcon from '@nasa-jpl/stellar/icons/timeline.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import CodeIcon from 'bootstrap-icons/icons/code.svg?component';

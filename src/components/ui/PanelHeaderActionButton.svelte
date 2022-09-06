@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PlayIcon from '@nasa-jpl/stellar/icons/svg/play.svg?component';
+  import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { tooltip } from '../../utilities/tooltip';
 

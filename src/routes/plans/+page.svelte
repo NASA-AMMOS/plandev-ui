@@ -4,7 +4,7 @@
   import { goto, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import PlanIcon from '@nasa-jpl/stellar/icons/svg/plan.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
