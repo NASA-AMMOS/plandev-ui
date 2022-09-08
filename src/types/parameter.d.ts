@@ -32,7 +32,12 @@ type RequiredParametersList = ParameterName[];
 
 type ParametersMap = Record<ParameterName, Parameter>;
 
+type ParameterValidationError = {
+  message: string;
+  subjects: string[];
+};
+
 type ParameterValidationResponse = {
-  errors: string[] | null;
+  errors?: ParameterValidationError[];
   success: boolean;
 };

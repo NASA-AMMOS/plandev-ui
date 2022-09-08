@@ -1070,7 +1070,10 @@ const gql = {
         activityTypeName: $activityTypeName,
         missionModelId: $modelId
       ) {
-        errors
+        errors {
+          message
+          subjects
+        }
         success
       }
     }
