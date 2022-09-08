@@ -106,7 +106,7 @@
 
     <details open>
       <summary>Arguments</summary>
-      <div>
+      <div class="mt-3 mb-3">
         {#if formParameters.length}
           <Parameters {formParameters} on:change={onChangeFormParameters} />
         {:else}

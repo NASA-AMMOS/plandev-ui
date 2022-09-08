@@ -714,6 +714,8 @@ const gql = {
   SIMULATE: `#graphql
     query Simulate($planId: Int!) {
       simulate(planId: $planId) {
+        reason
+        simulationDatasetId
         status
       }
     }

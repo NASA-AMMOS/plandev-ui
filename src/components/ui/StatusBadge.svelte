@@ -1,39 +1,39 @@
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import EditingIcon from '@nasa-jpl/stellar/icons/editing.svg?component';
-  import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
-  import QuestionIcon from '@nasa-jpl/stellar/icons/question.svg?component';
+  import SpinnerIcon from '@nasa-jpl/stellar/icons/spinner.svg?component';
   import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot_horizontal.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { getColorForStatus, Status, statusColors } from '../../utilities/status';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let status: Status = Status.Clean;
+  export let status: Status | null = null;
 
-  let color: string = statusColors.blue;
+  let color: string = statusColors.gray;
 
   $: color = getColorForStatus(status);
 </script>
 
-<span
-  class="status-badge {status}"
-  style="background: {status === Status.Failed ? 'transparent' : color}"
-  use:tooltip={{ content: status, placement: 'bottom' }}
->
-  {#if status === Status.Clean || status === Status.Complete}
-    <CheckIcon />
-  {:else if status === Status.Executing || status === Status.Pending}
-    <ThreeDotsIcon />
-  {:else if status === Status.Incomplete}
-    <MinusIcon />
-  {:else if status === Status.Dirty}
-    <EditingIcon />
-  {:else if status === Status.Failed}
-    <WarningIcon style="color: {color}" />
-  {:else}
-    <QuestionIcon />
-  {/if}
-</span>
+{#if status !== null}
+  <span
+    aria-label={status}
+    class="status-badge {status}"
+    style="background: {status === Status.Failed ? 'transparent' : color}"
+    use:tooltip={{ content: status, placement: 'bottom' }}
+  >
+    {#if status === Status.Complete}
+      <CheckIcon />
+    {:else if status === Status.Failed}
+      <WarningIcon style="color: {color}" />
+    {:else if status === Status.Incomplete}
+      <SpinnerIcon />
+    {:else if status === Status.Modified}
+      <EditingIcon />
+    {:else if status === Status.Pending}
+      <ThreeDotsIcon />
+    {/if}
+  </span>
+{/if}
 
 <style>
   .status-badge {

@@ -63,8 +63,8 @@ type SimulationDataset = {
   id: number;
 };
 
-type SimulationStatus = 'complete' | 'failed' | 'incomplete' | 'pending';
-
 type SimulationResponse = {
-  status: SimulationStatus;
+  reason: string;
+  simulationDatasetId: number;
+  status: 'complete' | 'failed' | 'incomplete' | 'pending';
 };

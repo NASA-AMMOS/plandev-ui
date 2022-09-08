@@ -22,11 +22,9 @@ type SchedulingGoalInsertInput = Omit<
   'analyses' | 'created_date' | 'id' | 'modified_date' | 'revision'
 >;
 
-type SchedulingResponseStatus = 'complete' | 'failed' | 'incomplete';
-
 type SchedulingResponse = {
   reason: string;
-  status: SchedulingResponseStatus;
+  status: 'complete' | 'failed' | 'incomplete';
 };
 
 type SchedulingSpec = {

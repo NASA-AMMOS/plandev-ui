@@ -2,7 +2,7 @@ import { derived, writable, type Writable } from 'svelte/store';
 import { plan } from '../stores/plan';
 import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
-import { Status } from '../utilities/status';
+import type { Status } from '../utilities/status';
 import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
@@ -21,7 +21,7 @@ export const schedulingSpecGoals = gqlSubscribable<SchedulingSpecGoal[]>(
 
 export const schedulingGoalsColumns: Writable<string> = writable('1fr 1px 2fr');
 
-export const schedulingStatus: Writable<Status> = writable(Status.Clean);
+export const schedulingStatus: Writable<Status | null> = writable(null);
 
 /* Derived. */
 
@@ -30,5 +30,5 @@ export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specifica
 /* Helper Functions. */
 
 export function resetSchedulingStores() {
-  schedulingStatus.set(Status.Clean);
+  schedulingStatus.set(null);
 }

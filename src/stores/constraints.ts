@@ -1,6 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
-import { Status } from '../utilities/status';
+import type { Status } from '../utilities/status';
 import { planStartTimeMs } from './plan';
 import { gqlSubscribable } from './subscribable';
 
@@ -12,7 +12,7 @@ export const constraintsAll = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS_
 
 /* Writeable. */
 
-export const checkConstraintsStatus: Writable<Status> = writable(Status.Clean);
+export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
 export const constraintViolationsMap: Writable<ConstraintViolationsMap> = writable({});
 
@@ -38,6 +38,6 @@ export const constraintViolations: Readable<ConstraintViolation[]> = derived(
 /* Helper Functions. */
 
 export function resetConstraintStores(): void {
-  checkConstraintsStatus.set(Status.Clean);
+  checkConstraintsStatus.set(null);
   constraintViolationsMap.set({});
 }

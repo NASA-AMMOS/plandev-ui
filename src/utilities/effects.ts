@@ -32,7 +32,7 @@ import { showFailureToast, showSuccessToast } from './toast';
 const effects = {
   async checkConstraints(): Promise<void> {
     try {
-      checkConstraintsStatus.set(Status.Executing);
+      checkConstraintsStatus.set(Status.Incomplete);
       const { id: planId } = get(plan);
       const data = await reqHasura<{ violationsMap: ConstraintViolationsMap }>(gql.CHECK_CONSTRAINTS, { planId });
       const { checkConstraintsResponse } = data;
@@ -95,8 +95,8 @@ const effects = {
 
       activitiesMap.update(activities => ({ ...activities, [id]: activity }));
       selectedActivityId.set(id);
-      checkConstraintsStatus.set(Status.Dirty);
-      simulationStatus.update(Status.Dirty);
+      checkConstraintsStatus.set(Status.Modified);
+      simulationStatus.set(Status.Modified);
 
       showSuccessToast('Activity Directive Created Successfully');
     } catch (e) {
@@ -146,8 +146,8 @@ const effects = {
       const { createConstraint } = data;
       const { id } = createConstraint;
 
-      checkConstraintsStatus.set(Status.Dirty);
-      simulationStatus.update(Status.Dirty);
+      checkConstraintsStatus.set(Status.Modified);
+      simulationStatus.set(Status.Modified);
       showSuccessToast('Constraint Created Successfully');
 
       return id;
@@ -401,8 +401,8 @@ const effects = {
           delete activities[id];
           return { ...activities };
         });
-        checkConstraintsStatus.set(Status.Dirty);
-        simulationStatus.update(Status.Dirty);
+        checkConstraintsStatus.set(Status.Modified);
+        simulationStatus.set(Status.Modified);
         showSuccessToast('Activity Directive Deleted Successfully');
         return true;
       }
@@ -429,8 +429,8 @@ const effects = {
           });
           return { ...activities };
         });
-        checkConstraintsStatus.set(Status.Dirty);
-        simulationStatus.update(Status.Dirty);
+        checkConstraintsStatus.set(Status.Modified);
+        simulationStatus.set(Status.Modified);
         showSuccessToast('Activity Directives Deleted Successfully');
         return true;
       }
@@ -471,8 +471,8 @@ const effects = {
       if (confirm) {
         await reqHasura(gql.DELETE_CONSTRAINT, { id });
 
-        checkConstraintsStatus.set(Status.Dirty);
-        simulationStatus.update(Status.Dirty);
+        checkConstraintsStatus.set(Status.Modified);
+        simulationStatus.set(Status.Modified);
         showSuccessToast('Constraint Deleted Successfully');
         return true;
       }
@@ -1149,8 +1149,8 @@ const effects = {
       const plan_revision = await effects.getPlanRevision(planId);
       await effects.updateSchedulingSpec(specificationId, { analysis_only, plan_revision });
 
-      let tries = 0;
-      schedulingStatus.set(Status.Executing);
+      let incomplete = true;
+      schedulingStatus.set(Status.Incomplete);
 
       do {
         const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
@@ -1160,23 +1160,22 @@ const effects = {
         if (status === 'complete') {
           const newActivities = await effects.getActivitiesForPlan(planId);
           activitiesMap.set(keyBy(newActivities, 'id'));
-          checkConstraintsStatus.set(Status.Dirty);
-          simulationStatus.update(Status.Dirty);
+          checkConstraintsStatus.set(Status.Modified);
+          simulationStatus.set(Status.Modified);
           schedulingStatus.set(Status.Complete);
-          return;
+          incomplete = false;
+          showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
         } else if (status === 'failed') {
           schedulingStatus.set(Status.Failed);
           console.log(reason);
-          return;
+          incomplete = false;
+          showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
         } else if (status === 'incomplete') {
           schedulingStatus.set(Status.Incomplete);
         }
 
-        await sleep();
-        ++tries;
-      } while (tries < 10); // Trying a max of 10 times.
-
-      schedulingStatus.set(Status.Incomplete);
+        await sleep(500); // Sleep half-second before re-scheduling.
+      } while (incomplete);
     } catch (e) {
       console.log(e);
       schedulingStatus.set(Status.Failed);
@@ -1197,13 +1196,13 @@ const effects = {
     try {
       const { id: planId } = get(plan);
 
-      let tries = 0;
-      simulationStatus.update(Status.Executing);
+      let incomplete = true;
+      simulationStatus.set(Status.Incomplete);
 
       do {
         const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
         const { simulate } = data;
-        const { status }: SimulationResponse = simulate;
+        const { reason, status }: SimulationResponse = simulate;
 
         if (status === 'complete') {
           // Activities.
@@ -1214,26 +1213,26 @@ const effects = {
           const resources: Resource[] = await effects.getSimulationResources(planId);
           simulationResources.set(resources);
 
-          checkConstraintsStatus.set(Status.Dirty);
-          simulationStatus.update(Status.Complete);
-          return;
+          checkConstraintsStatus.set(Status.Modified);
+          simulationStatus.set(Status.Complete);
+          incomplete = false;
+          showSuccessToast('Simulation Complete');
         } else if (status === 'failed') {
-          simulationStatus.update(Status.Failed);
-          return;
+          simulationStatus.set(Status.Failed);
+          console.log(reason);
+          incomplete = false;
+          showFailureToast('Simulation Failed');
         } else if (status === 'incomplete') {
-          simulationStatus.update(Status.Executing);
+          simulationStatus.set(Status.Incomplete);
         } else if (status === 'pending') {
-          simulationStatus.update(Status.Pending);
+          simulationStatus.set(Status.Pending);
         }
 
-        await sleep();
-        ++tries;
-      } while (tries < 10); // Trying a max of 10 times.
-
-      simulationStatus.update(Status.Incomplete);
+        await sleep(500); // Sleep half-second before re-simulating.
+      } while (incomplete);
     } catch (e) {
       console.log(e);
-      simulationStatus.update(Status.Failed);
+      simulationStatus.set(Status.Failed);
     }
   },
 
@@ -1279,8 +1278,8 @@ const effects = {
       },
     }));
 
-    checkConstraintsStatus.set(Status.Dirty);
-    simulationStatus.update(Status.Dirty);
+    checkConstraintsStatus.set(Status.Modified);
+    simulationStatus.set(Status.Modified);
   },
 
   async updateConstraint(
@@ -1303,8 +1302,8 @@ const effects = {
       };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
 
-      checkConstraintsStatus.set(Status.Dirty);
-      simulationStatus.update(Status.Dirty);
+      checkConstraintsStatus.set(Status.Modified);
+      simulationStatus.set(Status.Modified);
       showSuccessToast('Constraint Updated Successfully');
     } catch (e) {
       console.log(e);
@@ -1380,8 +1379,8 @@ const effects = {
       const { updateSimulation: updatedSimulation } = data;
       simulation.updateValue(() => updatedSimulation);
       await effects.uploadFiles(newFiles);
-      checkConstraintsStatus.set(Status.Dirty);
-      simulationStatus.update(Status.Dirty);
+      checkConstraintsStatus.set(Status.Modified);
+      simulationStatus.set(Status.Modified);
       showSuccessToast('Simulation Updated Successfully');
     } catch (e) {
       console.log(e);

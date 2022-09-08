@@ -1,6 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
-import { Status } from '../utilities/status';
+import type { Status } from '../utilities/status';
 import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
@@ -18,28 +18,7 @@ export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(gql.SUB
 
 export const modelParametersMap: Writable<ParametersMap> = writable({});
 
-export const simulationStatus = (() => {
-  const { set, subscribe, update: updateStore } = writable<Status>(Status.Clean);
-
-  return {
-    set,
-    subscribe,
-    update(newStatus: Status) {
-      updateStore(currentStatus => {
-        switch (currentStatus) {
-          case Status.Clean:
-            if (newStatus === Status.Dirty) {
-              return currentStatus;
-            } else {
-              return newStatus;
-            }
-          default:
-            return newStatus;
-        }
-      });
-    },
-  };
-})();
+export const simulationStatus: Writable<Status | null> = writable(null);
 
 /* Derived. */
 
@@ -54,5 +33,5 @@ export const simulationDatasetId: Readable<number | null> = derived(simulation, 
 
 export function resetSimulationStores() {
   modelParametersMap.set({});
-  simulationStatus.set(Status.Clean);
+  simulationStatus.set(null);
 }
