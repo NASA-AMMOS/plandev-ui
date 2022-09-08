@@ -9,8 +9,8 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import DataGrid from '../../components/ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { createModelError, creatingModel, models, sortedModels } from '../../stores/plan';
   import effects from '../../utilities/effects';
@@ -83,6 +83,16 @@
     effects.deleteModel(model);
   }
 
+  function deleteModelContext(event: CustomEvent<number[]>) {
+    const selectedModelListId = event.detail[0];
+
+    const modelListToDelete = $sortedModels.find((modelList: ModelList) => {
+      return modelList.id === selectedModelListId;
+    });
+
+    deleteModel(modelListToDelete);
+  }
+
   function showModel(model: ModelList) {
     goto(`${base}/plans?modelId=${model.id}`);
   }
@@ -144,12 +154,12 @@
 
       <svelte:fragment slot="body">
         {#if $sortedModels.length}
-          <DataGrid
+          <SingleActionDataGrid
             {columnDefs}
-            highlightOnSelection={false}
-            rowData={$sortedModels}
-            rowSelection="single"
-            on:rowSelected={({ detail }) => showModel(detail.data)}
+            itemDisplayText="Model"
+            items={$sortedModels}
+            on:deleteItem={deleteModelContext}
+            on:rowClicked={({ detail }) => showModel(detail.data)}
           />
         {:else}
           No Models Found

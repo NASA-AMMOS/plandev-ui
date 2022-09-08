@@ -12,14 +12,15 @@
   import { showExpansionSequenceModal } from '../../utilities/modal';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
 
   export let gridId: number;
 
   type CellRendererParams = {
     deleteExpansionSequence: (sequence: ExpansionSequence) => void;
+    openExpansionSequence: (sequence: ExpansionSequence) => void;
   };
   type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
 
@@ -55,6 +56,11 @@
               placement: 'bottom',
             },
             rowData: params.data,
+            viewCallback: params.openExpansionSequence,
+            viewTooltip: {
+              content: 'Open Sequence',
+              placement: 'bottom',
+            },
           },
           target: actionsDiv,
         });
@@ -63,6 +69,7 @@
       },
       cellRendererParams: {
         deleteExpansionSequence,
+        openExpansionSequence: showExpansionSequenceModal,
       } as CellRendererParams,
       field: 'actions',
       headerName: '',
@@ -70,7 +77,7 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 25,
+      width: 55,
     },
   ];
 
@@ -84,6 +91,18 @@
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence);
+  }
+
+  function deleteExpansionSequenceContext(event: CustomEvent<string[]>) {
+    const selectedSequenceId = event.detail[0];
+
+    const sequenceToDelete = $filteredExpansionSequences.find((sequence: ExpansionSequence) => {
+      return sequence.seq_id === selectedSequenceId;
+    });
+
+    if (sequenceToDelete) {
+      deleteExpansionSequence(sequenceToDelete);
+    }
   }
 </script>
 
@@ -155,12 +174,13 @@
                   </CssGrid>
                   <div class="mt-2">
                     {#if $filteredExpansionSequences.length}
-                      <DataGrid
+                      <SingleActionDataGrid
                         getRowId={rowData => rowData.seq_id}
                         {columnDefs}
-                        rowData={$filteredExpansionSequences}
-                        rowSelection="single"
-                        on:rowSelected={({ detail }) => showExpansionSequenceModal(detail.data)}
+                        itemDisplayText="Sequence"
+                        items={$filteredExpansionSequences}
+                        on:deleteItem={deleteExpansionSequenceContext}
+                        on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail)}
                       />
                     {:else}
                       <div class="st-typography-label">

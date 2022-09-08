@@ -13,8 +13,8 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import DataGrid from '../../components/ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
@@ -138,12 +138,16 @@
     }
   }
 
-  async function deletePlan({ id }: Plan): Promise<void> {
+  async function deletePlan({ id }: Pick<Plan, 'id'>): Promise<void> {
     const success = await effects.deletePlan(id);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
     }
+  }
+
+  function deletePlanContext(event: CustomEvent<number[]>) {
+    deletePlan({ id: event.detail[0] });
   }
 
   function prefetchPlan(plan: Plan) {
@@ -265,13 +269,13 @@
 
       <svelte:fragment slot="body">
         {#if sortedPlans.length}
-          <DataGrid
+          <SingleActionDataGrid
             {columnDefs}
-            highlightOnSelection={false}
-            rowData={sortedPlans}
-            rowSelection="single"
-            on:rowSelected={({ detail }) => showPlan(detail.data)}
+            itemDisplayText="Plan"
+            items={sortedPlans}
             on:cellMouseOver={({ detail }) => prefetchPlan(detail.data)}
+            on:deleteItem={deletePlanContext}
+            on:rowClicked={({ detail }) => showPlan(detail.data)}
           />
         {:else}
           No Plans Found

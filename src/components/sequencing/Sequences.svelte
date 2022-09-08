@@ -10,8 +10,8 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SequenceEditor from './SequenceEditor.svelte';
 
@@ -101,7 +101,7 @@
     }
   }
 
-  async function deleteSequence({ id }: UserSequence) {
+  async function deleteSequence({ id }: Pick<UserSequence, 'id'>) {
     const success = await effects.deleteUserSequence(id);
 
     if (success) {
@@ -112,6 +112,18 @@
         selectedSequenceSeqJson = 'No Sequence Selected';
       }
     }
+  }
+
+  function deleteSequenceContext(event: CustomEvent<number[]>) {
+    deleteSequence({ id: event.detail[0] });
+  }
+
+  function editSequence({ id }: Pick<UserSequence, 'id'>) {
+    goto(`${base}/sequencing/edit/${id}`);
+  }
+
+  function editSequenceContext(event: CustomEvent<number[]>) {
+    editSequence({ id: event.detail[0] });
   }
 
   async function getUserSequenceSeqJson(): Promise<void> {
@@ -134,10 +146,6 @@
         selectedSequenceSeqJson = responseMessage;
       }
     }
-  }
-
-  function editSequence({ id }: UserSequence) {
-    goto(`${base}/sequencing/edit/${id}`);
   }
 
   async function toggleSequence(event: CustomEvent<DataGridRowSelection<UserSequence>>) {
@@ -172,7 +180,15 @@
 
     <svelte:fragment slot="body">
       {#if sortedSequences.length}
-        <DataGrid {columnDefs} rowData={sortedSequences} rowSelection="single" on:rowSelected={toggleSequence} />
+        <SingleActionDataGrid
+          {columnDefs}
+          hasEdit={true}
+          itemDisplayText="Sequence"
+          items={sortedSequences}
+          on:deleteItem={deleteSequenceContext}
+          on:editItem={editSequenceContext}
+          on:rowSelected={toggleSequence}
+        />
       {:else}
         <div class="p1 st-typography-label">No Sequences Found</div>
       {/if}

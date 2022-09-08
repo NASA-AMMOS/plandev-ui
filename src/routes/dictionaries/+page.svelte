@@ -5,8 +5,8 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import DataGrid from '../../components/ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
   import { sortedCommandDictionaries } from '../../stores/sequencing';
@@ -76,8 +76,12 @@
 
   $: createButtonDisabled = !files;
 
-  function deleteCommandDictionary({ id }: CommandDictionary) {
+  function deleteCommandDictionary({ id }: Pick<CommandDictionary, 'id'>) {
     effects.deleteCommandDictionary(id);
+  }
+
+  function deleteCommandDictionaryContext(event: CustomEvent<number[]>) {
+    deleteCommandDictionary({ id: event.detail[0] });
   }
 </script>
 
@@ -117,7 +121,12 @@
 
       <svelte:fragment slot="body">
         {#if $sortedCommandDictionaries.length}
-          <DataGrid {columnDefs} rowData={$sortedCommandDictionaries} suppressRowClickSelection />
+          <SingleActionDataGrid
+            {columnDefs}
+            itemDisplayText="Command Dictionary"
+            items={$sortedCommandDictionaries}
+            on:deleteItem={deleteCommandDictionaryContext}
+          />
         {:else}
           No Command Dictionaries Found
         {/if}

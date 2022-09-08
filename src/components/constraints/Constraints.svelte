@@ -9,8 +9,8 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
@@ -109,7 +109,7 @@
   }
   $: constraintModelId = getConstraintModelId(selectedConstraint);
 
-  async function deleteConstraint({ id }: Constraint) {
+  async function deleteConstraint({ id }: Pick<Constraint, 'id'>) {
     const success = await effects.deleteConstraint(id);
 
     if (success) {
@@ -119,6 +119,18 @@
         selectedConstraint = null;
       }
     }
+  }
+
+  function deleteConstraintContext(event: CustomEvent<number[]>) {
+    deleteConstraint({ id: event.detail[0] });
+  }
+
+  function editConstraint({ id }: Pick<Constraint, 'id'>) {
+    goto(`${base}/constraints/edit/${id}`);
+  }
+
+  function editConstraintContext(event: CustomEvent<number[]>) {
+    editConstraint({ id: event.detail[0] });
   }
 
   function getConstraintModelId(selectedConstraint: Constraint | null): number | null {
@@ -136,10 +148,6 @@
     }
 
     return null;
-  }
-
-  function editConstraint({ id }: Constraint) {
-    goto(`${base}/constraints/edit/${id}`);
   }
 
   function toggleConstraint(event: CustomEvent<DataGridRowSelection<Constraint>>) {
@@ -176,11 +184,14 @@
 
     <svelte:fragment slot="body">
       {#if filteredConstraints.length}
-        <DataGrid
+        <SingleActionDataGrid
           {columnDefs}
-          rowData={filteredConstraints}
-          rowSelection="single"
-          on:rowSelected={event => toggleConstraint(event)}
+          hasEdit={true}
+          itemDisplayText="Constraint"
+          items={filteredConstraints}
+          on:deleteItem={deleteConstraintContext}
+          on:editItem={editConstraintContext}
+          on:rowSelected={toggleConstraint}
         />
       {:else}
         <div class="p1 st-typography-label">No Constraints Found</div>

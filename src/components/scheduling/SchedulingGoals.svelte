@@ -10,8 +10,8 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingGoalEditor from './SchedulingGoalEditor.svelte';
 
@@ -91,7 +91,7 @@
     }
   }
 
-  async function deleteGoal({ id }: SchedulingGoal) {
+  async function deleteGoal({ id }: Pick<SchedulingGoal, 'id'>) {
     const success = await effects.deleteSchedulingGoal(id);
 
     if (success) {
@@ -103,8 +103,16 @@
     }
   }
 
-  function editGoal({ id }: SchedulingGoal) {
+  function deleteGoalContext(event: CustomEvent<number[]>) {
+    deleteGoal({ id: event.detail[0] });
+  }
+
+  function editGoal({ id }: Pick<SchedulingGoal, 'id'>) {
     goto(`${base}/scheduling/goals/edit/${id}`);
+  }
+
+  function editGoalContext(event: CustomEvent<number[]>) {
+    editGoal({ id: event.detail[0] });
   }
 
   function toggleGoal(event: CustomEvent<DataGridRowSelection<SchedulingGoal>>) {
@@ -141,7 +149,15 @@
 
     <svelte:fragment slot="body">
       {#if sortedGoals.length}
-        <DataGrid {columnDefs} rowData={sortedGoals} rowSelection="single" on:rowSelected={toggleGoal} />
+        <SingleActionDataGrid
+          {columnDefs}
+          hasEdit={true}
+          itemDisplayText="Goal"
+          items={sortedGoals}
+          on:deleteItem={deleteGoalContext}
+          on:editItem={editGoalContext}
+          on:rowSelected={toggleGoal}
+        />
       {:else}
         No Scheduling Goals Found
       {/if}

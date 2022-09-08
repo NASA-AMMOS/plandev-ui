@@ -10,8 +10,8 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
@@ -94,7 +94,7 @@
   });
   $: sortedRules = filteredRules.sort((a, b) => compare(a.id, b.id));
 
-  async function deleteRule({ id }: ExpansionRule) {
+  async function deleteRule({ id }: Pick<ExpansionRule, 'id'>) {
     const success = await effects.deleteExpansionRule(id);
 
     if (success) {
@@ -106,8 +106,16 @@
     }
   }
 
-  function editRule({ id }: ExpansionRule) {
+  function deleteRuleContext(event: CustomEvent<number[]>) {
+    deleteRule({ id: event.detail[0] });
+  }
+
+  function editRule({ id }: Pick<ExpansionRule, 'id'>) {
     goto(`${base}/expansion/rules/edit/${id}`);
+  }
+
+  function editRuleContext(event: CustomEvent<number[]>) {
+    editRule({ id: event.detail[0] });
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {
@@ -144,7 +152,15 @@
 
     <svelte:fragment slot="body">
       {#if sortedRules.length}
-        <DataGrid {columnDefs} rowData={sortedRules} rowSelection="single" on:rowSelected={toggleRule} />
+        <SingleActionDataGrid
+          {columnDefs}
+          hasEdit={true}
+          itemDisplayText="Rule"
+          items={sortedRules}
+          on:deleteItem={deleteRuleContext}
+          on:editItem={editRuleContext}
+          on:rowSelected={toggleRule}
+        />
       {:else}
         <div class="st-typography-label">No Rules Found</div>
       {/if}

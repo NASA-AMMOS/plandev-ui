@@ -11,6 +11,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
@@ -79,7 +80,7 @@
   $: sortedSets = $expansionSets.sort((a, b) => compare(a.id, b.id));
   $: selectedExpansionRuleIds = selectedExpansionRule ? [selectedExpansionRule.id] : [];
 
-  async function deleteSet({ id }: ExpansionSet) {
+  async function deleteSet({ id }: Pick<ExpansionSet, 'id'>) {
     const success = await effects.deleteExpansionSet(id);
 
     if (success) {
@@ -90,6 +91,10 @@
         selectedExpansionSet = null;
       }
     }
+  }
+
+  function deleteSetContext(event: CustomEvent<number[]>) {
+    deleteSet({ id: event.detail[0] });
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {
@@ -134,7 +139,13 @@
 
       <svelte:fragment slot="body">
         {#if sortedSets.length}
-          <DataGrid {columnDefs} rowData={sortedSets} rowSelection="single" on:rowSelected={toggleSet} />
+          <SingleActionDataGrid
+            {columnDefs}
+            itemDisplayText="Expansion Set"
+            items={sortedSets}
+            on:deleteItem={deleteSetContext}
+            on:rowSelected={toggleSet}
+          />
         {:else}
           No Expansion Sets Found
         {/if}

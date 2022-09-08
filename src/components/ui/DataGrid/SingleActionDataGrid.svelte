@@ -11,10 +11,10 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let idKey: keyof TRowData = 'id';
+  export let hasEdit: boolean = false;
   export let items: TRowData[];
-  export let pluralItemDisplayText: string;
   export let selectedItemId: number | null = null;
-  export let singleItemDisplayText: string;
+  export let itemDisplayText: string;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
     return parseInt(data[idKey]);
@@ -24,16 +24,18 @@
   const dispatch = createEventDispatcher();
 
   let contextMenu: ContextMenu;
-  let dataGrid: DataGrid;
-  let isFiltered: boolean = false;
   let selectedItemIds: number[] = [];
 
   $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
     selectedItemIds = [selectedItemId];
   }
 
-  function bulkDeleteItems() {
-    dispatch('bulkDeleteItems', selectedItemIds);
+  function editItem() {
+    dispatch('editItem', selectedItemIds);
+  }
+
+  function deleteItem() {
+    dispatch('deleteItem', selectedItemIds);
   }
 
   function onCellContextMenu(event: CustomEvent) {
@@ -42,33 +44,23 @@
     if (selectedItemIds.length <= 1 && (!isRowSelectable || isRowSelectable(detail))) {
       selectedItemId = getRowId(clickedRow);
     }
-
-    contextMenu.show(detail.event);
-  }
-
-  function onFilterChanged(event: CustomEvent) {
-    const { detail: filterModel } = event;
-
-    isFiltered = Object.keys(filterModel).length > 0;
-  }
-
-  function selectAllItems() {
-    dataGrid.selectAllVisible();
+    if (selectedItemId !== null) {
+      contextMenu.show(detail.event);
+    }
   }
 </script>
 
 <DataGrid
-  bind:this={dataGrid}
   {columnDefs}
   {columnStates}
   bind:currentSelectedRowId={selectedItemId}
   {getRowId}
   {isRowSelectable}
-  rowSelection="multiple"
+  rowSelection="single"
   rowData={items}
   bind:selectedRowIds={selectedItemIds}
   preventDefaultOnContextMenu
-  on:filterChanged={onFilterChanged}
+  on:filterChanged
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
   on:columnMoved
@@ -81,14 +73,13 @@
   on:selectionChanged
 />
 <ContextMenu bind:this={contextMenu}>
-  <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={selectAllItems}>
-    Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
-  </ContextMenuItem>
-  {#if selectedItemIds.length}
-    <ContextMenuItem on:click={bulkDeleteItems}>
-      Delete {selectedItemIds.length}
-      {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+  <ContextMenuHeader>Actions</ContextMenuHeader>
+  {#if hasEdit}
+    <ContextMenuItem on:click={editItem}>
+      Edit {itemDisplayText}
     </ContextMenuItem>
   {/if}
+  <ContextMenuItem on:click={deleteItem}>
+    Delete {itemDisplayText}
+  </ContextMenuItem>
 </ContextMenu>
