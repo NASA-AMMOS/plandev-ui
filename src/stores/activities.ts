@@ -1,5 +1,15 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { activitiesToPoints } from '../utilities/activities';
+import gql from '../utilities/gql';
+import { gqlSubscribable } from './subscribable';
+
+/* Subscriptions. */
+
+export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefinition[]>(
+  gql.SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS,
+  {},
+  [],
+);
 
 /* Writeable. */
 

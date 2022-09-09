@@ -725,17 +725,6 @@ const effects = {
     }
   },
 
-  async getActivityMetadataDefinitions(): Promise<ActivityMetadataDefinition[]> {
-    try {
-      const data = await reqHasura<ActivityMetadataDefinition[]>(gql.GET_ACTIVITY_DIRECTIVE_METADATA_SCHEMA);
-      const { activity_directive_metadata_schema } = data;
-      return activity_directive_metadata_schema;
-    } catch (e) {
-      console.log(e);
-      return [];
-    }
-  },
-
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {

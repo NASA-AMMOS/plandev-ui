@@ -327,15 +327,6 @@ const gql = {
     }
   `,
 
-  GET_ACTIVITY_DIRECTIVE_METADATA_SCHEMA: `#graphql
-    query GetActivityDirectiveMetadataSchema {
-      activity_directive_metadata_schema {
-        key
-        schema
-      }
-    }
-  `,
-
   GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
     query GetActivityTypesExpansionRules($modelId: Int!) {
       activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
@@ -717,6 +708,15 @@ const gql = {
         reason
         simulationDatasetId
         status
+      }
+    }
+  `,
+
+  SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS: `#graphql
+    subscription SubActivityDirectiveMetadataSchemas {
+      activity_directive_metadata_schema(order_by: { key: asc }) {
+        key
+        schema
       }
     }
   `,

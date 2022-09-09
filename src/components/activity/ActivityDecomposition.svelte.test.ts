@@ -1,6 +1,6 @@
 import { cleanup, getByText, render } from '@testing-library/svelte';
 import { keyBy } from 'lodash-es';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activitiesMap } from '../../stores/activities';
 import ActivityDecomposition from './ActivityDecomposition.svelte';
 
@@ -175,6 +175,8 @@ const activities: Activity[] = [
 
 describe('Activity Decomposition component', () => {
   beforeAll(() => {
+    // See: https://github.com/sveltejs/kit/issues/6259
+    vi.mock('$app/environment', () => ({ browser: 'window' in globalThis }));
     activitiesMap.set(keyBy(activities, 'id'));
   });
 

@@ -26,7 +26,6 @@
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
   import { activitiesMap, resetActivityStores } from '../../../stores/activities';
-  import { activityMetadataDefinitions } from '../../../stores/activityMetadata';
   import { checkConstraintsStatus, resetConstraintStores } from '../../../stores/constraints';
   import {
     maxTimeRange,
@@ -88,10 +87,6 @@
   $: if (data.initialView) {
     $view = { ...data.initialView };
     $viewLayout = { ...data.initialView.definition.plan.layout };
-  }
-
-  $: if (data.initialMetadataDefinitions) {
-    activityMetadataDefinitions.set(data.initialMetadataDefinitions);
   }
 
   onMount(() => {

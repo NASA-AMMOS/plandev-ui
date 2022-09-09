@@ -4,8 +4,7 @@
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
-  import { activitiesMap, allPlanTags, selectedActivity } from '../../stores/activities';
-  import { activityMetadataDefinitions } from '../../stores/activityMetadata';
+  import { activitiesMap, activityMetadataDefinitions, allPlanTags, selectedActivity } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { activityTypesMap, plan } from '../../stores/plan';
