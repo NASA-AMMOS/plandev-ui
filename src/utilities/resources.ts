@@ -39,7 +39,7 @@ export function sampleProfiles(profiles: Profile[], startTime: string, duration:
         });
         values.push({
           x: planStart + nextSegmentOffset,
-          y: dynamics.initial + dynamics.rate * (nextSegmentOffset / 1000),
+          y: dynamics.initial + dynamics.rate * ((nextSegmentOffset - segmentOffset) / 1000),
         });
       }
     }
