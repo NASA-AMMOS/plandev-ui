@@ -25,10 +25,11 @@ Before you can run aerie-ui you must install and configure the following product
 
 - [Git](http://git-scm.com) and/or the [GitHub app](https://desktop.github.com/); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
 
-- [Node.js LTS](http://nodejs.org) which is used to run a development web server, and generate distributable files. If you're on OSX you can use [brew](https://brew.sh/):
+- [Node.js LTS](http://nodejs.org) which is used to run a development web server, and generate distributable files. We recommend using the [Node Version Manager (NVM)](https://github.com/nvm-sh/nvm) to install Node.js and [NPM](https://www.npmjs.com/) on your machine. Once you have NVM installed you can use the required Node.js/NPM versions via:
 
   ```shell
-  brew install node
+  cd aerie-ui
+  nvm use
   ```
 
 - [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based Aerie services. If you're on OSX you can use [brew](https://brew.sh/):
