@@ -10,11 +10,12 @@ declare namespace App {
  * Types for svelte-dnd-action.
  * @see https://github.com/isaacHagoel/svelte-dnd-action#typescript
  */
-declare type DndEvent = import('svelte-dnd-action').DndEvent;
+declare type Item = import('svelte-dnd-action').Item;
+declare type DndEvent<ItemType = Item> = import('svelte-dnd-action').DndEvent<ItemType>;
 declare namespace svelte.JSX {
   interface HTMLAttributes<T> {
-    onconsider?: (event: CustomEvent<DndEvent> & { target: EventTarget & T }) => void;
-    onfinalize?: (event: CustomEvent<DndEvent> & { target: EventTarget & T }) => void;
+    onconsider?: (event: CustomEvent<DndEvent<ItemType>> & { target: EventTarget & T }) => void;
+    onfinalize?: (event: CustomEvent<DndEvent<ItemType>> & { target: EventTarget & T }) => void;
   }
 }
 
