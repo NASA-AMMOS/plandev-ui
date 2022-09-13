@@ -12,7 +12,7 @@
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import { createModelError, creatingModel, models, sortedModels } from '../../stores/plan';
+  import { createModelError, creatingModel, models } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import type { PageData } from './$types';
 
@@ -24,17 +24,17 @@
   type ModelCellRendererParams = ICellRendererParams<ModelList> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Model ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 60,
     },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'version', filter: 'number', headerName: 'Version', sortable: true, width: 120 },
     {
       cellClass: 'action-cell-container',
@@ -85,11 +85,7 @@
 
   function deleteModelContext(event: CustomEvent<number[]>) {
     const selectedModelListId = event.detail[0];
-
-    const modelListToDelete = $sortedModels.find((modelList: ModelList) => {
-      return modelList.id === selectedModelListId;
-    });
-
+    const modelListToDelete = $models.find((modelList: ModelList) => modelList.id === selectedModelListId);
     deleteModel(modelListToDelete);
   }
 
@@ -153,11 +149,11 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if $sortedModels.length}
+        {#if $models.length}
           <SingleActionDataGrid
             {columnDefs}
             itemDisplayText="Model"
-            items={$sortedModels}
+            items={$models}
             on:deleteItem={deleteModelContext}
             on:rowClicked={({ detail }) => showModel(detail.data)}
           />

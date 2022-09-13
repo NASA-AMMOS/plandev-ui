@@ -26,13 +26,6 @@
 
   const columnDefs: DataGridColumnDef[] = [
     {
-      field: 'simulation_dataset_id',
-      filter: 'number',
-      headerName: 'Simulation ID',
-      resizable: true,
-      sortable: true,
-    },
-    {
       field: 'seq_id',
       filter: 'text',
       headerName: 'Seq ID',
@@ -40,6 +33,13 @@
       sortable: true,
       suppressSizeToFit: true,
       width: 85,
+    },
+    {
+      field: 'simulation_dataset_id',
+      filter: 'number',
+      headerName: 'Simulation ID',
+      resizable: true,
+      sortable: true,
     },
     { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
     { field: 'updated_at', filter: 'text', headerName: 'Updated At', resizable: true, sortable: true },

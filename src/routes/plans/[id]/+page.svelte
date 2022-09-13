@@ -35,15 +35,9 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
-  import { externalResources, resetResourceStores } from '../../../stores/resources';
+  import { resetResourceStores } from '../../../stores/resources';
   import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
-  import {
-    modelParametersMap,
-    resetSimulationStores,
-    simulation,
-    simulationStatus,
-    simulationTemplates,
-  } from '../../../stores/simulation';
+  import { modelParametersMap, resetSimulationStores, simulation, simulationStatus } from '../../../stores/simulation';
   import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
   import effects from '../../../utilities/effects';
   import { setQueryParam } from '../../../utilities/generic';
@@ -78,10 +72,6 @@
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $viewTimeRange = $maxTimeRange;
-
-    externalResources.setVariables({ planId: data.initialPlan.id });
-    simulation.setVariables({ planId: data.initialPlan.id });
-    simulationTemplates.setVariables({ modelId: data.initialPlan.model.id });
   }
 
   $: if (data.initialView) {

@@ -463,7 +463,7 @@ const gql = {
         duration
         id
         model: mission_model {
-          activity_types {
+          activity_types(order_by: { name: asc }) {
             computed_attributes_value_schema
             name
             parameters
@@ -498,13 +498,13 @@ const gql = {
 
   GET_PLANS_AND_MODELS: `#graphql
     query GetPlansAndModels {
-      models: mission_model {
+      models: mission_model(order_by: { id: desc }) {
         id
         jar_id
         name
         version
       }
-      plans: plan {
+      plans: plan(order_by: { id: desc }) {
         duration
         id
         model_id
@@ -731,7 +731,7 @@ const gql = {
 
   SUB_COMMAND_DICTIONARIES: `#graphql
     subscription SubCommandDictionaries {
-      command_dictionary {
+      command_dictionary(order_by: { id: desc }) {
         command_types_typescript_path
         created_at
         id
@@ -777,7 +777,7 @@ const gql = {
 
   SUB_EXPANSION_RULES: `#graphql
     subscription SubExpansionRules {
-      expansionRules: expansion_rule {
+      expansionRules: expansion_rule(order_by: { id: desc }) {
         activity_type
         authoring_command_dict_id
         authoring_mission_model_id
@@ -803,7 +803,7 @@ const gql = {
 
   SUB_EXPANSION_SETS: `#graphql
     subscription SubExpansionSets {
-      expansionSets: expansion_set {
+      expansionSets: expansion_set(order_by: { id: desc }) {
         command_dict_id
         created_at
         expansion_rules {
@@ -821,7 +821,7 @@ const gql = {
 
   SUB_MODELS: `#graphql
     subscription SubModels {
-      models: mission_model {
+      models: mission_model(order_by: { name: asc }) {
         id
         jar_id,
         name
@@ -854,7 +854,7 @@ const gql = {
 
   SUB_SCHEDULING_GOALS: `#graphql
     subscription SubSchedulingGoals {
-      goals: scheduling_goal {
+      goals: scheduling_goal(order_by: { id: desc }) {
         analyses(limit: 0) {
           analysis_id
         }
@@ -874,7 +874,7 @@ const gql = {
 
   SUB_SCHEDULING_SPEC_GOALS: `#graphql
     subscription SubSchedulingSpecGoals($specification_id: Int!) {
-      specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }) {
+      specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }, order_by: { priority: asc }) {
         enabled
         goal {
           analyses(order_by: { request: { specification_revision: desc } }, limit: 2) {
@@ -930,7 +930,7 @@ const gql = {
 
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {
-      user_sequence {
+      user_sequence(order_by: { id: desc }) {
         authoring_command_dict_id
         created_at
         definition

@@ -2,7 +2,8 @@ import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import type { Subscriber, Unsubscriber, Updater } from 'svelte/store';
+import { run_all } from 'svelte/internal';
+import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -17,6 +18,7 @@ export function gqlSubscribable<T>(
 
   let client: Client | null;
   let value: T | null = initialValue;
+  let variableUnsubscribers: Unsubscriber[] = [];
   let variables: QueryVariables | null = initialVariables;
 
   function clientSubscribe(): Unsubscriber {
@@ -68,9 +70,28 @@ export function gqlSubscribable<T>(
   }
 
   function setVariables(newVariables: QueryVariables): void {
+    newVariables = { ...variables, ...newVariables };
+
     if (!isEqual(variables, newVariables)) {
       variables = newVariables;
+      subscribeToVariables(variables);
       resubscribe();
+    }
+  }
+
+  function subscribeToVariables(initialVariables: QueryVariables): void {
+    run_all(variableUnsubscribers);
+    variableUnsubscribers = [];
+
+    for (const [name, variable] of Object.entries(initialVariables)) {
+      if (typeof variable === 'object' && variable?.subscribe !== undefined) {
+        const store = variable as Readable<any>;
+        const unsubscriber = store.subscribe(value => {
+          variables = { ...variables, [name]: value };
+          resubscribe();
+        });
+        variableUnsubscribers.push(unsubscriber);
+      }
     }
   }
 
@@ -78,6 +99,7 @@ export function gqlSubscribable<T>(
     if (browser && !client) {
       const clientOptions: ClientOptions = { url: env.HASURA_WEB_SOCKET_URL };
       client = createClient(clientOptions);
+      subscribeToVariables(initialVariables);
     }
 
     const unsubscribe = clientSubscribe();
@@ -90,6 +112,8 @@ export function gqlSubscribable<T>(
       subscribers.delete(subscriber);
 
       if (subscribers.size === 0 && client) {
+        run_all(variableUnsubscribers);
+        variableUnsubscribers = [];
         client.dispose();
         client = null;
       }

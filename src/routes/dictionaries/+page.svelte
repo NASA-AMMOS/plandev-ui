@@ -9,7 +9,7 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
-  import { sortedCommandDictionaries } from '../../stores/sequencing';
+  import { commandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
 
   type CellRendererParams = {
@@ -21,12 +21,12 @@
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Dictionary ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 120,
+      width: 60,
     },
     { field: 'mission', filter: 'text', headerName: 'Mission', sortable: true, width: 100 },
     { field: 'version', filter: 'text', headerName: 'Version', sortable: true, suppressAutoSize: true, width: 100 },
@@ -120,11 +120,11 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if $sortedCommandDictionaries.length}
+        {#if $commandDictionaries.length}
           <SingleActionDataGrid
             {columnDefs}
             itemDisplayText="Command Dictionary"
-            items={$sortedCommandDictionaries}
+            items={$commandDictionaries}
             on:deleteItem={deleteCommandDictionaryContext}
           />
         {:else}

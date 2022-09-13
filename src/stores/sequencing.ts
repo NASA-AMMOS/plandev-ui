@@ -1,5 +1,4 @@
-import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { compare } from '../utilities/generic';
+import { writable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
@@ -14,15 +13,3 @@ export const userSequences = gqlSubscribable<UserSequence[]>(gql.SUB_USER_SEQUEN
 export const userSequencesColumns: Writable<string> = writable('1fr 1px 2fr');
 
 export const userSequencesRows: Writable<string> = writable('1fr 1px 1fr');
-
-/* Derived. */
-
-export const sortedCommandDictionaries: Readable<CommandDictionary[]> = derived(
-  commandDictionaries,
-  $commandDictionaries => {
-    if ($commandDictionaries) {
-      return $commandDictionaries.sort((a, b) => compare(a.version, b.version));
-    }
-    return [];
-  },
-);

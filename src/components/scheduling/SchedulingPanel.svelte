@@ -3,7 +3,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
-  import { onMount } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
@@ -23,10 +22,6 @@
     const filterTextLowerCase = filterText.toLowerCase();
     const includesName = spec.goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
-  });
-
-  onMount(() => {
-    schedulingSpecGoals.setVariables({ specification_id: $selectedSpecId });
   });
 </script>
 

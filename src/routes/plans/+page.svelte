@@ -20,7 +20,7 @@
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import effects from '../../utilities/effects';
-  import { compare, removeQueryParam } from '../../utilities/generic';
+  import { removeQueryParam } from '../../utilities/generic';
   import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';
   import { min, required, timestamp } from '../../utilities/validators';
   import type { PageData } from './$types';
@@ -33,17 +33,17 @@
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Plan ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 60,
     },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
     { field: 'start_time', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
     { field: 'end_time', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
@@ -109,8 +109,6 @@
     );
   });
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
-  $: sortedModels = models.sort((a, b) => compare(a.name, b.name));
-  $: sortedPlans = filteredPlans.sort((a, b) => compare(a.name, b.name));
 
   onMount(() => {
     const queryModelId = $page.url.searchParams.get('modelId');
@@ -192,7 +190,7 @@
             <label for="model" slot="label">Models</label>
             <select class="st-select w-100" data-type="number" name="model">
               <option value="-1" />
-              {#each sortedModels as model}
+              {#each models as model}
                 <option value={model.id}>
                   {model.name}
                 </option>
@@ -268,11 +266,11 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if sortedPlans.length}
+        {#if filteredPlans.length}
           <SingleActionDataGrid
             {columnDefs}
             itemDisplayText="Plan"
-            items={sortedPlans}
+            items={filteredPlans}
             on:cellMouseOver={({ detail }) => prefetchPlan(detail.data)}
             on:deleteItem={deletePlanContext}
             on:rowClicked={({ detail }) => showPlan(detail.data)}

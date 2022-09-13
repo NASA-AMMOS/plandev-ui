@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { userSequences, userSequencesColumns } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -85,7 +84,6 @@
   let filteredSequences: UserSequence[] = [];
   let selectedSequence: UserSequence | null = null;
   let selectedSequenceSeqJson: string = 'No Sequence Selected';
-  let sortedSequences: UserSequence[] = [];
 
   $: filteredSequences = $userSequences.filter(sequence => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -93,7 +91,6 @@
     const includesName = sequence.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
-  $: sortedSequences = filteredSequences.sort((a, b) => compare(a.id, b.id));
   $: if (selectedSequence !== null) {
     const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence.id);
     if (found === -1) {
@@ -105,7 +102,7 @@
     const success = await effects.deleteUserSequence(id);
 
     if (success) {
-      sortedSequences = sortedSequences.filter(sequence => sequence.id !== id);
+      userSequences.filterValueById(id);
 
       if (id === selectedSequence?.id) {
         selectedSequence = null;
@@ -179,12 +176,12 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if sortedSequences.length}
+      {#if filteredSequences.length}
         <SingleActionDataGrid
           {columnDefs}
           hasEdit={true}
           itemDisplayText="Sequence"
-          items={sortedSequences}
+          items={filteredSequences}
           on:deleteItem={deleteSequenceContext}
           on:editItem={editSequenceContext}
           on:rowSelected={toggleSequence}

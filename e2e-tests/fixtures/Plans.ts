@@ -117,6 +117,6 @@ export class Plans {
     this.tableRowDeleteButton = page.locator(
       `.ag-row:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`,
     );
-    this.tableRowPlanId = page.locator(`.ag-row:has-text("${this.planName}") > div >> nth=1`);
+    this.tableRowPlanId = page.locator(`.ag-row:has-text("${this.planName}") > div >> nth=0`);
   }
 }

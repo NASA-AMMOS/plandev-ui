@@ -4,7 +4,6 @@
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { plan } from '../../stores/plan';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
@@ -12,11 +11,11 @@
 
   export let gridId: number;
 
-  let activityTypes: ActivityType[] = $plan.model.activity_types;
+  let activityTypes: ActivityType[];
   let filterText: string = '';
 
+  $: activityTypes = $plan?.model?.activity_types ?? [];
   $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
-  $: sortedActivityTypes = filteredActivityTypes.sort((a, b) => compare(a.name, b.name));
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
     const { start_time } = $plan;
@@ -50,8 +49,8 @@
       <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter activity types" />
     </fieldset>
 
-    {#if sortedActivityTypes.length}
-      {#each sortedActivityTypes as activityType}
+    {#if filteredActivityTypes.length}
+      {#each filteredActivityTypes as activityType}
         <ListItem
           draggable
           style="cursor: move;"

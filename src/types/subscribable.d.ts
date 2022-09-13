@@ -7,7 +7,7 @@ type GqlSubscribable<T> = {
 
 type NextValue<T> = { [key: string]: T };
 
-type QueryVariables = Record<string, unknown>;
+type QueryVariables = Record<string, any>;
 
 type Subscription<T> = {
   next: import('svelte/store').Subscriber<T>;

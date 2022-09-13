@@ -4,8 +4,8 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { activityTypeNames, expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
-  import { sortedModels } from '../../stores/plan';
-  import { sortedCommandDictionaries } from '../../stores/sequencing';
+  import { models } from '../../stores/plan';
+  import { commandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -111,7 +111,7 @@
         <label for="commandDictionary">Command Dictionary</label>
         <select bind:value={ruleDictionaryId} class="st-select w-100" name="commandDictionary">
           <option value={null} />
-          {#each $sortedCommandDictionaries as commandDictionary}
+          {#each $commandDictionaries as commandDictionary}
             <option value={commandDictionary.id}>
               {commandDictionary.mission} -
               {commandDictionary.version}
@@ -129,7 +129,7 @@
           on:change={() => (ruleActivityType = null)}
         >
           <option value={null} />
-          {#each $sortedModels as model}
+          {#each $models as model}
             <option value={model.id}>
               {model.name}
             </option>

@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -25,12 +24,12 @@
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Rule ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 80,
+      width: 60,
     },
     { field: 'activity_type', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
     {
@@ -84,7 +83,6 @@
   let filteredRules: ExpansionRule[] = [];
   let filterText: string = '';
   let selectedExpansionRule: ExpansionRule | null = null;
-  let sortedRules: ExpansionRule[] = [];
 
   $: filteredRules = $expansionRules.filter(rule => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -92,13 +90,12 @@
     const includesId = `${rule.id}`.includes(filterTextLowerCase);
     return includesActivityType || includesId;
   });
-  $: sortedRules = filteredRules.sort((a, b) => compare(a.id, b.id));
 
   async function deleteRule({ id }: Pick<ExpansionRule, 'id'>) {
     const success = await effects.deleteExpansionRule(id);
 
     if (success) {
-      sortedRules = sortedRules.filter(rule => rule.id !== id);
+      expansionRules.filterValueById(id);
 
       if (id === selectedExpansionRule?.id) {
         selectedExpansionRule = null;
@@ -151,12 +148,12 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if sortedRules.length}
+      {#if filteredRules.length}
         <SingleActionDataGrid
           {columnDefs}
           hasEdit={true}
           itemDisplayText="Rule"
-          items={sortedRules}
+          items={filteredRules}
           on:deleteItem={deleteRuleContext}
           on:editItem={editRuleContext}
           on:rowSelected={toggleRule}

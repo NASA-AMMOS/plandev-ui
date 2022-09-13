@@ -1,13 +1,14 @@
 import { derived, writable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { sampleProfiles } from '../utilities/resources';
+import { planId } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
 export const externalResources = gqlSubscribable<Resource[]>(
   gql.SUB_PROFILES_EXTERNAL,
-  { planId: -1 },
+  { planId },
   [],
   (data: ProfilesExternalResponse) => {
     const { datasets, duration, start_time } = data;

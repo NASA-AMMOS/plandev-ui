@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { schedulingGoals, schedulingGoalsColumns } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -25,12 +24,12 @@
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Goal ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 60,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
@@ -75,7 +74,6 @@
   let filteredGoals: SchedulingGoal[] = [];
   let filterText: string = '';
   let selectedGoal: SchedulingGoal | null = null;
-  let sortedGoals: SchedulingGoal[] = [];
 
   $: filteredGoals = $schedulingGoals.filter(goal => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -83,7 +81,6 @@
     const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
-  $: sortedGoals = filteredGoals.sort((a, b) => compare(a.id, b.id));
   $: if (selectedGoal !== null) {
     const found = $schedulingGoals.findIndex(goal => goal.id === selectedGoal.id);
     if (found === -1) {
@@ -95,7 +92,7 @@
     const success = await effects.deleteSchedulingGoal(id);
 
     if (success) {
-      sortedGoals = sortedGoals.filter(goal => goal.id !== id);
+      schedulingGoals.filterValueById(id);
 
       if (id === selectedGoal?.id) {
         selectedGoal = null;
@@ -148,12 +145,12 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if sortedGoals.length}
+      {#if filteredGoals.length}
         <SingleActionDataGrid
           {columnDefs}
           hasEdit={true}
           itemDisplayText="Goal"
-          items={sortedGoals}
+          items={filteredGoals}
           on:deleteItem={deleteGoalContext}
           on:editItem={editGoalContext}
           on:rowSelected={toggleGoal}

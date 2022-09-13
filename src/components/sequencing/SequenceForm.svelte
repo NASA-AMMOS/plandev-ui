@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { user as userStore } from '../../stores/app';
-  import { sortedCommandDictionaries, userSequencesColumns } from '../../stores/sequencing';
+  import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -134,7 +134,7 @@
         <label for="commandDictionary">Command Dictionary (required)</label>
         <select bind:value={sequenceCommandDictionaryId} class="st-select w-100" name="commandDictionary">
           <option value={null} />
-          {#each $sortedCommandDictionaries as commandDictionary}
+          {#each $commandDictionaries as commandDictionary}
             <option value={commandDictionary.id}>
               {commandDictionary.mission} -
               {commandDictionary.version}

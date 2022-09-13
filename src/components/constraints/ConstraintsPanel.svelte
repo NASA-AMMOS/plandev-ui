@@ -2,9 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import { onMount } from 'svelte';
   import { checkConstraintsStatus, constraints } from '../../stores/constraints';
-  import { plan } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -22,10 +20,6 @@
     const filterTextLowerCase = filterText.toLowerCase();
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
-  });
-
-  onMount(() => {
-    constraints.setVariables({ modelId: $plan.model.id, planId: $plan.id });
   });
 </script>
 

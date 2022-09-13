@@ -1,12 +1,12 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
-import { planStartTimeMs } from './plan';
+import { modelId, planId, planStartTimeMs } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const constraints = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS, { modelId: -1, planId: -1 }, []);
+export const constraints = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS, { modelId, planId }, []);
 
 export const constraintsAll = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS_ALL, {}, []);
 

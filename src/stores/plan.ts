@@ -1,6 +1,5 @@
 import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { compare } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
@@ -37,12 +36,9 @@ export const activityTypesMap: Readable<ActivityTypesMap> = derived(plan, $plan 
   return {};
 });
 
-export const sortedModels: Readable<ModelList[]> = derived(models, $models => {
-  if ($models) {
-    return $models.sort((a, b) => compare(a.name, b.name));
-  }
-  return [];
-});
+export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
+
+export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id : -1));
 
 /* Helper Functions. */
 

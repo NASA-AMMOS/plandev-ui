@@ -5,7 +5,6 @@
   import { base } from '$app/paths';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -24,12 +23,12 @@
     {
       field: 'id',
       filter: 'number',
-      headerName: 'Set ID',
+      headerName: 'ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 100,
+      width: 60,
     },
     {
       field: 'command_dict_id',
@@ -72,19 +71,17 @@
     },
   ];
 
-  let sortedSets: ExpansionSet[] = [];
   let selectedExpansionRule: ExpansionRule | null = null;
   let selectedExpansionRuleIds: number[] = [];
   let selectedExpansionSet: ExpansionSet | null = null;
 
-  $: sortedSets = $expansionSets.sort((a, b) => compare(a.id, b.id));
   $: selectedExpansionRuleIds = selectedExpansionRule ? [selectedExpansionRule.id] : [];
 
   async function deleteSet({ id }: Pick<ExpansionSet, 'id'>) {
     const success = await effects.deleteExpansionSet(id);
 
     if (success) {
-      sortedSets = sortedSets.filter(set => set.id !== id);
+      expansionSets.filterValueById(id);
 
       if (id === selectedExpansionSet?.id) {
         selectedExpansionRule = null;
@@ -138,11 +135,11 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if sortedSets.length}
+        {#if $expansionSets.length}
           <SingleActionDataGrid
             {columnDefs}
             itemDisplayText="Expansion Set"
-            items={sortedSets}
+            items={$expansionSets}
             on:deleteItem={deleteSetContext}
             on:rowSelected={toggleSet}
           />
@@ -166,12 +163,12 @@
               {
                 field: 'id',
                 filter: 'number',
-                headerName: 'Rule ID',
+                headerName: 'ID',
                 resizable: true,
                 sortable: true,
                 suppressAutoSize: true,
                 suppressSizeToFit: true,
-                width: 80,
+                width: 60,
               },
               { field: 'activity_type', filter: 'text', headerName: 'Activity Type', sortable: true },
             ]}
