@@ -112,11 +112,13 @@ const effects = {
 
       const file: File = files[0];
       const dictionary = await file.text();
-      await reqHasura(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+      const data = await reqHasura<CommandDictionary>(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+      const { createCommandDictionary: newCommandDictionary } = data;
 
       showSuccessToast('Command Dictionary Created Successfully');
       createDictionaryError.set(null);
       creatingDictionary.set(false);
+      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) => [newCommandDictionary, ...dictionaries]);
     } catch (e) {
       console.log(e);
       showFailureToast('Command Dictionary Create Failed');

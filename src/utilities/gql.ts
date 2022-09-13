@@ -21,6 +21,7 @@ const gql = {
   CREATE_COMMAND_DICTIONARY: `#graphql
     mutation CreateCommandDictionary($dictionary: String!) {
       createCommandDictionary: uploadDictionary(dictionary: $dictionary) {
+        command_types_typescript_path
         created_at
         id
         mission
