@@ -7,11 +7,11 @@
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
-  import ParameterRecError from './ParameterRecError.svelte';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameter: FormParameter<ValueSchemaStruct>;
+  export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
@@ -28,12 +28,13 @@
 
     const subFormParameters = structKeys.map((key, index) => {
       const subFormParameter: FormParameter = {
-        error: null,
+        errors: null,
         key,
         name: key,
         order: index,
         schema: schema.items[key],
         value: value ? value[key] || null : null,
+        valueSource: formParameter.valueSource,
       };
 
       return subFormParameter;
@@ -71,13 +72,12 @@
 
 {#if expanded}
   <ul style="padding-inline-start: {levelPadding}px">
-    <ParameterRecError {formParameter} />
-
     {#each subFormParameters as subFormParameter (subFormParameter.name)}
       <li>
         {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
           <ParameterRec
             {disabled}
+            {hideRightAdornments}
             formParameter={subFormParameter}
             {labelColumnWidth}
             level={++level}
@@ -87,6 +87,7 @@
         {:else}
           <ParameterBase
             {disabled}
+            {hideRightAdornments}
             formParameter={subFormParameter}
             {labelColumnWidth}
             level={++level}

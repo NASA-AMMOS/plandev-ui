@@ -1,26 +1,34 @@
 import { omitBy } from 'lodash-es';
 import { isEmpty } from './generic';
 
-export function getArgument(value: Argument, schema: ValueSchema, defaultValue?: Argument): any {
+/**
+ * Derive argument given input value, value schema, and optional default value.
+ * Returns the derived value and the source of the value which follows this logic:
+ * if the value is not null or undefined: "user"
+ * else if the default value is not undefined: "mission"
+ * otherwise there is no value so there is no value source: "none"
+ */
+export function getArgument(
+  value: Argument,
+  schema: ValueSchema,
+  defaultValue?: Argument,
+): { value: any; valueSource: ValueSource } {
   const type = schema.type;
 
   if (value !== null && value !== undefined) {
-    return value;
+    return { value, valueSource: 'user' };
   } else if (defaultValue !== undefined) {
-    return defaultValue;
+    return { value: defaultValue, valueSource: 'mission' };
   } else if (type === 'series') {
-    return [];
+    return { value: [], valueSource: 'none' };
   } else if (type === 'struct') {
-    const struct = Object.entries(schema.items).reduce(
-      (struct, [key, subSchema]) => ({
-        ...struct,
-        [key]: getArgument(null, subSchema),
-      }),
-      {},
-    );
-    return struct;
+    const struct = Object.entries(schema.items).reduce((struct, [key, subSchema]) => {
+      const { value } = getArgument(null, subSchema);
+      return { ...struct, [key]: value };
+    }, {});
+    return { value: struct, valueSource: 'none' };
   } else {
-    return null;
+    return { value: null, valueSource: 'none' };
   }
 }
 
@@ -39,16 +47,17 @@ export function getFormParameters(
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const arg: Argument = argumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
-    const value = getArgument(arg, schema, defaultArg);
+    const { value, valueSource } = getArgument(arg, schema, defaultArg);
     const required = requiredParameters.indexOf(name) > -1;
 
     const formParameter: FormParameter = {
-      error: null,
+      errors: null,
       name,
       order,
       required,
       schema,
       value,
+      valueSource,
     };
 
     return formParameter;

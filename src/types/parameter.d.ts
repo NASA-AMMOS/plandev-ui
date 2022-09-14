@@ -5,7 +5,7 @@ type EffectiveArguments = {
 };
 
 type FormParameter<T = ValueSchema> = {
-  error: string | null;
+  errors: string[] | null;
   file?: File;
   index?: number;
   key?: string;
@@ -14,6 +14,7 @@ type FormParameter<T = ValueSchema> = {
   required?: boolean;
   schema: T;
   value: Argument;
+  valueSource: ValueSource;
 };
 
 type Argument = any;
@@ -41,3 +42,5 @@ type ParameterValidationResponse = {
   errors?: ParameterValidationError[];
   success: boolean;
 };
+
+type ValueSource = 'user' | 'mission' | 'none';

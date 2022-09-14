@@ -7,25 +7,18 @@
   export let layout: 'inline' | 'stacked' | null = 'stacked';
 
   let container: HTMLDivElement;
+  let containerObserver: MutationObserver;
   let input: HTMLInputElement | null;
   let inputObserver: MutationObserver;
   let left: HTMLDivElement | null;
   let right: HTMLDivElement | null;
 
   $: if (input && left) {
-    const padLeft = 5;
-    const padRight = 3;
-    left.style.left = `${padLeft}px`;
-    input.style.paddingLeft = `${padLeft + left.clientWidth + padRight}px`;
-    setChildrenStyles([left]);
+    padLeftSlot();
   }
 
   $: if (input && right) {
-    const padLeft = 3;
-    const padRight = 5;
-    right.style.right = `${padRight}px`;
-    input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
-    setChildrenStyles([right]);
+    padRightSlot();
   }
 
   $: inputClasses = classNames('input', {
@@ -39,19 +32,51 @@
       inputObserver = new MutationObserver(inputObserverCallback);
       inputObserver.observe(input, { attributes: true });
     }
+
+    containerObserver = new MutationObserver(containerObserverCallback);
+    containerObserver.observe(container, { childList: true, subtree: true });
   });
 
   onDestroy(() => {
     if (inputObserver) {
       inputObserver.disconnect();
     }
+
+    if (containerObserver) {
+      containerObserver.disconnect();
+    }
   });
+
+  function padLeftSlot() {
+    const padLeft = 5;
+    const padRight = 3;
+    left.style.left = `${padLeft}px`;
+    input.style.paddingLeft = `${padLeft + left.clientWidth + padRight}px`;
+    setChildrenStyles([left]);
+  }
+
+  function padRightSlot() {
+    const padLeft = 3;
+    const padRight = 5;
+    right.style.right = `${padRight}px`;
+    input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
+    setChildrenStyles([right]);
+  }
 
   function inputObserverCallback(mutations: MutationRecord[]) {
     for (const { attributeName } of mutations) {
       if (attributeName === 'class' || attributeName === 'disabled') {
         setChildrenStyles([left, right]);
       }
+    }
+  }
+
+  function containerObserverCallback() {
+    if (left) {
+      padLeftSlot();
+    }
+    if (right) {
+      padRightSlot();
     }
   }
 
@@ -107,6 +132,7 @@
 
   .input > .left,
   .input > .right {
+    cursor: default;
     position: absolute;
   }
 

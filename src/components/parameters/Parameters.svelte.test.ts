@@ -10,22 +10,24 @@ describe('Parameters component', () => {
   it('Should render the list of parameters in the correct order', () => {
     const formParameters: FormParameter[] = [
       {
-        error: null,
+        errors: null,
         name: 'bar',
         order: 1,
         schema: {
           type: 'string',
         },
         value: 'value 2',
+        valueSource: 'user',
       },
       {
-        error: null,
+        errors: null,
         name: 'foo',
         order: 0,
         schema: {
           type: 'string',
         },
         value: 'value 1',
+        valueSource: 'user',
       },
     ];
     const { getAllByRole } = render(Parameters, { formParameters });
@@ -38,16 +40,17 @@ describe('Parameters component', () => {
   it('Should render a star next to a required parameter', () => {
     const formParameters: FormParameter[] = [
       {
-        error: null,
+        errors: null,
         name: 'bar',
         order: 1,
         schema: {
           type: 'string',
         },
         value: 'value 2',
+        valueSource: 'mission',
       },
       {
-        error: null,
+        errors: null,
         name: 'foo',
         order: 0,
         required: true,
@@ -55,6 +58,7 @@ describe('Parameters component', () => {
           type: 'string',
         },
         value: 'value 1',
+        valueSource: 'mission',
       },
     ];
     const { getByText } = render(Parameters, { formParameters });

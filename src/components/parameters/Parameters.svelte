@@ -41,4 +41,9 @@
   .parameter:not(:last-child) {
     margin-bottom: 1rem;
   }
+
+  .parameter :global(.st-input.error) {
+    background-color: inherit;
+    color: inherit;
+  }
 </style>

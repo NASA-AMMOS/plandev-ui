@@ -4,16 +4,16 @@
   import { createEventDispatcher } from 'svelte';
   import { convertDurationStringToUs, convertUsToDurationString } from '../../utilities/time';
   import Input from '../form/Input.svelte';
-  import ParameterBaseError from './ParameterBaseError.svelte';
+  import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
+  export let hideValueSource: boolean = false;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
 
-  let durationString: string = formParameter.value;
   let durationStringFormatError: string | null = null;
 
   const dispatch = createEventDispatcher();
@@ -29,7 +29,7 @@
     <input
       bind:value={durationString}
       class="st-input w-100"
-      class:error={formParameter.error !== null || durationStringFormatError !== null}
+      class:error={formParameter.errors !== null || durationStringFormatError !== null}
       {disabled}
       type="text"
       on:change={() => {
@@ -41,16 +41,15 @@
         }
       }}
     />
+
+    <ParameterBaseRightAdornments
+      slot="right"
+      {formParameter}
+      additionalErrors={durationStringFormatError ? [durationStringFormatError] : []}
+      {hideValueSource}
+    />
   </Input>
 </div>
-
-<ParameterBaseError
-  {columns}
-  formParameter={{
-    ...formParameter,
-    error: durationStringFormatError || formParameter.error,
-  }}
-/>
 
 <style>
   .parameter-base-duration {

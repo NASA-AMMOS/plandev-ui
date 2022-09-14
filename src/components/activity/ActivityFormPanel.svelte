@@ -54,7 +54,8 @@
   let formParameters: FormParameter[] = [];
   let isChild: boolean;
   let model: Model;
-  let parameterError: string | null = null;
+  let parametersWithErrorsCount: number = 0;
+  let parameterErrorMap: Record<string, string[]> = {};
   let rootActivityHasChildren: boolean;
   let startTimeField: FieldStore<string>;
 
@@ -92,6 +93,8 @@
     type = null;
     unfinished = null;
     tags = [];
+    parametersWithErrorsCount = 0;
+    parameterErrorMap = {};
   }
 
   $: if ($allPlanTags) {
@@ -127,6 +130,14 @@
       });
   }
   $: validateArguments(argumentsMap);
+
+  $: if (parameterErrorMap) {
+    formParameters = formParameters.map((formParameter: FormParameter) => {
+      const errors = parameterErrorMap[formParameter.name];
+      return { ...formParameter, errors: errors || null };
+    });
+    parametersWithErrorsCount = Object.keys(parameterErrorMap).length;
+  }
 
   $: if (simulated_activity_id !== null && $simulationDatasetId !== null) {
     effects.getExpansionSequenceId(simulated_activity_id, $simulationDatasetId).then(seqId => {
@@ -228,12 +239,18 @@
     if (newArguments) {
       const { errors, success } = await effects.validateActivityArguments(type, model.id, newArguments);
 
-      // TODO: Update to account for errors returned for individual arguments.
       if (!success) {
-        console.log(errors);
-        parameterError = 'one or more invalid - see console';
+        parameterErrorMap = errors.reduce((map, error) => {
+          error.subjects?.forEach(subject => {
+            if (!map[subject]) {
+              map[subject] = [];
+            }
+            map[subject].push(error.message);
+          });
+          return map;
+        }, {});
       } else {
-        parameterError = null;
+        parameterErrorMap = {};
       }
     }
   }
@@ -445,10 +462,10 @@
       <fieldset>
         <details open style:cursor="pointer">
           <summary>
-            <span class:error={parameterError !== null}>
+            <span class:error={parametersWithErrorsCount > 0}>
               Parameters
-              {#if parameterError !== null}
-                ({parameterError})
+              {#if parametersWithErrorsCount > 0}
+                ({parametersWithErrorsCount} invalid)
               {/if}
             </span>
           </summary>

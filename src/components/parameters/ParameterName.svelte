@@ -13,7 +13,7 @@
 <div class="form-parameter-name">
   <div
     class="name"
-    class:error={formParameter.error !== null}
+    class:error={formParameter.errors !== null}
     use:tooltip={{ content: tooltipContent, placement: 'bottom' }}
   >
     {formParameter?.name}

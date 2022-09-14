@@ -10,13 +10,14 @@
   import { tooltip } from '../../utilities/tooltip';
   import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';
+  import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
-  import ParameterRecError from './ParameterRecError.svelte';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameter: FormParameter<ValueSchemaSeries>;
+  export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
@@ -32,12 +33,13 @@
 
     for (let i = 0; i < value.length; ++i) {
       const subFormParameter: FormParameter = {
-        error: null,
+        errors: null,
         index: i,
         name: `[${i}]`,
         order: i,
         schema: schema.items,
-        value: getArgument(value[i], schema.items),
+        value: getArgument(value[i], schema.items).value,
+        valueSource: formParameter.valueSource,
       };
       subFormParameters.push(subFormParameter);
     }
@@ -58,7 +60,7 @@
 
   function valueAdd() {
     const { schema } = formParameter;
-    const newValue = getArgument(null, schema.items);
+    const { value: newValue } = getArgument(null, schema.items);
     const value = [...formParameter.value, newValue];
     dispatch('change', { ...formParameter, value });
   }
@@ -83,7 +85,7 @@
       <ParameterName {formParameter} />
     </div>
     <div class="series-right">
-      <CssGrid gap="3px" columns="auto auto">
+      <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
         <button
           class="st-button icon"
           disabled={subFormParameters?.length === 0}
@@ -99,6 +101,7 @@
         >
           <PlusIcon />
         </button>
+        <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
       </CssGrid>
     </div>
   </div>
@@ -108,14 +111,13 @@
 
 {#if expanded}
   <ul style="padding-inline-start: {levelPadding}px">
-    <ParameterRecError {formParameter} />
-
     {#if subFormParameters?.length}
       {#each subFormParameters as subFormParameter (subFormParameter.name)}
         <li>
           {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
             <ParameterRec
               {disabled}
+              hideRightAdornments
               {expanded}
               formParameter={subFormParameter}
               {labelColumnWidth}
@@ -127,6 +129,7 @@
             <ParameterBase
               {disabled}
               formParameter={subFormParameter}
+              hideRightAdornments
               {labelColumnWidth}
               level={++level}
               {levelPadding}
@@ -171,5 +174,10 @@
   .series-right {
     align-items: center;
     justify-content: flex-end;
+  }
+
+  :global(.parameter-rec-series-css-grid) {
+    align-items: center;
+    margin-right: 5px;
   }
 </style>
