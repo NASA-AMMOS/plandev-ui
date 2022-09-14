@@ -27,11 +27,20 @@
   const dispatch = createEventDispatcher();
 
   const [popperRef, popperContent] = createPopperActions({
-    placement: 'bottom',
-    strategy: 'absolute',
+    placement: 'bottom-start',
+    strategy: 'fixed',
   });
   const extraOpts = {
-    modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
+    modifiers: [
+      {
+        enabled: true,
+        name: 'flip',
+        options: {
+          fallbackPlacements: ['auto-end', 'auto-start'],
+        },
+      },
+      { name: 'offset', options: { offset: [0, 8] } },
+    ],
   };
 
   const monthsOptions: DropdownCustomOption[] = [

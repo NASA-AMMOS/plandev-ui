@@ -13,9 +13,11 @@
 
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { createPopperActions } from 'svelte-popperjs';
   import { hideAll as hideAllTooltips } from 'tippy.js';
 
   export let hideAfterClick: boolean = true;
+  export let offset: number[] = [0, 1];
   export let shown = false;
 
   export function hide(): void {
@@ -36,6 +38,23 @@
     }
   }
 
+  const [popperRef, popperContent] = createPopperActions({
+    placement: 'bottom-start',
+    strategy: 'fixed',
+  });
+  const extraOpts = {
+    modifiers: [
+      {
+        enabled: true,
+        name: 'flip',
+        options: {
+          fallbackPlacements: ['top-start'],
+        },
+      },
+      { name: 'offset', options: { offset } },
+    ],
+  };
+
   onMount(() => {
     hideFns.add(hide);
   });
@@ -54,14 +73,8 @@
 <svelte:body on:click={hide} />
 
 {#if shown}
-  <div
-    class="menu"
-    style:left="0"
-    style:top="115%"
-    on:click|stopPropagation={onClick}
-    on:mouseenter={() => hideAllTooltips()}
-  >
-    <div class="menu-slot st-typography-body">
+  <div class="menu" use:popperRef on:click|stopPropagation={onClick} on:mouseenter={() => hideAllTooltips()}>
+    <div class="menu-slot st-typography-body" use:popperContent={extraOpts}>
       <slot />
     </div>
   </div>
@@ -69,7 +82,11 @@
 
 <style>
   .menu {
+    height: 100%;
+    left: 0;
     position: absolute;
+    top: 0;
+    width: 100%;
   }
 
   .menu-slot {
@@ -77,7 +94,6 @@
     border-radius: 4px;
     box-shadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #0000001f;
     outline: 0;
-    position: fixed;
     z-index: 1000;
   }
 </style>
