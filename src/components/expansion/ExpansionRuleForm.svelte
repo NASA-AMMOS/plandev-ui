@@ -45,34 +45,46 @@
     ruleLogic = value;
   }
 
-  async function saveRule() {
-    if (mode === 'create') {
-      const newRule: ExpansionRuleInsertInput = {
-        activity_type: ruleActivityType,
-        authoring_command_dict_id: ruleDictionaryId,
-        authoring_mission_model_id: ruleModelId,
-        expansion_logic: ruleLogic,
-      };
-      const newRuleId = await effects.createExpansionRule(newRule);
+  function onKeydown(event: KeyboardEvent): void {
+    const { key, ctrlKey, metaKey } = event;
+    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+      event.preventDefault();
+      saveRule();
+    }
+  }
 
-      if (newRuleId !== null) {
-        goto(`${base}/expansion/rules/edit/${newRuleId}`);
-      }
-    } else if (mode === 'edit') {
-      const updatedRule: Partial<ExpansionRule> = {
-        activity_type: ruleActivityType,
-        authoring_command_dict_id: ruleDictionaryId,
-        authoring_mission_model_id: ruleModelId,
-        expansion_logic: ruleLogic,
-      };
-      const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
-      if (updated_at !== null) {
-        ruleUpdatedAt = updated_at;
-        savedRuleLogic = ruleLogic;
+  async function saveRule() {
+    if (saveButtonEnabled) {
+      if (mode === 'create') {
+        const newRule: ExpansionRuleInsertInput = {
+          activity_type: ruleActivityType,
+          authoring_command_dict_id: ruleDictionaryId,
+          authoring_mission_model_id: ruleModelId,
+          expansion_logic: ruleLogic,
+        };
+        const newRuleId = await effects.createExpansionRule(newRule);
+
+        if (newRuleId !== null) {
+          goto(`${base}/expansion/rules/edit/${newRuleId}`);
+        }
+      } else if (mode === 'edit') {
+        const updatedRule: Partial<ExpansionRule> = {
+          activity_type: ruleActivityType,
+          authoring_command_dict_id: ruleDictionaryId,
+          authoring_mission_model_id: ruleModelId,
+          expansion_logic: ruleLogic,
+        };
+        const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
+        if (updated_at !== null) {
+          ruleUpdatedAt = updated_at;
+          savedRuleLogic = ruleLogic;
+        }
       }
     }
   }
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$expansionRulesColumns}>
   <Panel overflowYBody="hidden">

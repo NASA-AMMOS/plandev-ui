@@ -53,35 +53,47 @@
     constraintDefinition = value;
   }
 
+  function onKeydown(event: KeyboardEvent): void {
+    const { key, ctrlKey, metaKey } = event;
+    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+      event.preventDefault();
+      saveConstraint();
+    }
+  }
+
   async function saveConstraint() {
-    if (mode === 'create') {
-      const newConstraintId = await effects.createConstraint(
-        constraintDefinition,
-        constraintDescription,
-        constraintModelId,
-        constraintName,
-        constraintPlanId,
-        constraintSummary,
-      );
+    if (saveButtonEnabled) {
+      if (mode === 'create') {
+        const newConstraintId = await effects.createConstraint(
+          constraintDefinition,
+          constraintDescription,
+          constraintModelId,
+          constraintName,
+          constraintPlanId,
+          constraintSummary,
+        );
 
-      if (newConstraintId !== null) {
-        goto(`${base}/constraints/edit/${newConstraintId}`);
+        if (newConstraintId !== null) {
+          goto(`${base}/constraints/edit/${newConstraintId}`);
+        }
+      } else if (mode === 'edit') {
+        await effects.updateConstraint(
+          constraintId,
+          constraintDefinition,
+          constraintDescription,
+          constraintModelId,
+          constraintName,
+          constraintPlanId,
+          constraintSummary,
+        );
+
+        savedConstraintDefinition = constraintDefinition;
       }
-    } else if (mode === 'edit') {
-      await effects.updateConstraint(
-        constraintId,
-        constraintDefinition,
-        constraintDescription,
-        constraintModelId,
-        constraintName,
-        constraintPlanId,
-        constraintSummary,
-      );
-
-      savedConstraintDefinition = constraintDefinition;
     }
   }
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$constraintsColumns}>
   <Panel overflowYBody="hidden">

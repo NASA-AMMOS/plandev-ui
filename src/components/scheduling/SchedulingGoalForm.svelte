@@ -48,45 +48,57 @@
     goalDefinition = value;
   }
 
+  function onKeydown(event: KeyboardEvent): void {
+    const { key, ctrlKey, metaKey } = event;
+    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+      event.preventDefault();
+      saveGoal();
+    }
+  }
+
   async function saveGoal() {
-    if (mode === 'create') {
-      const newGoal = await effects.createSchedulingGoal(
-        goalDefinition,
-        goalDescription,
-        goalName,
-        $userStore?.id,
-        goalModelId,
-      );
+    if (saveButtonEnabled) {
+      if (mode === 'create') {
+        const newGoal = await effects.createSchedulingGoal(
+          goalDefinition,
+          goalDescription,
+          goalName,
+          $userStore?.id,
+          goalModelId,
+        );
 
-      if (newGoal !== null) {
-        const { id: newGoalId } = newGoal;
+        if (newGoal !== null) {
+          const { id: newGoalId } = newGoal;
 
-        if (specId !== null) {
-          const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
-            enabled: true,
-            goal_id: newGoalId,
-            specification_id: specId,
-          };
-          await effects.createSchedulingSpecGoal(specGoalInsertInput);
+          if (specId !== null) {
+            const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
+              enabled: true,
+              goal_id: newGoalId,
+              specification_id: specId,
+            };
+            await effects.createSchedulingSpecGoal(specGoalInsertInput);
+          }
+
+          goto(`${base}/scheduling/goals/edit/${newGoalId}`);
         }
-
-        goto(`${base}/scheduling/goals/edit/${newGoalId}`);
-      }
-    } else if (mode === 'edit') {
-      const goal: Partial<SchedulingGoal> = {
-        definition: goalDefinition,
-        description: goalDescription,
-        model_id: goalModelId,
-        name: goalName,
-      };
-      const updatedGoal = await effects.updateSchedulingGoal(goalId, goal);
-      if (updatedGoal) {
-        goalModifiedDate = updatedGoal.modified_date;
-        savedGoalDefinition = goalDefinition;
+      } else if (mode === 'edit') {
+        const goal: Partial<SchedulingGoal> = {
+          definition: goalDefinition,
+          description: goalDescription,
+          model_id: goalModelId,
+          name: goalName,
+        };
+        const updatedGoal = await effects.updateSchedulingGoal(goalId, goal);
+        if (updatedGoal) {
+          goalModifiedDate = updatedGoal.modified_date;
+          savedGoalDefinition = goalDefinition;
+        }
       }
     }
   }
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$schedulingGoalsColumns}>
   <Panel overflowYBody="hidden">
