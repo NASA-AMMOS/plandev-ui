@@ -1,5 +1,3 @@
-type HtmlModalElement = HTMLDivElement & { resolve: (value: boolean | PromiseLike<boolean>) => void };
-
 type User = {
   id: string;
   ssoToken: string;

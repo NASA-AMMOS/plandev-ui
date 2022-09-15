@@ -19,7 +19,7 @@ import { view } from '../stores/views';
 import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
 import { formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
-import { showConfirmModal } from './modal';
+import { showConfirmModal, showCreateViewModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
@@ -374,15 +374,20 @@ const effects = {
     }
   },
 
-  async createView(name: string, owner: string, definition: ViewDefinition): Promise<void> {
+  async createView(owner: string, definition: ViewDefinition): Promise<void> {
     try {
-      const viewInsertInput: ViewInsertInput = { definition, name, owner };
-      const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
-      const { newView } = data;
+      const { confirm, value = null } = await showCreateViewModal();
 
-      view.update(() => newView);
-      setQueryParam('viewId', `${newView.id}`);
-      showSuccessToast('View Created Successfully');
+      if (confirm && value) {
+        const { name } = value;
+        const viewInsertInput: ViewInsertInput = { definition, name, owner };
+        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
+        const { newView } = data;
+
+        view.update(() => newView);
+        setQueryParam('viewId', `${newView.id}`);
+        showSuccessToast('View Created Successfully');
+      }
     } catch (e) {
       console.log(e);
       showFailureToast('View Create Failed');
@@ -391,7 +396,7 @@ const effects = {
 
   async deleteActivityDirective(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this activity directive?',
         'Delete Activity',
@@ -417,7 +422,7 @@ const effects = {
 
   async deleteActivityDirectives(ids: number[]): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete the selected activity directives?',
         'Delete Activities',
@@ -445,7 +450,7 @@ const effects = {
 
   async deleteCommandDictionary(id: number): Promise<void> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this dictionary?',
         'Delete Command Dictionary',
@@ -464,7 +469,7 @@ const effects = {
 
   async deleteConstraint(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this constraint?',
         'Delete Constraint',
@@ -487,7 +492,7 @@ const effects = {
 
   async deleteExpansionRule(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this expansion rule?',
         'Delete Expansion Rule',
@@ -509,7 +514,7 @@ const effects = {
 
   async deleteExpansionSequence(sequence: ExpansionSequence): Promise<void> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this expansion sequence?',
         'Delete Expansion Sequence',
@@ -546,7 +551,7 @@ const effects = {
 
   async deleteExpansionSet(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this expansion set?',
         'Delete Expansion Set',
@@ -578,7 +583,11 @@ const effects = {
 
   async deleteModel(model: ModelList): Promise<void> {
     try {
-      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this model?', 'Delete Model');
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        'Are you sure you want to delete this model?',
+        'Delete Model',
+      );
 
       if (confirm) {
         const { id, jar_id } = model;
@@ -595,7 +604,7 @@ const effects = {
 
   async deletePlan(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this plan?', 'Delete Plan');
+      const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this plan?', 'Delete Plan');
 
       if (confirm) {
         await reqHasura(gql.DELETE_PLAN, { id });
@@ -613,7 +622,7 @@ const effects = {
 
   async deleteSchedulingGoal(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this scheduling goal?',
         'Delete Scheduling Goal',
@@ -635,7 +644,7 @@ const effects = {
 
   async deleteUserSequence(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete this user sequence?',
         'Delete User Sequence',
@@ -657,7 +666,7 @@ const effects = {
 
   async deleteView(id: number): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
+      const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
 
       if (confirm) {
         await reqHasura(gql.DELETE_VIEW, { id });
@@ -671,7 +680,7 @@ const effects = {
 
   async deleteViews(ids: number[]): Promise<boolean> {
     try {
-      const confirm = await showConfirmModal(
+      const { confirm } = await showConfirmModal(
         'Delete',
         'Are you sure you want to delete the selected views?',
         'Delete Views',

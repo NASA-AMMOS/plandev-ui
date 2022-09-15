@@ -1,15 +1,16 @@
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
+import CreateViewModal from '../components/modals/CreateViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
  */
-export function modalBodyClickListener() {
-  const target: HtmlModalElement = document.querySelector('#svelte-modal');
+export function modalBodyClickListener(): void {
+  const target: ModalElement = document.querySelector('#svelte-modal');
   if (target && target.resolve) {
     target.replaceChildren();
-    target.resolve(false);
+    target.resolve({ confirm: false });
     target.resolve = null;
   }
 }
@@ -17,11 +18,11 @@ export function modalBodyClickListener() {
 /**
  * Listens for escape key presses on the document body and removes the modal children.
  */
-export function modalBodyKeyListener(event: KeyboardEvent) {
-  const target: HtmlModalElement = document.querySelector('#svelte-modal');
+export function modalBodyKeyListener(event: KeyboardEvent): void {
+  const target: ModalElement = document.querySelector('#svelte-modal');
   if (target && target.resolve && event.key == 'Escape') {
     target.replaceChildren();
-    target.resolve(false);
+    target.resolve({ confirm: false });
     target.resolve = null;
   }
 }
@@ -29,9 +30,9 @@ export function modalBodyKeyListener(event: KeyboardEvent) {
 /**
  * Shows an AboutModal component.
  */
-export async function showAboutModal(): Promise<boolean> {
+export async function showAboutModal(): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: HtmlModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
       const aboutModal = new AboutModal({ target });
@@ -40,7 +41,7 @@ export async function showAboutModal(): Promise<boolean> {
       aboutModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
-        resolve(true);
+        resolve({ confirm: true });
       });
     }
   });
@@ -49,9 +50,13 @@ export async function showAboutModal(): Promise<boolean> {
 /**
  * Shows a ConfirmModal component with the supplied arguments.
  */
-export async function showConfirmModal(confirmText: string, message: string, title: string): Promise<boolean> {
+export async function showConfirmModal(
+  confirmText: string,
+  message: string,
+  title: string,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: HtmlModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
       const confirmModal = new ConfirmModal({
@@ -63,13 +68,39 @@ export async function showConfirmModal(confirmText: string, message: string, tit
       confirmModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
-        resolve(false);
+        resolve({ confirm: false });
       });
 
       confirmModal.$on('confirm', () => {
         target.replaceChildren();
         target.resolve = null;
-        resolve(true);
+        resolve({ confirm: true });
+      });
+    }
+  });
+}
+
+/**
+ * Shows a CreateViewModal component.
+ */
+export async function showCreateViewModal(): Promise<ModalElementValue<{ name: string }>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const createViewModal = new CreateViewModal({ target });
+      target.resolve = resolve;
+
+      createViewModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+
+      createViewModal.$on('create', (e: CustomEvent<{ name: string }>) => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: true, value: e.detail });
       });
     }
   });
@@ -78,9 +109,9 @@ export async function showConfirmModal(confirmText: string, message: string, tit
 /**
  * Shows a SequenceModal with the supplied arguments.
  */
-export async function showExpansionSequenceModal(expansionSequence: ExpansionSequence) {
+export async function showExpansionSequenceModal(expansionSequence: ExpansionSequence): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: HtmlModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
       const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence }, target });
@@ -89,7 +120,7 @@ export async function showExpansionSequenceModal(expansionSequence: ExpansionSeq
       sequenceModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
-        resolve(true);
+        resolve({ confirm: true });
       });
     }
   });

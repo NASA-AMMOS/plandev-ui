@@ -16,6 +16,7 @@
   import ConstraintsPanel from '../../../components/constraints/ConstraintsPanel.svelte';
   import ConstraintViolationsPanel from '../../../components/constraints/ConstraintViolationsPanel.svelte';
   import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
+  import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
   import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
@@ -159,6 +160,7 @@
         on:click={() => viewSetLayout('View')}
       >
         <ColumnsIcon />
+        <ViewMenu slot="menu" />
       </NavButton>
     </svelte:fragment>
   </Nav>

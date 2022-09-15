@@ -14,6 +14,7 @@
     <slot />
   </span>
   {title}
+  <slot name="menu" />
 </div>
 
 <style>
