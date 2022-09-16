@@ -750,7 +750,7 @@ const gql = {
           { model_id: { _eq: $modelId } },
           { plan_id: { _eq: $planId } }
         ]
-      }) {
+      }, order_by: { name: asc }) {
         definition
         description
         id
@@ -764,7 +764,7 @@ const gql = {
 
   SUB_CONSTRAINTS_ALL: `#graphql
     subscription SubConstraintsAll {
-      constraints: condition {
+      constraints: condition(order_by: { name: asc }) {
         definition
         description
         id

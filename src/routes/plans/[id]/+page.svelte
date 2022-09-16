@@ -22,7 +22,7 @@
   import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
-  import IFrame from '../../../components/ui/IFrame.svelte';
+  import IFramePanel from '../../../components/ui/IFramePanel.svelte';
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
@@ -47,14 +47,14 @@
 
   export let data: PageData;
 
-  const gridComponentsByName: Record<string, unknown> = {
+  const gridComponentsByName: Record<string, any> = {
     ActivityFormPanel,
     ActivityTablePanel,
     ActivityTypesPanel,
     ConstraintViolationsPanel,
     ConstraintsPanel,
     ExpansionPanel,
-    IFrame,
+    IFramePanel,
     SchedulingPanel,
     SimulationPanel,
     TimelineFormPanel,

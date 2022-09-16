@@ -5,7 +5,7 @@
   import { createEventDispatcher, tick } from 'svelte';
 
   export let grid: Grid;
-  export let gridComponentsByName: Record<string, unknown> = {};
+  export let gridComponentsByName: Record<string, any> = {};
 
   const dispatch = createEventDispatcher();
 

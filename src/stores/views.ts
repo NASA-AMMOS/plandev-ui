@@ -162,6 +162,29 @@ export function viewUpdateActivityTables(update: Partial<ViewActivityTable>, act
   }));
 }
 
+export function viewUpdateIFrame(prop: string, value: any, iFrameId?: number) {
+  if (iFrameId !== undefined) {
+    view.update(currentView => ({
+      ...currentView,
+      definition: {
+        ...currentView.definition,
+        plan: {
+          ...currentView.definition.plan,
+          iFrames: currentView.definition.plan.iFrames.map(iFrame => {
+            if (iFrame && iFrame.id === iFrameId) {
+              return {
+                ...iFrame,
+                [prop]: value,
+              };
+            }
+            return iFrame;
+          }),
+        },
+      },
+    }));
+  }
+}
+
 export function viewUpdateLayer(event: Event) {
   event.stopPropagation();
   const { name: prop, value } = getTarget(event);

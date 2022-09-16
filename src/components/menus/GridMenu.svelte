@@ -14,6 +14,7 @@
   import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import FileEarmarkExcelIcon from 'bootstrap-icons/icons/file-earmark-excel.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import { viewUpdateLayout } from '../../stores/views';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -28,6 +29,8 @@
 
     if (name === 'ActivityTablePanel') {
       update.activityTableId = 0;
+    } else if (name === 'IFramePanel') {
+      update.iFrameId = 0;
     } else if (name === 'TimelinePanel') {
       update.timelineId = 0;
     }
@@ -60,6 +63,10 @@
     <MenuItem on:click={() => updateGridComponent('ExpansionPanel')}>
       <CodeSquareIcon />
       Expansion
+    </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('IFramePanel')}>
+      <WindowFullscreenIcon />
+      External Application
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('SchedulingPanel')}>
       <CalendarIcon />
