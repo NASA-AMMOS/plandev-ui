@@ -11,6 +11,7 @@
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
+  import TimelineCursors from './TimelineCursors.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
@@ -18,6 +19,8 @@
   export let timelineId: number;
 
   let clientWidth: number = 0;
+  let cursorEnabled: boolean = true;
+  let cursorHeaderHeight: number = 20;
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
@@ -68,6 +71,12 @@
     viewUpdateTimeline('rows', rows, timelineId);
   }
 
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key === 't' && event.ctrlKey) {
+      cursorEnabled = !cursorEnabled;
+    }
+  }
+
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
     const { points } = detail;
@@ -106,11 +115,13 @@
     if (timelineDiv && xAxisDiv && timelineDiv.parentElement) {
       const { clientHeight: parentHeight } = timelineDiv.parentElement;
       const offsetTop = xAxisDiv.clientHeight;
-      const maxHeight = parentHeight - offsetTop;
+      const maxHeight = parentHeight - offsetTop - cursorHeaderHeight;
       rowsMaxHeight = maxHeight;
     }
   }
 </script>
+
+<svelte:window on:keydown={onKeyDown} />
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
@@ -127,6 +138,14 @@
       on:viewTimeRangeChanged={onViewTimeRangeChanged}
     />
   </div>
+  <TimelineCursors
+    {mouseOver}
+    {xScaleView}
+    {drawWidth}
+    {cursorHeaderHeight}
+    {cursorEnabled}
+    marginLeft={timeline?.marginLeft}
+  />
   <div
     class="rows"
     style="max-height: {rowsMaxHeight}px"
