@@ -85,6 +85,11 @@
     rowDragMoveDisabled = false;
   }
 
+  function onToggleRowExpansion(event: CustomEvent<{ expanded: boolean; rowId: number }>) {
+    const { rowId, expanded } = event.detail;
+    viewUpdateRow('expanded', expanded, timelineId, rowId);
+  }
+
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (timeline.gridId === gridId && newHeight < MAX_CANVAS_SIZE) {
@@ -140,9 +145,11 @@
         constraintViolations={$constraintViolations}
         drawHeight={row.height}
         {drawWidth}
+        expanded={row.expanded}
         horizontalGuides={row.horizontalGuides}
         id={row.id}
         layers={row.layers}
+        name={row.name}
         marginLeft={timeline?.marginLeft}
         resources={$resources}
         {rowDragMoveDisabled}
@@ -155,6 +162,7 @@
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}
         on:mouseOverViolations={e => (mouseOverViolations = e.detail)}
+        on:toggleRowExpansion={onToggleRowExpansion}
         on:updateRowHeight={onUpdateRowHeight}
       />
     {/each}
@@ -167,6 +175,7 @@
 <style>
   .rows {
     min-height: 100px;
+    outline: none !important;
     overflow-x: hidden;
     overflow-y: auto;
   }

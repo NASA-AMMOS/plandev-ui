@@ -45,4 +45,8 @@
     opacity: 0.5;
     width: 100%;
   }
+
+  .row-drag-handle-height:hover {
+    background-color: var(--st-gray-30);
+  }
 </style>

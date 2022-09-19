@@ -104,10 +104,12 @@ type ResourceLayerFilter = {
 
 type Row = {
   autoAdjustHeight: boolean;
+  expanded: boolean;
   height: number;
   horizontalGuides: HorizontalGuide[];
   id: number;
   layers: Layer[];
+  name: string;
   yAxes: Axis[];
 };
 

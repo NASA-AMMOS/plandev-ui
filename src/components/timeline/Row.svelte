@@ -4,12 +4,13 @@
   import type { ScaleTime } from 'd3-scale';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import { classNames } from '../../utilities/generic';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
   import LayerLine from './LayerLine.svelte';
   import LayerXRange from './LayerXRange.svelte';
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
-  import RowDragHandleMove from './RowDragHandleMove.svelte';
+  import RowHeader from './RowHeader.svelte';
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
   import RowVerticalGuides from './RowVerticalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
@@ -19,9 +20,11 @@
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
+  export let expanded: boolean = true;
   export let horizontalGuides: HorizontalGuide[] = [];
   export let id: number;
   export let layers: Layer[] = [];
+  export let name: string = '';
   export let marginLeft: number = 50;
   export let resources: Resource[] = [];
   export let rowDragMoveDisabled = true;
@@ -50,6 +53,7 @@
     heightsByLayer,
     layers.map(({ id }) => id),
   );
+  $: rowClasses = classNames('row', { 'row-collapsed': !expanded });
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
@@ -82,13 +86,11 @@
   }
 </script>
 
-<div>
-  <div class="row" id={`row-${id}`} style="height: {drawHeight}px;">
-    <!-- Hover Menu. -->
-    <div class="row-hover-menu">
-      <RowDragHandleMove disabled={rowDragMoveDisabled} on:mouseDownRowMove />
-    </div>
+<div class="row-root">
+  <!-- Row Header. -->
+  <RowHeader {expanded} rowId={id} title={name} {rowDragMoveDisabled} on:mouseDownRowMove on:toggleRowExpansion />
 
+  <div class={rowClasses} id={`row-${id}`} style="height: {drawHeight}px;">
     <!-- Overlay for Pointer Events. -->
     <svg
       bind:this={overlaySvg}
@@ -189,7 +191,9 @@
   </div>
 
   <!-- Drag Handle for Row Height Resizing. -->
-  <RowDragHandleHeight rowHeight={drawHeight} on:updateRowHeight={onUpdateRowHeightDrag} />
+  {#if !autoAdjustHeight && expanded}
+    <RowDragHandleHeight rowHeight={drawHeight} on:updateRowHeight={onUpdateRowHeightDrag} />
+  {/if}
 </div>
 
 <style>
@@ -222,15 +226,15 @@
     z-index: 1;
   }
 
-  .row-hover-menu {
-    color: var(--st-gray-50);
-    display: none;
-    font-size: 1.2rem;
-    position: absolute;
-    z-index: 2;
+  :global(.row-root:hover .row-header .row-drag-handle-container) {
+    opacity: 1;
   }
 
-  .row:hover > .row-hover-menu {
-    display: block;
+  .row.row-collapsed {
+    display: none;
+  }
+
+  :global(.right) {
+    z-index: 0;
   }
 </style>
