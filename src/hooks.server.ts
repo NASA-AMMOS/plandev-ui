@@ -4,7 +4,7 @@ import { parse } from 'cookie';
 import effects from './utilities/effects';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  if (env.AUTH_TYPE === 'none') {
+  if (env.PUBLIC_AUTH_TYPE === 'none') {
     event.locals.user = { id: 'unknown', ssoToken: 'unknown' };
   } else {
     const cookies = parse(event.request.headers.get('cookie') || '');

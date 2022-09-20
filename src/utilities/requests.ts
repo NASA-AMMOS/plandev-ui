@@ -13,7 +13,7 @@ export async function reqGateway<T = any>(
   ssoToken: string | null,
   excludeContentType: boolean,
 ): Promise<T> {
-  const GATEWAY_URL = browser ? env.GATEWAY_CLIENT_URL : env.GATEWAY_SERVER_URL;
+  const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
   const user = get<User | null>(userStore);
 
   const options: RequestInit = {
@@ -53,7 +53,7 @@ export async function reqHasura<T = any>(
   variables: QueryVariables = {},
   signal: AbortSignal = undefined,
 ): Promise<Record<string, T>> {
-  const HASURA_URL = browser ? env.HASURA_CLIENT_URL : env.HASURA_SERVER_URL;
+  const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
   const user = get<User | null>(userStore);
 
   const options: RequestInit = {

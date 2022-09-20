@@ -97,7 +97,7 @@ export function gqlSubscribable<T>(
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
     if (browser && !client) {
-      const clientOptions: ClientOptions = { url: env.HASURA_WEB_SOCKET_URL };
+      const clientOptions: ClientOptions = { url: env.PUBLIC_HASURA_WEB_SOCKET_URL };
       client = createClient(clientOptions);
       subscribeToVariables(initialVariables);
     }

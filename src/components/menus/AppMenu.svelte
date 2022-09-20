@@ -70,11 +70,11 @@
       <JournalCodeIcon />
       Sequencing
     </MenuItem>
-    <MenuItem on:click={() => window.open(env.GATEWAY_CLIENT_URL, '_newtab')}>
+    <MenuItem on:click={() => window.open(env.PUBLIC_GATEWAY_CLIENT_URL, '_newtab')}>
       <DiagramIcon />
       Gateway
     </MenuItem>
-    <MenuItem on:click={() => window.open(`${env.GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
+    <MenuItem on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
       <GraphQLIcon />
       GraphQL Playground
     </MenuItem>
