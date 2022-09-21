@@ -12,9 +12,11 @@
   export let columnStates: ColumnState[] = [];
   export let idKey: keyof TRowData = 'id';
   export let items: TRowData[];
-  export let pluralItemDisplayText: string;
+  export let pluralItemDisplayText: string = '';
   export let selectedItemId: number | null = null;
-  export let singleItemDisplayText: string;
+  export let showContextMenu: boolean = true;
+  export let singleItemDisplayText: string = '';
+  export let suppressRowClickSelection: boolean = false;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
     return parseInt(data[idKey]);
@@ -37,13 +39,15 @@
   }
 
   function onCellContextMenu(event: CustomEvent) {
-    const { detail } = event;
-    const { data: clickedRow } = detail;
-    if (selectedItemIds.length <= 1 && (!isRowSelectable || isRowSelectable(detail))) {
-      selectedItemId = getRowId(clickedRow);
-    }
+    if (showContextMenu) {
+      const { detail } = event;
+      const { data: clickedRow } = detail;
+      if (selectedItemIds.length <= 1 && (!isRowSelectable || isRowSelectable(detail))) {
+        selectedItemId = getRowId(clickedRow);
+      }
 
-    contextMenu.show(detail.event);
+      contextMenu.show(detail.event);
+    }
   }
 
   function onFilterChanged(event: CustomEvent) {
@@ -63,11 +67,13 @@
   {columnStates}
   bind:currentSelectedRowId={selectedItemId}
   {getRowId}
+  {idKey}
   {isRowSelectable}
   rowSelection="multiple"
   rowData={items}
   bind:selectedRowIds={selectedItemIds}
-  preventDefaultOnContextMenu
+  preventDefaultOnContextMenu={showContextMenu}
+  {suppressRowClickSelection}
   on:filterChanged={onFilterChanged}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
@@ -80,15 +86,17 @@
   on:rowSelected
   on:selectionChanged
 />
-<ContextMenu bind:this={contextMenu}>
-  <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={selectAllItems}>
-    Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
-  </ContextMenuItem>
-  {#if selectedItemIds.length}
-    <ContextMenuItem on:click={bulkDeleteItems}>
-      Delete {selectedItemIds.length}
-      {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+{#if showContextMenu}
+  <ContextMenu bind:this={contextMenu}>
+    <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
+    <ContextMenuItem on:click={selectAllItems}>
+      Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
     </ContextMenuItem>
-  {/if}
-</ContextMenu>
+    {#if selectedItemIds.length}
+      <ContextMenuItem on:click={bulkDeleteItems}>
+        Delete {selectedItemIds.length}
+        {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+      </ContextMenuItem>
+    {/if}
+  </ContextMenu>
+{/if}

@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import type { ValueGetterParams } from 'ag-grid-community';
   import { expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
   import { models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
@@ -10,12 +11,20 @@
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+  import ExpansionSetRuleSelection from './ExpansionSetRuleSelection.svelte';
 
   export let mode: 'create' | 'edit' = 'create';
 
+  type CellRendererParams = {
+    selectExpansionRule: (name: string, rule: ExpansionRule) => void;
+  };
+  type ExpansionSetRuleSelectionRendererParams = ICellRendererParams<ActivityTypeExpansionRules> & CellRendererParams;
+
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
+  let dataGrid: DataGrid;
   let lastSelectedExpansionRule: ExpansionRule | null = null;
   let logicEditorActivityType: string | null = null;
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
@@ -60,7 +69,39 @@
     }
 
     selectedExpansionRules = { ...selectedExpansionRules };
+
+    // because selectedExpansionRules isn't bound to the dataGrid,
+    // we have to explicitly redraw the rows so that the checkboxes can update
+    dataGrid.redrawRows();
   }
+
+  const expansionSetRuleSelectionColumnDef: DataGridColumnDef = {
+    autoHeight: true,
+    cellRenderer: (params: ExpansionSetRuleSelectionRendererParams) => {
+      const selectionDiv = document.createElement('div');
+      new ExpansionSetRuleSelection({
+        props: {
+          activityName: params.data.name,
+          expansionRules: params.data.expansion_rules,
+          selectExpansionRule: params.selectExpansionRule,
+          selectedExpansionRules,
+        },
+        target: selectionDiv,
+      });
+
+      return selectionDiv;
+    },
+    cellRendererParams: {
+      selectExpansionRule,
+    } as CellRendererParams,
+    field: 'expansion_rules',
+    filter: 'text',
+    filterValueGetter: (params: ValueGetterParams<ActivityTypeExpansionRules>) => {
+      return params.data.expansion_rules.map(rule => `Rule ${rule.id}`).join(' ');
+    },
+    headerName: 'Expansion Rule',
+    resizable: true,
+  };
 </script>
 
 <CssGrid bind:columns={$expansionSetsColumns}>
@@ -109,44 +150,22 @@
         </select>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="expansion-rules-table">
         <label for="expansionRules" class="mb-2" style:display="block">Expansion Rules</label>
 
         {#if !activityTypesExpansionRules.length}
           No Expansion Rules Found
         {:else}
-          <table class="st-table">
-            <thead>
-              <tr>
-                <th>Activity Type</th>
-                <th>Expansion Rule</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {#each activityTypesExpansionRules as activityType}
-                <tr>
-                  {#if activityType.expansion_rules.length}
-                    <td>{activityType.name}</td>
-                    <td>
-                      {#each activityType.expansion_rules as rule}
-                        <div
-                          class="expansion-rule"
-                          on:click|stopPropagation={() => selectExpansionRule(activityType.name, rule)}
-                        >
-                          <input
-                            checked={selectedExpansionRules[activityType.name] === rule.id}
-                            name={activityType.name}
-                            type="checkbox"
-                          />Rule {rule.id}
-                        </div>
-                      {/each}
-                    </td>
-                  {/if}
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          <DataGrid
+            bind:this={dataGrid}
+            columnDefs={[
+              { field: 'name', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
+              expansionSetRuleSelectionColumnDef,
+            ]}
+            rowData={activityTypesExpansionRules.filter(activityType => activityType.expansion_rules.length > 0)}
+            shouldAutoGenerateId={true}
+            suppressRowClickSelection={true}
+          />
         {/if}
       </fieldset>
     </svelte:fragment>
@@ -165,15 +184,15 @@
 </CssGrid>
 
 <style>
-  .expansion-rule {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    gap: 5px;
-    user-select: none;
+  .expansion-rules-table {
+    display: contents;
   }
 
-  .expansion-rule > input {
+  .expansion-rules-table :global(.ag-theme-stellar .ag-row.ag-selectable-row) {
+    cursor: auto;
+  }
+
+  .expansion-rules-table :global(.ag-theme-stellar .ag-row.ag-selectable-row input) {
     cursor: pointer;
   }
 </style>
