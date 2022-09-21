@@ -122,7 +122,7 @@
 </script>
 
 <CssGrid bind:columns={$expansionSetsColumns}>
-  <CssGrid rows="1fr 1px 1fr">
+  <CssGrid rows="1fr 3px 1fr">
     <Panel>
       <svelte:fragment slot="header">
         <Chip>Expansion Sets</Chip>

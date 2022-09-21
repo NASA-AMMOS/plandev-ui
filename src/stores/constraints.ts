@@ -16,7 +16,7 @@ export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
 export const constraintViolationsMap: Writable<ConstraintViolationsMap> = writable({});
 
-export const constraintsColumns: Writable<string> = writable('1fr 1px 2fr');
+export const constraintsColumns: Writable<string> = writable('1fr 3px 2fr');
 
 /* Derived. */
 

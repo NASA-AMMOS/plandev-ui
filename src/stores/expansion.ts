@@ -26,9 +26,9 @@ export const createDictionaryError: Writable<string | null> = writable(null);
 
 export const creatingExpansionSequence: Writable<boolean> = writable(false);
 
-export const expansionRulesColumns: Writable<string> = writable('1fr 1px 2fr');
+export const expansionRulesColumns: Writable<string> = writable('1fr 3px 2fr');
 
-export const expansionSetsColumns: Writable<string> = writable('1fr 1px 2fr');
+export const expansionSetsColumns: Writable<string> = writable('1fr 3px 2fr');
 
 export const savingExpansionRule: Writable<boolean> = writable(false);
 

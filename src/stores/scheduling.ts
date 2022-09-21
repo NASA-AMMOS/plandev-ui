@@ -6,7 +6,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
 
-export const schedulingGoalsColumns: Writable<string> = writable('1fr 1px 2fr');
+export const schedulingGoalsColumns: Writable<string> = writable('1fr 3px 2fr');
 
 export const schedulingStatus: Writable<Status | null> = writable(null);
 
