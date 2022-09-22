@@ -3,10 +3,6 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
-/* Subscriptions. */
-
-export const models = gqlSubscribable<ModelList[]>(gql.SUB_MODELS, {}, []);
-
 /* Writeable. */
 
 export const creatingModel: Writable<boolean> = writable(false);
@@ -39,6 +35,17 @@ export const activityTypesMap: Readable<ActivityTypesMap> = derived(plan, $plan 
 export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
 
 export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id : -1));
+
+/* Subscriptions. */
+
+export const models = gqlSubscribable<ModelList[]>(gql.SUB_MODELS, {}, []);
+
+export const planRevision = gqlSubscribable<number>(
+  gql.SUB_PLAN_REVISION,
+  { planId },
+  -1,
+  ({ revision }: Pick<Plan, 'revision'>) => revision,
+);
 
 /* Helper Functions. */
 

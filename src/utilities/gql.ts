@@ -286,48 +286,6 @@ const gql = {
     }
   `,
 
-  GET_ACTIVITIES_FOR_PLAN: `#graphql
-    query GetActivitiesForPlan($planId: Int!) {
-      plan: plan_by_pk(id: $planId) {
-        activity_directives {
-          arguments
-          created_at
-          id
-          last_modified_at
-          metadata
-          name
-          simulated_activities(order_by: { id: desc }, limit: 1) {
-            activity_type_name
-            attributes
-            duration
-            id
-            parent_id
-            simulation_dataset_id
-            start_offset
-          }
-          source_scheduling_goal_id
-          start_offset
-          tags
-          type
-        }
-        simulations(limit: 1) {
-          datasets(order_by: { id: desc }, limit: 1) {
-            simulated_activities(where: { parent_id: {  _is_null: false } }) {
-              activity_type_name
-              attributes
-              duration
-              id
-              parent_id
-              simulation_dataset_id
-              start_offset
-            }
-          }
-        }
-        start_time
-      }
-    }
-  `,
-
   GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
     query GetActivityTypesExpansionRules($modelId: Int!) {
       activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
@@ -444,23 +402,6 @@ const gql = {
   GET_PLAN: `#graphql
     query GetPlan($id: Int!) {
       plan: plan_by_pk(id: $id) {
-        activity_directives {
-          arguments
-          created_at
-          id
-          last_modified_at
-          metadata
-          name
-          simulated_activities(order_by: { id: desc }, limit: 1) {
-            id
-            parent_id
-            simulation_dataset_id
-          }
-          source_scheduling_goal_id
-          start_offset
-          tags
-          type
-        }
         duration
         id
         model: mission_model {
@@ -480,15 +421,8 @@ const gql = {
         scheduling_specifications {
           id
         }
-        simulations {
-          arguments
-          datasets(order_by: { id: desc }, limit: 1) {
-            id
-          }
-          id
-          template: simulation_template {
-            arguments
-            description
+        simulations(order_by: { id: desc }, limit: 1) {
+          simulation_datasets(order_by: { id: desc }, limit: 1) {
             id
           }
         }
@@ -510,37 +444,6 @@ const gql = {
         id
         model_id
         name
-        start_time
-      }
-    }
-  `,
-
-  GET_PLAN_REVISION: `#graphql
-    query GetPlanRevision($id: Int!) {
-      plan: plan_by_pk(id: $id) {
-        revision
-      }
-    }
-  `,
-
-  GET_PROFILES_SIMULATION: `#graphql
-    query GetProfilesSimulation($planId: Int!) {
-      plan: plan_by_pk(id: $planId) {
-        duration
-        simulations(limit: 1) {
-          datasets(order_by: { id: desc }, limit: 1) {
-            dataset {
-              profiles {
-                name
-                profile_segments {
-                  dynamics
-                  start_offset
-                }
-                type
-              }
-            }
-          }
-        }
         start_time
       }
     }
@@ -713,6 +616,48 @@ const gql = {
     }
   `,
 
+  SUB_ACTIVITIES: `#graphql
+    subscription SubActivities($planId: Int!, $simulationDatasetId: Int!) {
+      plan_by_pk(id: $planId) {
+        activity_directives {
+          arguments
+          created_at
+          id
+          last_modified_at
+          metadata
+          name
+          simulated_activities(where: { simulation_dataset_id: { _eq: $simulationDatasetId } }, order_by: { id: desc }, limit: 1) {
+            activity_type_name
+            attributes
+            duration
+            id
+            parent_id
+            simulation_dataset_id
+            start_offset
+          }
+          source_scheduling_goal_id
+          start_offset
+          tags
+          type
+        }
+        simulations(order_by: { id: desc }, limit: 1) {
+          simulation_datasets(where: { dataset_id: { _eq: $simulationDatasetId } }, limit: 1) {
+            simulated_activities(where: { parent_id: {  _is_null: false } }) {
+              activity_type_name
+              attributes
+              duration
+              id
+              parent_id
+              simulation_dataset_id
+              start_offset
+            }
+          }
+        }
+        start_time
+      }
+    }
+  `,
+
   SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS: `#graphql
     subscription SubActivityDirectiveMetadataSchemas {
       activity_directive_metadata_schema(order_by: { key: asc }) {
@@ -831,6 +776,14 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_REVISION: `#graphql
+    subscription SubPlanRevision($planId: Int!) {
+      plan: plan_by_pk(id: $planId) {
+        revision
+      }
+    }
+  `,
+
   SUB_PROFILES_EXTERNAL: `#graphql
     subscription SubProfilesExternal($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
@@ -904,11 +857,8 @@ const gql = {
 
   SUB_SIMULATION: `#graphql
     subscription SubSimulation($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc } limit: 1) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         arguments
-        datasets(order_by: { id: desc }, limit: 1) {
-          id
-        }
         id
         template: simulation_template {
           arguments
@@ -919,7 +869,40 @@ const gql = {
     }
   `,
 
-  SUB_SIM_TEMPLATES: `#graphql
+  SUB_SIMULATION_DATASETS: `#graphql
+    subscription SubSimulationDatasets($planId: Int!, $simulationDatasetId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+        simulation_datasets(where: { dataset_id: { _eq: $simulationDatasetId } }, limit: 1) {
+          dataset {
+            profiles {
+              name
+              profile_segments {
+                dynamics
+                start_offset
+              }
+              type
+            }
+          }
+          id
+          plan_revision
+          reason
+          status
+        }
+      }
+    }
+  `,
+
+  SUB_SIMULATION_DATASET_IDS: `#graphql
+    subscription SubSimulationDatasetIds($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+        simulation_dataset_ids: simulation_datasets(order_by: { id: desc }) {
+          id
+        }
+      }
+    }
+  `,
+
+  SUB_SIMULATION_TEMPLATES: `#graphql
     subscription SubSimTemplates($modelId: Int!) {
       templates: simulation_template(where: { model_id: { _eq: $modelId } }) {
         arguments
@@ -1029,16 +1012,7 @@ const gql = {
       updateSimulation: update_simulation_by_pk(
         pk_columns: { id: $id }, _set: $simulation
       ) {
-        arguments
-        datasets(order_by: { id: desc }, limit: 1) {
-          id
-        }
         id
-        template: simulation_template {
-          arguments
-          description
-          id
-        }
       }
     }
   `,

@@ -1,4 +1,3 @@
-import { keyBy } from 'lodash-es';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
@@ -11,17 +10,14 @@ import {
   savingExpansionSet,
 } from '../stores/expansion';
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
-import { simulationResources } from '../stores/resources';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { simulation, simulationStatus } from '../stores/simulation';
+import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
-import { activityDirectiveToActivity, activitySimulatedToActivity, getChildIdsFn, getParentIdFn } from './activities';
-import { formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
+import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal, showCreateViewModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
-import { sampleProfiles } from './resources';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
@@ -93,10 +89,8 @@ const effects = {
         unfinished: false,
       };
 
-      activitiesMap.update(activities => ({ ...activities, [id]: activity }));
+      activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => ({ ...currentActivitiesMap, [id]: activity }));
       selectedActivityId.set(id);
-      checkConstraintsStatus.set(Status.Modified);
-      simulationStatus.set(Status.Modified);
 
       showSuccessToast('Activity Directive Created Successfully');
     } catch (e) {
@@ -148,10 +142,7 @@ const effects = {
       const { createConstraint } = data;
       const { id } = createConstraint;
 
-      checkConstraintsStatus.set(Status.Modified);
-      simulationStatus.set(Status.Modified);
       showSuccessToast('Constraint Created Successfully');
-
       return id;
     } catch (e) {
       console.log(e);
@@ -404,12 +395,10 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id });
-        activitiesMap.update(activities => {
-          delete activities[id];
-          return { ...activities };
+        activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => {
+          delete currentActivitiesMap[id];
+          return { ...currentActivitiesMap };
         });
-        checkConstraintsStatus.set(Status.Modified);
-        simulationStatus.set(Status.Modified);
         showSuccessToast('Activity Directive Deleted Successfully');
         return true;
       }
@@ -430,14 +419,12 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids });
-        activitiesMap.update(activities => {
+        activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => {
           ids.forEach(id => {
-            delete activities[id];
+            delete currentActivitiesMap[id];
           });
-          return { ...activities };
+          return { ...currentActivitiesMap };
         });
-        checkConstraintsStatus.set(Status.Modified);
-        simulationStatus.set(Status.Modified);
         showSuccessToast('Activity Directives Deleted Successfully');
         return true;
       }
@@ -477,9 +464,6 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_CONSTRAINT, { id });
-
-        checkConstraintsStatus.set(Status.Modified);
-        simulationStatus.set(Status.Modified);
         showSuccessToast('Constraint Deleted Successfully');
         return true;
       }
@@ -709,33 +693,6 @@ const effects = {
     }
   },
 
-  async getActivitiesForPlan(planId: number): Promise<Activity[]> {
-    try {
-      const data = await reqHasura<ActivitiesForPlanResponse>(gql.GET_ACTIVITIES_FOR_PLAN, { planId });
-      const { plan } = data;
-      const { activity_directives, simulations, start_time } = plan;
-      const [{ datasets } = { datasets: [] }] = simulations;
-      const [{ simulated_activities } = { simulated_activities: [] }] = datasets;
-
-      const getParentId = getParentIdFn(activity_directives);
-      const getChildIds = getChildIdsFn(simulated_activities);
-
-      const activities: Activity[] = [
-        ...activity_directives.map((activityDirective: ActivityDirective) =>
-          activityDirectiveToActivity(start_time, activityDirective, getChildIds),
-        ),
-        ...simulated_activities.map((activitySimulated: ActivitySimulated) =>
-          activitySimulatedToActivity(start_time, activitySimulated, getChildIds, getParentId),
-        ),
-      ];
-
-      return activities;
-    } catch (e) {
-      console.log(e);
-      return [];
-    }
-  },
-
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {
@@ -856,11 +813,9 @@ const effects = {
       if (plan) {
         return {
           ...plan,
-          activities: plan.activity_directives.map((activityDirective: ActivityDirective) =>
-            activityDirectiveToActivity(plan.start_time, activityDirective),
-          ),
           end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
           start_time: getDoyTime(new Date(plan.start_time)),
+          start_time_ymd: plan.start_time,
         };
       } else {
         return null;
@@ -871,9 +826,10 @@ const effects = {
     }
   },
 
-  async getPlanRevision(id: number): Promise<number | null> {
+  async getPlanRevision(planId: number): Promise<number | null> {
     try {
-      const data = await reqHasura<Pick<Plan, 'revision'>>(gql.GET_PLAN_REVISION, { id });
+      const query = convertToQuery(gql.SUB_PLAN_REVISION);
+      const data = await reqHasura<Pick<Plan, 'revision'>>(query, { planId });
       const { plan } = data;
       const { revision } = plan;
       return revision;
@@ -916,22 +872,6 @@ const effects = {
       }
     } else {
       return null;
-    }
-  },
-
-  async getSimulationResources(planId: number): Promise<Resource[]> {
-    try {
-      const data = await reqHasura<ProfilesSimulationResponse>(gql.GET_PROFILES_SIMULATION, { planId });
-      const { plan } = data;
-      const { duration, simulations, start_time } = plan;
-      const [{ datasets }] = simulations;
-      const [{ dataset }] = datasets;
-      const { profiles } = dataset;
-      const resources: Resource[] = sampleProfiles(profiles, start_time, duration);
-      return resources;
-    } catch (e) {
-      console.log(e);
-      return [];
     }
   },
 
@@ -1158,10 +1098,6 @@ const effects = {
         const { reason, status } = schedule;
 
         if (status === 'complete') {
-          const newActivities = await effects.getActivitiesForPlan(planId);
-          activitiesMap.set(keyBy(newActivities, 'id'));
-          checkConstraintsStatus.set(Status.Modified);
-          simulationStatus.set(Status.Modified);
           schedulingStatus.set(Status.Complete);
           incomplete = false;
           showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
@@ -1195,44 +1131,18 @@ const effects = {
   async simulate(): Promise<void> {
     try {
       const { id: planId } = get(plan);
-
-      let incomplete = true;
-      simulationStatus.set(Status.Incomplete);
-
-      do {
-        const data = await reqHasura<SimulationResponse>(gql.SIMULATE, { planId });
-        const { simulate } = data;
-        const { reason, status }: SimulationResponse = simulate;
-
-        if (status === 'complete') {
-          // Activities.
-          const newActivities = await effects.getActivitiesForPlan(planId);
-          activitiesMap.set(keyBy(newActivities, 'id'));
-
-          // Resources.
-          const resources: Resource[] = await effects.getSimulationResources(planId);
-          simulationResources.set(resources);
-
-          checkConstraintsStatus.set(Status.Modified);
-          simulationStatus.set(Status.Complete);
-          incomplete = false;
-          showSuccessToast('Simulation Complete');
-        } else if (status === 'failed') {
-          simulationStatus.set(Status.Failed);
-          console.log(reason);
-          incomplete = false;
-          showFailureToast('Simulation Failed');
-        } else if (status === 'incomplete') {
-          simulationStatus.set(Status.Incomplete);
-        } else if (status === 'pending') {
-          simulationStatus.set(Status.Pending);
+      const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId });
+      const { simulate } = data;
+      const { simulationDatasetId: newSimulationDatasetId } = simulate;
+      simulationDatasetId.set(newSimulationDatasetId);
+      simulationDatasetIds.updateValue((ids: number[]) => {
+        if (!ids.includes(newSimulationDatasetId)) {
+          return [newSimulationDatasetId, ...ids];
         }
-
-        await sleep(500); // Sleep half-second before re-simulating.
-      } while (incomplete);
+        return ids;
+      });
     } catch (e) {
       console.log(e);
-      simulationStatus.set(Status.Failed);
     }
   },
 
@@ -1270,16 +1180,13 @@ const effects = {
       }
     }
 
-    activitiesMap.update(activities => ({
-      ...activities,
+    activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => ({
+      ...currentActivitiesMap,
       [id]: {
-        ...activities[id],
+        ...currentActivitiesMap[id],
         ...activity,
       },
     }));
-
-    checkConstraintsStatus.set(Status.Modified);
-    simulationStatus.set(Status.Modified);
   },
 
   async updateConstraint(
@@ -1301,9 +1208,6 @@ const effects = {
         summary,
       };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
-
-      checkConstraintsStatus.set(Status.Modified);
-      simulationStatus.set(Status.Modified);
       showSuccessToast('Constraint Updated Successfully');
     } catch (e) {
       console.log(e);
@@ -1369,18 +1273,14 @@ const effects = {
 
   async updateSimulation(simulationSetInput: Simulation, newFiles: File[] = []): Promise<void> {
     try {
-      const data = await reqHasura<Simulation>(gql.UPDATE_SIMULATION, {
+      await reqHasura<Pick<Simulation, 'id'>>(gql.UPDATE_SIMULATION, {
         id: simulationSetInput.id,
         simulation: {
           arguments: simulationSetInput.arguments,
           simulation_template_id: simulationSetInput?.template?.id ?? null,
         },
       });
-      const { updateSimulation: updatedSimulation } = data;
-      simulation.updateValue(() => updatedSimulation);
       await effects.uploadFiles(newFiles);
-      checkConstraintsStatus.set(Status.Modified);
-      simulationStatus.set(Status.Modified);
       showSuccessToast('Simulation Updated Successfully');
     } catch (e) {
       console.log(e);

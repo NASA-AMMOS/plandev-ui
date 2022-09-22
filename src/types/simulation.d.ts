@@ -1,12 +1,10 @@
-type ProfilesExternalResponse = {
-  datasets: [{ dataset: { profiles: Profile[] }; offset_from_plan_start: string }];
-  duration: string;
-  start_time: string;
+type Dataset = {
+  profiles: Profile[];
 };
 
-type ProfilesSimulationResponse = {
+type ProfilesExternalResponse = {
+  datasets: [{ dataset: Dataset; offset_from_plan_start: string }];
   duration: string;
-  simulations: [{ datasets: [{ dataset: { profiles: Profile[] } }] }];
   start_time: string;
 };
 
@@ -22,25 +20,6 @@ type Profile = {
 type ProfileSegment = {
   dynamics: any;
   start_offset: string;
-};
-
-type Simulation = {
-  arguments: ArgumentsMap;
-  datasets: SimulationDataset[] | null;
-  id: number;
-  template: SimulationTemplate | null;
-};
-
-type SimulationInsertInput = {
-  arguments: ArgumentsMap;
-  plan_id: number;
-  simulation_template_id: number | null;
-};
-
-type SimulationTemplate = {
-  arguments: ArgumentsMap;
-  description: string;
-  id: number;
 };
 
 type Resource = {
@@ -59,12 +38,34 @@ type ResourceValue = {
   y: number | string;
 };
 
-type SimulationDataset = {
-  id: number;
-};
-
-type SimulationResponse = {
+type SimulateResponse = {
   reason: string;
   simulationDatasetId: number;
   status: 'complete' | 'failed' | 'incomplete' | 'pending';
+};
+
+type Simulation = {
+  arguments: ArgumentsMap;
+  id: number;
+  template: SimulationTemplate | null;
+};
+
+type SimulationDataset = {
+  dataset: Dataset;
+  id: number;
+  plan_revision: number;
+  reason: string;
+  status: 'failed' | 'incomplete' | 'pending' | 'success';
+};
+
+type SimulationInsertInput = {
+  arguments: ArgumentsMap;
+  plan_id: number;
+  simulation_template_id: number | null;
+};
+
+type SimulationTemplate = {
+  arguments: ArgumentsMap;
+  description: string;
+  id: number;
 };

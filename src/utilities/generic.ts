@@ -88,6 +88,14 @@ export function parseFloatOrNull(value: string | null): number | null {
 }
 
 /**
+ * Converts a string with the substring 'subscription' into 'query'.
+ * Use to quickly convert a GraphQL subscription into a query.
+ */
+export function convertToQuery(gql: string): string {
+  return gql.replace('subscription', 'query');
+}
+
+/**
  * Removes a query param from the current URL.
  */
 export function removeQueryParam(key: string): void {

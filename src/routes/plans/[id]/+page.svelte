@@ -6,7 +6,6 @@
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
-  import { keyBy } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
   import ActivityTablePanel from '../../../components/activity/ActivityTablePanel.svelte';
@@ -26,8 +25,8 @@
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
-  import { activitiesMap, resetActivityStores } from '../../../stores/activities';
-  import { checkConstraintsStatus, resetConstraintStores } from '../../../stores/constraints';
+  import { resetActivityStores } from '../../../stores/activities';
+  import { resetConstraintStores } from '../../../stores/constraints';
   import {
     maxTimeRange,
     plan,
@@ -36,9 +35,13 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
-  import { resetResourceStores } from '../../../stores/resources';
   import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
-  import { modelParametersMap, resetSimulationStores, simulation, simulationStatus } from '../../../stores/simulation';
+  import {
+    modelParametersMap,
+    resetSimulationStores,
+    simulationDatasetId,
+    simulationStatus,
+  } from '../../../stores/simulation';
   import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
   import effects from '../../../utilities/effects';
   import { setQueryParam } from '../../../utilities/generic';
@@ -64,14 +67,12 @@
   };
 
   $: if (data.initialPlan) {
-    $activitiesMap = keyBy(data.initialPlan.activities, 'id');
     $modelParametersMap = data.initialPlan.model.parameters.parameters;
     $plan = data.initialPlan;
-    simulation.updateValue(() => data.initialPlan.simulations[0]);
-
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time);
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
+    $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     $viewTimeRange = $maxTimeRange;
   }
 
@@ -90,7 +91,6 @@
     resetActivityStores();
     resetConstraintStores();
     resetPlanStores();
-    resetResourceStores();
     resetSchedulingStores();
     resetSimulationStores();
   });
@@ -132,7 +132,6 @@
       </NavButton>
       <NavButton
         selected={$view.definition.plan.layout?.gridName === 'Constraints'}
-        status={$checkConstraintsStatus}
         title="Constraints"
         on:click={() => viewSetLayout('Constraints')}
       >

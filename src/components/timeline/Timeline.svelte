@@ -6,7 +6,7 @@
   import { selectedActivityId } from '../../stores/activities';
   import { constraintViolations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
-  import { resources } from '../../stores/resources';
+  import { resources } from '../../stores/simulation';
   import { view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import { getDoyTime } from '../../utilities/time';
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';

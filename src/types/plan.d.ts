@@ -8,7 +8,6 @@ type PlanList = {
 };
 
 type Plan = {
-  activities: Activity[];
   duration: string;
   end_time: string;
   id: number;
@@ -16,8 +15,9 @@ type Plan = {
   name: string;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
-  simulations: Simulation[];
+  simulations: [{ simulation_datasets: [{ id: number }] }];
   start_time: string;
+  start_time_ymd: string;
 };
 
 type PlanInsertInput = {

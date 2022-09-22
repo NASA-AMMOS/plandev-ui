@@ -6,6 +6,7 @@
     modelParametersMap,
     simulation,
     simulationDatasetId,
+    simulationDatasetIds,
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
@@ -22,9 +23,9 @@
 
   let formParameters: FormParameter[] = [];
 
-  $: {
+  $: if ($simulation) {
     effects
-      .getEffectiveModelArguments($plan.model.id, $simulation?.arguments)
+      .getEffectiveModelArguments($plan.model.id, $simulation.arguments)
       .then(({ arguments: defaultArguments }) => {
         // Displayed simulation arguments are either user input arguments,
         // simulation template arguments, or default arguments.
@@ -32,9 +33,9 @@
         // which take precedence over default arguments.
         const defaultArgumentsMap = {
           ...defaultArguments,
-          ...$simulation?.template?.arguments,
+          ...($simulation?.template?.arguments ?? {}),
         };
-        formParameters = getFormParameters($modelParametersMap, $simulation?.arguments, [], defaultArgumentsMap);
+        formParameters = getFormParameters($modelParametersMap, $simulation.arguments, [], defaultArgumentsMap);
       });
   }
 
@@ -71,12 +72,23 @@
   <svelte:fragment slot="body">
     <div class="mb-3">
       <label for="id">Simulation ID</label>
-      <input value={$simulation.id} class="st-input w-100" disabled name="id" />
+      <input value={$simulation?.id} class="st-input w-100" disabled name="id" />
     </div>
 
     <div class="mb-3">
       <label for="simulationDatasetId">Simulation Dataset ID</label>
-      <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
+      <select bind:value={$simulationDatasetId} class="st-select w-100" name="simulationDatasetId">
+        {#if !$simulationDatasetIds.length}
+          <option value={-1}>No Simulation Datasets</option>
+        {:else}
+          <option value={-1} />
+          {#each $simulationDatasetIds as simDatasetId}
+            <option value={simDatasetId}>
+              {simDatasetId}
+            </option>
+          {/each}
+        {/if}
+      </select>
     </div>
 
     <details open>

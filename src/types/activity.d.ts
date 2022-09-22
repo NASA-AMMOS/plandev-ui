@@ -38,12 +38,6 @@ type Activity = {
   unfinished: boolean;
 };
 
-type ActivitiesForPlanResponse = {
-  activity_directives: ActivityDirective[];
-  simulations: [{ datasets: [{ simulated_activities: ActivitySimulated[] }] }];
-  start_time: string;
-};
-
 type ActivitiesMap = Record<ActivityId, Activity>;
 
 type ActivityDirective = {
@@ -85,4 +79,10 @@ type ActivitySimulated = {
   parent_id: number | null;
   simulation_dataset_id: number;
   start_offset: string;
+};
+
+type SubActivitiesResponse = {
+  activity_directives: ActivityDirective[];
+  simulations: [{ simulation_datasets: [{ simulated_activities: ActivitySimulated[] }] }];
+  start_time: string;
 };

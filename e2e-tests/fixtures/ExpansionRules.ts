@@ -17,7 +17,7 @@ export class ExpansionRules {
   inputModelSelector: string = 'select[name="modelId"]';
   newButton: Locator;
   ruleActivityType = 'PeelBanana';
-  ruleLogic: string = `export default function(): ExpansionReturn { return [FSW_CMD_0("ON", true, 1.0)]; }`;
+  ruleLogic: string = `export default function({ activityInstance: ActivityType }): ExpansionReturn { return [C.FSW_CMD_0("ON", true, 1.0)]; }`;
   rulesNavButton: Locator;
   saveButton: Locator;
   tableRow: Locator;

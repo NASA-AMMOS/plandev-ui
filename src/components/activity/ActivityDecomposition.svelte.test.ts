@@ -177,7 +177,7 @@ describe('Activity Decomposition component', () => {
   beforeAll(() => {
     // See: https://github.com/sveltejs/kit/issues/6259
     vi.mock('$app/environment', () => ({ browser: 'window' in globalThis }));
-    activitiesMap.set(keyBy(activities, 'id'));
+    activitiesMap.updateValue(() => keyBy(activities, 'id'));
   });
 
   afterEach(() => {
@@ -185,7 +185,7 @@ describe('Activity Decomposition component', () => {
   });
 
   afterAll(() => {
-    activitiesMap.set({});
+    activitiesMap.updateValue(() => ({}));
   });
 
   it('Should render the Activity Decomposition component', () => {
