@@ -39,7 +39,7 @@
   }
 </script>
 
-<div class="grid-menu st-typography-body" on:click|stopPropagation={() => gridMenu.toggle()}>
+<div class="grid-menu st-typography-medium" on:click|stopPropagation={() => gridMenu.toggle()}>
   <div class="title">{title}</div>
   <ChevronDownIcon />
 
@@ -106,6 +106,7 @@
     border-radius: 4px;
     cursor: pointer;
     display: flex;
+    font-size: 13px;
     gap: 5px;
     height: 24px;
     justify-content: center;

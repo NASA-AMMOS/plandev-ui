@@ -74,7 +74,7 @@
 
 {#if shown}
   <div class="menu" use:popperRef on:click|stopPropagation={onClick} on:mouseenter={() => hideAllTooltips()}>
-    <div class="menu-slot st-typography-body" use:popperContent={extraOpts}>
+    <div class="menu-slot st-typography-medium" use:popperContent={extraOpts}>
       <slot />
     </div>
   </div>

@@ -16,7 +16,7 @@
   .menu-item {
     align-items: center;
     display: grid;
-    font-size: 0.8rem;
+    font-size: 13px;
     gap: 0.5rem;
     grid-template-columns: 1rem auto;
     justify-content: flex-start;
