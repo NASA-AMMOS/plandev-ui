@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Input from '../../../components/form/Input.svelte';
   import { selectedLayer, viewUpdateLayer } from '../../../stores/views';
   import CssGrid from '../../ui/CssGrid.svelte';
 
@@ -19,8 +20,8 @@
 </script>
 
 {#if lineLayer && lineLayer.chartType === 'x-range'}
-  <CssGrid columns="50% 50%">
-    <fieldset>
+  <CssGrid columns="1fr 1fr" gap="16px">
+    <Input>
       <label for="colorScheme">Color Scheme</label>
       <select class="st-select w-100" name="colorScheme" value={lineLayer.colorScheme} on:change={viewUpdateLayer}>
         {#each colorSchemes as colorScheme}
@@ -29,11 +30,11 @@
           </option>
         {/each}
       </select>
-    </fieldset>
+    </Input>
 
-    <fieldset>
+    <Input>
       <label for="opacity">Opacity</label>
       <input class="st-input w-100" name="opacity" type="number" value={lineLayer.opacity} on:input={viewUpdateLayer} />
-    </fieldset>
+    </Input>
   </CssGrid>
 {/if}

@@ -38,6 +38,7 @@
   let argumentsMap: ArgumentsMap | null = null;
   let creationTime: string | null = null;
   let duration: string | null = null;
+  let hasComputedAttributes: boolean = false;
   let id: number | null = null;
   let lastModifiedTime: string | null = null;
   let metadata: ActivityMetadata = {};
@@ -86,6 +87,7 @@
     creationTime = null;
     duration = null;
     editingActivityName = false;
+    hasComputedAttributes = false;
     id = null;
     lastModifiedTime = null;
     metadata = {};
@@ -160,6 +162,24 @@
     activityType?.computed_attributes_value_schema,
     $selectedActivity?.attributes?.computedAttributes,
   );
+
+  // Check to see if the activity has a single empty computed value
+  // which is the same as having no computed attributes
+  $: if (formParametersComputedAttributes) {
+    if (formParametersComputedAttributes.length > 0) {
+      if (
+        formParametersComputedAttributes.length === 1 &&
+        formParametersComputedAttributes[0].schema.type === 'struct' &&
+        Object.keys(formParametersComputedAttributes[0].schema.items).length === 0
+      ) {
+        hasComputedAttributes = false;
+      } else {
+        hasComputedAttributes = true;
+      }
+    } else {
+      hasComputedAttributes = false;
+    }
+  }
 
   async function updateExpansionSequenceToActivity() {
     if (seq_id === null) {
@@ -268,7 +288,7 @@
       class="st-button icon activity-header-delete"
       disabled={isChild || !$selectedActivity}
       on:click|stopPropagation={() => effects.deleteActivityDirective(id)}
-      use:tooltip={{ content: 'Delete Activity', placement: 'left' }}
+      use:tooltip={{ content: 'Delete Activity', placement: 'top' }}
     >
       <TrashIcon />
     </button>
@@ -307,250 +327,239 @@
           <div class="activity-header-title-placeholder st-typography-medium">{type}</div>
         {/if}
       </div>
-      <div class="activity-directive-definition">
-        <details open style:cursor="pointer">
-          <summary>Definition</summary>
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Activity ID', placement: 'left' }} for="id"> Activity ID </label>
-              <input class="st-input w-100" disabled name="id" value={id} />
-            </Input>
-          </fieldset>
 
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Activity Type', placement: 'left' }} for="activity-type">
-                Activity Type
-              </label>
-              <input class="st-input w-100" disabled name="activity-type" value={type} />
-            </Input>
-          </fieldset>
+      <div class="activity-form">
+        <fieldset>
+          <details open>
+            <summary>Definition</summary>
 
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Parent ID', placement: 'left' }} for="parent-id">Parent ID</label>
-              <input
-                class="st-input w-100"
-                disabled
-                name="parent-id"
-                value={isChild ? parent_id : 'None (Root Activity)'}
-              />
-            </Input>
-          </fieldset>
-
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Duration', placement: 'left' }} for="duration">Duration</label>
-              <input class="st-input w-100" disabled name="duration" value={duration ?? 'None'} />
-            </Input>
-          </fieldset>
-
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Simulation Status', placement: 'left' }} for="simulationStatus">
-                Simulation Status
-              </label>
-              <input
-                class="st-input w-100"
-                disabled
-                name="simulationStatus"
-                value={unfinished ? 'Unfinished' : duration ? 'Finished' : 'None'}
-              />
-            </Input>
-          </fieldset>
-
-          <DatePickerField
-            disabled={isChild}
-            field={startTimeField}
-            label="Start Time - YYYY-DDDThh:mm:ss"
-            layout="inline"
-            name="start-time"
-            on:change={onUpdateStartTime}
-            on:keydown={onUpdateStartTime}
-          />
-
-          {#if duration !== null}
-            <fieldset>
+            <div class="details-body">
               <Input layout="inline">
-                <label use:tooltip={{ content: 'End Time', placement: 'left' }} for="endTime">End Time</label>
-                <input class="st-input w-100" disabled name="endTime" value={endTime} />
+                <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> Activity ID</label>
+                <input class="st-input w-100" disabled name="id" value={id} />
               </Input>
-            </fieldset>
-          {/if}
 
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Creation Time', placement: 'left' }} for="creationTime">
-                Creation Time
-              </label>
-              <input class="st-input w-100" disabled name="creationTime" value={creationTime ?? 'None'} />
-            </Input>
-          </fieldset>
-
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Last Modified Time', placement: 'left' }} for="lastModifiedTime">
-                Last Modified Time
-              </label>
-              <input class="st-input w-100" disabled name="lastModifiedTime" value={lastModifiedTime ?? 'None'} />
-            </Input>
-          </fieldset>
-
-          <fieldset>
-            <Input layout="inline">
-              <label
-                use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'left' }}
-                for="sourceSchedulingGoalId"
-              >
-                Source Scheduling Goal ID
-              </label>
-              <input
-                class="st-input w-100"
-                disabled
-                name="sourceSchedulingGoalId"
-                value={sourceSchedulingGoalId ?? 'None'}
-              />
-            </Input>
-          </fieldset>
-
-          {#if duration !== null}
-            <fieldset>
               <Input layout="inline">
-                <label use:tooltip={{ content: 'End Time', placement: 'left' }} for="endTime">End Time</label>
-                <input class="st-input w-100" disabled name="endTime" value={endTime} />
+                <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
+                  Activity Type
+                </label>
+                <input class="st-input w-100" disabled name="activity-type" value={type} />
               </Input>
-            </fieldset>
-          {/if}
 
-          <fieldset>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Tags', placement: 'left' }} for="activityTags">Tags</label>
-              <!--
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parent-id">Parent ID</label>
+                <input
+                  class="st-input w-100"
+                  disabled
+                  name="parent-id"
+                  value={isChild ? parent_id : 'None (Root Activity)'}
+                />
+              </Input>
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
+                <input class="st-input w-100" disabled name="duration" value={duration ?? 'None'} />
+              </Input>
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Simulation Status', placement: 'top' }} for="simulationStatus">
+                  Simulation Status
+                </label>
+                <input
+                  class="st-input w-100"
+                  disabled
+                  name="simulationStatus"
+                  value={unfinished ? 'Unfinished' : duration ? 'Finished' : 'None'}
+                />
+              </Input>
+
+              <DatePickerField
+                disabled={isChild}
+                field={startTimeField}
+                label="Start Time - YYYY-DDDThh:mm:ss"
+                layout="inline"
+                name="start-time"
+                on:change={onUpdateStartTime}
+                on:keydown={onUpdateStartTime}
+              />
+
+              {#if duration !== null}
+                <Input layout="inline">
+                  <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">End Time</label>
+                  <input class="st-input w-100" disabled name="endTime" value={endTime} />
+                </Input>
+              {/if}
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime">
+                  Creation Time
+                </label>
+                <input class="st-input w-100" disabled name="creationTime" value={creationTime ?? 'None'} />
+              </Input>
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Last Modified Time', placement: 'top' }} for="lastModifiedTime">
+                  Last Modified Time
+                </label>
+                <input class="st-input w-100" disabled name="lastModifiedTime" value={lastModifiedTime ?? 'None'} />
+              </Input>
+
+              <Input layout="inline">
+                <label
+                  use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
+                  for="sourceSchedulingGoalId"
+                >
+                  Source Scheduling Goal ID
+                </label>
+                <input
+                  class="st-input w-100"
+                  disabled
+                  name="sourceSchedulingGoalId"
+                  value={sourceSchedulingGoalId ?? 'None'}
+                />
+              </Input>
+
+              {#if duration !== null}
+                <Input layout="inline">
+                  <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">End Time</label>
+                  <input class="st-input w-100" disabled name="endTime" value={endTime} />
+                </Input>
+              {/if}
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityTags">Tags</label>
+                <!--
               Make use of svelte's 'key' here and switch on activity ID in order to clear the
               text input in the tags component which would otherwise remain populated with
               dirty input when a user switches to a new activity.
              -->
-              {#key id}
-                <Tags
-                  disabled={isChild}
-                  autocompleteValues={planTags}
-                  name="activityTags"
-                  on:change={onUpdateTags}
-                  {tags}
-                />
-              {/key}
-            </Input>
-          </fieldset>
-        </details>
-      </div>
+                {#key id}
+                  <Tags
+                    disabled={isChild}
+                    autocompleteValues={planTags}
+                    name="activityTags"
+                    on:change={onUpdateTags}
+                    {tags}
+                  />
+                {/key}
+              </Input>
+            </div>
+          </details>
+        </fieldset>
 
-      <fieldset>
-        <details open style:cursor="pointer">
-          <summary>Annotations</summary>
-          <div class="mt-2 annotations">
-            {#if $activityMetadataDefinitions.length === 0 || isChild}
-              <div class="p-1 st-typography-label">No Annotations Found</div>
-            {/if}
-            {#if !isChild}
-              {#each $activityMetadataDefinitions as definition}
-                <ActivityMetadataField
-                  on:change={onChangeActivityMetadata}
-                  value={getActivityMetadataValue(definition.key)}
-                  {definition}
-                />
-              {/each}
-            {/if}
-          </div>
-        </details>
-      </fieldset>
-
-      <fieldset>
-        <details open style:cursor="pointer">
-          <summary>
-            <span class:error={parametersWithErrorsCount > 0}>
-              Parameters
-              {#if parametersWithErrorsCount > 0}
-                ({parametersWithErrorsCount} invalid)
+        <fieldset>
+          <details open>
+            <summary>Annotations</summary>
+            <div class="details-body">
+              {#if $activityMetadataDefinitions.length === 0 || isChild}
+                <div class="st-typography-label">No Annotations Found</div>
               {/if}
-            </span>
-          </summary>
-          <div class="mt-2">
-            <Parameters disabled={isChild} {formParameters} on:change={onChangeFormParameters} />
-          </div>
-        </details>
-      </fieldset>
+              {#if !isChild}
+                {#each $activityMetadataDefinitions as definition}
+                  <ActivityMetadataField
+                    on:change={onChangeActivityMetadata}
+                    value={getActivityMetadataValue(definition.key)}
+                    {definition}
+                  />
+                {/each}
+              {/if}
+            </div>
+          </details>
+        </fieldset>
 
-      <fieldset>
-        <details open style:cursor="pointer">
-          <summary>Computed Attributes</summary>
-          <div class="mt-2">
-            <Parameters
-              disabled={true}
-              expanded
-              formParameters={formParametersComputedAttributes}
-              levelPadding={0}
-              showName={false}
-            />
-          </div>
-        </details>
-      </fieldset>
-
-      <fieldset>
-        <details open={rootActivityHasChildren} style:cursor="pointer">
-          <summary>Decomposition</summary>
-          <div class="mt-2">
-            {#if rootActivityHasChildren}
-              <ActivityDecomposition id={root_activity.id} selected_id={id} />
-            {:else}
-              <div class="p-1 st-typography-label">This activity has no children</div>
-            {/if}
-          </div>
-        </details>
-      </fieldset>
-
-      <fieldset>
-        <details open style:cursor="pointer">
-          <summary>Sequencing</summary>
-
-          <div class="p-2">
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'left' }} for="simulationDatasetId">
-                Simulation Dataset ID
-              </label>
-              <input
-                class="st-input w-100"
-                disabled
-                name="simulationDatasetId"
-                value={$simulationDatasetId ?? 'None'}
-              />
-            </Input>
-          </div>
-
-          <div class="p-2">
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Sequence ID', placement: 'left' }} for="expansionSet">Sequence ID</label>
-              <select
-                bind:value={seq_id}
-                class="st-select w-100"
-                name="sequences"
-                disabled={!$filteredExpansionSequences.length}
-                on:change={updateExpansionSequenceToActivity}
-              >
-                {#if !$filteredExpansionSequences.length}
-                  <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
-                {:else}
-                  <option value={null} />
-                  {#each $filteredExpansionSequences as sequence}
-                    <option value={sequence.seq_id}>
-                      {sequence.seq_id}
-                    </option>
-                  {/each}
+        <fieldset>
+          <details open>
+            <summary>
+              <span class:error={parametersWithErrorsCount > 0}>
+                Parameters
+                {#if parametersWithErrorsCount > 0}
+                  ({parametersWithErrorsCount} invalid)
                 {/if}
-              </select>
-            </Input>
-          </div>
-        </details>
-      </fieldset>
+              </span>
+            </summary>
+            <div class="details-body">
+              <Parameters disabled={isChild} {formParameters} on:change={onChangeFormParameters} />
+              {#if formParameters.length === 0}
+                <div class="st-typography-label">No Parameters Found</div>
+              {/if}
+            </div>
+          </details>
+        </fieldset>
+
+        <fieldset>
+          <details open>
+            <summary>Computed Attributes</summary>
+            <div class="details-body">
+              {#if !hasComputedAttributes}
+                <div class="st-typography-label">No Computed Attributes Found</div>
+              {:else}
+                <Parameters
+                  disabled={true}
+                  expanded
+                  formParameters={formParametersComputedAttributes}
+                  levelPadding={0}
+                  showName={false}
+                />
+              {/if}
+            </div>
+          </details>
+        </fieldset>
+
+        <fieldset>
+          <details open={rootActivityHasChildren} style:cursor="pointer">
+            <summary>Decomposition</summary>
+            <div class="details-body">
+              {#if rootActivityHasChildren}
+                <ActivityDecomposition id={root_activity.id} selected_id={id} />
+              {:else}
+                <div class="st-typography-label">This activity has no children</div>
+              {/if}
+            </div>
+          </details>
+        </fieldset>
+
+        <fieldset>
+          <details open>
+            <summary>Sequencing</summary>
+
+            <div class="details-body">
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'top' }} for="simulationDatasetId">
+                  Simulation Dataset ID
+                </label>
+                <input
+                  class="st-input w-100"
+                  disabled
+                  name="simulationDatasetId"
+                  value={$simulationDatasetId ?? 'None'}
+                />
+              </Input>
+
+              <Input layout="inline">
+                <label use:tooltip={{ content: 'Sequence ID', placement: 'top' }} for="expansionSet">Sequence ID</label>
+                <select
+                  bind:value={seq_id}
+                  class="st-select w-100"
+                  name="sequences"
+                  disabled={!$filteredExpansionSequences.length}
+                  on:change={updateExpansionSequenceToActivity}
+                >
+                  {#if !$filteredExpansionSequences.length}
+                    <option value={null}>No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}</option>
+                  {:else}
+                    <option value={null} />
+                    {#each $filteredExpansionSequences as sequence}
+                      <option value={sequence.seq_id}>
+                        {sequence.seq_id}
+                      </option>
+                    {/each}
+                  {/if}
+                </select>
+              </Input>
+            </div>
+          </details>
+        </fieldset>
+      </div>
     {:else}
       <div class="p-2 st-typography-label">No Activity Selected</div>
     {/if}
@@ -558,6 +567,10 @@
 </Panel>
 
 <style>
+  .activity-form fieldset:last-child {
+    padding-bottom: 16px;
+  }
+
   .activity-directive-definition {
     padding: 0.5rem;
   }

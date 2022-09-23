@@ -146,23 +146,26 @@
 
 <style>
   ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     margin: 0;
   }
 
   li {
     list-style: none;
-    margin-bottom: 1rem;
+    padding: 4px 0px;
   }
 
   .arrow {
-    padding-right: 10px;
+    display: flex;
+    padding-right: 8px;
   }
 
   .parameter-rec-series {
     align-items: center;
     cursor: pointer;
     display: flex;
-    margin-bottom: 1rem;
   }
 
   .series-left {
@@ -179,5 +182,9 @@
   :global(.parameter-rec-series-css-grid) {
     align-items: center;
     margin-right: 5px;
+  }
+
+  .parameter-rec-series :global(.form-parameter-name .name) {
+    cursor: pointer;
   }
 </style>

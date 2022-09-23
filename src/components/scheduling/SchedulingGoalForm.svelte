@@ -101,7 +101,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$schedulingGoalsColumns}>
-  <Panel overflowYBody="hidden">
+  <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <Chip>{mode === 'create' ? 'New Scheduling Goal' : 'Edit Scheduling Goal'}</Chip>
 

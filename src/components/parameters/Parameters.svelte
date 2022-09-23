@@ -38,8 +38,11 @@
 {/each}
 
 <style>
-  .parameter:not(:last-child) {
-    margin-bottom: 1rem;
+  .parameter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 0px;
   }
 
   .parameter :global(.st-input.error) {

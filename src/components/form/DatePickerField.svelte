@@ -22,17 +22,17 @@
   }
 </script>
 
-<fieldset class="date-picker-field">
+<div class="date-picker-field">
   <Input {layout}>
     {#if layout === 'inline'}
-      <label use:tooltip={{ content: label, placement: 'left' }} class:error={$field.invalid} for={name}>{label}</label>
+      <label use:tooltip={{ content: label, placement: 'top' }} class:error={$field.invalid} for={name}>{label}</label>
     {:else}
       <label class:error={$field.invalid} for={name}>{label}</label>
     {/if}
     <DatePicker dateString={$field.value} {disabled} hasError={$field.invalid} {name} on:change={onChange} />
     <FieldError {field} />
   </Input>
-</fieldset>
+</div>
 
 <style>
   .date-picker-field :global(.input) {

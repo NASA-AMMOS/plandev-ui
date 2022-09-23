@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Input from '../../../components/form/Input.svelte';
   import { selectedRow, selectedYAxis, viewUpdateYAxis } from '../../../stores/views';
   import { getTarget } from '../../../utilities/generic';
   import CssGrid from '../../ui/CssGrid.svelte';
@@ -64,11 +65,11 @@
 </script>
 
 {#if !$selectedYAxis}
-  <fieldset>No y-axis selected</fieldset>
+  <div>No y-axis selected</div>
 {:else}
-  <CssGrid columns="33% 33% 33%">
-    <fieldset>
-      <label class:error={idError !== null} for="id"> Id </label>
+  <CssGrid columns="1fr 1fr 1fr" gap="16px" padding="0px 0px 8px">
+    <Input>
+      <label class:error={idError !== null} for="id">Id</label>
       <input
         class="st-input w-100"
         class:error={idError !== null}
@@ -77,10 +78,10 @@
         value={$selectedYAxis.id}
         on:input|stopPropagation={updateId}
       />
-    </fieldset>
+    </Input>
 
-    <fieldset>
-      <label for="label"> Label Text </label>
+    <Input>
+      <label for="label">Label Text</label>
       <input
         class="st-input w-100"
         name="text"
@@ -88,10 +89,10 @@
         value={$selectedYAxis.label.text}
         on:input|stopPropagation={updateLabel}
       />
-    </fieldset>
+    </Input>
 
-    <fieldset>
-      <label for="color"> Axis Color </label>
+    <Input>
+      <label for="color">Axis Color</label>
       <input
         class="w-100"
         name="color"
@@ -99,12 +100,12 @@
         value={$selectedYAxis.color}
         on:input|stopPropagation={updateAxis}
       />
-    </fieldset>
+    </Input>
   </CssGrid>
 
-  <CssGrid columns="33% 33% 33%">
-    <fieldset>
-      <label for="domainMin"> Domain Min </label>
+  <CssGrid columns="1fr 1fr 1fr" gap="16px">
+    <Input>
+      <label for="domainMin">Domain Min</label>
       <input
         class="st-input w-100"
         name="domainMin"
@@ -112,10 +113,10 @@
         value={$selectedYAxis.scaleDomain[0]}
         on:input|stopPropagation={updateScaleDomain}
       />
-    </fieldset>
+    </Input>
 
-    <fieldset>
-      <label for="domainMax"> Domain Max </label>
+    <Input>
+      <label for="domainMax">Domain Max</label>
       <input
         class="st-input w-100"
         name="domainMax"
@@ -123,10 +124,10 @@
         value={$selectedYAxis.scaleDomain[1]}
         on:input|stopPropagation={updateScaleDomain}
       />
-    </fieldset>
+    </Input>
 
-    <fieldset>
-      <label for="tickCount"> Tick Count </label>
+    <Input>
+      <label for="tickCount">Tick Count</label>
       <input
         class="st-input w-100"
         name="tickCount"
@@ -134,6 +135,6 @@
         value={$selectedYAxis.tickCount}
         on:input|stopPropagation={updateAxis}
       />
-    </fieldset>
+    </Input>
   </CssGrid>
 {/if}

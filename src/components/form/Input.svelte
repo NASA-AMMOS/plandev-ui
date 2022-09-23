@@ -140,6 +140,7 @@
     display: grid;
     gap: 8px;
     grid-template-columns: 40% auto;
+    padding: 4px 0px;
   }
 
   .input-inline :global(label) {

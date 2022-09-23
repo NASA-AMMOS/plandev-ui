@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ChevronDownIcon from 'bootstrap-icons/icons/chevron-down.svg?component';
-  import ChevronRightIcon from 'bootstrap-icons/icons/chevron-right.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { createEventDispatcher } from 'svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -102,19 +102,27 @@
 
 <style>
   ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     margin: 0;
   }
 
   li {
     list-style: none;
-    margin-bottom: 1rem;
+    padding: 4px 0px;
   }
 
   .parameter-rec-struct {
     align-items: center;
+    cursor: pointer;
     display: grid;
-    gap: 5px;
+    gap: 8px;
     grid-template-columns: 16px auto;
-    margin-bottom: 1rem;
+    padding: 8px 0px;
+  }
+
+  .parameter-rec-struct :global(.form-parameter-name .name) {
+    cursor: pointer;
   }
 </style>

@@ -14,7 +14,7 @@
   <div
     class="name"
     class:error={formParameter.errors !== null}
-    use:tooltip={{ content: tooltipContent, placement: 'bottom' }}
+    use:tooltip={{ content: tooltipContent, placement: 'top' }}
   >
     {formParameter?.name}
     {#if formParameter.required}
@@ -31,7 +31,7 @@
 
   .name {
     color: var(--st-gray-80);
-    cursor: pointer;
+    cursor: default;
     font-style: normal;
     overflow: hidden;
     text-overflow: ellipsis;

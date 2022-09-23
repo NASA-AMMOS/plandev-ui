@@ -10,6 +10,7 @@
   import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
+  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -106,7 +107,7 @@
   }
 </script>
 
-<Panel>
+<Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Expansion" />
     <div class="right">
@@ -147,7 +148,7 @@
         <details class="details-container" open style:cursor="pointer">
           <summary class="details-label">Sequences</summary>
           <div class="details-body">
-            <div class="pt-2 pb-3">
+            <Input>
               <label for="simulationDatasetId">Simulation Dataset ID</label>
               <input
                 class="st-input w-100"
@@ -155,7 +156,7 @@
                 name="simulationDatasetId"
                 value={$simulationDatasetId ?? 'None'}
               />
-            </div>
+            </Input>
 
             <div>
               {#if $simulationDatasetId === null}
@@ -209,14 +210,10 @@
     height: 100%;
   }
 
-  .details-container .details-label {
-    height: 18px;
-  }
-
   .details-body {
     display: grid;
     grid-template-rows: min-content auto;
-    height: calc(100% - 18px);
+    height: calc(100% - 48px);
   }
 
   .expansion-panel-body .details-container .details-body :global(.expansion-form) {

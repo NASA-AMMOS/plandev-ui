@@ -98,7 +98,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$userSequencesColumns}>
-  <Panel overflowYBody="hidden">
+  <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <Chip>{mode === 'create' ? 'New Sequence' : 'Edit Sequence'}</Chip>
 

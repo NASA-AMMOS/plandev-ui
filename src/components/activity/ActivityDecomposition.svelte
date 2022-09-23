@@ -85,7 +85,6 @@
 
   .activity-decomposition-not-found {
     color: var(--st-red);
-    cursor: pointer;
   }
 
   .activity-decomposition-unselected {

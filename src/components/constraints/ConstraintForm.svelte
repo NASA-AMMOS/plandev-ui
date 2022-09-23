@@ -96,7 +96,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 <CssGrid bind:columns={$constraintsColumns}>
-  <Panel overflowYBody="hidden">
+  <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <Chip>{mode === 'create' ? 'New Constraint' : 'Edit Constraint'}</Chip>
 

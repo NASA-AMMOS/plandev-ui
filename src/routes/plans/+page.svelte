@@ -203,21 +203,25 @@
             <input bind:this={nameInputField} autocomplete="off" class="st-input w-100" name="name" />
           </Field>
 
-          <DatePickerField
-            field={startTimeField}
-            label="Start Time - YYYY-DDDThh:mm:ss"
-            name="start-time"
-            on:change={updateDurationString}
-            on:keydown={updateDurationString}
-          />
+          <fieldset>
+            <DatePickerField
+              field={startTimeField}
+              label="Start Time - YYYY-DDDThh:mm:ss"
+              name="start-time"
+              on:change={updateDurationString}
+              on:keydown={updateDurationString}
+            />
+          </fieldset>
 
-          <DatePickerField
-            field={endTimeField}
-            label="End Time - YYYY-DDDThh:mm:ss"
-            name="end-time"
-            on:change={updateDurationString}
-            on:keydown={updateDurationString}
-          />
+          <fieldset>
+            <DatePickerField
+              field={endTimeField}
+              label="End Time - YYYY-DDDThh:mm:ss"
+              name="end-time"
+              on:change={updateDurationString}
+              on:keydown={updateDurationString}
+            />
+          </fieldset>
 
           <fieldset>
             <label for="plan-duration">Plan Duration</label>

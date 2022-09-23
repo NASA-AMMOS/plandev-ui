@@ -50,8 +50,8 @@
 </script>
 
 <div class="container">
-  <form on:submit|preventDefault={login} class="p-3">
-    <div class="title">Log in to Aerie</div>
+  <form on:submit|preventDefault={login} class="form">
+    <div class="title st-typography-displayBody">Log in to Aerie</div>
 
     <AlertError class="m-2" {error} />
 
@@ -99,7 +99,13 @@
   .title {
     align-items: center;
     display: flex;
-    font-size: 1rem;
     justify-content: center;
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 8px;
   }
 </style>

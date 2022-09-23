@@ -61,7 +61,7 @@
   }
 </script>
 
-<Panel>
+<Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Simulation" />
     <PanelHeaderActions status={$simulationStatus}>
@@ -70,12 +70,12 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <div class="mb-3">
+    <fieldset>
       <label for="id">Simulation ID</label>
       <input value={$simulation?.id} class="st-input w-100" disabled name="id" />
-    </div>
+    </fieldset>
 
-    <div class="mb-3">
+    <fieldset>
       <label for="simulationDatasetId">Simulation Dataset ID</label>
       <select bind:value={$simulationDatasetId} class="st-select w-100" name="simulationDatasetId">
         {#if !$simulationDatasetIds.length}
@@ -89,42 +89,46 @@
           {/each}
         {/if}
       </select>
-    </div>
+    </fieldset>
 
-    <details open>
-      <summary>Templates</summary>
-      <div class="mt-3 mb-3">
-        <select
-          class="st-select w-100"
-          data-type="number"
-          disabled={!$simulationTemplates.length}
-          name="simulation-templates"
-          value={$simulation?.template?.id || null}
-          on:change={onChangeSimulationTemplate}
-        >
-          {#if !$simulationTemplates.length}
-            <option value={null}>Empty</option>
+    <fieldset>
+      <details open>
+        <summary>Templates</summary>
+        <div class="details-body">
+          <select
+            class="st-select w-100"
+            data-type="number"
+            disabled={!$simulationTemplates.length}
+            name="simulation-templates"
+            value={$simulation?.template?.id || null}
+            on:change={onChangeSimulationTemplate}
+          >
+            {#if !$simulationTemplates.length}
+              <option value={null}>Empty</option>
+            {:else}
+              <option value={null} />
+              {#each $simulationTemplates as template}
+                <option value={template.id}>
+                  {template.description}
+                </option>
+              {/each}
+            {/if}
+          </select>
+        </div>
+      </details>
+    </fieldset>
+
+    <fieldset>
+      <details open>
+        <summary>Arguments</summary>
+        <div class="details-body">
+          {#if formParameters.length}
+            <Parameters {formParameters} on:change={onChangeFormParameters} />
           {:else}
-            <option value={null} />
-            {#each $simulationTemplates as template}
-              <option value={template.id}>
-                {template.description}
-              </option>
-            {/each}
+            <div class="p-1">No simulation arguments found</div>
           {/if}
-        </select>
-      </div>
-    </details>
-
-    <details open>
-      <summary>Arguments</summary>
-      <div class="mt-3 mb-3">
-        {#if formParameters.length}
-          <Parameters {formParameters} on:change={onChangeFormParameters} />
-        {:else}
-          <div class="p-1">No simulation arguments found</div>
-        {/if}
-      </div>
-    </details>
+        </div>
+      </details>
+    </fieldset>
   </svelte:fragment>
 </Panel>
