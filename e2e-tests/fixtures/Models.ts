@@ -74,7 +74,9 @@ export class Models {
 
   async goto() {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(3000); // Wait for page load to finish.
     await this.page.goto('/models', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(3000); // Wait for page load to finish.
   }
 
   updatePage(page: Page): void {

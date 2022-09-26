@@ -26,6 +26,7 @@ test.afterAll(async () => {
 test.describe.serial('Plans', () => {
   test.beforeEach(async () => {
     await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000); // Wait for page load to finish.
   });
 
   test('Create plan button should be disabled with no errors', async () => {
@@ -60,16 +61,14 @@ test.describe.serial('Plans', () => {
 
   test('Entering an invalid start time should display an error, and the create button should be disabled', async () => {
     await plans.inputStartTime.fill('2022-');
-    await plans.inputStartTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await plans.inputStartTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await page.keyboard.press('Tab');
     await expect(plans.inputStartTime).toHaveClass(/error/);
     await expect(plans.createButton).toBeDisabled();
   });
 
   test('Entering an invalid end time should display an error, and the create button should be disabled', async () => {
     await plans.inputEndTime.fill('2022-');
-    await plans.inputEndTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await plans.inputEndTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await page.keyboard.press('Tab');
     await expect(plans.inputEndTime).toHaveClass(/error/);
     await expect(plans.createButton).toBeDisabled();
   });
@@ -82,8 +81,7 @@ test.describe.serial('Plans', () => {
 
   test('Entering an invalid start time should display "None" in the duration text', async () => {
     await plans.inputStartTime.fill('2022-');
-    await plans.inputStartTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await plans.inputStartTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await page.keyboard.press('Tab');
     await plans.fillInputEndTime();
     await expect(plans.durationDisplay).toHaveValue('None');
   });
@@ -91,8 +89,7 @@ test.describe.serial('Plans', () => {
   test('Entering an invalid end time should display "None" in the duration text', async () => {
     await plans.fillInputStartTime();
     await plans.inputEndTime.fill('2022-');
-    await plans.inputEndTime.evaluate(e => e.dispatchEvent(new Event('change')));
-    await plans.inputEndTime.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    await page.keyboard.press('Tab');
     await expect(plans.durationDisplay).toHaveValue('None');
   });
 

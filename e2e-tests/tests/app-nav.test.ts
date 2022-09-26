@@ -16,6 +16,7 @@ test.afterAll(async () => {
 test.describe.serial('App Nav', () => {
   test.beforeEach(async () => {
     await page.goto('/plans', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000); // Wait for page load to finish.
   });
 
   test('Initially the app menu should hidden', async () => {

@@ -80,8 +80,9 @@ export class Plan {
    */
   async goto() {
     await this.page.goto('/plans', { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(1200);
+    await this.page.waitForTimeout(3000); // Wait for page load to finish.
     await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(3000); // Wait for page load to finish.
   }
 
   async runAnalysis() {
