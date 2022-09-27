@@ -1,17 +1,20 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
 
+let context: BrowserContext;
 let models: Models;
 let page: Page;
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  context = await browser.newContext();
+  page = await context.newPage();
   models = new Models(page);
   await models.goto();
 });
 
 test.afterAll(async () => {
   await page.close();
+  await context.close();
 });
 
 test.describe.serial('Models', () => {

@@ -1,32 +1,33 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
 import { Plans } from '../fixtures/Plans.js';
 
+let context: BrowserContext;
 let models: Models;
 let page: Page;
 let plans: Plans;
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  context = await browser.newContext();
+  page = await context.newPage();
 
   models = new Models(page);
   plans = new Plans(page, models);
 
   await models.goto();
   await models.createModel();
-  await plans.goto();
 });
 
 test.afterAll(async () => {
   await models.goto();
   await models.deleteModel();
   await page.close();
+  await context.close();
 });
 
 test.describe.serial('Plans', () => {
   test.beforeEach(async () => {
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000); // Wait for page load to finish.
+    await plans.goto();
   });
 
   test('Create plan button should be disabled with no errors', async () => {

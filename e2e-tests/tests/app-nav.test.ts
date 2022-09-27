@@ -1,22 +1,24 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { AppNav } from '../fixtures/AppNav.js';
 
 let appNav: AppNav;
+let context: BrowserContext;
 let page: Page;
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  context = await browser.newContext();
+  page = await context.newPage();
   appNav = new AppNav(page);
 });
 
 test.afterAll(async () => {
   await page.close();
+  await context.close();
 });
 
 test.describe.serial('App Nav', () => {
   test.beforeEach(async () => {
-    await page.goto('/plans', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000); // Wait for page load to finish.
+    await appNav.goto();
   });
 
   test('Initially the app menu should hidden', async () => {
@@ -104,12 +106,14 @@ test.describe.serial('App Nav', () => {
     await playgroundPage.close();
   });
 
-  test(`Clicking on the app menu 'Logout' option should route to the login page`, async ({ baseURL }) => {
+  test(`Clicking on the app menu 'Logout' option should route to the plans page (auth disabled)`, async ({
+    baseURL,
+  }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemLogout.click();
-    await expect(page).toHaveURL(`${baseURL}/login`);
+    await expect(page).toHaveURL(`${baseURL}/plans`);
   });
 
   test(`Clicking on the app menu 'About' option should open the about modal`, async () => {

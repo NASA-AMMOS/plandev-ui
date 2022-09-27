@@ -1,17 +1,20 @@
-import { test, type Page } from '@playwright/test';
+import { test, type BrowserContext, type Page } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 
+let context: BrowserContext;
 let dictionaries: Dictionaries;
 let page: Page;
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  context = await browser.newContext();
+  page = await context.newPage();
   dictionaries = new Dictionaries(page);
   await dictionaries.goto();
 });
 
 test.afterAll(async () => {
   await page.close();
+  await context.close();
 });
 
 test.describe.serial('Dictionaries', () => {

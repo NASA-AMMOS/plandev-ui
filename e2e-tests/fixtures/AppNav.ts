@@ -19,6 +19,11 @@ export class AppNav {
     this.updatePage(page);
   }
 
+  async goto() {
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForTimeout(250);
+  }
+
   updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
