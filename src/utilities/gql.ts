@@ -535,6 +535,12 @@ const gql = {
     }
   `,
 
+  GET_USER_SEQUENCE_FROM_SEQ_JSON: `#graphql
+    query GetUserSequenceFromSeqJson($seqJson: SequenceSeqJsonInput!) {
+      sequence: getEdslForSeqJson(seqJson: $seqJson)
+    }
+  `,
+
   GET_USER_SEQUENCE_SEQ_JSON: `#graphql
     query GetUserSequenceSeqJson($commandDictionaryId: Int!, $sequenceDefinition: String!) {
       seqJson: getUserSequenceSeqJson(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {

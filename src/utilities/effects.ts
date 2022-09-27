@@ -982,6 +982,16 @@ const effects = {
     }
   },
 
+  async getUserSequenceFromSeqJson(seqJson: SeqJson): Promise<string> {
+    try {
+      const data = await reqHasura<string>(gql.GET_USER_SEQUENCE_FROM_SEQ_JSON, { seqJson });
+      const { sequence } = data;
+      return sequence;
+    } catch (e) {
+      return e.message;
+    }
+  },
+
   async getUserSequenceSeqJson(
     commandDictionaryId: number | null,
     sequenceDefinition: string | null,

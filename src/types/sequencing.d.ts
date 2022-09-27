@@ -7,6 +7,8 @@ type CommandDictionary = {
   version: string;
 };
 
+type SeqJson = any; // TODO: Strongly type.
+
 type UserSequence = {
   authoring_command_dict_id: number;
   created_at: string;
