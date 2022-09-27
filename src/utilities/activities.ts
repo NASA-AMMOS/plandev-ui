@@ -43,9 +43,9 @@ export function activityToPoint(
     id: activity.id,
     label: {
       color: activity.unfinished ? '#ff7760' : null,
-      text: activity.unfinished ? `${activity.type} (Unfinished)` : activity.type,
+      text: activity.unfinished ? `${activity.name} (Unfinished)` : activity.name,
     },
-    name: `${activity.id}`,
+    name: activity.name,
     parent_id: activity.parent_id,
     selected: selectedActivityId === activity.id,
     type: 'activity',
