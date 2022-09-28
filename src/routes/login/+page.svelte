@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -35,7 +35,8 @@
 
       if (success) {
         $userStore = user;
-        goto(`${base}/plans`);
+        await invalidateAll();
+        await goto(`${base}/plans`);
       } else {
         console.log(message);
         error = message;

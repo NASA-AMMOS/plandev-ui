@@ -1,7 +1,7 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
-  import { goto, prefetch } from '$app/navigation';
+  import { goto, invalidateAll, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -26,7 +26,8 @@
   async function logout() {
     await fetch(`${base}/auth/logout`, { method: 'POST' });
     $userStore = null;
-    goto(`${base}/login`);
+    await invalidateAll();
+    await goto(`${base}/login`);
   }
 </script>
 
