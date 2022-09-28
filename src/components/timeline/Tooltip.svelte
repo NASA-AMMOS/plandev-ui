@@ -95,7 +95,7 @@
       <div>
         Id: ${id}
         <br>
-        Activity Type: ${labelText}
+        Name: ${labelText}
         <br>
         Start: ${getDoyTime(new Date(x))}
       </div>

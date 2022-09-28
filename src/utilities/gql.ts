@@ -14,6 +14,7 @@ const gql = {
     mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
       createActivityDirective: insert_activity_directive_one(object: $activityDirectiveInsertInput) {
         id
+        name
       }
     }
   `,

@@ -67,7 +67,7 @@ const effects = {
       };
       const data = await reqHasura(gql.CREATE_ACTIVITY_DIRECTIVE, { activityDirectiveInsertInput });
       const { createActivityDirective } = data;
-      const { id } = createActivityDirective;
+      const { id, name: newName } = createActivityDirective;
 
       const activity: Activity = {
         arguments: argumentsMap,
@@ -78,7 +78,7 @@ const effects = {
         id,
         last_modified_at: null,
         metadata,
-        name,
+        name: newName,
         parent_id: null,
         simulated_activity_id: null,
         simulation_dataset_id: null,
