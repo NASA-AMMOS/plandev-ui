@@ -58,6 +58,7 @@
   .activity-metadata-base-enum-multiselect {
     align-items: flex-start;
     display: grid;
+    padding: 4px 0px;
   }
 
   select {

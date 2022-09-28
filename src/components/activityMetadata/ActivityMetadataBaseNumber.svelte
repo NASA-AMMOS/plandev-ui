@@ -39,5 +39,6 @@
   .activity-metadata-base-number {
     align-items: center;
     display: grid;
+    padding: 4px 0px;
   }
 </style>

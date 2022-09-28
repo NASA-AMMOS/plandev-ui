@@ -40,5 +40,6 @@
   .activity-metadata-base-long-string {
     align-items: flex-start;
     display: grid;
+    padding: 4px 0px;
   }
 </style>
