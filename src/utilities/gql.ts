@@ -879,7 +879,7 @@ const gql = {
   SUB_SIMULATION_DATASETS: `#graphql
     subscription SubSimulationDatasets($planId: Int!, $simulationDatasetId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
-        simulation_datasets(where: { dataset_id: { _eq: $simulationDatasetId } }, limit: 1) {
+        simulation_datasets(where: { id: { _eq: $simulationDatasetId } }, limit: 1) {
           dataset {
             profiles {
               name
