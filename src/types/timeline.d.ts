@@ -23,6 +23,11 @@ type Axis = {
   tickCount: number | null;
 };
 
+type BoundingBox = {
+  maxX: number;
+  maxY: number;
+};
+
 type HorizontalGuide = {
   id: number;
   label: Label;

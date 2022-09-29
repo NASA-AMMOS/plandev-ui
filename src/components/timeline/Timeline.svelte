@@ -26,6 +26,7 @@
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
+  let tickCount: number = 5;
   let timeline: Timeline;
   let timelineDiv: HTMLDivElement;
   let xAxisDiv: HTMLDivElement;
@@ -40,7 +41,7 @@
   $: xDomainView = [new Date($viewTimeRange.start), new Date($viewTimeRange.end)];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
-  $: xTicksView = xScaleView.ticks().map((date: Date) => {
+  $: xTicksView = xScaleView.ticks(tickCount).map((date: Date) => {
     const doyTimestamp = getDoyTime(date, false);
     const [yearDay, time] = doyTimestamp.split('T');
     return { date, time, yearDay };

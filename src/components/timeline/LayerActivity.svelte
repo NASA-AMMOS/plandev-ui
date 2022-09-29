@@ -224,8 +224,8 @@
       visiblePointsById = {};
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
-      let maxY = Number.MIN_SAFE_INTEGER;
-      const coords = [];
+      let totalMaxY = Number.MIN_SAFE_INTEGER;
+      const boundingBoxes: BoundingBox[] = [];
 
       for (const point of $activityPoints) {
         const r = new RegExp(filter?.type);
@@ -238,49 +238,50 @@
           point.x + point.duration >= viewTimeRange.start &&
           point.x <= viewTimeRange.end
         ) {
-          let largestXEnd = Number.MIN_SAFE_INTEGER;
-          let largestY = Number.MIN_SAFE_INTEGER;
           const x = xScaleView(point.x);
           const end = xScaleView(point.x + point.duration);
           const { textWidth } = setLabelContext(point);
           const xEnd = end + textWidth;
+
+          let maxX = Number.MIN_SAFE_INTEGER;
+          let maxY = Number.MIN_SAFE_INTEGER;
           let y = rowHeight;
 
-          for (const coord of coords) {
-            if (x <= coord.xEnd) {
-              y = coord.y + rowHeight;
+          for (const boundingBox of boundingBoxes) {
+            if (x <= boundingBox.maxX) {
+              y = boundingBox.maxY + rowHeight;
             }
           }
 
           drawActivity(point, x, y, end);
 
-          if (xEnd > largestXEnd) {
-            largestXEnd = xEnd;
+          if (xEnd > maxX) {
+            maxX = xEnd;
           }
-          if (y > largestY) {
-            largestY = y;
+          if (y > maxY) {
+            maxY = y;
           }
 
-          const childCoords = drawChildren(point, y);
+          const childrenBoundingBox: BoundingBox = drawChildren(point, y);
 
-          if (childCoords) {
-            if (childCoords.xEnd > largestXEnd) {
-              largestXEnd = childCoords.xEnd;
+          if (childrenBoundingBox) {
+            if (childrenBoundingBox.maxX > maxX) {
+              maxX = childrenBoundingBox.maxX;
             }
-            if (childCoords.y > largestY) {
-              largestY = childCoords.y;
+            if (childrenBoundingBox.maxY > maxY) {
+              maxY = childrenBoundingBox.maxY;
             }
           }
 
-          coords.push({ xEnd: largestXEnd, y: largestY });
+          boundingBoxes.push({ maxX, maxY });
 
-          if (largestY > maxY) {
-            maxY = largestY;
+          if (maxY > totalMaxY) {
+            totalMaxY = maxY;
           }
         }
       }
 
-      const newHeight = maxY + rowHeight;
+      const newHeight = totalMaxY + rowHeight;
       if (newHeight > 0 && drawHeight !== newHeight) {
         dispatch('updateRowHeight', { layerId: id, newHeight });
       }
@@ -322,41 +323,50 @@
     }
   }
 
-  function drawChildren(parent: ActivityPoint, parentY: number) {
+  function drawChildren(parent: ActivityPoint, parentY: number): BoundingBox | null {
     if (showChildren && parent?.children?.length) {
-      let largestXEnd = Number.MIN_SAFE_INTEGER;
-      let largestY = Number.MIN_SAFE_INTEGER;
-      let y = parentY;
+      const boundingBoxes: BoundingBox[] = [];
+
+      let maxX = Number.MIN_SAFE_INTEGER;
+      let maxY = Number.MIN_SAFE_INTEGER;
+      let y = parentY + rowHeight;
 
       for (const point of parent.children) {
         const x = xScaleView(point.x);
         const end = xScaleView(point.x + point.duration);
         const { textWidth } = setLabelContext(point);
         const xEnd = end + textWidth;
-        y = y + rowHeight;
+
+        for (const boundingBox of boundingBoxes) {
+          if (x <= boundingBox.maxX) {
+            y = boundingBox.maxY + rowHeight;
+          }
+        }
 
         drawActivity(point, x, y, end);
 
-        if (xEnd > largestXEnd) {
-          largestXEnd = xEnd;
+        if (xEnd > maxX) {
+          maxX = xEnd;
         }
-        if (y > largestY) {
-          largestY = y;
+        if (y > maxY) {
+          maxY = y;
         }
 
-        const childCoords = drawChildren(point, y);
+        const childrenBoundingBox: BoundingBox = drawChildren(point, y);
 
-        if (childCoords) {
-          if (childCoords.xEnd > largestXEnd) {
-            largestXEnd = childCoords.xEnd;
+        if (childrenBoundingBox) {
+          if (childrenBoundingBox.maxX > maxX) {
+            maxX = childrenBoundingBox.maxX;
           }
-          if (childCoords.y > largestY) {
-            largestY = childCoords.y;
+          if (childrenBoundingBox.maxY > maxY) {
+            maxY = childrenBoundingBox.maxY;
           }
         }
+
+        boundingBoxes.push({ maxX, maxY });
       }
 
-      return { xEnd: largestXEnd, y: largestY };
+      return { maxX, maxY };
     }
 
     return null;
