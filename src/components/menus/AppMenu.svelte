@@ -16,6 +16,7 @@
   import InfoCircleIcon from 'bootstrap-icons/icons/info-circle.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
+  import AerieLogoDark from '../../assets/aerie-logo-dark.svg?component';
   import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
@@ -32,7 +33,7 @@
 </script>
 
 <div class="app-menu" on:click|stopPropagation={() => appMenu.toggle()}>
-  <div class="app-icon">A</div>
+  <div class="app-icon"><AerieLogoDark /></div>
 
   <ChevronDownIcon />
 
@@ -102,12 +103,8 @@
 
   .app-icon {
     align-items: center;
-    background-color: white;
-    border-radius: 4px;
-    color: black;
     display: flex;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 24px;
     height: 24px;
     justify-content: center;
     line-height: 24px;
