@@ -5,6 +5,7 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
+  import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
@@ -19,8 +20,37 @@
   export let priority: number;
   export let specificationId: number;
 
+  $: upButtonClass = priority <= 0 ? 'hidden' : '';
+
   let contextMenu: ContextMenu;
   let expanded = false;
+  let schedulingGoalInput: HTMLInputElement;
+
+  function focusInput() {
+    if (document.activeElement !== schedulingGoalInput) {
+      schedulingGoalInput.focus();
+    }
+
+    return true;
+  }
+
+  function updatePriority(priority: number) {
+    effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority });
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'ArrowUp') {
+        if (priority > 0) {
+          updatePriority(priority - 1);
+        }
+      } else {
+        updatePriority(priority + 1);
+      }
+    }
+  }
 </script>
 
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
@@ -44,17 +74,26 @@
     <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
     <Input>
       <input
+        bind:this={schedulingGoalInput}
         bind:value={priority}
         class="st-input"
         disabled={!enabled}
         min="0"
         style:width="65px"
         type="number"
-        on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority })}
+        on:change={() => updatePriority(priority)}
+        on:keydown={onKeyDown}
       />
+      <div class="priority-buttons">
+        <div class="up-button {upButtonClass}" on:click={() => focusInput() && updatePriority(priority - 1)}>
+          <CaretUpFillIcon />
+        </div>
+        <div class="down-button" on:click={() => focusInput() && updatePriority(priority + 1)}>
+          <CaretDownFillIcon />
+        </div>
+      </div>
       <input
         bind:checked={enabled}
-        slot="right"
         style:cursor="pointer"
         type="checkbox"
         on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled })}
@@ -130,7 +169,49 @@
   .right {
     align-items: center;
     display: flex;
-    gap: 5px;
     justify-content: flex-end;
+  }
+
+  /* Hide number input "spinners" (up and down arrows) in WebKit browsers ... */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* ... and Firefox */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    padding-right: 32px;
+  }
+
+  .priority-buttons {
+    align-items: center;
+    display: flex;
+    margin-left: -32px;
+  }
+
+  .up-button,
+  .down-button {
+    align-items: center;
+    color: var(--st-gray-40);
+    cursor: pointer;
+    display: flex;
+    pointer-events: painted;
+  }
+
+  .up-button:hover,
+  .down-button:hover {
+    color: var(--st-gray-60);
+  }
+
+  .down-button {
+    margin-left: -3px;
+    margin-right: 2px;
+  }
+
+  .hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 </style>

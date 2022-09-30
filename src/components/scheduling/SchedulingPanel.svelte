@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
+  import { afterUpdate, beforeUpdate } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
@@ -15,6 +16,7 @@
 
   export let gridId: number;
 
+  let activeElement: HTMLElement;
   let filterText: string = '';
   let filteredSchedulingSpecGoals: SchedulingSpecGoal[] = [];
 
@@ -22,6 +24,19 @@
     const filterTextLowerCase = filterText.toLowerCase();
     const includesName = spec.goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
+  });
+
+  // Manually keep focus as scheduling goal elements are re-ordered.
+  // Svelte currently does not retain focus as elements are moved, even when keyed.
+  // See discussion here: https://github.com/sveltejs/svelte/issues/3973
+  beforeUpdate(() => {
+    activeElement = document.activeElement as HTMLElement;
+  });
+
+  afterUpdate(() => {
+    if (activeElement) {
+      activeElement.focus();
+    }
   });
 </script>
 
@@ -51,7 +66,7 @@
     {#if !filteredSchedulingSpecGoals.length}
       <div class="pt-1 st-typography-label">No scheduling goals found</div>
     {:else}
-      {#each filteredSchedulingSpecGoals as specGoal}
+      {#each filteredSchedulingSpecGoals as specGoal (specGoal.goal.id)}
         <SchedulingGoal
           enabled={specGoal.enabled}
           goal={specGoal.goal}
