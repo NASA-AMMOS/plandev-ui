@@ -7,6 +7,21 @@ type CommandDictionary = {
   version: string;
 };
 
+type GetSeqJsonResponseError = {
+  location: {
+    column: number;
+    line: number;
+  };
+  message: string;
+  stack: string;
+};
+
+type GetSeqJsonResponse = {
+  errors: GetSeqJsonResponseError[];
+  seqJson: SeqJson;
+  status: 'FAILURE' | 'SUCCESS';
+};
+
 type SeqJson = any; // TODO: Strongly type.
 
 type UserSequence = {

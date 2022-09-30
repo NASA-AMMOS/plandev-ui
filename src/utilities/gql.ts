@@ -372,19 +372,30 @@ const gql = {
 
   GET_EXPANSION_SEQUENCE_SEQ_JSON: `#graphql
     query GetExpansionSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
-      seqJson: getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
-        id
-        metadata
-        steps {
-          args
+      getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
+        errors {
+          location {
+            column
+            line
+          }
+          message
+          stack
+        }
+        seqJson {
+          id
           metadata
-          stem
-          time {
-            tag
+          steps {
+            args
+            metadata
+            stem
+            time {
+              tag
+              type
+            }
             type
           }
-          type
         }
+        status
       }
     }
   `,
@@ -544,19 +555,30 @@ const gql = {
 
   GET_USER_SEQUENCE_SEQ_JSON: `#graphql
     query GetUserSequenceSeqJson($commandDictionaryId: Int!, $sequenceDefinition: String!) {
-      seqJson: getUserSequenceSeqJson(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {
-        id
-        metadata
-        steps {
-          args
+      getUserSequenceSeqJson(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {
+        errors {
+          location {
+            column
+            line
+          }
+          message
+          stack
+        }
+        seqJson {
+          id
           metadata
-          stem
-          time {
-            tag
+          steps {
+            args
+            metadata
+            stem
+            time {
+              tag
+              type
+            }
             type
           }
-          type
         }
+        status
       }
     }
   `,

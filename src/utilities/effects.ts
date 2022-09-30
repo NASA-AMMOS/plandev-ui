@@ -785,9 +785,20 @@ const effects = {
 
   async getExpansionSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string> {
     try {
-      const data = await reqHasura(gql.GET_EXPANSION_SEQUENCE_SEQ_JSON, { seqId, simulationDatasetId });
-      const { seqJson } = data;
-      return JSON.stringify(seqJson, null, 2);
+      const data = await reqHasura<GetSeqJsonResponse>(gql.GET_EXPANSION_SEQUENCE_SEQ_JSON, {
+        seqId,
+        simulationDatasetId,
+      });
+      const { getSequenceSeqJson } = data;
+      const { errors, seqJson, status } = getSequenceSeqJson;
+
+      if (status === 'FAILURE') {
+        const [firstError] = errors;
+        const { message } = firstError;
+        return message;
+      } else {
+        return JSON.stringify(seqJson, null, 2);
+      }
     } catch (e) {
       console.log(e);
       return null;
@@ -998,9 +1009,21 @@ const effects = {
     signal: AbortSignal = undefined,
   ): Promise<string> {
     try {
-      const data = await reqHasura(gql.GET_USER_SEQUENCE_SEQ_JSON, { commandDictionaryId, sequenceDefinition }, signal);
-      const { seqJson } = data;
-      return JSON.stringify(seqJson, null, 2);
+      const data = await reqHasura<GetSeqJsonResponse>(
+        gql.GET_USER_SEQUENCE_SEQ_JSON,
+        { commandDictionaryId, sequenceDefinition },
+        signal,
+      );
+      const { getUserSequenceSeqJson } = data;
+      const { errors, seqJson, status } = getUserSequenceSeqJson;
+
+      if (status === 'FAILURE') {
+        const [firstError] = errors;
+        const { message } = firstError;
+        return message;
+      } else {
+        return JSON.stringify(seqJson, null, 2);
+      }
     } catch (e) {
       return e.message;
     }
