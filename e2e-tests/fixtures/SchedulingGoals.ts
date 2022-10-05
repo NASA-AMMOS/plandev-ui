@@ -7,7 +7,7 @@ export class SchedulingGoals {
   closeButton: Locator;
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
-  goalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: 12 * 60 * 60 * 1000 * 1000 })`;
+  goalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: Temporal.Duration.from({ hours: 12 }) })`;
   goalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
   goalName: string;
   goalsNavButton: Locator;
