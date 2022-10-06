@@ -81,6 +81,7 @@ const gql = {
       createPlan: insert_plan_one(object: $plan) {
         id
         revision
+        start_time
       }
     }
   `,
@@ -424,10 +425,14 @@ const gql = {
             required_parameters
           }
           id
+          jar_id
+          name
           parameters {
             parameters
           }
+          version
         }
+        model_id
         name
         revision
         scheduling_specifications {
@@ -456,6 +461,7 @@ const gql = {
         id
         model_id
         name
+        revision
         start_time
       }
     }

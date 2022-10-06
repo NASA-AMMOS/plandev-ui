@@ -1,28 +1,17 @@
-type PlanList = {
-  end_time: string;
-  id: number;
-  model_id: number;
-  name: string;
-  revision: number;
-  start_time: string;
-};
+type Plan = PlanSchema & { end_time_doy: string; start_time_doy: string };
 
-type Plan = {
+type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' | 'start_time'>;
+
+type PlanSchema = {
   duration: string;
-  end_time: string;
   id: number;
   model: Model;
+  model_id: number;
   name: string;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
   simulations: [{ simulation_datasets: [{ id: number }] }];
   start_time: string;
-  start_time_ymd: string;
 };
 
-type PlanInsertInput = {
-  duration: string;
-  model_id: number;
-  name: string;
-  start_time: string;
-};
+type PlanSlim = Pick<Plan, 'end_time_doy' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time' | 'start_time_doy'>;

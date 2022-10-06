@@ -45,8 +45,8 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
-    { field: 'start_time', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
-    { field: 'end_time', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
+    { field: 'start_time_doy', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
+    { field: 'end_time_doy', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: PlanCellRendererParams) => {
@@ -81,31 +81,31 @@
 
   let durationString: string = 'None';
   let filterText: string = '';
-  let models: ModelList[];
+  let models: ModelSlim[];
   let nameInputField: HTMLInputElement;
-  let plans: PlanList[];
+  let plans: PlanSlim[];
 
-  let endTimeField = field<string>('', [required, timestamp]);
+  let endTimeDoyField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [required]);
   let simTemplateField = field<number | null>(null);
-  let startTimeField = field<string>('', [required, timestamp]);
+  let startTimeDoyField = field<string>('', [required, timestamp]);
 
   $: plans = data.plans;
   $: models = data.models;
   $: createButtonEnabled =
-    $endTimeField.dirtyAndValid &&
+    $endTimeDoyField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
-    $startTimeField.dirtyAndValid;
+    $startTimeDoyField.dirtyAndValid;
   $: filteredPlans = plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
-      plan.end_time.includes(filterTextLowerCase) ||
+      plan.end_time_doy.includes(filterTextLowerCase) ||
       `${plan.id}`.includes(filterTextLowerCase) ||
       `${plan.model_id}`.includes(filterTextLowerCase) ||
       plan.name.toLowerCase().includes(filterTextLowerCase) ||
-      plan.start_time.includes(filterTextLowerCase)
+      plan.start_time_doy.includes(filterTextLowerCase)
     );
   });
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
@@ -124,10 +124,10 @@
 
   async function createPlan() {
     const newPlan = await effects.createPlan(
-      $endTimeField.value,
+      $endTimeDoyField.value,
       $modelIdField.value,
       $nameField.value,
-      $startTimeField.value,
+      $startTimeDoyField.value,
       $simTemplateField.value,
     );
 
@@ -157,9 +157,9 @@
   }
 
   function updateDurationString() {
-    if ($startTimeField.valid && $endTimeField.valid) {
+    if ($startTimeDoyField.valid && $endTimeDoyField.valid) {
       durationString = convertUsToDurationString(
-        (getUnixEpochTime($endTimeField.value) - getUnixEpochTime($startTimeField.value)) * 1000,
+        (getUnixEpochTime($endTimeDoyField.value) - getUnixEpochTime($startTimeDoyField.value)) * 1000,
       );
 
       if (!durationString) {
@@ -205,7 +205,7 @@
 
           <fieldset>
             <DatePickerField
-              field={startTimeField}
+              field={startTimeDoyField}
               label="Start Time - YYYY-DDDThh:mm:ss"
               name="start-time"
               on:change={updateDurationString}
@@ -215,7 +215,7 @@
 
           <fieldset>
             <DatePickerField
-              field={endTimeField}
+              field={endTimeDoyField}
               label="End Time - YYYY-DDDThh:mm:ss"
               name="end-time"
               on:change={updateDurationString}

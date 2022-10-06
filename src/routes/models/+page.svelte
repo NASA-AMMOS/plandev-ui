@@ -19,9 +19,9 @@
   export let data: PageData;
 
   type CellRendererParams = {
-    deleteModel: (model: ModelList) => void;
+    deleteModel: (model: ModelSlim) => void;
   };
-  type ModelCellRendererParams = ICellRendererParams<ModelList> & CellRendererParams;
+  type ModelCellRendererParams = ICellRendererParams<ModelSlim> & CellRendererParams;
 
   const columnDefs: DataGridColumnDef[] = [
     {
@@ -79,17 +79,17 @@
     models.updateValue(() => data.initialModels);
   });
 
-  function deleteModel(model: ModelList) {
+  function deleteModel(model: ModelSlim) {
     effects.deleteModel(model);
   }
 
   function deleteModelContext(event: CustomEvent<number[]>) {
-    const selectedModelListId = event.detail[0];
-    const modelListToDelete = $models.find((modelList: ModelList) => modelList.id === selectedModelListId);
-    deleteModel(modelListToDelete);
+    const selectedModelId = event.detail[0];
+    const modelToDelete = $models.find((model: ModelSlim) => model.id === selectedModelId);
+    deleteModel(modelToDelete);
   }
 
-  function showModel(model: ModelList) {
+  function showModel(model: ModelSlim) {
     goto(`${base}/plans?modelId=${model.id}`);
   }
 </script>

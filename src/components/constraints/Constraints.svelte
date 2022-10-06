@@ -20,7 +20,7 @@
   };
   type ConstraintsCellRendererParams = ICellRendererParams<Constraint> & CellRendererParams;
 
-  export let initialPlans: PlanList[] = [];
+  export let initialPlans: PlanSlim[] = [];
 
   const columnDefs: DataGridColumnDef[] = [
     {

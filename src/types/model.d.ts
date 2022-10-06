@@ -1,19 +1,14 @@
-type ModelList = {
-  id: number;
-  jar_id: number;
-  name: string;
-  version: string;
-};
+type Model = ModelSchema;
 
-type ModelInsertInput = {
-  jar_id: number;
-  mission: string;
-  name: string;
-  version: string;
-};
+type ModelInsertInput = Pick<Model | 'jar_id' | 'mission' | 'name' | 'version'>;
 
-type Model = {
+type ModelSchema = {
   activity_types: ActivityType[];
   id: number;
+  jar_id: number;
+  name: string;
   parameters: { parameters: ParametersMap };
+  version: string;
 };
+
+type ModelSlim = Pick<Model, 'id' | 'jar_id' | 'name' | 'version'>;

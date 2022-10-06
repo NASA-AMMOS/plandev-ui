@@ -20,7 +20,7 @@
   export let initialGoalModelId: number | null = null;
   export let initialGoalModifiedDate: string | null = null;
   export let initialGoalName: string = '';
-  export let initialModels: ModelList[] = [];
+  export let initialModels: ModelSlim[] = [];
   export let initialSpecId: number | null = null;
   export let mode: 'create' | 'edit' = 'create';
 
@@ -33,7 +33,7 @@
   let goalModelId: number | null = initialGoalModelId;
   let goalModifiedDate: string | null = initialGoalModifiedDate;
   let goalName: string = initialGoalName;
-  let models: ModelList[] = initialModels;
+  let models: ModelSlim[] = initialModels;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
 

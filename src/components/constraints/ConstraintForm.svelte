@@ -18,8 +18,8 @@
   export let initialConstraintModelId: number | null = null;
   export let initialConstraintPlanId: number | null = null;
   export let initialConstraintSummary: string = '';
-  export let initialModels: ModelList[] = [];
-  export let initialPlans: PlanList[] = [];
+  export let initialModels: ModelSlim[] = [];
+  export let initialPlans: PlanSlim[] = [];
   export let mode: 'create' | 'edit' = 'create';
 
   let constraintDefinition: string = initialConstraintDefinition;
@@ -30,8 +30,8 @@
   let constraintModelId: number | null = initialConstraintModelId;
   let constraintPlanId: number | null = initialConstraintPlanId;
   let constraintSummary: string = initialConstraintSummary;
-  let models: ModelList[] = initialModels;
-  let plans: PlanList[] = initialPlans;
+  let models: ModelSlim[] = initialModels;
+  let plans: PlanSlim[] = initialPlans;
   let saveButtonEnabled: boolean = false;
 
   $: saveButtonEnabled =

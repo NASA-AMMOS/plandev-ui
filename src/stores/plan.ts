@@ -38,7 +38,7 @@ export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id
 
 /* Subscriptions. */
 
-export const models = gqlSubscribable<ModelList[]>(gql.SUB_MODELS, {}, []);
+export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 
 export const planRevision = gqlSubscribable<number>(
   gql.SUB_PLAN_REVISION,

@@ -79,14 +79,14 @@ export const simulationResources: Readable<Resource[]> = derived(
   [plan, simulationDataset],
   ([$plan, $simulationDataset]) => {
     if ($plan) {
-      const { duration, start_time_ymd } = $plan;
+      const { duration, start_time } = $plan;
 
       if ($simulationDataset) {
         const { dataset } = $simulationDataset;
 
         if (dataset) {
           const { profiles } = dataset;
-          return sampleProfiles(profiles, start_time_ymd, duration);
+          return sampleProfiles(profiles, start_time, duration);
         }
       }
     }

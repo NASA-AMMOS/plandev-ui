@@ -18,8 +18,8 @@
   $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
-    const { start_time } = $plan;
-    effects.createActivityDirective({}, start_time, activityType.name, activityType.name, [], {});
+    const { start_time_doy } = $plan;
+    effects.createActivityDirective({}, start_time_doy, activityType.name, activityType.name, [], {});
   }
 
   function onDragEnd(): void {

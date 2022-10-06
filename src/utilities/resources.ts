@@ -1,11 +1,16 @@
-import { getDoyTime, getDurationInMs, getUnixEpochTime } from './time';
+import { getDurationInMs } from './time';
 
 /**
  * Samples a list of profiles at their change points. Converts the sampled profiles to Resources.
  */
-export function sampleProfiles(profiles: Profile[], startTime: string, duration: string, offset?: string): Resource[] {
+export function sampleProfiles(
+  profiles: Profile[],
+  planStartTimeYmd: string,
+  duration: string,
+  offset?: string,
+): Resource[] {
   const planOffset = getDurationInMs(offset);
-  const planStart = getUnixEpochTime(getDoyTime(new Date(startTime))) + planOffset;
+  const planStart = new Date(planStartTimeYmd).getTime() + planOffset;
   const planDuration = getDurationInMs(duration);
   const resources: Resource[] = [];
 

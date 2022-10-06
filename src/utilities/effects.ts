@@ -46,7 +46,7 @@ const effects = {
 
   async createActivityDirective(
     argumentsMap: ArgumentsMap,
-    start_time: string,
+    start_time_doy: string,
     type: string,
     name: string,
     tags: string[],
@@ -54,7 +54,7 @@ const effects = {
   ): Promise<void> {
     try {
       const currentPlan = get<Plan>(plan);
-      const start_offset = getIntervalFromDoyRange(currentPlan.start_time, start_time);
+      const start_offset = getIntervalFromDoyRange(currentPlan.start_time_doy, start_time_doy);
       const tagsString = formatHasuraStringArray(tags);
       const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
         arguments: argumentsMap,
@@ -83,7 +83,7 @@ const effects = {
         simulated_activity_id: null,
         simulation_dataset_id: null,
         source_scheduling_goal_id: null,
-        start_time,
+        start_time: start_time_doy,
         tags,
         type,
         unfinished: false,
@@ -219,12 +219,12 @@ const effects = {
       const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput });
       const { createModel } = data;
       const { id } = createModel;
-      const model: ModelList = { id, jar_id, name, version };
+      const model: ModelSlim = { id, jar_id, name, version };
 
       showSuccessToast('Model Created Successfully');
       createModelError.set(null);
       creatingModel.set(false);
-      models.updateValue((currentModels: ModelList[]) => [...currentModels, model]);
+      models.updateValue((currentModels: ModelSlim[]) => [...currentModels, model]);
     } catch (e) {
       console.log(e);
       showFailureToast('Model Create Failed');
@@ -234,43 +234,46 @@ const effects = {
   },
 
   async createPlan(
-    end_time: string,
+    end_time_doy: string,
     model_id: number,
     name: string,
-    start_time: string,
+    start_time_doy: string,
     simulation_template_id: number | null,
-  ): Promise<PlanList | null> {
+  ): Promise<PlanSlim | null> {
     try {
       createPlanError.set(null);
       creatingPlan.set(true);
 
       const planInsertInput: PlanInsertInput = {
-        duration: getIntervalFromDoyRange(start_time, end_time),
+        duration: getIntervalFromDoyRange(start_time_doy, end_time_doy),
         model_id,
         name,
-        start_time,
+        start_time: start_time_doy, // Postgres accepts DOY dates for it's 'timestamptz' type.
       };
-      const data = await reqHasura(gql.CREATE_PLAN, { plan: planInsertInput });
+      const data = await reqHasura<Pick<PlanSchema, 'id' | 'revision' | 'start_time'>>(gql.CREATE_PLAN, {
+        plan: planInsertInput,
+      });
       const { createPlan } = data;
-      const { id, revision } = createPlan;
+      const { id, revision, start_time } = createPlan;
 
       await effects.createSimulation(id, simulation_template_id);
       await effects.createSchedulingSpec({
         analysis_only: false,
-        horizon_end: end_time,
-        horizon_start: start_time,
+        horizon_end: end_time_doy,
+        horizon_start: start_time_doy,
         plan_id: id,
         plan_revision: revision,
         simulation_arguments: {},
       });
 
-      const plan: PlanList = {
-        end_time,
+      const plan: PlanSlim = {
+        end_time_doy,
         id,
         model_id,
         name,
         revision,
         start_time,
+        start_time_doy,
       };
 
       showSuccessToast('Plan Created Successfully');
@@ -565,7 +568,7 @@ const effects = {
     }
   },
 
-  async deleteModel(model: ModelList): Promise<void> {
+  async deleteModel(model: ModelSlim): Promise<void> {
     try {
       const { confirm } = await showConfirmModal(
         'Delete',
@@ -805,9 +808,9 @@ const effects = {
     }
   },
 
-  async getModels(): Promise<ModelList[]> {
+  async getModels(): Promise<ModelSlim[]> {
     try {
-      const data = await reqHasura(gql.GET_MODELS);
+      const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS);
       const { models = [] } = data;
       return models;
     } catch (e) {
@@ -818,16 +821,17 @@ const effects = {
 
   async getPlan(id: number): Promise<Plan | null> {
     try {
-      const data = await reqHasura(gql.GET_PLAN, { id });
-      const { plan } = data;
+      const data = await reqHasura<PlanSchema>(gql.GET_PLAN, { id });
+      const { plan: planSchema } = data;
 
-      if (plan) {
-        return {
-          ...plan,
-          end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
-          start_time: getDoyTime(new Date(plan.start_time)),
-          start_time_ymd: plan.start_time,
+      if (planSchema) {
+        const { start_time, duration } = planSchema;
+        const plan: Plan = {
+          ...planSchema,
+          end_time_doy: getDoyTimeFromDuration(start_time, duration),
+          start_time_doy: getDoyTime(new Date(start_time)),
         };
+        return plan;
       } else {
         return null;
       }
@@ -850,18 +854,21 @@ const effects = {
     }
   },
 
-  async getPlansAndModels(): Promise<{ models: ModelList[]; plans: PlanList[] }> {
+  async getPlansAndModels(): Promise<{ models: ModelSlim[]; plans: PlanSlim[] }> {
     try {
-      const data = await reqHasura(gql.GET_PLANS_AND_MODELS);
+      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS)) as {
+        models: ModelSlim[];
+        plans: Pick<Plan, 'duration' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time'>[];
+      };
       const { models, plans } = data;
 
       return {
         models,
-        plans: plans.map((plan: any) => {
+        plans: plans.map(plan => {
           return {
             ...plan,
-            end_time: getDoyTimeFromDuration(plan.start_time, plan.duration),
-            start_time: getDoyTime(new Date(plan.start_time)),
+            end_time_doy: getDoyTimeFromDuration(plan.start_time, plan.duration),
+            start_time_doy: getDoyTime(new Date(plan.start_time)),
           };
         }),
       };
@@ -1188,7 +1195,7 @@ const effects = {
       }
 
       if (activity.start_time) {
-        const planStartTime = get<Plan>(plan).start_time;
+        const planStartTime = get<Plan>(plan).start_time_doy;
         activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
       }
 

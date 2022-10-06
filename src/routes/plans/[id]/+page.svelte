@@ -69,8 +69,8 @@
   $: if (data.initialPlan) {
     $modelParametersMap = data.initialPlan.model.parameters.parameters;
     $plan = data.initialPlan;
-    $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time);
-    $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time);
+    $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
+    $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     $viewTimeRange = $maxTimeRange;
