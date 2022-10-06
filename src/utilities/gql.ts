@@ -670,7 +670,7 @@ const gql = {
           type
         }
         simulations(order_by: { id: desc }, limit: 1) {
-          simulation_datasets(where: { dataset_id: { _eq: $simulationDatasetId } }, limit: 1) {
+          simulation_datasets(where: { id: { _eq: $simulationDatasetId } }, limit: 1) {
             simulated_activities(where: { parent_id: {  _is_null: false } }) {
               activity_type_name
               attributes
