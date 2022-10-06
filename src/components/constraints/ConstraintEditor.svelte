@@ -8,13 +8,14 @@
 
   export let constraintDefinition: string = '';
   export let constraintModelId: number | null = null;
+  export let constraintPlanId: number | null = null;
   export let readOnly: boolean = false;
   export let title: string = 'Constraint - Definition Editor';
 
   let constraintsTsFiles: TypeScriptFile[];
   let monaco: Monaco;
 
-  $: effects.getTsFilesConstraints(constraintModelId).then(tsFiles => (constraintsTsFiles = tsFiles));
+  $: effects.getTsFilesConstraints(constraintModelId, constraintPlanId).then(tsFiles => (constraintsTsFiles = tsFiles));
 
   $: if (monaco !== undefined && constraintsTsFiles !== undefined) {
     const { languages } = monaco;

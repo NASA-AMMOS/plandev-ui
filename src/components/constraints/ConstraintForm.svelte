@@ -188,6 +188,7 @@
   <ConstraintEditor
     {constraintDefinition}
     {constraintModelId}
+    {constraintPlanId}
     title="{mode === 'create' ? 'New' : 'Edit'} Constraint - Definition Editor"
     on:didChangeModelContent={onDidChangeModelContent}
   />
