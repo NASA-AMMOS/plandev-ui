@@ -12,6 +12,9 @@
   import ActivityTypesPanel from '../../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import NavButton from '../../../components/app/NavButton.svelte';
+  import Console from '../../../components/console/Console.svelte';
+  import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
+  import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConstraintsPanel from '../../../components/constraints/ConstraintsPanel.svelte';
   import ConstraintViolationsPanel from '../../../components/constraints/ConstraintViolationsPanel.svelte';
   import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
@@ -27,6 +30,7 @@
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
   import { resetActivityStores } from '../../../stores/activities';
   import { resetConstraintStores } from '../../../stores/constraints';
+  import { allErrors, schedulingErrors, simulationDatasetErrors } from '../../../stores/errors';
   import {
     maxTimeRange,
     plan,
@@ -118,7 +122,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<CssGrid rows="42px calc(100vh - 42px)">
+<CssGrid class="plan-container" rows="42px auto 36px">
   <Nav>
     <span class="plan-title" slot="title">{data.initialPlan.name}</span>
 
@@ -170,4 +174,45 @@
     on:changeColumnSizes={changeColumnSizes}
     on:changeRowSizes={changeRowSizes}
   />
+  <Console>
+    <svelte:fragment slot="console-tabs">
+      <div class="console-tabs">
+        <div>
+          <ConsoleTab numberOfErrors={$allErrors?.length} title="All Errors">All</ConsoleTab>
+        </div>
+        <div class="separator">|</div>
+        <div class="grouped-error-tabs">
+          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors"
+            ><GearWideConnectedIcon /></ConsoleTab
+          >
+          <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
+        </div>
+      </div>
+    </svelte:fragment>
+
+    <ConsoleSection errors={$allErrors} title="All Errors" />
+    <ConsoleSection errors={$schedulingErrors} title="Scheduling Errors" />
+    <ConsoleSection errors={$simulationDatasetErrors} title="Simulation Errors" />
+  </Console>
 </CssGrid>
+
+<style>
+  :global(.plan-container) {
+    height: 100%;
+  }
+
+  .console-tabs {
+    align-items: center;
+    column-gap: 1rem;
+    display: grid;
+    grid-template-columns: min-content min-content auto;
+  }
+
+  .grouped-error-tabs {
+    display: flex;
+  }
+
+  .separator {
+    color: var(--st-gray-30);
+  }
+</style>

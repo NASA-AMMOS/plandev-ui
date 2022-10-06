@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
+import { parseErrorReason, schedulingErrors } from '../stores/errors';
 import {
   createDictionaryError,
   creatingDictionary,
@@ -14,6 +15,7 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
+import { ErrorTypes } from './errors';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal, showCreateViewModal } from './modal';
@@ -1132,6 +1134,8 @@ const effects = {
       let incomplete = true;
       schedulingStatus.set(Status.Incomplete);
 
+      schedulingErrors.set([]);
+
       do {
         const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
         const { schedule } = data;
@@ -1143,8 +1147,15 @@ const effects = {
           showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
         } else if (status === 'failed') {
           schedulingStatus.set(Status.Failed);
-          console.log(reason);
+
+          const schedulingError: SchedulingError = {
+            reason: parseErrorReason(reason),
+            trace: reason,
+            type: ErrorTypes.SCHEDULE,
+          };
+          schedulingErrors.set([schedulingError]);
           incomplete = false;
+
           showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
         } else if (status === 'incomplete') {
           schedulingStatus.set(Status.Incomplete);

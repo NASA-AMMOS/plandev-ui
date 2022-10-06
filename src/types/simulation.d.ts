@@ -54,7 +54,7 @@ type SimulationDataset = {
   dataset: Dataset;
   id: number;
   plan_revision: number;
-  reason: string;
+  reason: string | null;
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 
@@ -68,4 +68,11 @@ type SimulationTemplate = {
   arguments: ArgumentsMap;
   description: string;
   id: number;
+};
+
+type SimulationDatasetReason = {
+  errors: {
+    [activityId: string]: BaseError;
+  };
+  success: boolean;
 };
