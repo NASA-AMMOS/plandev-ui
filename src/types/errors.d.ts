@@ -1,9 +1,25 @@
 interface BaseError {
-  reason: string;
-  sourceId?: string;
+  data: unknown;
+  message: string;
+  timestamp: string;
   trace?: string;
   type: import('../utilities/errors').ErrorTypes;
 }
 
-type SchedulingError = BaseError;
-type SimulationDatasetError = BaseError;
+interface SchedulingError extends BaseError {
+  data: {
+    errors: {
+      [activityId: string]: unknown;
+    };
+    success: boolean;
+  };
+}
+
+interface SimulationDatasetError extends BaseError {
+  data: {
+    errors: {
+      [activityId: string]: unknown;
+    };
+    success: boolean;
+  };
+}

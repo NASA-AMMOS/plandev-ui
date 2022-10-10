@@ -39,7 +39,7 @@ type ResourceValue = {
 };
 
 type SimulateResponse = {
-  reason: string;
+  reason: SimulationDatasetError;
   simulationDatasetId: number;
   status: 'complete' | 'failed' | 'incomplete' | 'pending';
 };
@@ -54,7 +54,7 @@ type SimulationDataset = {
   dataset: Dataset;
   id: number;
   plan_revision: number;
-  reason: string | null;
+  reason: SimulationDatasetError | null;
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 

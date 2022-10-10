@@ -3,7 +3,7 @@
 <script lang="ts">
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
 
-  export let errors: BaseError[];
+  export let errors: BaseError[] = [];
   export let title: string;
 </script>
 
@@ -14,9 +14,11 @@
       {#each errors as error}
         <div class="error">
           <div class="reason">
-            <div>{error.reason}</div>
+            <div><span class="timestamp">{error.timestamp}</span>{error.message}</div>
           </div>
-          <div class="trace"><pre>{error.trace}</pre></div>
+          <div class="trace">
+            <pre>{JSON.stringify(error.data) !== '{}' ? JSON.stringify(error.data) : error.trace}</pre>
+          </div>
         </div>
       {/each}
     </div>
@@ -45,6 +47,11 @@
 
   .error {
     margin: 0 1rem 12px;
+  }
+
+  .timestamp {
+    font-family: 'JetBrains mono';
+    margin-right: 1rem;
   }
 
   .reason {

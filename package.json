@@ -36,6 +36,7 @@
     "version": "node ./scripts/version.js"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^4.5.11",
     "@nasa-jpl/stellar": "^1.0.10",
     "@sveltejs/adapter-node": "1.0.0-next.96",
     "@sveltejs/kit": "1.0.0-next.504",

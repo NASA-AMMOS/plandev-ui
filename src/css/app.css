@@ -3,6 +3,8 @@
 @import 'toastify-js/src/toastify.css';
 @import 'ag-grid-community/styles/ag-grid.min.css';
 
+@import '@fontsource/jetbrains-mono/index.css';
+
 @import '@nasa-jpl/stellar/font/inter/inter.css';
 @import '@nasa-jpl/stellar/css/variables.css';
 @import '@nasa-jpl/stellar/css/typography.css';

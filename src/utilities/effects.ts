@@ -15,7 +15,6 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
-import { ErrorTypes } from './errors';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal, showCreateViewModal } from './modal';
@@ -1147,13 +1146,12 @@ const effects = {
           showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
         } else if (status === 'failed') {
           schedulingStatus.set(Status.Failed);
-
-          const schedulingError: SchedulingError = {
-            reason: parseErrorReason(reason),
-            trace: reason,
-            type: ErrorTypes.SCHEDULE,
-          };
-          schedulingErrors.set([schedulingError]);
+          schedulingErrors.set([
+            {
+              ...reason,
+              message: parseErrorReason(reason.message),
+            },
+          ]);
           incomplete = false;
 
           showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);

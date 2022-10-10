@@ -23,7 +23,7 @@ type SchedulingGoalInsertInput = Omit<
 >;
 
 type SchedulingResponse = {
-  reason: string;
+  reason: SchedulingError;
   status: 'complete' | 'failed' | 'incomplete';
 };
 

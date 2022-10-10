@@ -182,10 +182,10 @@
         </div>
         <div class="separator">|</div>
         <div class="grouped-error-tabs">
+          <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
           <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors"
             ><GearWideConnectedIcon /></ConsoleTab
           >
-          <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
         </div>
       </div>
     </svelte:fragment>
