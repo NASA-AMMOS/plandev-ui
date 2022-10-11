@@ -9,14 +9,14 @@ export function parseErrorReason(error: string) {
 export const simulationDatasetErrors: Readable<SimulationDatasetError[]> = derived(
   [simulationDataset],
   ([$simulationDataset]) => {
-    return $simulationDataset
+    return $simulationDataset && $simulationDataset.reason
       ? [
           {
             ...$simulationDataset.reason,
             message: parseErrorReason($simulationDataset.reason.message),
           },
         ]
-      : null;
+      : [];
   },
   [],
 );
