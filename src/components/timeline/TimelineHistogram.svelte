@@ -272,7 +272,6 @@
       timelineHovering = false;
       dispatch('cursorTimeChange', null);
     }
-    console.log('cursorLeft :>> ', cursorLeft, x);
   }
 
   function onWindowMouseMove(e: MouseEvent) {
