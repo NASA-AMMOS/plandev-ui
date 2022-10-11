@@ -12,6 +12,7 @@
   import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
+  import TimelineHistogram from './TimelineHistogram.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
@@ -21,6 +22,7 @@
   let clientWidth: number = 0;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 20;
+  let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
@@ -29,14 +31,16 @@
   let tickCount: number = 5;
   let timeline: Timeline;
   let timelineDiv: HTMLDivElement;
+  let timelineHistogramDiv: HTMLDivElement;
+  let timelineHistogramDrawHeight: number = 40;
   let xAxisDiv: HTMLDivElement;
-  let xAxisDrawHeight: number = 90;
+  let xAxisDrawHeight: number = 56;
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: rows = timeline?.rows || [];
   $: timeline.gridId = gridId;
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
-  $: setRowsMaxHeight(timelineDiv, xAxisDiv);
+  $: setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
   $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
   $: xDomainView = [new Date($viewTimeRange.start), new Date($viewTimeRange.end)];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
@@ -48,7 +52,7 @@
   });
 
   afterUpdate(() => {
-    setRowsMaxHeight(timelineDiv, xAxisDiv);
+    setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
   });
 
   function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
@@ -111,11 +115,24 @@
     $viewTimeRange = event.detail;
   }
 
-  async function setRowsMaxHeight(timelineDiv: HTMLDivElement, xAxisDiv: HTMLDivElement) {
+  function onHistogramViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
+    $viewTimeRange = event.detail;
+    mouseOver = null;
+  }
+
+  function onHistogramCursorTimeChanged(event: CustomEvent<Date>) {
+    histogramCursorTime = event.detail;
+  }
+
+  async function setRowsMaxHeight(
+    timelineDiv: HTMLDivElement,
+    xAxisDiv: HTMLDivElement,
+    timelineHistogramDiv: HTMLDivElement,
+  ) {
     await tick();
     if (timelineDiv && xAxisDiv && timelineDiv.parentElement) {
       const { clientHeight: parentHeight } = timelineDiv.parentElement;
-      const offsetTop = xAxisDiv.clientHeight;
+      const offsetTop = xAxisDiv.clientHeight + timelineHistogramDiv.clientHeight;
       const maxHeight = parentHeight - offsetTop - cursorHeaderHeight;
       rowsMaxHeight = maxHeight;
     }
@@ -125,6 +142,22 @@
 <svelte:window on:keydown={onKeyDown} />
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
+  <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
+    <TimelineHistogram
+      constraintViolations={$constraintViolations}
+      {cursorEnabled}
+      drawHeight={timelineHistogramDrawHeight}
+      {drawWidth}
+      marginLeft={timeline?.marginLeft}
+      {mouseOver}
+      {rows}
+      viewTimeRange={$viewTimeRange}
+      {xScaleView}
+      {xScaleMax}
+      on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
+      on:cursorTimeChange={onHistogramCursorTimeChanged}
+    />
+  </div>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
       constraintViolations={$constraintViolations}
@@ -133,7 +166,6 @@
       marginLeft={timeline?.marginLeft}
       verticalGuides={timeline?.verticalGuides}
       viewTimeRange={$viewTimeRange}
-      {xScaleMax}
       {xScaleView}
       {xTicksView}
       on:viewTimeRangeChanged={onViewTimeRangeChanged}
@@ -141,6 +173,7 @@
   </div>
   <TimelineCursors
     {mouseOver}
+    {histogramCursorTime}
     {xScaleView}
     {drawWidth}
     {cursorHeaderHeight}
@@ -205,5 +238,9 @@
     overflow-x: hidden;
     overflow-y: hidden;
     width: 100%;
+  }
+
+  .x-axis {
+    pointer-events: none;
   }
 </style>

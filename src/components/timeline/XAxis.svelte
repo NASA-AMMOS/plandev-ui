@@ -3,7 +3,6 @@
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
   import ConstraintViolations from './ConstraintViolations.svelte';
-  import XAxisBrush from './XAxisBrush.svelte';
   import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
 
   export let constraintViolations: ConstraintViolation[] = [];
@@ -12,29 +11,16 @@
   export let marginLeft: number = 50;
   export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
-  export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
 
-  let axisOffset = 55;
-  let violationsOffset = 20;
-  let verticalGuidesOffset = 35;
+  let axisOffset = 24;
+  let violationsOffset = 16;
+  let verticalGuidesOffset = 10;
 </script>
 
-<svg style="height: {drawHeight}px">
+<svg style="height: {drawHeight}px;">
   <g transform="translate({marginLeft}, 0)">
-    <g transform="translate(0, 0)">
-      <XAxisBrush
-        drawHeight={20}
-        {drawWidth}
-        type="max"
-        {viewTimeRange}
-        {xScaleMax}
-        {xScaleView}
-        yOffset={10}
-        on:viewTimeRangeChanged
-      />
-    </g>
     <g transform="translate(0, {violationsOffset})">
       <ConstraintViolations
         {constraintViolations}
@@ -50,16 +36,6 @@
       <XAxisVerticalGuides {drawHeight} {drawWidth} {verticalGuides} {viewTimeRange} {xScaleView} />
     </g>
     <g transform="translate(0, {axisOffset})">
-      <XAxisBrush
-        drawHeight={30}
-        {drawWidth}
-        type="view"
-        {viewTimeRange}
-        {xScaleMax}
-        {xScaleView}
-        yOffset={-10}
-        on:viewTimeRangeChanged
-      />
       <g fill="none" font-size="10" text-anchor="middle">
         {#if drawWidth > 0}
           {#each xTicksView as tick}

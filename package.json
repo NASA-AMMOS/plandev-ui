@@ -42,6 +42,7 @@
     "@sveltejs/kit": "1.0.0-next.513",
     "ag-grid-community": "^28.2.0",
     "bootstrap": "^5.2.2",
+    "@types/d3-brush": "^3.0.1",
     "bootstrap-icons": "^1.9.1",
     "cookie": "^0.5.0",
     "d3-axis": "^3.0.0",

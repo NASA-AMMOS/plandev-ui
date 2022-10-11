@@ -25,6 +25,7 @@
     font-size: 1rem;
     height: 42px;
     padding: 1rem;
+    z-index: 2;
   }
 
   .divider {
