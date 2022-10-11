@@ -55,6 +55,7 @@
 
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
   <div class="left st-typography-body" class:disabled={!enabled}>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <span on:click={() => (expanded = !expanded)}>
       {#if !expanded}
         <CaretRightFillIcon />
@@ -85,9 +86,11 @@
         on:keydown={onKeyDown}
       />
       <div class="priority-buttons">
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="up-button {upButtonClass}" on:click={() => focusInput() && updatePriority(priority - 1)}>
           <CaretUpFillIcon />
         </div>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="down-button" on:click={() => focusInput() && updatePriority(priority + 1)}>
           <CaretDownFillIcon />
         </div>

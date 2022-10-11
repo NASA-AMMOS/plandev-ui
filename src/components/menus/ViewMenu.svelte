@@ -28,6 +28,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="view-menu st-typography-body" on:click|stopPropagation={() => viewMenu.toggle()}>
   <ChevronDownIcon />
 

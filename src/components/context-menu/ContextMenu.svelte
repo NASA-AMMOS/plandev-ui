@@ -41,6 +41,7 @@
 <svelte:body on:click={hide} />
 
 {#if shown}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     bind:this={div}
     class="context-menu"

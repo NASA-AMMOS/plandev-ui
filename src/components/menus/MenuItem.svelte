@@ -8,6 +8,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="menu-item" class:disabled on:click|preventDefault={() => dispatch('click')}>
   <slot />
 </div>

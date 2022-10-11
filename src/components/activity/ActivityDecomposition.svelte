@@ -51,6 +51,7 @@
         <TreeLeafIcon />
       {/if}
     </button>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <span on:click={() => ($selectedActivityId = id)} on:dblclick={toggle} class={nodeClass}>{type}</span>
   </div>
 

@@ -8,6 +8,7 @@
 </script>
 
 {#each expansionRules as rule}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="expansion-rule-selection" on:click|stopPropagation={() => selectExpansionRule(activityName, rule)}>
     <input checked={selectedExpansionRules[activityName] === rule.id} name={activityName} type="checkbox" />Rule {rule.id}
   </div>

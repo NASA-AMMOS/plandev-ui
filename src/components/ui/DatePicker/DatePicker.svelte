@@ -258,6 +258,7 @@
   {#if isOpen}
     <div class="date-picker-portal" use:popperContent={extraOpts}>
       <div class="date-picker-inputs">
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div><div class="chevron-button button" role="button" on:click={decrementMonth}><ChevronLeft /></div></div>
         <DatePickerDropdown
           class="date-picker-month-input"
@@ -271,6 +272,7 @@
           value={viewYear}
           on:change={onChangeViewYear}
         />
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div><div class="chevron-button button" role="button" on:click={incrementMonth}><ChevronRight /></div></div>
       </div>
       <Month {maxDate} {minDate} month={viewMonth} year={viewYear} {selectedDate} on:select={onSelect} />

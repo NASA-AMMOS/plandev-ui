@@ -74,6 +74,7 @@
 
 {#if showName}
   <div class="parameter-rec-series">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div class="series-left" on:click={toggleExpanded}>
       <div class="arrow">
         {#if !expanded}

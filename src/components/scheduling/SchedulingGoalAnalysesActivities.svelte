@@ -19,6 +19,7 @@
 
 <div class="scheduling-goal-analysis-activities">
   <div class="left st-typography-body">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <span on:click={() => (expanded = !expanded)}>
       {#if !expanded}
         <CaretRightFillIcon />
@@ -38,6 +39,7 @@
         {#each analysis.satisfying_activities as activity}
           {#if $activitiesMap[activity.activity_id]}
             <li>
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div
                 class="satisfied-activity st-typography-body"
                 class:selected={$selectedActivityId === activity.activity_id}

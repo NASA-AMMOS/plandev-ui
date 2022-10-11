@@ -11,6 +11,7 @@
   let styleName: string = '';
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="list-item st-typography-body {className}"
   {draggable}

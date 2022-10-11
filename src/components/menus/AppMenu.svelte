@@ -32,6 +32,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="app-menu" on:click|stopPropagation={() => appMenu.toggle()}>
   <div class="app-icon"><AerieLogoDark /></div>
 
