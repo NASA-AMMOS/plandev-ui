@@ -369,7 +369,7 @@
 
   .bin {
     flex: 1;
-    transition: height 150ms ease-out;
+    transition: height 75ms ease-out;
     width: 2px;
   }
 
