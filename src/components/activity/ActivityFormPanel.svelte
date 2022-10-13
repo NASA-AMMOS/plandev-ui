@@ -48,7 +48,7 @@
   let seq_id: string | null = null;
   let simulated_activity_id: number | null = null;
   let sourceSchedulingGoalId: number | null = null;
-  let startTime: string | null = null;
+  let startTimeDoy: string | null = null;
   let tags: string[] = [];
   let type: string | null = null;
   let unfinished: boolean | null = null;
@@ -63,7 +63,7 @@
   let parametersWithErrorsCount: number = 0;
   let parameterErrorMap: Record<string, string[]> = {};
   let rootActivityHasChildren: boolean;
-  let startTimeField: FieldStore<string>;
+  let startTimeDoyField: FieldStore<string>;
 
   $: if ($selectedActivity) {
     activityName = $selectedActivity.name;
@@ -77,7 +77,7 @@
     root_activity = getActivityRootParent($activitiesMap, id);
     simulated_activity_id = $selectedActivity.simulated_activity_id;
     sourceSchedulingGoalId = $selectedActivity.source_scheduling_goal_id;
-    startTime = $selectedActivity.start_time;
+    startTimeDoy = $selectedActivity.start_time_doy;
     tags = $selectedActivity.tags;
     type = $selectedActivity.type;
     unfinished = $selectedActivity.unfinished;
@@ -96,7 +96,7 @@
     seq_id = null;
     simulated_activity_id = null;
     sourceSchedulingGoalId = null;
-    startTime = null;
+    startTimeDoy = null;
     type = null;
     unfinished = null;
     tags = [];
@@ -115,10 +115,10 @@
   $: activityType = $activityTypesMap[type] || null;
   $: rootActivityHasChildren = root_activity?.child_ids ? root_activity.child_ids.length > 0 : false;
   $: isChild = parent_id !== null;
-  $: startTimeField = field<string>(startTime, [required, timestamp]);
+  $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
   $: activityNameField = field<string>(activityName);
   $: if (duration) {
-    const startTimeISO = new Date(getUnixEpochTime(startTime)).toISOString();
+    const startTimeISO = new Date(getUnixEpochTime(startTimeDoy)).toISOString();
     endTime = `${getDoyTimeFromDuration(startTimeISO, duration)}`;
   } else {
     endTime = null;
@@ -204,8 +204,8 @@
   }
 
   function onUpdateStartTime() {
-    if ($startTimeField.valid && startTime !== $startTimeField.value) {
-      effects.updateActivityDirective(id, { start_time: $startTimeField.value });
+    if ($startTimeDoyField.valid && startTimeDoy !== $startTimeDoyField.value) {
+      effects.updateActivityDirective(id, { start_time_doy: $startTimeDoyField.value });
     }
   }
 
@@ -375,7 +375,7 @@
 
               <DatePickerField
                 disabled={isChild}
-                field={startTimeField}
+                field={startTimeDoyField}
                 label="Start Time - YYYY-DDDThh:mm:ss"
                 layout="inline"
                 name="start-time"

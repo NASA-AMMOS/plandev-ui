@@ -66,28 +66,34 @@ const effects = {
         tags: tagsString,
         type,
       };
-      const data = await reqHasura(gql.CREATE_ACTIVITY_DIRECTIVE, { activityDirectiveInsertInput });
+      const data = await reqHasura<Pick<ActivityDirective, 'created_at' | 'id' | 'last_modified_at' | 'name'>>(
+        gql.CREATE_ACTIVITY_DIRECTIVE,
+        {
+          activityDirectiveInsertInput,
+        },
+      );
       const { createActivityDirective } = data;
-      const { id, name: newName } = createActivityDirective;
+      const { created_at, id, last_modified_at, name: newName } = createActivityDirective;
 
       const activity: Activity = {
         arguments: argumentsMap,
         attributes: null,
         child_ids: [],
-        created_at: null,
+        created_at,
         duration: null,
         id,
-        last_modified_at: null,
+        last_modified_at,
         metadata,
         name: newName,
         parent_id: null,
         simulated_activity_id: null,
         simulation_dataset_id: null,
         source_scheduling_goal_id: null,
-        start_time: start_time_doy,
+        start_time_doy,
         tags,
         type,
         unfinished: false,
+        uniqueId: `directive_${id}`,
       };
 
       activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => ({ ...currentActivitiesMap, [id]: activity }));
@@ -1203,9 +1209,9 @@ const effects = {
         activityDirectiveSetInput.arguments = activity.arguments;
       }
 
-      if (activity.start_time) {
-        const planStartTime = get<Plan>(plan).start_time_doy;
-        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTime, activity.start_time);
+      if (activity.start_time_doy) {
+        const planStartTimeDoy = get<Plan>(plan).start_time_doy;
+        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTimeDoy, activity.start_time_doy);
       }
 
       if (activity.tags) {

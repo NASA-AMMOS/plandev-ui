@@ -98,9 +98,9 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const start_time = getDoyTime(new Date(unixEpochTime));
+      const start_time_doy = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivityDirective(dragPoint.id, { start_time }, false);
+        effects.updateActivityDirective(dragPoint.id, { start_time_doy }, false);
       }
     }
   }
@@ -109,9 +109,9 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const start_time = getDoyTime(new Date(unixEpochTime));
+      const start_time_doy = getDoyTime(new Date(unixEpochTime));
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivityDirective(dragPoint.id, { start_time });
+        effects.updateActivityDirective(dragPoint.id, { start_time_doy });
       }
       dragOffsetX = null;
       dragPoint = null;

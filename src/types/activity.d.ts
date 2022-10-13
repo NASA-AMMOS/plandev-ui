@@ -32,10 +32,11 @@ type Activity = {
   simulated_activity_id: ActivitySimulatedId | null;
   simulation_dataset_id: number | null;
   source_scheduling_goal_id: number;
-  start_time: string;
+  start_time_doy: string;
   tags: string[];
   type: string;
   unfinished: boolean;
+  uniqueId: string;
 };
 
 type ActivitiesMap = Record<ActivityId, Activity>;
@@ -44,9 +45,11 @@ type ActivityDirective = {
   arguments: ArgumentsMap;
   created_at: string;
   id: ActivityDirectiveId;
+  last_modified_arguments_at: string;
   last_modified_at: string;
   metadata: ActivityMetadata;
   name: string;
+  plan_id: number;
   simulated_activities: [ActivitySimulated];
   source_scheduling_goal_id: number;
   start_offset: string;
@@ -84,5 +87,4 @@ type ActivitySimulated = {
 type SubActivitiesResponse = {
   activity_directives: ActivityDirective[];
   simulations: [{ simulation_datasets: [{ simulated_activities: ActivitySimulated[] }] }];
-  start_time: string;
 };

@@ -1,14 +1,8 @@
-import { keyBy } from 'lodash-es';
-import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import {
-  activitiesToPoints,
-  activityDirectiveToActivity,
-  activitySimulatedToActivity,
-  getChildIdsFn,
-  getParentIdFn,
-} from '../utilities/activities';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
+import { activitiesToPoints } from '../utilities/activities';
 import gql from '../utilities/gql';
-import { planId } from './plan';
+import { getDoyTimeFromDuration } from '../utilities/time';
+import { plan, planId } from './plan';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';
 
@@ -19,23 +13,91 @@ export const activitiesMap = gqlSubscribable<ActivitiesMap>(
   { planId, simulationDatasetId },
   {},
   (data: SubActivitiesResponse) => {
-    const { activity_directives, simulations, start_time } = data;
+    const { start_time: plan_start_time } = get<Plan>(plan);
+    const { activity_directives, simulations } = data;
     const [{ simulation_datasets } = { simulation_datasets: [] }] = simulations;
     const [{ simulated_activities } = { simulated_activities: [] }] = simulation_datasets;
 
-    const getParentId = getParentIdFn(activity_directives);
-    const getChildIds = getChildIdsFn(simulated_activities);
+    // For each directive, map each simulated activity to it's directive activity id.
+    const simulatedIdToDirectiveId = activity_directives.reduce(
+      (map: Record<ActivitySimulatedId, ActivityDirectiveId>, activityDirective: ActivityDirective) => {
+        const { simulated_activities } = activityDirective;
+        const activitySimulated = simulated_activities[0];
 
-    const newActivities: Activity[] = [
-      ...activity_directives.map((activityDirective: ActivityDirective) =>
-        activityDirectiveToActivity(start_time, activityDirective, getChildIds),
-      ),
-      ...simulated_activities.map((activitySimulated: ActivitySimulated) =>
-        activitySimulatedToActivity(start_time, activitySimulated, getChildIds, getParentId),
-      ),
-    ];
+        if (activitySimulated) {
+          map[activitySimulated.id] = activityDirective.id;
+        }
 
-    return keyBy(newActivities, 'id');
+        return map;
+      },
+      {},
+    );
+
+    // Map each simulated activity id to it's list of simulated activity child ids.
+    const parentIdToChildIds = simulated_activities.reduce(
+      (map: Record<ActivitySimulatedId, ActivitySimulatedId[]>, activitySimulated: ActivitySimulated) => {
+        if (map[activitySimulated.parent_id] === undefined) {
+          map[activitySimulated.parent_id] = [activitySimulated.id];
+        } else {
+          map[activitySimulated.parent_id].push(activitySimulated.id);
+        }
+        return map;
+      },
+      {},
+    );
+
+    const activitiesMap: ActivitiesMap = {};
+
+    for (const activityDirective of activity_directives) {
+      const { simulated_activities } = activityDirective;
+      const activitySimulated = simulated_activities[0];
+
+      activitiesMap[activityDirective.id] = {
+        arguments: activityDirective.arguments,
+        attributes: activitySimulated?.attributes ?? null,
+        child_ids: parentIdToChildIds[activitySimulated?.id] ?? [],
+        created_at: activityDirective.created_at,
+        duration: activitySimulated?.duration ?? null,
+        id: activityDirective.id,
+        last_modified_at: activityDirective.last_modified_at,
+        metadata: activityDirective.metadata,
+        name: activityDirective.name,
+        parent_id: null,
+        simulated_activity_id: activitySimulated?.id ?? null,
+        simulation_dataset_id: activitySimulated?.simulation_dataset_id ?? null,
+        source_scheduling_goal_id: activityDirective.source_scheduling_goal_id,
+        start_time_doy: getDoyTimeFromDuration(plan_start_time, activityDirective.start_offset),
+        tags: activityDirective.tags,
+        type: activityDirective.type,
+        unfinished: activitySimulated?.duration === null,
+        uniqueId: `directive_${activityDirective.id}`,
+      };
+    }
+
+    for (const activitySimulated of simulated_activities) {
+      activitiesMap[activitySimulated.id] = {
+        arguments: {},
+        attributes: activitySimulated.attributes,
+        child_ids: parentIdToChildIds[activitySimulated.id] ?? [],
+        created_at: '',
+        duration: activitySimulated.duration,
+        id: activitySimulated.id,
+        last_modified_at: '',
+        metadata: {},
+        name: '',
+        parent_id: simulatedIdToDirectiveId[activitySimulated.parent_id] ?? activitySimulated.parent_id,
+        simulated_activity_id: activitySimulated.id,
+        simulation_dataset_id: activitySimulated.simulation_dataset_id,
+        source_scheduling_goal_id: null,
+        start_time_doy: getDoyTimeFromDuration(plan_start_time, activitySimulated.start_offset),
+        tags: [],
+        type: activitySimulated.activity_type_name,
+        unfinished: activitySimulated.duration === null,
+        uniqueId: `simulated_${activitySimulated.id}`,
+      };
+    }
+
+    return activitiesMap;
   },
 );
 

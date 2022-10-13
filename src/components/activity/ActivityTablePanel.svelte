@@ -88,7 +88,7 @@
       resizable: true,
       sortable: true,
     },
-    start_time: {
+    start_time_doy: {
       field: 'start_time',
       filter: 'text',
       headerName: 'Start Time',
@@ -103,7 +103,7 @@
       hide: true,
       resizable: true,
       sortable: true,
-    }, //string[];
+    },
     type: {
       field: 'type',
       filter: 'text',

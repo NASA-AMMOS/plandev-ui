@@ -13,7 +13,9 @@ const gql = {
   CREATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
       createActivityDirective: insert_activity_directive_one(object: $activityDirectiveInsertInput) {
+        created_at
         id
+        last_modified_at
         name
       }
     }
@@ -654,13 +656,15 @@ const gql = {
   SUB_ACTIVITIES: `#graphql
     subscription SubActivities($planId: Int!, $simulationDatasetId: Int!) {
       plan_by_pk(id: $planId) {
-        activity_directives {
+        activity_directives(order_by: { start_offset: asc }) {
           arguments
           created_at
           id
+          last_modified_arguments_at
           last_modified_at
           metadata
           name
+          plan_id
           simulated_activities(where: { simulation_dataset_id: { _eq: $simulationDatasetId } }, order_by: { id: desc }, limit: 1) {
             activity_type_name
             attributes
@@ -688,7 +692,6 @@ const gql = {
             }
           }
         }
-        start_time
       }
     }
   `,
@@ -826,7 +829,7 @@ const gql = {
           dataset {
             profiles {
               name
-              profile_segments {
+              profile_segments(order_by: { start_offset: asc }) {
                 dynamics
                 start_offset
               }
@@ -911,7 +914,7 @@ const gql = {
           dataset {
             profiles {
               name
-              profile_segments {
+              profile_segments(order_by: { start_offset: asc }) {
                 dynamics
                 start_offset
               }
