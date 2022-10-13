@@ -17,13 +17,13 @@
   .menu-item {
     align-items: center;
     display: grid;
-    font-size: 13px;
-    gap: 0.5rem;
-    grid-template-columns: 1rem auto;
+    font-size: var(--aerie-menu-item-font-size, 13px);
+    gap: var(--aerie-menu-item-gap, 0.5rem);
+    grid-template-columns: var(--aerie-menu-item-template-columns, 1rem auto);
     justify-content: flex-start;
-    line-height: 24px;
+    line-height: var(--aerie-menu-item-line-height, 24px);
     overflow: hidden;
-    padding: 8px;
+    padding: var(--aerie-menu-item-padding, 8px);
     text-overflow: ellipsis;
     user-select: none;
     white-space: nowrap;

@@ -17,6 +17,7 @@
   export let showContextMenu: boolean = true;
   export let singleItemDisplayText: string = '';
   export let suppressRowClickSelection: boolean = false;
+  export let suppressDragLeaveHidesColumns: boolean = true;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
     return parseInt(data[idKey]);
@@ -74,6 +75,7 @@
   bind:selectedRowIds={selectedItemIds}
   preventDefaultOnContextMenu={showContextMenu}
   {suppressRowClickSelection}
+  {suppressDragLeaveHidesColumns}
   on:filterChanged={onFilterChanged}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver

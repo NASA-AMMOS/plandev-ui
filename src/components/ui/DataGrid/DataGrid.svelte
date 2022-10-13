@@ -11,6 +11,7 @@
     type ColumnPinnedEvent,
     type ColumnResizedEvent,
     type ColumnState,
+    type ColumnVisibleEvent,
     type GridOptions,
     type RedrawRowsParams,
     type RowClassParams,
@@ -158,6 +159,10 @@
       },
       onColumnResized(event: ColumnResizedEvent<TRowData>) {
         dispatch('columnResized', event);
+        onColumnStateChangeDebounced();
+      },
+      onColumnVisible(event: ColumnVisibleEvent<TRowData>) {
+        dispatch('columnVisible', event);
         onColumnStateChangeDebounced();
       },
       onFilterChanged() {

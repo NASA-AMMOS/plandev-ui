@@ -13,3 +13,9 @@
     <input checked={selectedExpansionRules[activityName] === rule.id} name={activityName} type="checkbox" />Rule {rule.id}
   </div>
 {/each}
+
+<style>
+  .expansion-rule-selection {
+    display: flex;
+  }
+</style>
