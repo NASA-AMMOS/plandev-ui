@@ -4,6 +4,7 @@
   import { goto, invalidateAll, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
+  import AerieLogoDark from '@nasa-jpl/stellar/icons/aerie-logo-dark.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
@@ -16,7 +17,6 @@
   import InfoCircleIcon from 'bootstrap-icons/icons/info-circle.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
-  import AerieLogoDark from '../../assets/aerie-logo-dark.svg?component';
   import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
