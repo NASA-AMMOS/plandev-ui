@@ -85,7 +85,7 @@
           }
         } else {
           // When dragging the selection box, snap the tooltip to the start time bound
-          onMouseMove(handleWestX + handleWidth + handleWidth / 2, 0, false);
+          onMouseMove(handleWestX + handleWidth / 2, 0, false);
         }
 
         brushed(event);
