@@ -11,7 +11,7 @@
 <g class="row-x-axis-ticks">
   {#each xTicksView as tick}
     <g class="tick" opacity="1" transform="translate({xScaleView(tick.date)}, 0)">
-      <line stroke="rgba(0, 0, 0, 0.125)" y2={drawHeight} />
+      <line stroke="rgba(241, 242, 243, 1)" y2={drawHeight} />
     </g>
   {/each}
 </g>

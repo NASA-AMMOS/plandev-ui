@@ -111,6 +111,7 @@
     <svg>
       <g transform="translate({marginLeft}, 0)">
         {#if drawWidth > 0}
+          <RowXAxisTicks {drawHeight} {xScaleView} {xTicksView} />
           <ConstraintViolations
             {constraintViolations}
             {drawHeight}
@@ -124,7 +125,6 @@
           <RowYAxes {drawHeight} {yAxes} />
           <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} {yAxes} />
           <RowVerticalGuides {drawHeight} {verticalGuides} {viewTimeRange} {xScaleView} />
-          <RowXAxisTicks {drawHeight} {xScaleView} {xTicksView} />
         {/if}
       </g>
     </svg>

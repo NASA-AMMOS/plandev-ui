@@ -8,8 +8,17 @@
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
   import { resources } from '../../stores/simulation';
   import { view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
-  import { getDoyTime } from '../../utilities/time';
-  import { getXScale, MAX_CANVAS_SIZE } from '../../utilities/timeline';
+  import { clamp } from '../../utilities/generic';
+  import { getDoy, getDoyTime } from '../../utilities/time';
+  import {
+    customD3Ticks,
+    durationHour,
+    durationMinute,
+    durationMonth,
+    durationYear,
+    getXScale,
+    MAX_CANVAS_SIZE,
+  } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
   import TimelineHistogram from './TimelineHistogram.svelte';
@@ -21,35 +30,79 @@
 
   let clientWidth: number = 0;
   let cursorEnabled: boolean = true;
-  let cursorHeaderHeight: number = 20;
+  let cursorHeaderHeight: number = 0;
+  let estimatedLabelWidthPx: number = 74; // width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
-  let tickCount: number = 5;
+  let tickCount: number = 10;
   let timeline: Timeline;
   let timelineDiv: HTMLDivElement;
   let timelineHistogramDiv: HTMLDivElement;
   let timelineHistogramDrawHeight: number = 40;
   let xAxisDiv: HTMLDivElement;
-  let xAxisDrawHeight: number = 56;
+  let xAxisDrawHeight: number = 64;
+  let xTicksView: XAxisTick[] = [];
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: rows = timeline?.rows || [];
   $: timeline.gridId = gridId;
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
+
+  // Compute number of ticks based off draw width
+  $: if (drawWidth) {
+    const padding = 1.5;
+    let ticks = Math.round(drawWidth / (estimatedLabelWidthPx * padding));
+    tickCount = clamp(ticks, 2, 16);
+  }
+
   $: setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
   $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
-  $: xDomainView = [new Date($viewTimeRange.start), new Date($viewTimeRange.end)];
+  $: viewTimeRangeStartDate = new Date($viewTimeRange.start);
+  $: viewTimeRangeEndDate = new Date($viewTimeRange.end);
+  $: xDomainView = [viewTimeRangeStartDate, viewTimeRangeEndDate];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
-  $: xTicksView = xScaleView.ticks(tickCount).map((date: Date) => {
-    const doyTimestamp = getDoyTime(date, false);
-    const [yearDay, time] = doyTimestamp.split('T');
-    return { date, time, yearDay };
-  });
+  $: xScaleViewDuration = $viewTimeRange.end - $viewTimeRange.start;
+
+  $: if (viewTimeRangeStartDate && viewTimeRangeEndDate && tickCount) {
+    let labelWidth = estimatedLabelWidthPx; // Compute the actual label width
+    xTicksView = customD3Ticks(viewTimeRangeStartDate, viewTimeRangeEndDate, tickCount).map((date: Date) => {
+      // Format fine and coarse time based off duration
+      const doyTimestamp = getDoyTime(date, true);
+      const splits = doyTimestamp.split('T');
+      let coarseTime = splits[0];
+      let fineTime = splits[1];
+      if (xScaleViewDuration > durationYear * tickCount) {
+        coarseTime = date.getFullYear().toString();
+        fineTime = '';
+        labelWidth = 29;
+      } else if (xScaleViewDuration > durationMonth) {
+        coarseTime = date.getFullYear().toString();
+        fineTime = getDoy(date).toString();
+        labelWidth = 29;
+      } else if (xScaleViewDuration > durationHour) {
+        fineTime = splits[1].slice(0, 5);
+        labelWidth = 55;
+      } else if (xScaleViewDuration > durationMinute) {
+        fineTime = splits[1].slice(0, 8);
+        labelWidth = 55;
+      }
+      return { coarseTime, date, fineTime, hideLabel: false };
+    });
+
+    // Determine whether or not to hide the last tick label
+    // which has the potential to draw past the drawWidth
+    if (xTicksView.length) {
+      const lastTick = xTicksView[xTicksView.length - 1];
+      if (xScaleView(lastTick.date) + labelWidth > drawWidth) {
+        lastTick.hideLabel = true;
+      }
+    }
+  }
 
   afterUpdate(() => {
     setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
