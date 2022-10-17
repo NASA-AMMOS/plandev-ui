@@ -58,12 +58,12 @@ test.describe.serial('Scheduling', () => {
     await plan.schedulingGoalEnabledCheckbox.check();
   });
 
-  test('Running the same scheduling goal twice in a row should show +10 in that goals badge', async () => {
+  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
     await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
     await plan.runScheduling();
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
     await plan.runScheduling();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
   });
 
   test('Running analyze-only should show +0 in that goals badge', async () => {
