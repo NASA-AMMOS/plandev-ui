@@ -88,7 +88,8 @@
     }
   }
 
-  function deleteViews({ detail: ids }: CustomEvent<number[]>) {
+  function deleteViews({ detail: views }: CustomEvent<View[]>) {
+    const ids = views.map(({ id }) => id);
     effects.deleteViews(ids);
   }
 

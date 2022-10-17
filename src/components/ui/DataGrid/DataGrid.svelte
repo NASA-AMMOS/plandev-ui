@@ -61,8 +61,6 @@
   };
   export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
 
-  type RowId = number | string;
-
   const dispatch = createEventDispatcher();
 
   let gridOptions: GridOptions<TRowData>;

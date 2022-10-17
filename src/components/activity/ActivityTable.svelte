@@ -20,15 +20,20 @@
   const activityActionColumnDef: DataGridColumnDef = {
     cellClass: 'action-cell-container',
     cellRenderer: (params: ActivityCellRendererParams) => {
+      const isParent = params.data.parent_id === null;
       const actionsDiv = document.createElement('div');
       actionsDiv.className = 'actions-cell';
       new DataGridActions({
         props: {
-          deleteCallback: params.deleteActivityDirective,
-          deleteTooltip: {
-            content: 'Delete Activity',
-            placement: 'bottom',
-          },
+          ...(isParent
+            ? {
+                deleteCallback: params.deleteActivityDirective,
+                deleteTooltip: {
+                  content: 'Delete Activity',
+                  placement: 'bottom',
+                },
+              }
+            : {}),
           rowData: params.data,
         },
         target: actionsDiv,
@@ -52,8 +57,13 @@
     effects.deleteActivityDirective(id);
   }
 
-  function deleteActivityDirectives({ detail: ids }: CustomEvent<number[]>) {
+  function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
+    const ids = activities.map(({ id }) => id);
     effects.deleteActivityDirectives(ids);
+  }
+
+  function getRowId(activity: Activity): ActivityUniqueId {
+    return activity.uniqueId;
   }
 </script>
 
@@ -61,6 +71,7 @@
   bind:dataGrid
   columnDefs={[...(columnDefs ?? []), activityActionColumnDef]}
   {columnStates}
+  {getRowId}
   items={$activities}
   pluralItemDisplayText="Activities"
   singleItemDisplayText="Activity"

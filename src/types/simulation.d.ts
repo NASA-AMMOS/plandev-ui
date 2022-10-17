@@ -1,5 +1,6 @@
 type Dataset = {
   profiles: Profile[];
+  spans: Span[];
 };
 
 type ProfilesExternalResponse = {
@@ -75,4 +76,22 @@ type SimulationDatasetReason = {
     [activityId: string]: BaseError;
   };
   success: boolean;
+};
+
+type SpanAttributes = {
+  arguments: ArgumentsMap;
+  computedAttributes: ArgumentsMap;
+  directiveId?: number;
+};
+
+type SpanId = number;
+
+type Span = {
+  attributes: SpanAttributes;
+  dataset_id: number;
+  duration: string;
+  id: SpanId;
+  parent_id: number | null;
+  start_offset: string;
+  type: string;
 };

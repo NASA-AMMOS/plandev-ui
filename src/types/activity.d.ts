@@ -1,8 +1,6 @@
 type ActivityId = number;
-
 type ActivityDirectiveId = number;
-
-type ActivitySimulatedId = number;
+type ActivityUniqueId = string;
 
 type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
@@ -21,25 +19,26 @@ type ActivityTypesMap = Record<string, ActivityType>;
 type Activity = {
   arguments: ArgumentsMap;
   attributes: ActivitySimulatedAttributes | null;
-  child_ids: ActivityId[];
+  childUniqueIds: ActivityUniqueId[];
   created_at: string;
   duration: string | null;
   id: ActivityId;
   last_modified_at: string;
   metadata: ActivityMetadata;
   name: string;
+  parentUniqueId: ActivityUniqueId | null;
   parent_id: ActivityId | null;
-  simulated_activity_id: ActivitySimulatedId | null;
-  simulation_dataset_id: number | null;
+  plan_id: number;
+  simulated_activity_id: SpanId | null;
   source_scheduling_goal_id: number;
   start_time_doy: string;
   tags: string[];
   type: string;
   unfinished: boolean;
-  uniqueId: string;
+  uniqueId: ActivityUniqueId;
 };
 
-type ActivitiesMap = Record<ActivityId, Activity>;
+type ActivitiesMap = Record<ActivityUniqueId, Activity>;
 
 type ActivityDirective = {
   arguments: ArgumentsMap;
@@ -50,7 +49,6 @@ type ActivityDirective = {
   metadata: ActivityMetadata;
   name: string;
   plan_id: number;
-  simulated_activities: [ActivitySimulated];
   source_scheduling_goal_id: number;
   start_offset: string;
   tags: string[];
@@ -68,23 +66,3 @@ type ActivityDirectiveInsertInput = {
 };
 
 type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
-
-type ActivitySimulatedAttributes = {
-  arguments: ArgumentsMap;
-  computedAttributes: ArgumentsMap;
-};
-
-type ActivitySimulated = {
-  activity_type_name: string;
-  attributes: ActivitySimulatedAttributes;
-  duration: string;
-  id: ActivitySimulatedId;
-  parent_id: number | null;
-  simulation_dataset_id: number;
-  start_offset: string;
-};
-
-type SubActivitiesResponse = {
-  activity_directives: ActivityDirective[];
-  simulations: [{ simulation_datasets: [{ simulated_activities: ActivitySimulated[] }] }];
-};

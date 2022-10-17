@@ -8,19 +8,22 @@
   import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/tree_parent_expanded.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
 
-  export let selected_id: number | null = null;
   export let expanded = true;
-  export let id: number = 0;
+  export let rootUniqueId: ActivityUniqueId | null = null;
+  export let selectedUniqueId: ActivityUniqueId | null = null;
 
-  $: activity = $activitiesMap[id];
+  let activity: Activity | null = null;
+  let childUniqueIds: ActivityUniqueId[] = [];
+
+  $: activity = $activitiesMap[rootUniqueId] ?? null;
   $: isRoot = activity ? !activity.parent_id : true;
   $: type = activity?.type || '';
-  $: child_ids = activity?.child_ids || null;
-  $: hasChildren = child_ids ? child_ids.length > 0 : false;
+  $: childUniqueIds = activity?.childUniqueIds;
+  $: hasChildren = childUniqueIds ? childUniqueIds.length > 0 : false;
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =
     'activity-decomposition-node activity-decomposition-' +
-    (id === selected_id ? 'selected st-typography-medium' : 'unselected st-typography-body');
+    (rootUniqueId === selectedUniqueId ? 'selected st-typography-medium' : 'unselected st-typography-body');
   $: buttonClass = 'st-button icon' + (!hasChildren ? ' st-button-no-hover' : '');
 
   function toggle() {
@@ -30,7 +33,7 @@
 
 {#if !activity}
   <div class="activity-decomposition activity-decomposition-not-found st-typography-medium" {role}>
-    Activity {id} not found
+    Activity not found
   </div>
 {:else}
   <div class="activity-decomposition" {role}>
@@ -52,14 +55,14 @@
       {/if}
     </button>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span on:click={() => ($selectedActivityId = id)} on:dblclick={toggle} class={nodeClass}>{type}</span>
+    <span on:click={() => ($selectedActivityId = rootUniqueId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
   </div>
 
   {#if hasChildren && expanded}
     <ul>
-      {#each child_ids as child_id}
+      {#each childUniqueIds as childUniqueId}
         <li>
-          <svelte:self id={$activitiesMap[child_id]?.id} {selected_id} />
+          <svelte:self rootUniqueId={$activitiesMap[childUniqueId]?.uniqueId} {selectedUniqueId} />
         </li>
       {/each}
     </ul>

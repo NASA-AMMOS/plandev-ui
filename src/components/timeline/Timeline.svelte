@@ -142,7 +142,8 @@
     if (points.length) {
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
-        $selectedActivityId = point.id;
+        const activityPoint = point as ActivityPoint;
+        $selectedActivityId = activityPoint.uniqueId;
       }
     }
   }

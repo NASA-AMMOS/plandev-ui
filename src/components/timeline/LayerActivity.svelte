@@ -5,7 +5,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { activityPoints } from '../../stores/activities';
+  import { activitiesMap, activityPoints, selectedActivityId } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { getDoyTime } from '../../utilities/time';
@@ -42,7 +42,7 @@
   let dragPoint: ActivityPoint | null = null;
   let maxActivityWidth: number;
   let quadtree: Quadtree<QuadtreeRect>;
-  let visiblePointsById: Record<number, ActivityPoint> = {};
+  let visiblePointsByUniqueId: Record<ActivityUniqueId, ActivityPoint> = {};
 
   $: onDragenter(dragenter);
   $: onDragleave(dragleave);
@@ -68,6 +68,7 @@
     drawHeight &&
     drawWidth &&
     filter &&
+    $selectedActivityId !== undefined &&
     viewTimeRange &&
     xScaleView
   ) {
@@ -98,10 +99,9 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      const start_time_doy = getDoyTime(new Date(unixEpochTime));
-      if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivityDirective(dragPoint.id, { start_time_doy }, false);
-      }
+      // TODO: Update activity directly without updating entire activitiesMap.
+      dragPoint.x = unixEpochTime;
+      draw();
     }
   }
 
@@ -110,8 +110,9 @@
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
       const start_time_doy = getDoyTime(new Date(unixEpochTime));
-      if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivityDirective(dragPoint.id, { start_time_doy });
+      const dragActivity = $activitiesMap[dragPoint.uniqueId];
+      if (dragActivity && dragActivity.start_time_doy !== start_time_doy) {
+        effects.updateActivityDirective(dragActivity.id, { start_time_doy });
       }
       dragOffsetX = null;
       dragPoint = null;
@@ -166,7 +167,7 @@
         offsetY,
         activityHeight,
         maxActivityWidth,
-        visiblePointsById,
+        visiblePointsByUniqueId,
       );
       dispatch('mouseDown', { e, layerId: id, points });
       dragActivityStart(points, offsetX);
@@ -182,7 +183,7 @@
         offsetY,
         activityHeight,
         maxActivityWidth,
-        visiblePointsById,
+        visiblePointsByUniqueId,
       );
       dispatch('mouseOver', { e, layerId: id, points });
       dragActivity(offsetX);
@@ -221,7 +222,7 @@
           [0, 0],
           [drawWidth, drawHeight],
         ]);
-      visiblePointsById = {};
+      visiblePointsByUniqueId = {};
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
       let totalMaxY = Number.MIN_SAFE_INTEGER;
@@ -289,25 +290,25 @@
   }
 
   function drawActivity(point: ActivityPoint, x: number, y: number, end: number) {
-    const { id } = point;
+    const { uniqueId } = point;
     const activityWidth = Math.max(5.0, end - x);
     const rect = new Path2D();
     rect.rect(x, y, activityWidth, activityHeight);
 
     quadtree.add({
       height: activityHeight,
-      id,
+      id: uniqueId,
       width: activityWidth,
       x,
       y,
     });
-    visiblePointsById[id] = point;
+    visiblePointsByUniqueId[uniqueId] = point;
 
     if (activityWidth > maxActivityWidth) {
       maxActivityWidth = activityWidth;
     }
 
-    if (point.selected) {
+    if ($selectedActivityId === uniqueId) {
       ctx.fillStyle = activitySelectedColor;
     } else if (point.unfinished) {
       ctx.fillStyle = activityUnfinishedColor;

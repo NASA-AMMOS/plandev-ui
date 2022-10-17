@@ -653,45 +653,21 @@ const gql = {
     }
   `,
 
-  SUB_ACTIVITIES: `#graphql
-    subscription SubActivities($planId: Int!, $simulationDatasetId: Int!) {
-      plan_by_pk(id: $planId) {
-        activity_directives(order_by: { start_offset: asc }) {
-          arguments
-          created_at
-          id
-          last_modified_arguments_at
-          last_modified_at
-          metadata
-          name
-          plan_id
-          simulated_activities(where: { simulation_dataset_id: { _eq: $simulationDatasetId } }, order_by: { id: desc }, limit: 1) {
-            activity_type_name
-            attributes
-            duration
-            id
-            parent_id
-            simulation_dataset_id
-            start_offset
-          }
-          source_scheduling_goal_id
-          start_offset
-          tags
-          type
-        }
-        simulations(order_by: { id: desc }, limit: 1) {
-          simulation_datasets(where: { id: { _eq: $simulationDatasetId } }, limit: 1) {
-            simulated_activities(where: { parent_id: {  _is_null: false } }) {
-              activity_type_name
-              attributes
-              duration
-              id
-              parent_id
-              simulation_dataset_id
-              start_offset
-            }
-          }
-        }
+  SUB_ACTIVITY_DIRECTIVES: `#graphql
+    subscription SubActivityDirectives($planId: Int!) {
+      activity_directives: activity_directive(where: { plan_id: { _eq: $planId } }, order_by: { start_offset: asc }) {
+        arguments
+        created_at
+        id
+        last_modified_arguments_at
+        last_modified_at
+        metadata
+        name
+        plan_id
+        source_scheduling_goal_id
+        start_offset
+        tags
+        type
       }
     }
   `,
@@ -907,8 +883,8 @@ const gql = {
     }
   `,
 
-  SUB_SIMULATION_DATASETS: `#graphql
-    subscription SubSimulationDatasets($planId: Int!, $simulationDatasetId: Int!) {
+  SUB_SIMULATION_DATASET: `#graphql
+    subscription SubSimulationDataset($planId: Int!, $simulationDatasetId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         simulation_datasets(where: { id: { _eq: $simulationDatasetId } }, limit: 1) {
           dataset {
@@ -918,6 +894,15 @@ const gql = {
                 dynamics
                 start_offset
               }
+              type
+            }
+            spans(order_by: { start_offset: asc }) {
+              attributes
+              dataset_id
+              duration
+              id
+              parent_id
+              start_offset
               type
             }
           }

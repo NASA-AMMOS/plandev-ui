@@ -42,7 +42,8 @@
   let id: number | null = null;
   let lastModifiedTime: string | null = null;
   let metadata: ActivityMetadata = {};
-  let parent_id: number | null = null;
+  let parentUniqueId: ActivityUniqueId | null = null;
+  let parent_id: ActivityId | null = null;
   let planTags: string[] = [];
   let root_activity: Activity | null = null;
   let seq_id: string | null = null;
@@ -52,6 +53,7 @@
   let tags: string[] = [];
   let type: string | null = null;
   let unfinished: boolean | null = null;
+  let uniqueId: string | null = null;
 
   // Other vars.
   let editingActivityName: boolean = false;
@@ -73,14 +75,16 @@
     id = $selectedActivity.id;
     lastModifiedTime = $selectedActivity.last_modified_at;
     metadata = $selectedActivity.metadata;
+    parentUniqueId = $selectedActivity.parentUniqueId;
     parent_id = $selectedActivity.parent_id;
-    root_activity = getActivityRootParent($activitiesMap, id);
+    root_activity = getActivityRootParent($activitiesMap, $selectedActivity.uniqueId);
     simulated_activity_id = $selectedActivity.simulated_activity_id;
     sourceSchedulingGoalId = $selectedActivity.source_scheduling_goal_id;
     startTimeDoy = $selectedActivity.start_time_doy;
     tags = $selectedActivity.tags;
     type = $selectedActivity.type;
     unfinished = $selectedActivity.unfinished;
+    uniqueId = $selectedActivity.uniqueId;
   } else {
     activityName = null;
     argumentsMap = null;
@@ -91,6 +95,9 @@
     id = null;
     lastModifiedTime = null;
     metadata = {};
+    parameterErrorMap = {};
+    parametersWithErrorsCount = 0;
+    parentUniqueId = null;
     parent_id = null;
     root_activity = null;
     seq_id = null;
@@ -100,8 +107,7 @@
     type = null;
     unfinished = null;
     tags = [];
-    parametersWithErrorsCount = 0;
-    parameterErrorMap = {};
+    uniqueId = null;
   }
 
   $: if ($allActivityTags) {
@@ -113,8 +119,8 @@
   $: model = $plan.model;
 
   $: activityType = $activityTypesMap[type] || null;
-  $: rootActivityHasChildren = root_activity?.child_ids ? root_activity.child_ids.length > 0 : false;
-  $: isChild = parent_id !== null;
+  $: rootActivityHasChildren = root_activity?.childUniqueIds ? root_activity.childUniqueIds.length > 0 : false;
+  $: isChild = parentUniqueId !== null;
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
   $: activityNameField = field<string>(activityName);
   $: if (duration) {
@@ -196,9 +202,8 @@
   }
 
   async function onChangeActivityMetadata(event: CustomEvent<{ key: string; value: any }>) {
-    const {
-      detail: { key, value },
-    } = event;
+    const { detail } = event;
+    const { key, value } = detail;
     const newActivityMetadata = getActivityMetadata(metadata, key, value);
     effects.updateActivityDirective(id, { metadata: newActivityMetadata });
   }
@@ -510,7 +515,7 @@
             <summary>Decomposition</summary>
             <div class="details-body">
               {#if rootActivityHasChildren}
-                <ActivityDecomposition id={root_activity.id} selected_id={id} />
+                <ActivityDecomposition rootUniqueId={root_activity.uniqueId} selectedUniqueId={uniqueId} />
               {:else}
                 <div class="st-typography-label">This activity has no children</div>
               {/if}

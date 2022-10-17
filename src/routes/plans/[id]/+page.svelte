@@ -28,7 +28,7 @@
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
-  import { resetActivityStores } from '../../../stores/activities';
+  import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
   import { resetConstraintStores } from '../../../stores/constraints';
   import { allErrors, schedulingErrors, simulationDatasetErrors } from '../../../stores/errors';
   import {
@@ -44,9 +44,11 @@
     modelParametersMap,
     resetSimulationStores,
     simulationDatasetId,
+    simulationSpans,
     simulationStatus,
   } from '../../../stores/simulation';
   import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
+  import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { setQueryParam } from '../../../utilities/generic';
   import { getUnixEpochTime } from '../../../utilities/time';
@@ -84,6 +86,8 @@
     $view = { ...data.initialView };
     $viewLayout = { ...data.initialView.definition.plan.layout };
   }
+
+  $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $simulationSpans);
 
   onMount(() => {
     if ($view) {

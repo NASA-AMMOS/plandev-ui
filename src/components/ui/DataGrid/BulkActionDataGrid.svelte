@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
+  import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -14,13 +15,13 @@
   export let idKey: keyof TRowData = 'id';
   export let items: TRowData[];
   export let pluralItemDisplayText: string = '';
-  export let selectedItemId: number | null = null;
+  export let selectedItemId: RowId | null = null;
   export let showContextMenu: boolean = true;
   export let singleItemDisplayText: string = '';
   export let suppressRowClickSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
 
-  export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
+  export let getRowId: (data: TRowData) => RowId = (data: TRowData): RowId => {
     return parseInt(data[idKey]);
   };
   export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
@@ -29,14 +30,25 @@
 
   let contextMenu: ContextMenu;
   let isFiltered: boolean = false;
-  let selectedItemIds: number[] = [];
+  let selectedItemIds: RowId[] = [];
 
   $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
     selectedItemIds = [selectedItemId];
   }
 
   function bulkDeleteItems() {
-    dispatch('bulkDeleteItems', selectedItemIds);
+    const selectedItemIdsMap = keyBy(selectedItemIds);
+    const selectedRows: TRowData[] = items.reduce((selectedRows: TRowData[], row: TRowData) => {
+      const id = getRowId(row);
+      if (selectedItemIdsMap[id] !== undefined) {
+        selectedRows.push(row);
+      }
+      return selectedRows;
+    }, []);
+
+    if (selectedRows.length) {
+      dispatch('bulkDeleteItems', selectedRows);
+    }
   }
 
   function onCellContextMenu(event: CustomEvent) {

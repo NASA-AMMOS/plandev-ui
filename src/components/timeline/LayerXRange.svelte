@@ -221,7 +221,6 @@
               id: id++,
               label: { text },
               name,
-              selected: false,
               type: 'x-range',
               x,
             });
@@ -235,7 +234,6 @@
               id: id++,
               label: { text },
               name,
-              selected: false,
               type: 'x-range',
               x,
             });
@@ -251,7 +249,6 @@
               id: id++,
               label: { text },
               name,
-              selected: false,
               type: 'x-range',
               x,
             });

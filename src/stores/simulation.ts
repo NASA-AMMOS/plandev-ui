@@ -42,7 +42,7 @@ export const simulation = gqlSubscribable<Simulation>(
 );
 
 export const simulationDataset = gqlSubscribable<SimulationDataset | null>(
-  gql.SUB_SIMULATION_DATASETS,
+  gql.SUB_SIMULATION_DATASET,
   { planId, simulationDatasetId },
   null,
   (simulations: { simulation_datasets: SimulationDataset[] }[]): SimulationDataset => {
@@ -88,6 +88,23 @@ export const simulationResources: Readable<Resource[]> = derived(
           const { profiles } = dataset;
           return sampleProfiles(profiles, start_time, duration);
         }
+      }
+    }
+
+    return [];
+  },
+  [],
+);
+
+export const simulationSpans: Readable<Span[]> = derived(
+  simulationDataset,
+  $simulationDataset => {
+    if ($simulationDataset) {
+      const { dataset } = $simulationDataset;
+
+      if (dataset) {
+        const { spans } = dataset;
+        return spans;
       }
     }
 

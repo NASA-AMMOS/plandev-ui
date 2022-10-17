@@ -42,11 +42,11 @@
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div
                 class="satisfied-activity st-typography-body"
-                class:selected={$selectedActivityId === activity.activity_id}
-                on:click={() => ($selectedActivityId = activity.activity_id)}
+                class:selected={$selectedActivityId === `directive_${activity.activity_id}`}
+                on:click={() => ($selectedActivityId = `directive_${activity.activity_id}`)}
               >
                 <ActivityIcon />
-                {$activitiesMap[activity.activity_id].type}
+                {$activitiesMap[`directive_${activity.activity_id}`].type}
               </div>
             </li>
           {/if}

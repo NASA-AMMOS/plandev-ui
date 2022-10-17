@@ -11,8 +11,10 @@ interface ActivityPoint extends Point {
   children: ActivityPoint[];
   duration: number;
   label: Label;
-  parent_id: number | null;
+  parentUniqueId: ActivityUniqueId | null;
+  parent_id: ActivityId | null;
   unfinished: boolean;
+  uniqueId: string;
 }
 
 type Axis = {
@@ -84,7 +86,6 @@ type MouseOver = {
 interface Point {
   id: number;
   name: string;
-  selected: boolean;
   type: 'activity' | 'line' | 'x-range';
   x: number;
 }
@@ -97,7 +98,7 @@ type QuadtreePoint = {
 
 type QuadtreeRect = {
   height: number;
-  id: number;
+  id: number | string;
   width: number;
   x: number;
   y: number;

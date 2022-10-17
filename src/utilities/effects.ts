@@ -74,30 +74,35 @@ const effects = {
       );
       const { createActivityDirective } = data;
       const { created_at, id, last_modified_at, name: newName } = createActivityDirective;
+      const uniqueId = `directive_${id}`;
 
       const activity: Activity = {
         arguments: argumentsMap,
         attributes: null,
-        child_ids: [],
+        childUniqueIds: [],
         created_at,
         duration: null,
         id,
         last_modified_at,
         metadata,
         name: newName,
+        parentUniqueId: null,
         parent_id: null,
+        plan_id: currentPlan.id,
         simulated_activity_id: null,
-        simulation_dataset_id: null,
         source_scheduling_goal_id: null,
         start_time_doy,
         tags,
         type,
         unfinished: false,
-        uniqueId: `directive_${id}`,
+        uniqueId,
       };
 
-      activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => ({ ...currentActivitiesMap, [id]: activity }));
-      selectedActivityId.set(id);
+      activitiesMap.update((currentActivitiesMap: ActivitiesMap) => ({
+        ...currentActivitiesMap,
+        [uniqueId]: activity,
+      }));
+      selectedActivityId.set(uniqueId);
 
       showSuccessToast('Activity Directive Created Successfully');
     } catch (e) {
@@ -405,8 +410,9 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id });
-        activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => {
-          delete currentActivitiesMap[id];
+        activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
+          const uniqueId = `directive_${id}`;
+          delete currentActivitiesMap[uniqueId];
           return { ...currentActivitiesMap };
         });
         showSuccessToast('Activity Directive Deleted Successfully');
@@ -429,9 +435,10 @@ const effects = {
 
       if (confirm) {
         await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids });
-        activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => {
+        activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
           ids.forEach(id => {
-            delete currentActivitiesMap[id];
+            const uniqueId = `directive_${id}`;
+            delete currentActivitiesMap[uniqueId];
           });
           return { ...currentActivitiesMap };
         });
@@ -1201,44 +1208,43 @@ const effects = {
     }
   },
 
-  async updateActivityDirective(id: number, activity: Partial<Activity>, doRequest: boolean = true): Promise<void> {
-    if (doRequest) {
-      const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
+  async updateActivityDirective(id: ActivityId, activity: Partial<Activity>): Promise<void> {
+    const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
 
-      if (activity.arguments) {
-        activityDirectiveSetInput.arguments = activity.arguments;
-      }
-
-      if (activity.start_time_doy) {
-        const planStartTimeDoy = get<Plan>(plan).start_time_doy;
-        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTimeDoy, activity.start_time_doy);
-      }
-
-      if (activity.tags) {
-        activityDirectiveSetInput.tags = formatHasuraStringArray(activity.tags);
-      }
-
-      if (activity.name) {
-        activityDirectiveSetInput.name = activity.name;
-      }
-
-      if (activity.metadata) {
-        activityDirectiveSetInput.metadata = activity.metadata;
-      }
-
-      try {
-        await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id });
-        showSuccessToast('Activity Directive Updated Successfully');
-      } catch (e) {
-        console.log(e);
-        showFailureToast('Activity Directive Update Failed');
-      }
+    if (activity.arguments) {
+      activityDirectiveSetInput.arguments = activity.arguments;
     }
 
-    activitiesMap.updateValue((currentActivitiesMap: ActivitiesMap) => ({
+    if (activity.start_time_doy) {
+      const planStartTimeDoy = get<Plan>(plan).start_time_doy;
+      activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTimeDoy, activity.start_time_doy);
+    }
+
+    if (activity.tags) {
+      activityDirectiveSetInput.tags = formatHasuraStringArray(activity.tags);
+    }
+
+    if (activity.name) {
+      activityDirectiveSetInput.name = activity.name;
+    }
+
+    if (activity.metadata) {
+      activityDirectiveSetInput.metadata = activity.metadata;
+    }
+
+    try {
+      await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id });
+      showSuccessToast('Activity Directive Updated Successfully');
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Activity Directive Update Failed');
+    }
+
+    const uniqueId = `directive_${id}`;
+    activitiesMap.update((currentActivitiesMap: ActivitiesMap) => ({
       ...currentActivitiesMap,
-      [id]: {
-        ...currentActivitiesMap[id],
+      [uniqueId]: {
+        ...currentActivitiesMap[uniqueId],
         ...activity,
       },
     }));
