@@ -7,6 +7,7 @@
     type CellContextMenuEvent,
     type CellMouseOverEvent,
     type ColDef,
+    type Column,
     type ColumnMovedEvent,
     type ColumnPinnedEvent,
     type ColumnResizedEvent,
@@ -20,15 +21,25 @@
     type RowSelectedEvent,
     type SortChangedEvent,
   } from 'ag-grid-community';
+  import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/gridApi';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
 
+  export function autoSizeColumns(keys: (string | Column)[], skipHeader?: boolean) {
+    gridOptions?.columnApi?.autoSizeColumns(keys, skipHeader);
+  }
+  export function autoSizeAllColumns(skipHeader?: boolean) {
+    gridOptions?.columnApi?.autoSizeAllColumns(skipHeader);
+  }
   // expose ag-grid function to select all visible rows
   export function selectAllVisible() {
     gridOptions?.api?.selectAllFiltered();
   }
   export function redrawRows(params?: RedrawRowsParams<TRowData>) {
     gridOptions?.api?.redrawRows(params);
+  }
+  export function sizeColumnsToFit(params?: ISizeColumnsToFitParams) {
+    gridOptions?.api?.sizeColumnsToFit(params);
   }
 
   export let columnDefs: ColDef[];

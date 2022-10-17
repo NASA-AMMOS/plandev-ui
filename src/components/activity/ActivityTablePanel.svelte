@@ -1,9 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CollapseIcon from '@nasa-jpl/stellar/icons/collapse.svg?component';
+  import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import type { ColDef, ColumnState, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
   import { view, viewUpdateActivityTables } from '../../stores/views';
+  import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
+  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import ActivityTable from './ActivityTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
@@ -115,6 +119,7 @@
   };
 
   let activityTable: ViewActivityTable;
+  let dataGrid: DataGrid;
   let derivedColumnDefs: ColDef[] = [];
 
   $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
@@ -130,6 +135,14 @@
 
     return defaultColumnDef;
   });
+
+  function onAutoSizeContent() {
+    dataGrid?.autoSizeAllColumns();
+  }
+
+  function onAutoSizeSpace() {
+    dataGrid?.sizeColumnsToFit();
+  }
 
   function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
     const activityColumnStates: ColumnState[] = activityTable?.columnStates ?? [];
@@ -195,19 +208,41 @@
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Activity Table" />
-    <ActivityTableMenu
-      on:toggle-column={onColumnToggleChange}
-      on:show-hide-all-columns={onShowHideAllColumns}
-      columnDefs={derivedColumnDefs}
-      columnStates={activityTable?.columnStates}
-    />
+    <div class="table-menu">
+      <div class="size-actions">
+        <button
+          class="st-button secondary"
+          use:tooltip={{ content: 'Auto Size Columns to Fit Content', placement: 'top' }}
+          on:click={onAutoSizeContent}><CollapseIcon /></button
+        >
+        <button
+          class="st-button secondary"
+          use:tooltip={{ content: 'Auto Size Columns to Fit Space', placement: 'top' }}
+          on:click={onAutoSizeSpace}><ExpandIcon /></button
+        >
+      </div>
+      <ActivityTableMenu
+        on:toggle-column={onColumnToggleChange}
+        on:show-hide-all-columns={onShowHideAllColumns}
+        columnDefs={derivedColumnDefs}
+        columnStates={activityTable?.columnStates}
+      />
+    </div>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
     <ActivityTable
+      bind:dataGrid
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityTable?.columnStates}
       on:columnStateChange={onColumnStateChange}
     />
   </svelte:fragment>
 </Panel>
+
+<style>
+  .table-menu {
+    column-gap: 1rem;
+    display: flex;
+  }
+</style>

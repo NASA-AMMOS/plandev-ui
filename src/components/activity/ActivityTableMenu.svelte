@@ -71,7 +71,9 @@
 <div class="grid-menu st-typography-medium" on:click|stopPropagation={() => tableMenu.toggle()}>
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
-    <div class="title">COLUMNS</div>
+    <div class="header">
+      <div class="title">COLUMNS</div>
+    </div>
     <div class="search-field">
       <Input>
         <input class="st-input w-100" value={searchFilter} on:input={onSearchFilterChange} />
@@ -130,12 +132,19 @@
     margin-top: -4px;
   }
 
+  .header {
+    align-items: center;
+    cursor: auto;
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    padding: 8px;
+  }
+
   .title {
     color: var(--st-gray-40);
-    cursor: auto;
     font-size: 11px;
     font-weight: 700;
-    padding: 8px;
   }
 
   .search-field {

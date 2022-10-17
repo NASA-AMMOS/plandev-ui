@@ -10,6 +10,7 @@
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
+  export let dataGrid: DataGrid = undefined;
   export let idKey: keyof TRowData = 'id';
   export let items: TRowData[];
   export let pluralItemDisplayText: string = '';
@@ -27,7 +28,6 @@
   const dispatch = createEventDispatcher();
 
   let contextMenu: ContextMenu;
-  let dataGrid: DataGrid;
   let isFiltered: boolean = false;
   let selectedItemIds: number[] = [];
 
