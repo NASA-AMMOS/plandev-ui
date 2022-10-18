@@ -122,6 +122,7 @@
 
   .timeline-cursor-container {
     height: 100%;
+    pointer-events: none;
     position: absolute;
     width: 100%;
   }
