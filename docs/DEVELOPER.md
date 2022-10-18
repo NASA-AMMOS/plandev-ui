@@ -41,7 +41,7 @@ Before you can run aerie-ui you must install and configure the following product
   Make sure you update your `JAVA_HOME` environment variable. For example with [Zsh](https://www.zsh.org/) you can set your `.zshrc` to:
 
   ```shell
-  export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home"
+  export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-19.jdk/Contents/Home"
   ```
 
 - [Docker](https://www.docker.com/) which is used to run the Aerie services.
