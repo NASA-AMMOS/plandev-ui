@@ -140,42 +140,38 @@
 
     for (const resource of resources) {
       const { name, schema, values } = resource;
-      const r = new RegExp(filter?.name);
-      const includeResource = r.test(name);
 
-      if (includeResource) {
-        if (schema.type === 'boolean') {
-          for (let i = 0; i < values.length; ++i) {
-            const value = values[i];
-            const { x, y: yBoolean } = value;
-            const y = yBoolean ? 1 : 0;
-            points.push({
-              id: id++,
-              name,
-              radius,
-              type: 'line',
-              x,
-              y,
-            });
-          }
-        } else if (
-          schema.type === 'int' ||
-          schema.type === 'real' ||
-          (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
-        ) {
-          for (let i = 0; i < values.length; ++i) {
-            const value = values[i];
-            const { x } = value;
-            const y = value.y as number;
-            points.push({
-              id: id++,
-              name,
-              radius,
-              type: 'line',
-              x,
-              y,
-            });
-          }
+      if (schema.type === 'boolean') {
+        for (let i = 0; i < values.length; ++i) {
+          const value = values[i];
+          const { x, y: yBoolean } = value;
+          const y = yBoolean ? 1 : 0;
+          points.push({
+            id: id++,
+            name,
+            radius,
+            type: 'line',
+            x,
+            y,
+          });
+        }
+      } else if (
+        schema.type === 'int' ||
+        schema.type === 'real' ||
+        (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
+      ) {
+        for (let i = 0; i < values.length; ++i) {
+          const value = values[i];
+          const { x } = value;
+          const y = value.y as number;
+          points.push({
+            id: id++,
+            name,
+            radius,
+            type: 'line',
+            x,
+            y,
+          });
         }
       }
     }

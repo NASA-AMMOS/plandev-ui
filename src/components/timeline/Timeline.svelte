@@ -3,10 +3,9 @@
 <script lang="ts">
   import { afterUpdate, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
-  import { selectedActivityId } from '../../stores/activities';
+  import { activitiesByView, selectedActivityId } from '../../stores/activities';
   import { constraintViolations } from '../../stores/constraints';
   import { maxTimeRange, viewTimeRange } from '../../stores/plan';
-  import { resources } from '../../stores/simulation';
   import { view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
@@ -198,13 +197,13 @@
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
   <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
     <TimelineHistogram
+      activities={$activitiesByView?.byTimelineId[timeline.id] ?? []}
       constraintViolations={$constraintViolations}
       {cursorEnabled}
       drawHeight={timelineHistogramDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
       {mouseOver}
-      {rows}
       viewTimeRange={$viewTimeRange}
       {xScaleView}
       {xScaleMax}
@@ -258,7 +257,6 @@
         layers={row.layers}
         name={row.name}
         marginLeft={timeline?.marginLeft}
-        resources={$resources}
         {rowDragMoveDisabled}
         verticalGuides={timeline?.verticalGuides}
         viewTimeRange={$viewTimeRange}

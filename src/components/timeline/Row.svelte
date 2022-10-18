@@ -4,6 +4,8 @@
   import type { ScaleTime } from 'd3-scale';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import { activitiesByView } from '../../stores/activities';
+  import { resourcesByViewLayerId } from '../../stores/simulation';
   import { classNames } from '../../utilities/generic';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
@@ -26,7 +28,6 @@
   export let layers: Layer[] = [];
   export let name: string = '';
   export let marginLeft: number = 50;
-  export let resources: Resource[] = [];
   export let rowDragMoveDisabled = true;
   export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
@@ -135,6 +136,7 @@
         {#if layer.chartType === 'activity'}
           <LayerActivity
             {...layer}
+            activities={$activitiesByView?.byLayerId[layer.id] ?? []}
             {drawHeight}
             {drawWidth}
             {dragenter}
@@ -163,7 +165,7 @@
             {mousedown}
             {mousemove}
             {mouseout}
-            {resources}
+            resources={$resourcesByViewLayerId[layer.id] ?? []}
             {viewTimeRange}
             {xScaleView}
             {yAxes}
@@ -180,7 +182,7 @@
             {mousedown}
             {mousemove}
             {mouseout}
-            {resources}
+            resources={$resourcesByViewLayerId[layer.id] ?? []}
             {xScaleView}
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}

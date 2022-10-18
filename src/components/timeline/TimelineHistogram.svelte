@@ -5,18 +5,17 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
-  import { activityPoints } from '../../stores/activities';
   import { clamp } from '../../utilities/generic';
-  import { getDoyTime } from '../../utilities/time';
+  import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
 
+  export let activities: Activity[] = [];
   export let constraintViolations: ConstraintViolation[] = [];
   export let cursorEnabled: boolean = true;
   export let drawHeight: number = 40;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
   export let mouseOver: MouseOver;
-  export let rows: Row[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -32,7 +31,6 @@
   let cursorTooltip = '';
   let cursorVisible = false;
   let drawingRange = false;
-  let filteredActivityPoints: ActivityPoint[] = [];
   let gTimeSelectorContainer: SVGGElement;
   let histogramContainer: HTMLDivElement;
   let movingSlider = false;
@@ -143,38 +141,6 @@
   $: selectorHandleHeight = drawHeight / 1.9;
   $: numBins = Math.max(Math.min(numBinsMax, parseInt((drawWidth / 5).toString())), numBinsMin);
 
-  // Derive activities to render in activity histogram by
-  // ORing the regexp filters of all found activity rows
-  $: if (rows) {
-    filteredActivityPoints = [];
-    // Collect all activity layers
-    const activityLayers: Layer[] = [];
-    rows.forEach(row => {
-      row.layers.forEach(layer => {
-        if (layer.chartType === 'activity') {
-          activityLayers.push(layer);
-        }
-      });
-    });
-
-    // Create an aggregate RegExp using all the filters
-    let filters = [];
-    activityLayers.forEach(l => {
-      if (l.filter && l.filter.activity?.type) {
-        filters.push(l.filter.activity?.type);
-      }
-    });
-    const r = new RegExp(`(${filters.join('|')})`);
-
-    // Bin filtered activities
-    for (const point of $activityPoints) {
-      const includeActivity = r.test(point?.label?.text);
-      if (includeActivity) {
-        filteredActivityPoints.push(point);
-      }
-    }
-  }
-
   $: if (mouseOver && mouseOver.e.offsetX >= 0 && mouseOver.e.offsetX <= drawWidth) {
     const unixEpochTime = xScaleView.invert(mouseOver.e.offsetX).getTime();
     cursorLeft = xScaleMax(unixEpochTime);
@@ -187,7 +153,7 @@
   $: windowMin = xScaleMax?.range()[1];
 
   // Update histograms if xScaleMax, activities, or constraint violation changes
-  $: if ((xScaleMax || filteredActivityPoints || constraintViolations) && windowMin - windowMax > 0) {
+  $: if ((xScaleMax || activities || constraintViolations) && windowMin - windowMax > 0) {
     activityHistValues = [];
     const windowStartTime = xScaleMax.invert(windowMax).getTime();
     const windowEndTime = xScaleMax.invert(windowMin).getTime();
@@ -195,18 +161,21 @@
 
     // Compute activity histogram
     activityHistValues = Array(numBins).fill(0);
-    filteredActivityPoints.forEach(point => {
+    activities.forEach(activity => {
+      const activityX = getUnixEpochTime(activity.start_time_doy);
+      const activityDuration = getDurationInMs(activity.duration);
+
       // Filter out points that do not fall within the plan bounds at all
-      if (point.x > windowEndTime || point.x + point.duration < windowStartTime) {
+      if (activityX > windowEndTime || activityX + activityDuration < windowStartTime) {
         return;
       }
 
       // Figure out which start bin this is in
-      const startBin = Math.floor((point.x - windowStartTime) / binSize);
+      const startBin = Math.floor((activityX - windowStartTime) / binSize);
       activityHistValues[startBin]++;
 
       // Figure out which other bins this value is in
-      const x = Math.floor(point.duration / binSize) + 1;
+      const x = Math.floor(activityDuration / binSize) + 1;
       for (let i = 1; i < x; i++) {
         if (startBin + i >= activityHistValues.length) {
           return;

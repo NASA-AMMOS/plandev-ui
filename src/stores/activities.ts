@@ -1,8 +1,8 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { activitiesToPoints } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { planId } from './plan';
 import { gqlSubscribable } from './subscribable';
+import { view } from './views';
 
 /* Subscriptions. */
 
@@ -24,9 +24,53 @@ export const selectedActivityId: Writable<ActivityUniqueId | null> = writable(nu
 
 export const activities: Readable<Activity[]> = derived(activitiesMap, $activitiesMap => Object.values($activitiesMap));
 
-export const activityPoints = derived([activitiesMap, activities], ([$activitiesMap, $activities]) =>
-  activitiesToPoints($activitiesMap, $activities),
-);
+export const activitiesByView: Readable<{
+  byLayerId: Record<number, Activity[]>;
+  byTimelineId: Record<number, Activity[]>;
+}> = derived([activities, view], ([$activities, $view]) => {
+  const { definition } = $view;
+  const { plan } = definition;
+  const { timelines } = plan;
+  const byLayerId: Record<number, Activity[]> = {};
+  const byTimelineId: Record<number, Activity[]> = {};
+
+  for (const activity of $activities) {
+    for (const timeline of timelines) {
+      const { rows } = timeline;
+
+      for (const row of rows) {
+        const { layers } = row;
+
+        for (const layer of layers) {
+          const { filter } = layer;
+
+          if (filter.activity !== undefined) {
+            const { activity: activityFilter } = filter;
+            const { type } = activityFilter;
+            const regExp = new RegExp(type);
+            const includeActivity = regExp.test(activity.type);
+
+            if (includeActivity) {
+              if (byLayerId[layer.id] === undefined) {
+                byLayerId[layer.id] = [activity];
+              } else {
+                byLayerId[layer.id].push(activity);
+              }
+
+              if (byTimelineId[timeline.id] === undefined) {
+                byTimelineId[timeline.id] = [activity];
+              } else {
+                byTimelineId[timeline.id].push(activity);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { byLayerId, byTimelineId };
+});
 
 export const allActivityTags: Readable<string[]> = derived(activities, $activities => {
   const tagMap = $activities.reduce((map: Record<string, boolean>, activity: Activity) => {

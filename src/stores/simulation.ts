@@ -4,6 +4,7 @@ import { sampleProfiles } from '../utilities/resources';
 import { Status } from '../utilities/status';
 import { modelId, plan, planId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
+import { view } from './views';
 
 /* Writeable. */
 
@@ -113,12 +114,46 @@ export const simulationSpans: Readable<Span[]> = derived(
   [],
 );
 
-export const resources: Readable<Resource[]> = derived(
-  [externalResources, simulationResources],
-  ([$externalResources, $simulationResources]) => {
-    return [...$externalResources, ...$simulationResources];
+export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(
+  [externalResources, simulationResources, view],
+  ([$externalResources, $simulationResources, $view]) => {
+    const resources: Resource[] = [...$externalResources, ...$simulationResources];
+    const { definition } = $view;
+    const { plan } = definition;
+    const { timelines } = plan;
+    const resourcesByViewLayerId: Record<number, Resource[]> = {};
+
+    for (const resource of resources) {
+      for (const timeline of timelines) {
+        const { rows } = timeline;
+
+        for (const row of rows) {
+          const { layers } = row;
+
+          for (const layer of layers) {
+            const { filter } = layer;
+
+            if (filter.resource !== undefined) {
+              const { resource: resourceFilter } = filter;
+              const { name } = resourceFilter;
+              const regExp = new RegExp(name);
+              const includeResource = regExp.test(resource.name);
+
+              if (includeResource) {
+                if (resourcesByViewLayerId[layer.id] === undefined) {
+                  resourcesByViewLayerId[layer.id] = [resource];
+                } else {
+                  resourcesByViewLayerId[layer.id].push(resource);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return resourcesByViewLayerId;
   },
-  [],
 );
 
 export const simulationStatus: Readable<Status | null> = derived(

@@ -208,51 +208,47 @@
 
     for (const resource of resources) {
       const { name, schema, values } = resource;
-      const r = new RegExp(filter?.name);
-      const includeResource = r.test(name);
 
-      if (includeResource) {
-        if (schema.type === 'boolean') {
-          domain = ['TRUE', 'FALSE'];
-          for (let i = 0; i < values.length; ++i) {
-            const { x, y } = values[i];
-            const text = y ? 'TRUE' : 'FALSE';
-            points.push({
-              id: id++,
-              label: { text },
-              name,
-              type: 'x-range',
-              x,
-            });
-          }
-        } else if (schema.type === 'string') {
-          const domainMap: Record<string, string> = {};
-          for (let i = 0; i < values.length; ++i) {
-            const { x, y } = values[i];
-            const text = y as string;
-            points.push({
-              id: id++,
-              label: { text },
-              name,
-              type: 'x-range',
-              x,
-            });
-            domainMap[text] = text;
-          }
-          domain = Object.values(domainMap);
-        } else if (schema.type === 'variant') {
-          domain = schema.variants.map(({ label }) => label);
-          for (let i = 0; i < values.length; ++i) {
-            const { x, y } = values[i];
-            const text = y as string;
-            points.push({
-              id: id++,
-              label: { text },
-              name,
-              type: 'x-range',
-              x,
-            });
-          }
+      if (schema.type === 'boolean') {
+        domain = ['TRUE', 'FALSE'];
+        for (let i = 0; i < values.length; ++i) {
+          const { x, y } = values[i];
+          const text = y ? 'TRUE' : 'FALSE';
+          points.push({
+            id: id++,
+            label: { text },
+            name,
+            type: 'x-range',
+            x,
+          });
+        }
+      } else if (schema.type === 'string') {
+        const domainMap: Record<string, string> = {};
+        for (let i = 0; i < values.length; ++i) {
+          const { x, y } = values[i];
+          const text = y as string;
+          points.push({
+            id: id++,
+            label: { text },
+            name,
+            type: 'x-range',
+            x,
+          });
+          domainMap[text] = text;
+        }
+        domain = Object.values(domainMap);
+      } else if (schema.type === 'variant') {
+        domain = schema.variants.map(({ label }) => label);
+        for (let i = 0; i < values.length; ++i) {
+          const { x, y } = values[i];
+          const text = y as string;
+          points.push({
+            id: id++,
+            label: { text },
+            name,
+            type: 'x-range',
+            x,
+          });
         }
       }
     }

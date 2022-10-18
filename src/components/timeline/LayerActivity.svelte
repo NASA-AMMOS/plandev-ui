@@ -5,12 +5,14 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { activitiesMap, activityPoints, selectedActivityId } from '../../stores/activities';
+  import { activitiesMap, selectedActivityId } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
   import effects from '../../utilities/effects';
-  import { getDoyTime } from '../../utilities/time';
+  import { compare } from '../../utilities/generic';
+  import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
 
+  export let activities: Activity[] = [];
   export let activityColor: string = '';
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
@@ -61,7 +63,7 @@
   $: timelineLocked = $timelineLockStatus === TimelineLockStatus.Locked;
 
   $: if (
-    $activityPoints !== undefined &&
+    activities &&
     activityColor &&
     activityHeight &&
     ctx &&
@@ -83,6 +85,73 @@
   });
 
   /**
+   * Recursively converts an Activity to an ActivityPoint.
+   * Sorts child activity points in start time ascending order.
+   */
+  function activityToPoint(activity: Activity): ActivityPoint {
+    const children = activity?.childUniqueIds
+      ? [...activity.childUniqueIds]
+          .sort((aId: ActivityUniqueId, bId: ActivityUniqueId): number => {
+            const a = $activitiesMap[aId];
+            const b = $activitiesMap[bId];
+
+            if (a && b) {
+              return sortActivities(a, b);
+            }
+
+            return 0;
+          })
+          .reduce((childActivityPoints, childUniqueId: ActivityUniqueId) => {
+            const childActivity = $activitiesMap[childUniqueId];
+
+            if (childActivity) {
+              const childActivityPoint = activityToPoint(childActivity);
+              childActivityPoints.push(childActivityPoint);
+            }
+
+            return childActivityPoints;
+          }, [])
+      : [];
+
+    let activityLabelText = activity.name;
+
+    if (activity.parent_id !== null) {
+      activityLabelText = activity.type;
+    }
+
+    if (activity.unfinished) {
+      activityLabelText = `${activityLabelText} (Unfinished)`;
+    }
+
+    const point: ActivityPoint = {
+      children,
+      duration: getDurationInMs(activity.duration),
+      id: activity.id,
+      label: {
+        color: activity.unfinished ? '#ff7760' : null,
+        text: activityLabelText,
+      },
+      name: activity.name,
+      parentUniqueId: activity.parentUniqueId,
+      parent_id: activity.parent_id,
+      type: 'activity',
+      unfinished: activity.unfinished,
+      uniqueId: activity.uniqueId,
+      x: getUnixEpochTime(activity.start_time_doy),
+    };
+
+    return point;
+  }
+
+  /**
+   * Transforms activities to activity points for rendering.
+   * Sorts activities in start time ascending order.
+   */
+  function activitiesToPoints(activities: Activity[]): ActivityPoint[] {
+    return [...activities].sort(sortActivities).map(activity => activityToPoint(activity));
+  }
+
+  /**
    * @note We only allow dragging parent activities. Disable dragging all activities if timeline is "locked"
    */
   function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
@@ -99,9 +168,11 @@
     if (dragOffsetX && dragPoint) {
       const x = offsetX - dragOffsetX;
       const unixEpochTime = xScaleView.invert(x).getTime();
-      // TODO: Update activity directly without updating entire activitiesMap.
-      dragPoint.x = unixEpochTime;
-      draw();
+      const start_time_doy = getDoyTime(new Date(unixEpochTime));
+      if (unixEpochTime !== dragPoint.x) {
+        $activitiesMap[dragPoint.uniqueId].start_time_doy = start_time_doy;
+        draw();
+      }
     }
   }
 
@@ -111,7 +182,7 @@
       const unixEpochTime = xScaleView.invert(x).getTime();
       const start_time_doy = getDoyTime(new Date(unixEpochTime));
       const dragActivity = $activitiesMap[dragPoint.uniqueId];
-      if (dragActivity && dragActivity.start_time_doy !== start_time_doy) {
+      if (unixEpochTime !== dragPoint.x) {
         effects.updateActivityDirective(dragActivity.id, { start_time_doy });
       }
       dragOffsetX = null;
@@ -226,19 +297,14 @@
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
       let totalMaxY = Number.MIN_SAFE_INTEGER;
+
+      const activityPoints: ActivityPoint[] = activitiesToPoints(activities);
       const boundingBoxes: BoundingBox[] = [];
 
-      for (const point of $activityPoints) {
-        const r = new RegExp(filter?.type);
-        const includeActivity = r.test(point?.label?.text);
+      for (const point of activityPoints) {
         const isParentActivity = !point.parent_id;
 
-        if (
-          isParentActivity &&
-          includeActivity &&
-          point.x + point.duration >= viewTimeRange.start &&
-          point.x <= viewTimeRange.end
-        ) {
+        if (isParentActivity && point.x + point.duration >= viewTimeRange.start && point.x <= viewTimeRange.end) {
           const x = xScaleView(point.x);
           const end = xScaleView(point.x + point.duration);
           const { textWidth } = setLabelContext(point);
@@ -385,6 +451,15 @@
     const textWidth = textMetrics.width;
     const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
     return { labelText, textHeight, textMetrics, textWidth };
+  }
+
+  /**
+   * Sort function to sort activities in start time ascending order.
+   */
+  function sortActivities(a: Activity, b: Activity): number {
+    const aStartTime = getUnixEpochTime(a.start_time_doy);
+    const bStartTime = getUnixEpochTime(b.start_time_doy);
+    return compare(aStartTime, bStartTime);
   }
 </script>
 
