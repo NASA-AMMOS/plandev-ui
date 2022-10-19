@@ -15,7 +15,11 @@
   export let activityTableId: number;
   export let gridId: number;
 
-  const defaultColumnDefinitions: Partial<Record<keyof Activity, ColDef<Activity>>> = {
+  interface ActivityColDef extends ColDef<Activity> {
+    field: keyof Activity;
+  }
+
+  const defaultColumnDefinitions: Partial<Record<keyof Activity, ActivityColDef>> = {
     arguments: {
       field: 'arguments',
       filter: 'text',
@@ -93,7 +97,7 @@
       sortable: true,
     },
     start_time_doy: {
-      field: 'start_time',
+      field: 'start_time_doy',
       filter: 'text',
       headerName: 'Start Time',
       hide: true,
