@@ -33,7 +33,7 @@ export function createActivitiesMap(
       }
     } else {
       if (directiveId !== undefined) {
-        const directiveUniqueId = `directive_${directiveId}`;
+        const directiveUniqueId = getActivityDirectiveUniqueId(plan.id, directiveId);
         activityDirectiveUniqueIdToSpan[directiveUniqueId] = span;
         spanIdToDirectiveId[span.id] = directiveId;
         spanUniqueIdToDirectiveUniqueId[spanUniqueId] = directiveUniqueId;
@@ -42,7 +42,7 @@ export function createActivitiesMap(
   }
 
   for (const activityDirective of activity_directives) {
-    const activityDirectiveUniqueId = `directive_${activityDirective.id}`;
+    const activityDirectiveUniqueId = getActivityDirectiveUniqueId(activityDirective.plan_id, activityDirective.id);
     const span = activityDirectiveUniqueIdToSpan[activityDirectiveUniqueId];
     const spanUniqueId = span ? `span_${span.id}` : null;
 
@@ -123,4 +123,33 @@ export function getActivityRootParent(
     return activity;
   }
   return getActivityRootParent(activitiesMap, activity.parentUniqueId);
+}
+
+export function getActivityDirectiveUniqueId(planId: number, activityId: ActivityDirectiveId): ActivityUniqueId {
+  if (planId == null) {
+    throw new Error('Empty plan ID provided');
+  }
+  if (activityId == null) {
+    throw new Error('Empty activity ID provided');
+  }
+
+  return `directive_${planId}_${activityId}`;
+}
+
+export function decomposeActivityDirectiveId(id: ActivityUniqueId): {
+  activityId: ActivityDirectiveId;
+  planId: number;
+} {
+  const matches = id.match(/directive_(?<planId>\d+)_(?<activityId>\d+)/i);
+
+  if (matches?.length > 0) {
+    const { groups: { planId, activityId } = {} } = matches;
+
+    return {
+      activityId: parseInt(activityId),
+      planId: parseInt(planId),
+    };
+  }
+
+  throw new Error(`Invalid Activity Directive ID (${id}) provided`);
 }

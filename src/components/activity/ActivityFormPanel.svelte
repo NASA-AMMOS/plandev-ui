@@ -44,6 +44,7 @@
   let metadata: ActivityMetadata = {};
   let parentUniqueId: ActivityUniqueId | null = null;
   let parent_id: ActivityId | null = null;
+  let plan_id: number | null = null;
   let planTags: string[] = [];
   let root_activity: Activity | null = null;
   let seq_id: string | null = null;
@@ -77,6 +78,7 @@
     metadata = $selectedActivity.metadata;
     parentUniqueId = $selectedActivity.parentUniqueId;
     parent_id = $selectedActivity.parent_id;
+    plan_id = $selectedActivity.plan_id;
     root_activity = getActivityRootParent($activitiesMap, $selectedActivity.uniqueId);
     simulated_activity_id = $selectedActivity.simulated_activity_id;
     sourceSchedulingGoalId = $selectedActivity.source_scheduling_goal_id;
@@ -93,6 +95,7 @@
     editingActivityName = false;
     hasComputedAttributes = false;
     id = null;
+    plan_id = null;
     lastModifiedTime = null;
     metadata = {};
     parameterErrorMap = {};
@@ -198,26 +201,26 @@
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
-    effects.updateActivityDirective(id, { arguments: newArguments });
+    effects.updateActivityDirective(plan_id, id, { arguments: newArguments });
   }
 
   async function onChangeActivityMetadata(event: CustomEvent<{ key: string; value: any }>) {
     const { detail } = event;
     const { key, value } = detail;
     const newActivityMetadata = getActivityMetadata(metadata, key, value);
-    effects.updateActivityDirective(id, { metadata: newActivityMetadata });
+    effects.updateActivityDirective(plan_id, id, { metadata: newActivityMetadata });
   }
 
   function onUpdateStartTime() {
     if ($startTimeDoyField.valid && startTimeDoy !== $startTimeDoyField.value) {
-      effects.updateActivityDirective(id, { start_time_doy: $startTimeDoyField.value });
+      effects.updateActivityDirective(plan_id, id, { start_time_doy: $startTimeDoyField.value });
     }
   }
 
   function onUpdateTags(event: CustomEvent<{ tags: string[] }>) {
     const { detail } = event;
     const { tags } = detail;
-    effects.updateActivityDirective(id, { tags });
+    effects.updateActivityDirective(plan_id, id, { tags });
   }
 
   function editActivityName() {
@@ -227,13 +230,13 @@
   function resetActivityName() {
     const initialValue = $activityNameField.initialValue;
     activityNameField.reset(initialValue);
-    effects.updateActivityDirective(id, { name: initialValue });
+    effects.updateActivityDirective(plan_id, id, { name: initialValue });
   }
 
   async function onUpdateActivityName() {
     if ($activityNameField.dirty) {
       if ($activityNameField.value) {
-        effects.updateActivityDirective(id, { name: $activityNameField.value });
+        effects.updateActivityDirective(plan_id, id, { name: $activityNameField.value });
       } else {
         resetActivityName();
       }
@@ -292,7 +295,7 @@
     <button
       class="st-button icon activity-header-delete"
       disabled={isChild || !$selectedActivity}
-      on:click|stopPropagation={() => effects.deleteActivityDirective(id)}
+      on:click|stopPropagation={() => effects.deleteActivityDirective(plan_id, id)}
       use:tooltip={{ content: 'Delete Activity', placement: 'top' }}
     >
       <TrashIcon />

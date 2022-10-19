@@ -154,16 +154,18 @@ const gql = {
   `,
 
   DELETE_ACTIVITY_DIRECTIVE: `#graphql
-    mutation DeleteActivityDirective($id: Int!) {
-      deleteActivityDirective: delete_activity_directive_by_pk(id: $id) {
+    mutation DeleteActivityDirective($plan_id: Int!, $id: Int!) {
+      deleteActivityDirective: delete_activity_directive_by_pk(plan_id: $plan_id, id: $id) {
         id
       }
     }
   `,
 
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
-    mutation DeleteActivityDirectives($ids: [Int!]!) {
-      deleteActivityDirectives: delete_activity_directive(where: { id: { _in: $ids } }) {
+    mutation DeleteActivityDirectives($plan_id: Int!, $ids: [Int!]!) {
+      deleteActivityDirectives: delete_activity_directive(
+        where: { id: { _in: $ids }, _and: { plan_id: { _eq: $plan_id } } }
+      ) {
         returning {
           id
         }
@@ -963,9 +965,9 @@ const gql = {
   `,
 
   UPDATE_ACTIVITY_DIRECTIVE: `#graphql
-    mutation UpdateActivityDirective($id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
+    mutation UpdateActivityDirective($id: Int!, $plan_id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
       updateActivityDirective: update_activity_directive_by_pk(
-        pk_columns: { id: $id }, _set: $activityDirectiveSetInput
+        pk_columns: { id: $id, plan_id: $plan_id }, _set: $activityDirectiveSetInput
       ) {
         id
       }

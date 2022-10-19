@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { activities, selectedActivityId } from '../../stores/activities';
+  import { planId } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -53,13 +54,14 @@
     width: 25,
   };
 
-  function deleteActivityDirective({ id }: Activity) {
-    effects.deleteActivityDirective(id);
+  function deleteActivityDirective({ id, plan_id }: Activity) {
+    effects.deleteActivityDirective(plan_id, id);
   }
 
   function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
     const ids = activities.map(({ id }) => id);
-    effects.deleteActivityDirectives(ids);
+
+    effects.deleteActivityDirectives($planId, ids);
   }
 
   function getRowId(activity: Activity): ActivityUniqueId {

@@ -15,6 +15,7 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
+import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal, showCreateViewModal } from './modal';
@@ -74,7 +75,7 @@ const effects = {
       );
       const { createActivityDirective } = data;
       const { created_at, id, last_modified_at, name: newName } = createActivityDirective;
-      const uniqueId = `directive_${id}`;
+      const uniqueId = getActivityDirectiveUniqueId(currentPlan.id, id);
 
       const activity: Activity = {
         arguments: argumentsMap,
@@ -400,7 +401,7 @@ const effects = {
     }
   },
 
-  async deleteActivityDirective(id: number): Promise<boolean> {
+  async deleteActivityDirective(plan_id: number, id: ActivityId): Promise<boolean> {
     try {
       const { confirm } = await showConfirmModal(
         'Delete',
@@ -409,9 +410,9 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id });
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id, plan_id });
         activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
-          const uniqueId = `directive_${id}`;
+          const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
           delete currentActivitiesMap[uniqueId];
           return { ...currentActivitiesMap };
         });
@@ -425,7 +426,7 @@ const effects = {
     }
   },
 
-  async deleteActivityDirectives(ids: number[]): Promise<boolean> {
+  async deleteActivityDirectives(plan_id: number, ids: ActivityId[]): Promise<boolean> {
     try {
       const { confirm } = await showConfirmModal(
         'Delete',
@@ -434,10 +435,10 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids });
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids, plan_id });
         activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
           ids.forEach(id => {
-            const uniqueId = `directive_${id}`;
+            const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
             delete currentActivitiesMap[uniqueId];
           });
           return { ...currentActivitiesMap };
@@ -1208,7 +1209,7 @@ const effects = {
     }
   },
 
-  async updateActivityDirective(id: ActivityId, activity: Partial<Activity>): Promise<void> {
+  async updateActivityDirective(plan_id: number, id: ActivityId, activity: Partial<Activity>): Promise<void> {
     const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
 
     if (activity.arguments) {
@@ -1233,14 +1234,14 @@ const effects = {
     }
 
     try {
-      await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id });
+      await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id, plan_id });
       showSuccessToast('Activity Directive Updated Successfully');
     } catch (e) {
       console.log(e);
       showFailureToast('Activity Directive Update Failed');
     }
 
-    const uniqueId = `directive_${id}`;
+    const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
     activitiesMap.update((currentActivitiesMap: ActivitiesMap) => ({
       ...currentActivitiesMap,
       [uniqueId]: {

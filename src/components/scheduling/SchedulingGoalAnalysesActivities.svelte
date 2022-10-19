@@ -6,6 +6,7 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
+  import { getActivityDirectiveUniqueId } from '../../utilities/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
@@ -42,11 +43,18 @@
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div
                 class="satisfied-activity st-typography-body"
-                class:selected={$selectedActivityId === `directive_${activity.activity_id}`}
-                on:click={() => ($selectedActivityId = `directive_${activity.activity_id}`)}
+                class:selected={$selectedActivityId ===
+                  getActivityDirectiveUniqueId($activitiesMap[activity.activity_id].plan_id, activity.activity_id)}
+                on:click={() =>
+                  ($selectedActivityId = getActivityDirectiveUniqueId(
+                    $activitiesMap[activity.activity_id].plan_id,
+                    activity.activity_id,
+                  ))}
               >
                 <ActivityIcon />
-                {$activitiesMap[`directive_${activity.activity_id}`].type}
+                {$activitiesMap[
+                  getActivityDirectiveUniqueId($activitiesMap[activity.activity_id].plan_id, activity.activity_id)
+                ].type}
               </div>
             </li>
           {/if}

@@ -4,7 +4,7 @@ import { activitiesMap } from '../../stores/activities';
 import ActivityDecomposition from './ActivityDecomposition.svelte';
 
 const activities: ActivitiesMap = {
-  directive_12: {
+  directive_0_12: {
     arguments: {},
     attributes: {
       arguments: {},
@@ -26,7 +26,7 @@ const activities: ActivitiesMap = {
     tags: [],
     type: 'parent',
     unfinished: false,
-    uniqueId: 'directive_12',
+    uniqueId: 'directive_0_12',
   },
   span_68: {
     arguments: {},
@@ -95,7 +95,7 @@ const activities: ActivitiesMap = {
     last_modified_at: '2022-08-03T21:53:22.093235+00:00',
     metadata: {},
     name: 'child1 1',
-    parentUniqueId: 'directive_12',
+    parentUniqueId: 'directive_0_12',
     parent_id: 12,
     plan_id: 0,
     simulated_activity_id: 70,
@@ -147,7 +147,7 @@ const activities: ActivitiesMap = {
     last_modified_at: '2022-08-03T21:53:22.093235+00:00',
     metadata: {},
     name: 'child2 1',
-    parentUniqueId: 'directive_12',
+    parentUniqueId: 'directive_0_12',
     parent_id: 12,
     plan_id: 0,
     simulated_activity_id: 72,
@@ -173,7 +173,7 @@ const activities: ActivitiesMap = {
     last_modified_at: '2022-08-03T21:53:22.093235+00:00',
     metadata: {},
     name: 'grandchild4 1',
-    parentUniqueId: 'directive_72',
+    parentUniqueId: 'directive_0_72',
     parent_id: 72,
     plan_id: 0,
     simulated_activity_id: 73,
@@ -203,8 +203,8 @@ describe('Activity Decomposition component', () => {
 
   it('Should render the Activity Decomposition component', () => {
     const { container, getByText } = render(ActivityDecomposition, {
-      rootUniqueId: 'directive_12',
-      selectedUniqueId: 'directive_12',
+      rootUniqueId: 'directive_0_12',
+      selectedUniqueId: 'directive_0_12',
     });
     const activityDecomposition = container.getElementsByClassName('activity-decomposition');
     const activitiesList = Object.values(activities);
@@ -218,8 +218,8 @@ describe('Activity Decomposition component', () => {
 
   it('Should highlight the selected root activity', () => {
     const { container } = render(ActivityDecomposition, {
-      rootUniqueId: 'directive_12',
-      selectedUniqueId: 'directive_12',
+      rootUniqueId: 'directive_0_12',
+      selectedUniqueId: 'directive_0_12',
     });
     const selectedActivity = container.getElementsByClassName('activity-decomposition-selected');
 
@@ -232,7 +232,7 @@ describe('Activity Decomposition component', () => {
 
   it('Should highlight the selected child activity', () => {
     const { container } = render(ActivityDecomposition, {
-      rootUniqueId: 'directive_12',
+      rootUniqueId: 'directive_0_12',
       selectedUniqueId: 'span_69',
     });
     const selectedActivity = container.getElementsByClassName('activity-decomposition-selected');
@@ -246,7 +246,7 @@ describe('Activity Decomposition component', () => {
 
   it('Should handle activity not found in store', () => {
     const { getByRole, container } = render(ActivityDecomposition, {
-      rootUniqueId: 'directive_999',
+      rootUniqueId: 'directive_0_999',
       selectedUniqueId: 'span_12',
     });
 
