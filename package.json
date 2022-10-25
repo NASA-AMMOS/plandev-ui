@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^4.5.11",
-    "@nasa-jpl/stellar": "^1.0.18",
+    "@nasa-jpl/stellar": "^1.0.19",
     "@sveltejs/adapter-node": "1.0.0-next.99",
     "@sveltejs/kit": "1.0.0-next.525",
     "ag-grid-community": "^28.2.0",

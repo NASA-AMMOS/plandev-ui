@@ -14,7 +14,6 @@
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
   import RowHeader from './RowHeader.svelte';
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
-  import RowVerticalGuides from './RowVerticalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
 
@@ -29,7 +28,6 @@
   export let name: string = '';
   export let marginLeft: number = 50;
   export let rowDragMoveDisabled = true;
-  export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
@@ -125,7 +123,6 @@
           />
           <RowYAxes {drawHeight} {yAxes} />
           <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} {yAxes} />
-          <RowVerticalGuides {drawHeight} {verticalGuides} {viewTimeRange} {xScaleView} />
         {/if}
       </g>
     </svg>

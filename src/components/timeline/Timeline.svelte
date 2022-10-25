@@ -217,7 +217,6 @@
       drawHeight={xAxisDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
-      verticalGuides={timeline?.verticalGuides}
       viewTimeRange={$viewTimeRange}
       {xScaleView}
       {xTicksView}
@@ -225,13 +224,15 @@
     />
   </div>
   <TimelineCursors
-    {mouseOver}
-    {histogramCursorTime}
-    {xScaleView}
-    {drawWidth}
     {cursorHeaderHeight}
     {cursorEnabled}
+    {drawWidth}
+    {histogramCursorTime}
     marginLeft={timeline?.marginLeft}
+    {mouseOver}
+    {timelineId}
+    verticalGuides={timeline?.verticalGuides}
+    {xScaleView}
   />
   <div
     class="rows"
@@ -258,7 +259,6 @@
         name={row.name}
         marginLeft={timeline?.marginLeft}
         {rowDragMoveDisabled}
-        verticalGuides={timeline?.verticalGuides}
         viewTimeRange={$viewTimeRange}
         {xScaleView}
         {xTicksView}

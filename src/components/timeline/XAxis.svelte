@@ -4,20 +4,17 @@
   import type { ScaleTime } from 'd3-scale';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
-  import XAxisVerticalGuides from './XAxisVerticalGuides.svelte';
 
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 70;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
-  export let verticalGuides: VerticalGuide[] = [];
   export let viewTimeRange: TimeRange | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
 
   let axisOffset = 12;
   let violationsOffset = 0;
-  let verticalGuidesOffset = drawHeight - axisOffset - 1;
 </script>
 
 <svg style="height: {drawHeight}px;">
@@ -51,9 +48,6 @@
         {viewTimeRange}
         {xScaleView}
       />
-    </g>
-    <g transform="translate(0, {verticalGuidesOffset})">
-      <XAxisVerticalGuides {drawHeight} {drawWidth} {verticalGuides} {viewTimeRange} {xScaleView} />
     </g>
   </g>
 </svg>
