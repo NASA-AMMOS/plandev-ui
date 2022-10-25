@@ -4,7 +4,6 @@
   import { goto, invalidateAll, prefetch } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
-  import AerieLogoDark from '@nasa-jpl/stellar/icons/aerie-logo-dark.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
@@ -17,6 +16,7 @@
   import InfoCircleIcon from 'bootstrap-icons/icons/info-circle.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
+  import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
@@ -34,7 +34,7 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="app-menu" on:click|stopPropagation={() => appMenu.toggle()}>
-  <div class="app-icon"><AerieLogoDark /></div>
+  <div class="app-icon"><AerieWordmarkDark /></div>
 
   <ChevronDownIcon />
 
@@ -109,6 +109,6 @@
     height: 24px;
     justify-content: center;
     line-height: 24px;
-    width: 24px;
+    width: 88px;
   }
 </style>
