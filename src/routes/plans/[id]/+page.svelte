@@ -18,6 +18,7 @@
   import ConstraintsPanel from '../../../components/constraints/ConstraintsPanel.svelte';
   import ConstraintViolationsPanel from '../../../components/constraints/ConstraintViolationsPanel.svelte';
   import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
+  import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
@@ -128,8 +129,9 @@
 
 <CssGrid class="plan-container" rows="42px auto 36px">
   <Nav>
-    <span class="plan-title" slot="title">{data.initialPlan.name}</span>
-
+    <div slot="title">
+      <PlanMenu plan={data.initialPlan} />
+    </div>
     <svelte:fragment slot="right">
       <NavButton
         selected={$view.definition.plan.layout?.gridName === 'Activities'}

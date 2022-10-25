@@ -7,4 +7,6 @@ interface TabContext {
   selectTab: (tabId: TabId) => void;
   selectedPanel: Writable<TabId>;
   selectedTab: Writable<TabId>;
+  unregisterPanel: (panelId: PanelId) => void;
+  unregisterTab: (tabId: TabId) => void;
 }
