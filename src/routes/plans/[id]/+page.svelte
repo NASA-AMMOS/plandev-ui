@@ -26,6 +26,7 @@
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import IFramePanel from '../../../components/ui/IFramePanel.svelte';
+  import MergeRequestsStatusBadge from '../../../components/ui/MergeRequestsStatusBadge.svelte';
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
@@ -132,6 +133,10 @@
     <div slot="title">
       <PlanMenu plan={data.initialPlan} />
     </div>
+    <svelte:fragment slot="left">
+      <div class="divider">|</div>
+      <MergeRequestsStatusBadge incomingMergeRequestCount={0} />
+    </svelte:fragment>
     <svelte:fragment slot="right">
       <NavButton
         selected={$view.definition.plan.layout?.gridName === 'Activities'}
