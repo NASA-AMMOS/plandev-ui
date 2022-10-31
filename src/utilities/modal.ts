@@ -4,6 +4,8 @@ import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.sv
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
+import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
+import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -155,6 +157,35 @@ export async function showExpansionSequenceModal(expansionSequence: ExpansionSeq
 }
 
 /**
+ * Shows a PlanBranchRequestModal with the supplied arguments.
+ */
+export async function showPlanBranchRequestModal(
+  plan: Plan,
+  action: PlanBranchRequestAction,
+): Promise<ModalElementValue<{ source_plan_id: number; target_plan_id: number }>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const planModal = new PlanBranchRequestModal({ props: { action, plan }, target });
+      target.resolve = resolve;
+
+      planModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+
+      planModal.$on('create', (e: CustomEvent<{ source_plan_id: number; target_plan_id: number }>) => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: true, value: e.detail });
+      });
+    }
+  });
+}
+
+/**
  * Shows an PlanBranchesModal component with the supplied arguments.
  */
 export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementValue> {
@@ -169,6 +200,26 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
         target.replaceChildren();
         target.resolve = null;
         resolve({ confirm: true });
+      });
+    }
+  });
+}
+
+/**
+ * Shows a PlanMergeRequestsModal with the supplied arguments.
+ */
+export async function showPlanMergeRequestsModal(): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const planMergeRequestsModal = new PlanMergeRequestsModal({ target });
+      target.resolve = resolve;
+
+      planMergeRequestsModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
       });
     }
   });

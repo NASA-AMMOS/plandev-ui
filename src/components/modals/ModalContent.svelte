@@ -1,4 +1,10 @@
-<div class="modal-content">
+<script lang="ts">
+  export { styleName as style };
+
+  let styleName: string = '';
+</script>
+
+<div class="modal-content" style={styleName}>
   <slot />
 </div>
 

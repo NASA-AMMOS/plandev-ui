@@ -88,6 +88,14 @@ const gql = {
     }
   `,
 
+  CREATE_PLAN_MERGE_REQUEST: `#graphql
+    mutation CreatePlanMergeRequest($requester_username: String!, $source_plan_id: Int!, $target_plan_id: Int!) {
+      create_merge_request(args: { requester_username: $requester_username, source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
+        merge_request_id
+      }
+    }
+  `,
+
   CREATE_SCHEDULING_GOAL: `#graphql
     mutation CreateSchedulingGoal($goal: scheduling_goal_insert_input!) {
       createSchedulingGoal: insert_scheduling_goal_one(object: $goal) {
@@ -804,6 +812,42 @@ const gql = {
         jar_id,
         name
         version
+      }
+    }
+  `,
+
+  SUB_PLAN_MERGE_REQUESTS_INCOMING: `#graphql
+    subscription SubPlanMergeRequestsIncoming($planId: Int!) {
+      merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }) {
+        id
+        plan_receiving_changes {
+          id
+          name
+        }
+        plan_snapshot_supplying_changes {
+          name
+          snapshot_id
+        }
+        requester_username
+        status
+      }
+    }
+  `,
+
+  SUB_PLAN_MERGE_REQUESTS_OUTGOING: `#graphql
+    subscription SubPlanMergeRequestsOutgoing($planId: Int!) {
+      merge_request(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }) {
+        id
+        plan_receiving_changes {
+          id
+          name
+        }
+        plan_snapshot_supplying_changes {
+          name
+          snapshot_id
+        }
+        requester_username
+        status
       }
     }
   `,

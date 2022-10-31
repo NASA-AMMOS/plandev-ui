@@ -20,7 +20,7 @@ import { view } from '../stores/views';
 import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
-import { showConfirmModal, showCreatePlanBranchModal, showCreateViewModal } from './modal';
+import { showConfirmModal, showCreatePlanBranchModal, showCreateViewModal, showPlanBranchRequestModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
@@ -320,6 +320,47 @@ const effects = {
     } catch (e) {
       console.log(e);
       showFailureToast('Branch Creation Failed');
+    }
+  },
+
+  async createPlanBranchRequest(
+    plan: Plan,
+    action: PlanBranchRequestAction,
+    requester_username: string,
+  ): Promise<void> {
+    try {
+      const { confirm, value } = await showPlanBranchRequestModal(plan, action);
+
+      if (confirm) {
+        const { source_plan_id, target_plan_id } = value;
+        if (action === 'merge') {
+          await effects.createPlanMergeRequest(requester_username, source_plan_id, target_plan_id);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  },
+
+  async createPlanMergeRequest(
+    requester_username: string,
+    source_plan_id: number,
+    target_plan_id: number,
+  ): Promise<number | null> {
+    try {
+      const data = await reqHasura<{ merge_request_id: number }>(gql.CREATE_PLAN_MERGE_REQUEST, {
+        requester_username,
+        source_plan_id,
+        target_plan_id,
+      });
+      const { create_merge_request } = data;
+      const { merge_request_id } = create_merge_request;
+      showSuccessToast('Merge Request Created Successfully');
+      return merge_request_id;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Merge Request Create Failed');
+      return null;
     }
   },
 

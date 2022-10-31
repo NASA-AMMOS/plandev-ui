@@ -134,8 +134,7 @@
       <PlanMenu plan={data.initialPlan} />
     </div>
     <svelte:fragment slot="left">
-      <div class="divider">|</div>
-      <MergeRequestsStatusBadge incomingMergeRequestCount={0} />
+      <MergeRequestsStatusBadge />
     </svelte:fragment>
     <svelte:fragment slot="right">
       <NavButton
@@ -194,9 +193,9 @@
         <div class="separator">|</div>
         <div class="grouped-error-tabs">
           <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
-          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors"
-            ><GearWideConnectedIcon /></ConsoleTab
-          >
+          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors">
+            <GearWideConnectedIcon />
+          </ConsoleTab>
         </div>
       </div>
     </svelte:fragment>

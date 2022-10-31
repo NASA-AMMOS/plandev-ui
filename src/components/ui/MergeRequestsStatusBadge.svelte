@@ -1,31 +1,33 @@
 <script lang="ts">
   import PlanWithDownArrowIcon from '@nasa-jpl/stellar/icons/plan_with_down_arrow.svg?component';
   import PlanWithUpArrowIcon from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
-  import { createEventDispatcher } from 'svelte';
+  import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
+  import { showPlanMergeRequestsModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let incomingMergeRequestCount: number = 0;
-  export let outgoingMergeRequestCount: number = 0;
-
-  const dispatch = createEventDispatcher();
+  $: incomingMergeRequestCount = $planMergeRequestsIncoming.length;
+  $: outgoingMergeRequestCount = $planMergeRequestsOutgoing.length;
 </script>
 
-<button
-  class="merge-requests-status-badge st-button tertiary st-typography-medium"
-  on:click={() => dispatch('click')}
-  use:tooltip={{
-    content: `${incomingMergeRequestCount} incoming, ${outgoingMergeRequestCount} outgoing`,
-    placement: 'top',
-  }}
->
-  <span class="status-icon" class:active={incomingMergeRequestCount > 0}>
-    <PlanWithDownArrowIcon />
-  </span>
-  <span class="status-icon" class:active={outgoingMergeRequestCount > 0}>
-    <PlanWithUpArrowIcon />
-  </span>
-  <span>Merge requests</span>
-</button>
+{#if incomingMergeRequestCount > 0 || outgoingMergeRequestCount > 0}
+  <div class="divider">|</div>
+  <button
+    class="merge-requests-status-badge st-button tertiary st-typography-medium"
+    on:click|stopPropagation={() => showPlanMergeRequestsModal()}
+    use:tooltip={{
+      content: `${incomingMergeRequestCount} incoming, ${outgoingMergeRequestCount} outgoing`,
+      placement: 'top',
+    }}
+  >
+    <span class="status-icon" class:active={incomingMergeRequestCount > 0}>
+      <PlanWithDownArrowIcon />
+    </span>
+    <span class="status-icon" class:active={outgoingMergeRequestCount > 0}>
+      <PlanWithUpArrowIcon />
+    </span>
+    <span>Merge requests</span>
+  </button>
+{/if}
 
 <style>
   .merge-requests-status-badge {

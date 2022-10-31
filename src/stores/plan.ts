@@ -40,6 +40,22 @@ export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 
+export const planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequest[]>(
+  gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
+  { planId },
+  [],
+  (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
+    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, type: 'incoming' })),
+);
+
+export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
+  gql.SUB_PLAN_MERGE_REQUESTS_OUTGOING,
+  { planId },
+  [],
+  (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
+    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, type: 'outgoing' })),
+);
+
 export const planRevision = gqlSubscribable<number>(
   gql.SUB_PLAN_REVISION,
   { planId },
