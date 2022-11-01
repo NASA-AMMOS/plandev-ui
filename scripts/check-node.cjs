@@ -12,7 +12,7 @@ function main() {
     if (!isValid) {
       console.log(
         '\x1b[37m\x1b[45m%s\x1b[0m',
-        `Your version of node (${nodeVersion}) does not meet the required node version. Please use ${requiredNodeVersions}`,
+        `Your version of Node (${nodeVersion}) does not meet the required version. Please use ${requiredNodeVersions}`,
       );
       process.exit(1);
     }

@@ -1,10 +1,10 @@
 .DS_Store
+aerie/
 build
-node_modules
 e2e-test-results
-unit-test-results
-/.svelte-kit
+.idea/
+node_modules
 /package
 /static/version.json
-aerie/
-.idea/
+/.svelte-kit
+unit-test-results

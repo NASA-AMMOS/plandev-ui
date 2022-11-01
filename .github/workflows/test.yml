@@ -46,7 +46,7 @@ jobs:
       - name: Setup Node (UI)
         uses: actions/setup-node@v2
         with:
-          node-version: '16.17.0'
+          node-version: '18.12.0'
       - name: Install Dependencies (UI)
         run: npm ci
       - name: Build (UI)
