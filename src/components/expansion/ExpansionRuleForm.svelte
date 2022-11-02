@@ -28,16 +28,32 @@
   let ruleDictionaryId: number | null = initialRuleDictionaryId;
   let ruleId: number | null = initialRuleId;
   let ruleLogic: string = initialRuleLogic;
-  let savedRuleLogic: string = mode === 'create' ? '' : initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
   let ruleUpdatedAt: string | null = initialRuleUpdatedAt;
   let saveButtonEnabled: boolean = false;
+  let savedRule: Partial<ExpansionRule> = {
+    activity_type: ruleActivityType,
+    authoring_command_dict_id: ruleDictionaryId,
+    authoring_mission_model_id: ruleModelId,
+    expansion_logic: ruleLogic,
+  };
 
   $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
   $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
-  $: ruleModified = ruleLogic !== savedRuleLogic;
+  $: ruleModified = diffRule(savedRule, {
+    activity_type: ruleActivityType,
+    authoring_command_dict_id: ruleDictionaryId,
+    authoring_mission_model_id: ruleModelId,
+    expansion_logic: ruleLogic,
+  });
   $: saveButtonText = mode === 'edit' && !ruleModified ? 'Saved' : 'Save';
   $: saveButtonClass = ruleModified && saveButtonEnabled ? 'primary' : 'secondary';
+
+  function diffRule(ruleA: Partial<ExpansionRule>, ruleB: Partial<ExpansionRule>) {
+    return Object.entries(ruleA).some(([key, value]) => {
+      return ruleB[key] !== value;
+    });
+  }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
     const { detail } = event;
@@ -77,7 +93,7 @@
         const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
         if (updated_at !== null) {
           ruleUpdatedAt = updated_at;
-          savedRuleLogic = ruleLogic;
+          savedRule = updatedRule;
         }
       }
     }

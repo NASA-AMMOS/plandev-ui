@@ -28,13 +28,14 @@
   let sequenceCommandDictionaryId: number | null = initialSequenceCommandDictionaryId;
   let sequenceId: number | null = initialSequenceId;
   let sequenceName: string = initialSequenceName;
+  let savedSequenceName: string = sequenceName;
   let sequenceSeqJson: string = 'Seq JSON has not been generated yet';
   let sequenceUpdatedAt: string | null = initialSequenceUpdatedAt;
   let saveButtonEnabled: boolean = false;
   let savingSequence: boolean = false;
 
   $: saveButtonEnabled = sequenceCommandDictionaryId !== null && sequenceDefinition !== '' && sequenceName !== '';
-  $: sequenceModified = sequenceDefinition !== savedSequenceDefinition;
+  $: sequenceModified = sequenceDefinition !== savedSequenceDefinition || sequenceName !== savedSequenceName;
   $: saveButtonText = mode === 'edit' && !sequenceModified ? 'Saved' : 'Save';
   $: saveButtonClass = sequenceModified && saveButtonEnabled ? 'primary' : 'secondary';
 
@@ -99,6 +100,7 @@
         }
         await getUserSequenceSeqJson();
         savedSequenceDefinition = sequenceDefinition;
+        savedSequenceName = sequenceName;
       }
       savingSequence = false;
     }
