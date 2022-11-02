@@ -88,6 +88,14 @@ const gql = {
     }
   `,
 
+  CREATE_PLAN_MERGE_REQUEST: `#graphql
+    mutation CreatePlanMergeRequest($requester_username: String!, $source_plan_id: Int!, $target_plan_id: Int!) {
+      create_merge_request(args: { requester_username: $requester_username, source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
+        merge_request_id
+      }
+    }
+  `,
+
   CREATE_SCHEDULING_GOAL: `#graphql
     mutation CreateSchedulingGoal($goal: scheduling_goal_insert_input!) {
       createSchedulingGoal: insert_scheduling_goal_one(object: $goal) {
@@ -154,16 +162,18 @@ const gql = {
   `,
 
   DELETE_ACTIVITY_DIRECTIVE: `#graphql
-    mutation DeleteActivityDirective($id: Int!) {
-      deleteActivityDirective: delete_activity_directive_by_pk(id: $id) {
+    mutation DeleteActivityDirective($plan_id: Int!, $id: Int!) {
+      deleteActivityDirective: delete_activity_directive_by_pk(plan_id: $plan_id, id: $id) {
         id
       }
     }
   `,
 
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
-    mutation DeleteActivityDirectives($ids: [Int!]!) {
-      deleteActivityDirectives: delete_activity_directive(where: { id: { _in: $ids } }) {
+    mutation DeleteActivityDirectives($plan_id: Int!, $ids: [Int!]!) {
+      deleteActivityDirectives: delete_activity_directive(
+        where: { id: { _in: $ids }, _and: { plan_id: { _eq: $plan_id } } }
+      ) {
         returning {
           id
         }
@@ -278,6 +288,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DUPLICATE_PLAN: `#graphql
+    mutation DuplicatePlan($plan_id: Int!, $new_plan_name: String!) {
+      duplicate_plan(args: { new_plan_name: $new_plan_name, plan_id: $plan_id }) {
+        new_plan_id
       }
     }
   `,
@@ -417,6 +435,10 @@ const gql = {
   GET_PLAN: `#graphql
     query GetPlan($id: Int!) {
       plan: plan_by_pk(id: $id) {
+        child_plans {
+          id
+          name
+        }
         duration
         id
         model: mission_model {
@@ -436,6 +458,10 @@ const gql = {
         }
         model_id
         name
+        parent_plan {
+          id
+          name
+        }
         revision
         scheduling_specifications {
           id
@@ -790,6 +816,42 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_MERGE_REQUESTS_INCOMING: `#graphql
+    subscription SubPlanMergeRequestsIncoming($planId: Int!) {
+      merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }) {
+        id
+        plan_receiving_changes {
+          id
+          name
+        }
+        plan_snapshot_supplying_changes {
+          name
+          snapshot_id
+        }
+        requester_username
+        status
+      }
+    }
+  `,
+
+  SUB_PLAN_MERGE_REQUESTS_OUTGOING: `#graphql
+    subscription SubPlanMergeRequestsOutgoing($planId: Int!) {
+      merge_request(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }) {
+        id
+        plan_receiving_changes {
+          id
+          name
+        }
+        plan_snapshot_supplying_changes {
+          name
+          snapshot_id
+        }
+        requester_username
+        status
+      }
+    }
+  `,
+
   SUB_PLAN_REVISION: `#graphql
     subscription SubPlanRevision($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
@@ -963,9 +1025,9 @@ const gql = {
   `,
 
   UPDATE_ACTIVITY_DIRECTIVE: `#graphql
-    mutation UpdateActivityDirective($id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
+    mutation UpdateActivityDirective($id: Int!, $plan_id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
       updateActivityDirective: update_activity_directive_by_pk(
-        pk_columns: { id: $id }, _set: $activityDirectiveSetInput
+        pk_columns: { id: $id, plan_id: $plan_id }, _set: $activityDirectiveSetInput
       ) {
         id
       }

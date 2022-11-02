@@ -7,6 +7,7 @@
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
+  import { decomposeActivityDirectiveId } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { compare } from '../../utilities/generic';
   import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
@@ -183,7 +184,8 @@
       const start_time_doy = getDoyTime(new Date(unixEpochTime));
       const dragActivity = $activitiesMap[dragPoint.uniqueId];
       if (unixEpochTime !== dragPoint.x) {
-        effects.updateActivityDirective(dragActivity.id, { start_time_doy });
+        const { activityId, planId } = decomposeActivityDirectiveId(dragActivity.uniqueId);
+        effects.updateActivityDirective(planId, activityId, { start_time_doy });
       }
       dragOffsetX = null;
       dragPoint = null;

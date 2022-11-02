@@ -18,6 +18,7 @@
   import ConstraintsPanel from '../../../components/constraints/ConstraintsPanel.svelte';
   import ConstraintViolationsPanel from '../../../components/constraints/ConstraintViolationsPanel.svelte';
   import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
+  import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
@@ -25,6 +26,7 @@
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import IFramePanel from '../../../components/ui/IFramePanel.svelte';
+  import MergeRequestsStatusBadge from '../../../components/ui/MergeRequestsStatusBadge.svelte';
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
@@ -128,8 +130,12 @@
 
 <CssGrid class="plan-container" rows="42px auto 36px">
   <Nav>
-    <span class="plan-title" slot="title">{data.initialPlan.name}</span>
-
+    <div slot="title">
+      <PlanMenu plan={data.initialPlan} />
+    </div>
+    <svelte:fragment slot="left">
+      <MergeRequestsStatusBadge />
+    </svelte:fragment>
     <svelte:fragment slot="right">
       <NavButton
         selected={$view.definition.plan.layout?.gridName === 'Activities'}
@@ -187,9 +193,9 @@
         <div class="separator">|</div>
         <div class="grouped-error-tabs">
           <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
-          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors"
-            ><GearWideConnectedIcon /></ConsoleTab
-          >
+          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors">
+            <GearWideConnectedIcon />
+          </ConsoleTab>
         </div>
       </div>
     </svelte:fragment>

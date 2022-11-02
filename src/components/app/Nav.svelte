@@ -36,7 +36,6 @@
   .title {
     align-items: center;
     color: var(--st-gray-20);
-    opacity: 0.7;
   }
 
   .left {

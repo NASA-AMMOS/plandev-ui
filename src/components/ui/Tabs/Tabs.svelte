@@ -18,15 +18,25 @@
   const selectedTab = writable<TabId>(null);
   const selectedPanel = writable<PanelId>(null);
 
+  function unregisterPanel(panelId: PanelId) {
+    const i = panels.indexOf(panelId);
+    panels.splice(i, 1);
+    selectedPanel.update(current => (current === panelId ? panels[i] || panels[panels.length - 1] : current));
+  }
+
+  function unregisterTab(tabId: TabId) {
+    const i = tabs.indexOf(tabId);
+    tabs.splice(i, 1);
+    selectedTab.update(current => (current === tabId ? tabs[i] || tabs[tabs.length - 1] : current));
+  }
+
   setContext<TabContext>(TabContextKey, {
     registerPanel: (panelId: PanelId) => {
       panels.push(panelId);
       selectedPanel.update(current => current || panelId);
 
       onDestroy(() => {
-        const i = panels.indexOf(panelId);
-        panels.splice(i, 1);
-        selectedPanel.update(current => (current === panelId ? panels[i] || panels[panels.length - 1] : current));
+        unregisterPanel(panelId);
       });
     },
     registerTab: (tabId: TabId) => {
@@ -38,9 +48,7 @@
         selectedTab.update(current => current || tabId);
 
         onDestroy(() => {
-          const i = tabs.indexOf(tabId);
-          tabs.splice(i, 1);
-          selectedTab.update(current => (current === tabId ? tabs[i] || tabs[tabs.length - 1] : current));
+          unregisterTab(tabId);
         });
       }
     },
@@ -53,6 +61,8 @@
     },
     selectedPanel,
     selectedTab,
+    unregisterPanel,
+    unregisterTab,
   });
 </script>
 

@@ -4,11 +4,16 @@
   import { getContext } from 'svelte';
   import { TabContextKey } from './Tabs.svelte';
 
+  export let disabled: boolean = false;
   export let panelId: PanelId = {};
 
-  const { registerPanel, selectedPanel } = getContext<TabContext>(TabContextKey);
+  const { registerPanel, selectedPanel, unregisterPanel } = getContext<TabContext>(TabContextKey);
 
-  registerPanel(panelId);
+  $: if (!disabled) {
+    registerPanel(panelId);
+  } else {
+    unregisterPanel(panelId);
+  }
 </script>
 
 {#if $selectedPanel === panelId}

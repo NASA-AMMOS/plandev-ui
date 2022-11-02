@@ -1,3 +1,5 @@
+import { goto } from '$app/navigation';
+import { base } from '$app/paths';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
@@ -15,9 +17,10 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
+import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
-import { showConfirmModal, showCreateViewModal } from './modal';
+import { showConfirmModal, showCreatePlanBranchModal, showCreateViewModal, showPlanBranchRequestModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
@@ -74,7 +77,7 @@ const effects = {
       );
       const { createActivityDirective } = data;
       const { created_at, id, last_modified_at, name: newName } = createActivityDirective;
-      const uniqueId = `directive_${id}`;
+      const uniqueId = getActivityDirectiveUniqueId(currentPlan.id, id);
 
       const activity: Activity = {
         arguments: argumentsMap,
@@ -303,6 +306,64 @@ const effects = {
     }
   },
 
+  async createPlanBranch(plan: Plan): Promise<void> {
+    try {
+      const { confirm, value = null } = await showCreatePlanBranchModal(plan);
+
+      if (confirm && value) {
+        const { name, plan } = value;
+        const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id });
+        const { duplicate_plan } = data;
+        goto(`${base}/plans/${duplicate_plan.new_plan_id}`);
+        showSuccessToast('Branch Created Successfully');
+      }
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Branch Creation Failed');
+    }
+  },
+
+  async createPlanBranchRequest(
+    plan: Plan,
+    action: PlanBranchRequestAction,
+    requester_username: string,
+  ): Promise<void> {
+    try {
+      const { confirm, value } = await showPlanBranchRequestModal(plan, action);
+
+      if (confirm) {
+        const { source_plan_id, target_plan_id } = value;
+        if (action === 'merge') {
+          await effects.createPlanMergeRequest(requester_username, source_plan_id, target_plan_id);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  },
+
+  async createPlanMergeRequest(
+    requester_username: string,
+    source_plan_id: number,
+    target_plan_id: number,
+  ): Promise<number | null> {
+    try {
+      const data = await reqHasura<{ merge_request_id: number }>(gql.CREATE_PLAN_MERGE_REQUEST, {
+        requester_username,
+        source_plan_id,
+        target_plan_id,
+      });
+      const { create_merge_request } = data;
+      const { merge_request_id } = create_merge_request;
+      showSuccessToast('Merge Request Created Successfully');
+      return merge_request_id;
+    } catch (e) {
+      console.log(e);
+      showFailureToast('Merge Request Create Failed');
+      return null;
+    }
+  },
+
   async createSchedulingGoal(
     definition: string,
     description: string,
@@ -400,7 +461,7 @@ const effects = {
     }
   },
 
-  async deleteActivityDirective(id: number): Promise<boolean> {
+  async deleteActivityDirective(plan_id: number, id: ActivityId): Promise<boolean> {
     try {
       const { confirm } = await showConfirmModal(
         'Delete',
@@ -409,9 +470,9 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id });
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id, plan_id });
         activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
-          const uniqueId = `directive_${id}`;
+          const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
           delete currentActivitiesMap[uniqueId];
           return { ...currentActivitiesMap };
         });
@@ -425,7 +486,7 @@ const effects = {
     }
   },
 
-  async deleteActivityDirectives(ids: number[]): Promise<boolean> {
+  async deleteActivityDirectives(plan_id: number, ids: ActivityId[]): Promise<boolean> {
     try {
       const { confirm } = await showConfirmModal(
         'Delete',
@@ -434,10 +495,10 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids });
+        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids, plan_id });
         activitiesMap.update((currentActivitiesMap: ActivitiesMap) => {
           ids.forEach(id => {
-            const uniqueId = `directive_${id}`;
+            const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
             delete currentActivitiesMap[uniqueId];
           });
           return { ...currentActivitiesMap };
@@ -1208,7 +1269,7 @@ const effects = {
     }
   },
 
-  async updateActivityDirective(id: ActivityId, activity: Partial<Activity>): Promise<void> {
+  async updateActivityDirective(plan_id: number, id: ActivityId, activity: Partial<Activity>): Promise<void> {
     const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
 
     if (activity.arguments) {
@@ -1233,14 +1294,14 @@ const effects = {
     }
 
     try {
-      await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id });
+      await reqHasura(gql.UPDATE_ACTIVITY_DIRECTIVE, { activityDirectiveSetInput, id, plan_id });
       showSuccessToast('Activity Directive Updated Successfully');
     } catch (e) {
       console.log(e);
       showFailureToast('Activity Directive Update Failed');
     }
 
-    const uniqueId = `directive_${id}`;
+    const uniqueId = getActivityDirectiveUniqueId(plan_id, id);
     activitiesMap.update((currentActivitiesMap: ActivitiesMap) => ({
       ...currentActivitiesMap,
       [uniqueId]: {
