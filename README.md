@@ -1,4 +1,3 @@
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/aerie-ui.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NASA-AMMOS/aerie-ui/context:javascript)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/NASA-AMMOS/aerie-ui?color=brightgreen)
 
 # aerie-ui
@@ -17,6 +16,7 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 ├── e2e-tests       # End-to-end tests
 ├── scripts         # Helper build scripts
 └── src             # The source code
+    ├── assets      # Additional assets
     ├── components  # Svelte components
     ├── css         # Style sheets
     ├── routes      # Svelte Kit route components
