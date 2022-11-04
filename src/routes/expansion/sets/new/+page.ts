@@ -1,6 +1,5 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
-import effects from '../../../utilities/effects';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
@@ -10,10 +9,5 @@ export const load: PageLoad = async ({ parent }) => {
     throw redirect(302, `${base}/login`);
   }
 
-  const { models: initialModels, plans: initialPlans } = await effects.getPlansAndModels();
-
-  return {
-    initialModels,
-    initialPlans,
-  };
+  return {};
 };
