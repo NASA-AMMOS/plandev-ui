@@ -39,8 +39,8 @@
     "@fontsource/jetbrains-mono": "^4.5.11",
     "@nasa-jpl/stellar": "^1.0.20",
     "@sveltejs/adapter-node": "1.0.0-next.100",
-    "@sveltejs/kit": "1.0.0-next.531",
-    "ag-grid-community": "^28.2.0",
+    "@sveltejs/kit": "1.0.0-next.537",
+    "ag-grid-community": "^28.2.1",
     "bootstrap": "^5.2.2",
     "bootstrap-icons": "^1.9.1",
     "cookie": "^0.5.0",
@@ -88,7 +88,7 @@
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "cloc": "^2.10.0",
-    "eslint": "^8.26.0",
+    "eslint": "^8.27.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-svelte3": "^4.0.0",
     "jsdom": "^20.0.2",
@@ -96,7 +96,7 @@
     "prettier": "^2.7.1",
     "prettier-plugin-svelte": "^2.8.0",
     "semver": "^7.3.8",
-    "stylelint": "^14.14.0",
+    "stylelint": "^14.14.1",
     "stylelint-config-html": "^1.1.0",
     "stylelint-config-prettier": "^9.0.3",
     "stylelint-order": "^5.0.0",
@@ -104,7 +104,7 @@
     "tslib": "^2.4.1",
     "typescript": "^4.8.4",
     "unique-names-generator": "^4.7.1",
-    "vite": "^3.2.2",
-    "vitest": "^0.24.4"
+    "vite": "^3.2.3",
+    "vitest": "^0.25.0"
   }
 }
