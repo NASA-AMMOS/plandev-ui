@@ -74,7 +74,7 @@ export function createActivitiesMap(
     const spanUniqueId = `span_${span.id}`;
 
     activitiesMap[spanUniqueId] = {
-      arguments: {},
+      arguments: span.attributes?.arguments ?? {},
       attributes: span.attributes,
       childUniqueIds: parentUniqueIdToChildUniqueIds[spanUniqueId] ?? [],
       created_at: '',
