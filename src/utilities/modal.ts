@@ -58,13 +58,14 @@ export async function showConfirmModal(
   confirmText: string,
   message: string,
   title: string,
+  actionCanBeUndone?: boolean,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
       const confirmModal = new ConfirmModal({
-        props: { confirmText, message, title },
+        props: { actionCanBeUndone, confirmText, message, title },
         target,
       });
       target.resolve = resolve;
@@ -208,12 +209,14 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
 /**
  * Shows a PlanMergeRequestsModal with the supplied arguments.
  */
-export async function showPlanMergeRequestsModal(): Promise<ModalElementValue> {
+export async function showPlanMergeRequestsModal(
+  selectedFilter?: PlanMergeRequestTypeFilter,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
-      const planMergeRequestsModal = new PlanMergeRequestsModal({ target });
+      const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter }, target });
       target.resolve = resolve;
 
       planMergeRequestsModal.$on('close', () => {

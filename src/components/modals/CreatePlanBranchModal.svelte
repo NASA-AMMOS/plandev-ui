@@ -38,7 +38,7 @@
 
 <Modal {height} {width}>
   <ModalHeader on:close>Create Branch</ModalHeader>
-  <ModalContent>
+  <ModalContent style=" display: flex; flex-direction: column; gap: 8px; padding:8px 0 0 ;">
     <fieldset>
       <label for="name">Name of branch</label>
       <input

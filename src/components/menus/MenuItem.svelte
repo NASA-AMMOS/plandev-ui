@@ -32,7 +32,6 @@
 
   .menu-item:hover {
     background: var(--st-gray-20);
-    border-radius: 4px;
   }
 
   .menu-item.disabled {

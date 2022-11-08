@@ -10,6 +10,44 @@ export function attemptStringConversion(x: any) {
 }
 
 /**
+ * Utility function that returns a list of keys that have changed between two objects of the same type.
+ * Optionally keys can be ignored from the comparison.
+ */
+export function changedKeys<T>(objA: T, objB: T, ignoreKeys: string[] = []): string[] {
+  const changedKeys: string[] = [];
+
+  Object.keys(objA)
+    .filter(key => ignoreKeys.indexOf(key) < 0)
+    .forEach(key => {
+      const valueA = objA[key];
+      const valueB = objB[key];
+      if (
+        (typeof valueA === 'string' ||
+          typeof valueB === 'string' ||
+          typeof valueA === 'number' ||
+          typeof valueB === 'number' ||
+          valueA === null ||
+          valueB === null ||
+          valueA === undefined ||
+          valueB === undefined) &&
+        valueA !== valueB
+      ) {
+        changedKeys.push(key);
+      }
+
+      if (
+        typeof valueA === 'object' &&
+        typeof valueB === 'object' &&
+        JSON.stringify(valueA) !== JSON.stringify(valueB)
+      ) {
+        changedKeys.push(key);
+      }
+    });
+
+  return changedKeys;
+}
+
+/**
  * Comparator function for numbers or strings.
  * Defaults to ascending order.
  */

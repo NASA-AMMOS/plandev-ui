@@ -26,7 +26,7 @@
     display: inline-flex;
     font-size: 13px;
     gap: 8px;
-    height: 42px;
+    height: var(--nav-header-height);
     line-height: 14px;
     padding: 10px;
   }

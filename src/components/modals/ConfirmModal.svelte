@@ -7,6 +7,7 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
+  export let actionCanBeUndone: boolean = false;
   export let cancelText: string = 'Cancel';
   export let confirmText: string = 'Yes';
   export let height: number = 150;
@@ -33,7 +34,9 @@
   </ModalHeader>
   <ModalContent>
     <div>{message}</div>
-    <div>This action cannot be undone.</div>
+    {#if !actionCanBeUndone}
+      <div>This action cannot be undone.</div>
+    {/if}
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}>

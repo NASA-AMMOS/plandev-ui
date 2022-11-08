@@ -17,6 +17,9 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     const initialPlan = await effects.getPlan(planId);
 
     if (initialPlan) {
+      if (initialPlan.is_locked) {
+        throw redirect(302, `${base}/plans/${id}/merge`);
+      }
       const initialView = await effects.getView(user.id, url.searchParams);
 
       return {

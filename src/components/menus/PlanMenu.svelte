@@ -35,7 +35,7 @@
 <div class="plan-menu-container">
   {#if plan.parent_plan !== null}
     <div>
-      <a href={`${base}/plans/${plan.parent_plan.id}`} class="link">{plan.parent_plan.name}</a>
+      <a href={`${base}/plans/${plan.parent_plan.id}`} class="link st-typography-medium">{plan.parent_plan.name}</a>
     </div>
     <BranchIcon />
   {/if}
@@ -62,7 +62,7 @@
   </div>
   {#if plan.child_plans.length > 0}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div class="plan-branches" on:click|stopPropagation={showPlanBranches}>
+    <div class="plan-branches st-typography-medium" on:click|stopPropagation={showPlanBranches}>
       {plan.child_plans.length} branch{plan.child_plans.length > 1 ? 'es' : ''}
     </div>
   {/if}
@@ -70,6 +70,7 @@
 
 <style>
   hr.menu-divider {
+    opacity: 0.3;
     width: 90%;
   }
 
@@ -81,12 +82,14 @@
   }
 
   .link {
-    color: var(--st-gray-30);
+    color: var(--st-white);
+    font-size: 14px;
+    opacity: 0.7;
     text-decoration: none;
   }
 
   .link:hover {
-    color: var(--st-gray-white);
+    opacity: 1;
   }
 
   .plan-menu {
@@ -107,11 +110,13 @@
     color: var(--st-white);
     display: flex;
     flex-flow: row;
-    font-weight: 500;
+    font-size: 14px;
+    gap: 4px;
   }
 
   .plan-branches {
     color: var(--st-white);
     cursor: pointer;
+    user-select: none;
   }
 </style>

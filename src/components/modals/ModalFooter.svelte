@@ -17,6 +17,6 @@
   }
 
   .modal-footer > :global(.st-button) {
-    margin-left: 5px;
+    margin-left: 8px;
   }
 </style>

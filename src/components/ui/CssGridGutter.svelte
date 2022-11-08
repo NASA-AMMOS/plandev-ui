@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  export let track: number = 1;
+  export let track: number = 1; // Array index number in the children of CSSGrid
   export let type: 'column' | 'row' = 'column';
 </script>
 

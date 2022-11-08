@@ -441,6 +441,7 @@ const gql = {
         }
         duration
         id
+        is_locked
         model: mission_model {
           activity_types(order_by: { name: asc }) {
             computed_attributes_value_schema
@@ -491,6 +492,17 @@ const gql = {
         name
         revision
         start_time
+      }
+    }
+  `,
+
+  GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: `#graphql
+    query GetPlanMergeNonConflictingActivities($merge_request_id: Int!) {
+      nonConflictingActivities: get_non_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {
+        activity_id,
+        change_type,
+        source,
+        target
       }
     }
   `,
@@ -660,6 +672,78 @@ const gql = {
     }
   `,
 
+  PLAN_MERGE_BEGIN: `#graphql
+    mutation PlanMergeBegin($merge_request_id: Int!, $reviewer_username: String!) {
+      begin_merge(args: { merge_request_id: $merge_request_id, reviewer_username: $reviewer_username } ) {
+        merge_request_id
+      }
+    }
+  `,
+
+  PLAN_MERGE_CANCEL: `#graphql
+    mutation PlanMergeCancel($merge_request_id: Int!) {
+      cancel_merge(args: { merge_request_id: $merge_request_id } ) {
+        merge_request_id
+      }
+    }
+  `,
+
+  PLAN_MERGE_COMMIT: `#graphql
+    mutation PlanMergeCommit($merge_request_id: Int) {
+      commit_merge(args: { merge_request_id: $merge_request_id } ) {
+        merge_request_id
+      }
+    }
+  `,
+
+  PLAN_MERGE_DENY: `#graphql
+    mutation PlanMergeDeny($merge_request_id: Int) {
+      deny_merge(args: { merge_request_id: $merge_request_id } ) {
+        merge_request_id
+      }
+    }
+  `,
+
+  PLAN_MERGE_REQUEST_WITHDRAW: `#graphql
+    mutation PlanMergeRequestWithdraw($merge_request_id: Int!) {
+      withdraw_merge_request(args: { merge_request_id: $merge_request_id } ) {
+        merge_request_id
+      }
+    }
+  `,
+
+  PLAN_MERGE_RESOLVE_CONFLICT: `#graphql
+    mutation PlanMergeResolveConflict($merge_request_id: Int!, $activity_id: Int!, $resolution: resolution_type!) {
+      set_resolution(
+        args: { _merge_request_id: $merge_request_id, _activity_id: $activity_id, _resolution: $resolution }
+      ) {
+        activity_id
+        change_type_source
+        change_type_target
+        resolution
+        merge_base
+        source
+        target
+      }
+    }
+  `,
+
+  PlAN_MERGE_RESOLVE_ALL_CONFLICTS: `#graphql
+    mutation PlanMergeResolveAllConflicts($merge_request_id: Int!, $resolution: resolution_type!) {
+      set_resolution_bulk (
+        args: { _merge_request_id: $merge_request_id, _resolution: $resolution }
+      ) {
+        activity_id
+        change_type_source
+        change_type_target
+        resolution
+        merge_base
+        source
+        target
+      }
+    }
+  `,
+
   SCHEDULE: `#graphql
     query Schedule($specificationId: Int!) {
       schedule(specificationId: $specificationId){
@@ -816,6 +900,20 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: `#graphql
+    subscription SubPlanMergeConflictingActivities($merge_request_id: Int!) {
+      conflictingActivities: get_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {
+        activity_id,
+        change_type_source,
+        change_type_target,
+        merge_base,
+        resolution
+        source,
+        target,
+      }
+    }
+  `,
+
   SUB_PLAN_MERGE_REQUESTS_INCOMING: `#graphql
     subscription SubPlanMergeRequestsIncoming($planId: Int!) {
       merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }) {
@@ -829,6 +927,7 @@ const gql = {
           snapshot_id
         }
         requester_username
+        reviewer_username
         status
       }
     }
@@ -847,6 +946,25 @@ const gql = {
           snapshot_id
         }
         requester_username
+        status
+      }
+    }
+  `,
+
+  SUB_PLAN_MERGE_REQUEST_IN_PROGRESS: `#graphql
+    subscription SubPlanMergeRequestInProgress($planId: Int!) {
+      merge_requests: merge_request(where: { _and: [{ plan_id_receiving_changes: { _eq: $planId } }, { status: { _eq: "in-progress" } }] }, limit: 1 ) {
+        id
+        plan_receiving_changes {
+          id
+          name
+        }
+        plan_snapshot_supplying_changes {
+          name
+          snapshot_id
+        }
+        requester_username
+        reviewer_username
         status
       }
     }

@@ -45,7 +45,7 @@ export const planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequest[]>(
   { planId },
   [],
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
-    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, type: 'incoming' })),
+    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'incoming' })),
 );
 
 export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
@@ -53,7 +53,7 @@ export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
   { planId },
   [],
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
-    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, type: 'outgoing' })),
+    planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'outgoing' })),
 );
 
 export const planRevision = gqlSubscribable<number>(

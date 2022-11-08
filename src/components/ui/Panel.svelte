@@ -20,7 +20,7 @@
 <style>
   .panel {
     display: grid;
-    grid-template-rows: 42px calc(100% - 42px);
+    grid-template-rows: var(--nav-header-height) calc(100% - var(--nav-header-height));
     overflow: hidden;
     width: 100%;
   }
@@ -30,7 +30,7 @@
     border-bottom: 1px solid var(--st-gray-20);
     display: flex;
     gap: 0.5rem;
-    height: 42px;
+    height: var(--nav-header-height);
     justify-content: space-between;
   }
 

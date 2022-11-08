@@ -99,6 +99,75 @@ export function createActivitiesMap(
   return activitiesMap;
 }
 
+/**
+ * Parses a unique string activity id into it's original id and plan id.
+ */
+export function decomposeActivityDirectiveId(id: ActivityUniqueId): {
+  activityId: ActivityDirectiveId;
+  planId: number;
+} {
+  const matches = id.match(/directive_(?<planId>\d+)_(?<activityId>\d+)/i);
+
+  if (matches?.length > 0) {
+    const { groups: { planId, activityId } = {} } = matches;
+
+    return {
+      activityId: parseInt(activityId),
+      planId: parseInt(planId),
+    };
+  }
+
+  throw new Error(`Invalid Activity Directive ID (${id}) provided`);
+}
+
+/**
+ * Converts a PlanMergeActivityDirective into an Activity for use in plan merge review.
+ */
+export function deriveActivityFromMergeActivityDirective(
+  activityDirective: PlanMergeActivityDirective,
+  plan: Plan,
+): Activity {
+  return {
+    arguments: activityDirective.arguments,
+    attributes: null,
+    childUniqueIds: [],
+    created_at: activityDirective.created_at,
+    duration: null,
+    id: activityDirective.id,
+    last_modified_at: activityDirective.last_modified_at,
+    metadata: activityDirective.metadata,
+    name: activityDirective.name,
+    parentUniqueId: null,
+    parent_id: null,
+    plan_id: plan.id,
+    simulated_activity_id: null,
+    source_scheduling_goal_id: activityDirective.source_scheduling_goal_id,
+    start_time_doy: getDoyTimeFromDuration(plan.start_time, activityDirective.start_offset),
+    tags: activityDirective.tags,
+    type: activityDirective.type,
+    unfinished: null,
+    uniqueId: getActivityDirectiveUniqueId(plan.id, activityDirective.id),
+  };
+}
+
+/**
+ * Returns a unique string id for an activity directive.
+ * It is just the regular id prefixed with 'directive_' and the plan id.
+ */
+export function getActivityDirectiveUniqueId(planId: number, activityId: ActivityDirectiveId): ActivityUniqueId {
+  if (planId == null) {
+    throw new Error('Empty plan ID provided');
+  }
+  if (activityId == null) {
+    throw new Error('Empty activity ID provided');
+  }
+
+  return `directive_${planId}_${activityId}`;
+}
+
+/**
+ * Updates activity metadata with a new key/value and removes any empty values.
+ */
 export function getActivityMetadata(
   activityMetadata: ActivityMetadata,
   key: ActivityMetadataKey,
@@ -123,33 +192,4 @@ export function getActivityRootParent(
     return activity;
   }
   return getActivityRootParent(activitiesMap, activity.parentUniqueId);
-}
-
-export function getActivityDirectiveUniqueId(planId: number, activityId: ActivityDirectiveId): ActivityUniqueId {
-  if (planId == null) {
-    throw new Error('Empty plan ID provided');
-  }
-  if (activityId == null) {
-    throw new Error('Empty activity ID provided');
-  }
-
-  return `directive_${planId}_${activityId}`;
-}
-
-export function decomposeActivityDirectiveId(id: ActivityUniqueId): {
-  activityId: ActivityDirectiveId;
-  planId: number;
-} {
-  const matches = id.match(/directive_(?<planId>\d+)_(?<activityId>\d+)/i);
-
-  if (matches?.length > 0) {
-    const { groups: { planId, activityId } = {} } = matches;
-
-    return {
-      activityId: parseInt(activityId),
-      planId: parseInt(planId),
-    };
-  }
-
-  throw new Error(`Invalid Activity Directive ID (${id}) provided`);
 }

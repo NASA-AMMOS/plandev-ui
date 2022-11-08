@@ -20,13 +20,13 @@
   import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
+  import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
   import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import IFramePanel from '../../../components/ui/IFramePanel.svelte';
-  import MergeRequestsStatusBadge from '../../../components/ui/MergeRequestsStatusBadge.svelte';
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
@@ -128,13 +128,13 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<CssGrid class="plan-container" rows="42px auto 36px">
+<CssGrid class="plan-container" rows="var(--nav-header-height) auto 36px">
   <Nav>
     <div slot="title">
       <PlanMenu plan={data.initialPlan} />
     </div>
     <svelte:fragment slot="left">
-      <MergeRequestsStatusBadge />
+      <PlanMergeRequestsStatusButton />
     </svelte:fragment>
     <svelte:fragment slot="right">
       <NavButton

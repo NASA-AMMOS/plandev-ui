@@ -916,6 +916,44 @@ const effects = {
     }
   },
 
+  async getPlanMergeConflictingActivities(merge_request_id: number): Promise<PlanMergeConflictingActivity[]> {
+    try {
+      const query = convertToQuery(gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES);
+      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id });
+      const { conflictingActivities } = data;
+      return conflictingActivities;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
+  async getPlanMergeNonConflictingActivities(merge_request_id: number): Promise<PlanMergeNonConflictingActivity[]> {
+    try {
+      const data = await reqHasura<PlanMergeNonConflictingActivity[]>(gql.GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES, {
+        merge_request_id,
+      });
+      const { nonConflictingActivities } = data;
+      return nonConflictingActivities;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  },
+
+  async getPlanMergeRequestInProgress(planId: number): Promise<PlanMergeRequestSchema | null> {
+    try {
+      const query = convertToQuery(gql.SUB_PLAN_MERGE_REQUEST_IN_PROGRESS);
+      const data = await reqHasura<PlanMergeRequestSchema[]>(query, { planId });
+      const { merge_requests } = data;
+      const [merge_request] = merge_requests; // Query uses 'limit: 1' so merge_requests.length === 1.
+      return merge_request;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
+
   async getPlanRevision(planId: number): Promise<number | null> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_REVISION);
@@ -1193,6 +1231,85 @@ const effects = {
     } catch (e) {
       console.log(e);
       return { message: 'An unexpected error occurred', success: false };
+    }
+  },
+
+  async planMergeBegin(merge_request_id: number, reviewer_username: string): Promise<boolean> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id, reviewer_username });
+      return true;
+    } catch (error) {
+      showFailureToast('Could not begin merge');
+      console.log(error);
+      return false;
+    }
+  },
+
+  async planMergeCancel(merge_request_id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_CANCEL, { merge_request_id });
+      showSuccessToast('Canceled merge');
+      return true;
+    } catch (error) {
+      console.log(error);
+      showFailureToast('Could not cancel merge');
+      return false;
+    }
+  },
+
+  async planMergeCommit(merge_request_id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_COMMIT, { merge_request_id });
+      showSuccessToast('Approved merge changes');
+      return true;
+    } catch (error) {
+      console.log(error);
+      showFailureToast('Unable to approve changes');
+      return false;
+    }
+  },
+
+  async planMergeDeny(merge_request_id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_DENY, { merge_request_id });
+      showSuccessToast('Denied merge changes');
+      return true;
+    } catch (error) {
+      console.log(error);
+      showFailureToast('Unable to deny changes');
+      return false;
+    }
+  },
+
+  async planMergeRequestWithdraw(merge_request_id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_REQUEST_WITHDRAW, { merge_request_id });
+      showSuccessToast('Withdrew plan merge');
+      return true;
+    } catch (error) {
+      showFailureToast('Could not withdraw plan merge');
+      console.log(error);
+      return false;
+    }
+  },
+
+  async planMergeResolveAllConflicts(merge_request_id: number, resolution: PlanMergeResolution): Promise<void> {
+    try {
+      await reqHasura(gql.PlAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution });
+    } catch (e) {
+      console.log(e);
+    }
+  },
+
+  async planMergeResolveConflict(
+    merge_request_id: number,
+    activity_id: ActivityId,
+    resolution: PlanMergeResolution,
+  ): Promise<void> {
+    try {
+      await reqHasura(gql.PLAN_MERGE_RESOLVE_CONFLICT, { activity_id, merge_request_id, resolution });
+    } catch (e) {
+      console.log(e);
     }
   },
 

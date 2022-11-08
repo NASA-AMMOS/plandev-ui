@@ -5,7 +5,7 @@
   import CssGrid from '../../components/ui/CssGrid.svelte';
 </script>
 
-<CssGrid rows="42px calc(100vh - 42px)">
+<CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>
     <span class="sequencing-title" slot="title">Sequencing</span>
   </Nav>

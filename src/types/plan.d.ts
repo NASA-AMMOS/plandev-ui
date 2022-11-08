@@ -4,9 +4,36 @@ type PlanBranchRequestAction = 'merge' | 'pull';
 
 type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' | 'start_time'>;
 
+type PlanMergeActivityOutcome = 'add' | 'delete' | 'modify' | 'none';
+
+type PlanMergeActivityDirective = Omit<ActivityDirective, 'plan_id'> & { snapshot_id: number };
+
+type PlanMergeConflictingActivity = {
+  activity_id: number;
+  change_type_source: PlanMergeActivityOutcome;
+  change_type_target: PlanMergeActivityOutcome;
+  merge_base: PlanMergeActivityDirective;
+  merge_request_id: number;
+  resolution: PlanMergeResolution;
+  source: PlanMergeActivityDirective;
+  target: PlanMergeActivityDirective;
+};
+
+type PlanMergeNonConflictingActivity = {
+  activity_id: number;
+  change_type: PlanMergeActivityOutcome;
+  merge_request_id: number;
+  source: PlanMergeActivityDirective;
+  target: PlanMergeActivityDirective;
+};
+
 type PlanMergeRequestType = 'incoming' | 'outgoing';
 
-type PlanMergeRequest = PlanMergeRequestSchema & { type: PlanMergeRequestType };
+type PlanMergeRequestTypeFilter = PlanMergeRequestType | 'all';
+
+type PlanMergeRequest = PlanMergeRequestSchema & { pending: boolean; type: PlanMergeRequestType };
+
+type PlanMergeRequestStatus = 'accepted' | 'in-progress' | 'pending' | 'rejected' | 'withdrawn';
 
 type PlanMergeRequestSchema = {
   id: number;
@@ -19,13 +46,17 @@ type PlanMergeRequestSchema = {
     snapshot_id: number;
   };
   requester_username: string;
-  status: 'accepted' | 'in-progress' | 'pending' | 'rejected' | 'withdrawn';
+  reviewer_username: string;
+  status: PlanMergeRequestStatus;
 };
+
+type PlanMergeResolution = 'none' | 'source' | 'target';
 
 type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
   duration: string;
   id: number;
+  is_locked: boolean;
   model: Model;
   model_id: number;
   name: string;

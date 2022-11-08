@@ -5,7 +5,9 @@
   import { classNames } from '../../utilities/generic';
 
   export let layout: 'inline' | 'stacked' | null = 'stacked';
+  export { className as class };
 
+  let className: string = '';
   let container: HTMLDivElement;
   let containerObserver: MutationObserver;
   let input: HTMLInputElement | null;
@@ -22,6 +24,7 @@
   }
 
   $: inputClasses = classNames('input', {
+    [className]: !!className,
     'input-inline': layout === 'inline',
     'input-stacked': layout === 'stacked',
   });

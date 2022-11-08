@@ -18,7 +18,7 @@ type ActivityTypesMap = Record<string, ActivityType>;
 
 type Activity = {
   arguments: ArgumentsMap;
-  attributes: ActivitySimulatedAttributes | null;
+  attributes: SpanAttributes | null;
   childUniqueIds: ActivityUniqueId[];
   created_at: string;
   duration: string | null;

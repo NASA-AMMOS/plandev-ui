@@ -5,7 +5,7 @@
 <div class="nav">
   <div class="left">
     <AppMenu />
-    <div class="divider">|</div>
+    <div class="divider" />
     <div class="title st-typography-medium">
       <slot name="title" />
     </div>
@@ -17,25 +17,30 @@
 </div>
 
 <style>
+  :root {
+    --nav-header-height: 48px;
+  }
   .nav {
     align-items: center;
     background: var(--st-primary);
     color: var(--st-primary-background-color);
     display: flex;
-    font-size: 1rem;
-    height: 42px;
+    height: var(--nav-header-height);
     padding: 1rem;
     z-index: 2;
   }
 
   .divider {
-    color: var(--st-gray-50);
-    font-size: 12px;
+    background: var(--st-white);
+    height: 16px;
+    opacity: 0.2;
+    width: 1px;
   }
 
   .title {
     align-items: center;
     color: var(--st-gray-20);
+    font-size: 14px;
   }
 
   .left {

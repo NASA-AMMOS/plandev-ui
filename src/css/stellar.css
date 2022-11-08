@@ -1,6 +1,7 @@
 /* Aerie Stellar Custom Classes and Overrides. */
 
 :root {
+  --st-badge-padding: 0px 5px;
   --st-primary-100: #0d1667;
   --st-primary-90: #1a237e;
   --st-primary-80: #283593;

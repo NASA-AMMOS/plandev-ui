@@ -89,13 +89,14 @@
       <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
         <button
           class="st-button icon"
-          disabled={subFormParameters?.length === 0}
+          disabled={subFormParameters?.length === 0 || disabled}
           on:click|stopPropagation={valueRemove}
           use:tooltip={{ content: 'Remove Value', placement: 'left' }}
         >
           <DashIcon />
         </button>
         <button
+          {disabled}
           class="st-button icon"
           on:click|stopPropagation={valueAdd}
           use:tooltip={{ content: 'Add Value', placement: 'left' }}

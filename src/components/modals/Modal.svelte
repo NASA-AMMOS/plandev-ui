@@ -1,18 +1,16 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  export let height = 350;
-  export let width = 400;
+  export let height: number | string = 350;
+  export let width: number | string = 400;
+
+  $: heightStyle = typeof height === 'number' ? `${height}px` : height;
+  $: widthStyle = typeof width === 'number' ? `${width}px` : width;
 </script>
 
 <div class="modal-container">
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
-    class="modal st-typography-body"
-    style:height={`${height}px`}
-    style:width={`${width}px`}
-    on:click|stopPropagation
-  >
+  <div class="modal st-typography-body" style:height={heightStyle} style:width={widthStyle} on:click|stopPropagation>
     <slot />
   </div>
 </div>
