@@ -35,8 +35,8 @@ const gql = {
   `,
 
   CREATE_CONSTRAINT: `#graphql
-    mutation CreateConstraint($constraint: condition_insert_input!) {
-      createConstraint: insert_condition_one(object: $constraint) {
+    mutation CreateConstraint($constraint: constraint_insert_input!) {
+      createConstraint: insert_constraint_one(object: $constraint) {
         id
       }
     }
@@ -191,7 +191,7 @@ const gql = {
 
   DELETE_CONSTRAINT: `#graphql
     mutation DeleteConstraint($id: Int!) {
-      deleteConstraint: delete_condition_by_pk(id: $id) {
+      deleteConstraint: delete_constraint_by_pk(id: $id) {
         id
       }
     }
@@ -327,7 +327,7 @@ const gql = {
 
   GET_CONSTRAINT: `#graphql
     query GetConstraint($id: Int!) {
-      constraint: condition_by_pk(id: $id) {
+      constraint: constraint_by_pk(id: $id) {
         definition
         description
         id
@@ -730,7 +730,7 @@ const gql = {
 
   SUB_CONSTRAINTS: `#graphql
     subscription SubConstraints($modelId: Int!, $planId: Int!) {
-      constraints: condition(where: {
+      constraints: constraint(where: {
         _or: [
           { model_id: { _eq: $modelId } },
           { plan_id: { _eq: $planId } }
@@ -749,7 +749,7 @@ const gql = {
 
   SUB_CONSTRAINTS_ALL: `#graphql
     subscription SubConstraintsAll {
-      constraints: condition(order_by: { name: asc }) {
+      constraints: constraint(order_by: { name: asc }) {
         definition
         description
         id
@@ -1035,8 +1035,8 @@ const gql = {
   `,
 
   UPDATE_CONSTRAINT: `#graphql
-    mutation UpdateConstraint($id: Int!, $constraint: condition_set_input!) {
-      updateConstraint: update_condition_by_pk(
+    mutation UpdateConstraint($id: Int!, $constraint: constraint_set_input!) {
+      updateConstraint: update_constraint_by_pk(
         pk_columns: { id: $id }, _set: $constraint
       ) {
         id
