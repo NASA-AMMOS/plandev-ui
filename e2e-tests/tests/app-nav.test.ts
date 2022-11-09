@@ -106,6 +106,18 @@ test.describe.serial('App Nav', () => {
     await playgroundPage.close();
   });
 
+  test(`Clicking on the app menu 'Documentation' option should open a new tab to the Aerie documentation`, async () => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'attached' });
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    const [documentationPage] = await Promise.all([
+      page.waitForEvent('popup'),
+      appNav.appMenuItemDocumentation.click(),
+    ]);
+    expect(await documentationPage.title()).toContain('Aerie Documentation');
+    await documentationPage.close();
+  });
+
   test(`Clicking on the app menu 'Logout' option should route to the plans page (auth disabled)`, async ({
     baseURL,
   }) => {

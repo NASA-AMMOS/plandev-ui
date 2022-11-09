@@ -16,6 +16,7 @@
   import InfoCircleIcon from 'bootstrap-icons/icons/info-circle.svg?component';
   import JournalCodeIcon from 'bootstrap-icons/icons/journal-code.svg?component';
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
+  import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
   import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
@@ -80,6 +81,10 @@
     <MenuItem on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/playground`, '_newtab')}>
       <GraphQLIcon />
       GraphQL Playground
+    </MenuItem>
+    <MenuItem on:click={() => window.open('https://nasa-ammos.github.io/aerie/stable/', '_newtab')}>
+      <JournalsIcon />
+      Documentation
     </MenuItem>
     <MenuItem on:click={() => logout()}>
       <BoxArrowRightIcon />

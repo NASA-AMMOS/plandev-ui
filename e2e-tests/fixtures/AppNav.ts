@@ -7,6 +7,7 @@ export class AppNav {
   appMenuButton: Locator;
   appMenuItemAbout: Locator;
   appMenuItemDictionaries: Locator;
+  appMenuItemDocumentation: Locator;
   appMenuItemExpansion: Locator;
   appMenuItemGateway: Locator;
   appMenuItemLogout: Locator;
@@ -31,6 +32,9 @@ export class AppNav {
     this.appMenuButton = page.locator('.app-menu');
     this.appMenuItemAbout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("About")`);
     this.appMenuItemDictionaries = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Dictionaries")`);
+    this.appMenuItemDocumentation = page.locator(
+      `.app-menu > .menu > .menu-slot > .menu-item:has-text("Documentation")`,
+    );
     this.appMenuItemExpansion = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Expansion")`);
     this.appMenuItemGateway = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Gateway")`);
     this.appMenuItemLogout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Logout")`);
