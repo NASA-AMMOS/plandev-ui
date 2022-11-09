@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { Selection } from 'd3-selection';
   import { axisLeft as d3AxisLeft } from 'd3-axis';
   import { select } from 'd3-selection';
   import { getYScale } from '../../utilities/timeline';
@@ -8,10 +9,43 @@
   export let drawHeight: number = 0;
   export let yAxes: Axis[] = [];
 
+  const MAX_ITERATIONS = 5;
+
   let g: SVGGElement;
 
   $: if (drawHeight && g && yAxes) {
     draw();
+  }
+
+  function fitTextToWidth(
+    textSelection: Selection<SVGTextElement, unknown, null, undefined>,
+    text: string,
+    width: number,
+  ) {
+    textSelection.text(text);
+    let textLength = textSelection.node().getComputedTextLength();
+
+    // If text is longer than total allowed width,
+    // split the string in half and reduce the character length of each half by the ratio
+    // of how much longer the string is than the width.
+    // Iterate this process until "[start]...[end]" fits within the width.
+    // (One pass is not necessarily good enough, due to variance in character widths,
+    // but this should take at most 2 or 3 iterations)
+    if (textLength > width) {
+      let start = text.substring(0, text.length * 0.5);
+      let end = text.substring(text.length * 0.5);
+      let i = 0;
+      let reduction;
+
+      while (textLength > width && i < MAX_ITERATIONS) {
+        i++;
+        reduction = 1 - width / textLength;
+        start = start.substring(0, start.length * (1 - reduction));
+        end = end.substring(Math.ceil(end.length * reduction));
+        textSelection.text(start + '...' + end);
+        textLength = textSelection.node().getComputedTextLength();
+      }
+    }
   }
 
   function draw() {
@@ -51,7 +85,7 @@
         const axisLabelMargin = 20;
         const y = -(axisWidth + axisLabelMargin);
 
-        axisG
+        const text = axisG
           .append('text')
           .attr('transform', 'rotate(-90)')
           .attr('y', y)
@@ -60,9 +94,9 @@
           .attr('fill', labelColor)
           .attr('font-family', labelFontFace)
           .attr('font-size', `${labelFontSize}px`)
-          .style('text-anchor', 'middle')
-          .text(labelText);
+          .style('text-anchor', 'middle');
 
+        fitTextToWidth(text, labelText, drawHeight);
         totalWidth += axisGElement.getBoundingClientRect().width;
       }
     }
