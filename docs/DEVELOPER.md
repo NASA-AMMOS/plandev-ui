@@ -69,7 +69,7 @@ Before you can run aerie-ui you must install and configure the following product
   ./gradlew assemble
 
   # Notice we exclude the aerie_ui since we run it locally (i.e. not in Docker) for development.
-  docker-compose up --build --detach aerie_commanding aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 hasura postgres
+  docker-compose up --build --detach aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres
   ```
 
   To stop and clean the Aerie services do:
@@ -77,7 +77,7 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   cd aerie
   docker-compose down
-  docker rmi aerie_commanding aerie_merlin aerie_scheduler aerie-aerie_merlin_worker_1 aerie-aerie_merlin_worker_2 aerie-aerie_scheduler_worker_1 aerie-aerie_scheduler_worker_2
+  docker rmi aerie_merlin aerie_scheduler aerie-aerie_merlin_worker_1 aerie-aerie_merlin_worker_2 aerie-aerie_scheduler_worker_1 aerie-aerie_scheduler_worker_2 aerie_sequencing
   docker volume prune --force
   ./gradlew clean
   ```
