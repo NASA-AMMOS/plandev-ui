@@ -742,6 +742,7 @@
   .merge-review-button-container {
     background: var(--st-gray-10);
     border-bottom: 1px solid var(--st-gray-20);
+    display: flex;
     padding: 8px;
     width: 100%;
   }

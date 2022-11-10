@@ -1239,7 +1239,7 @@ const effects = {
       await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id, reviewer_username });
       return true;
     } catch (error) {
-      showFailureToast('Could not begin merge');
+      showFailureToast('Begin Merge Failed');
       console.log(error);
       return false;
     }
@@ -1248,11 +1248,11 @@ const effects = {
   async planMergeCancel(merge_request_id: number): Promise<boolean> {
     try {
       await reqHasura(gql.PLAN_MERGE_CANCEL, { merge_request_id });
-      showSuccessToast('Canceled merge');
+      showSuccessToast('Canceled Merge Request');
       return true;
     } catch (error) {
       console.log(error);
-      showFailureToast('Could not cancel merge');
+      showFailureToast('Cancel Merge Request Failed');
       return false;
     }
   },
@@ -1260,11 +1260,11 @@ const effects = {
   async planMergeCommit(merge_request_id: number): Promise<boolean> {
     try {
       await reqHasura(gql.PLAN_MERGE_COMMIT, { merge_request_id });
-      showSuccessToast('Approved merge changes');
+      showSuccessToast('Approved Merge Request Changes');
       return true;
     } catch (error) {
       console.log(error);
-      showFailureToast('Unable to approve changes');
+      showFailureToast('Approve Merge Request Changes Failed');
       return false;
     }
   },
@@ -1272,11 +1272,11 @@ const effects = {
   async planMergeDeny(merge_request_id: number): Promise<boolean> {
     try {
       await reqHasura(gql.PLAN_MERGE_DENY, { merge_request_id });
-      showSuccessToast('Denied merge changes');
+      showSuccessToast('Denied Merge Request Changes');
       return true;
     } catch (error) {
       console.log(error);
-      showFailureToast('Unable to deny changes');
+      showFailureToast('Deny Merge Request Changes Failed');
       return false;
     }
   },
@@ -1284,10 +1284,10 @@ const effects = {
   async planMergeRequestWithdraw(merge_request_id: number): Promise<boolean> {
     try {
       await reqHasura(gql.PLAN_MERGE_REQUEST_WITHDRAW, { merge_request_id });
-      showSuccessToast('Withdrew plan merge');
+      showSuccessToast('Withdrew Merge Request');
       return true;
     } catch (error) {
-      showFailureToast('Could not withdraw plan merge');
+      showFailureToast('Withdraw Merge Request Failed');
       console.log(error);
       return false;
     }
@@ -1297,6 +1297,7 @@ const effects = {
     try {
       await reqHasura(gql.PlAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution });
     } catch (e) {
+      showFailureToast('Resolve All Merge Request Conflicts Failed');
       console.log(e);
     }
   },
@@ -1309,6 +1310,7 @@ const effects = {
     try {
       await reqHasura(gql.PLAN_MERGE_RESOLVE_CONFLICT, { activity_id, merge_request_id, resolution });
     } catch (e) {
+      showFailureToast('Resolve Merge Request Conflict Failed');
       console.log(e);
     }
   },
