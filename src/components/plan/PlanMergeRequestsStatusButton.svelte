@@ -11,16 +11,15 @@
   $: outgoingPendingMergeRequets = $planMergeRequestsOutgoing.filter(request => request.status === 'pending');
   $: incomingPendingMergeRequetCount = incomingPendingMergeRequets.length;
   $: outgoingPendingMergeRequetCount = outgoingPendingMergeRequets.length;
+  $: label = `${incomingPendingMergeRequetCount} incoming, ${outgoingPendingMergeRequetCount} outgoing`;
 </script>
 
 {#if incomingPendingMergeRequetCount > 0 || outgoingPendingMergeRequetCount > 0}
   <button
+    aria-label={label}
     class="plan-merge-requests-status-button st-button tertiary st-typography-medium"
     on:click|stopPropagation={() => showPlanMergeRequestsModal()}
-    use:tooltip={{
-      content: `${incomingPendingMergeRequetCount} incoming, ${outgoingPendingMergeRequetCount} outgoing`,
-      placement: 'top',
-    }}
+    use:tooltip={{ content: label, placement: 'top' }}
   >
     <span class="status-icon" class:active={incomingPendingMergeRequetCount > 0}>
       <PlanWithDownArrowIcon />

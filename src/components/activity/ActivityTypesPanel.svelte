@@ -60,6 +60,7 @@
           {activityType.name}
           <span slot="suffix">
             <button
+              aria-label="CreateActivity-{activityType.name}"
               class="st-button icon"
               on:click={() => createActivityDirectiveAtPlanStart(activityType)}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
