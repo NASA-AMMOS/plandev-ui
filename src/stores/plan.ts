@@ -40,6 +40,13 @@ export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 
+export const planLocked = gqlSubscribable<boolean>(
+  gql.SUB_PLAN_LOCKED,
+  { planId },
+  false,
+  ({ is_locked }) => is_locked,
+);
+
 export const planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequest[]>(
   gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
   { planId },

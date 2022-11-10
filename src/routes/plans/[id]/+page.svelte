@@ -37,6 +37,7 @@
     maxTimeRange,
     plan,
     planEndTimeMs,
+    planLocked,
     planStartTimeMs,
     resetPlanStores,
     viewTimeRange,
@@ -53,6 +54,7 @@
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { setQueryParam } from '../../../utilities/generic';
+  import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
 
@@ -74,6 +76,8 @@
     ViewsPanel,
   };
 
+  let planHasBeenLocked = false;
+
   $: if (data.initialPlan) {
     $modelParametersMap = data.initialPlan.model.parameters.parameters;
     $plan = data.initialPlan;
@@ -90,6 +94,14 @@
   }
 
   $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $simulationSpans);
+
+  $: if ($planLocked) {
+    planHasBeenLocked = true;
+    showPlanLockedModal($plan.id);
+  } else if (planHasBeenLocked) {
+    closeActiveModal();
+    planHasBeenLocked = false;
+  }
 
   onMount(() => {
     if ($view) {

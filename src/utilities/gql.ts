@@ -900,6 +900,14 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_LOCKED: `#graphql
+    subscription SubPlanLocked($planId: Int!) {
+      planLocked: plan_by_pk(id: $planId) {
+        is_locked
+      }
+    }
+  `,
+
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: `#graphql
     subscription SubPlanMergeConflictingActivities($merge_request_id: Int!) {
       conflictingActivities: get_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {

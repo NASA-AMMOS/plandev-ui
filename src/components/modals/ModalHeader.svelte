@@ -2,14 +2,18 @@
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
   import { createEventDispatcher } from 'svelte';
 
+  export let showClose: boolean = true;
+
   const dispatch = createEventDispatcher();
 </script>
 
 <div class="modal-header st-typography-header">
   <slot />
-  <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
-    <XIcon />
-  </button>
+  {#if showClose}
+    <button class="st-button icon fs-6" on:click|stopPropagation={() => dispatch('close')}>
+      <XIcon />
+    </button>
+  {/if}
 </div>
 
 <style>
