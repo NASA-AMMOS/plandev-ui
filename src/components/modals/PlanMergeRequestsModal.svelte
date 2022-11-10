@@ -29,8 +29,8 @@
   let showRejected = true;
   let showWithdrawn = false;
 
-  $: incomingMergeRequestCount = $planMergeRequestsIncoming.length;
-  $: outgoingMergeRequestCount = $planMergeRequestsOutgoing.length;
+  $: incomingMergeRequestCount = getActiveRequestCount($planMergeRequestsIncoming);
+  $: outgoingMergeRequestCount = getActiveRequestCount($planMergeRequestsOutgoing);
 
   $: selectedFilterClass = (filter: PlanMergeRequestTypeFilter) =>
     classNames('st-typography-medium', {
@@ -84,6 +84,19 @@
 
     planMergeRequest.pending = false;
     filteredPlanMergeRequests = [...filteredPlanMergeRequests];
+  }
+
+  function getActiveRequestCount(requests: PlanMergeRequest[]): number {
+    const activeRequestTypes: Record<PlanMergeRequestStatus, boolean> = {
+      accepted: false,
+      'in-progress': true,
+      pending: true,
+      rejected: false,
+      withdrawn: false,
+    };
+    return requests.filter(request => {
+      return activeRequestTypes[request.status];
+    }).length;
   }
 </script>
 
