@@ -3,9 +3,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
-  import PlanWithDownArrow from '@nasa-jpl/stellar/icons/plan_with_down_arrow.svg?component';
+  import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
+  import PlanWithUpArrow from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
   import { activityMetadataDefinitions } from '../../stores/activities';
   import { activityTypesMap } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
@@ -285,14 +285,14 @@
         <div class="merge-review-branch-metadata">
           <div class="st-typography-medium">Current Branch (Target)</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
-            <BranchIcon />
+            <MergeIcon />
             {initialMergeRequest.plan_receiving_changes.name}
           </div>
         </div>
         <div class="merge-review-branch-metadata">
           <div class="st-typography-medium">Source Branch</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
-            <PlanWithDownArrow />
+            <PlanWithUpArrow />
             {initialMergeRequest.plan_snapshot_supplying_changes.name}
           </div>
         </div>
@@ -434,7 +434,7 @@
       <div class="merge-review-comparison-target">
         <div class="merge-review-subheader">
           <span style="gap: 8px">
-            <PlanWithDownArrow />
+            <PlanWithUpArrow />
             <span class="st-typography-medium">{initialMergeRequest.plan_snapshot_supplying_changes.name}</span>
           </span>
           <span class="st-chip st-typography-medium">Source</span>
@@ -496,7 +496,7 @@
       <div class="merge-review-comparison-request">
         <div class="merge-review-subheader">
           <span style="gap: 8px">
-            <BranchIcon />
+            <MergeIcon />
             <span class="st-typography-medium">{initialMergeRequest.plan_receiving_changes.name}</span>
           </span>
           <span class="st-chip st-typography-medium">Current Branch (Target)</span>
