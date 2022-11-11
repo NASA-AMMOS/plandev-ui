@@ -3,6 +3,7 @@ import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
+import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
@@ -99,7 +100,7 @@ export async function showConfirmModal(
 }
 
 /**
- * Shows a ConfirmModal component with the supplied arguments.
+ * Shows a PlanLockedModal component with the supplied arguments.
  */
 export async function showPlanLockedModal(planId: number): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -116,6 +117,35 @@ export async function showPlanLockedModal(planId: number): Promise<ModalElementV
       target.setAttribute('data-dismissible', 'false');
 
       planLockedModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        target.removeAttribute('data-dismissible');
+      });
+    }
+  });
+}
+
+/**
+ * Shows a PlanLockedModal component with the supplied arguments.
+ */
+export async function showMergeReviewEndedModal(
+  planId: number,
+  status: PlanMergeRequestStatus,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const mergeReviewEndedModal = new MergeReviewEndedModal({
+        props: { planId, status },
+        target,
+      });
+      target.resolve = resolve;
+
+      // Do not allow users to dismiss this modal
+      target.setAttribute('data-dismissible', 'false');
+
+      mergeReviewEndedModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
         target.removeAttribute('data-dismissible');

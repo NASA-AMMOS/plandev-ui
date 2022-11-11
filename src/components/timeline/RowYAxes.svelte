@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { Selection } from 'd3-selection';
   import { axisLeft as d3AxisLeft } from 'd3-axis';
+  import type { Selection } from 'd3-selection';
   import { select } from 'd3-selection';
   import { getYScale } from '../../utilities/timeline';
 
@@ -35,7 +35,7 @@
       let start = text.substring(0, text.length * 0.5);
       let end = text.substring(text.length * 0.5);
       let i = 0;
-      let reduction;
+      let reduction: number;
 
       while (textLength > width && i < MAX_ITERATIONS) {
         i++;

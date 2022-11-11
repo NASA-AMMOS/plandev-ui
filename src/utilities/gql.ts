@@ -978,6 +978,14 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_MERGE_REQUEST_STATUS: `#graphql
+    subscription SubPlanMergeRequestStatus($mergeRequestId: Int!) {
+      merge_request: merge_request_by_pk(id: $mergeRequestId) {
+        status
+      }
+    }
+  `,
+
   SUB_PLAN_REVISION: `#graphql
     subscription SubPlanRevision($planId: Int!) {
       plan: plan_by_pk(id: $planId) {

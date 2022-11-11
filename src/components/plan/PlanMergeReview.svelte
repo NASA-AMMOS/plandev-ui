@@ -13,6 +13,7 @@
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
+  import { showMergeReviewEndedModal } from '../../utilities/modal';
   import { tooltip } from '../../utilities/tooltip';
   import ActivityForm from '../activity/ActivityForm.svelte';
   import Nav from '../app/Nav.svelte';
@@ -30,6 +31,14 @@
     { merge_request_id: initialMergeRequest.id },
     initialConflictingActivities,
   );
+  const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
+    gql.SUB_PLAN_MERGE_REQUEST_STATUS,
+    {
+      mergeRequestId: initialMergeRequest.id,
+    },
+    initialMergeRequest.status,
+    ({ status }) => status,
+  );
 
   let additions: PlanMergeNonConflictingActivity[] = [];
   let computedSourceActivity: Activity | null;
@@ -37,6 +46,9 @@
   let conflicts: PlanMergeConflictingActivity[] = [];
   let deletions: PlanMergeNonConflictingActivity[] = [];
   let keysWithChanges: string[] = [];
+  let mergeComparisonSourceDiv: HTMLElement | null = null;
+  let mergeComparisonTargetDiv: HTMLElement | null = null;
+  let mergeComparisonScrollOrigin: 'source' | 'target' | null = null;
   let modifications: PlanMergeNonConflictingActivity[] = [];
   let selectedActivityId: number | null;
   let selectedConflictingActivity: PlanMergeConflictingActivity | null;
@@ -44,10 +56,7 @@
   let selectedMergeType: 'conflict' | 'add' | 'modify' | 'delete' | 'none' | null;
   let selectedNonConflictingActivity: PlanMergeNonConflictingActivity | null;
   let unresolvedConflictsCount: number = 0;
-
-  let mergeComparisonSourceDiv: HTMLElement | null = null;
-  let mergeComparisonTargetDiv: HTMLElement | null = null;
-  let mergeComparisonScrollOrigin: 'source' | 'target' | null = null;
+  let userInitiatedMergeRequestResolution: boolean = false;
 
   $: if (initialNonConflictingActivities) {
     // Updated selectedNonConflictingActivity with the refeshed version if needed
@@ -183,9 +192,14 @@
     keysWithChanges = [];
   }
 
+  $: if ($mergeRequestStatus !== 'in-progress' && !userInitiatedMergeRequestResolution) {
+    showMergeReviewEndedModal(initialPlan.id, $mergeRequestStatus);
+  }
+
   async function onApproveChanges() {
     const success = await effects.planMergeCommit(initialMergeRequest.id);
     if (success) {
+      userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
     }
   }
@@ -193,6 +207,7 @@
   async function onDenyChanges() {
     const success = await effects.planMergeDeny(initialMergeRequest.id);
     if (success) {
+      userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
     }
   }
@@ -200,6 +215,7 @@
   async function onCancel() {
     const success = await effects.planMergeCancel(initialMergeRequest.id);
     if (success) {
+      userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
     }
   }
