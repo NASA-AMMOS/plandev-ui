@@ -924,7 +924,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUESTS_INCOMING: `#graphql
     subscription SubPlanMergeRequestsIncoming($planId: Int!) {
-      merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }) {
+      merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }, order_by: { id: desc }) {
         id
         plan_receiving_changes {
           id
@@ -943,7 +943,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUESTS_OUTGOING: `#graphql
     subscription SubPlanMergeRequestsOutgoing($planId: Int!) {
-      merge_request(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }) {
+      merge_request(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }, order_by: { id: desc }) {
         id
         plan_receiving_changes {
           id
