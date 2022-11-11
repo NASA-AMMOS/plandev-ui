@@ -33,8 +33,10 @@ export class Plan {
   scheduleButton: Locator;
   schedulingGoalDifferenceBadge: Locator;
   schedulingGoalEnabledCheckbox: Locator;
+  schedulingGoalExpand: Locator;
   schedulingGoalListItemSelector: string;
   schedulingGoalNewButton: Locator;
+  schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
 
   constructor(
@@ -177,6 +179,8 @@ export class Plan {
     this.schedulingGoalEnabledCheckbox = page.locator(
       `.scheduling-goal:has-text("${this.schedulingGoals.goalName}") >> input[type="checkbox"]`,
     );
+    this.schedulingGoalExpand = page.locator('span[aria-label="scheduling-goal-expand"]');
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
+    this.schedulingSatisfiedActivity = page.locator('li > .satisfied-activity');
   }
 }

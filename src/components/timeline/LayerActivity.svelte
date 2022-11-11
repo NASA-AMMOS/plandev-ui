@@ -7,9 +7,8 @@
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
-  import { decomposeActivityDirectiveId } from '../../utilities/activities';
+  import { decomposeActivityDirectiveId, sortActivities } from '../../utilities/activities';
   import effects from '../../utilities/effects';
-  import { compare } from '../../utilities/generic';
   import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
 
@@ -453,15 +452,6 @@
     const textWidth = textMetrics.width;
     const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
     return { labelText, textHeight, textMetrics, textWidth };
-  }
-
-  /**
-   * Sort function to sort activities in start time ascending order.
-   */
-  function sortActivities(a: Activity, b: Activity): number {
-    const aStartTime = getUnixEpochTime(a.start_time_doy);
-    const bStartTime = getUnixEpochTime(b.start_time_doy);
-    return compare(aStartTime, bStartTime);
   }
 </script>
 

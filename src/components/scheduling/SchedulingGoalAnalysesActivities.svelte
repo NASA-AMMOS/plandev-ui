@@ -6,16 +6,27 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import { activitiesMap, selectedActivityId } from '../../stores/activities';
-  import { getActivityDirectiveUniqueId } from '../../utilities/activities';
+  import { planId } from '../../stores/plan';
+  import { getActivityDirectiveUniqueId, sortActivities } from '../../utilities/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
   let analysis: SchedulingGoalAnalysis | null = null;
   let expanded = true;
+  let sasfyingActivities: Activity[] = [];
 
-  $: {
-    analysis = analyses[0] || null;
-  }
+  $: analysis = analyses[0] || null;
+  $: sasfyingActivities = analysis
+    ? analysis.satisfying_activities.reduce((sasfyingActivities: Activity[], { activity_id }) => {
+        const uniqueActivityId = getActivityDirectiveUniqueId($planId, activity_id);
+        const activity = $activitiesMap[uniqueActivityId];
+        if (activity) {
+          sasfyingActivities.push(activity);
+        }
+        return sasfyingActivities;
+      }, [])
+    : [];
+  $: sortedSatisfyingActivities = sasfyingActivities.sort(sortActivities);
 </script>
 
 <div class="scheduling-goal-analysis-activities">
@@ -36,28 +47,19 @@
 {#if expanded}
   <ul>
     {#if analysis}
-      {#if analysis.satisfying_activities.length}
-        {#each analysis.satisfying_activities as activity}
-          {#if $activitiesMap[activity.activity_id]}
-            <li>
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
-              <div
-                class="satisfied-activity st-typography-body"
-                class:selected={$selectedActivityId ===
-                  getActivityDirectiveUniqueId($activitiesMap[activity.activity_id].plan_id, activity.activity_id)}
-                on:click={() =>
-                  ($selectedActivityId = getActivityDirectiveUniqueId(
-                    $activitiesMap[activity.activity_id].plan_id,
-                    activity.activity_id,
-                  ))}
-              >
-                <ActivityIcon />
-                {$activitiesMap[
-                  getActivityDirectiveUniqueId($activitiesMap[activity.activity_id].plan_id, activity.activity_id)
-                ].type}
-              </div>
-            </li>
-          {/if}
+      {#if sortedSatisfyingActivities.length}
+        {#each sortedSatisfyingActivities as activity}
+          <li>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+              class="satisfied-activity st-typography-body"
+              class:selected={$selectedActivityId === activity.uniqueId}
+              on:click={() => ($selectedActivityId = activity.uniqueId)}
+            >
+              <ActivityIcon />
+              {activity.name}
+            </div>
+          </li>
         {/each}
       {:else}
         <li class="st-typography-label">No Satisfied Activities</li>

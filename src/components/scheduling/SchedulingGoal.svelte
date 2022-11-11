@@ -56,7 +56,7 @@
 <div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
   <div class="left st-typography-body" class:disabled={!enabled}>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span on:click={() => (expanded = !expanded)}>
+    <span aria-label="scheduling-goal-expand" on:click={() => (expanded = !expanded)}>
       {#if !expanded}
         <CaretRightFillIcon />
       {:else}

@@ -1,6 +1,6 @@
 import { omitBy } from 'lodash-es';
-import { isEmpty } from './generic';
-import { getDoyTimeFromDuration } from './time';
+import { compare, isEmpty } from './generic';
+import { getDoyTimeFromDuration, getUnixEpochTime } from './time';
 
 /**
  * Creates a map of activities from directives and spans.
@@ -192,4 +192,13 @@ export function getActivityRootParent(
     return activity;
   }
   return getActivityRootParent(activitiesMap, activity.parentUniqueId);
+}
+
+/**
+ * Sort function to sort activities in start time ascending order.
+ */
+export function sortActivities(a: Activity, b: Activity): number {
+  const aStartTime = getUnixEpochTime(a.start_time_doy);
+  const bStartTime = getUnixEpochTime(b.start_time_doy);
+  return compare(aStartTime, bStartTime);
 }
