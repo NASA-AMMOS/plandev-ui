@@ -273,7 +273,10 @@
     if (schema) {
       const parametersMap: ParametersMap = { Value: { order: 0, schema } };
       const argumentsMap: ArgumentsMap = computedAttributes ? { Value: computedAttributes } : { Value: {} };
-      formParametersComputedAttributes = getFormParameters(parametersMap, argumentsMap, []);
+      formParametersComputedAttributes = getFormParameters(parametersMap, argumentsMap, []).map(formParameter => ({
+        ...formParameter,
+        valueSource: 'none',
+      }));
     }
   }
 
