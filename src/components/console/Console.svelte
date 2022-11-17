@@ -4,20 +4,55 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronUpIcon from '@nasa-jpl/stellar/icons/chevron_up.svg?component';
   import Tabs from '../ui/Tabs/Tabs.svelte';
+  import ConsoleDragHandle from './ConsoleDragHandle.svelte';
 
+  const consoleHeaderHeight: number = 36;
+
+  let consoleHeight: number = 0;
+  let consoleHeightString: string;
+  let consolePositionString: string;
   let isOpen: boolean = false;
+  let previousConsoleHeight: number = 300;
+
+  $: {
+    consoleHeightString = `${consoleHeight + consoleHeaderHeight}px`;
+    consolePositionString = `${-consoleHeight}px`;
+  }
 
   function onSelectTab() {
-    isOpen = true;
+    toggleConsole(true);
   }
 
   function onToggle() {
-    isOpen = !isOpen;
+    toggleConsole(!isOpen);
+  }
+
+  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number }>) {
+    consoleHeight = event.detail.newHeight;
+  }
+
+  function toggleConsole(updatedOpenState: boolean) {
+    if (!updatedOpenState) {
+      previousConsoleHeight = consoleHeight;
+      consoleHeight = 0;
+    } else if (!isOpen) {
+      consoleHeight = previousConsoleHeight;
+    }
+
+    isOpen = updatedOpenState;
   }
 </script>
 
 <div class="console-container">
-  <div class="console-expand-container" class:expanded={isOpen}>
+  <div
+    class="console-expand-container"
+    class:expanded={isOpen}
+    style:height={consoleHeightString}
+    style:top={consolePositionString}
+  >
+    {#if isOpen}
+      <ConsoleDragHandle maxHeight="75%" rowHeight={consoleHeight} on:updateRowHeight={onUpdateRowHeight} />
+    {/if}
     <Tabs on:select-tab={onSelectTab}>
       <svelte:fragment slot="tab-list">
         <div class="console-tabs-container">
@@ -55,11 +90,6 @@
     top: 0;
     width: 100%;
     z-index: 1;
-  }
-
-  .console-expand-container.expanded {
-    height: 336px;
-    top: -300px;
   }
 
   .console-tabs-container {
