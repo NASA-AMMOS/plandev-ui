@@ -128,6 +128,8 @@
       }
       return map;
     }, {});
+  } else {
+    highlightKeysMap = {};
   }
 
   $: activityType = activityTypesMap[type] || null;
