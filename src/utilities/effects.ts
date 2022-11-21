@@ -314,6 +314,15 @@ const effects = {
         const { name, plan } = value;
         const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id });
         const { duplicate_plan } = data;
+        const { new_plan_id } = duplicate_plan;
+        await effects.createSchedulingSpec({
+          analysis_only: false,
+          horizon_end: plan.end_time_doy,
+          horizon_start: plan.start_time_doy,
+          plan_id: new_plan_id,
+          plan_revision: 0,
+          simulation_arguments: {},
+        });
         goto(`${base}/plans/${duplicate_plan.new_plan_id}`);
         showSuccessToast('Branch Created Successfully');
       }
