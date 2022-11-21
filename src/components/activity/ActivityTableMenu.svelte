@@ -8,8 +8,8 @@
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
 
-  export let columnDefs: ColDef[] = [];
-  export let columnStates: ColumnState[] = [];
+  export let columnDefs: ColDef[] | undefined = [];
+  export let columnStates: ColumnState[] | undefined = [];
 
   type ColumnMenuItem = {
     field: keyof Activity;
@@ -24,8 +24,8 @@
   let searchFilter: string = '';
   let tableMenu: Menu;
 
-  $: columnMenuItems = columnDefs.map((derivedColumnDef: ColDef) => {
-    const columnState = columnStates.find((columnState: ColumnState) => columnState.colId === derivedColumnDef.field);
+  $: columnMenuItems = (columnDefs ?? []).map((derivedColumnDef: ColDef) => {
+    const columnState = columnStates?.find((columnState: ColumnState) => columnState.colId === derivedColumnDef.field);
 
     if (columnState) {
       return {
