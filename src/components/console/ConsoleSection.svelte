@@ -16,9 +16,11 @@
           <div class="reason">
             <div><span class="timestamp">{error.timestamp}</span>{error.message}</div>
           </div>
-          <div class="trace">
-            <pre>{JSON.stringify(error.data) !== '{}' ? JSON.stringify(error.data) : error.trace}</pre>
-          </div>
+          {#if error.data || error.trace}
+            <div class="trace">
+              <pre>{error.data && JSON.stringify(error.data) !== '{}' ? JSON.stringify(error.data) : error.trace}</pre>
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
