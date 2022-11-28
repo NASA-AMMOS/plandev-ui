@@ -780,6 +780,18 @@ const effects = {
     }
   },
 
+  async getActivityTypes(modelId: number): Promise<ActivityType[]> {
+    try {
+      const query = convertToQuery(gql.SUB_ACTIVITY_TYPES);
+      const data = await reqHasura<ActivityType[]>(query, { modelId });
+      const { activity_type: activityTypes } = data;
+      return activityTypes;
+    } catch (e) {
+      catchError(e);
+      return [];
+    }
+  },
+
   async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {

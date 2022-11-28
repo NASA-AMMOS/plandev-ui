@@ -1,4 +1,3 @@
-import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -25,18 +24,13 @@ export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 })
 
 /* Derived. */
 
-export const activityTypesMap: Readable<ActivityTypesMap> = derived(plan, $plan => {
-  if ($plan) {
-    return keyBy($plan.model.activity_types, 'name');
-  }
-  return {};
-});
-
 export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
 
 export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id : -1));
 
 /* Subscriptions. */
+
+export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, []);
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 

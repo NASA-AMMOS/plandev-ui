@@ -8,8 +8,6 @@ import { view } from './views';
 
 /* Writeable. */
 
-export const modelParametersMap: Writable<ParametersMap> = writable({});
-
 export const simulationDatasetId: Writable<number> = writable(-1);
 
 /* Subscriptions. */
@@ -186,7 +184,6 @@ export const simulationStatus: Readable<Status | null> = derived(
 
 export function resetSimulationStores() {
   externalResources.updateValue(() => []);
-  modelParametersMap.set({});
   simulationDatasetId.set(-1);
   simulationDataset.updateValue(() => null);
   simulationTemplates.updateValue(() => []);

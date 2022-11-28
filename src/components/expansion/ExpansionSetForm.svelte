@@ -151,7 +151,7 @@
       </fieldset>
 
       <fieldset class="expansion-rules-table">
-        <label for="expansionRules" class="mb-2" style:display="block">Expansion Rules</label>
+        <label for="expansionRules" class="mb-2 mt-2" style:display="block"> Expansion Rules </label>
 
         {#if !activityTypesExpansionRules.length}
           No Expansion Rules Found

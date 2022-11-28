@@ -34,6 +34,7 @@
   import { resetConstraintStores } from '../../../stores/constraints';
   import { allErrors, schedulingErrors, simulationDatasetErrors } from '../../../stores/errors';
   import {
+    activityTypes,
     maxTimeRange,
     plan,
     planEndTimeMs,
@@ -44,7 +45,6 @@
   } from '../../../stores/plan';
   import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
   import {
-    modelParametersMap,
     resetSimulationStores,
     simulationDatasetId,
     simulationSpans,
@@ -79,13 +79,13 @@
   let planHasBeenLocked = false;
 
   $: if (data.initialPlan) {
-    $modelParametersMap = data.initialPlan.model.parameters.parameters;
     $plan = data.initialPlan;
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     $viewTimeRange = $maxTimeRange;
+    activityTypes.updateValue(() => data.initialActivityTypes);
   }
 
   $: if (data.initialView) {

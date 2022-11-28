@@ -3,7 +3,6 @@ type Model = ModelSchema;
 type ModelInsertInput = Pick<Model | 'jar_id' | 'mission' | 'name' | 'version'>;
 
 type ModelSchema = {
-  activity_types: ActivityType[];
   id: number;
   jar_id: number;
   name: string;

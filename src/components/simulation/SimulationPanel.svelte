@@ -3,7 +3,6 @@
 <script lang="ts">
   import { plan } from '../../stores/plan';
   import {
-    modelParametersMap,
     simulation,
     simulationDatasetId,
     simulationDatasetIds,
@@ -22,7 +21,9 @@
   export let gridId: number;
 
   let formParameters: FormParameter[] = [];
+  let modelParametersMap: ParametersMap = {};
 
+  $: modelParametersMap = $plan?.model?.parameters?.parameters ?? {};
   $: if ($simulation) {
     effects
       .getEffectiveModelArguments($plan.model.id, $simulation.arguments)
@@ -35,7 +36,7 @@
           ...defaultArguments,
           ...($simulation?.template?.arguments ?? {}),
         };
-        formParameters = getFormParameters($modelParametersMap, $simulation.arguments, [], defaultArgumentsMap);
+        formParameters = getFormParameters(modelParametersMap, $simulation.arguments, [], defaultArgumentsMap);
       });
   }
 

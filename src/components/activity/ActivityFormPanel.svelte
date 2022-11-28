@@ -9,7 +9,7 @@
     selectedActivity,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
-  import { activityTypesMap, modelId } from '../../stores/plan';
+  import { activityTypes, modelId } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
@@ -59,7 +59,7 @@
         activitiesMap={$activitiesMap}
         activity={$selectedActivity}
         activityMetadataDefinitions={$activityMetadataDefinitions}
-        activityTypesMap={$activityTypesMap}
+        activityTypes={$activityTypes}
         allActivityTags={$allActivityTags}
         filteredExpansionSequences={$filteredExpansionSequences}
         modelId={$modelId}

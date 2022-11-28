@@ -23,7 +23,7 @@
   export let activity: Activity;
   export let activitiesMap: ActivitiesMap = {};
   export let activityMetadataDefinitions: ActivityMetadataDefinition[] = [];
-  export let activityTypesMap: ActivityTypesMap = {};
+  export let activityTypes: ActivityType[] = [];
   export let allActivityTags: string[] = [];
   export let editable: boolean = true;
   export let filteredExpansionSequences: ExpansionSequence[] = [];
@@ -132,7 +132,7 @@
     highlightKeysMap = {};
   }
 
-  $: activityType = activityTypesMap[type] || null;
+  $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => type === activityTypeName) ?? null;
   $: rootActivityHasChildren = root_activity?.childUniqueIds ? root_activity.childUniqueIds.length > 0 : false;
   $: isChild = parentUniqueId !== null;
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
@@ -347,8 +347,8 @@
           <Highlight highlight={highlightKeysMap.name}>
             <Input layout="inline">
               <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
-                Activity Name</label
-              >
+                Activity Name
+              </label>
               <input class="st-input w-100" disabled name="activityName" value={activityName} />
             </Input>
           </Highlight>

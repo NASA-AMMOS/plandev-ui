@@ -7,7 +7,7 @@
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import PlanWithUpArrow from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
   import { activityMetadataDefinitions } from '../../stores/activities';
-  import { activityTypesMap } from '../../stores/plan';
+  import { activityTypes } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import { deriveActivityFromMergeActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
@@ -489,7 +489,7 @@
               <ActivityForm
                 activity={computedSourceActivity}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
-                activityTypesMap={$activityTypesMap}
+                activityTypes={$activityTypes}
                 editable={false}
                 highlightKeys={keysWithChanges}
                 modelId={initialPlan.model_id}
@@ -551,7 +551,7 @@
               <ActivityForm
                 activity={computedTargetActivity}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
-                activityTypesMap={$activityTypesMap}
+                activityTypes={$activityTypes}
                 editable={false}
                 highlightKeys={!!selectedConflictingActivity && keysWithChanges}
                 modelId={initialPlan.model_id}

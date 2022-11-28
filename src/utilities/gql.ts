@@ -443,12 +443,6 @@ const gql = {
         id
         is_locked
         model: mission_model {
-          activity_types(order_by: { name: asc }) {
-            computed_attributes_value_schema
-            name
-            parameters
-            required_parameters
-          }
           id
           jar_id
           name
@@ -791,10 +785,13 @@ const gql = {
     }
   `,
 
-  SUB_ACTIVITY_TYPE_NAMES: `#graphql
-    subscription SubActivityTypeNames($modelId: Int!) {
-      activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
+  SUB_ACTIVITY_TYPES: `#graphql
+    subscription SubActivityTypes($modelId: Int!) {
+      activity_type(where: { model_id: { _eq: $modelId } }, order_by: { name: asc }) {
+        computed_attributes_value_schema
         name
+        parameters
+        required_parameters
       }
     }
   `,

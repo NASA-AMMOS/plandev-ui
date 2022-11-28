@@ -4,6 +4,7 @@
   import CollapseIcon from '@nasa-jpl/stellar/icons/collapse.svg?component';
   import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import type { ColDef, ColumnState, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
+  import { planId } from '../../stores/plan';
   import { view, viewUpdateActivityTables } from '../../stores/views';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -239,6 +240,7 @@
       bind:dataGrid
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityTable?.columnStates}
+      planId={$planId}
       on:columnStateChange={onColumnStateChange}
     />
   </svelte:fragment>

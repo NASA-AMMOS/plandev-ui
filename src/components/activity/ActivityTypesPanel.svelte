@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
-  import { plan } from '../../stores/plan';
+  import { activityTypes, plan } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -11,11 +11,11 @@
 
   export let gridId: number;
 
-  let activityTypes: ActivityType[];
   let filterText: string = '';
 
-  $: activityTypes = $plan?.model?.activity_types ?? [];
-  $: filteredActivityTypes = activityTypes.filter(({ name }) => name.toLowerCase().includes(filterText.toLowerCase()));
+  $: filteredActivityTypes = ($activityTypes ?? []).filter(({ name }) =>
+    name.toLowerCase().includes(filterText.toLowerCase()),
+  );
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
     const { start_time_doy } = $plan;

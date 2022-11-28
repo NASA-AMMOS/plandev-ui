@@ -3,7 +3,6 @@
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { activities, selectedActivityId } from '../../stores/activities';
-  import { planId } from '../../stores/plan';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -12,6 +11,7 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid = undefined;
+  export let planId: number;
 
   type CellRendererParams = {
     deleteActivityDirective: (activity: Activity) => void;
@@ -60,8 +60,7 @@
 
   function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
     const ids = activities.map(({ id }) => id);
-
-    effects.deleteActivityDirectives($planId, ids);
+    effects.deleteActivityDirectives(planId, ids);
   }
 
   function getRowId(activity: Activity): ActivityUniqueId {

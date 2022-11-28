@@ -3,8 +3,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { activityTypeNames, expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
-  import { models } from '../../stores/plan';
+  import { expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
+  import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
@@ -38,7 +38,7 @@
     expansion_logic: ruleLogic,
   };
 
-  $: activityTypeNames.setVariables({ modelId: ruleModelId ?? -1 });
+  $: activityTypes.setVariables({ modelId: ruleModelId ?? -1 });
   $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
   $: ruleModified = diffRule(savedRule, {
     activity_type: ruleActivityType,
@@ -169,7 +169,7 @@
         <label for="activityType">Activity Type</label>
         <select bind:value={ruleActivityType} class="st-select w-100" name="activityType">
           <option value={null} />
-          {#each $activityTypeNames as { name: activityTypeName }}
+          {#each $activityTypes as { name: activityTypeName }}
             <option value={activityTypeName}>
               {activityTypeName}
             </option>

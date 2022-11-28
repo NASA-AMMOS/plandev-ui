@@ -1,16 +1,9 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import gql from '../utilities/gql';
-import { modelId } from './plan';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
-
-export const activityTypeNames = gqlSubscribable<Pick<ActivityType, 'name'>[]>(
-  gql.SUB_ACTIVITY_TYPE_NAMES,
-  { modelId },
-  [],
-);
 
 export const expansionRules = gqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, []);
 
