@@ -21,9 +21,7 @@
   export let suppressRowClickSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
 
-  export let getRowId: (data: TRowData) => RowId = (data: TRowData): RowId => {
-    return parseInt(data[idKey]);
-  };
+  export let getRowId: (data: TRowData) => RowId = (data: TRowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
 
   const dispatch = createEventDispatcher();

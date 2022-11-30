@@ -68,7 +68,7 @@
     <ParameterName {formParameter} />
   </div>
 {:else}
-  <div class="parameter-rec-struct" />
+  <div class="parameter-rec-struct p-0" />
 {/if}
 
 {#if expanded}

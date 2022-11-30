@@ -555,7 +555,12 @@
         <summary>Decomposition</summary>
         <div class="details-body">
           {#if rootActivityHasChildren}
-            <ActivityDecomposition rootUniqueId={root_activity.uniqueId} selectedUniqueId={uniqueId} />
+            <ActivityDecomposition
+              {activitiesMap}
+              rootUniqueId={root_activity.uniqueId}
+              selectedActivityId={uniqueId}
+              on:selectActivity
+            />
           {:else}
             <div class="st-typography-label">This activity has no children</div>
           {/if}

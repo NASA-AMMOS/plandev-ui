@@ -7,6 +7,7 @@
     activityMetadataDefinitions,
     allActivityTags,
     selectedActivity,
+    selectedActivityId,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { activityTypes, modelId } from '../../stores/plan';
@@ -38,6 +39,11 @@
   }
 
   $: isChild = parentUniqueId !== null;
+
+  function selectActivity(event: CustomEvent<ActivityUniqueId>) {
+    const { detail: newSelectedActivityId } = event;
+    $selectedActivityId = newSelectedActivityId;
+  }
 </script>
 
 <Panel padBody={false}>
@@ -64,6 +70,7 @@
         filteredExpansionSequences={$filteredExpansionSequences}
         modelId={$modelId}
         simulationDatasetId={$simulationDatasetId}
+        on:selectActivity={selectActivity}
       />
     {:else}
       <div class="p-2 st-typography-label">No Activity Selected</div>

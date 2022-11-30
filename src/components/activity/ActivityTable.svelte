@@ -2,16 +2,17 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
-  import { activities, selectedActivityId } from '../../stores/activities';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
+  export let activities: Activity[] = [];
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid = undefined;
   export let planId: number;
+  export let selectedActivityId: ActivityUniqueId | null = null;
 
   type CellRendererParams = {
     deleteActivityDirective: (activity: Activity) => void;
@@ -70,14 +71,14 @@
 
 <BulkActionDataGrid
   bind:dataGrid
+  bind:selectedItemId={selectedActivityId}
   columnDefs={[...(columnDefs ?? []), activityActionColumnDef]}
   {columnStates}
   {getRowId}
-  items={$activities}
+  items={activities}
   pluralItemDisplayText="Activities"
   singleItemDisplayText="Activity"
   suppressDragLeaveHidesColumns={false}
-  bind:selectedItemId={$selectedActivityId}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:columnStateChange
 />

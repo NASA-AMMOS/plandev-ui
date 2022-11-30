@@ -1,9 +1,8 @@
 import { cleanup, getByText, render } from '@testing-library/svelte';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { activitiesMap } from '../../stores/activities';
+import { afterEach, describe, expect, it } from 'vitest';
 import ActivityDecomposition from './ActivityDecomposition.svelte';
 
-const activities: ActivitiesMap = {
+const activitiesMap: ActivitiesMap = {
   directive_0_12: {
     arguments: {},
     attributes: {
@@ -187,27 +186,18 @@ const activities: ActivitiesMap = {
 };
 
 describe('Activity Decomposition component', () => {
-  beforeAll(() => {
-    // See: https://github.com/sveltejs/kit/issues/6259
-    vi.mock('$app/environment', () => ({ browser: 'window' in globalThis }));
-    activitiesMap.set(activities);
-  });
-
   afterEach(() => {
     cleanup();
   });
 
-  afterAll(() => {
-    activitiesMap.set({});
-  });
-
   it('Should render the Activity Decomposition component', () => {
     const { container, getByText } = render(ActivityDecomposition, {
+      activitiesMap,
       rootUniqueId: 'directive_0_12',
-      selectedUniqueId: 'directive_0_12',
+      selectedActivityId: 'directive_0_12',
     });
     const activityDecomposition = container.getElementsByClassName('activity-decomposition');
-    const activitiesList = Object.values(activities);
+    const activitiesList = Object.values(activitiesMap);
 
     // There should be as many activity decomposition components as there are activities
     expect(activityDecomposition.length).toEqual(activitiesList.length);
@@ -218,8 +208,9 @@ describe('Activity Decomposition component', () => {
 
   it('Should highlight the selected root activity', () => {
     const { container } = render(ActivityDecomposition, {
+      activitiesMap,
       rootUniqueId: 'directive_0_12',
-      selectedUniqueId: 'directive_0_12',
+      selectedActivityId: 'directive_0_12',
     });
     const selectedActivity = container.getElementsByClassName('activity-decomposition-selected');
 
@@ -232,8 +223,9 @@ describe('Activity Decomposition component', () => {
 
   it('Should highlight the selected child activity', () => {
     const { container } = render(ActivityDecomposition, {
+      activitiesMap,
       rootUniqueId: 'directive_0_12',
-      selectedUniqueId: 'span_69',
+      selectedActivityId: 'span_69',
     });
     const selectedActivity = container.getElementsByClassName('activity-decomposition-selected');
 
@@ -246,8 +238,9 @@ describe('Activity Decomposition component', () => {
 
   it('Should handle activity not found in store', () => {
     const { getByRole, container } = render(ActivityDecomposition, {
+      activitiesMap,
       rootUniqueId: 'directive_0_999',
-      selectedUniqueId: 'span_12',
+      selectedActivityId: 'span_12',
     });
 
     // Should only see the root since it has a bad ID and should not render children

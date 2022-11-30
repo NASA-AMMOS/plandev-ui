@@ -6,16 +6,19 @@
   import TreeLeafIcon from '@nasa-jpl/stellar/icons/tree_leaf.svg?component';
   import TreeParentCollapsedIcon from '@nasa-jpl/stellar/icons/tree_parent_collapsed.svg?component';
   import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/tree_parent_expanded.svg?component';
-  import { activitiesMap, selectedActivityId } from '../../stores/activities';
+  import { createEventDispatcher } from 'svelte';
 
+  export let activitiesMap: ActivitiesMap = {};
   export let expanded = true;
   export let rootUniqueId: ActivityUniqueId | null = null;
-  export let selectedUniqueId: ActivityUniqueId | null = null;
+  export let selectedActivityId: ActivityUniqueId | null = null;
+
+  const dispatch = createEventDispatcher();
 
   let activity: Activity | null = null;
   let childUniqueIds: ActivityUniqueId[] = [];
 
-  $: activity = $activitiesMap[rootUniqueId] ?? null;
+  $: activity = activitiesMap[rootUniqueId] ?? null;
   $: isRoot = activity ? !activity.parent_id : true;
   $: type = activity?.type || '';
   $: childUniqueIds = activity?.childUniqueIds;
@@ -23,7 +26,7 @@
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =
     'activity-decomposition-node activity-decomposition-' +
-    (rootUniqueId === selectedUniqueId ? 'selected st-typography-medium' : 'unselected st-typography-body');
+    (rootUniqueId === selectedActivityId ? 'selected st-typography-medium' : 'unselected st-typography-body');
   $: buttonClass = 'st-button icon' + (!hasChildren ? ' st-button-no-hover' : '');
 
   function toggle() {
@@ -55,14 +58,19 @@
       {/if}
     </button>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span on:click={() => ($selectedActivityId = rootUniqueId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
+    <span on:click={() => dispatch('selectActivity', rootUniqueId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
   </div>
 
   {#if hasChildren && expanded}
     <ul>
       {#each childUniqueIds as childUniqueId}
         <li>
-          <svelte:self rootUniqueId={$activitiesMap[childUniqueId]?.uniqueId} {selectedUniqueId} />
+          <svelte:self
+            {activitiesMap}
+            rootUniqueId={activitiesMap[childUniqueId]?.uniqueId}
+            {selectedActivityId}
+            on:selectActivity
+          />
         </li>
       {/each}
     </ul>
