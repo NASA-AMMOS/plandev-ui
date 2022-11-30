@@ -154,5 +154,6 @@
 
   .input-stacked {
     display: inherit;
+    gap: 4px;
   }
 </style>

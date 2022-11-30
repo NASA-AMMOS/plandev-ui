@@ -26,6 +26,7 @@ export class Plan {
   panelScheduling: Locator;
   panelSimulation: Locator;
   panelTimeline: Locator;
+  panelTimelineDetails: Locator;
   panelTimelineForm: Locator;
   panelViewEditor: Locator;
   panelViews: Locator;
@@ -170,6 +171,7 @@ export class Plan {
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineForm = page.locator('[data-component-name="TimelineFormPanel"]');
+    this.panelTimelineDetails = page.locator('[data-component-name="TimelineDetailsPanel"]');
     this.panelViewEditor = page.locator('[data-component-name="ViewEditorPanel"]');
     this.panelViews = page.locator('[data-component-name="ViewsPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);

@@ -23,6 +23,7 @@
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
+  import TimelineDetailsPanel from '../../../components/timeline/form/TimelineDetailsPanel.svelte';
   import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
@@ -70,6 +71,7 @@
     IFramePanel,
     SchedulingPanel,
     SimulationPanel,
+    TimelineDetailsPanel,
     TimelineFormPanel,
     TimelinePanel,
     ViewEditorPanel,

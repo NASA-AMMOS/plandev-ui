@@ -177,3 +177,43 @@ export function searchQuadtreeRect<T>(
 
   return points;
 }
+
+/*
+  Returns a new vertical guide
+*/
+export function createVerticalGuide(doyTimestamp: string, verticalGuides: VerticalGuide[]): VerticalGuide {
+  const id = verticalGuides.reduce((prev, curr) => {
+    if (curr.id >= prev) {
+      return curr.id + 1;
+    }
+    return prev;
+  }, 0);
+  const defaultLabel = `Guide ${id}`;
+  return {
+    id,
+    label: { text: defaultLabel },
+    timestamp: doyTimestamp,
+  };
+}
+
+/*
+  Returns a new row
+*/
+export function createRow(rows: Row[]): Row {
+  const id = rows.reduce((prev, curr) => {
+    if (curr.id >= prev) {
+      return curr.id + 1;
+    }
+    return prev;
+  }, 0);
+  return {
+    autoAdjustHeight: true,
+    expanded: true,
+    height: 200,
+    horizontalGuides: [],
+    id,
+    layers: [],
+    name: 'Row',
+    yAxes: [],
+  };
+}

@@ -2,6 +2,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { viewUpdateTimeline } from '../../stores/views';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
+  import { createVerticalGuide } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
 
   export let cursorEnabled: boolean = true;
@@ -81,19 +82,7 @@
   }
 
   function addVerticalGuide(doyTimestamp: string) {
-    const id = verticalGuides.reduce((prev, curr) => {
-      if (curr.id >= prev) {
-        return curr.id + 1;
-      }
-      return prev;
-    }, 0);
-    const defaultLabel = `Guide ${id}`;
-    const newVerticalGuide: VerticalGuide = {
-      id,
-      label: { text: defaultLabel },
-      timestamp: doyTimestamp,
-    };
-
+    const newVerticalGuide = createVerticalGuide(doyTimestamp, verticalGuides);
     viewUpdateTimeline('verticalGuides', [...verticalGuides, newVerticalGuide], timelineId);
     cursorWithinView = false; // Hide active cursor that would overlap the created guide until mouse is moved again
   }

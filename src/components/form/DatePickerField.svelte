@@ -12,6 +12,8 @@
   export let name: string = '';
   export let label: string = '';
   export let layout: 'inline' | 'stacked' | null = 'stacked';
+  export let maxDate: Date | null = undefined;
+  export let minDate: Date | null = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -29,7 +31,15 @@
     {:else}
       <label class:error={$field.invalid} for={name}>{label}</label>
     {/if}
-    <DatePicker dateString={$field.value} {disabled} hasError={$field.invalid} {name} on:change={onChange} />
+    <DatePicker
+      dateString={$field.value}
+      {disabled}
+      hasError={$field.invalid}
+      {name}
+      on:change={onChange}
+      {minDate}
+      {maxDate}
+    />
     <FieldError {field} />
   </Input>
 </div>

@@ -89,6 +89,12 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelTimelineForm).toBeVisible();
   });
 
+  test(`Clicking on 'Timeline Details' in the grid menu should show the timeline details panel`, async () => {
+    await expect(plan.panelTimelineDetails).not.toBeVisible();
+    await plan.showPanel('Timeline Details');
+    await expect(plan.panelTimelineDetails).toBeVisible();
+  });
+
   test(`Clicking on 'Views' in the grid menu should show the views panel`, async () => {
     await expect(plan.panelViews).not.toBeVisible();
     await plan.showPanel('Views');
