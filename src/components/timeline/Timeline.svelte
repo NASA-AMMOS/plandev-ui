@@ -1,12 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { afterUpdate, tick } from 'svelte';
+  import { afterUpdate, createEventDispatcher, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
-  import { activitiesByView, selectedActivityId } from '../../stores/activities';
-  import { constraintViolations } from '../../stores/constraints';
-  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
-  import { view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
   import {
@@ -24,13 +20,21 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
+  export let activitiesByView: ActivitiesByView = { byLayerId: {}, byTimelineId: {} };
+  export let constraintViolations: ConstraintViolation[] = [];
   export let gridId: number;
-  export let timelineId: number;
+  export let maxTimeRange: TimeRange = { end: 0, start: 0 };
+  export let resourcesByViewLayerId: Record<number, Resource[]> = {};
+  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let timeline: Timeline | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
+
+  const dispatch = createEventDispatcher();
 
   let clientWidth: number = 0;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
-  let estimatedLabelWidthPx: number = 74; // width of MS time which is the largest display format
+  let estimatedLabelWidthPx: number = 74; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver;
   let mouseOverViolations: MouseOverViolations;
@@ -38,7 +42,6 @@
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
   let tickCount: number = 10;
-  let timeline: Timeline;
   let timelineDiv: HTMLDivElement;
   let timelineHistogramDiv: HTMLDivElement;
   let timelineHistogramDrawHeight: number = 40;
@@ -46,7 +49,6 @@
   let xAxisDrawHeight: number = 64;
   let xTicksView: XAxisTick[] = [];
 
-  $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: rows = timeline?.rows || [];
   $: timeline.gridId = gridId;
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
@@ -59,13 +61,13 @@
   }
 
   $: setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
-  $: xDomainMax = [new Date($maxTimeRange.start), new Date($maxTimeRange.end)];
-  $: viewTimeRangeStartDate = new Date($viewTimeRange.start);
-  $: viewTimeRangeEndDate = new Date($viewTimeRange.end);
+  $: xDomainMax = [new Date(maxTimeRange.start), new Date(maxTimeRange.end)];
+  $: viewTimeRangeStartDate = new Date(viewTimeRange.start);
+  $: viewTimeRangeEndDate = new Date(viewTimeRange.end);
   $: xDomainView = [viewTimeRangeStartDate, viewTimeRangeEndDate];
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
-  $: xScaleViewDuration = $viewTimeRange.end - $viewTimeRange.start;
+  $: xScaleViewDuration = viewTimeRange.end - viewTimeRange.start;
 
   $: if (viewTimeRangeStartDate && viewTimeRangeEndDate && tickCount) {
     let labelWidth = estimatedLabelWidthPx; // Compute the actual label width
@@ -125,7 +127,7 @@
     if (source === SOURCES.POINTER) {
       rowDragMoveDisabled = true;
     }
-    viewUpdateTimeline('rows', rows, timelineId);
+    dispatch('updateRows', rows);
   }
 
   function onKeyDown(event: KeyboardEvent) {
@@ -142,7 +144,7 @@
       const [point] = points; // TODO: Multiselect points?
       if (point.type === 'activity') {
         const activityPoint = point as ActivityPoint;
-        $selectedActivityId = activityPoint.uniqueId;
+        dispatch('mouseDown', activityPoint.uniqueId);
       }
     }
   }
@@ -154,22 +156,18 @@
 
   function onToggleRowExpansion(event: CustomEvent<{ expanded: boolean; rowId: number }>) {
     const { rowId, expanded } = event.detail;
-    viewUpdateRow('expanded', expanded, timelineId, rowId);
+    dispatch('toggleRowExpansion', { expanded, rowId });
   }
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
     const { newHeight, rowId } = event.detail;
     if (timeline.gridId === gridId && newHeight < MAX_CANVAS_SIZE) {
-      viewUpdateRow('height', newHeight, timelineId, rowId);
+      dispatch('updateRowHeight', { newHeight, rowId });
     }
   }
 
-  function onViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
-    $viewTimeRange = event.detail;
-  }
-
   function onHistogramViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
-    $viewTimeRange = event.detail;
+    dispatch('viewTimeRangeChanged', event.detail);
     mouseOver = null;
   }
 
@@ -194,33 +192,33 @@
 
 <svelte:window on:keydown={onKeyDown} />
 
-<div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timelineId}`}>
+<div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
     <TimelineHistogram
-      activities={$activitiesByView?.byTimelineId[timeline.id] ?? []}
-      constraintViolations={$constraintViolations}
+      activities={activitiesByView?.byTimelineId[timeline.id] ?? []}
+      {constraintViolations}
       {cursorEnabled}
       drawHeight={timelineHistogramDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
       {mouseOver}
-      viewTimeRange={$viewTimeRange}
+      {viewTimeRange}
       {xScaleView}
       {xScaleMax}
-      on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
       on:cursorTimeChange={onHistogramCursorTimeChanged}
+      on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
     />
   </div>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
-      constraintViolations={$constraintViolations}
+      {constraintViolations}
       drawHeight={xAxisDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
-      viewTimeRange={$viewTimeRange}
+      {viewTimeRange}
       {xScaleView}
       {xTicksView}
-      on:viewTimeRangeChanged={onViewTimeRangeChanged}
+      on:viewTimeRangeChanged
     />
   </div>
   <TimelineCursors
@@ -230,9 +228,9 @@
     {histogramCursorTime}
     marginLeft={timeline?.marginLeft}
     {mouseOver}
-    {timelineId}
     verticalGuides={timeline?.verticalGuides}
     {xScaleView}
+    on:updateVerticalGuides
   />
   <div
     class="rows"
@@ -240,16 +238,13 @@
     on:consider={handleDndConsiderRows}
     on:finalize={handleDndFinalizeRows}
     on:mouseenter={() => (timeline.gridId = gridId)}
-    use:dndzone={{
-      dragDisabled: rowDragMoveDisabled,
-      items: rows,
-      type: 'rows',
-    }}
+    use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
   >
     {#each rows as row (row.id)}
       <TimelineRow
+        {activitiesByView}
         autoAdjustHeight={row.autoAdjustHeight}
-        constraintViolations={$constraintViolations}
+        {constraintViolations}
         drawHeight={row.height}
         {drawWidth}
         expanded={row.expanded}
@@ -258,8 +253,10 @@
         layers={row.layers}
         name={row.name}
         marginLeft={timeline?.marginLeft}
+        {resourcesByViewLayerId}
         {rowDragMoveDisabled}
-        viewTimeRange={$viewTimeRange}
+        {selectedActivityId}
+        {viewTimeRange}
         {xScaleView}
         {xTicksView}
         yAxes={row.yAxes}

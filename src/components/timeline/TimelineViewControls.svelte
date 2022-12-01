@@ -4,15 +4,19 @@
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
-  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
+  import { createEventDispatcher } from 'svelte';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let nudgePercent = 0.05;
+  export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let minZoomMS = 100; // Min zoom of one minute
+  export let nudgePercent = 0.05;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
-  $: maxDuration = $maxTimeRange.end - $maxTimeRange.start;
-  $: viewDuration = $viewTimeRange.end - $viewTimeRange.start;
-  $: viewTimeRangePercentZoom = ($viewTimeRange.end - $viewTimeRange.start) / ($maxTimeRange.end - $maxTimeRange.start);
+  const dispatch = createEventDispatcher();
+
+  $: maxDuration = maxTimeRange.end - maxTimeRange.start;
+  $: viewDuration = viewTimeRange.end - viewTimeRange.start;
+  $: viewTimeRangePercentZoom = (viewTimeRange.end - viewTimeRange.start) / (maxTimeRange.end - maxTimeRange.start);
 
   // TODO implement a more sophisticated zooming step that based off time instead of percentage for the high zoom
   // cases or even the whole range
@@ -38,12 +42,11 @@
 
   function onZoomIn() {
     // Compute current zoom percentage
-    let newDuration = Math.max((viewTimeRangePercentZoom - zoomActionPercent) * maxDuration, minZoomMS);
-
-    const pivotTime = $viewTimeRange.start + viewDuration / 2;
+    const newDuration = Math.max((viewTimeRangePercentZoom - zoomActionPercent) * maxDuration, minZoomMS);
+    const pivotTime = viewTimeRange.start + viewDuration / 2;
     const newStart = pivotTime - newDuration / 2;
     const newEnd = pivotTime + newDuration / 2;
-    $viewTimeRange = { end: newEnd, start: newStart };
+    dispatch('viewTimeRangeChanged', { end: newEnd, start: newStart });
   }
 
   function onZoomOut() {
@@ -53,38 +56,39 @@
     // Clamp zoom
     if (viewDuration >= maxDuration) {
       newDuration = maxDuration;
-      $viewTimeRange = $maxTimeRange;
+      dispatch('viewTimeRangeChanged', maxTimeRange);
       return;
     }
 
-    const pivotTime = $viewTimeRange.start + viewDuration / 2;
-    const newStart = Math.max(pivotTime - newDuration / 2, $maxTimeRange.start);
-    const newEnd = Math.min(pivotTime + newDuration / 2, $maxTimeRange.end);
-    $viewTimeRange = { end: newEnd, start: newStart };
+    const pivotTime = viewTimeRange.start + viewDuration / 2;
+    const newStart = Math.max(pivotTime - newDuration / 2, maxTimeRange.start);
+    const newEnd = Math.min(pivotTime + newDuration / 2, maxTimeRange.end);
+
+    dispatch('viewTimeRangeChanged', { end: newEnd, start: newStart });
   }
 
   function onNudgeLeft() {
     // Nudge the time window to the left 5%
-    const newStart = Math.max($viewTimeRange.start - viewDuration * nudgePercent, $maxTimeRange.start);
-    let newEnd = Math.min($viewTimeRange.end - viewDuration * nudgePercent, $maxTimeRange.end);
-    if (newStart === $maxTimeRange.start) {
-      newEnd = $viewTimeRange.start + viewDuration;
+    const newStart = Math.max(viewTimeRange.start - viewDuration * nudgePercent, maxTimeRange.start);
+    let newEnd = Math.min(viewTimeRange.end - viewDuration * nudgePercent, maxTimeRange.end);
+    if (newStart === maxTimeRange.start) {
+      newEnd = viewTimeRange.start + viewDuration;
     }
-    $viewTimeRange = { end: newEnd, start: newStart };
+    dispatch('viewTimeRangeChanged', { end: newEnd, start: newStart });
   }
 
   function onNudgeRight() {
     // Shift the time window to the right
-    const newEnd = Math.min($viewTimeRange.end + viewDuration * nudgePercent, $maxTimeRange.end);
-    let newStart = Math.max($viewTimeRange.start + viewDuration * nudgePercent, $maxTimeRange.start);
-    if (newEnd === $maxTimeRange.end) {
-      newStart = $viewTimeRange.end - viewDuration;
+    const newEnd = Math.min(viewTimeRange.end + viewDuration * nudgePercent, maxTimeRange.end);
+    let newStart = Math.max(viewTimeRange.start + viewDuration * nudgePercent, maxTimeRange.start);
+    if (newEnd === maxTimeRange.end) {
+      newStart = viewTimeRange.end - viewDuration;
     }
-    $viewTimeRange = { end: newEnd, start: newStart };
+    dispatch('viewTimeRangeChanged', { end: newEnd, start: newStart });
   }
 
   function onResetViewTimeRange() {
-    $viewTimeRange = $maxTimeRange;
+    dispatch('viewTimeRangeChanged', maxTimeRange);
   }
 </script>
 
@@ -94,7 +98,7 @@
   class="st-button icon"
   on:click={onNudgeLeft}
   use:tooltip={{ content: `Shift Left '['`, placement: 'bottom' }}
-  disabled={$viewTimeRange.start === $maxTimeRange.start}
+  disabled={viewTimeRange.start === maxTimeRange.start}
 >
   <ArrowLeftIcon />
 </button>
@@ -102,7 +106,7 @@
   class="st-button icon"
   on:click={onNudgeRight}
   use:tooltip={{ content: `Shift Right ']'`, placement: 'bottom' }}
-  disabled={$viewTimeRange.end === $maxTimeRange.end}
+  disabled={viewTimeRange.end === maxTimeRange.end}
 >
   <ArrowRightIcon />
 </button>

@@ -10,7 +10,7 @@
   export let drawWidth: number = 0;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
-  export let viewTimeRange: TimeRange | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
   const dispatch = createEventDispatcher();

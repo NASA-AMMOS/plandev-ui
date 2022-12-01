@@ -5,7 +5,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { activitiesMap, selectedActivityId } from '../../stores/activities';
+  import { activitiesMap } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
   import { decomposeActivityDirectiveId, sortActivities } from '../../utilities/activities';
   import effects from '../../utilities/effects';
@@ -31,8 +31,9 @@
   export let mouseout: MouseEvent | undefined;
   export let mouseup: MouseEvent | undefined;
   export let overlaySvg: SVGElement;
+  export let selectedActivityId: ActivityUniqueId | null = null;
   export let showChildren: boolean = true;
-  export let viewTimeRange: TimeRange | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
   const dispatch = createEventDispatcher();
@@ -70,7 +71,7 @@
     drawHeight &&
     drawWidth &&
     filter &&
-    $selectedActivityId !== undefined &&
+    selectedActivityId !== undefined &&
     viewTimeRange &&
     xScaleView
   ) {
@@ -375,7 +376,7 @@
       maxActivityWidth = activityWidth;
     }
 
-    if ($selectedActivityId === uniqueId) {
+    if (selectedActivityId === uniqueId) {
       ctx.fillStyle = activitySelectedColor;
     } else if (point.unfinished) {
       ctx.fillStyle = activityUnfinishedColor;

@@ -4,8 +4,6 @@
   import type { ScaleTime } from 'd3-scale';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import { activitiesByView } from '../../stores/activities';
-  import { resourcesByViewLayerId } from '../../stores/simulation';
   import { classNames } from '../../utilities/generic';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
@@ -17,6 +15,7 @@
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
 
+  export let activitiesByView: ActivitiesByView = { byLayerId: {}, byTimelineId: {} };
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
@@ -27,8 +26,10 @@
   export let layers: Layer[] = [];
   export let name: string = '';
   export let marginLeft: number = 50;
+  export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let rowDragMoveDisabled = true;
-  export let viewTimeRange: TimeRange | null = null;
+  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
   export let yAxes: Axis[] = [];
@@ -133,7 +134,7 @@
         {#if layer.chartType === 'activity'}
           <LayerActivity
             {...layer}
-            activities={$activitiesByView?.byLayerId[layer.id] ?? []}
+            activities={activitiesByView?.byLayerId[layer.id] ?? []}
             {drawHeight}
             {drawWidth}
             {dragenter}
@@ -146,6 +147,7 @@
             {mouseout}
             {mouseup}
             {overlaySvg}
+            {selectedActivityId}
             {viewTimeRange}
             {xScaleView}
             on:mouseDown={onMouseDown}
@@ -162,7 +164,7 @@
             {mousedown}
             {mousemove}
             {mouseout}
-            resources={$resourcesByViewLayerId[layer.id] ?? []}
+            resources={resourcesByViewLayerId[layer.id] ?? []}
             {viewTimeRange}
             {xScaleView}
             {yAxes}
@@ -179,7 +181,7 @@
             {mousedown}
             {mousemove}
             {mouseout}
-            resources={$resourcesByViewLayerId[layer.id] ?? []}
+            resources={resourcesByViewLayerId[layer.id] ?? []}
             {xScaleView}
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}

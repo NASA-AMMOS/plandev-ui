@@ -24,10 +24,7 @@ export const selectedActivityId: Writable<ActivityUniqueId | null> = writable(nu
 
 export const activities: Readable<Activity[]> = derived(activitiesMap, $activitiesMap => Object.values($activitiesMap));
 
-export const activitiesByView: Readable<{
-  byLayerId: Record<number, Activity[]>;
-  byTimelineId: Record<number, Activity[]>;
-}> = derived([activities, view], ([$activities, $view]) => {
+export const activitiesByView: Readable<ActivitiesByView> = derived([activities, view], ([$activities, $view]) => {
   const { definition } = $view;
   const { plan } = definition;
   const { timelines } = plan;
@@ -84,6 +81,7 @@ export const selectedActivity = derived(
   [activitiesMap, selectedActivityId],
   ([$activitiesMap, $selectedActivityId]) => $activitiesMap[$selectedActivityId] || null,
 );
+
 /* Helper Functions. */
 
 export function resetActivityStores() {

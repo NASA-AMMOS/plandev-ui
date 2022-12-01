@@ -9,7 +9,7 @@
   export let drawHeight: number = 70;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
-  export let viewTimeRange: TimeRange | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
 

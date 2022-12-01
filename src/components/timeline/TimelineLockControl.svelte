@@ -1,14 +1,16 @@
 <script lang="ts">
   import LockIcon from '@nasa-jpl/stellar/icons/lock.svg?component';
   import UnlockIcon from '@nasa-jpl/stellar/icons/unlock.svg?component';
-  import { onMount } from 'svelte';
-  import { timelineLockStatus } from '../../stores/views';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { TimelineLockStatus } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
 
+  export let timelineLockStatus: TimelineLockStatus = TimelineLockStatus.Locked;
+
+  const dispatch = createEventDispatcher();
   const lockTooltipContent = 'Click to unlock timeline, or press and hold the Shift key to temporarily unlock';
 
-  $: lockClassName = $timelineLockStatus === TimelineLockStatus.TemporaryUnlock ? 'temporary-unlock' : '';
+  $: lockClassName = timelineLockStatus === TimelineLockStatus.TemporaryUnlock ? 'temporary-unlock' : '';
 
   onMount(() => {
     document.addEventListener('keydown', onKeydown);
@@ -23,27 +25,27 @@
   function onKeydown(e: KeyboardEvent & { target: HTMLInputElement }) {
     // If user holds shift while not focused on an input then activate the temporary unlock.
     // If an input is focused, we assume they're holding shift to capitalize instead.
-    if (e.key === 'Shift' && e.target.tagName !== 'INPUT' && $timelineLockStatus !== TimelineLockStatus.Unlocked) {
-      $timelineLockStatus = TimelineLockStatus.TemporaryUnlock;
+    if (e.key === 'Shift' && e.target.tagName !== 'INPUT' && timelineLockStatus !== TimelineLockStatus.Unlocked) {
+      dispatch('temporaryUnlock', TimelineLockStatus.TemporaryUnlock);
     }
   }
 
   function onKeyup(e: KeyboardEvent) {
-    if (e.key === 'Shift' && $timelineLockStatus === TimelineLockStatus.TemporaryUnlock) {
-      $timelineLockStatus = TimelineLockStatus.Locked;
+    if (e.key === 'Shift' && timelineLockStatus === TimelineLockStatus.TemporaryUnlock) {
+      dispatch('lock', TimelineLockStatus.Locked);
     }
   }
 
   function onClick() {
-    if ($timelineLockStatus === TimelineLockStatus.Locked) {
-      $timelineLockStatus = TimelineLockStatus.Unlocked;
+    if (timelineLockStatus === TimelineLockStatus.Locked) {
+      dispatch('unlock', TimelineLockStatus.Unlocked);
     } else {
-      $timelineLockStatus = TimelineLockStatus.Locked;
+      dispatch('lock', TimelineLockStatus.Locked);
     }
   }
 </script>
 
-{#if $timelineLockStatus === TimelineLockStatus.Locked}
+{#if timelineLockStatus === TimelineLockStatus.Locked}
   <button class="st-button icon" on:click={onClick} use:tooltip={{ content: lockTooltipContent, placement: 'bottom' }}>
     <LockIcon />
   </button>

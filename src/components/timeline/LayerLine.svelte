@@ -18,7 +18,7 @@
   export let mouseout: MouseEvent | undefined;
   export let pointRadius: number = 2;
   export let resources: Resource[] = [];
-  export let viewTimeRange: TimeRange | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yAxes: Axis[] = [];
   export let yAxisId: number | null = null;

@@ -16,7 +16,7 @@
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
   export let mouseOver: MouseOver;
-  export let viewTimeRange: TimeRange | null = null;
+  export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
 
