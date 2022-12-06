@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import Nav from '../../components/app/Nav.svelte';
+  import PageTitle from '../../components/app/PageTitle.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -84,6 +85,8 @@
     deleteCommandDictionary({ id: event.detail[0] });
   }
 </script>
+
+<PageTitle title="Command Dictionaries" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>

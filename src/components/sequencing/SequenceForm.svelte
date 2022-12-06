@@ -7,6 +7,7 @@
   import { user as userStore } from '../../stores/app';
   import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
+  import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -38,6 +39,8 @@
   $: sequenceModified = sequenceDefinition !== savedSequenceDefinition || sequenceName !== savedSequenceName;
   $: saveButtonText = mode === 'edit' && !sequenceModified ? 'Saved' : 'Save';
   $: saveButtonClass = sequenceModified && saveButtonEnabled ? 'primary' : 'secondary';
+  $: pageTitle = mode === 'edit' ? 'Sequencing' : 'New Sequence';
+  $: pageSubtitle = mode === 'edit' ? savedSequenceName : '';
 
   onMount(() => {
     if (mode === 'edit') {
@@ -108,6 +111,8 @@
 </script>
 
 <svelte:window on:keydown={onKeydown} />
+
+<PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
 <CssGrid bind:columns={$userSequencesColumns}>
   <Panel overflowYBody="hidden" padBody={false}>

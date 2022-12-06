@@ -49,7 +49,7 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Create a branch', async ({ baseURL }) => {
-    await page.getByText(plans.planName).click();
+    await page.getByText(plans.planName).first().click();
     await page.getByText('Create branch').click();
     await page.getByPlaceholder('Name of branch').click();
     await page.getByPlaceholder('Name of branch').fill(planBranchName);
@@ -65,7 +65,7 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Create a merge request from branch to parent plan', async () => {
-    await page.getByText(planBranchName).click();
+    await page.getByText(planBranchName).first().click();
     await page.getByText('Create merge request').click();
     await page.getByRole('button', { name: 'Create Merge Request' }).click();
   });

@@ -6,6 +6,7 @@
   import { user as userStore } from '../../stores/app';
   import { schedulingGoalsColumns } from '../../stores/scheduling';
   import effects from '../../utilities/effects';
+  import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -51,6 +52,8 @@
   });
   $: saveButtonText = mode === 'edit' && !goalModified ? 'Saved' : 'Save';
   $: saveButtonClass = goalModified && saveButtonEnabled ? 'primary' : 'secondary';
+  $: pageTitle = mode === 'edit' ? 'Scheduling Goals' : 'New Scheduling Goal';
+  $: pageSubtitle = mode === 'edit' ? savedGoal.name : '';
 
   function diffGoals(goalA: Partial<SchedulingGoal>, goalB: Partial<SchedulingGoal>) {
     return Object.entries(goalA).some(([key, value]) => {
@@ -115,6 +118,8 @@
 </script>
 
 <svelte:window on:keydown={onKeydown} />
+
+<PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
 <CssGrid bind:columns={$schedulingGoalsColumns}>
   <Panel overflowYBody="hidden" padBody={false}>

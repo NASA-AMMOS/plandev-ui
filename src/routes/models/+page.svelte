@@ -6,6 +6,7 @@
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
+  import PageTitle from '../../components/app/PageTitle.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -93,6 +94,8 @@
     goto(`${base}/plans?modelId=${model.id}`);
   }
 </script>
+
+<PageTitle title="Models" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>

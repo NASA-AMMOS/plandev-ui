@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import { constraintsColumns } from '../../stores/constraints';
   import effects from '../../utilities/effects';
+  import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -53,6 +54,8 @@
   });
   $: saveButtonText = mode === 'edit' && !constraintModified ? 'Saved' : 'Save';
   $: saveButtonClass = saveButtonEnabled && constraintModified ? 'primary' : 'secondary';
+  $: pageTitle = mode === 'edit' ? 'Constraints' : 'New Constraint';
+  $: pageSubtitle = mode === 'edit' ? savedConstraint.name : '';
 
   $: if (constraintPlanId !== null) {
     const plan = initialPlans.find(plan => plan.id === constraintPlanId);
@@ -132,6 +135,8 @@
 </script>
 
 <svelte:window on:keydown={onKeydown} />
+
+<PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
 <CssGrid bind:columns={$constraintsColumns}>
   <Panel overflowYBody="hidden" padBody={false}>

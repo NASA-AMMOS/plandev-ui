@@ -12,6 +12,7 @@
   import ActivityTypesPanel from '../../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import NavButton from '../../../components/app/NavButton.svelte';
+  import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
   import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
@@ -141,6 +142,8 @@
 </script>
 
 <svelte:window on:keydown={onKeydown} />
+
+<PageTitle subTitle={data.initialPlan.name} title="Plans" />
 
 <CssGrid class="plan-container" rows="var(--nav-header-height) auto 36px">
   <Nav>

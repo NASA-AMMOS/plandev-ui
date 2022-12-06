@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
+  import PageTitle from '../components/app/PageTitle.svelte';
 
   const comics = [
     { id: '927', name: 'standards' },
@@ -25,6 +26,8 @@
     xkcdUrl = `https://xkcd.com/${id}/`;
   });
 </script>
+
+<PageTitle title="404" />
 
 <div class="app-error-container">
   <div class="app-error">

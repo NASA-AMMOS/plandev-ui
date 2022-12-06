@@ -7,6 +7,7 @@
   import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
+  import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -48,6 +49,7 @@
   });
   $: saveButtonText = mode === 'edit' && !ruleModified ? 'Saved' : 'Save';
   $: saveButtonClass = ruleModified && saveButtonEnabled ? 'primary' : 'secondary';
+  $: pageTitle = mode === 'edit' ? 'Edit Expansion Rule' : 'New Expansion Rule';
 
   function diffRule(ruleA: Partial<ExpansionRule>, ruleB: Partial<ExpansionRule>) {
     return Object.entries(ruleA).some(([key, value]) => {
@@ -101,6 +103,8 @@
 </script>
 
 <svelte:window on:keydown={onKeydown} />
+
+<PageTitle title={pageTitle} />
 
 <CssGrid bind:columns={$expansionRulesColumns}>
   <Panel overflowYBody="hidden">

@@ -7,6 +7,7 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
+  import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
@@ -170,6 +171,8 @@
     }
   }
 </script>
+
+<PageTitle title="Plans" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>
