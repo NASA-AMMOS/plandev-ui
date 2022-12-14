@@ -12,7 +12,7 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
-  import SchedulingGoal from './SchedulingGoal.svelte';
+  import SchedulingGoal from './goals/SchedulingGoal.svelte';
 
   export let gridId: number;
 
@@ -42,7 +42,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Scheduling" />
+    <GridMenu {gridId} title="Scheduling Goals" />
     <PanelHeaderActions status={$schedulingStatus}>
       <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)}>
         <ChecklistIcon />

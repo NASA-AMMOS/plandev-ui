@@ -63,10 +63,7 @@
       <CodeSquareIcon />
       Expansion
     </MenuItem>
-    <MenuItem
-      on:click={() => goto(`${base}/scheduling/goals`)}
-      on:pointerenter={() => prefetch(`${base}/scheduling/goals`)}
-    >
+    <MenuItem on:click={() => goto(`${base}/scheduling`)} on:pointerenter={() => prefetch(`${base}/scheduling`)}>
       <CalendarIcon />
       Scheduling
     </MenuItem>

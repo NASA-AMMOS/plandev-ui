@@ -44,6 +44,7 @@
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
+  export let columnShiftResize: boolean = false;
   export let currentSelectedRowId: RowId | null = null;
   export let highlightOnSelection: boolean = true;
   export let idKey: keyof TRowData = 'id';
@@ -148,6 +149,7 @@
   onMount(() => {
     gridOptions = {
       // each entry here represents one column
+      ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
       columnDefs,
       getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}` }),

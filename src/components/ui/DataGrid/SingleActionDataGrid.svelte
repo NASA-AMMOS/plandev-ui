@@ -28,6 +28,8 @@
 
   $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
     selectedItemIds = [selectedItemId];
+  } else if (selectedItemId === null) {
+    selectedItemIds = [];
   }
 
   function editItem() {

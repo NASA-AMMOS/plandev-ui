@@ -3,6 +3,7 @@ import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
+import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
 let constraints: Constraints;
@@ -11,6 +12,7 @@ let models: Models;
 let page: Page;
 let plan: Plan;
 let plans: Plans;
+let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ browser }) => {
@@ -20,8 +22,9 @@ test.beforeAll(async ({ browser }) => {
   models = new Models(page);
   plans = new Plans(page, models);
   constraints = new Constraints(page, models);
+  schedulingConditions = new SchedulingConditions(page, models);
   schedulingGoals = new SchedulingGoals(page, models);
-  plan = new Plan(page, plans, constraints, schedulingGoals);
+  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
   await models.createModel();

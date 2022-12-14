@@ -6,15 +6,15 @@
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
 
-  export let goalDefinition: string = '';
-  export let goalModelId: number | null = null;
+  export let scheduleItemDefinition: string = '';
+  export let scheduleItemModelId: number | null = null;
   export let readOnly: boolean = false;
-  export let title: string = 'Scheduling Goal - Definition Editor';
+  export let title: string = 'Scheduling Item - Definition Editor';
 
   let monaco: Monaco;
   let schedulingTsFiles: TypeScriptFile[];
 
-  $: effects.getTsFilesScheduling(goalModelId).then(tsFiles => (schedulingTsFiles = tsFiles));
+  $: effects.getTsFilesScheduling(scheduleItemModelId).then(tsFiles => (schedulingTsFiles = tsFiles));
 
   $: if (monaco !== undefined && schedulingTsFiles !== undefined) {
     const { languages } = monaco;
@@ -43,7 +43,7 @@
       {readOnly}
       scrollBeyondLastLine={false}
       tabSize={2}
-      value={goalDefinition}
+      value={scheduleItemDefinition}
       on:didChangeModelContent
     />
   </svelte:fragment>

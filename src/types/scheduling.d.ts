@@ -12,10 +12,25 @@ type SchedulingGoal = {
   revision: number;
 };
 
+type SchedulingCondition = {
+  author: string | null;
+  created_date: string;
+  definition: string;
+  description: string | null;
+  id: number;
+  last_modified_by: string | null;
+  model_id: number;
+  modified_date: string;
+  name: string;
+  revision: number;
+};
+
 type SchedulingGoalAnalysis = {
   satisfied: boolean;
   satisfying_activities: { activity_id: number }[];
 };
+
+type SchedulingConditionInsertInput = Omit<SchedulingCondition, 'created_date' | 'id' | 'modified_date' | 'revision'>;
 
 type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
@@ -40,10 +55,23 @@ type SchedulingSpec = {
 
 type SchedulingSpecInsertInput = Omit<SchedulingSpec, 'id' | 'revision'>;
 
+type SchedulingSpecCondition = {
+  condition: SchedulingCondition;
+  enabled: boolean;
+  specification: SchedulingSpec;
+  specification_id: number;
+};
+
 type SchedulingSpecGoal = {
   enabled: boolean;
   goal: SchedulingGoal;
   priority: number;
+  specification_id: number;
+};
+
+type SchedulingSpecConditionInsertInput = {
+  condition_id: number;
+  enabled: boolean;
   specification_id: number;
 };
 

@@ -3,16 +3,15 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { schedulingGoals, schedulingGoalsColumns } from '../../stores/scheduling';
-  import effects from '../../utilities/effects';
-  import Input from '../form/Input.svelte';
-  import Chip from '../ui/Chip.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
-  import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
-  import Panel from '../ui/Panel.svelte';
-  import SchedulingGoalEditor from './SchedulingGoalEditor.svelte';
+  import { createEventDispatcher } from 'svelte';
+  import Input from '../../form/Input.svelte';
+  import Chip from '../../ui/Chip.svelte';
+  import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
+  import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
+  import Panel from '../../ui/Panel.svelte';
+
+  export let schedulingGoals: SchedulingGoal[] = [];
+  export let selectedGoal: SchedulingGoal | null | undefined = null;
 
   type CellRendererParams = {
     deleteGoal: (goal: SchedulingGoal) => void;
@@ -71,33 +70,26 @@
     },
   ];
 
+  const dispatch = createEventDispatcher();
+
   let filteredGoals: SchedulingGoal[] = [];
   let filterText: string = '';
-  let selectedGoal: SchedulingGoal | null = null;
 
-  $: filteredGoals = $schedulingGoals.filter(goal => {
+  $: filteredGoals = schedulingGoals.filter(goal => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${goal.id}`.includes(filterTextLowerCase);
     const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
   $: if (selectedGoal !== null) {
-    const found = $schedulingGoals.findIndex(goal => goal.id === selectedGoal.id);
+    const found = schedulingGoals.findIndex(goal => goal.id === selectedGoal.id);
     if (found === -1) {
       selectedGoal = null;
     }
   }
 
-  async function deleteGoal({ id }: Pick<SchedulingGoal, 'id'>) {
-    const success = await effects.deleteSchedulingGoal(id);
-
-    if (success) {
-      schedulingGoals.filterValueById(id);
-
-      if (id === selectedGoal?.id) {
-        selectedGoal = null;
-      }
-    }
+  function deleteGoal({ id }: Pick<SchedulingGoal, 'id'>) {
+    dispatch('deleteGoal', id);
   }
 
   function deleteGoalContext(event: CustomEvent<number[]>) {
@@ -111,62 +103,40 @@
   function editGoalContext(event: CustomEvent<number[]>) {
     editGoal({ id: event.detail[0] });
   }
-
-  function toggleGoal(event: CustomEvent<DataGridRowSelection<SchedulingGoal>>) {
-    const {
-      detail: { data: clickedGoal, isSelected },
-    } = event;
-
-    if (isSelected) {
-      selectedGoal = clickedGoal;
-    }
-  }
 </script>
 
-<CssGrid bind:columns={$schedulingGoalsColumns}>
-  <Panel>
-    <svelte:fragment slot="header">
-      <Chip>Scheduling Goals</Chip>
+<Panel>
+  <svelte:fragment slot="header">
+    <Chip>Scheduling Goals</Chip>
 
-      <Input>
-        <input
-          bind:value={filterText}
-          class="st-input"
-          placeholder="Filter goals"
-          style="max-width: 300px; width: 100%;"
-        />
-      </Input>
+    <Input>
+      <input
+        bind:value={filterText}
+        class="st-input"
+        placeholder="Filter goals"
+        style="max-width: 300px; width: 100%;"
+      />
+    </Input>
 
-      <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals/new`)}>
-          New
-        </button>
-      </div>
-    </svelte:fragment>
+    <div class="right">
+      <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals/new`)}> New </button>
+    </div>
+  </svelte:fragment>
 
-    <svelte:fragment slot="body">
-      {#if filteredGoals.length}
-        <SingleActionDataGrid
-          {columnDefs}
-          hasEdit={true}
-          itemDisplayText="Goal"
-          items={filteredGoals}
-          on:deleteItem={deleteGoalContext}
-          on:editItem={editGoalContext}
-          on:rowSelected={toggleGoal}
-        />
-      {:else}
-        No Scheduling Goals Found
-      {/if}
-    </svelte:fragment>
-  </Panel>
-
-  <CssGridGutter track={1} type="column" />
-
-  <SchedulingGoalEditor
-    goalDefinition={selectedGoal?.definition ?? 'No Scheduling Goal Selected'}
-    goalModelId={selectedGoal?.model_id}
-    readOnly={true}
-    title="Scheduling Goal - Definition Editor (Read-only)"
-  />
-</CssGrid>
+  <svelte:fragment slot="body">
+    {#if filteredGoals.length}
+      <SingleActionDataGrid
+        {columnDefs}
+        hasEdit={true}
+        itemDisplayText="Goal"
+        items={filteredGoals}
+        selectedItemId={selectedGoal?.id ?? null}
+        on:deleteItem={deleteGoalContext}
+        on:editItem={editGoalContext}
+        on:rowSelected
+      />
+    {:else}
+      No Scheduling Goals Found
+    {/if}
+  </svelte:fragment>
+</Panel>

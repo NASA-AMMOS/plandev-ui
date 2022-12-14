@@ -6,12 +6,12 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
-  import effects from '../../utilities/effects';
-  import { tooltip } from '../../utilities/tooltip';
-  import ContextMenu from '../context-menu/ContextMenu.svelte';
-  import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
-  import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
-  import Input from '../form/Input.svelte';
+  import effects from '../../../utilities/effects';
+  import { tooltip } from '../../../utilities/tooltip';
+  import ContextMenu from '../../context-menu/ContextMenu.svelte';
+  import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
+  import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
+  import Input from '../../form/Input.svelte';
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 

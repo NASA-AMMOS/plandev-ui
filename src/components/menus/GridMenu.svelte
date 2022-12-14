@@ -69,9 +69,13 @@
       <WindowFullscreenIcon />
       External Application
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('SchedulingPanel')}>
+    <MenuItem on:click={() => updateGridComponent('SchedulingGoalsPanel')}>
       <CalendarIcon />
-      Scheduling
+      Scheduling Goals
+    </MenuItem>
+    <MenuItem on:click={() => updateGridComponent('SchedulingConditionsPanel')}>
+      <CalendarIcon />
+      Scheduling Conditions
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ActivityFormPanel')}>
       <ActivityIcon />

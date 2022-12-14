@@ -3,15 +3,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { user as userStore } from '../../stores/app';
-  import { schedulingGoalsColumns } from '../../stores/scheduling';
-  import effects from '../../utilities/effects';
-  import PageTitle from '../app/PageTitle.svelte';
-  import Chip from '../ui/Chip.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
-  import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import Panel from '../ui/Panel.svelte';
-  import SchedulingGoalEditor from './SchedulingGoalEditor.svelte';
+  import { user as userStore } from '../../../stores/app';
+  import { schedulingGoalsColumns } from '../../../stores/scheduling';
+  import effects from '../../../utilities/effects';
+  import { isMacOs } from '../../../utilities/generic';
+  import PageTitle from '../../app/PageTitle.svelte';
+  import Chip from '../../ui/Chip.svelte';
+  import CssGrid from '../../ui/CssGrid.svelte';
+  import CssGridGutter from '../../ui/CssGridGutter.svelte';
+  import Panel from '../../ui/Panel.svelte';
+  import SchedulingEditor from '../SchedulingEditor.svelte';
 
   export let initialGoalAuthor: string | null = null;
   export let initialGoalCreatedDate: string | null = null;
@@ -69,7 +70,7 @@
 
   function onKeydown(event: KeyboardEvent): void {
     const { key, ctrlKey, metaKey } = event;
-    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
       event.preventDefault();
       saveGoal();
     }
@@ -198,9 +199,9 @@
 
   <CssGridGutter track={1} type="column" />
 
-  <SchedulingGoalEditor
-    {goalDefinition}
-    {goalModelId}
+  <SchedulingEditor
+    scheduleItemDefinition={goalDefinition}
+    scheduleItemModelId={goalModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Scheduling Goal - Definition Editor"
     on:didChangeModelContent={onDidChangeModelContent}
   />

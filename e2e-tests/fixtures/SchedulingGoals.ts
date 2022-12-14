@@ -10,7 +10,6 @@ export class SchedulingGoals {
   goalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: Temporal.Duration.from({ hours: 12 }) })`;
   goalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
   goalName: string;
-  goalsNavButton: Locator;
   inputGoalDefinition: Locator;
   inputGoalDescription: Locator;
   inputGoalModel: Locator;
@@ -38,7 +37,7 @@ export class SchedulingGoals {
     await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
-    await this.page.waitForURL(`${baseURL}/scheduling/goals`);
+    await this.page.waitForURL(`${baseURL}/scheduling`);
   }
 
   async deleteSchedulingGoal() {
@@ -85,7 +84,7 @@ export class SchedulingGoals {
   async goto() {
     await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
-    await expect(this.goalsNavButton).toHaveClass(/selected/);
+    await this.page.waitForSelector(`input[placeholder="Filter goals"]`, { state: 'attached' });
   }
 
   async selectModel() {
@@ -102,7 +101,6 @@ export class SchedulingGoals {
     this.confirmModalDeleteButton = page.locator(
       `.modal:has-text("Delete Scheduling Goal") >> button:has-text("Delete")`,
     );
-    this.goalsNavButton = page.locator(`.nav-button:has-text("Goals")`);
     this.inputGoalDefinition = page.locator('.monaco-editor >> textarea.inputarea');
     this.inputGoalDescription = page.locator('textarea[name="goal-description"]');
     this.inputGoalModel = page.locator(this.inputGoalModelSelector);

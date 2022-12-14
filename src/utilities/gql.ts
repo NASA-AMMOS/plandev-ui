@@ -96,6 +96,23 @@ const gql = {
     }
   `,
 
+  CREATE_SCHEDULING_CONDITION: `#graphql
+    mutation CreateSchedulingCondition($condition: scheduling_condition_insert_input!) {
+      createSchedulingCondition: insert_scheduling_condition_one(object: $condition) {
+        author
+        created_date
+        definition
+        description
+        id
+        last_modified_by
+        model_id
+        modified_date
+        name
+        revision
+      }
+    }
+  `,
+
   CREATE_SCHEDULING_GOAL: `#graphql
     mutation CreateSchedulingGoal($goal: scheduling_goal_insert_input!) {
       createSchedulingGoal: insert_scheduling_goal_one(object: $goal) {
@@ -117,6 +134,16 @@ const gql = {
     mutation CreateSchedulingSpec($spec: scheduling_specification_insert_input!) {
       createSchedulingSpec: insert_scheduling_specification_one(object: $spec) {
         id
+      }
+    }
+  `,
+
+  CREATE_SCHEDULING_SPEC_CONDITION: `#graphql
+    mutation CreateSchedulingSpecCondition($spec_condition: scheduling_specification_conditions_insert_input!) {
+      createSchedulingSpecCondition: insert_scheduling_specification_conditions_one(object: $spec_condition) {
+        enabled
+        condition_id
+        specification_id
       }
     }
   `,
@@ -254,6 +281,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_CONDITION: `#graphql
+    mutation DeleteSchedulingCondition($id: Int!) {
+      deleteSchedulingCondition: delete_scheduling_condition_by_pk(id: $id) {
+        id
       }
     }
   `,
@@ -497,6 +532,23 @@ const gql = {
         change_type,
         source,
         target
+      }
+    }
+  `,
+
+  GET_SCHEDULING_CONDITION: `#graphql
+    query GetSchedulingCondition($id: Int!) {
+      condition: scheduling_condition_by_pk(id: $id) {
+        author
+        created_date
+        definition
+        description
+        id
+        last_modified_by
+        model_id
+        modified_date
+        name
+        revision
       }
     }
   `,
@@ -1013,6 +1065,23 @@ const gql = {
     }
   `,
 
+  SUB_SCHEDULING_CONDITIONS: `#graphql
+    subscription SubSchedulingConditions {
+      conditions: scheduling_condition(order_by: { id: desc }) {
+        author
+        created_date
+        definition
+        description
+        id
+        last_modified_by
+        model_id
+        modified_date
+        name
+        revision
+      }
+    }
+  `,
+
   SUB_SCHEDULING_GOALS: `#graphql
     subscription SubSchedulingGoals {
       goals: scheduling_goal(order_by: { id: desc }) {
@@ -1029,6 +1098,37 @@ const gql = {
         modified_date
         name
         revision
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_SPEC_CONDITIONS: `#graphql
+    subscription SubSchedulingSpecConditions($specification_id: Int!) {
+      specConditions: scheduling_specification_conditions(where: { specification_id: { _eq: $specification_id } }, order_by: { condition_id: asc }) {
+        enabled
+        condition {
+          author
+          created_date
+          definition
+          description
+          id
+          last_modified_by
+          model_id
+          modified_date
+          name
+          revision
+        }
+        specification {
+          analysis_only
+          horizon_end
+          horizon_start
+          id
+          plan_id
+          plan_revision
+          revision
+          simulation_arguments
+        }
+        specification_id
       }
     }
   `,
@@ -1185,6 +1285,18 @@ const gql = {
     }
   `,
 
+  UPDATE_SCHEDULING_CONDITION: `#graphql
+    mutation UpdateSchedulingCondition($id: Int!, $condition: scheduling_condition_set_input!) {
+      updateSchedulingCondition: update_scheduling_condition_by_pk(
+        pk_columns: { id: $id }, _set: $condition
+      ) {
+        id
+        last_modified_by
+        modified_date
+      }
+    }
+  `,
+
   UPDATE_SCHEDULING_GOAL: `#graphql
     mutation UpdateSchedulingGoal($id: Int!, $goal: scheduling_goal_set_input!) {
       updateSchedulingGoal: update_scheduling_goal_by_pk(
@@ -1207,6 +1319,22 @@ const gql = {
     }
   `,
 
+  UPDATE_SCHEDULING_SPEC_CONDITION: `#graphql
+    mutation UpdateSchedulingSpecCondition(
+      $condition_id: Int!,
+      $specification_id: Int!,
+      $spec_condition: scheduling_specification_conditions_set_input!
+    ) {
+      updateSchedulingSpecCondition: update_scheduling_specification_conditions_by_pk(
+        pk_columns: { condition_id: $condition_id, specification_id: $specification_id },
+        _set: $spec_condition
+      ) {
+        condition_id
+        specification_id
+      }
+    }
+  `,
+
   UPDATE_SCHEDULING_SPEC_GOAL: `#graphql
     mutation UpdateSchedulingSpecGoal(
       $goal_id: Int!,
@@ -1214,7 +1342,7 @@ const gql = {
       $spec_goal: scheduling_specification_goals_set_input!
     ) {
       updateSchedulingSpecGoal: update_scheduling_specification_goals_by_pk(
-        pk_columns: { goal_id: $goal_id, specification_id:$specification_id },
+        pk_columns: { goal_id: $goal_id, specification_id: $specification_id },
         _set: $spec_goal
       ) {
         goal_id

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import PageTitle from '../../../../../components/app/PageTitle.svelte';
-  import SchedulingGoalForm from '../../../../../components/scheduling/SchedulingGoalForm.svelte';
+  import SchedulingGoalForm from '../../../../../components/scheduling/goals/SchedulingGoalForm.svelte';
   import type { PageData } from './$types';
 
   export let data: PageData;

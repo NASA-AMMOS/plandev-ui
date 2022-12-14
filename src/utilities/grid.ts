@@ -60,20 +60,29 @@ export const constraintsGrid: Grid = {
 export const schedulingGrid: Grid = {
   columnSizes: '1fr 3px 3fr 3px 1fr',
   columns: [
-    { componentName: 'SchedulingPanel', id: 1, type: 'component' },
-    { id: 2, track: 1, type: 'gutter' },
     {
-      id: 3,
-      rowSizes: '2fr 3px 1fr',
+      id: 1,
+      rowSizes: '1fr 3px 1fr',
       rows: [
-        { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
-        { id: 5, track: 1, type: 'gutter' },
-        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
+        { componentName: 'SchedulingGoalsPanel', id: 2, type: 'component' },
+        { id: 3, track: 1, type: 'gutter' },
+        { componentName: 'SchedulingConditionsPanel', id: 4, type: 'component' },
       ],
       type: 'rows',
     },
-    { id: 7, track: 3, type: 'gutter' },
-    { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
+    { id: 5, track: 1, type: 'gutter' },
+    {
+      id: 6,
+      rowSizes: '2fr 3px 1fr',
+      rows: [
+        { componentName: 'TimelinePanel', id: 7, timelineId: 0, type: 'component' },
+        { id: 8, track: 1, type: 'gutter' },
+        { activityTableId: 0, componentName: 'ActivityTablePanel', id: 9, type: 'component' },
+      ],
+      type: 'rows',
+    },
+    { id: 10, track: 3, type: 'gutter' },
+    { componentName: 'ActivityFormPanel', id: 11, type: 'component' },
   ],
   gridName: 'Scheduling',
   id: 0,

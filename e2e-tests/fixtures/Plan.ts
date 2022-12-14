@@ -2,11 +2,16 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { Constraints } from './Constraints.js';
 import { Plans } from './Plans.js';
+import { SchedulingConditions } from './SchedulingConditions.js';
 import { SchedulingGoals } from './SchedulingGoals.js';
 
 export class Plan {
+  activitiesTable: Locator;
+  activitiesTableFirstRow: Locator;
   analyzeButton: Locator;
   appError: Locator;
+  confirmModal: Locator;
+  confirmModalDeleteButton: Locator;
   constraintListItemSelector: string;
   constraintNewButton: Locator;
   gridMenu: Locator;
@@ -23,7 +28,8 @@ export class Plan {
   panelConstraintViolations: Locator;
   panelConstraints: Locator;
   panelExpansion: Locator;
-  panelScheduling: Locator;
+  panelSchedulingConditions: Locator;
+  panelSchedulingGoals: Locator;
   panelSimulation: Locator;
   panelTimeline: Locator;
   panelTimelineDetails: Locator;
@@ -32,6 +38,9 @@ export class Plan {
   panelViews: Locator;
   planTitle: Locator;
   scheduleButton: Locator;
+  schedulingConditionEnabledCheckbox: Locator;
+  schedulingConditionListItemSelector: string;
+  schedulingConditionNewButton: Locator;
   schedulingGoalDifferenceBadge: Locator;
   schedulingGoalEnabledCheckbox: Locator;
   schedulingGoalExpand: Locator;
@@ -45,8 +54,10 @@ export class Plan {
     public plans: Plans,
     public constraints: Constraints,
     public schedulingGoals: SchedulingGoals,
+    public schedulingConditions: SchedulingConditions,
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
+    this.schedulingConditionListItemSelector = `.scheduling-condition:has-text("${schedulingConditions.conditionName}")`;
     this.schedulingGoalListItemSelector = `.scheduling-goal:has-text("${schedulingGoals.goalName}")`;
     this.schedulingStatusSelector = (status: string) => `.status-badge.${status}`;
     this.updatePage(page);
@@ -62,6 +73,19 @@ export class Plan {
     await this.page.waitForSelector(this.constraintListItemSelector, { state: 'visible', strict: true });
   }
 
+  async createSchedulingCondition(baseURL: string | undefined) {
+    const [newSchedulingConditionPage] = await Promise.all([
+      this.page.waitForEvent('popup'),
+      this.schedulingConditionNewButton.click(),
+    ]);
+    this.schedulingConditions.updatePage(newSchedulingConditionPage);
+    await newSchedulingConditionPage.waitForURL(`${baseURL}/scheduling/conditions/new?modelId=*&&specId=*`);
+    await this.schedulingConditions.createSchedulingCondition(baseURL);
+    await newSchedulingConditionPage.close();
+    this.schedulingConditions.updatePage(this.page);
+    await this.page.waitForSelector(this.schedulingConditionListItemSelector, { state: 'visible', strict: true });
+  }
+
   async createSchedulingGoal(baseURL: string | undefined) {
     const [newSchedulingGoalPage] = await Promise.all([
       this.page.waitForEvent('popup'),
@@ -73,6 +97,27 @@ export class Plan {
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
     await this.page.waitForSelector(this.schedulingGoalListItemSelector, { state: 'visible', strict: true });
+  }
+
+  async deleteAllActivities() {
+    await this.navButtonActivities.click();
+    await this.activitiesTable.waitFor({ state: 'attached' });
+    await expect(this.confirmModal).not.toBeVisible();
+
+    await this.activitiesTableFirstRow.click({ button: 'right' });
+    await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activities")').click();
+    await this.activitiesTableFirstRow.click({ button: 'right' });
+    await this.page.locator('.context-menu > .context-menu-item:has-text("Delete 10 Activities")').click();
+
+    await this.confirmModal.waitFor({ state: 'attached' });
+    await this.confirmModal.waitFor({ state: 'visible' });
+    await expect(this.confirmModal).toBeVisible();
+    await expect(this.confirmModalDeleteButton).toBeVisible();
+    await this.confirmModalDeleteButton.click();
+    await this.page.pause();
+    await this.activitiesTableFirstRow.waitFor({ state: 'detached' });
+    await this.activitiesTableFirstRow.waitFor({ state: 'hidden' });
+    await expect(this.activitiesTableFirstRow).not.toBeVisible();
   }
 
   /**
@@ -133,15 +178,17 @@ export class Plan {
 
   async showSchedulingLayout() {
     await this.navButtonScheduling.click();
-    await this.panelScheduling.waitFor({ state: 'attached' });
-    await this.panelScheduling.waitFor({ state: 'visible' });
+    await this.panelSchedulingGoals.waitFor({ state: 'attached' });
+    await this.panelSchedulingGoals.waitFor({ state: 'visible' });
+    await this.panelSchedulingConditions.waitFor({ state: 'attached' });
+    await this.panelSchedulingConditions.waitFor({ state: 'visible' });
     await this.panelActivityForm.waitFor({ state: 'attached' });
     await this.panelActivityForm.waitFor({ state: 'visible' });
     await this.panelActivityTable.waitFor({ state: 'attached' });
     await this.panelActivityTable.waitFor({ state: 'visible' });
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
-    await expect(this.panelScheduling).toBeVisible();
+    await expect(this.panelSchedulingGoals).toBeVisible();
     await expect(this.panelActivityForm).toBeVisible();
     await expect(this.panelActivityTable).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
@@ -150,6 +197,12 @@ export class Plan {
 
   updatePage(page: Page): void {
     this.appError = page.locator('.app-error');
+    this.activitiesTable = page.locator(`div.ag-theme-stellar.table`);
+    this.activitiesTableFirstRow = page
+      .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
+      .nth(0);
+    this.confirmModal = page.locator(`.modal:has-text("Delete Activities")`);
+    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Activities") >> button:has-text("Delete")`);
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.gridMenu = page.locator('.grid-menu > .menu > .menu-slot');
     this.gridMenuButton = page.locator('.grid-menu');
@@ -167,7 +220,8 @@ export class Plan {
     this.panelConstraintViolations = page.locator('[data-component-name="ConstraintViolationsPanel"]');
     this.panelConstraints = page.locator('[data-component-name="ConstraintsPanel"]');
     this.panelExpansion = page.locator('[data-component-name="ExpansionPanel"]');
-    this.panelScheduling = page.locator('[data-component-name="SchedulingPanel"]');
+    this.panelSchedulingConditions = page.locator('[data-component-name="SchedulingConditionsPanel"]');
+    this.panelSchedulingGoals = page.locator('[data-component-name="SchedulingGoalsPanel"]');
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineForm = page.locator('[data-component-name="TimelineFormPanel"]');
@@ -181,8 +235,12 @@ export class Plan {
     this.schedulingGoalEnabledCheckbox = page.locator(
       `.scheduling-goal:has-text("${this.schedulingGoals.goalName}") >> input[type="checkbox"]`,
     );
+    this.schedulingConditionEnabledCheckbox = page.locator(
+      `.scheduling-condition:has-text("${this.schedulingConditions.conditionName}") >> input[type="checkbox"]`,
+    );
     this.schedulingGoalExpand = page.locator('span[aria-label="scheduling-goal-expand"]');
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
+    this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('li > .satisfied-activity');
   }
 }

@@ -78,14 +78,12 @@ test.describe.serial('App Nav', () => {
     await expect(page).toHaveURL(`${baseURL}/expansion/rules`);
   });
 
-  test(`Clicking on the app menu 'Scheduling' option should route to the scheduling/goals page`, async ({
-    baseURL,
-  }) => {
+  test(`Clicking on the app menu 'Scheduling' option should route to the scheduling page`, async ({ baseURL }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     await appNav.appMenuItemScheduling.click();
-    await expect(page).toHaveURL(`${baseURL}/scheduling/goals`);
+    await expect(page).toHaveURL(`${baseURL}/scheduling`);
   });
 
   test(`Clicking on the app menu 'Gateway' option should open a new tab to the gateway page`, async () => {

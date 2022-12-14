@@ -7,6 +7,7 @@
   import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
+  import { isMacOs } from '../../utilities/generic';
   import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -65,7 +66,7 @@
 
   function onKeydown(event: KeyboardEvent): void {
     const { key, ctrlKey, metaKey } = event;
-    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
       event.preventDefault();
       saveRule();
     }

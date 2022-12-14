@@ -3,6 +3,7 @@ import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
+import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
 let constraints: Constraints;
@@ -11,6 +12,7 @@ let models: Models;
 let page: Page;
 let plan: Plan;
 let plans: Plans;
+let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
 
 test.beforeAll(async ({ browser }) => {
@@ -20,8 +22,9 @@ test.beforeAll(async ({ browser }) => {
   models = new Models(page);
   plans = new Plans(page, models);
   constraints = new Constraints(page, models);
+  schedulingConditions = new SchedulingConditions(page, models);
   schedulingGoals = new SchedulingGoals(page, models);
-  plan = new Plan(page, plans, constraints, schedulingGoals);
+  plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
   await models.createModel();
@@ -48,6 +51,10 @@ test.describe.serial('Scheduling', () => {
     await plan.createSchedulingGoal(baseURL);
   });
 
+  test('Create scheduling condition from the plan page', async ({ baseURL }) => {
+    await plan.createSchedulingCondition(baseURL);
+  });
+
   test('Disabling a scheduling goal should not include that goal in a scheduling run ', async () => {
     await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
     await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
@@ -56,6 +63,22 @@ test.describe.serial('Scheduling', () => {
     await plan.runScheduling();
     await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
     await plan.schedulingGoalEnabledCheckbox.check();
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
+  });
+
+  test('The condition should prevent showing +10 in the goals badge', async () => {
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
+
+  test('Disabling a scheduling condition should not include that condition in a scheduling run ', async () => {
+    await expect(plan.schedulingConditionEnabledCheckbox).toBeChecked();
+    await plan.schedulingConditionEnabledCheckbox.uncheck();
+    await expect(plan.schedulingConditionEnabledCheckbox).not.toBeChecked();
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await plan.deleteAllActivities();
+    await plan.showSchedulingLayout();
   });
 
   test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {

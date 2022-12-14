@@ -118,6 +118,13 @@ export function isEmpty(value: any): boolean {
 }
 
 /**
+ * Returns true if the current browser is running on MacOS
+ */
+export function isMacOs(): boolean {
+  return /mac/i.test(window.navigator.platform);
+}
+
+/**
  * Parses a string into a number. If string cannot be parsed just returns null.
  */
 export function parseFloatOrNull(value: string | null): number | null {

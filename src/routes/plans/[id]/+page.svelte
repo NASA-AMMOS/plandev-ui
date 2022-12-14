@@ -22,7 +22,8 @@
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
-  import SchedulingPanel from '../../../components/scheduling/SchedulingPanel.svelte';
+  import SchedulingConditionsPanel from '../../../components/scheduling/SchedulingConditionsPanel.svelte';
+  import SchedulingGoalsPanel from '../../../components/scheduling/SchedulingGoalsPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
   import TimelineDetailsPanel from '../../../components/timeline/form/TimelineDetailsPanel.svelte';
   import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
@@ -55,7 +56,7 @@
   import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
-  import { setQueryParam } from '../../../utilities/generic';
+  import { isMacOs, setQueryParam } from '../../../utilities/generic';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
@@ -70,7 +71,8 @@
     ConstraintsPanel,
     ExpansionPanel,
     IFramePanel,
-    SchedulingPanel,
+    SchedulingConditionsPanel,
+    SchedulingGoalsPanel,
     SimulationPanel,
     TimelineDetailsPanel,
     TimelineFormPanel,
@@ -134,7 +136,7 @@
 
   function onKeydown(event: KeyboardEvent): void {
     const { key, ctrlKey, metaKey } = event;
-    if ((window.navigator.platform.match(/mac/i) ? metaKey : ctrlKey) && key === 's') {
+    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
       event.preventDefault();
       effects.simulate();
     }

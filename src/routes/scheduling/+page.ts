@@ -1,7 +1,19 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import effects from '../../utilities/effects';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = () => {
-  throw redirect(302, `${base}/scheduling/goals`);
+export const load: PageLoad = async ({ parent }) => {
+  const { user } = await parent();
+
+  if (!user) {
+    throw redirect(302, `${base}/login`);
+  }
+
+  const { models = [], plans = [] } = await effects.getPlansAndModels();
+
+  return {
+    models,
+    plans,
+  };
 };
