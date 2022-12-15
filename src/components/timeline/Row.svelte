@@ -1,10 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import type { ScaleTime } from 'd3-scale';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import { selectedRow, view, viewSetSelectedRow, viewUpdateLayout } from '../../stores/views';
   import { classNames } from '../../utilities/generic';
+  import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
   import LayerLine from './LayerLine.svelte';
@@ -84,11 +87,35 @@
       dispatch('updateRowHeight', { newHeight, rowId: id });
     }
   }
+
+  function onEditRow() {
+    // Open the timeline editor panel on the right. For now we will assume
+    // the right panel is the last component in the view and that the panel is open.
+    // This will be improved after future layout enhancements.
+    const gridColumns = $view.definition.plan.layout as GridColumns;
+    const components = gridColumns.columns.filter(grid => grid.type === 'component');
+    if (components.length) {
+      viewUpdateLayout(components[components.length - 1].id, { componentName: 'TimelineEditorPanel' });
+    }
+
+    // Set row to edit
+    viewSetSelectedRow(id);
+  }
 </script>
 
-<div class="row-root">
+<div class="row-root" class:active-row={$selectedRow ? $selectedRow.id === id : false}>
   <!-- Row Header. -->
-  <RowHeader {expanded} rowId={id} title={name} {rowDragMoveDisabled} on:mouseDownRowMove on:toggleRowExpansion />
+  <RowHeader {expanded} rowId={id} title={name} {rowDragMoveDisabled} on:mouseDownRowMove on:toggleRowExpansion>
+    <div slot="right">
+      <button
+        use:tooltip={{ content: 'Edit Row', placement: 'top' }}
+        class="st-button icon row-edit-button"
+        on:click={onEditRow}
+      >
+        <PenIcon />
+      </button>
+    </div>
+  </RowHeader>
 
   <div class={rowClasses} id={`row-${id}`} style="height: {drawHeight}px;">
     <!-- Overlay for Pointer Events. -->
@@ -211,6 +238,7 @@
   }
 
   .overlay {
+    outline: none;
     z-index: 2;
   }
 
@@ -237,5 +265,32 @@
 
   :global(.right) {
     z-index: 0;
+  }
+
+  .row-edit-button {
+    display: flex;
+  }
+
+  :global(.row-edit-button.st-button.icon svg) {
+    color: var(--st-gray-50);
+  }
+
+  :global(.row-edit-button.st-button.icon:hover svg) {
+    color: var(--st-gray-70);
+  }
+
+  .row-root {
+    position: relative;
+  }
+
+  .active-row:after {
+    border: 1px solid #2f80ed;
+    content: ' ';
+    height: 100%;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    width: 100%;
   }
 </style>

@@ -7,13 +7,16 @@
   export let maxWidth = 0;
   export let label = '';
   export let activeCursor = false;
+  export let color = '';
 
   let hovered = false;
 </script>
 
 <div class="timeline-cursor" style="transform: translateX({x}px)">
+  <div class="timeline-cursor-line" style="background: {color}" />
   <button
     class="timeline-cursor-icon"
+    style="color: {color}"
     on:click
     on:mouseenter={() => (hovered = true)}
     on:mouseleave={() => (hovered = false)}
@@ -57,9 +60,8 @@
     width: 15px;
   }
 
-  .timeline-cursor::before {
+  .timeline-cursor-line {
     background-color: var(--st-gray-50);
-    content: '';
     display: block;
     height: 100%;
     left: -0.5px;

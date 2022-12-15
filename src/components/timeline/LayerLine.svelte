@@ -9,6 +9,7 @@
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
+  // TODO make an issue to remove these unneeded filters from LayerLine, LayerRange, etc
   export let filter: ResourceLayerFilter | undefined;
   export let id: number;
   export let lineColor: string = '';
@@ -37,6 +38,7 @@
   $: if (
     drawHeight &&
     drawWidth &&
+    // TODO swap filter out for resources which are recomputed when the view changes (i.e. filter changes)
     filter &&
     lineColor &&
     lineWidth &&

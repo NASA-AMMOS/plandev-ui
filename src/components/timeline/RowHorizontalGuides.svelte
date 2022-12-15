@@ -34,6 +34,7 @@
           const lineGroup = gSelection.append('g').attr('class', horizontalGuideClass);
 
           const color = 'gray';
+          const dashColor = guide?.label?.color || color;
           const dashLength = 2;
           const width = 1.0;
           lineGroup
@@ -44,7 +45,7 @@
             .attr('y1', y)
             .attr('x2', drawWidth)
             .attr('y2', y)
-            .attr('stroke', color)
+            .attr('stroke', dashColor)
             .attr('stroke-dasharray', dashLength)
             .attr('stroke-width', width);
 

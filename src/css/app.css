@@ -84,3 +84,8 @@ fieldset {
 .toastify {
   color: var(--st-white);
 }
+
+/* Remove safari input margin */
+.st-input {
+  margin: 0;
+}

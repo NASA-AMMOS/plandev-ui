@@ -178,34 +178,53 @@ export function searchQuadtreeRect<T>(
   return points;
 }
 
-/*
-  Returns a new vertical guide
-*/
+/**
+ * Returns a new vertical guide
+ */
 export function createVerticalGuide(doyTimestamp: string, verticalGuides: VerticalGuide[]): VerticalGuide {
-  const id = verticalGuides.reduce((prev, curr) => {
-    if (curr.id >= prev) {
-      return curr.id + 1;
-    }
-    return prev;
-  }, 0);
+  const id = getNextID(verticalGuides);
   const defaultLabel = `Guide ${id}`;
+
   return {
     id,
-    label: { text: defaultLabel },
+    label: { color: '#969696', text: defaultLabel },
     timestamp: doyTimestamp,
   };
 }
 
-/*
-  Returns a new row
-*/
-export function createRow(rows: Row[]): Row {
-  const id = rows.reduce((prev, curr) => {
-    if (curr.id >= prev) {
-      return curr.id + 1;
+/**
+ * Returns a new horizontal guide
+ */
+export function createHorizontalGuide(yAxes: Axis[], horizontalGuides: HorizontalGuide[]): HorizontalGuide {
+  const id = getNextID(horizontalGuides);
+  const defaultLabel = `Guide ${id}`;
+
+  // Default the y value to the middle of the scale domain
+  const firstAxis = yAxes.length > 0 ? yAxes[0] : 0;
+  let yAxisId = 0;
+  let y = 0;
+  if (firstAxis) {
+    yAxisId = firstAxis.id;
+    if (firstAxis.scaleDomain.length === 2) {
+      // Default y value to the middle of the domain
+      y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
     }
-    return prev;
-  }, 0);
+  }
+
+  return {
+    id,
+    label: { color: '#969696', text: defaultLabel },
+    y,
+    yAxisId,
+  };
+}
+
+/**
+ * Returns a new row
+ */
+export function createRow(rows: Row[]): Row {
+  const id = getNextID(rows);
+
   return {
     autoAdjustHeight: true,
     expanded: true,
@@ -216,4 +235,89 @@ export function createRow(rows: Row[]): Row {
     name: 'Row',
     yAxes: [],
   };
+}
+
+/**
+ * Returns a new y axis
+ */
+export function createYAxis(yAxes: Axis[]): Axis {
+  const id = getNextID(yAxes);
+
+  return {
+    color: '',
+    id,
+    label: { text: 'Label' },
+
+    // TODO is there a sensible default for this since there are
+    // no associated layers for a new y axis?
+    scaleDomain: [0, 1],
+    tickCount: 4,
+  };
+}
+
+/**
+ * Returns a new layer
+ */
+export function createTimelineLayer(layers: Layer[], yAxes: Axis[]): Layer {
+  const id = getNextID(layers);
+  const yAxisId = yAxes.length > 0 ? yAxes[0].id : 0;
+
+  return {
+    chartType: 'activity',
+    filter: {},
+    id,
+    yAxisId,
+  };
+}
+
+/**
+ * Returns the max bounds of the resources associated with an axis
+ */
+export function getYAxisBounds(
+  yAxis: Axis,
+  layers: Layer[],
+  resourcesByViewLayerId: Record<number, Resource[]>,
+): number[] {
+  // Find all layers that are associated with this y axis
+  const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
+
+  // Find min and max of associated layers
+  let minY = undefined;
+  let maxY = undefined;
+  yAxisLayers.forEach(layer => {
+    if (resourcesByViewLayerId[layer.id]) {
+      resourcesByViewLayerId[layer.id].forEach(resource => {
+        resource.values.forEach(value => {
+          if (minY === undefined || value.y < minY) {
+            minY = value.y;
+          }
+          if (maxY === undefined || value.y > maxY) {
+            maxY = value.y;
+          }
+        });
+      });
+    }
+  });
+
+  const scaleDomain = [...yAxis.scaleDomain];
+  if (minY !== undefined) {
+    scaleDomain[0] = minY;
+  }
+  if (maxY !== undefined) {
+    scaleDomain[1] = maxY;
+  }
+
+  return scaleDomain;
+}
+
+/**
+ * Returns the next available ID given an array of objects with ID keys
+ */
+export function getNextID(objects: { id: number }[]): number {
+  return objects.reduce((prev, curr) => {
+    if (curr.id >= prev) {
+      return curr.id + 1;
+    }
+    return prev;
+  }, 0);
 }

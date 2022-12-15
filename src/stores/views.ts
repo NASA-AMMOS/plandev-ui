@@ -130,15 +130,6 @@ export function viewSetSelectedRow(rowId: number | null): void {
 
 export function viewSetSelectedTimeline(timelineId: number | null): void {
   selectedTimelineId.set(timelineId);
-  const currentTimeline = get(selectedTimeline);
-
-  if (currentTimeline) {
-    const firstRow = currentTimeline.rows[0];
-
-    if (firstRow) {
-      viewSetSelectedRow(firstRow.id);
-    }
-  }
 }
 
 export function viewUpdateActivityTables(update: Partial<ViewActivityTable>, activityTableId: number): void {

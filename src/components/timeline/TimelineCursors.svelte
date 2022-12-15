@@ -151,6 +151,7 @@
   <div class="timeline-cursor-header" />
   {#each computedVerticalGuides as guide}
     <TimelineCursor
+      color={guide.label.color}
       x={guide.x}
       label={guide.label.text}
       maxWidth={guide.maxWidth}
