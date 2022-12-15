@@ -33,7 +33,7 @@ describe('Tags component', () => {
 
     // Test tag removal
     expect(getAllByText('×').length).to.equal(tags.length);
-    await fireEvent.click(getAllByText('×')[0]);
+    await fireEvent.pointerDown(getAllByText('×')[0]);
     expect(queryByText(tags[0])).to.be.null;
   });
 });
