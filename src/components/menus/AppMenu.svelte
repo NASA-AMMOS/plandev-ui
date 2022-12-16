@@ -1,7 +1,7 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
-  import { goto, invalidateAll, prefetch } from '$app/navigation';
+  import { goto, invalidateAll, preloadData } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -40,34 +40,34 @@
   <ChevronDownIcon />
 
   <Menu bind:this={appMenu}>
-    <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => prefetch(`${base}/plans`)}>
+    <MenuItem on:click={() => goto(`${base}/plans`)} on:pointerenter={() => preloadData(`${base}/plans`)}>
       <PlanIcon />
       Plans
     </MenuItem>
-    <MenuItem on:click={() => goto(`${base}/models`)} on:pointerenter={() => prefetch(`${base}/models`)}>
+    <MenuItem on:click={() => goto(`${base}/models`)} on:pointerenter={() => preloadData(`${base}/models`)}>
       <BarChartIcon />
       Models
     </MenuItem>
-    <MenuItem on:click={() => goto(`${base}/constraints`)} on:pointerenter={() => prefetch(`${base}/constraints`)}>
+    <MenuItem on:click={() => goto(`${base}/constraints`)} on:pointerenter={() => preloadData(`${base}/constraints`)}>
       <BracesAsteriskIcon />
       Constraints
     </MenuItem>
-    <MenuItem on:click={() => goto(`${base}/dictionaries`)} on:pointerenter={() => prefetch(`${base}/dictionaries`)}>
+    <MenuItem on:click={() => goto(`${base}/dictionaries`)} on:pointerenter={() => preloadData(`${base}/dictionaries`)}>
       <JournalTextIcon />
       Command Dictionaries
     </MenuItem>
     <MenuItem
       on:click={() => goto(`${base}/expansion/rules`)}
-      on:pointerenter={() => prefetch(`${base}/expansion/rules`)}
+      on:pointerenter={() => preloadData(`${base}/expansion/rules`)}
     >
       <CodeSquareIcon />
       Expansion
     </MenuItem>
-    <MenuItem on:click={() => goto(`${base}/scheduling`)} on:pointerenter={() => prefetch(`${base}/scheduling`)}>
+    <MenuItem on:click={() => goto(`${base}/scheduling`)} on:pointerenter={() => preloadData(`${base}/scheduling`)}>
       <CalendarIcon />
       Scheduling
     </MenuItem>
-    <MenuItem on:click={() => goto(`${base}/sequencing`)} on:pointerenter={() => prefetch(`${base}/sequencing`)}>
+    <MenuItem on:click={() => goto(`${base}/sequencing`)} on:pointerenter={() => preloadData(`${base}/sequencing`)}>
       <JournalCodeIcon />
       Sequencing
     </MenuItem>
