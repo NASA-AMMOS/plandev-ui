@@ -191,7 +191,7 @@
     line-height: var(--st-typography-bold-line-height);
   }
 
-  :global(.svelte-tags-input-matchs li:hover, .svelte-tags-input-matchs li.focus) {
+  :global(.svelte-tags-input-matchs li:hover, .svelte-tags-input-matchs li:focus) {
     background: var(--st-gray-15) !important;
     color: inherit !important;
   }
