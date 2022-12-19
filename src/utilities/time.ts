@@ -118,6 +118,25 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
 }
 
 /**
+ * Get the number of days in a given month (0-11) of a specific year.
+ * @example getDaysInMonth(2020, 5) -> 3
+ */
+export function getDaysInMonth(year: number, month: number): number {
+  const lastOfMonth = new Date(Date.UTC(year, month + 1, 0));
+
+  return lastOfMonth.getUTCDate();
+}
+
+export function getDaysInYear(year: number): number {
+  let daysInYear = 0;
+  for (let month: number = 0; month < 12; month++) {
+    daysInYear += getDaysInMonth(year, month);
+  }
+
+  return daysInYear;
+}
+
+/**
  * Get the day-of-year for a given date.
  * @example getDoy(new Date('1/3/2019')) -> 3
  * @see https://stackoverflow.com/a/8619946

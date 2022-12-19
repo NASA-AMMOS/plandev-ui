@@ -1,3 +1,5 @@
+import { getDaysInYear } from './time';
+
 export function min(min: number, errorMessage?: string): (value: number) => Promise<ValidationResult> {
   return (value: number): Promise<ValidationResult> =>
     new Promise(resolve => {
@@ -27,12 +29,15 @@ export function timestamp(value: string): Promise<ValidationResult> {
     const error = 'DOY format required: YYYY-DDDThh:mm:ss';
 
     if (match) {
-      const [, , doy] = match;
+      const [, year, doy] = match;
+
+      const daysInYear = getDaysInYear(Number.parseInt(year));
+
       const dayOfYear = parseInt(doy, 10);
-      if (dayOfYear > 0 && dayOfYear < 366) {
+      if (dayOfYear > 0 && dayOfYear <= daysInYear) {
         return resolve(null);
       } else {
-        return resolve('Day-of-year must be between 0 and 365');
+        return resolve(`Day-of-year must be between 0 and ${daysInYear}`);
       }
     } else {
       return resolve(error);

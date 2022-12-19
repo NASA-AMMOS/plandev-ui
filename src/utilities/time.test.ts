@@ -2,6 +2,8 @@ import { expect, test } from 'vitest';
 import {
   convertDurationStringToUs,
   convertUsToDurationString,
+  getDaysInMonth,
+  getDaysInYear,
   getDoy,
   getDoyTime,
   getUnixEpochTime,
@@ -19,6 +21,23 @@ test('convertUsToDurationString', () => {
   expect(convertUsToDurationString(90577779200000)).toEqual('2y 318d 6h 16m 19s 200ms');
   expect(convertUsToDurationString(200000)).toEqual('200ms');
   expect(convertUsToDurationString(3e7)).toEqual('30s');
+});
+
+test('getDaysInMonth', () => {
+  expect(getDaysInMonth(2022, 0)).toEqual(31);
+  expect(getDaysInMonth(2022, 1)).toEqual(28);
+
+  expect(getDaysInMonth(2024, 0)).toEqual(31);
+  expect(getDaysInMonth(2024, 1)).toEqual(29);
+});
+
+test('getDaysInYear', () => {
+  expect(getDaysInYear(2020)).toEqual(366);
+  expect(getDaysInYear(2021)).toEqual(365);
+  expect(getDaysInYear(2022)).toEqual(365);
+  expect(getDaysInYear(2023)).toEqual(365);
+  expect(getDaysInYear(2024)).toEqual(366);
+  expect(getDaysInYear(2025)).toEqual(365);
 });
 
 test('getDoy', () => {

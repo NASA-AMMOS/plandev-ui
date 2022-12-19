@@ -44,16 +44,25 @@ describe('required', () => {
 
 describe('timestamp', () => {
   const doyError = 'DOY format required: YYYY-DDDThh:mm:ss';
-  const rangeError = 'Day-of-year must be between 0 and 365';
 
   test('Should return an error message if input is not in DOY format', async () => {
     const invalidMsg = await timestamp('2020-001');
     expect(invalidMsg).toEqual(doyError);
   });
 
-  test('Should return an error message if input is out of DOY range', async () => {
+  test('Should return an error message if input is out of DOY range not during leap year', async () => {
+    const invalidMsg = await timestamp('2019-400T00:00:00.000');
+    expect(invalidMsg).toEqual('Day-of-year must be between 0 and 365');
+  });
+
+  test('Should return an error message if input is out of DOY range during leap year', async () => {
     const invalidMsg = await timestamp('2020-400T00:00:00.000');
-    expect(invalidMsg).toEqual(rangeError);
+    expect(invalidMsg).toEqual('Day-of-year must be between 0 and 366');
+  });
+
+  test('Should not return an error message if input day is 366 during a leap year', async () => {
+    const invalidMsg = await timestamp('2024-366T00:00:00.000');
+    expect(invalidMsg).toEqual(null);
   });
 
   test('Should return null if input is a valid DOY string', async () => {
