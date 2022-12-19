@@ -61,7 +61,7 @@
       {#if column.type === 'gutter'}
         <div class="split-grid-gutter column" data-track={column.track} />
       {:else}
-        <svelte:self grid={column} {gridComponentsByName} />
+        <svelte:self grid={column} {gridComponentsByName} on:changeColumnSizes on:changeRowSizes />
       {/if}
     {/each}
   </div>
@@ -71,7 +71,7 @@
       {#if row.type === 'gutter'}
         <div class="split-grid-gutter row" data-track={row.track} />
       {:else}
-        <svelte:self grid={row} {gridComponentsByName} />
+        <svelte:self grid={row} {gridComponentsByName} on:changeColumnSizes on:changeRowSizes />
       {/if}
     {/each}
   </div>
@@ -82,6 +82,8 @@
       {...grid?.props || {}}
       {...grid}
       gridId={grid.id}
+      on:changeColumnSizes
+      on:changeRowSizes
     />
   </div>
 {/if}
