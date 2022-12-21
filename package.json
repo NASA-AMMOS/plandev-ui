@@ -41,6 +41,7 @@
     "@sveltejs/adapter-node": "^1.0.0",
     "@sveltejs/kit": "^1.0.0",
     "ag-grid-community": "^28.2.1",
+    "ajv": "^8.11.2",
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.2",
     "cookie": "^0.5.0",

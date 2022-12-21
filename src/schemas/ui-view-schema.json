@@ -1,0 +1,516 @@
+{
+  "$id": "https://github.com/NASA-AMMOS/aerie-ui/blob/develop/src/schemas/ui-view-schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "additionalProperties": false,
+  "definitions": {
+    "color": {
+      "description": "RGB color in hex format",
+      "pattern": "^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$",
+      "type": "string"
+    },
+    "filterResource": {
+      "additionalProperties": false,
+      "properties": {
+        "resource": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "A JavaScript regular expression to filter resource names to display in this layer",
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "type": "object"
+        }
+      },
+      "required": ["resource"],
+      "type": "object"
+    },
+    "grid": {
+      "description": "Grid specification for specifying grid rows, columns, draggable gutters, and UI components",
+      "oneOf": [
+        { "$ref": "#/definitions/gridColumns" },
+        { "$ref": "#/definitions/gridComponent" },
+        { "$ref": "#/definitions/gridGutter" },
+        { "$ref": "#/definitions/gridRows" }
+      ]
+    },
+    "gridColumns": {
+      "additionalProperties": false,
+      "description": "A CSS grid area with child grid columns",
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/definitions/grid"
+          },
+          "type": "array"
+        },
+        "columnSizes": {
+          "description": "The grid-template-columns CSS property that defines the sizing of the grid columns",
+          "type": "string"
+        },
+        "gridName": {
+          "$ref": "#/definitions/gridName"
+        },
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "columns"
+        }
+      },
+      "required": ["columns", "columnSizes", "id", "type"],
+      "type": "object"
+    },
+    "gridComponent": {
+      "additionalProperties": false,
+      "description": "A CSS grid area for a specific UI component",
+      "properties": {
+        "activityTableId": {
+          "$ref": "#/definitions/id"
+        },
+        "componentName": {
+          "$ref": "#/definitions/gridComponentName"
+        },
+        "gridName": {
+          "$ref": "#/definitions/gridName"
+        },
+        "iFrameId": {
+          "$ref": "#/definitions/id"
+        },
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "timelineId": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "component"
+        }
+      },
+      "required": ["componentName", "id", "type"],
+      "type": "object"
+    },
+    "gridComponentName": {
+      "description": "Name of the component to display in the grid area",
+      "type": "string"
+    },
+    "gridGutter": {
+      "additionalProperties": false,
+      "description": "A draggable grid gutter",
+      "properties": {
+        "gridName": {
+          "$ref": "#/definitions/gridName"
+        },
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "track": {
+          "description": "Index of the gutter among the grid rows or grid columns",
+          "minimum": 0,
+          "type": "number"
+        },
+        "type": {
+          "const": "gutter"
+        }
+      },
+      "required": ["id", "track", "type"],
+      "type": "object"
+    },
+    "gridName": {
+      "description": "Optional name of grid for specifying a layout tied to a specific workflow",
+      "type": "string"
+    },
+    "gridRows": {
+      "additionalProperties": false,
+      "description": "A CSS grid area with child grid rows",
+      "properties": {
+        "gridName": {
+          "$ref": "#/definitions/gridName"
+        },
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/grid"
+          },
+          "type": "array"
+        },
+        "rowSizes": {
+          "description": "The grid-template-rows CSS property that defines the sizing of the grid rows",
+          "type": "string"
+        },
+        "type": {
+          "const": "rows"
+        }
+      },
+      "required": ["id", "rows", "rowSizes", "type"],
+      "type": "object"
+    },
+    "id": {
+      "description": "Numeric unique id >= 0",
+      "minimum": 0,
+      "type": "number"
+    },
+    "label": {
+      "additionalProperties": false,
+      "description": "Generic label object",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "text": {
+          "description": "Label text content",
+          "type": "string"
+        }
+      },
+      "required": ["text"],
+      "type": "object"
+    },
+    "yAxisId": {
+      "description": "Id of the associated y-axis. Can be null for no association.",
+      "type": ["number", "null"]
+    }
+  },
+  "description": "JSON schema definition used for configuring the Aerie UI",
+  "properties": {
+    "plan": {
+      "additionalProperties": false,
+      "description": "View configuration for a plan",
+      "properties": {
+        "activityTables": {
+          "description": "Activity table specifications for visualizing tabular activity data",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "columnDefs": {
+                "description": "Array of column definition objects that conform to the ag-grid ColumnDef type",
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "columnStates": {
+                "description": "Array of column state objects that conform to the ag-grid ColumnState type",
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "id": {
+                "$ref": "#/definitions/id"
+              }
+            },
+            "required": ["columnDefs", "columnStates", "id"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "iFrames": {
+          "description": "IFrame specifications for embedding other web pages",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/id"
+              },
+              "src": {
+                "description": "The URL of the page to embed",
+                "type": "string"
+              },
+              "title": {
+                "description": "The title attribute of the iframe",
+                "type": "string"
+              }
+            },
+            "required": ["id", "src", "title"],
+            "type": "object"
+          }
+        },
+        "layout": {
+          "$ref": "#/definitions/grid"
+        },
+        "timelines": {
+          "description": "Timeline specifications for visualizing activities or resources in a timeline",
+          "items": {
+            "additionalProperties": false,
+            "description": "Displays a timeline in the section",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/id"
+              },
+              "marginLeft": {
+                "description": "Left margin of the timeline in pixels",
+                "minimum": 0,
+                "type": "number"
+              },
+              "marginRight": {
+                "description": "Right margin of the timeline in pixels",
+                "minimum": 0,
+                "type": "number"
+              },
+              "rows": {
+                "description": "Timeline row definitions",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "autoAdjustHeight": {
+                      "description": "If true the row height is set automatically to fit the row content",
+                      "type": "boolean"
+                    },
+                    "expanded": {
+                      "description": "Expanded state of the timeline row",
+                      "type": "boolean"
+                    },
+                    "height": {
+                      "description": "Height of the row in pixels",
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "horizontalGuides": {
+                      "description": "Row horizontal guide definitions",
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "$ref": "#/definitions/id"
+                          },
+                          "label": {
+                            "$ref": "#/definitions/label"
+                          },
+                          "y": {
+                            "description": "Y value the horizontal guide anchors to",
+                            "type": "number"
+                          },
+                          "yAxisId": {
+                            "$ref": "#/definitions/id"
+                          }
+                        },
+                        "required": ["id", "label", "y", "yAxisId"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "id": {
+                      "$ref": "#/definitions/id"
+                    },
+                    "layers": {
+                      "description": "Row layer definitions",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "description": "Activity layer",
+                            "properties": {
+                              "activityColor": {
+                                "$ref": "#/definitions/color"
+                              },
+                              "activityHeight": {
+                                "description": "Height of each activity",
+                                "type": "number"
+                              },
+                              "chartType": {
+                                "const": "activity",
+                                "description": "Layer that visualizes activities"
+                              },
+                              "filter": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "activity": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "type": {
+                                        "description": "A JavaScript regular expression to filter activity types to display in this layer",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["type"],
+                                    "type": "object"
+                                  }
+                                },
+                                "required": ["activity"],
+                                "type": "object"
+                              },
+                              "id": {
+                                "$ref": "#/definitions/id"
+                              },
+                              "yAxisId": {
+                                "$ref": "#/definitions/yAxisId"
+                              }
+                            },
+                            "required": ["activityColor", "activityHeight", "chartType", "filter", "id", "yAxisId"],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "description": "Line layer",
+                            "properties": {
+                              "chartType": {
+                                "const": "line",
+                                "description": "Layer that visualizes points and a line"
+                              },
+                              "filter": {
+                                "$ref": "#/definitions/filterResource"
+                              },
+                              "id": {
+                                "$ref": "#/definitions/id"
+                              },
+                              "lineColor": {
+                                "$ref": "#/definitions/color"
+                              },
+                              "lineWidth": {
+                                "description": "Width of the line",
+                                "type": "number"
+                              },
+                              "pointRadius": {
+                                "description": "Radius of the points",
+                                "type": "number"
+                              },
+                              "yAxisId": {
+                                "$ref": "#/definitions/yAxisId"
+                              }
+                            },
+                            "required": [
+                              "chartType",
+                              "filter",
+                              "id",
+                              "lineColor",
+                              "lineWidth",
+                              "pointRadius",
+                              "yAxisId"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "description": "X-range layer",
+                            "properties": {
+                              "chartType": {
+                                "const": "x-range",
+                                "description": "Layer that visualizes range data as full-height colored rectangles"
+                              },
+                              "colorScheme": {
+                                "description": "https://github.com/d3/d3-scale-chromatic/blob/main/README.md#api-reference",
+                                "enum": [
+                                  "schemeAccent",
+                                  "schemeCategory10",
+                                  "schemeDark2",
+                                  "schemePaired",
+                                  "schemePastel1",
+                                  "schemePastel2",
+                                  "schemeSet1",
+                                  "schemeSet2",
+                                  "schemeSet3",
+                                  "schemeTableau10"
+                                ],
+                                "type": "string"
+                              },
+                              "filter": {
+                                "$ref": "#/definitions/filterResource"
+                              },
+                              "id": {
+                                "$ref": "#/definitions/id"
+                              },
+                              "opacity": {
+                                "type": "number"
+                              },
+                              "yAxisId": {
+                                "$ref": "#/definitions/yAxisId"
+                              }
+                            },
+                            "required": ["chartType", "colorScheme", "filter", "id", "opacity", "yAxisId"],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "name": {
+                      "description": "Name of the row",
+                      "type": "string"
+                    },
+                    "yAxes": {
+                      "description": "Row y-axes definitions",
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "color": {
+                            "$ref": "#/definitions/color"
+                          },
+                          "id": {
+                            "$ref": "#/definitions/id"
+                          },
+                          "label": {
+                            "$ref": "#/definitions/label"
+                          },
+                          "scaleDomain": {
+                            "description": "Min and max values of the axis domain: [min, max]",
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "tickCount": {
+                            "description": "Number of ticks on the axis",
+                            "minimum": 0,
+                            "type": "number"
+                          }
+                        },
+                        "required": ["color", "id", "label", "scaleDomain", "tickCount"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "autoAdjustHeight",
+                    "expanded",
+                    "height",
+                    "horizontalGuides",
+                    "id",
+                    "layers",
+                    "name",
+                    "yAxes"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "verticalGuides": {
+                "description": "Timeline vertical guide definitions",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "$ref": "#/definitions/id"
+                    },
+                    "label": {
+                      "$ref": "#/definitions/label"
+                    },
+                    "timestamp": {
+                      "description": "DOY timestamp (YYYY-DDDThh:mm:ss) of the vertical guide",
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "label", "timestamp"],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": ["id", "marginLeft", "marginRight", "rows", "verticalGuides"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["activityTables", "iFrames", "layout", "timelines"],
+      "type": "object"
+    }
+  },
+  "required": ["plan"],
+  "title": "View",
+  "type": "object"
+}
