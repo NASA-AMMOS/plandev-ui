@@ -218,12 +218,12 @@
       <div class="size-actions">
         <button
           class="st-button secondary"
-          use:tooltip={{ content: 'Auto Size Columns to Fit Content', placement: 'top' }}
+          use:tooltip={{ content: 'Fit Columns to Content', placement: 'top' }}
           on:click={onAutoSizeContent}><CollapseIcon /></button
         >
         <button
           class="st-button secondary"
-          use:tooltip={{ content: 'Auto Size Columns to Fit Space', placement: 'top' }}
+          use:tooltip={{ content: 'Fit Columns to Available Space', placement: 'top' }}
           on:click={onAutoSizeSpace}><ExpandIcon /></button
         >
       </div>

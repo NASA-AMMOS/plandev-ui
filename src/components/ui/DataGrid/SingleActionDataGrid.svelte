@@ -7,9 +7,11 @@
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
+  import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
+  export let dataGrid: DataGrid = undefined;
   export let idKey: keyof TRowData = 'id';
   export let hasEdit: boolean = false;
   export let items: TRowData[];
@@ -40,6 +42,14 @@
     dispatch('deleteItem', selectedItemIds);
   }
 
+  function onAutoSizeContent() {
+    dataGrid?.autoSizeAllColumns();
+  }
+
+  function onAutoSizeSpace() {
+    dataGrid?.sizeColumnsToFit();
+  }
+
   function onCellContextMenu(event: CustomEvent) {
     const { detail } = event;
     const { data: clickedRow } = detail;
@@ -53,6 +63,7 @@
 </script>
 
 <DataGrid
+  bind:this={dataGrid}
   {columnDefs}
   {columnStates}
   bind:currentSelectedRowId={selectedItemId}
@@ -84,4 +95,5 @@
   <ContextMenuItem on:click={deleteItem}>
     Delete {itemDisplayText}
   </ContextMenuItem>
+  <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
 </ContextMenu>

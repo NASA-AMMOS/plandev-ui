@@ -8,6 +8,7 @@
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
+  import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -49,6 +50,14 @@
     if (selectedRows.length) {
       dispatch('bulkDeleteItems', selectedRows);
     }
+  }
+
+  function onAutoSizeContent() {
+    dataGrid?.autoSizeAllColumns();
+  }
+
+  function onAutoSizeSpace() {
+    dataGrid?.sizeColumnsToFit();
   }
 
   function onCellContextMenu(event: CustomEvent) {
@@ -112,5 +121,6 @@
         {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
       </ContextMenuItem>
     {/if}
+    <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
   </ContextMenu>
 {/if}
