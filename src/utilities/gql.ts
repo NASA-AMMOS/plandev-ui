@@ -301,6 +301,15 @@ const gql = {
     }
   `,
 
+  DELETE_SCHEDULING_SPEC_GOAL: `#graphql
+    mutation DeleteSchedulingSpecGoal($goal_id: Int!, $specification_id: Int!) {
+      deleteSchedulingSpecGoal: delete_scheduling_specification_goals_by_pk(goal_id: $goal_id, specification_id: $specification_id) {
+        goal_id,
+        specification_id,
+      }
+    }
+  `,
+
   DELETE_USER_SEQUENCE: `#graphql
     mutation DeleteUserSequence($id: Int!) {
       deleteUserSequence: delete_user_sequence_by_pk(id: $id) {
@@ -525,6 +534,25 @@ const gql = {
     }
   `,
 
+  GET_PLANS_AND_MODELS_FOR_SCHEDULING: `#graphql
+    query GetPlansAndSchedulingSpecifications {
+      models: mission_model(order_by: { id: desc }) {
+        id
+        jar_id
+        name
+        version
+      }
+      plans: plan(order_by: { id: desc }) {
+        scheduling_specifications {
+          id
+        }
+        model_id
+        name
+        id
+      }
+    }
+  `,
+
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: `#graphql
     query GetPlanMergeNonConflictingActivities($merge_request_id: Int!) {
       nonConflictingActivities: get_non_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {
@@ -569,6 +597,27 @@ const gql = {
         modified_date
         name
         revision
+      }
+    }
+  `,
+
+  GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION: `#graphql
+    query GetSchedulingSpecConditionsForCondition($condition_id: Int!) {
+      scheduling_specification_conditions(where: { condition_id: { _eq: $condition_id } }) {
+        enabled
+        condition_id
+        specification_id
+      }
+    }
+  `,
+
+  GET_SCHEDULING_SPEC_GOALS_FOR_GOAL: `#graphql
+    query GetSchedulingSpecGoalsForGoal($goal_id: Int!) {
+      scheduling_specification_goals(where: { goal_id: { _eq: $goal_id } }) {
+        enabled
+        goal_id
+        priority
+        specification_id
       }
     }
   `,
@@ -1312,6 +1361,22 @@ const gql = {
       updateSchedulingSpecCondition: update_scheduling_specification_conditions_by_pk(
         pk_columns: { condition_id: $condition_id, specification_id: $specification_id },
         _set: $spec_condition
+      ) {
+        condition_id
+        specification_id
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_SPEC_CONDITION_ID: `#graphql
+    mutation UpdateSchedulingSpecConditionId(
+      $condition_id: Int!,
+      $specification_id: Int!,
+      $new_specification_id: Int!,
+    ) {
+      updateSchedulingSpecConditionId: update_scheduling_specification_conditions_by_pk(
+        pk_columns: { condition_id: $condition_id, specification_id: $specification_id },
+        _set: { specification_id: $new_specification_id },
       ) {
         condition_id
         specification_id

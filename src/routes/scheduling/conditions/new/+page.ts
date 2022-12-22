@@ -11,15 +11,17 @@ export const load: PageLoad = async ({ parent, url }) => {
     throw redirect(302, `${base}/login`);
   }
 
+  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling();
+
   const modelId: string | null = url.searchParams.get('modelId');
   const specId: string | null = url.searchParams.get('specId');
   const initialModelId: number | null = parseFloatOrNull(modelId);
   const initialSpecId: number | null = parseFloatOrNull(specId);
-  const initialModels = await effects.getModels();
 
   return {
     initialModelId,
-    initialModels,
     initialSpecId,
+    models,
+    plans,
   };
 };

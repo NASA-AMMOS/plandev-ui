@@ -21,9 +21,10 @@
   export let initialConditionModelId: number | null = null;
   export let initialConditionModifiedDate: string | null = null;
   export let initialConditionName: string = '';
-  export let initialModels: ModelSlim[] = [];
   export let initialSpecId: number | null = null;
   export let mode: 'create' | 'edit' = 'create';
+  export let models: ModelSlim[] = [];
+  export let plans: PlanSchedulingSpec[] = [];
 
   let conditionAuthor: string | null = initialConditionAuthor;
   let conditionCreatedDate: string | null = initialConditionCreatedDate;
@@ -33,9 +34,9 @@
   let conditionModelId: number | null = initialConditionModelId;
   let conditionModifiedDate: string | null = initialConditionModifiedDate;
   let conditionName: string = initialConditionName;
-  let models: ModelSlim[] = initialModels;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
+  let savedSpecId: number | null = initialSpecId;
   let savedCondition: Partial<SchedulingCondition> = {
     definition: conditionDefinition,
     description: conditionDescription,
@@ -43,13 +44,20 @@
     name: conditionName,
   };
 
-  $: saveButtonEnabled = conditionDefinition !== '' && conditionModelId !== null && conditionName !== '';
-  $: conditionModified = diffConditions(savedCondition, {
-    definition: conditionDefinition,
-    description: conditionDescription,
-    model_id: conditionModelId,
-    name: conditionName,
-  });
+  $: planOptions = plans
+    .filter(plan => plan.model_id === conditionModelId)
+    .map(({ id, name, scheduling_specifications }) => ({ id, name, specId: scheduling_specifications[0].id }));
+  $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
+
+  $: saveButtonEnabled =
+    conditionDefinition !== '' && conditionModelId !== null && conditionName !== '' && specId !== null;
+  $: conditionModified =
+    diffConditions(savedCondition, {
+      definition: conditionDefinition,
+      description: conditionDescription,
+      model_id: conditionModelId,
+      name: conditionName,
+    }) || specId !== savedSpecId;
   $: saveButtonText = mode === 'edit' && !conditionModified ? 'Saved' : 'Save';
   $: saveButtonClass = conditionModified && saveButtonEnabled ? 'primary' : 'secondary';
 
@@ -87,14 +95,12 @@
         if (newCondition !== null) {
           const { id: newConditionId } = newCondition;
 
-          if (specId !== null) {
-            const specConditionInsertInput: SchedulingSpecConditionInsertInput = {
-              condition_id: newConditionId,
-              enabled: true,
-              specification_id: specId,
-            };
-            await effects.createSchedulingSpecCondition(specConditionInsertInput);
-          }
+          const specConditionInsertInput: SchedulingSpecConditionInsertInput = {
+            condition_id: newConditionId,
+            enabled: true,
+            specification_id: specId,
+          };
+          await effects.createSchedulingSpecCondition(specConditionInsertInput);
 
           goto(`${base}/scheduling/conditions/edit/${newConditionId}`);
         }
@@ -107,6 +113,11 @@
         };
         const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition);
         if (updatedCondition) {
+          if (specId !== savedSpecId) {
+            await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId);
+            savedSpecId = specId;
+          }
+
           conditionModifiedDate = updatedCondition.modified_date;
           savedCondition = { ...condition };
         }
@@ -126,7 +137,11 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/conditions`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveCondition}>
+        <button
+          class="st-button {saveButtonClass} ellipsis"
+          disabled={!saveButtonEnabled}
+          on:click|stopPropagation={saveCondition}
+        >
           {saveButtonText}
         </button>
       </div>
@@ -162,6 +177,18 @@
           {#each models as model}
             <option value={model.id}>
               {model.name} ({model.id})
+            </option>
+          {/each}
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <label for="plan">Plan</label>
+        <select bind:value={specId} class="st-select w-100" name="plan">
+          <option value={null} />
+          {#each planOptions as plan}
+            <option value={plan.specId}>
+              {plan.name} ({plan.id})
             </option>
           {/each}
         </select>

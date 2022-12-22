@@ -68,3 +68,5 @@ type PlanSchema = {
 };
 
 type PlanSlim = Pick<Plan, 'end_time_doy' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time' | 'start_time_doy'>;
+
+type PlanSchedulingSpec = Pick<Plan, 'id' | 'name' | 'scheduling_specifications' | 'model_id'>;

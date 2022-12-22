@@ -774,6 +774,17 @@ const effects = {
     }
   },
 
+  async deleteSchedulingSpecGoal(goal_id: number, specification_id: number): Promise<boolean> {
+    try {
+      await reqHasura(gql.DELETE_SCHEDULING_SPEC_GOAL, { goal_id, specification_id });
+      return true;
+    } catch (e) {
+      catchError('Scheduling Goal Spec Delete Failed', e);
+      showFailureToast('Scheduling Goal Delete Failed');
+      return false;
+    }
+  },
+
   async deleteUserSequence(id: number): Promise<boolean> {
     try {
       const { confirm } = await showConfirmModal(
@@ -1073,6 +1084,24 @@ const effects = {
     }
   },
 
+  async getPlansAndModelsForScheduling(): Promise<{
+    models: ModelSlim[];
+    plans: PlanSchedulingSpec[];
+  }> {
+    try {
+      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS_FOR_SCHEDULING)) as {
+        models: ModelSlim[];
+        plans: PlanSchedulingSpec[];
+      };
+
+      const { models, plans } = data;
+      return { models, plans };
+    } catch (e) {
+      catchError(e);
+      return { models: [], plans: [] };
+    }
+  },
+
   async getSchedulingCondition(id: number | null | undefined): Promise<SchedulingCondition | null> {
     if (id !== null && id !== undefined) {
       try {
@@ -1094,6 +1123,40 @@ const effects = {
         const data = await reqHasura<SchedulingGoal>(gql.GET_SCHEDULING_GOAL, { id });
         const { goal } = data;
         return goal;
+      } catch (e) {
+        catchError(e);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  },
+
+  async getSchedulingSpecConditionsForCondition(
+    condition_id: number | null,
+  ): Promise<SchedulingSpecCondition[] | null> {
+    if (condition_id !== null) {
+      try {
+        const data = await reqHasura<SchedulingSpecCondition[]>(gql.GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION, {
+          condition_id,
+        });
+        const { scheduling_specification_conditions } = data;
+        return scheduling_specification_conditions;
+      } catch (e) {
+        catchError(e);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  },
+
+  async getSchedulingSpecGoalsForGoal(goal_id: number | null): Promise<SchedulingSpecGoal[] | null> {
+    if (goal_id !== null) {
+      try {
+        const data = await reqHasura<SchedulingSpecGoal[]>(gql.GET_SCHEDULING_SPEC_GOALS_FOR_GOAL, { goal_id });
+        const { scheduling_specification_goals } = data;
+        return scheduling_specification_goals;
       } catch (e) {
         catchError(e);
         return null;
@@ -1613,6 +1676,24 @@ const effects = {
   ): Promise<void> {
     try {
       await reqHasura(gql.UPDATE_SCHEDULING_SPEC_CONDITION, { condition_id, spec_condition, specification_id });
+      showSuccessToast('Scheduling Spec Condition Updated Successfully');
+    } catch (e) {
+      catchError('Scheduling Spec Condition Update Failed', e);
+      showFailureToast('Scheduling Spec Condition Update Failed');
+    }
+  },
+
+  async updateSchedulingSpecConditionId(
+    condition_id: number,
+    specification_id: number,
+    new_specification_id: number,
+  ): Promise<void> {
+    try {
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_CONDITION_ID, {
+        condition_id,
+        new_specification_id,
+        specification_id,
+      });
       showSuccessToast('Scheduling Spec Condition Updated Successfully');
     } catch (e) {
       catchError('Scheduling Spec Condition Update Failed', e);

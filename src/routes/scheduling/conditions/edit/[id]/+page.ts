@@ -12,16 +12,19 @@ export const load: PageLoad = async ({ parent, params }) => {
   }
 
   const { id: conditionIdParam } = params;
+  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling();
 
   if (conditionIdParam !== null && conditionIdParam !== undefined) {
     const conditionId = parseFloatOrNull(conditionIdParam);
     const initialCondition = await effects.getSchedulingCondition(conditionId);
-    const initialModels = await effects.getModels();
+    const schedulingSpecConditions = await effects.getSchedulingSpecConditionsForCondition(conditionId);
 
     if (initialCondition !== null) {
       return {
         initialCondition,
-        initialModels,
+        initialSpecId: schedulingSpecConditions[0]?.specification_id,
+        models,
+        plans,
       };
     }
   }

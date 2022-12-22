@@ -12,7 +12,8 @@
 
 <SchedulingGoalForm
   initialGoalModelId={data.initialModelId}
-  initialModels={data.initialModels}
   initialSpecId={data.initialSpecId}
   mode="create"
+  models={data.models}
+  plans={data.plans}
 />

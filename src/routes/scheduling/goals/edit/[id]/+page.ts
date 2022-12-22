@@ -12,16 +12,19 @@ export const load: PageLoad = async ({ parent, params }) => {
   }
 
   const { id: goalIdParam } = params;
+  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling();
 
   if (goalIdParam !== null && goalIdParam !== undefined) {
     const goalId = parseFloatOrNull(goalIdParam);
     const initialGoal = await effects.getSchedulingGoal(goalId);
-    const initialModels = await effects.getModels();
+    const schedulingSpecGoals = await effects.getSchedulingSpecGoalsForGoal(goalId);
 
     if (initialGoal !== null) {
       return {
         initialGoal,
-        initialModels,
+        initialSpecId: schedulingSpecGoals[0]?.specification_id,
+        models,
+        plans,
       };
     }
   }

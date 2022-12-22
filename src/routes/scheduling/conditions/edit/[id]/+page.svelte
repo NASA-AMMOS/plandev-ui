@@ -19,6 +19,8 @@
   initialConditionName={data.initialCondition.name}
   initialConditionModelId={data.initialCondition.model_id}
   initialConditionModifiedDate={data.initialCondition.modified_date}
-  initialModels={data.initialModels}
+  initialSpecId={data.initialSpecId}
+  models={data.models}
+  plans={data.plans}
   mode="edit"
 />

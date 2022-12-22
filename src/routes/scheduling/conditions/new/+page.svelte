@@ -12,7 +12,8 @@
 
 <SchedulingConditionForm
   initialConditionModelId={data.initialModelId}
-  initialModels={data.initialModels}
   initialSpecId={data.initialSpecId}
+  models={data.models}
+  plans={data.plans}
   mode="create"
 />
