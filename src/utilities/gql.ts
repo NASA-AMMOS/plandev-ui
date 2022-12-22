@@ -688,22 +688,6 @@ const gql = {
     }
   `,
 
-  GET_VIEWS_LATEST: `#graphql
-    query GetViewsLatest($owner: String!) {
-      views: view(
-        where: { _or: [{ owner: { _eq: $owner } }, { owner: { _eq: "system" } }] },
-        order_by: { updated_at: desc }
-      ) {
-        created_at
-        definition
-        id
-        name
-        owner
-        updated_at
-      }
-    }
-  `,
-
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
       sequence: insert_sequence_to_simulated_activity_one(

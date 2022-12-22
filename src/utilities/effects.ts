@@ -25,6 +25,7 @@ import { reqGateway, reqHasura } from './requests';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
+import { generateDefaultView } from './view';
 
 /**
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
@@ -1245,7 +1246,7 @@ const effects = {
     }
   },
 
-  async getView(owner: string, query: URLSearchParams | null): Promise<View | null> {
+  async getView(query: URLSearchParams | null): Promise<View | null> {
     try {
       if (query !== null) {
         const viewId = query.has('viewId') ? query.get('viewId') : null;
@@ -1261,14 +1262,7 @@ const effects = {
         }
       }
 
-      const data = await reqHasura<View[]>(gql.GET_VIEWS_LATEST, { owner });
-      const { views } = data;
-
-      if (views.length) {
-        return views[0];
-      } else {
-        return null;
-      }
+      return generateDefaultView();
     } catch (e) {
       catchError(e);
       return null;

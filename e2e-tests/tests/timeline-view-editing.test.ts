@@ -52,14 +52,12 @@ test.describe.serial('Timeline View Editing', () => {
 
   test('Change the start time of the activity', async () => {
     await page.getByRole('gridcell', { name: 'PickBanana' }).click();
-    await plan.showPanel('Selected Activity');
     await page.locator('input[name="start-time"]').first().click();
     await page.locator('input[name="start-time"]').first().fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').first().press('Enter');
   });
 
   test('Add a vertical guide', async () => {
-    await plan.showPanel('Timeline Editor');
     const existingGuideCount = await page.locator('.guide').count();
     await page.getByRole('button', { name: 'New Vertical Guide' }).click();
     const newGuideCount = await page.locator('.guide').count();
@@ -70,14 +68,14 @@ test.describe.serial('Timeline View Editing', () => {
     const existingGuideCount = await page.locator('.guide').count();
     await page.getByRole('button', { name: 'Delete Guide' }).last().click();
     const newGuideCount = await page.locator('.guide').count();
-    await expect(newGuideCount - existingGuideCount).toEqual(-1);
+    expect(newGuideCount - existingGuideCount).toEqual(-1);
   });
 
   test('Add a row', async () => {
     const existingRowCount = await page.locator('.timeline-row').count();
     await page.getByRole('button', { name: 'New Row' }).click();
     const newRowCount = await page.locator('.timeline-row').count();
-    await expect(newRowCount - existingRowCount).toEqual(1);
+    expect(newRowCount - existingRowCount).toEqual(1);
   });
 
   test('Delete a row', async () => {
@@ -90,7 +88,7 @@ test.describe.serial('Timeline View Editing', () => {
     await page.locator('#svelte-modal').getByRole('button', { name: 'Delete' }).click();
 
     const newRowCount = await page.locator('.timeline-row').count();
-    await expect(newRowCount - existingRowCount).toEqual(-1);
+    expect(newRowCount - existingRowCount).toEqual(-1);
   });
 
   test('Edit a row', async () => {
@@ -98,7 +96,7 @@ test.describe.serial('Timeline View Editing', () => {
     await page.locator('.timeline-row').last().locator("button[aria-label='Edit Row']").click();
 
     // Look for back button indicating that the row editor is active
-    await expect(page.locator('.section-back-button ').first()).toBeDefined();
+    expect(page.locator('.section-back-button ').first()).toBeDefined();
 
     // TODO fill out this test more when layer editing is possible so that
     // rows can be constructed properly without relying on existing rows from the dummy model

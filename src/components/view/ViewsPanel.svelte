@@ -1,8 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { user as userStore } from '../../stores/app';
-  import { view, viewLayout, views } from '../../stores/views';
+  import { view, views } from '../../stores/views';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -80,9 +79,8 @@
 
     if (success) {
       if ($view.id === viewId) {
-        const nextView = await effects.getView($userStore?.id, null);
+        const nextView = await effects.getView(null);
         $view = { ...nextView };
-        $viewLayout = { ...nextView.definition.plan.layout };
         setQueryParam('viewId', `${nextView.id}`);
       }
     }
@@ -95,11 +93,10 @@
 
   async function openView({ id: viewId }: View) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await effects.getView($userStore?.id, query);
+    const newView = await effects.getView(query);
 
     if (view) {
       $view = { ...newView };
-      $viewLayout = { ...newView.definition.plan.layout };
       setQueryParam('viewId', `${newView.id}`);
     } else {
       console.log(`No view found for ID: ${viewId}`);

@@ -6,7 +6,7 @@
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
   import ActivityTablePanel from '../../../components/activity/ActivityTablePanel.svelte';
   import ActivityTypesPanel from '../../../components/activity/ActivityTypesPanel.svelte';
@@ -53,10 +53,10 @@
     simulationSpans,
     simulationStatus,
   } from '../../../stores/simulation';
-  import { view, viewLayout, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
+  import { view, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
-  import { isMacOs, setQueryParam } from '../../../utilities/generic';
+  import { isMacOs } from '../../../utilities/generic';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
@@ -95,7 +95,6 @@
 
   $: if (data.initialView) {
     $view = { ...data.initialView };
-    $viewLayout = { ...data.initialView.definition.plan.layout };
   }
 
   $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $simulationSpans);
@@ -107,12 +106,6 @@
     closeActiveModal();
     planHasBeenLocked = false;
   }
-
-  onMount(() => {
-    if ($view) {
-      setQueryParam('viewId', `${$view.id}`);
-    }
-  });
 
   onDestroy(() => {
     resetActivityStores();
@@ -186,11 +179,7 @@
       >
         <GearWideConnectedIcon />
       </NavButton>
-      <NavButton
-        selected={$view.definition.plan.layout?.gridName === 'View'}
-        title="View"
-        on:click={() => viewSetLayout('View')}
-      >
+      <NavButton title="View">
         <ColumnsIcon />
         <ViewMenu slot="menu" />
       </NavButton>

@@ -125,7 +125,6 @@ type TimeRange = {
 };
 
 type Timeline = {
-  gridId: number;
   id: number;
   marginLeft: number;
   marginRight: number;

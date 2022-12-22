@@ -13,8 +13,6 @@ export const views = gqlSubscribable<View[]>(gql.SUB_VIEWS, {}, []);
 
 export const view: Writable<View | null> = writable(null);
 
-export const viewLayout: Writable<Grid | null> = writable(null);
-
 export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedRowId: Writable<number | null> = writable(null);
@@ -86,9 +84,6 @@ export function viewSetLayout(title: string) {
     layout = schedulingGrid;
   } else if (title === 'Simulation') {
     layout = simulationGrid;
-  } else if (title === 'View') {
-    const viewGrid = get(viewLayout);
-    layout = viewGrid;
   } else {
     layout = activitiesGrid;
   }
