@@ -3,7 +3,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { userSequences, userSequencesColumns } from '../../stores/sequencing';
+  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
   import Chip from '../ui/Chip.svelte';

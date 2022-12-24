@@ -5,6 +5,8 @@
   import MagicEraser from '@nasa-jpl/stellar/icons/magic_eraser.svg?component';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
+  import type { DropdownCustomOption } from '../../../types/datepicker';
+  import type { ParsedDoyString, ParsedYmdString } from '../../../types/time';
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime, parseDoyOrYmdTime } from '../../../utilities/time';
   import DatePickerDropdown from './DatePickerDropdown.svelte';

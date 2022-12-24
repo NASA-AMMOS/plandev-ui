@@ -4,6 +4,7 @@
   import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import type { RowId, TRowData } from '../../../types/data-grid';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';

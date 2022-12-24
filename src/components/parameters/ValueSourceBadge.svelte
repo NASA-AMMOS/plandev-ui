@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ValueSource } from '../../types/parameter';
   import { classNames } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
 

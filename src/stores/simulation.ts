@@ -1,4 +1,12 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type {
+  ProfilesExternalResponse,
+  Resource,
+  Simulation,
+  SimulationDataset,
+  SimulationTemplate,
+  Span,
+} from '../types/simulation';
 import gql from '../utilities/gql';
 import { sampleProfiles } from '../utilities/resources';
 import { Status } from '../utilities/status';

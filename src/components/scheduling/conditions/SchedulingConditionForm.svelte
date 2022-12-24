@@ -5,6 +5,9 @@
   import { base } from '$app/paths';
   import { user as userStore } from '../../../stores/app';
   import { schedulingColumns } from '../../../stores/scheduling';
+  import type { ModelSlim } from '../../../types/model';
+  import type { PlanSchedulingSpec } from '../../../types/plan';
+  import type { SchedulingCondition, SchedulingSpecConditionInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { isMacOs } from '../../../utilities/generic';
   import Chip from '../../ui/Chip.svelte';

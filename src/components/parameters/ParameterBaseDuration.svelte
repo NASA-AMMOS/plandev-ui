@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { FormParameter } from '../../types/parameter';
   import { convertDurationStringToUs, convertUsToDurationString } from '../../utilities/time';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';

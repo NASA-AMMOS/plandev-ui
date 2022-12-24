@@ -1,6 +1,7 @@
 <script lang="ts">
   import Input from '../../../components/form/Input.svelte';
   import { selectedRow, selectedYAxis, viewUpdateYAxis } from '../../../stores/views';
+  import type { Axis, Label } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import CssGrid from '../../ui/CssGrid.svelte';
 

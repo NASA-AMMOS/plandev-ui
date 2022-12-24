@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import { user as userStore } from '../../stores/app';
   import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
+  import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { isMacOs } from '../../utilities/generic';
   import PageTitle from '../app/PageTitle.svelte';

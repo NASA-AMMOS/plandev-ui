@@ -1,4 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { ActivitiesByView, ActivitiesMap, Activity, ActivityDirective, ActivityUniqueId } from '../types/activity';
+import type { ActivityMetadataDefinition } from '../types/activity-metadata';
 import gql from '../utilities/gql';
 import { planId } from './plan';
 import { gqlSubscribable } from './subscribable';

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import type { Plan } from '../../types/plan';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalHeader from './ModalHeader.svelte';

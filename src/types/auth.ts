@@ -1,44 +1,46 @@
-type LoginRequestBody = {
+import type { User } from './app';
+
+export type LoginRequestBody = {
   password: string;
   username: string;
 };
 
-type LoginResponseBody = {
+export type LoginResponseBody = {
   message?: string;
   success: boolean;
   user?: User;
 };
 
-type LoginResponse = {
+export type LoginResponse = {
   body?: LoginResponseBody;
-  headers?: import('@sveltejs/kit/types/helper').ResponseHeaders;
+  headers?: Headers;
   status?: number;
 };
 
-type LogoutResponseBody = {
+export type LogoutResponseBody = {
   message: string;
   success: boolean;
 };
 
-type LogoutResponse = {
+export type LogoutResponse = {
   body?: LogoutResponseBody;
-  headers?: import('@sveltejs/kit/types/helper').ResponseHeaders;
+  headers?: Headers;
   status?: number;
 };
 
-type ReqLoginResponse = {
+export type ReqLoginResponse = {
   message: string;
   ssoToken: string | null;
   success: boolean;
   username: string | null;
 };
 
-type ReqLogoutResponse = {
+export type ReqLogoutResponse = {
   message: string;
   success: boolean;
 };
 
-type ReqSessionResponse = {
+export type ReqSessionResponse = {
   message: string;
   success: boolean;
 };

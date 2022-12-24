@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -20,6 +21,9 @@
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ModelSlim } from '../../types/model';
+  import type { Plan, PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { removeQueryParam } from '../../utilities/generic';
   import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';

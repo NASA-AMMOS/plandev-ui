@@ -12,6 +12,7 @@
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { activityTypes, modelId } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
+  import type { ActivityUniqueId } from '../../types/activity';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';

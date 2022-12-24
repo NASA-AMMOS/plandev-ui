@@ -4,6 +4,7 @@
   import ExclamationTriangleIcon from 'bootstrap-icons/icons/exclamation-triangle.svg?component';
   import { constraintViolations } from '../../stores/constraints';
   import { viewTimeRange } from '../../stores/plan';
+  import type { ConstraintViolation } from '../../types/constraint';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';

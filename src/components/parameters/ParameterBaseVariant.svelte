@@ -2,6 +2,8 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { FormParameter } from '../../types/parameter';
+  import type { ValueSchemaVariant } from '../../types/schema';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
 
@@ -34,7 +36,7 @@
         </option>
       {/each}
     </select>
-    <ParameterBaseRightAdornments hidden={hideRightAdornments} slot="right" {formParameter} />
+    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
   </div>
 </div>
 

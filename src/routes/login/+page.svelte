@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import { user as userStore } from '../../stores/app';
+  import type { LoginResponseBody } from '../../types/auth';
 
   let error = null;
   let loginButtonText = 'Login';

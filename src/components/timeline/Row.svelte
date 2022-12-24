@@ -6,6 +6,20 @@
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { selectedRow, view, viewSetSelectedRow, viewUpdateLayout } from '../../stores/views';
+  import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { GridColumns } from '../../types/grid';
+  import type { Resource } from '../../types/simulation';
+  import type {
+    Axis,
+    HorizontalGuide,
+    Layer,
+    MouseDown,
+    MouseOver,
+    Point,
+    TimeRange,
+    XAxisTick,
+  } from '../../types/timeline';
   import { classNames } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';

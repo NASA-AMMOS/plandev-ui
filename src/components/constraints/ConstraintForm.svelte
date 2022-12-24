@@ -4,6 +4,9 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { constraintsColumns } from '../../stores/constraints';
+  import type { Constraint } from '../../types/constraint';
+  import type { ModelSlim } from '../../types/model';
+  import type { PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { isMacOs } from '../../utilities/generic';
   import PageTitle from '../app/PageTitle.svelte';

@@ -1,22 +1,26 @@
-type ViewActivityTable = {
-  columnDefs: import('ag-grid-community').ColDef[];
-  columnStates: import('ag-grid-community').ColumnState[];
+import type { ColDef, ColumnState } from 'ag-grid-community';
+import type { Grid } from './grid';
+import type { Timeline } from './timeline';
+
+export type ViewActivityTable = {
+  columnDefs: ColDef[];
+  columnStates: ColumnState[];
   id: number;
 };
 
-type ViewIFrame = {
+export type ViewIFrame = {
   id: number;
   src: string;
   title: string;
 };
 
-type ViewInsertInput = {
+export type ViewInsertInput = {
   definition: ViewDefinition;
   name: string;
   owner: string;
 };
 
-type ViewDefinition = {
+export type ViewDefinition = {
   plan: {
     activityTables: ViewActivityTable[];
     iFrames: ViewIFrame[];
@@ -25,7 +29,7 @@ type ViewDefinition = {
   };
 };
 
-type View = {
+export type View = {
   created_at: string;
   definition: ViewDefinition;
   id: number;

@@ -3,7 +3,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { DataGridColumnDef } from '../../../types/data-grid';
+  import type { SchedulingCondition } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
   import Chip from '../../ui/Chip.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';

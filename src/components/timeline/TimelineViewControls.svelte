@@ -5,6 +5,7 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { TimeRange } from '../../types/timeline';
   import { tooltip } from '../../utilities/tooltip';
 
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };

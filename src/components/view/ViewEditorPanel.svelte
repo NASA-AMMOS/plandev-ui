@@ -1,5 +1,6 @@
 <script lang="ts">
   import { view, viewDefinitionText } from '../../stores/views';
+  import type { ViewDefinition } from '../../types/view';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';

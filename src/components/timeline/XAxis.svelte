@@ -2,6 +2,8 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { TimeRange, XAxisTick } from '../../types/timeline';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
 

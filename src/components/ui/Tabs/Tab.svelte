@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { getContext } from 'svelte';
+  import type { TabContext, TabId } from '../../../types/tabs';
   import { TabContextKey } from './Tabs.svelte';
 
   export { className as class };

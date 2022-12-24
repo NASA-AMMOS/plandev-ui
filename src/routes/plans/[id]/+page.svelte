@@ -54,6 +54,7 @@
     simulationStatus,
   } from '../../../stores/simulation';
   import { view, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
+  import type { GridChangeSizesEvent } from '../../../types/grid';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { isMacOs } from '../../../utilities/generic';

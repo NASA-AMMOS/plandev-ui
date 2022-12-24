@@ -13,6 +13,8 @@ import {
   type CountableTimeInterval,
   type TimeInterval,
 } from 'd3-time';
+import type { Resource } from '../types/simulation';
+import type { Axis, HorizontalGuide, Layer, QuadtreePoint, QuadtreeRect, Row, VerticalGuide } from '../types/timeline';
 
 export enum TimelineLockStatus {
   Locked = 'Locked',

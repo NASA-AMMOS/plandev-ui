@@ -1,4 +1,8 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { ActivityType } from '../types/activity';
+import type { ModelSlim } from '../types/model';
+import type { Plan, PlanMergeRequest, PlanMergeRequestSchema } from '../types/plan';
+import type { TimeRange } from '../types/timeline';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 

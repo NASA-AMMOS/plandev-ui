@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { BaseError, CaughtError, SchedulingError, SimulationDatasetError } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { simulationDataset } from './simulation';

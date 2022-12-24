@@ -1,25 +1,31 @@
-type ActivityId = number;
-type ActivityDirectiveId = number;
-type ActivityUniqueId = string;
+import type { ActivityMetadata } from './activity-metadata';
+import type { ExpansionRule } from './expansion';
+import type { ArgumentsMap, ParametersMap } from './parameter';
+import type { ValueSchema } from './schema';
+import type { SpanAttributes, SpanId } from './simulation';
 
-type ActivitiesByView = {
+export type ActivityId = number;
+export type ActivityDirectiveId = number;
+export type ActivityUniqueId = string;
+
+export type ActivitiesByView = {
   byLayerId: Record<number, Activity[]>;
   byTimelineId: Record<number, Activity[]>;
 };
 
-type ActivityType = {
+export type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
   name: string;
   parameters: ParametersMap;
   required_parameters: string[];
 };
 
-type ActivityTypeExpansionRules = {
+export type ActivityTypeExpansionRules = {
   expansion_rules: ExpansionRule[];
   name: ActivityType['name'];
 };
 
-type Activity = {
+export type Activity = {
   arguments: ArgumentsMap;
   attributes: SpanAttributes | null;
   childUniqueIds: ActivityUniqueId[];
@@ -41,9 +47,9 @@ type Activity = {
   uniqueId: ActivityUniqueId;
 };
 
-type ActivitiesMap = Record<ActivityUniqueId, Activity>;
+export type ActivitiesMap = Record<ActivityUniqueId, Activity>;
 
-type ActivityDirective = {
+export type ActivityDirective = {
   arguments: ArgumentsMap;
   created_at: string;
   id: ActivityDirectiveId;
@@ -58,7 +64,7 @@ type ActivityDirective = {
   type: string;
 };
 
-type ActivityDirectiveInsertInput = {
+export type ActivityDirectiveInsertInput = {
   arguments: ArgumentsMap;
   metadata: ActivityMetadata;
   name: string;
@@ -68,4 +74,4 @@ type ActivityDirectiveInsertInput = {
   type: string;
 };
 
-type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
+export type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;

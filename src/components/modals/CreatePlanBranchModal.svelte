@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { Plan } from '../../types/plan';
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';

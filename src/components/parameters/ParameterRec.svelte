@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { FormParameter } from '../../types/parameter';
+
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameter: FormParameter;

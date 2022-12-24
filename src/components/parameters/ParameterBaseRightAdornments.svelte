@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { FormParameter } from '../../types/parameter';
   import InputErrorBadge from './InputErrorBadge.svelte';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 

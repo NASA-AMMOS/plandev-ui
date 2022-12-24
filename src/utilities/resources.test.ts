@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import type { Profile, Resource } from '../types/simulation';
 import { sampleProfiles } from './resources';
 
 describe('sampleProfiles', () => {

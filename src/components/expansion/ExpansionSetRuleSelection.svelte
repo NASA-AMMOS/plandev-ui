@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ExpansionRule } from '../../types/expansion';
+
   export let activityName: string;
   export let expansionRules: ExpansionRule[];
   export let selectedExpansionRules: Record<string, number> = {};

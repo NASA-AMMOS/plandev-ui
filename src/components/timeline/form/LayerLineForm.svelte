@@ -1,6 +1,7 @@
 <script lang="ts">
   import Input from '../../../components/form/Input.svelte';
   import { selectedLayer, viewUpdateLayer } from '../../../stores/views';
+  import type { LineLayer } from '../../../types/timeline';
   import CssGrid from '../../ui/CssGrid.svelte';
 
   $: lineLayer = $selectedLayer as LineLayer | null;

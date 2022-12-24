@@ -3,10 +3,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { ValueGetterParams } from 'ag-grid-community';
+  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
   import { models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
+  import type { ActivityTypeExpansionRules } from '../../types/activity';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
   import Chip from '../ui/Chip.svelte';

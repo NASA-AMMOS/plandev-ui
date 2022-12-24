@@ -4,6 +4,7 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { Activity } from '../../types/activity';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';

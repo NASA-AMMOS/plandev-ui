@@ -1,5 +1,6 @@
 import { cleanup, getByText, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { ActivitiesMap } from '../../types/activity';
 import ActivityDecomposition from './ActivityDecomposition.svelte';
 
 const activitiesMap: ActivitiesMap = {

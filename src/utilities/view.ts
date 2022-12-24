@@ -1,3 +1,6 @@
+import type { ActivityLayer } from '../types/timeline';
+import type { View } from '../types/view';
+
 /**
  * Generates a default generic UI view.
  * @todo Generate default rows based on resources.

@@ -7,6 +7,7 @@
   import TreeParentCollapsedIcon from '@nasa-jpl/stellar/icons/tree_parent_collapsed.svg?component';
   import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/tree_parent_expanded.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { ActivitiesMap, Activity, ActivityUniqueId } from '../../types/activity';
 
   export let activitiesMap: ActivitiesMap = {};
   export let expanded = true;

@@ -3,6 +3,7 @@
 <script lang="ts">
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { activityTypes, plan } from '../../stores/plan';
+  import type { ActivityType } from '../../types/activity';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';

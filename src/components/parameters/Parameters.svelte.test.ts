@@ -1,5 +1,6 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { FormParameter } from '../../types/parameter';
 import Parameters from './Parameters.svelte';
 
 describe('Parameters component', () => {

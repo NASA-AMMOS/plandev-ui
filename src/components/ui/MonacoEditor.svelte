@@ -6,6 +6,7 @@
   import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
   import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import type { Monaco } from '../../types/monaco';
 
   export { className as class };
   export { styleName as style };

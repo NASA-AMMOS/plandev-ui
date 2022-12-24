@@ -3,6 +3,10 @@
 <script lang="ts">
   import { afterUpdate, createEventDispatcher, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
+  import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
+  import type { ConstraintViolation, MouseOverViolations } from '../../types/constraint';
+  import type { Resource } from '../../types/simulation';
+  import type { ActivityPoint, MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
   import {

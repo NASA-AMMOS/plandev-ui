@@ -7,6 +7,11 @@
   import { activities, selectedActivityId } from '../../stores/activities';
   import { planId } from '../../stores/plan';
   import { view, viewUpdateActivityTables } from '../../stores/views';
+  import type { Activity } from '../../types/activity';
+  import type { ActivityMetadata } from '../../types/activity-metadata';
+  import type { TRowData } from '../../types/data-grid';
+  import type { ArgumentsMap } from '../../types/parameter';
+  import type { ViewActivityTable } from '../../types/view';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';

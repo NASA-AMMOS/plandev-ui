@@ -1,4 +1,5 @@
 import parse from 'postgres-interval';
+import type { ParsedDoyString, ParsedYmdString } from '../types/time';
 
 /**
  * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.

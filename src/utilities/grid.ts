@@ -1,3 +1,5 @@
+import type { Grid } from '../types/grid';
+
 /**
  * Grid constants for use in updating the view layout.
  */

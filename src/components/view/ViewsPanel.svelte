@@ -1,7 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { view, views } from '../../stores/views';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { View } from '../../types/view';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
   import GridMenu from '../menus/GridMenu.svelte';

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ICellRendererParams } from 'ag-grid-community';
   import {
     creatingExpansionSequence,
     expandingPlan,
@@ -8,6 +9,8 @@
     filteredExpansionSequences,
   } from '../../stores/expansion';
   import { simulationDatasetId } from '../../stores/simulation';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ExpansionSequence } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
   import Input from '../form/Input.svelte';

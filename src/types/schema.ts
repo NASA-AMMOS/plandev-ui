@@ -1,43 +1,43 @@
-type ValueSchemaBoolean = {
+export type ValueSchemaBoolean = {
   type: 'boolean';
 };
 
-type ValueSchemaDuration = {
+export type ValueSchemaDuration = {
   type: 'duration';
 };
 
-type ValueSchemaInt = {
+export type ValueSchemaInt = {
   type: 'int';
 };
 
-type ValueSchemaPath = {
+export type ValueSchemaPath = {
   type: 'path';
 };
 
-type ValueSchemaReal = {
+export type ValueSchemaReal = {
   type: 'real';
 };
 
-type ValueSchemaSeries = {
+export type ValueSchemaSeries = {
   items: ValueSchema;
   type: 'series';
 };
 
-type ValueSchemaString = {
+export type ValueSchemaString = {
   type: 'string';
 };
 
-type ValueSchemaStruct = {
+export type ValueSchemaStruct = {
   items: Record<string, ValueSchema>;
   type: 'struct';
 };
 
-type ValueSchemaVariant = {
+export type ValueSchemaVariant = {
   type: 'variant';
   variants: Variant[];
 };
 
-type ValueSchema =
+export type ValueSchema =
   | ValueSchemaBoolean
   | ValueSchemaDuration
   | ValueSchemaInt
@@ -48,7 +48,7 @@ type ValueSchema =
   | ValueSchemaStruct
   | ValueSchemaVariant;
 
-type Variant = {
+export type Variant = {
   key: string;
   label: string;
 };

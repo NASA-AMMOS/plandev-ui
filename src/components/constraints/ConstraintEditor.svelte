@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';

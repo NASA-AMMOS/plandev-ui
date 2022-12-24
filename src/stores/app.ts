@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type { User, Version } from '../types/app';
 
 /* Data. */
 

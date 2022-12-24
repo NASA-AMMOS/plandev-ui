@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { Constraint, ConstraintViolation, ConstraintViolationsMap } from '../types/constraint';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { modelId, planId, planStartTimeMs } from './plan';

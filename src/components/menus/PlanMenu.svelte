@@ -6,6 +6,7 @@
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { user } from '../../stores/app';
+  import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
   import Menu from '../menus/Menu.svelte';

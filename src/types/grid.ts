@@ -1,9 +1,9 @@
-type GridChangeSizesEvent = {
+export type GridChangeSizesEvent = {
   gridId: number;
   newSizes: string;
 };
 
-type GridComponent = {
+export type GridComponent = {
   activityTableId?: number;
   componentName: string;
   gridName?: string;
@@ -14,7 +14,7 @@ type GridComponent = {
   type: 'component';
 };
 
-type GridColumns = {
+export type GridColumns = {
   columnSizes: string;
   columns: Grid[];
   gridName?: string;
@@ -22,14 +22,14 @@ type GridColumns = {
   type: 'columns';
 };
 
-type GridGutter = {
+export type GridGutter = {
   gridName?: string;
   id: number;
   track: number;
   type: 'gutter';
 };
 
-type GridRows = {
+export type GridRows = {
   gridName?: string;
   id: number;
   rowSizes: string;
@@ -37,4 +37,4 @@ type GridRows = {
   type: 'rows';
 };
 
-type Grid = GridColumns | GridComponent | GridGutter | GridRows;
+export type Grid = GridColumns | GridComponent | GridGutter | GridRows;

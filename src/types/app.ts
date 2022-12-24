@@ -1,9 +1,9 @@
-type User = {
+export type User = {
   id: string;
   ssoToken: string;
 };
 
-type Version = {
+export type Version = {
   branch: string;
   commit: string;
   commitUrl: string;

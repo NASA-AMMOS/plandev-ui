@@ -6,6 +6,7 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
+  import type { Constraint } from '../../types/constraint';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
 

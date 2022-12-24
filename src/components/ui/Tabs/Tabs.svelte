@@ -9,6 +9,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, setContext } from 'svelte';
   import { writable } from 'svelte/store';
+  import type { PanelId, TabContext, TabId } from '../../../types/tabs';
   import TabList from './TabList.svelte';
 
   const dispatch = createEventDispatcher();

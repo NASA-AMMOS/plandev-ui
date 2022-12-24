@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { BaseError } from '../../types/errors';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
 
   export let errors: BaseError[] = [];

@@ -21,6 +21,7 @@
     viewUpdateRow,
     viewUpdateTimeline,
   } from '../../../stores/views';
+  import type { Axis, HorizontalGuide, Row, VerticalGuide } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
   import { getDoyTime } from '../../../utilities/time';

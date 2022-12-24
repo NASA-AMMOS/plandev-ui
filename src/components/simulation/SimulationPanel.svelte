@@ -9,6 +9,8 @@
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
+  import type { FormParameter, ParametersMap } from '../../types/parameter';
+  import type { Simulation } from '../../types/simulation';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';

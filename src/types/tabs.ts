@@ -1,7 +1,9 @@
-type TabId = number | string | Record<string, never>;
-type PanelId = TabId;
+import type { Writable } from 'svelte/store';
 
-interface TabContext {
+export type TabId = number | string | Record<string, never>;
+export type PanelId = TabId;
+
+export interface TabContext {
   registerPanel: (panelId: PanelId) => void;
   registerTab: (tabId: TabId) => void;
   selectTab: (tabId: TabId) => void;

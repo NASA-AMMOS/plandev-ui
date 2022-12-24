@@ -4,6 +4,7 @@
   import CheckCircleFillIcon from 'bootstrap-icons/icons/check-circle-fill.svg?component';
   import XCircleFillIcon from 'bootstrap-icons/icons/x-circle-fill.svg?component';
   import { difference } from 'lodash-es';
+  import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
   export let enabled: boolean;

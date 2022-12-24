@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
+  import type { Axis, HorizontalGuide } from '../../types/timeline';
   import { getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;

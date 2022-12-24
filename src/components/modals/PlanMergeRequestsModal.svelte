@@ -6,6 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { user } from '../../stores/app';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
+  import type { PlanMergeRequest, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';

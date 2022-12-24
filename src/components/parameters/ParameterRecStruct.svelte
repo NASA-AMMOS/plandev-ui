@@ -4,6 +4,8 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { FormParameter } from '../../types/parameter';
+  import type { ValueSchemaStruct } from '../../types/schema';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';

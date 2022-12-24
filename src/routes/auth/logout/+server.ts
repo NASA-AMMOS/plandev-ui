@@ -1,6 +1,7 @@
 import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
+import type { ReqLogoutResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
 export const POST: RequestHandler = async event => {

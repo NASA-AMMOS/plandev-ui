@@ -1,4 +1,4 @@
-type CommandDictionary = {
+export type CommandDictionary = {
   command_types_typescript_path: string;
   created_at: string;
   id: number;
@@ -7,7 +7,7 @@ type CommandDictionary = {
   version: string;
 };
 
-type GetSeqJsonResponseError = {
+export type GetSeqJsonResponseError = {
   location: {
     column: number;
     line: number;
@@ -16,15 +16,15 @@ type GetSeqJsonResponseError = {
   stack: string;
 };
 
-type GetSeqJsonResponse = {
+export type GetSeqJsonResponse = {
   errors: GetSeqJsonResponseError[];
   seqJson: SeqJson;
   status: 'FAILURE' | 'SUCCESS';
 };
 
-type SeqJson = any; // TODO: Strongly type.
+export type SeqJson = any; // TODO: Strongly type.
 
-type UserSequence = {
+export type UserSequence = {
   authoring_command_dict_id: number;
   created_at: string;
   definition: string;
@@ -34,4 +34,4 @@ type UserSequence = {
   updated_at: string;
 };
 
-type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'updated_at'>;
+export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'updated_at'>;

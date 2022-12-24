@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { DropdownCustomOption, DropdownOption } from '../../../types/datepicker';
   import { classNames } from '../../../utilities/generic';
 
   export { className as class };

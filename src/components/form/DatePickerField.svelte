@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import FieldError from './FieldError.svelte';

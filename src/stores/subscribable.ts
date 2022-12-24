@@ -4,6 +4,7 @@ import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
 import { run_all } from 'svelte/internal';
 import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
+import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.

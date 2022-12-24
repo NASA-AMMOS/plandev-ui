@@ -1,3 +1,4 @@
+import type { Profile, Resource, ResourceValue } from '../types/simulation';
 import { getDurationInMs } from './time';
 
 /**

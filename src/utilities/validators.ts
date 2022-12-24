@@ -1,3 +1,4 @@
+import type { Field, ValidationResult } from '../types/form';
 import { getDaysInYear } from './time';
 
 export function min(min: number, errorMessage?: string): (value: number) => Promise<ValidationResult> {

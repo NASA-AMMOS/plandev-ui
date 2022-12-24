@@ -16,6 +16,8 @@
     schemeTableau10,
   } from 'd3-scale-chromatic';
   import { createEventDispatcher, onMount, tick } from 'svelte';
+  import type { Resource } from '../../types/simulation';
+  import type { QuadtreeRect, ResourceLayerFilter, XRangeLayerColorScheme, XRangePoint } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 

@@ -6,6 +6,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import type { SchedulingSpecGoal } from '../../types/scheduling';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';

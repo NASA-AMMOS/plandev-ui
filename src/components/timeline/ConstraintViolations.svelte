@@ -4,6 +4,8 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { TimeRange } from '../../types/timeline';
 
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;

@@ -5,6 +5,9 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
+  import type { Activity } from '../../types/activity';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { MouseOver, TimeRange } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';

@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { TRowData } from '../../../types/data-grid';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';

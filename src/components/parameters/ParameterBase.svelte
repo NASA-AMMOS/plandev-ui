@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { FormParameter } from '../../types/parameter';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
   import ParameterBaseNumber from './ParameterBaseNumber.svelte';

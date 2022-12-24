@@ -1,5 +1,6 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import type { UserSequence } from '../../../../types/sequencing';
 import effects from '../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../utilities/generic';
 import type { PageLoad } from './$types';

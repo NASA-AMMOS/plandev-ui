@@ -2,6 +2,8 @@
 
 <script lang="ts">
   import { schedulingColumns, schedulingConditions, schedulingGoals } from '../../stores/scheduling';
+  import type { DataGridRowSelection } from '../../types/data-grid';
+  import type { SchedulingCondition, SchedulingGoal } from '../../types/scheduling';
   import effects from '../../utilities/effects';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { FormParameter } from '../../types/parameter';
   import { tooltip } from '../../utilities/tooltip';
 
   export let formParameter: FormParameter;

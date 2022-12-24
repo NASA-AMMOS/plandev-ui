@@ -3,6 +3,7 @@
 <script lang="ts">
   import Split, { type SplitInstance } from 'split-grid';
   import { createEventDispatcher, tick } from 'svelte';
+  import type { Grid } from '../../types/grid';
 
   export let grid: Grid;
   export let gridComponentsByName: Record<string, any> = {};

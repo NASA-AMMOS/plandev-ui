@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ICellRendererParams } from 'ag-grid-community';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -11,6 +12,8 @@
   import Panel from '../../components/ui/Panel.svelte';
   import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
   import { commandDictionaries } from '../../stores/sequencing';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { CommandDictionary } from '../../types/sequencing';
   import effects from '../../utilities/effects';
 
   type CellRendererParams = {

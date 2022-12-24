@@ -1,4 +1,14 @@
 import { omitBy } from 'lodash-es';
+import type {
+  ActivitiesMap,
+  Activity,
+  ActivityDirective,
+  ActivityDirectiveId,
+  ActivityUniqueId,
+} from '../types/activity';
+import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
+import type { Plan, PlanMergeActivityDirective } from '../types/plan';
+import type { Span, SpanId } from '../types/simulation';
 import { compare, isEmpty } from './generic';
 import { getDoyTimeFromDuration, getUnixEpochTime } from './time';
 

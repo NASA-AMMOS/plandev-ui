@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { ExpansionSequence } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Modal from './Modal.svelte';

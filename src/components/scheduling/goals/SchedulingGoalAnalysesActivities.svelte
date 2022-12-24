@@ -7,26 +7,28 @@
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import { activitiesMap, selectedActivityId } from '../../../stores/activities';
   import { planId } from '../../../stores/plan';
+  import type { Activity } from '../../../types/activity';
+  import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
   import { getActivityDirectiveUniqueId, sortActivities } from '../../../utilities/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
   let analysis: SchedulingGoalAnalysis | null = null;
   let expanded = true;
-  let sasfyingActivities: Activity[] = [];
+  let satisfyingActivities: Activity[] = [];
 
   $: analysis = analyses[0] || null;
-  $: sasfyingActivities = analysis
-    ? analysis.satisfying_activities.reduce((sasfyingActivities: Activity[], { activity_id }) => {
+  $: satisfyingActivities = analysis
+    ? analysis.satisfying_activities.reduce((satisfyingActivities: Activity[], { activity_id }) => {
         const uniqueActivityId = getActivityDirectiveUniqueId($planId, activity_id);
         const activity = $activitiesMap[uniqueActivityId];
         if (activity) {
-          sasfyingActivities.push(activity);
+          satisfyingActivities.push(activity);
         }
-        return sasfyingActivities;
+        return satisfyingActivities;
       }, [])
     : [];
-  $: sortedSatisfyingActivities = sasfyingActivities.sort(sortActivities);
+  $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivities);
 </script>
 
 <div class="scheduling-goal-analysis-activities">

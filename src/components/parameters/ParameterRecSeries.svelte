@@ -6,6 +6,8 @@
   import DashIcon from 'bootstrap-icons/icons/dash.svg?component';
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { FormParameter } from '../../types/parameter';
+  import type { ValueSchemaSeries } from '../../types/schema';
   import { getArgument } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
   import CssGrid from '../ui/CssGrid.svelte';

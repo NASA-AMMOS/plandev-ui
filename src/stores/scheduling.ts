@@ -1,5 +1,11 @@
 import { derived, writable, type Writable } from 'svelte/store';
 import { plan } from '../stores/plan';
+import type {
+  SchedulingCondition,
+  SchedulingGoal,
+  SchedulingSpecCondition,
+  SchedulingSpecGoal,
+} from '../types/scheduling';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { gqlSubscribable } from './subscribable';

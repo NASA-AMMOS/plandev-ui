@@ -1,4 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
+import type { CommandDictionary, UserSequence } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 

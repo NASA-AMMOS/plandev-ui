@@ -17,6 +17,64 @@ import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { view } from '../stores/views';
+import type {
+  ActivitiesMap,
+  Activity,
+  ActivityDirective,
+  ActivityDirectiveInsertInput,
+  ActivityDirectiveSetInput,
+  ActivityId,
+  ActivityType,
+  ActivityTypeExpansionRules,
+} from '../types/activity';
+import type { ActivityMetadata } from '../types/activity-metadata';
+import type { ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
+import type { Constraint, ConstraintInsertInput, ConstraintViolationsMap } from '../types/constraint';
+import type {
+  ExpansionRule,
+  ExpansionRuleInsertInput,
+  ExpansionSequence,
+  ExpansionSequenceInsertInput,
+  ExpansionSequenceToActivityInsertInput,
+  SeqId,
+} from '../types/expansion';
+import type { ModelInsertInput, ModelSlim } from '../types/model';
+import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
+import type { ArgumentsMap, EffectiveArguments, ParameterValidationResponse } from '../types/parameter';
+import type {
+  Plan,
+  PlanBranchRequestAction,
+  PlanInsertInput,
+  PlanMergeConflictingActivity,
+  PlanMergeNonConflictingActivity,
+  PlanMergeRequestSchema,
+  PlanMergeResolution,
+  PlanSchedulingSpec,
+  PlanSchema,
+  PlanSlim,
+} from '../types/plan';
+import type {
+  SchedulingCondition,
+  SchedulingConditionInsertInput,
+  SchedulingGoal,
+  SchedulingGoalInsertInput,
+  SchedulingResponse,
+  SchedulingSpec,
+  SchedulingSpecCondition,
+  SchedulingSpecConditionInsertInput,
+  SchedulingSpecGoal,
+  SchedulingSpecGoalInsertInput,
+  SchedulingSpecInsertInput,
+} from '../types/scheduling';
+import type {
+  CommandDictionary,
+  GetSeqJsonResponse,
+  SeqJson,
+  UserSequence,
+  UserSequenceInsertInput,
+} from '../types/sequencing';
+import type { SimulateResponse, Simulation, SimulationInsertInput } from '../types/simulation';
+import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';

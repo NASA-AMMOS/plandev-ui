@@ -1,4 +1,4 @@
-type ParsedDoyString = {
+export type ParsedDoyString = {
   doy: number;
   hour: number;
   min: number;
@@ -8,7 +8,7 @@ type ParsedDoyString = {
   year: number;
 };
 
-type ParsedYmdString = {
+export type ParsedYmdString = {
   day: number;
   hour: number;
   min: number;

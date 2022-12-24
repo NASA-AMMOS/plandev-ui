@@ -1,7 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ColDef, ColumnState } from 'ag-grid-community';
+  import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
+  import type { Activity, ActivityUniqueId } from '../../types/activity';
+  import type { DataGridColumnDef } from '../../types/data-grid';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';

@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import gql from '../utilities/gql';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';

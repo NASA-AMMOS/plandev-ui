@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import Globe2Icon from 'bootstrap-icons/icons/globe2.svg?component';
+  import type { SchedulingCondition } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { tooltip } from '../../../utilities/tooltip';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';

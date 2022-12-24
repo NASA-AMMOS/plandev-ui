@@ -6,6 +6,7 @@
   import { expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
   import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
+  import type { ExpansionRule, ExpansionRuleInsertInput } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import { isMacOs } from '../../utilities/generic';
   import PageTitle from '../app/PageTitle.svelte';

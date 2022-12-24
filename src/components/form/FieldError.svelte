@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
 
   export let field: FieldStore<any>;

@@ -5,6 +5,8 @@
   import type { ScaleTime } from 'd3-scale';
   import { curveLinear, line as d3Line } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
+  import type { Resource } from '../../types/simulation';
+  import type { Axis, LinePoint, QuadtreePoint, ResourceLayerFilter, TimeRange } from '../../types/timeline';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;

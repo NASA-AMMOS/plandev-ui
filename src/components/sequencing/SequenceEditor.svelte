@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { userSequencesRows } from '../../stores/sequencing';
+  import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';

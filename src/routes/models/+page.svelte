@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
@@ -14,6 +15,8 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import { createModelError, creatingModel, models } from '../../stores/plan';
+  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { ModelSlim } from '../../types/model';
   import effects from '../../utilities/effects';
   import type { PageData } from './$types';
 

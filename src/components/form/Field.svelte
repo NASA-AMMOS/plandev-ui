@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import type { FieldStore } from '../../types/form';
   import { getTarget } from '../../utilities/generic';
   import FieldError from './FieldError.svelte';
 

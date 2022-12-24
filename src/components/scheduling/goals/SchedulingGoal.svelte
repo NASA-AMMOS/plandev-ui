@@ -6,6 +6,7 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
+  import type { SchedulingGoal } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { tooltip } from '../../../utilities/tooltip';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';

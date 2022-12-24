@@ -3,7 +3,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
+  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { ExpansionRule, ExpansionSet } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';

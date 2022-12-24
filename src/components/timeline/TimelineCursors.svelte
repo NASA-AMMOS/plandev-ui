@@ -3,6 +3,7 @@
 
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
+  import type { Label, MouseOver, VerticalGuide } from '../../types/timeline';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { createVerticalGuide } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';

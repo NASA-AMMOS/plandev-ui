@@ -4,6 +4,7 @@
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { Plan, PlanBranchRequestAction, PlanSchema } from '../../types/plan';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';

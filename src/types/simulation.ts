@@ -1,15 +1,19 @@
-type Dataset = {
+import type { BaseError, SimulationDatasetError } from './errors';
+import type { ArgumentsMap } from './parameter';
+import type { ValueSchema } from './schema';
+
+export type Dataset = {
   profiles: Profile[];
   spans: Span[];
 };
 
-type ProfilesExternalResponse = {
+export type ProfilesExternalResponse = {
   datasets: [{ dataset: Dataset; offset_from_plan_start: string }];
   duration: string;
   start_time: string;
 };
 
-type Profile = {
+export type Profile = {
   name: string;
   profile_segments: ProfileSegment[];
   type: {
@@ -18,40 +22,40 @@ type Profile = {
   };
 };
 
-type ProfileSegment = {
+export type ProfileSegment = {
   dynamics: any;
   start_offset: string;
 };
 
-type Resource = {
+export type Resource = {
   name: string;
   schema: ValueSchema;
   values: ResourceValue[];
 };
 
-type ResourceType = {
+export type ResourceType = {
   name: string;
   schema: ValueSchema;
 };
 
-type ResourceValue = {
+export type ResourceValue = {
   x: number;
   y: number | string;
 };
 
-type SimulateResponse = {
+export type SimulateResponse = {
   reason: SimulationDatasetError;
   simulationDatasetId: number;
   status: 'complete' | 'failed' | 'incomplete' | 'pending';
 };
 
-type Simulation = {
+export type Simulation = {
   arguments: ArgumentsMap;
   id: number;
   template: SimulationTemplate | null;
 };
 
-type SimulationDataset = {
+export type SimulationDataset = {
   dataset: Dataset;
   id: number;
   plan_revision: number;
@@ -59,34 +63,34 @@ type SimulationDataset = {
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 
-type SimulationInsertInput = {
+export type SimulationInsertInput = {
   arguments: ArgumentsMap;
   plan_id: number;
   simulation_template_id: number | null;
 };
 
-type SimulationTemplate = {
+export type SimulationTemplate = {
   arguments: ArgumentsMap;
   description: string;
   id: number;
 };
 
-type SimulationDatasetReason = {
+export type SimulationDatasetReason = {
   errors: {
     [activityId: string]: BaseError;
   };
   success: boolean;
 };
 
-type SpanAttributes = {
+export type SpanAttributes = {
   arguments: ArgumentsMap;
   computedAttributes: ArgumentsMap;
   directiveId?: number;
 };
 
-type SpanId = number;
+export type SpanId = number;
 
-type Span = {
+export type Span = {
   attributes: SpanAttributes;
   dataset_id: number;
   duration: string;

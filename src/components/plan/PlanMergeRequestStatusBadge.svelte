@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { PlanMergeRequestStatus } from '../../types/plan';
+
   export let status: PlanMergeRequestStatus = 'withdrawn';
 
   const statusToColors: Record<PlanMergeRequestStatus, string> = {

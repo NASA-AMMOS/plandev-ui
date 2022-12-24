@@ -1,4 +1,7 @@
-type SchedulingGoal = {
+import type { SchedulingError } from './errors';
+import type { ArgumentsMap } from './parameter';
+
+export type SchedulingGoal = {
   analyses: SchedulingGoalAnalysis[];
   author: string | null;
   created_date: string;
@@ -12,7 +15,7 @@ type SchedulingGoal = {
   revision: number;
 };
 
-type SchedulingCondition = {
+export type SchedulingCondition = {
   author: string | null;
   created_date: string;
   definition: string;
@@ -25,24 +28,27 @@ type SchedulingCondition = {
   revision: number;
 };
 
-type SchedulingGoalAnalysis = {
+export type SchedulingGoalAnalysis = {
   satisfied: boolean;
   satisfying_activities: { activity_id: number }[];
 };
 
-type SchedulingConditionInsertInput = Omit<SchedulingCondition, 'created_date' | 'id' | 'modified_date' | 'revision'>;
+export type SchedulingConditionInsertInput = Omit<
+  SchedulingCondition,
+  'created_date' | 'id' | 'modified_date' | 'revision'
+>;
 
-type SchedulingGoalInsertInput = Omit<
+export type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
   'analyses' | 'created_date' | 'id' | 'modified_date' | 'revision'
 >;
 
-type SchedulingResponse = {
+export type SchedulingResponse = {
   reason: SchedulingError;
   status: 'complete' | 'failed' | 'incomplete';
 };
 
-type SchedulingSpec = {
+export type SchedulingSpec = {
   analysis_only: boolean;
   horizon_end: string;
   horizon_start: string;
@@ -53,29 +59,29 @@ type SchedulingSpec = {
   simulation_arguments: ArgumentsMap;
 };
 
-type SchedulingSpecInsertInput = Omit<SchedulingSpec, 'id' | 'revision'>;
+export type SchedulingSpecInsertInput = Omit<SchedulingSpec, 'id' | 'revision'>;
 
-type SchedulingSpecCondition = {
+export type SchedulingSpecCondition = {
   condition: SchedulingCondition;
   enabled: boolean;
   specification: SchedulingSpec;
   specification_id: number;
 };
 
-type SchedulingSpecGoal = {
+export type SchedulingSpecGoal = {
   enabled: boolean;
   goal: SchedulingGoal;
   priority: number;
   specification_id: number;
 };
 
-type SchedulingSpecConditionInsertInput = {
+export type SchedulingSpecConditionInsertInput = {
   condition_id: number;
   enabled: boolean;
   specification_id: number;
 };
 
-type SchedulingSpecGoalInsertInput = {
+export type SchedulingSpecGoalInsertInput = {
   enabled: boolean;
   goal_id: number;
   specification_id: number;

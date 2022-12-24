@@ -1,13 +1,16 @@
-interface ActivityLayer extends Layer {
+import type { Selection } from 'd3-selection';
+import type { ActivityId, ActivityUniqueId } from './activity';
+
+export interface ActivityLayer extends Layer {
   activityColor: string;
   activityHeight: number;
 }
 
-type ActivityLayerFilter = {
+export type ActivityLayerFilter = {
   type: string;
 };
 
-interface ActivityPoint extends Point {
+export interface ActivityPoint extends Point {
   children: ActivityPoint[];
   duration: number;
   label: Label;
@@ -17,7 +20,7 @@ interface ActivityPoint extends Point {
   uniqueId: string;
 }
 
-type Axis = {
+export type Axis = {
   color: string;
   id: number;
   label: Label;
@@ -25,19 +28,19 @@ type Axis = {
   tickCount: number | null;
 };
 
-type BoundingBox = {
+export type BoundingBox = {
   maxX: number;
   maxY: number;
 };
 
-type HorizontalGuide = {
+export type HorizontalGuide = {
   id: number;
   label: Label;
   y: number;
   yAxisId: number;
 };
 
-type Label = {
+export type Label = {
   align?: CanvasTextAlign;
   baseline?: CanvasTextBaseline;
   color?: string;
@@ -47,7 +50,7 @@ type Label = {
   text: string;
 };
 
-interface Layer {
+export interface Layer {
   chartType: 'activity' | 'line' | 'x-range';
   filter: {
     activity?: ActivityLayerFilter;
@@ -57,18 +60,18 @@ interface Layer {
   yAxisId: number | null;
 }
 
-interface LineLayer extends Layer {
+export interface LineLayer extends Layer {
   lineColor: string;
   lineWidth: number;
   pointRadius: number;
 }
 
-interface LinePoint extends Point {
+export interface LinePoint extends Point {
   radius: number;
   y: number;
 }
 
-type MouseDown = {
+export type MouseDown = {
   e: MouseEvent;
   layerId: number;
   points: Point[];
@@ -77,26 +80,26 @@ type MouseDown = {
   yAxisId: number | null;
 };
 
-type MouseOver = {
+export type MouseOver = {
   e: MouseEvent;
   layerId: number;
   points: Point[];
 };
 
-interface Point {
+export interface Point {
   id: number;
   name: string;
   type: 'activity' | 'line' | 'x-range';
   x: number;
 }
 
-type QuadtreePoint = {
+export type QuadtreePoint = {
   id: number;
   x: number;
   y: number;
 };
 
-type QuadtreeRect = {
+export type QuadtreeRect = {
   height: number;
   id: number | string;
   width: number;
@@ -104,11 +107,11 @@ type QuadtreeRect = {
   y: number;
 };
 
-type ResourceLayerFilter = {
+export type ResourceLayerFilter = {
   name: string;
 };
 
-type Row = {
+export type Row = {
   autoAdjustHeight: boolean;
   expanded: boolean;
   height: number;
@@ -119,12 +122,12 @@ type Row = {
   yAxes: Axis[];
 };
 
-type TimeRange = {
+export type TimeRange = {
   end: number;
   start: number;
 };
 
-type Timeline = {
+export type Timeline = {
   id: number;
   marginLeft: number;
   marginRight: number;
@@ -132,28 +135,28 @@ type Timeline = {
   verticalGuides: VerticalGuide[];
 };
 
-type VerticalGuide = {
+export type VerticalGuide = {
   id: number;
   label: Label;
   timestamp: string;
 };
 
-type VerticalGuideSelection = {
-  group: import('d3-selection').Selection<SVGGElement, unknown, null, undefined>;
-  label: import('d3-selection').Selection<SVGTextElement, unknown, null, undefined>;
+export type VerticalGuideSelection = {
+  group: Selection<SVGGElement, unknown, null, undefined>;
+  label: Selection<SVGTextElement, unknown, null, undefined>;
 };
 
-type XAxisTick = {
+export type XAxisTick = {
   coarseTime: string;
   date: Date;
   fineTime: string;
-  hideLabel: boolean = false;
+  hideLabel: boolean;
 };
 
 /**
  * @see https://github.com/d3/d3-scale-chromatic#categorical
  */
-type XRangeLayerColorScheme =
+export type XRangeLayerColorScheme =
   | 'schemeAccent'
   | 'schemeCategory10'
   | 'schemeDark2'
@@ -165,11 +168,11 @@ type XRangeLayerColorScheme =
   | 'schemeSet3'
   | 'schemeTableau10';
 
-interface XRangeLayer extends Layer {
+export interface XRangeLayer extends Layer {
   colorScheme: XRangeLayerColorScheme;
   opacity: number;
 }
 
-interface XRangePoint extends Point {
+export interface XRangePoint extends Point {
   label: Label;
 }

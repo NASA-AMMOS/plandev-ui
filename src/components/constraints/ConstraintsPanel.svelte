@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { checkConstraintsStatus, constraints } from '../../stores/constraints';
+  import type { Constraint } from '../../types/constraint';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';

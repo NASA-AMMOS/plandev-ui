@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { view } from '../../stores/views';
+  import type { ViewIFrame } from '../../types/view';
 
   export let iFrameId: number;
 

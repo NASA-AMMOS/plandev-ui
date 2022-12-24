@@ -1,4 +1,6 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
+import type { Grid } from '../types/grid';
+import type { View, ViewActivityTable } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';

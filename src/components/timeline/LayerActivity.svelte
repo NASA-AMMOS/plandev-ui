@@ -7,6 +7,8 @@
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { activitiesMap } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
+  import type { Activity, ActivityUniqueId } from '../../types/activity';
+  import type { ActivityLayerFilter, ActivityPoint, BoundingBox, QuadtreeRect, TimeRange } from '../../types/timeline';
   import { decomposeActivityDirectiveId, sortActivities } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';

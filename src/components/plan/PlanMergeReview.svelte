@@ -9,6 +9,15 @@
   import { activityMetadataDefinitions } from '../../stores/activities';
   import { activityTypes } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
+  import type { Activity } from '../../types/activity';
+  import type {
+    Plan,
+    PlanMergeConflictingActivity,
+    PlanMergeNonConflictingActivity,
+    PlanMergeRequestSchema,
+    PlanMergeRequestStatus,
+    PlanMergeResolution,
+  } from '../../types/plan';
   import { deriveActivityFromMergeActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
@@ -59,7 +68,7 @@
   let userInitiatedMergeRequestResolution: boolean = false;
 
   $: if (initialNonConflictingActivities) {
-    // Updated selectedNonConflictingActivity with the refeshed version if needed
+    // Updated selectedNonConflictingActivity with the refreshed version if needed
     if (selectedNonConflictingActivity) {
       selectedNonConflictingActivity = initialNonConflictingActivities.find(
         merge => merge.activity_id === selectedNonConflictingActivity.activity_id,

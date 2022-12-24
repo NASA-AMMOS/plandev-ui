@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { ActivityMetadataValueEnumMultiselect } from '../../types/activity-metadata';
   import ActivityMetadataName from './ActivityMetadataName.svelte';
 
   export let key: string = '';

@@ -1,4 +1,6 @@
-type Field<T> = {
+import type { Writable } from 'svelte/store';
+
+export type Field<T> = {
   dirty: boolean;
   dirtyAndValid: boolean;
   errors: string[];
@@ -11,11 +13,11 @@ type Field<T> = {
   value: T;
 };
 
-type FieldStore<T> = import('svelte/store').Writable<Field<T>> & {
+export type FieldStore<T> = Writable<Field<T>> & {
   reset(value: T): void;
   validateAndSet(value?: T): Promise<boolean>;
 };
 
-type ValidatorFn<T> = (value: T) => Promise<ValidationResult>;
+export type ValidatorFn<T> = (value: T) => Promise<ValidationResult>;
 
-type ValidationResult = string | null;
+export type ValidationResult = string | null;

@@ -5,6 +5,9 @@
   import { base } from '$app/paths';
   import { user as userStore } from '../../../stores/app';
   import { schedulingGoalsColumns } from '../../../stores/scheduling';
+  import type { ModelSlim } from '../../../types/model';
+  import type { PlanSchedulingSpec } from '../../../types/plan';
+  import type { SchedulingGoal, SchedulingSpecGoalInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { isMacOs } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';

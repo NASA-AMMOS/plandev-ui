@@ -1,6 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type {
+    ActivityMetadataDefinition,
+    ActivityMetadataSchemaEnum,
+    ActivityMetadataValue,
+  } from '../../types/activity-metadata';
   import ActivityMetadataBaseBoolean from './ActivityMetadataBaseBoolean.svelte';
   import ActivityMetadataBaseEnum from './ActivityMetadataBaseEnum.svelte';
   import ActivityMetadataBaseEnumMultiselect from './ActivityMetadataBaseEnumMultiselect.svelte';

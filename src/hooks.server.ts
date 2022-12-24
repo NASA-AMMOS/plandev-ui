@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/public';
 import type { Handle } from '@sveltejs/kit';
 import { parse } from 'cookie';
+import type { User } from './types/app';
 import effects from './utilities/effects';
 
 export const handle: Handle = async ({ event, resolve }) => {

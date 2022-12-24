@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { view, viewUpdateIFrame } from '../../stores/views';
+  import type { ViewIFrame } from '../../types/view';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import IFrame from './IFrame.svelte';

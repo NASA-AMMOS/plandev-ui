@@ -5,6 +5,7 @@
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import type { Placement } from 'tippy.js';
+  import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
 
   type Tooltip = {

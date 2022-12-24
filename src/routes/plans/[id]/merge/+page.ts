@@ -1,5 +1,10 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import type {
+  PlanMergeConflictingActivity,
+  PlanMergeNonConflictingActivity,
+  PlanMergeRequestSchema,
+} from '../../../../types/plan';
 import effects from '../../../../utilities/effects';
 import type { PageLoad } from './$types';
 

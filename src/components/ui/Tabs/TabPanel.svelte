@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { getContext } from 'svelte';
+  import type { PanelId, TabContext } from '../../../types/tabs';
   import { TabContextKey } from './Tabs.svelte';
 
   export let disabled: boolean = false;

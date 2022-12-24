@@ -1,4 +1,6 @@
 import { expect, test } from 'vitest';
+import type { Resource } from '../types/simulation';
+import type { Axis, Layer } from '../types/timeline';
 import { createTimelineLayer, createYAxis, getNextID, getYAxisBounds } from './timeline';
 
 test('getNextID', () => {

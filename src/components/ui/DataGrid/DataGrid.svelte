@@ -24,6 +24,7 @@
   import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/gridApi';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
+  import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
 
   export function autoSizeColumns(keys: (string | Column)[], skipHeader?: boolean) {
     gridOptions?.columnApi?.autoSizeColumns(keys, skipHeader);

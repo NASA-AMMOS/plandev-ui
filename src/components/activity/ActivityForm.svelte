@@ -4,6 +4,12 @@
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import { field } from '../../stores/form';
+  import type { ActivitiesMap, Activity, ActivityId, ActivityType, ActivityUniqueId } from '../../types/activity';
+  import type { ActivityMetadata, ActivityMetadataDefinition } from '../../types/activity-metadata';
+  import type { ExpansionSequence } from '../../types/expansion';
+  import type { FieldStore } from '../../types/form';
+  import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
+  import type { ValueSchema } from '../../types/schema';
   import { getActivityMetadata, getActivityRootParent } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';

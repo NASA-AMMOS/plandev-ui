@@ -8,6 +8,9 @@ import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
+import type { ExpansionSequence } from '../types/expansion';
+import type { ModalElement, ModalElementValue } from '../types/modal';
+import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
