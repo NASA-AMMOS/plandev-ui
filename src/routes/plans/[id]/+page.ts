@@ -21,7 +21,8 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         throw redirect(302, `${base}/plans/${id}/merge`);
       }
       const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id);
-      const initialView = await effects.getView(url.searchParams);
+      const initialResourceTypes = await effects.getResourceTypes(initialPlan.model_id);
+      const initialView = await effects.getView(url.searchParams, initialResourceTypes);
 
       return {
         initialActivityTypes,

@@ -564,6 +564,15 @@ const gql = {
     }
   `,
 
+  GET_RESOURCE_TYPES: `#graphql
+    query GetResourceTypes($missionModelId: ID!) {
+      resourceTypes(missionModelId: $missionModelId) {
+        name
+        schema
+      }
+    }
+  `,
+
   GET_SCHEDULING_CONDITION: `#graphql
     query GetSchedulingCondition($id: Int!) {
       condition: scheduling_condition_by_pk(id: $id) {

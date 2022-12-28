@@ -1,12 +1,16 @@
-import type { ActivityLayer } from '../types/timeline';
+import type { ResourceType } from '../types/simulation';
+import type { ActivityLayer, Axis, LineLayer, Row, XRangeLayer } from '../types/timeline';
 import type { View } from '../types/view';
 
 /**
  * Generates a default generic UI view.
- * @todo Generate default rows based on resources.
  */
-export function generateDefaultView(): View {
+export function generateDefaultView(resourceTypes: ResourceType[] = []): View {
   const now = new Date().toISOString();
+  let rowIds = 0;
+  let layerIds = 0;
+  let yAxisIds = 0;
+
   return {
     created_at: now,
     definition: {
@@ -52,16 +56,7 @@ export function generateDefaultView(): View {
               type: 'rows',
             },
             { id: 7, track: 3, type: 'gutter' },
-            {
-              id: 8,
-              rowSizes: '1fr 3px 1fr',
-              rows: [
-                { componentName: 'ActivityFormPanel', id: 9, type: 'component' },
-                { id: 10, track: 1, type: 'gutter' },
-                { componentName: 'TimelineEditorPanel', id: 11, type: 'component' },
-              ],
-              type: 'rows',
-            },
+            { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
           ],
           gridName: 'View',
           id: 0,
@@ -76,22 +71,78 @@ export function generateDefaultView(): View {
               {
                 autoAdjustHeight: true,
                 expanded: true,
-                height: 200,
+                height: 100,
                 horizontalGuides: [],
-                id: 0,
+                id: rowIds++,
                 layers: [
                   {
                     activityColor: '#283593',
                     activityHeight: 20,
                     chartType: 'activity',
                     filter: { activity: { type: '.*' } },
-                    id: 0,
+                    id: layerIds++,
                     yAxisId: null,
                   } as ActivityLayer,
                 ],
-                name: 'Activity Timeline',
+                name: 'Activities',
                 yAxes: [],
               },
+              ...resourceTypes.map(resourceType => {
+                const { name, schema } = resourceType;
+                const { type: schemaType } = schema;
+                const isDiscreteSchema =
+                  schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
+                const isNumericSchema =
+                  schemaType === 'int' ||
+                  schemaType === 'real' ||
+                  (schemaType === 'struct' &&
+                    schema?.items?.rate?.type === 'real' &&
+                    schema?.items?.initial?.type === 'real');
+
+                const yAxis: Axis = {
+                  color: '#000000',
+                  id: yAxisIds++,
+                  label: { text: name },
+                  scaleDomain: isNumericSchema ? [-6, 6] : [],
+                  tickCount: isNumericSchema ? 5 : 0,
+                };
+
+                const row: Row = {
+                  autoAdjustHeight: false,
+                  expanded: true,
+                  height: 100,
+                  horizontalGuides: [],
+                  id: rowIds++,
+                  layers: isDiscreteSchema
+                    ? [
+                        {
+                          chartType: 'x-range',
+                          colorScheme: 'schemeTableau10',
+                          filter: { resource: { name: `${name}$` } },
+                          id: layerIds++,
+                          opacity: 0.8,
+                          yAxisId: yAxis.id,
+                        } as XRangeLayer,
+                      ]
+                    : isNumericSchema
+                    ? [
+                        {
+                          chartType: 'line',
+                          filter: { resource: { name: `${name}$` } },
+                          id: layerIds++,
+                          lineColor: '#283593',
+                          lineWidth: 1,
+                          pointRadius: 2,
+                          yAxisId: yAxis.id,
+                        } as LineLayer,
+                      ]
+                    : [],
+                  name,
+                  yAxes: [yAxis],
+                };
+
+                return row;
+              }),
             ],
             verticalGuides: [],
           },

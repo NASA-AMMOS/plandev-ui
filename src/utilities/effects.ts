@@ -73,7 +73,7 @@ import type {
   UserSequence,
   UserSequenceInsertInput,
 } from '../types/sequencing';
-import type { SimulateResponse, Simulation, SimulationInsertInput } from '../types/simulation';
+import type { ResourceType, SimulateResponse, Simulation, SimulationInsertInput } from '../types/simulation';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
@@ -1160,6 +1160,17 @@ const effects = {
     }
   },
 
+  async getResourceTypes(missionModelId: number): Promise<ResourceType[]> {
+    try {
+      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { missionModelId });
+      const { resourceTypes } = data;
+      return resourceTypes;
+    } catch (e) {
+      catchError(e);
+      return [];
+    }
+  },
+
   async getSchedulingCondition(id: number | null | undefined): Promise<SchedulingCondition | null> {
     if (id !== null && id !== undefined) {
       try {
@@ -1367,7 +1378,7 @@ const effects = {
     }
   },
 
-  async getView(query: URLSearchParams | null): Promise<View | null> {
+  async getView(query: URLSearchParams | null, resourceTypes: ResourceType[] = []): Promise<View | null> {
     try {
       if (query !== null) {
         const viewId = query.has('viewId') ? query.get('viewId') : null;
@@ -1383,7 +1394,7 @@ const effects = {
         }
       }
 
-      return generateDefaultView();
+      return generateDefaultView(resourceTypes);
     } catch (e) {
       catchError(e);
       return null;

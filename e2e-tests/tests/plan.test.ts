@@ -53,7 +53,6 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelActivityTable).toBeVisible();
     await expect(plan.panelActivityTypes).toBeVisible();
     await expect(plan.panelTimeline).toBeVisible();
-    await expect(plan.panelTimelineEditor).toBeVisible();
   });
 
   test(`Clicking on 'Constraints' in the grid menu should show the constraints panel`, async () => {
@@ -96,6 +95,12 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelTimelineForm).not.toBeVisible();
     await plan.showPanel('Timeline Form');
     await expect(plan.panelTimelineForm).toBeVisible();
+  });
+
+  test(`Clicking on 'Timeline Editor' in the grid menu should show the timeline editor panel`, async () => {
+    await expect(plan.panelTimelineEditor).not.toBeVisible();
+    await plan.showPanel('Timeline Editor');
+    await expect(plan.panelTimelineEditor).toBeVisible();
   });
 
   test(`Clicking on 'Views' in the grid menu should show the views panel`, async () => {

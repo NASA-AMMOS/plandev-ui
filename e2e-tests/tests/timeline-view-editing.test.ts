@@ -52,12 +52,14 @@ test.describe.serial('Timeline View Editing', () => {
 
   test('Change the start time of the activity', async () => {
     await page.getByRole('gridcell', { name: 'PickBanana' }).click();
+    await plan.showPanel('Selected Activity');
     await page.locator('input[name="start-time"]').first().click();
     await page.locator('input[name="start-time"]').first().fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').first().press('Enter');
   });
 
   test('Add a vertical guide', async () => {
+    await plan.showPanel('Timeline Editor');
     const existingGuideCount = await page.locator('.guide').count();
     await page.getByRole('button', { name: 'New Vertical Guide' }).click();
     const newGuideCount = await page.locator('.guide').count();
