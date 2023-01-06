@@ -31,7 +31,8 @@ export const allErrors: Readable<BaseError[]> = derived(
   [simulationDatasetErrors, schedulingErrors, caughtErrors],
   ([$simulationDatasetErrors, $schedulingErrors, $caughtErrors]) =>
     [...($simulationDatasetErrors ?? []), ...($schedulingErrors ?? []), ...($caughtErrors ?? [])].sort(
-      (errorA: BaseError, errorB: BaseError) => compare(errorA.timestamp, errorB.timestamp, false),
+      (errorA: BaseError, errorB: BaseError) =>
+        compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),
     ),
 );
 
@@ -45,10 +46,29 @@ export function catchError(error: string | Error, details?: string | Error, shou
       ...(details ? { trace: `${details}` } : {}),
       type: ErrorTypes.CAUGHT_ERROR,
     });
-    return errors;
+    return [...errors];
   });
 
   if (shouldLog) {
     console.log(details ?? error);
   }
+}
+
+export function catchSchedulingError(error: SchedulingError) {
+  schedulingErrors.update(errors => {
+    errors.push({
+      ...error,
+      message: parseErrorReason(error.message),
+    });
+    return [...errors];
+  });
+}
+
+export function clearSchedulingErrors(): void {
+  schedulingErrors.set([]);
+}
+
+export function clearAllErrors(): void {
+  clearSchedulingErrors();
+  caughtErrors.set([]);
 }

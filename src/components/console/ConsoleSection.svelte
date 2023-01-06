@@ -1,16 +1,34 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import type { BaseError } from '../../types/errors';
+  import { tooltip } from '../../utilities/tooltip';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
 
   export let errors: BaseError[] = [];
   export let title: string;
+  export let isClearable: boolean = true;
+
+  const dispatch = createEventDispatcher();
+
+  function onClear() {
+    dispatch('clearMessages');
+  }
 </script>
 
 <TabPanel>
   <div class="console-section">
-    <div class="console-header">{title}</div>
+    <div class="console-header">
+      <div>{title}</div>
+      {#if isClearable}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="clear-console" on:click={onClear} use:tooltip={{ content: `Clear ${title}`, placement: 'left' }}>
+          <RemoveAllIcon />
+        </div>
+      {/if}
+    </div>
     <div class="errors">
       {#each errors as error}
         <div class="error">
@@ -37,11 +55,23 @@
 
   .console-header {
     color: var(--st-gray-60);
+    display: grid;
     font-size: 11px;
     font-weight: 700;
+    grid-template-columns: auto min-content;
+    justify-content: space-between;
     line-height: 1rem;
     margin: 0.65rem 1rem;
     text-transform: uppercase;
+  }
+
+  .clear-console {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .clear-console:hover {
+    color: var(--st-black);
   }
 
   .errors {

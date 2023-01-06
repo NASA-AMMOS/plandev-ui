@@ -3,7 +3,7 @@ import { base } from '$app/paths';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
-import { catchError, parseErrorReason, schedulingErrors } from '../stores/errors';
+import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createDictionaryError,
   creatingDictionary,
@@ -1548,8 +1548,6 @@ const effects = {
       let incomplete = true;
       schedulingStatus.set(Status.Incomplete);
 
-      schedulingErrors.set([]);
-
       do {
         const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
         const { schedule } = data;
@@ -1561,12 +1559,7 @@ const effects = {
           showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
         } else if (status === 'failed') {
           schedulingStatus.set(Status.Failed);
-          schedulingErrors.set([
-            {
-              ...reason,
-              message: parseErrorReason(reason.message),
-            },
-          ]);
+          catchSchedulingError(reason);
           incomplete = false;
 
           showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);

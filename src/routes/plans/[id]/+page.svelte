@@ -35,7 +35,13 @@
   import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
   import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
   import { resetConstraintStores } from '../../../stores/constraints';
-  import { allErrors, schedulingErrors, simulationDatasetErrors } from '../../../stores/errors';
+  import {
+    allErrors,
+    clearAllErrors,
+    clearSchedulingErrors,
+    schedulingErrors,
+    simulationDatasetErrors,
+  } from '../../../stores/errors';
   import {
     activityTypes,
     maxTimeRange,
@@ -128,6 +134,14 @@
     viewUpdateLayout(gridId, { rowSizes: newSizes });
   }
 
+  function onClearAllErrors() {
+    clearAllErrors();
+  }
+
+  function onClearSchedulingErrors() {
+    clearSchedulingErrors();
+  }
+
   function onKeydown(event: KeyboardEvent): void {
     const { key, ctrlKey, metaKey } = event;
     if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
@@ -209,9 +223,9 @@
       </div>
     </svelte:fragment>
 
-    <ConsoleSection errors={$allErrors} title="All Errors" />
-    <ConsoleSection errors={$schedulingErrors} title="Scheduling Errors" />
-    <ConsoleSection errors={$simulationDatasetErrors} title="Simulation Errors" />
+    <ConsoleSection errors={$allErrors} title="All Errors" on:clearMessages={onClearAllErrors} />
+    <ConsoleSection errors={$schedulingErrors} title="Scheduling Errors" on:clearMessages={onClearSchedulingErrors} />
+    <ConsoleSection errors={$simulationDatasetErrors} isClearable={false} title="Simulation Errors" />
   </Console>
 </CssGrid>
 
