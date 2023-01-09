@@ -10,6 +10,7 @@
   const dispatch = createEventDispatcher();
   const lockTooltipContent = 'Click to unlock timeline, or press and hold the Shift key to temporarily unlock';
 
+  $: tooltipDisabled = timelineLockStatus !== TimelineLockStatus.Locked;
   $: lockClassName = timelineLockStatus === TimelineLockStatus.TemporaryUnlock ? 'temporary-unlock' : '';
 
   onMount(() => {
@@ -45,15 +46,17 @@
   }
 </script>
 
-{#if timelineLockStatus === TimelineLockStatus.Locked}
-  <button class="st-button icon" on:click={onClick} use:tooltip={{ content: lockTooltipContent, placement: 'bottom' }}>
+<button
+  class={`st-button icon ${lockClassName}`}
+  on:click={onClick}
+  use:tooltip={{ content: lockTooltipContent, disabled: tooltipDisabled, placement: 'bottom' }}
+>
+  {#if timelineLockStatus === TimelineLockStatus.Locked}
     <LockIcon />
-  </button>
-{:else}
-  <button class={`st-button icon ${lockClassName}`} on:click={onClick}>
+  {:else}
     <UnlockIcon />
-  </button>
-{/if}
+  {/if}
+</button>
 
 <style>
   .st-button {

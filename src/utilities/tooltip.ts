@@ -1,3 +1,4 @@
+import type { Plugin, Props } from 'tippy.js';
 import tippy from 'tippy.js';
 
 /**
@@ -29,7 +30,11 @@ export function tooltip(node: Element, params: any = {}): any {
 
   // Support any of the Tippy props by forwarding all "params":
   // https://atomiks.github.io/tippyjs/v6/all-props/
-  const tip: any = tippy(node, { content, ...params });
+  const tip: any = tippy(node, {
+    content,
+    plugins: [disabled],
+    ...params,
+  });
 
   return {
     // Clean up the Tippy instance on unmount.
@@ -39,3 +44,24 @@ export function tooltip(node: Element, params: any = {}): any {
     update: (newParams: any) => tip.setProps({ content, ...newParams }),
   };
 }
+
+const disabled: Plugin<Props & { disabled: boolean }> = {
+  defaultValue: false,
+  fn(instance) {
+    return {
+      onBeforeUpdate(instance, partialProps) {
+        if (partialProps.disabled || !partialProps.content) {
+          instance.disable();
+        } else {
+          instance.enable();
+        }
+      },
+      onCreate() {
+        if (instance.props.disabled || !instance.props.content) {
+          instance.disable();
+        }
+      },
+    };
+  },
+  name: 'disabled',
+};
