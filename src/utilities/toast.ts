@@ -9,15 +9,21 @@ interface Toast {
 
 let currentToasts: Toast[] = [];
 
-function findToast(toastText: string) {
-  return currentToasts.findIndex(toast => toast.options.text === toastText);
+function findToast(toastText: string, checkIsClosed: boolean = false) {
+  return currentToasts.findIndex(
+    toast => toast.options.text === toastText && ((checkIsClosed && toast.options.close === false) || !checkIsClosed),
+  );
+}
+
+function hideToast(toast: Toast) {
+  toast.options.close = true;
+  toast.hideToast();
 }
 
 function removeToast(toastText: string) {
   const toastIndex = findToast(toastText);
 
   if (toastIndex > -1) {
-    currentToasts[toastIndex].hideToast();
     currentToasts = [...currentToasts.slice(0, toastIndex), ...currentToasts.slice(toastIndex + 1)];
   }
 }
@@ -28,10 +34,10 @@ function toastCallback(this: Element) {
 
 function showToast(toast: Toast) {
   const toastText = toast.options.text;
-  const existingToastIndex = findToast(toastText);
+  const existingToastIndex = findToast(toastText, true);
 
   if (existingToastIndex > -1) {
-    currentToasts[existingToastIndex].hideToast();
+    hideToast(currentToasts[existingToastIndex]);
   }
 
   toast.showToast();
@@ -43,6 +49,7 @@ export function showFailureToast(text: string): void {
     backgroundColor: '#a32a2a',
     callback: toastCallback,
     className: 'st-typography-body',
+    close: false,
     duration: 3000,
     gravity: 'bottom',
     position: 'left',
@@ -56,6 +63,7 @@ export function showSuccessToast(text: string): void {
     backgroundColor: '#2da44e',
     callback: toastCallback,
     className: 'st-typography-body',
+    close: false,
     duration: 3000,
     gravity: 'bottom',
     position: 'left',

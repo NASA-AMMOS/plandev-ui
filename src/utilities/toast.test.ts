@@ -14,7 +14,7 @@ interface ToastifyOptions {
 vi.mock('toastify-js', () => {
   const Toastify = vi.fn().mockImplementation((options: ToastifyOptions) => {
     if (options.callback) {
-      setTimeout(() => options.callback({ textContent: options.text }), 1000);
+      setTimeout(() => options.callback({ textContent: options.text }), 300);
     }
 
     const toastDiv = document.createElement('div');
@@ -29,7 +29,7 @@ vi.mock('toastify-js', () => {
 
         document.body.removeChild(toastDiv);
       },
-      options: { text: options.text },
+      options,
       showToast: () => {
         document.body.appendChild(toastDiv);
       },
