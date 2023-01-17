@@ -186,6 +186,7 @@
   /* ... and Firefox */
   input[type='number'] {
     -moz-appearance: textfield;
+    appearance: textfield;
     padding-right: 32px;
   }
 

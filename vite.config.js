@@ -32,10 +32,11 @@ const config = {
     environment: 'jsdom',
     include: ['./src/**/*.test.ts'],
     outputFile: {
+      html: 'unit-test-results/html-results/index.html',
       json: 'unit-test-results/json-results.json',
       junit: 'unit-test-results/junit-results.xml',
     },
-    reporters: ['verbose', 'json', 'junit'],
+    reporters: ['verbose', 'json', 'junit', 'html'],
   },
 };
 

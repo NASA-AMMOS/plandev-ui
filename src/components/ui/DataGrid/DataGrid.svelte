@@ -14,14 +14,15 @@
     type ColumnState,
     type ColumnVisibleEvent,
     type GridOptions,
-    type RedrawRowsParams,
+    type IRowNode,
     type RowClassParams,
     type RowClickedEvent,
     type RowDoubleClickedEvent,
     type RowSelectedEvent,
     type SortChangedEvent,
   } from 'ag-grid-community';
-  import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/gridApi';
+  import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/columns/columnModel';
+  import type { RedrawRowsParams } from 'ag-grid-community/dist/lib/rendering/rowRenderer';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
@@ -61,7 +62,7 @@
   export let getRowId: (data: TRowData) => RowId = (data: TRowData): number => {
     return parseInt(data[idKey]);
   };
-  export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
+  export let isRowSelectable: (node: IRowNode<TRowData>) => boolean = undefined;
 
   const dispatch = createEventDispatcher();
 
