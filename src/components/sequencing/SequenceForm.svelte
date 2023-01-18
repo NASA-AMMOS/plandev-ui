@@ -8,7 +8,7 @@
   import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
   import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
-  import { isMacOs } from '../../utilities/generic';
+  import { isSaveEvent } from '../../utilities/keyboardEvents';
   import PageTitle from '../app/PageTitle.svelte';
   import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -71,8 +71,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    const { key, ctrlKey, metaKey } = event;
-    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
+    if (isSaveEvent(event)) {
       event.preventDefault();
       saveSequence();
     }

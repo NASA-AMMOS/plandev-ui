@@ -9,7 +9,7 @@
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingGoal, SchedulingSpecGoalInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
-  import { isMacOs } from '../../../utilities/generic';
+  import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import PageTitle from '../../app/PageTitle.svelte';
   import Chip from '../../ui/Chip.svelte';
@@ -79,8 +79,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    const { key, ctrlKey, metaKey } = event;
-    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
+    if (isSaveEvent(event)) {
       event.preventDefault();
       saveGoal();
     }

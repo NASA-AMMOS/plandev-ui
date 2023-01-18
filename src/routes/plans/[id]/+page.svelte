@@ -63,7 +63,7 @@
   import type { GridChangeSizesEvent } from '../../../types/grid';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
-  import { isMacOs } from '../../../utilities/generic';
+  import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
@@ -143,8 +143,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    const { key, ctrlKey, metaKey } = event;
-    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
+    if (isSaveEvent(event)) {
       event.preventDefault();
       effects.simulate();
     }

@@ -9,7 +9,7 @@
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingCondition, SchedulingSpecConditionInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
-  import { isMacOs } from '../../../utilities/generic';
+  import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
@@ -77,8 +77,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    const { key, ctrlKey, metaKey } = event;
-    if ((isMacOs() ? metaKey : ctrlKey) && key === 's') {
+    if (isSaveEvent(event)) {
       event.preventDefault();
       saveCondition();
     }
