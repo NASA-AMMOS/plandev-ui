@@ -53,10 +53,12 @@
 
   const dispatch = createEventDispatcher();
 
+  let blur: FocusEvent;
   let dragenter: DragEvent;
   let dragleave: DragEvent;
   let dragover: DragEvent;
   let drop: DragEvent;
+  let focus: FocusEvent;
   let heightsByLayer: Record<number, number> = {};
   let mousedown: MouseEvent;
   let mousemove: MouseEvent;
@@ -137,11 +139,12 @@
       bind:this={overlaySvg}
       class="overlay"
       style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px"
-      on:blur={e => e}
+      on:blur={e => (blur = e)}
       on:dragenter|preventDefault={e => (dragenter = e)}
       on:dragleave={e => (dragleave = e)}
       on:dragover|preventDefault={e => (dragover = e)}
       on:drop|preventDefault={e => (drop = e)}
+      on:focus={e => (focus = e)}
       on:mousedown={e => (mousedown = e)}
       on:mousemove={e => (mousemove = e)}
       on:mouseout={e => (mouseout = e)}
@@ -176,6 +179,7 @@
           <LayerActivity
             {...layer}
             activities={activitiesByView?.byLayerId[layer.id] ?? []}
+            {blur}
             {drawHeight}
             {drawWidth}
             {dragenter}
@@ -183,6 +187,7 @@
             {dragover}
             {drop}
             filter={layer.filter.activity}
+            {focus}
             {mousedown}
             {mousemove}
             {mouseout}
@@ -191,6 +196,7 @@
             {selectedActivityId}
             {viewTimeRange}
             {xScaleView}
+            on:delete
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
             on:updateRowHeight={onUpdateRowHeightLayer}

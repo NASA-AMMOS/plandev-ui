@@ -1,11 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activitiesByView, selectedActivityId } from '../../stores/activities';
+  import { activitiesByView, selectedActivity, selectedActivityId } from '../../stores/activities';
   import { constraintViolations } from '../../stores/constraints';
-  import { maxTimeRange, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, planId, viewTimeRange } from '../../stores/plan';
   import { resourcesByViewLayerId } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
+  import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -16,7 +17,17 @@
   export let gridId: number;
   export let timelineId: number;
 
+  let isDeletingDirective: boolean = false;
+
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
+
+  async function deleteActivityDirective() {
+    if (!isDeletingDirective) {
+      isDeletingDirective = true;
+      await effects.deleteActivityDirective($planId, $selectedActivity.id);
+      isDeletingDirective = false;
+    }
+  }
 </script>
 
 <Panel padBody={false}>
@@ -57,6 +68,7 @@
       resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityId={$selectedActivityId}
       viewTimeRange={$viewTimeRange}
+      on:delete={deleteActivityDirective}
       on:mouseDown={({ detail: newSelectedActivityId }) => {
         $selectedActivityId = newSelectedActivityId;
       }}

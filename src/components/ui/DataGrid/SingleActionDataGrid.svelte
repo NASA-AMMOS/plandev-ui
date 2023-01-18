@@ -1,9 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import type { TRowData } from '../../../types/data-grid';
+  import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
@@ -13,11 +15,11 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid = undefined;
-  export let idKey: keyof TRowData = 'id';
   export let hasEdit: boolean = false;
+  export let idKey: keyof TRowData = 'id';
   export let items: TRowData[];
-  export let selectedItemId: number | null = null;
   export let itemDisplayText: string;
+  export let selectedItemId: number | null = null;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
     return parseInt(data[idKey]);
@@ -35,6 +37,8 @@
     selectedItemIds = [];
   }
 
+  onDestroy(() => onBlur());
+
   function editItem() {
     dispatch('editItem', selectedItemIds);
   }
@@ -51,6 +55,12 @@
     dataGrid?.sizeColumnsToFit();
   }
 
+  function onBlur() {
+    if (browser) {
+      document.removeEventListener('keydown', onKeyDown);
+    }
+  }
+
   function onCellContextMenu(event: CustomEvent) {
     const { detail } = event;
     const { data: clickedRow } = detail;
@@ -61,26 +71,38 @@
       contextMenu.show(detail.event);
     }
   }
+
+  function onFocus() {
+    document.addEventListener('keydown', onKeyDown);
+  }
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (isDeleteEvent(event)) {
+      deleteItem();
+    }
+  }
 </script>
 
 <DataGrid
   bind:this={dataGrid}
+  bind:currentSelectedRowId={selectedItemId}
+  bind:selectedRowIds={selectedItemIds}
   {columnDefs}
   {columnStates}
-  bind:currentSelectedRowId={selectedItemId}
   {getRowId}
   {isRowSelectable}
-  rowSelection="single"
-  rowData={items}
-  bind:selectedRowIds={selectedItemIds}
   preventDefaultOnContextMenu
-  on:filterChanged
+  rowData={items}
+  rowSelection="single"
+  on:blur={onBlur}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
   on:columnMoved
   on:columnPinned
   on:columnResized
   on:columnStateChange
+  on:filterChanged
+  on:focus={onFocus}
   on:rowClicked
   on:rowDoubleClicked
   on:rowSelected

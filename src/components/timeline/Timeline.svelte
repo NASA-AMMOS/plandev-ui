@@ -265,6 +265,7 @@
         {xScaleView}
         {xTicksView}
         yAxes={row.yAxes}
+        on:delete
         on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}

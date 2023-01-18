@@ -1,16 +1,18 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
-  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { activitiesMap } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
   import type { Activity, ActivityUniqueId } from '../../types/activity';
   import type { ActivityLayerFilter, ActivityPoint, BoundingBox, QuadtreeRect, TimeRange } from '../../types/timeline';
   import { decomposeActivityDirectiveId, sortActivities } from '../../utilities/activities';
   import effects from '../../utilities/effects';
+  import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
   import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
 
@@ -20,6 +22,7 @@
   export let activityRowPadding: number = 20;
   export let activitySelectedColor: string = '#81D4FA';
   export let activityUnfinishedColor: string = '#ff7760';
+  export let blur: FocusEvent | undefined;
   export let dragenter: DragEvent | undefined;
   export let dragleave: DragEvent | undefined;
   export let dragover: DragEvent | undefined;
@@ -28,6 +31,7 @@
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
   export let id: number;
+  export let focus: FocusEvent | undefined;
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
@@ -49,10 +53,12 @@
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsByUniqueId: Record<ActivityUniqueId, ActivityPoint> = {};
 
+  $: onBlur(blur);
   $: onDragenter(dragenter);
   $: onDragleave(dragleave);
   $: onDragover(dragover);
   $: onDrop(drop);
+  $: onFocus(focus);
   $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
@@ -86,6 +92,8 @@
       dpr = window.devicePixelRatio;
     }
   });
+
+  onDestroy(() => removeKeyDownEvent());
 
   /**
    * Recursively converts an Activity to an ActivityPoint.
@@ -194,6 +202,24 @@
     }
   }
 
+  function removeKeyDownEvent() {
+    if (browser) {
+      document.removeEventListener('keydown', onKeyDown);
+    }
+  }
+
+  function onBlur(e: FocusEvent | undefined) {
+    if (e) {
+      removeKeyDownEvent();
+    }
+  }
+
+  function onKeyDown(event: KeyboardEvent): void {
+    if (isDeleteEvent(event) && !!selectedActivityId) {
+      dispatch('delete', selectedActivityId);
+    }
+  }
+
   function onDragenter(e: DragEvent | undefined): void {
     if (e) {
       const { offsetX } = e;
@@ -230,6 +256,12 @@
       const start_time = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
       effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {});
+    }
+  }
+
+  function onFocus(e: FocusEvent | undefined) {
+    if (e) {
+      document.addEventListener('keydown', onKeyDown);
     }
   }
 

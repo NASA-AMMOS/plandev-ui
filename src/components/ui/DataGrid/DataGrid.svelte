@@ -33,6 +33,9 @@
   export function autoSizeAllColumns(skipHeader?: boolean) {
     gridOptions?.columnApi?.autoSizeAllColumns(skipHeader);
   }
+  export function focusDataGrid() {
+    gridDiv.focus();
+  }
   // expose ag-grid function to select all visible rows
   export function selectAllVisible() {
     gridOptions?.api?.selectAllFiltered();
@@ -262,7 +265,7 @@
   });
 </script>
 
-<div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection />
+<div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
 
 <style>
   .table {

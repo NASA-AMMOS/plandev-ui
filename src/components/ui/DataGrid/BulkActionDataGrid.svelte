@@ -1,10 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import type { RowId, TRowData } from '../../../types/data-grid';
+  import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
@@ -20,8 +22,8 @@
   export let selectedItemId: RowId | null = null;
   export let showContextMenu: boolean = true;
   export let singleItemDisplayText: string = '';
-  export let suppressRowClickSelection: boolean = false;
   export let suppressDragLeaveHidesColumns: boolean = true;
+  export let suppressRowClickSelection: boolean = false;
 
   export let getRowId: (data: TRowData) => RowId = (data: TRowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
@@ -37,6 +39,8 @@
   } else if (selectedItemId === null) {
     selectedItemIds = [];
   }
+
+  onDestroy(() => onBlur());
 
   function bulkDeleteItems() {
     const selectedItemIdsMap = keyBy(selectedItemIds);
@@ -61,6 +65,12 @@
     dataGrid?.sizeColumnsToFit();
   }
 
+  function onBlur() {
+    if (browser) {
+      document.removeEventListener('keydown', onKeyDown);
+    }
+  }
+
   function onCellContextMenu(event: CustomEvent) {
     if (showContextMenu) {
       const { detail } = event;
@@ -79,32 +89,45 @@
     isFiltered = Object.keys(filterModel).length > 0;
   }
 
+  function onFocus() {
+    document.addEventListener('keydown', onKeyDown);
+  }
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (isDeleteEvent(event)) {
+      bulkDeleteItems();
+    }
+  }
+
   function selectAllItems() {
     dataGrid.selectAllVisible();
+    dataGrid.focusDataGrid();
   }
 </script>
 
 <DataGrid
   bind:this={dataGrid}
+  bind:currentSelectedRowId={selectedItemId}
+  bind:selectedRowIds={selectedItemIds}
   {columnDefs}
   {columnStates}
-  bind:currentSelectedRowId={selectedItemId}
   {getRowId}
   {idKey}
   {isRowSelectable}
-  rowSelection="multiple"
-  rowData={items}
-  bind:selectedRowIds={selectedItemIds}
   preventDefaultOnContextMenu={showContextMenu}
-  {suppressRowClickSelection}
+  rowData={items}
+  rowSelection="multiple"
   {suppressDragLeaveHidesColumns}
-  on:filterChanged={onFilterChanged}
+  {suppressRowClickSelection}
+  on:blur={onBlur}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
   on:columnMoved
   on:columnPinned
   on:columnResized
   on:columnStateChange
+  on:filterChanged={onFilterChanged}
+  on:focus={onFocus}
   on:rowClicked
   on:rowDoubleClicked
   on:rowSelected

@@ -57,13 +57,23 @@
     width: 25,
   };
 
-  function deleteActivityDirective({ id, plan_id }: Activity) {
-    effects.deleteActivityDirective(plan_id, id);
+  let isDeletingDirective: boolean = false;
+
+  async function deleteActivityDirective({ id, plan_id }: Activity) {
+    if (!isDeletingDirective) {
+      isDeletingDirective = true;
+      await effects.deleteActivityDirective(plan_id, id);
+      isDeletingDirective = false;
+    }
   }
 
-  function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
-    const ids = activities.map(({ id }) => id);
-    effects.deleteActivityDirectives(planId, ids);
+  async function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
+    if (!isDeletingDirective) {
+      isDeletingDirective = true;
+      const ids = activities.map(({ id }) => id);
+      await effects.deleteActivityDirectives(planId, ids);
+      isDeletingDirective = false;
+    }
   }
 
   function getRowId(activity: Activity): ActivityUniqueId {
