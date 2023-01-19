@@ -5,7 +5,7 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="context-menu-item" on:click|preventDefault={() => dispatch('click')}>
+<div class="context-menu-item st-typography-body" on:click|preventDefault={() => dispatch('click')}>
   <slot />
 </div>
 
