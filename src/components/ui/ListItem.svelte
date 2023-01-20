@@ -20,7 +20,7 @@
   on:dragend={e => dispatch('dragend', e)}
   on:dragstart={e => dispatch('dragstart', e)}
 >
-  <div>
+  <div class="list-item-content">
     <slot />
   </div>
   <div class="suffix">
@@ -37,6 +37,12 @@
     font-size: 0.8rem;
     justify-content: space-between;
     padding: 0.2rem;
+  }
+
+  .list-item-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .list-item:not(:last-child) {
