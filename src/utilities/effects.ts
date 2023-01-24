@@ -73,13 +73,23 @@ import type {
   UserSequence,
   UserSequenceInsertInput,
 } from '../types/sequencing';
-import type { ResourceType, SimulateResponse, Simulation, SimulationInsertInput } from '../types/simulation';
+import type {
+  PlanDataset,
+  Profile,
+  Resource,
+  ResourceType,
+  SimulateResponse,
+  Simulation,
+  SimulationInsertInput,
+  Span,
+} from '../types/simulation';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
 import { showConfirmModal, showCreatePlanBranchModal, showCreateViewModal, showPlanBranchRequestModal } from './modal';
 import { reqGateway, reqHasura } from './requests';
+import { sampleProfiles } from './resources';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromDuration, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
@@ -1171,6 +1181,44 @@ const effects = {
     }
   },
 
+  async getResources(datasetId: number, planStartTime: string, planDuration: string): Promise<Resource[]> {
+    try {
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId });
+      const { profile: profiles } = data;
+      return sampleProfiles(profiles, planStartTime, planDuration);
+    } catch (e) {
+      catchError(e);
+      return [];
+    }
+  },
+
+  async getResourcesExternal(planId: number, planStartTime: string, planDuration: string): Promise<Resource[]> {
+    try {
+      const data = await reqHasura<PlanDataset[]>(gql.GET_PROFILES_EXTERNAL, { planId });
+      const { plan_dataset: plan_datasets } = data;
+      let resources: Resource[] = [];
+
+      for (const dataset of plan_datasets) {
+        const {
+          dataset: { profiles },
+          offset_from_plan_start,
+        } = dataset;
+        const sampledResources: Resource[] = sampleProfiles(
+          profiles,
+          planStartTime,
+          planDuration,
+          offset_from_plan_start,
+        );
+        resources = [...resources, ...sampledResources];
+      }
+
+      return resources;
+    } catch (e) {
+      catchError(e);
+      return [];
+    }
+  },
+
   async getSchedulingCondition(id: number | null | undefined): Promise<SchedulingCondition | null> {
     if (id !== null && id !== undefined) {
       try {
@@ -1232,6 +1280,17 @@ const effects = {
       }
     } else {
       return null;
+    }
+  },
+
+  async getSpans(datasetId: number): Promise<Span[]> {
+    try {
+      const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId });
+      const { span: spans } = data;
+      return spans;
+    } catch (e) {
+      catchError(e);
+      return [];
     }
   },
 

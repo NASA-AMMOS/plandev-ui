@@ -1,16 +1,8 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type {
-  ProfilesExternalResponse,
-  Resource,
-  Simulation,
-  SimulationDataset,
-  SimulationTemplate,
-  Span,
-} from '../types/simulation';
+import type { Resource, Simulation, SimulationDataset, SimulationTemplate, Span } from '../types/simulation';
 import gql from '../utilities/gql';
-import { sampleProfiles } from '../utilities/resources';
 import { Status } from '../utilities/status';
-import { modelId, plan, planId, planRevision } from './plan';
+import { modelId, planId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { view } from './views';
 
@@ -18,28 +10,13 @@ import { view } from './views';
 
 export const simulationDatasetId: Writable<number> = writable(-1);
 
+export const externalResources: Writable<Resource[]> = writable([]);
+
+export const resources: Writable<Resource[]> = writable([]);
+
+export const spans: Writable<Span[]> = writable([]);
+
 /* Subscriptions. */
-
-export const externalResources = gqlSubscribable<Resource[]>(
-  gql.SUB_PROFILES_EXTERNAL,
-  { planId },
-  [],
-  (data: ProfilesExternalResponse) => {
-    const { datasets, duration, start_time } = data;
-    let resources: Resource[] = [];
-
-    for (const dataset of datasets) {
-      const {
-        dataset: { profiles },
-        offset_from_plan_start,
-      } = dataset;
-      const sampledResources: Resource[] = sampleProfiles(profiles, start_time, duration, offset_from_plan_start);
-      resources = [...resources, ...sampledResources];
-    }
-
-    return resources;
-  },
-);
 
 export const simulation = gqlSubscribable<Simulation>(
   gql.SUB_SIMULATION,
@@ -50,20 +27,8 @@ export const simulation = gqlSubscribable<Simulation>(
 
 export const simulationDataset = gqlSubscribable<SimulationDataset | null>(
   gql.SUB_SIMULATION_DATASET,
-  { planId, simulationDatasetId },
+  { simulationDatasetId },
   null,
-  (simulations: { simulation_datasets: SimulationDataset[] }[]): SimulationDataset => {
-    if (simulations.length) {
-      const [simulation] = simulations;
-      const { simulation_datasets } = simulation;
-
-      if (simulation_datasets.length) {
-        const [simulation_dataset] = simulation_datasets;
-        return simulation_dataset;
-      }
-    }
-    return null;
-  },
 );
 
 export const simulationDatasetIds = gqlSubscribable<number[]>(
@@ -82,48 +47,10 @@ export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(gql.SUB
 
 /* Derived. */
 
-export const simulationResources: Readable<Resource[]> = derived(
-  [plan, simulationDataset],
-  ([$plan, $simulationDataset]) => {
-    if ($plan) {
-      const { duration, start_time } = $plan;
-
-      if ($simulationDataset) {
-        const { dataset } = $simulationDataset;
-
-        if (dataset) {
-          const { profiles } = dataset;
-          return sampleProfiles(profiles, start_time, duration);
-        }
-      }
-    }
-
-    return [];
-  },
-  [],
-);
-
-export const simulationSpans: Readable<Span[]> = derived(
-  simulationDataset,
-  $simulationDataset => {
-    if ($simulationDataset) {
-      const { dataset } = $simulationDataset;
-
-      if (dataset) {
-        const { spans } = dataset;
-        return spans;
-      }
-    }
-
-    return [];
-  },
-  [],
-);
-
 export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(
-  [externalResources, simulationResources, view],
-  ([$externalResources, $simulationResources, $view]) => {
-    const resources: Resource[] = [...$externalResources, ...$simulationResources];
+  [externalResources, resources, view],
+  ([$externalResources, $resources, $view]) => {
+    const resources: Resource[] = [...$externalResources, ...$resources];
     const { definition } = $view;
     const { plan } = definition;
     const { timelines } = plan;
@@ -191,9 +118,11 @@ export const simulationStatus: Readable<Status | null> = derived(
 /* Helper Functions. */
 
 export function resetSimulationStores() {
-  externalResources.updateValue(() => []);
+  externalResources.set([]);
+  resources.set([]);
   simulationDatasetId.set(-1);
   simulationDataset.updateValue(() => null);
   simulationTemplates.updateValue(() => []);
   simulation.updateValue(() => null);
+  spans.set([]);
 }

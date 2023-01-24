@@ -564,6 +564,49 @@ const gql = {
     }
   `,
 
+  GET_PROFILES: `#graphql
+    query GetProfiles($datasetId: Int!) {
+      profile(where: { dataset_id: { _eq: $datasetId } }) {
+        dataset_id
+        duration
+        id
+        name
+        profile_segments(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
+          dataset_id
+          dynamics
+          is_gap
+          profile_id
+          start_offset
+        }
+        type
+      }
+    }
+  `,
+
+  GET_PROFILES_EXTERNAL: `#graphql
+    query GetProfilesExternal($planId: Int!) {
+      plan_dataset(where: { plan_id: { _eq: $planId } }) {
+        dataset {
+          profiles {
+            dataset_id
+            duration
+            id
+            name
+            profile_segments(order_by: { start_offset: asc }) {
+              dataset_id
+              dynamics
+              is_gap
+              profile_id
+              start_offset
+            }
+            type
+          }
+        }
+        offset_from_plan_start
+      }
+    }
+  `,
+
   GET_RESOURCE_TYPES: `#graphql
     query GetResourceTypes($missionModelId: ID!) {
       resourceTypes(missionModelId: $missionModelId) {
@@ -627,6 +670,20 @@ const gql = {
         goal_id
         priority
         specification_id
+      }
+    }
+  `,
+
+  GET_SPANS: `#graphql
+    query GetSpans($datasetId: Int!) {
+      span(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
+        attributes
+        dataset_id
+        duration
+        id
+        parent_id
+        start_offset
+        type
       }
     }
   `,
@@ -1085,28 +1142,6 @@ const gql = {
     }
   `,
 
-  SUB_PROFILES_EXTERNAL: `#graphql
-    subscription SubProfilesExternal($planId: Int!) {
-      plan: plan_by_pk(id: $planId) {
-        datasets {
-          dataset {
-            profiles {
-              name
-              profile_segments(order_by: { start_offset: asc }) {
-                dynamics
-                start_offset
-              }
-              type
-            }
-          }
-          offset_from_plan_start
-        }
-        duration
-        start_time
-      }
-    }
-  `,
-
   SUB_SCHEDULING_CONDITIONS: `#graphql
     subscription SubSchedulingConditions {
       conditions: scheduling_condition(order_by: { id: desc }) {
@@ -1219,33 +1254,13 @@ const gql = {
   `,
 
   SUB_SIMULATION_DATASET: `#graphql
-    subscription SubSimulationDataset($planId: Int!, $simulationDatasetId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
-        simulation_datasets(where: { id: { _eq: $simulationDatasetId } }, limit: 1) {
-          dataset {
-            profiles {
-              name
-              profile_segments(order_by: { start_offset: asc }) {
-                dynamics
-                start_offset
-              }
-              type
-            }
-            spans(order_by: { start_offset: asc }) {
-              attributes
-              dataset_id
-              duration
-              id
-              parent_id
-              start_offset
-              type
-            }
-          }
-          id
-          plan_revision
-          reason
-          status
-        }
+    subscription SubSimulationDataset($simulationDatasetId: Int!) {
+      simulation_dataset_by_pk(id: $simulationDatasetId) {
+        dataset_id
+        id
+        plan_revision
+        reason
+        status
       }
     }
   `,

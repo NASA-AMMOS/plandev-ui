@@ -2,18 +2,15 @@ import type { BaseError, SimulationDatasetError } from './errors';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
 
-export type Dataset = {
-  profiles: Profile[];
-  spans: Span[];
-};
-
-export type ProfilesExternalResponse = {
-  datasets: [{ dataset: Dataset; offset_from_plan_start: string }];
-  duration: string;
-  start_time: string;
+export type PlanDataset = {
+  dataset: { profiles: Profile[] };
+  offset_from_plan_start: string;
 };
 
 export type Profile = {
+  dataset_id: number;
+  duration: string;
+  id: number;
   name: string;
   profile_segments: ProfileSegment[];
   type: {
@@ -23,10 +20,16 @@ export type Profile = {
 };
 
 export type ProfileSegment = {
+  dataset_id: number;
   dynamics: any;
+  is_gap: boolean;
+  profile_id: number;
   start_offset: string;
 };
 
+/**
+ * Resources are just sampled Profiles.
+ */
 export type Resource = {
   name: string;
   schema: ValueSchema;
@@ -56,7 +59,7 @@ export type Simulation = {
 };
 
 export type SimulationDataset = {
-  dataset: Dataset;
+  dataset_id: number;
   id: number;
   plan_revision: number;
   reason: SimulationDatasetError | null;

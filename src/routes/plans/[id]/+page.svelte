@@ -54,10 +54,13 @@
   } from '../../../stores/plan';
   import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
   import {
+    externalResources,
     resetSimulationStores,
+    resources,
+    simulationDataset,
     simulationDatasetId,
-    simulationSpans,
     simulationStatus,
+    spans,
   } from '../../../stores/simulation';
   import { view, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
   import type { GridChangeSizesEvent } from '../../../types/grid';
@@ -104,7 +107,26 @@
     $view = { ...data.initialView };
   }
 
-  $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $simulationSpans);
+  $: if ($plan) {
+    effects
+      .getResourcesExternal($plan.id, $plan.start_time, $plan.duration)
+      .then(newResources => ($externalResources = newResources));
+  }
+
+  $: if ($plan && $simulationDataset !== undefined) {
+    if ($simulationDataset !== null) {
+      const datasetId = $simulationDataset.dataset_id;
+      effects
+        .getResources(datasetId, $plan.start_time, $plan.duration)
+        .then(newResources => ($resources = newResources));
+      effects.getSpans(datasetId).then(newSpans => ($spans = newSpans));
+    } else {
+      $resources = [];
+      $spans = [];
+    }
+  }
+
+  $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $spans);
 
   $: if ($planLocked) {
     planHasBeenLocked = true;
