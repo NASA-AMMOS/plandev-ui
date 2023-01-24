@@ -47,8 +47,10 @@
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let dpr: number = 1;
+  let dragCurrentX: number | null = null;
   let dragOffsetX: number | null = null;
   let dragPoint: ActivityPoint | null = null;
+  let dragStartX: number | null = null;
   let maxActivityWidth: number;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsByUniqueId: Record<ActivityUniqueId, ActivityPoint> = {};
@@ -163,42 +165,45 @@
   }
 
   /**
-   * @note We only allow dragging parent activities. Disable dragging all activities if timeline is "locked"
+   * @note We only allow dragging parent activities.
    */
   function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
-    if (!timelineLocked && points.length) {
+    if (points.length) {
       const [point] = points;
       if (point.parent_id === null) {
         dragOffsetX = offsetX - xScaleView(point.x);
         dragPoint = point;
+        dragStartX = dragCurrentX = dragPoint.x;
       }
     }
   }
 
   function dragActivity(offsetX: number): void {
-    if (dragOffsetX && dragPoint) {
+    // Only update the x position if the timeline is unlocked
+    if (!timelineLocked && dragPoint && $activitiesMap[dragPoint.uniqueId]) {
       const x = offsetX - dragOffsetX;
-      const unixEpochTime = xScaleView.invert(x).getTime();
-      const start_time_doy = getDoyTime(new Date(unixEpochTime));
-      if (unixEpochTime !== dragPoint.x) {
+      dragCurrentX = xScaleView.invert(x).getTime();
+      const start_time_doy = getDoyTime(new Date(dragCurrentX));
+      if (dragCurrentX !== dragPoint.x) {
         $activitiesMap[dragPoint.uniqueId].start_time_doy = start_time_doy;
         draw();
       }
     }
   }
 
-  function dragActivityEnd(offsetX: number): void {
-    if (dragOffsetX && dragPoint) {
-      const x = offsetX - dragOffsetX;
-      const unixEpochTime = xScaleView.invert(x).getTime();
-      const start_time_doy = getDoyTime(new Date(unixEpochTime));
-      const dragActivity = $activitiesMap[dragPoint.uniqueId];
-      if (unixEpochTime !== dragPoint.x) {
+  function dragActivityEnd(): void {
+    if (dragPoint && dragStartX !== null && dragCurrentX !== null) {
+      if (dragStartX !== dragCurrentX && $activitiesMap[dragPoint.uniqueId]) {
+        const start_time_doy = getDoyTime(new Date(dragCurrentX));
+        const dragActivity = $activitiesMap[dragPoint.uniqueId];
         const { activityId, planId } = decomposeActivityDirectiveId(dragActivity.uniqueId);
         effects.updateActivityDirective(planId, activityId, { start_time_doy });
       }
+
       dragOffsetX = null;
       dragPoint = null;
+      dragStartX = null;
+      dragCurrentX = null;
     }
   }
 
@@ -305,8 +310,7 @@
 
   function onMouseup(e: MouseEvent | undefined): void {
     if (e) {
-      const { offsetX } = e;
-      dragActivityEnd(offsetX);
+      dragActivityEnd();
     }
   }
 
