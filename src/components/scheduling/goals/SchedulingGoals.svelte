@@ -8,10 +8,10 @@
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { SchedulingGoal } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
-  import Chip from '../../ui/Chip.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../ui/Panel.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
 
   export let schedulingGoals: SchedulingGoal[] = [];
   export let selectedGoal: SchedulingGoal | null | undefined = null;
@@ -110,7 +110,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Scheduling Goals</Chip>
+    <SectionTitle>Scheduling Goals</SectionTitle>
 
     <Input>
       <input

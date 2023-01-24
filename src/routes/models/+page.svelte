@@ -9,11 +9,11 @@
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
+  import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { createModelError, creatingModel, models } from '../../stores/plan';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
@@ -108,7 +108,7 @@
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
-        <Chip>New Model</Chip>
+        <SectionTitle>New Model</SectionTitle>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
@@ -148,10 +148,10 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <Chip>
+        <SectionTitle>
           <BarChartIcon />
           Models
-        </Chip>
+        </SectionTitle>
       </svelte:fragment>
 
       <svelte:fragment slot="body">

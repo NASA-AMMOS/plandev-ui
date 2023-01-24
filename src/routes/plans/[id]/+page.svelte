@@ -52,6 +52,7 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
+  import { resourceTypes } from '../../../stores/resource';
   import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
   import {
     externalResources,
@@ -101,6 +102,9 @@
     $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     $viewTimeRange = $maxTimeRange;
     activityTypes.updateValue(() => data.initialActivityTypes);
+
+    // Asyncronously fetch resource types
+    effects.getResourceTypes($plan.model_id).then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
   }
 
   $: if (data.initialView) {

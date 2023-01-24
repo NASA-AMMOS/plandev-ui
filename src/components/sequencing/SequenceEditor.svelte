@@ -5,11 +5,11 @@
   import { userSequencesRows } from '../../stores/sequencing';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
 
   export let readOnly: boolean = false;
   export let sequenceCommandDictionaryId: number | null = null;
@@ -53,7 +53,7 @@
 <CssGrid bind:rows={$userSequencesRows}>
   <Panel overflowYBody="hidden">
     <svelte:fragment slot="header">
-      <Chip>{title}</Chip>
+      <SectionTitle>{title}</SectionTitle>
 
       <div class="right">
         <slot />
@@ -81,7 +81,7 @@
 
   <Panel>
     <svelte:fragment slot="header">
-      <Chip>Seq JSON (Read-only)</Chip>
+      <SectionTitle>Seq JSON (Read-only)</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => dispatch('generate')}> Generate </button>

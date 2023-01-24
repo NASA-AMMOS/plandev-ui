@@ -94,13 +94,33 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Edit a row', async () => {
+    // Create a new row
+    await page.getByRole('button', { name: 'New Row' }).click();
+
     // Click on edit button of last row
     await page.locator('.timeline-row').last().locator("button[aria-label='Edit Row']").click();
 
     // Look for back button indicating that the row editor is active
     expect(page.locator('.section-back-button ').first()).toBeDefined();
 
-    // TODO fill out this test more when layer editing is possible so that
-    // rows can be constructed properly without relying on existing rows from the dummy model
+    const existingLayerCount = await page.locator('.timeline-layer').count();
+
+    // Add a layer
+    await page.getByRole('button', { name: 'New Layer' }).click();
+    const newLayerCount = await page.locator('.timeline-layer').count();
+    expect(newLayerCount - existingLayerCount).toEqual(1);
+
+    // Expect an activity layer to be created by default
+    expect(await page.locator('select[name="chartType"]').last().inputValue()).toBe('activity');
+
+    // Expect the filter list to open
+    await page.getByPlaceholder('Search').last().click();
+    expect(await page.locator('.menu-slot > .header')).toBeDefined();
+
+    // Delete an activity
+    await page.getByRole('button', { name: 'Layer Settings' }).last().click();
+    await page.getByText('Delete Layer').click();
+    const finalLayerCount = await page.locator('.timeline-layer').count();
+    expect(finalLayerCount - newLayerCount).toEqual(-1);
   });
 });

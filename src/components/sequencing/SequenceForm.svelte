@@ -10,10 +10,10 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import PageTitle from '../app/PageTitle.svelte';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import SequenceEditor from './SequenceEditor.svelte';
 
   export let initialSequenceCommandDictionaryId: number | null = null;
@@ -118,7 +118,7 @@
 <CssGrid bind:columns={$userSequencesColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
-      <Chip>{mode === 'create' ? 'New Sequence' : 'Edit Sequence'}</Chip>
+      <SectionTitle>{mode === 'create' ? 'New Sequence' : 'Edit Sequence'}</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/sequencing`)}>

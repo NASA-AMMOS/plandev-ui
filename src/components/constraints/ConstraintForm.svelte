@@ -10,10 +10,10 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import PageTitle from '../app/PageTitle.svelte';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
   export let initialConstraintDefinition: string = 'export default (): Constraint => {\n\n}\n';
@@ -144,7 +144,7 @@
 <CssGrid bind:columns={$constraintsColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
-      <Chip>{mode === 'create' ? 'New Constraint' : 'Edit Constraint'}</Chip>
+      <SectionTitle>{mode === 'create' ? 'New Constraint' : 'Edit Constraint'}</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/constraints`)}>

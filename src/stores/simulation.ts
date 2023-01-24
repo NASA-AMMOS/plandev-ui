@@ -68,9 +68,8 @@ export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = deri
 
             if (filter.resource !== undefined) {
               const { resource: resourceFilter } = filter;
-              const { name } = resourceFilter;
-              const regExp = new RegExp(name);
-              const includeResource = regExp.test(resource.name);
+              const { names } = resourceFilter;
+              const includeResource = names.indexOf(resource.name) > -1;
 
               if (includeResource) {
                 if (resourcesByViewLayerId[layer.id] === undefined) {

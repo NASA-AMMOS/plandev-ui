@@ -14,7 +14,19 @@ import {
   type TimeInterval,
 } from 'd3-time';
 import type { Resource } from '../types/simulation';
-import type { Axis, HorizontalGuide, Layer, QuadtreePoint, QuadtreeRect, Row, VerticalGuide } from '../types/timeline';
+import type {
+  ActivityLayer,
+  Axis,
+  HorizontalGuide,
+  Layer,
+  LineLayer,
+  QuadtreePoint,
+  QuadtreeRect,
+  Row,
+  Timeline,
+  VerticalGuide,
+  XRangeLayer,
+} from '../types/timeline';
 
 export enum TimelineLockStatus {
   Locked = 'Locked',
@@ -181,10 +193,104 @@ export function searchQuadtreeRect<T>(
 }
 
 /**
+ * Returns the next layer ID based on all layers in all timelines
+ */
+export function getNextLayerID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.layers.forEach(layer => {
+        if (layer.id > maxID) {
+          maxID = layer.id;
+        }
+      });
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns the next horizontal guide ID based on all layers in all timelines
+ */
+export function getNextHorizontalGuideID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.horizontalGuides.forEach(guide => {
+        if (guide.id > maxID) {
+          maxID = guide.id;
+        }
+      });
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns the next vertical guide ID based on all layers in all timelines
+ */
+export function getNextVerticalGuideID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    timeline.verticalGuides.forEach(guide => {
+      if (guide.id > maxID) {
+        maxID = guide.id;
+      }
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns the next row ID based on all layers in all timelines
+ */
+export function getNextRowID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      if (row.id > maxID) {
+        maxID = row.id;
+      }
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns the next row ID based on all layers in all timelines
+ */
+export function getNextYAxisID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.yAxes.forEach(axis => {
+        if (axis.id > maxID) {
+          maxID = axis.id;
+        }
+      });
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns the next row ID based on all layers in all timelines
+ */
+export function getNextTimelineID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    if (timeline.id > maxID) {
+      maxID = timeline.id;
+    }
+  });
+  return maxID + 1;
+}
+
+/**
  * Returns a new vertical guide
  */
-export function createVerticalGuide(doyTimestamp: string, verticalGuides: VerticalGuide[]): VerticalGuide {
-  const id = getNextID(verticalGuides);
+export function createVerticalGuide(timelines: Timeline[], doyTimestamp: string): VerticalGuide {
+  const id = getNextVerticalGuideID(timelines);
   const defaultLabel = `Guide ${id}`;
 
   return {
@@ -197,8 +303,8 @@ export function createVerticalGuide(doyTimestamp: string, verticalGuides: Vertic
 /**
  * Returns a new horizontal guide
  */
-export function createHorizontalGuide(yAxes: Axis[], horizontalGuides: HorizontalGuide[]): HorizontalGuide {
-  const id = getNextID(horizontalGuides);
+export function createHorizontalGuide(timelines: Timeline[], yAxes: Axis[]): HorizontalGuide {
+  const id = getNextHorizontalGuideID(timelines);
   const defaultLabel = `Guide ${id}`;
 
   // Default the y value to the middle of the scale domain
@@ -224,8 +330,8 @@ export function createHorizontalGuide(yAxes: Axis[], horizontalGuides: Horizonta
 /**
  * Returns a new row
  */
-export function createRow(rows: Row[]): Row {
-  const id = getNextID(rows);
+export function createRow(timelines: Timeline[]): Row {
+  const id = getNextRowID(timelines);
 
   return {
     autoAdjustHeight: true,
@@ -242,8 +348,8 @@ export function createRow(rows: Row[]): Row {
 /**
  * Returns a new y axis
  */
-export function createYAxis(yAxes: Axis[]): Axis {
-  const id = getNextID(yAxes);
+export function createYAxis(timelines: Timeline[]): Axis {
+  const id = getNextYAxisID(timelines);
 
   return {
     color: '',
@@ -252,22 +358,85 @@ export function createYAxis(yAxes: Axis[]): Axis {
 
     // TODO is there a sensible default for this since there are
     // no associated layers for a new y axis?
-    scaleDomain: [0, 1],
+    scaleDomain: [0, 10],
     tickCount: 4,
   };
 }
 
 /**
- * Returns a new layer
+ * Returns a new timeline
  */
-export function createTimelineLayer(layers: Layer[], yAxes: Axis[]): Layer {
-  const id = getNextID(layers);
+export function createTimeline(timelines: Timeline[]): Timeline {
+  const id = getNextTimelineID(timelines);
+
+  return {
+    id,
+    marginLeft: 0,
+    marginRight: 0,
+    rows: [],
+    verticalGuides: [],
+  };
+}
+
+/**
+ * Returns a new activity layer
+ */
+export function createTimelineActivityLayer(timelines: Timeline[]): ActivityLayer {
+  const id = getNextLayerID(timelines);
+
+  return {
+    activityColor: '#283593',
+    activityHeight: 20,
+    chartType: 'activity',
+    filter: {
+      activity: {
+        types: [],
+      },
+    },
+    id,
+    yAxisId: null,
+  };
+}
+
+/**
+ * Returns a new line layer
+ */
+export function createTimelineLineLayer(timelines: Timeline[], yAxes: Axis[]): LineLayer {
+  const id = getNextLayerID(timelines);
   const yAxisId = yAxes.length > 0 ? yAxes[0].id : 0;
 
   return {
-    chartType: 'activity',
-    filter: {},
+    chartType: 'line',
+    filter: {
+      resource: {
+        names: [],
+      },
+    },
     id,
+    lineColor: 'ff0000',
+    lineWidth: 1,
+    pointRadius: 2,
+    yAxisId,
+  };
+}
+
+/**
+ * Returns a new x-range layer
+ */
+export function createTimelineXRangeLayer(timelines: Timeline[], yAxes: Axis[]): XRangeLayer {
+  const id = getNextLayerID(timelines);
+  const yAxisId = yAxes.length > 0 ? yAxes[0].id : 0;
+
+  return {
+    chartType: 'x-range',
+    colorScheme: 'schemeAccent',
+    filter: {
+      resource: {
+        names: [],
+      },
+    },
+    id,
+    opacity: 0.8,
     yAxisId,
   };
 }
@@ -290,11 +459,13 @@ export function getYAxisBounds(
     if (resourcesByViewLayerId[layer.id]) {
       resourcesByViewLayerId[layer.id].forEach(resource => {
         resource.values.forEach(value => {
-          if (minY === undefined || value.y < minY) {
-            minY = value.y;
-          }
-          if (maxY === undefined || value.y > maxY) {
-            maxY = value.y;
+          if (typeof value.y === 'number') {
+            if (minY === undefined || value.y < minY) {
+              minY = value.y;
+            }
+            if (maxY === undefined || value.y > maxY) {
+              maxY = value.y;
+            }
           }
         });
       });
@@ -310,16 +481,4 @@ export function getYAxisBounds(
   }
 
   return scaleDomain;
-}
-
-/**
- * Returns the next available ID given an array of objects with ID keys
- */
-export function getNextID(objects: { id: number }[]): number {
-  return objects.reduce((prev, curr) => {
-    if (curr.id >= prev) {
-      return curr.id + 1;
-    }
-    return prev;
-  }, 0);
 }

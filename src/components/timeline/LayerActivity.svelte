@@ -4,7 +4,6 @@
   import { browser } from '$app/environment';
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
-  import { select } from 'd3-selection';
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { activitiesMap } from '../../stores/activities';
   import { timelineLockStatus } from '../../stores/views';
@@ -23,10 +22,6 @@
   export let activitySelectedColor: string = '#81D4FA';
   export let activityUnfinishedColor: string = '#ff7760';
   export let blur: FocusEvent | undefined;
-  export let dragenter: DragEvent | undefined;
-  export let dragleave: DragEvent | undefined;
-  export let dragover: DragEvent | undefined;
-  export let drop: DragEvent | undefined;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
@@ -36,7 +31,6 @@
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let mouseup: MouseEvent | undefined;
-  export let overlaySvg: SVGElement;
   export let selectedActivityId: ActivityUniqueId | null = null;
   export let showChildren: boolean = true;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -56,10 +50,6 @@
   let visiblePointsByUniqueId: Record<ActivityUniqueId, ActivityPoint> = {};
 
   $: onBlur(blur);
-  $: onDragenter(dragenter);
-  $: onDragleave(dragleave);
-  $: onDragover(dragover);
-  $: onDrop(drop);
   $: onFocus(focus);
   $: onMousedown(mousedown);
   $: onMousemove(mousemove);
@@ -68,7 +58,6 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
-  $: overlaySvgSelection = select(overlaySvg);
   $: rowHeight = activityHeight + activityRowPadding;
 
   $: timelineLocked = $timelineLockStatus === TimelineLockStatus.Locked;
@@ -222,45 +211,6 @@
   function onKeyDown(event: KeyboardEvent): void {
     if (isDeleteEvent(event) && !!selectedActivityId) {
       dispatch('delete', selectedActivityId);
-    }
-  }
-
-  function onDragenter(e: DragEvent | undefined): void {
-    if (e) {
-      const { offsetX } = e;
-      overlaySvgSelection
-        .append('line')
-        .attr('class', 'activity-drag-guide')
-        .attr('x1', offsetX)
-        .attr('y1', 0)
-        .attr('x2', offsetX)
-        .attr('y2', drawHeight)
-        .attr('stroke', 'black')
-        .style('pointer-events', 'none');
-    }
-  }
-
-  function onDragleave(e: DragEvent | undefined): void {
-    if (e) {
-      overlaySvgSelection.select('.activity-drag-guide').remove();
-    }
-  }
-
-  function onDragover(e: DragEvent | undefined): void {
-    if (e) {
-      const { offsetX } = e;
-      overlaySvgSelection.select('.activity-drag-guide').attr('x1', offsetX).attr('x2', offsetX);
-    }
-  }
-
-  function onDrop(e: DragEvent | undefined): void {
-    if (e) {
-      const { offsetX } = e;
-      overlaySvgSelection.select('.activity-drag-guide').remove();
-      const unixEpochTime = xScaleView.invert(offsetX).getTime();
-      const start_time = getDoyTime(new Date(unixEpochTime));
-      const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {});
     }
   }
 

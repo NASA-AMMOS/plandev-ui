@@ -14,12 +14,15 @@
         "resource": {
           "additionalProperties": false,
           "properties": {
-            "name": {
-              "description": "A JavaScript regular expression to filter resource names to display in this layer",
-              "type": "string"
+            "names": {
+              "description": "Array of resource names to display in this layer",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             }
           },
-          "required": ["name"],
+          "required": ["names"],
           "type": "object"
         }
       },
@@ -321,12 +324,15 @@
                                   "activity": {
                                     "additionalProperties": false,
                                     "properties": {
-                                      "type": {
-                                        "description": "A JavaScript regular expression to filter activity types to display in this layer",
-                                        "type": "string"
+                                      "types": {
+                                        "description": "Array of activity types to display in this layer",
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "type": "array"
                                       }
                                     },
-                                    "required": ["type"],
+                                    "required": ["types"],
                                     "type": "object"
                                   }
                                 },

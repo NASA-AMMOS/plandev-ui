@@ -34,6 +34,10 @@
     width: 100%;
   }
 
+  .color-picker:hover:after {
+    border: 1px solid rgb(0 0 0 / 80%);
+  }
+
   .color-picker-input {
     -webkit-appearance: none;
     -moz-appearance: none;

@@ -43,7 +43,8 @@
     // TODO swap filter out for resources which are recomputed when the view changes (i.e. filter changes)
     filter &&
     lineColor &&
-    lineWidth &&
+    typeof lineWidth === 'number' &&
+    typeof pointRadius === 'number' &&
     mounted &&
     points &&
     viewTimeRange &&

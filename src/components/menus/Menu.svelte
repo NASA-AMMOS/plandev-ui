@@ -12,15 +12,28 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
-  import { hideAll as hideAllTooltips } from 'tippy.js';
+  import { hideAll as hideAllTooltips, type Placement } from 'tippy.js';
 
   export let hideAfterClick: boolean = true;
   export let offset: number[] = [0, 1];
-  export let shown = false;
+  export let shown: boolean = false;
+  export let isMounted: boolean = false;
+  export let placement: Placement = 'bottom-start';
+
+  $: if (isMounted) {
+    if (shown) {
+      document.addEventListener('keydown', onDocumentKeydown);
+    } else {
+      document.removeEventListener('keydown', onDocumentKeydown);
+    }
+  }
 
   export function hide(): void {
+    if (shown) {
+      dispatch('hide');
+    }
     shown = false;
   }
 
@@ -38,8 +51,10 @@
     }
   }
 
+  const dispatch = createEventDispatcher();
+
   const [popperRef, popperContent] = createPopperActions({
-    placement: 'bottom-start',
+    placement,
     strategy: 'fixed',
   });
   const extraOpts = {
@@ -57,11 +72,18 @@
 
   onMount(() => {
     hideFns.add(hide);
+    isMounted = true;
   });
 
   onDestroy(() => {
     hideFns.delete(hide);
   });
+
+  function onDocumentKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      hideAllMenus();
+    }
+  }
 
   function onClick() {
     if (hideAfterClick) {

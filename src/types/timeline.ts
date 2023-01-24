@@ -7,7 +7,7 @@ export interface ActivityLayer extends Layer {
 }
 
 export type ActivityLayerFilter = {
-  type: string;
+  types: string[];
 };
 
 export interface ActivityPoint extends Point {
@@ -50,8 +50,10 @@ export type Label = {
   text: string;
 };
 
+export type ChartType = 'activity' | 'line' | 'x-range';
+
 export interface Layer {
-  chartType: 'activity' | 'line' | 'x-range';
+  chartType: ChartType;
   filter: {
     activity?: ActivityLayerFilter;
     resource?: ResourceLayerFilter;
@@ -89,7 +91,7 @@ export type MouseOver = {
 export interface Point {
   id: number;
   name: string;
-  type: 'activity' | 'line' | 'x-range';
+  type: ChartType;
   x: number;
 }
 
@@ -108,7 +110,7 @@ export type QuadtreeRect = {
 };
 
 export type ResourceLayerFilter = {
-  name: string;
+  names: string[];
 };
 
 export type Row = {

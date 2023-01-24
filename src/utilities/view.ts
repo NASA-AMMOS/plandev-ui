@@ -1,3 +1,4 @@
+import type { ActivityType } from '../types/activity';
 import type { ResourceType } from '../types/simulation';
 import type { ActivityLayer, Axis, LineLayer, Row, XRangeLayer } from '../types/timeline';
 import type { View } from '../types/view';
@@ -5,8 +6,9 @@ import type { View } from '../types/view';
 /**
  * Generates a default generic UI view.
  */
-export function generateDefaultView(resourceTypes: ResourceType[] = []): View {
+export function generateDefaultView(activityTypes: ActivityType[] = [], resourceTypes: ResourceType[] = []): View {
   const now = new Date().toISOString();
+  const types: string[] = activityTypes.map(({ name }) => name);
   let rowIds = 0;
   let layerIds = 0;
   let yAxisIds = 0;
@@ -79,7 +81,7 @@ export function generateDefaultView(resourceTypes: ResourceType[] = []): View {
                     activityColor: '#283593',
                     activityHeight: 20,
                     chartType: 'activity',
-                    filter: { activity: { type: '.*' } },
+                    filter: { activity: { types } },
                     id: layerIds++,
                     yAxisId: null,
                   } as ActivityLayer,
@@ -118,7 +120,7 @@ export function generateDefaultView(resourceTypes: ResourceType[] = []): View {
                         {
                           chartType: 'x-range',
                           colorScheme: 'schemeTableau10',
-                          filter: { resource: { name: `${name}$` } },
+                          filter: { resource: { names: [name] } },
                           id: layerIds++,
                           opacity: 0.8,
                           yAxisId: yAxis.id,
@@ -128,7 +130,7 @@ export function generateDefaultView(resourceTypes: ResourceType[] = []): View {
                     ? [
                         {
                           chartType: 'line',
-                          filter: { resource: { name: `${name}$` } },
+                          filter: { resource: { names: [name] } },
                           id: layerIds++,
                           lineColor: '#283593',
                           lineWidth: 1,

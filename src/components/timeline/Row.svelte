@@ -3,6 +3,7 @@
 <script lang="ts">
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import type { ScaleTime } from 'd3-scale';
+  import { select } from 'd3-selection';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { selectedRow, view, viewSetSelectedRow, viewUpdateLayout } from '../../stores/views';
@@ -20,7 +21,9 @@
     TimeRange,
     XAxisTick,
   } from '../../types/timeline';
+  import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
+  import { getDoyTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
@@ -68,11 +71,57 @@
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
 
+  $: onDragenter(dragenter);
+  $: onDragleave(dragleave);
+  $: onDragover(dragover);
+  $: onDrop(drop);
+
   $: heightsByLayer = pick(
     heightsByLayer,
     layers.map(({ id }) => id),
   );
+  $: overlaySvgSelection = select(overlaySvg);
   $: rowClasses = classNames('row', { 'row-collapsed': !expanded });
+  $: hasActivityLayer = !!layers.find(layer => layer.chartType === 'activity');
+
+  function onDragenter(e: DragEvent | undefined): void {
+    if (hasActivityLayer && e && overlaySvgSelection) {
+      const { offsetX } = e;
+      overlaySvgSelection
+        .append('line')
+        .attr('class', 'activity-drag-guide')
+        .attr('x1', offsetX)
+        .attr('y1', 0)
+        .attr('x2', offsetX)
+        .attr('y2', drawHeight)
+        .attr('stroke', 'black')
+        .style('pointer-events', 'none');
+    }
+  }
+
+  function onDragleave(e: DragEvent | undefined): void {
+    if (hasActivityLayer && e && overlaySvgSelection) {
+      overlaySvgSelection.select('.activity-drag-guide').remove();
+    }
+  }
+
+  function onDragover(e: DragEvent | undefined): void {
+    if (hasActivityLayer && e && overlaySvgSelection) {
+      const { offsetX } = e;
+      overlaySvgSelection.select('.activity-drag-guide').attr('x1', offsetX).attr('x2', offsetX);
+    }
+  }
+
+  function onDrop(e: DragEvent | undefined): void {
+    if (hasActivityLayer && e && overlaySvgSelection) {
+      const { offsetX } = e;
+      overlaySvgSelection.select('.activity-drag-guide').remove();
+      const unixEpochTime = xScaleView.invert(offsetX).getTime();
+      const start_time = getDoyTime(new Date(unixEpochTime));
+      const activityTypeName = e.dataTransfer.getData('activityTypeName');
+      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {});
+    }
+  }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
@@ -100,7 +149,11 @@
       heightsByLayer[detail.layerId] = detail.newHeight;
       const heights = Object.values(heightsByLayer);
       const newHeight = Math.max(...heights);
-      dispatch('updateRowHeight', { newHeight, rowId: id });
+
+      // Only update row height if a change has occurred to avoid loopback
+      if (newHeight !== drawHeight) {
+        dispatch('updateRowHeight', { newHeight, rowId: id });
+      }
     }
   }
 
@@ -182,17 +235,12 @@
             {blur}
             {drawHeight}
             {drawWidth}
-            {dragenter}
-            {dragleave}
-            {dragover}
-            {drop}
             filter={layer.filter.activity}
             {focus}
             {mousedown}
             {mousemove}
             {mouseout}
             {mouseup}
-            {overlaySvg}
             {selectedActivityId}
             {viewTimeRange}
             {xScaleView}

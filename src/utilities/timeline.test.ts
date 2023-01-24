@@ -1,23 +1,148 @@
 import { expect, test } from 'vitest';
 import type { Resource } from '../types/simulation';
-import type { Axis, Layer } from '../types/timeline';
-import { createTimelineLayer, createYAxis, getNextID, getYAxisBounds } from './timeline';
+import type { Timeline } from '../types/timeline';
+import {
+  createHorizontalGuide,
+  createRow,
+  createTimeline,
+  createTimelineActivityLayer,
+  createTimelineLineLayer,
+  createTimelineXRangeLayer,
+  createVerticalGuide,
+  createYAxis,
+  getYAxisBounds,
+} from './timeline';
 
-test('getNextID', () => {
-  const genIDs = (ids: number[]) => ids.map(id => ({ id }));
+function genTimelines() {
+  // Create test timelines
+  const timeline1 = createTimeline([]);
+  const timeline2 = createTimeline([timeline1]);
+  return [timeline1, timeline2];
+}
 
-  expect(getNextID([])).toEqual(0);
-  expect(getNextID(genIDs([0]))).toEqual(1);
-  expect(getNextID(genIDs([0, 1, 2, 3, 4]))).toEqual(5);
-  expect(getNextID(genIDs([0, 1, 3, 4, 6]))).toEqual(7);
-  expect(getNextID(genIDs([0, -1, -2, 2, -5]))).toEqual(3);
+function populateTimelineRows(timelines: Timeline[]) {
+  timelines.forEach(timeline => {
+    timeline.rows.push(createRow(timelines));
+    timeline.rows.push(createRow(timelines));
+  });
+}
+
+function populateTimelineVerticalGuides(timelines: Timeline[]) {
+  timelines.forEach(timeline => {
+    timeline.verticalGuides.push(createVerticalGuide(timelines, ''));
+    timeline.verticalGuides.push(createVerticalGuide(timelines, ''));
+  });
+}
+
+function populateTimelineLayers(timelines: Timeline[]) {
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.layers.push(createTimelineActivityLayer(timelines));
+      row.layers.push(createTimelineLineLayer(timelines, row.yAxes));
+      row.layers.push(createTimelineXRangeLayer(timelines, row.yAxes));
+    });
+  });
+  return timelines;
+}
+
+function populateTimelineHorizontalGuides(timelines: Timeline[]) {
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.horizontalGuides.push(createHorizontalGuide(timelines, row.yAxes));
+      row.horizontalGuides.push(createHorizontalGuide(timelines, row.yAxes));
+    });
+  });
+  return timelines;
+}
+
+function populateTimelineYAxes(timelines: Timeline[]) {
+  timelines.forEach(timeline => {
+    timeline.rows.forEach(row => {
+      row.yAxes.push(createYAxis(timelines));
+    });
+  });
+  return timelines;
+}
+
+test('createTimeline', () => {
+  const timelines = genTimelines();
+  expect(timelines[0].id).toBe(0);
+  expect(timelines[1].id).toBe(1);
+});
+
+test('createRow', () => {
+  const timelines = genTimelines();
+  populateTimelineRows(timelines);
+
+  // Check length
+  expect(timelines[0].rows.length).toBe(2);
+  expect(timelines[1].rows.length).toBe(2);
+
+  // Check IDs
+  expect(timelines[0].rows[0].id).toBe(0);
+  expect(timelines[0].rows[1].id).toBe(1);
+  expect(timelines[1].rows[0].id).toBe(2);
+  expect(timelines[1].rows[1].id).toBe(3);
+});
+
+test('createTimelineLayers', () => {
+  const timelines = genTimelines();
+  populateTimelineRows(timelines);
+  populateTimelineYAxes(timelines);
+  populateTimelineLayers(timelines);
+
+  // Check IDs
+  expect(timelines[0].rows[0].layers[0].chartType).toBe('activity');
+  expect(timelines[0].rows[0].layers[0].id).toBe(0);
+  expect(timelines[0].rows[0].layers[0].yAxisId).toBe(null);
+  expect(timelines[0].rows[0].layers[1].chartType).toBe('line');
+  expect(timelines[0].rows[0].layers[1].id).toBe(1);
+  expect(timelines[0].rows[0].layers[1].yAxisId).toBe(0);
+  expect(timelines[0].rows[0].layers[2].chartType).toBe('x-range');
+  expect(timelines[0].rows[0].layers[2].id).toBe(2);
+  expect(timelines[0].rows[0].layers[2].yAxisId).toBe(0);
+
+  expect(timelines[1].rows[0].layers[0].chartType).toBe('activity');
+  expect(timelines[1].rows[0].layers[0].id).toBe(6);
+  expect(timelines[1].rows[0].layers[0].yAxisId).toBe(null);
+  expect(timelines[1].rows[0].layers[1].chartType).toBe('line');
+  expect(timelines[1].rows[0].layers[1].id).toBe(7);
+  expect(timelines[1].rows[0].layers[1].yAxisId).toBe(2);
+  expect(timelines[1].rows[0].layers[2].chartType).toBe('x-range');
+  expect(timelines[1].rows[0].layers[2].id).toBe(8);
+  expect(timelines[1].rows[0].layers[2].yAxisId).toBe(2);
+});
+
+test('createTimelineHorizontalGuides', () => {
+  const timelines = genTimelines();
+  populateTimelineRows(timelines);
+  populateTimelineYAxes(timelines);
+  populateTimelineHorizontalGuides(timelines);
+
+  // Check IDs
+  expect(timelines[0].rows[0].horizontalGuides[0].id).toBe(0);
+  expect(timelines[0].rows[1].horizontalGuides[0].id).toBe(2);
+});
+
+test('createVerticalGuide', () => {
+  const timelines = genTimelines();
+  populateTimelineVerticalGuides(timelines);
+
+  // Check IDs
+  expect(timelines[0].verticalGuides[0].id).toBe(0);
+  expect(timelines[1].verticalGuides[0].id).toBe(2);
 });
 
 test('getYAxisBounds', () => {
-  const yAxis: Axis = createYAxis([]);
-  const layer1 = createTimelineLayer([], [yAxis]);
-  const layer2 = createTimelineLayer([layer1], [yAxis]);
-  const layers: Layer[] = [layer1, layer2];
+  const timelines = genTimelines();
+  populateTimelineRows(timelines);
+  populateTimelineYAxes(timelines);
+  populateTimelineLayers(timelines);
+
+  const layer1 = timelines[0].rows[0].layers[1];
+  const layer2 = timelines[0].rows[0].layers[2];
+  const yAxis = timelines[0].rows[0].yAxes[0];
+  const layers = timelines[0].rows[0].layers;
   const resource: Resource = {
     name: 'test',
     schema: {

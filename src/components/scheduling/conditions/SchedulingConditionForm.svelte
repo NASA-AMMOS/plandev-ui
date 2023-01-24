@@ -10,10 +10,10 @@
   import type { SchedulingCondition, SchedulingSpecConditionInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
   import SchedulingEditor from '../SchedulingEditor.svelte';
 
   export let initialConditionAuthor: string | null = null;
@@ -133,7 +133,7 @@
 <CssGrid bind:columns={$schedulingColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
-      <Chip>{mode === 'create' ? 'New Scheduling Condition' : 'Edit Scheduling Condition'}</Chip>
+      <SectionTitle>{mode === 'create' ? 'New Scheduling Condition' : 'Edit Scheduling Condition'}</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/conditions`)}>

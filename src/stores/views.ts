@@ -103,6 +103,14 @@ export function viewSetLayout(title: string) {
 }
 
 export function viewSetSelectedRow(rowId: number | null): void {
+  // If no timeline is selected, select the first timeline
+  if (get(selectedTimelineId) === null) {
+    const firstTimeline = get(view).definition.plan.timelines[0];
+    if (firstTimeline) {
+      viewSetSelectedTimeline(firstTimeline.id);
+    }
+  }
+
   selectedRowId.set(rowId);
   const currentRow = get(selectedRow);
 

@@ -13,11 +13,11 @@
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import Chip from '../../components/ui/Chip.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
+  import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
@@ -186,7 +186,7 @@
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
-        <Chip>New Plan</Chip>
+        <SectionTitle>New Plan</SectionTitle>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
@@ -267,10 +267,10 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <Chip>
+        <SectionTitle>
           <PlanIcon />
           Plans
-        </Chip>
+        </SectionTitle>
         <Input>
           <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
         </Input>

@@ -14,6 +14,8 @@
   --st-primary-10: #e8eaf6;
   --st-primary: var(--st-primary-90);
   --st-primary-text-color: var(--st-black);
+  /* TODO add to stellar */
+  --st-utility-blue: rgba(38, 95, 197, 1);
 }
 
 .st-button.ellipsis {

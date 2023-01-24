@@ -9,12 +9,12 @@
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   type CellRendererParams = {
@@ -134,7 +134,7 @@
 <CssGrid bind:columns={$expansionRulesColumns}>
   <Panel>
     <svelte:fragment slot="header">
-      <Chip>Expansion Rules</Chip>
+      <SectionTitle>Expansion Rules</SectionTitle>
 
       <Input>
         <input

@@ -73,7 +73,7 @@
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
     <div class="header">
-      <div class="title">COLUMNS</div>
+      <div class="title st-typography-small-caps">Columns</div>
     </div>
     <div class="search-field">
       <Input>

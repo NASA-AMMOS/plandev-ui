@@ -12,10 +12,10 @@
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import PageTitle from '../../app/PageTitle.svelte';
-  import Chip from '../../ui/Chip.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
   import SchedulingEditor from '../SchedulingEditor.svelte';
 
   export let initialGoalAuthor: string | null = null;
@@ -155,7 +155,7 @@
 <CssGrid bind:columns={$schedulingGoalsColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
-      <Chip>{mode === 'create' ? 'New Scheduling Goal' : 'Edit Scheduling Goal'}</Chip>
+      <SectionTitle>{mode === 'create' ? 'New Scheduling Goal' : 'Edit Scheduling Goal'}</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/goals`)}>

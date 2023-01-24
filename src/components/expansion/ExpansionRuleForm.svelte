@@ -10,10 +10,10 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import PageTitle from '../app/PageTitle.svelte';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let initialRuleActivityType: string | null = null;
@@ -110,7 +110,7 @@
 <CssGrid bind:columns={$expansionRulesColumns}>
   <Panel overflowYBody="hidden">
     <svelte:fragment slot="header">
-      <Chip>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</Chip>
+      <SectionTitle>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/rules`)}>

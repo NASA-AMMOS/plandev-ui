@@ -1437,7 +1437,11 @@ const effects = {
     }
   },
 
-  async getView(query: URLSearchParams | null, resourceTypes: ResourceType[] = []): Promise<View | null> {
+  async getView(
+    query: URLSearchParams | null,
+    activityTypes: ActivityType[] = [],
+    resourceTypes: ResourceType[] = [],
+  ): Promise<View | null> {
     try {
       if (query !== null) {
         const viewId = query.has('viewId') ? query.get('viewId') : null;
@@ -1453,7 +1457,7 @@ const effects = {
         }
       }
 
-      return generateDefaultView(resourceTypes);
+      return generateDefaultView(activityTypes, resourceTypes);
     } catch (e) {
       catchError(e);
       return null;

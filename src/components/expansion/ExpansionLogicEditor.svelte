@@ -3,9 +3,9 @@
 <script lang="ts">
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
-  import Chip from '../ui/Chip.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
 
   export let readOnly: boolean = false;
   export let ruleActivityType: string | null = null;
@@ -34,7 +34,7 @@
 
 <Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
-    <Chip>{title}</Chip>
+    <SectionTitle>{title}</SectionTitle>
 
     <div class="right">
       <slot />

@@ -3,6 +3,7 @@
 
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
+  import { view } from '../../stores/views';
   import type { Label, MouseOver, VerticalGuide } from '../../types/timeline';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { createVerticalGuide } from '../../utilities/timeline';
@@ -23,6 +24,7 @@
   $: onMouseOver(mouseOver);
   $: onHistogramCursorTime(histogramCursorTime);
   $: onVerticalGuidesChange(verticalGuides, xScaleView, drawWidth);
+  $: timelines = $view.definition.plan.timelines;
 
   let offsetX: number = -1;
   let cursorX: number = 0;
@@ -84,7 +86,7 @@
   }
 
   function addVerticalGuide(doyTimestamp: string) {
-    const newVerticalGuide = createVerticalGuide(doyTimestamp, verticalGuides);
+    const newVerticalGuide = createVerticalGuide(timelines, doyTimestamp);
     dispatch('updateVerticalGuides', [...verticalGuides, newVerticalGuide]);
     cursorWithinView = false; // Hide active cursor that would overlap the created guide until mouse is moved again
   }

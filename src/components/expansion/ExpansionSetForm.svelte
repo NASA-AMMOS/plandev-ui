@@ -12,12 +12,12 @@
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import ColumnResizeContextMenu from '../ui/DataGrid/column-menu/ColumnResizeContextMenu.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
   import ExpansionSetRuleSelection from './ExpansionSetRuleSelection.svelte';
 
@@ -130,7 +130,7 @@
 <CssGrid bind:columns={$expansionSetsColumns}>
   <Panel>
     <svelte:fragment slot="header">
-      <Chip>New Expansion Set</Chip>
+      <SectionTitle>New Expansion Set</SectionTitle>
 
       <div class="right">
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/sets`)}>

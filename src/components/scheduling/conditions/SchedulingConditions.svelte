@@ -8,10 +8,10 @@
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { SchedulingCondition } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
-  import Chip from '../../ui/Chip.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../ui/Panel.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
 
   export let schedulingConditions: SchedulingCondition[] = [];
   export let selectedCondition: SchedulingCondition | null | undefined = null;
@@ -110,7 +110,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <Chip>Scheduling Conditions</Chip>
+    <SectionTitle>Scheduling Conditions</SectionTitle>
 
     <Input>
       <input

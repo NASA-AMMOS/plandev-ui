@@ -384,7 +384,7 @@
                       -->
                       {merge.merge_base.name}
                       {#if merge.resolution !== 'none'}
-                        <span class="merge-review-activity-item-resolution st-typography-medium st-chip">
+                        <span class="merge-review-activity-item-resolution st-typography-medium section-title">
                           {merge.resolution}
                         </span>
                       {/if}
@@ -462,7 +462,7 @@
             <PlanWithUpArrow />
             <span class="st-typography-medium">{initialMergeRequest.plan_snapshot_supplying_changes.name}</span>
           </span>
-          <span class="st-chip st-typography-medium">Source</span>
+          <span class="section-title st-typography-medium">Source</span>
         </div>
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
@@ -524,7 +524,7 @@
             <MergeIcon />
             <span class="st-typography-medium">{initialMergeRequest.plan_receiving_changes.name}</span>
           </span>
-          <span class="st-chip st-typography-medium">Current Branch (Target)</span>
+          <span class="section-title st-typography-medium">Current Branch (Target)</span>
         </div>
         {#if selectedConflictingActivity}
           <div class="merge-review-button-container">
@@ -708,7 +708,7 @@
     user-select: none;
   }
 
-  .st-chip {
+  .section-title {
     color: var(--st-gray-50);
   }
 
@@ -739,7 +739,7 @@
     text-transform: capitalize;
   }
 
-  .st-chip {
+  .section-title {
     white-space: nowrap;
   }
 

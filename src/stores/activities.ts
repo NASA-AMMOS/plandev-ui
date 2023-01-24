@@ -45,9 +45,8 @@ export const activitiesByView: Readable<ActivitiesByView> = derived([activities,
 
           if (filter.activity !== undefined) {
             const { activity: activityFilter } = filter;
-            const { type } = activityFilter;
-            const regExp = new RegExp(type);
-            const includeActivity = regExp.test(activity.type);
+            const { types } = activityFilter;
+            const includeActivity = types.indexOf(activity.type) > -1;
 
             if (includeActivity) {
               if (byLayerId[layer.id] === undefined) {

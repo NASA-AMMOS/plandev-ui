@@ -62,6 +62,7 @@ test.describe.serial('Plan Merge', () => {
 
   test('Change the start time of the activity on the branch', async () => {
     await page.getByRole('gridcell', { name: 'BiteBanana' }).click();
+    await page.waitForSelector('button:has-text("BiteBanana")', { state: 'visible' });
     await page.locator('input[name="start-time"]').click();
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').press('Enter');

@@ -8,13 +8,13 @@
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { ExpansionRule, ExpansionSet } from '../../types/expansion';
   import effects from '../../utilities/effects';
-  import Chip from '../ui/Chip.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
+  import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   type CellRendererParams = {
@@ -128,7 +128,7 @@
   <CssGrid rows="1fr 3px 1fr">
     <Panel>
       <svelte:fragment slot="header">
-        <Chip>Expansion Sets</Chip>
+        <SectionTitle>Expansion Sets</SectionTitle>
 
         <div class="right">
           <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/sets/new`)}>
@@ -156,7 +156,7 @@
 
     <Panel>
       <svelte:fragment slot="header">
-        <Chip>Expansion Rules</Chip>
+        <SectionTitle>Expansion Rules</SectionTitle>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
