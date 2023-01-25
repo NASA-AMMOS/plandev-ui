@@ -161,6 +161,13 @@
     goto(`${base}/plans/${plan.id}`);
   }
 
+  function onStartTimeChanged() {
+    if ($startTimeDoyField.value && $endTimeDoyField.value === '') {
+      endTimeDoyField.set($startTimeDoyField);
+    }
+    updateDurationString();
+  }
+
   function updateDurationString() {
     if ($startTimeDoyField.valid && $endTimeDoyField.valid) {
       durationString = convertUsToDurationString(
@@ -215,7 +222,7 @@
               field={startTimeDoyField}
               label="Start Time - YYYY-DDDThh:mm:ss"
               name="start-time"
-              on:change={updateDurationString}
+              on:change={onStartTimeChanged}
               on:keydown={updateDurationString}
             />
           </fieldset>

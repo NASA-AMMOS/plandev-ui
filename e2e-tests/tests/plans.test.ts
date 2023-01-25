@@ -80,6 +80,21 @@ test.describe.serial('Plans', () => {
     await expect(plans.durationDisplay).toHaveValue('5d');
   });
 
+  test('Entering a valid start should prepopulate the end time correctly', async () => {
+    await plans.fillInputStartTime();
+
+    const endTime = await plans.inputEndTime.inputValue();
+    expect(endTime).toEqual(plans.startTime);
+  });
+
+  test('Entering an invalid start should not prepopulate the end time', async () => {
+    await plans.inputStartTime.fill('2022-');
+    await page.keyboard.press('Tab');
+
+    const endTime = await plans.inputEndTime.inputValue();
+    expect(endTime).toEqual('');
+  });
+
   test('Entering an invalid start time should display "None" in the duration text', async () => {
     await plans.inputStartTime.fill('2022-');
     await page.keyboard.press('Tab');
