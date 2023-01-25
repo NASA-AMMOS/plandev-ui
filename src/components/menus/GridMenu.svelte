@@ -89,10 +89,6 @@
       <TimelineIcon />
       Timeline
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('TimelineFormPanel')}>
-      <ChecklistOnPageIcon />
-      Timeline Form
-    </MenuItem>
     <MenuItem on:click={() => updateGridComponent('TimelineEditorPanel')}>
       <ChecklistOnPageIcon />
       Timeline Editor

@@ -26,7 +26,6 @@
   import SchedulingGoalsPanel from '../../../components/scheduling/SchedulingGoalsPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
   import TimelineEditorPanel from '../../../components/timeline/form/TimelineEditorPanel.svelte';
-  import TimelineFormPanel from '../../../components/timeline/form/TimelineFormPanel.svelte';
   import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import IFramePanel from '../../../components/ui/IFramePanel.svelte';
@@ -86,7 +85,6 @@
     SchedulingGoalsPanel,
     SimulationPanel,
     TimelineEditorPanel,
-    TimelineFormPanel,
     TimelinePanel,
     ViewEditorPanel,
     ViewsPanel,
