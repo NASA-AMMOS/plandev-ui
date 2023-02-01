@@ -7,6 +7,7 @@
   import type { Activity } from '../../types/activity';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
+  import MenuHeader from '../menus/MenuHeader.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
 
   export let columnDefs: ColDef[] | undefined = [];
@@ -72,9 +73,7 @@
 <div class="grid-menu st-typography-medium" on:click|stopPropagation={() => tableMenu.toggle()}>
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
-    <div class="header">
-      <div class="title st-typography-small-caps">Columns</div>
-    </div>
+    <MenuHeader title="Columns" showBorder={false} />
     <div class="search-field">
       <Input>
         <input class="st-input w-100" value={searchFilter} on:input={onSearchFilterChange} />
@@ -131,21 +130,6 @@
     letter-spacing: -1px;
     line-height: 0px;
     margin-top: -4px;
-  }
-
-  .header {
-    align-items: center;
-    cursor: auto;
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: space-between;
-    padding: 8px;
-  }
-
-  .title {
-    color: var(--st-gray-40);
-    font-size: 11px;
-    font-weight: 700;
   }
 
   .search-field {

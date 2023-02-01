@@ -8,6 +8,7 @@
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
+  import MenuHeader from '../../menus/MenuHeader.svelte';
 
   export let layer: Layer;
   export let yAxes: Axis[];
@@ -47,9 +48,7 @@
 >
   <div class="button-inner"><SettingsIcon /></div>
   <Menu bind:this={layerMenu} hideAfterClick={false} placement="bottom-end">
-    <div class="header">
-      <div class="title st-typography-small-caps">{layer.chartType} Layer Settings</div>
-    </div>
+    <MenuHeader title={`${layer.chartType} Layer Settings`} />
     <div class="body st-typography-body">
       {#if layer.chartType === 'activity'}
         <Input layout="inline">
@@ -144,20 +143,6 @@
 </button>
 
 <style>
-  .header {
-    align-items: center;
-    border-bottom: 1px solid var(--st-gray-20);
-    color: var(--st-gray-40);
-    cursor: auto;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-  }
-
-  .title {
-    color: var(--st-gray-40);
-  }
-
   .button-inner {
     align-items: center;
     display: flex;

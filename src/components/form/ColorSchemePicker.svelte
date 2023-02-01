@@ -17,6 +17,7 @@
   import type { XRangeLayerColorScheme } from '../../types/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
+  import MenuHeader from '../menus/MenuHeader.svelte';
 
   export let value: string = 'schemeAccent';
   export let layout: 'compact' | 'dropdown' = 'dropdown';
@@ -67,9 +68,7 @@
     {/if}
   </div>
   <Menu bind:this={pickerMenu} hideAfterClick={false} placement="bottom-end">
-    <div class="header">
-      <div class="title st-typography-small-caps">Color Schemes</div>
-    </div>
+    <MenuHeader title="Color Schemes" />
     {#each schemes as scheme}
       <button class:active={scheme === value} class="st-button tertiary scheme-item" on:click={() => onInput(scheme)}>
         {#each schemeMap[scheme] as color}
@@ -81,20 +80,6 @@
 </button>
 
 <style>
-  .header {
-    align-items: center;
-    border-bottom: 1px solid var(--st-gray-20);
-    color: var(--st-gray-40);
-    cursor: auto;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-  }
-
-  .title {
-    color: var(--st-gray-40);
-  }
-
   .compact {
     background: none;
     border-color: rgb(0 0 0 / 50%);
