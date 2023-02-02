@@ -20,6 +20,7 @@
   export let items: TRowData[];
   export let itemDisplayText: string;
   export let selectedItemId: number | null = null;
+  export let scrollToSelection: boolean = false;
 
   export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
     return parseInt(data[idKey]);
@@ -94,6 +95,7 @@
   preventDefaultOnContextMenu
   rowData={items}
   rowSelection="single"
+  {scrollToSelection}
   on:blur={onBlur}
   on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver

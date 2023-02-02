@@ -19,6 +19,7 @@
   export let idKey: keyof TRowData = 'id';
   export let items: TRowData[];
   export let pluralItemDisplayText: string = '';
+  export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
   export let showContextMenu: boolean = true;
   export let singleItemDisplayText: string = '';
@@ -117,6 +118,7 @@
   preventDefaultOnContextMenu={showContextMenu}
   rowData={items}
   rowSelection="multiple"
+  {scrollToSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
   on:blur={onBlur}

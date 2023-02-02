@@ -89,6 +89,7 @@
   {getRowId}
   items={activities}
   pluralItemDisplayText="Activities"
+  scrollToSelection={true}
   singleItemDisplayText="Activity"
   suppressDragLeaveHidesColumns={false}
   on:bulkDeleteItems={deleteActivityDirectives}

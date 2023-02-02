@@ -56,6 +56,7 @@
   export let preventDefaultOnContextMenu: boolean | undefined = undefined;
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
+  export let scrollToSelection: boolean = false;
   export let selectedRowIds: RowId[] = [];
   export let shouldAutoGenerateId: boolean = false;
   export let suppressCellFocus: boolean = true;
@@ -217,8 +218,12 @@
       onRowSelected(event: RowSelectedEvent<TRowData>) {
         const selectedNodes = gridOptions?.api?.getSelectedNodes();
 
-        // only dispatch `rowSelected` for single row selections
+        // only dispatch `rowSelected` or enforce visibility for single row selections
         if (selectedNodes.length <= 1 || suppressRowClickSelection) {
+          if (scrollToSelection) {
+            gridOptions?.api?.ensureIndexVisible(selectedNodes[0].rowIndex);
+          }
+
           dispatch('rowSelected', {
             data: event.data,
             isSelected: event.node.isSelected(),
