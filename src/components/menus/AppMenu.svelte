@@ -79,7 +79,7 @@
       <GraphQLIcon />
       GraphQL Playground
     </MenuItem>
-    <MenuItem on:click={() => window.open('https://nasa-ammos.github.io/aerie/stable/', '_newtab')}>
+    <MenuItem on:click={() => window.open('https://nasa-ammos.github.io/aerie-docs/', '_newtab')}>
       <JournalsIcon />
       Documentation
     </MenuItem>
