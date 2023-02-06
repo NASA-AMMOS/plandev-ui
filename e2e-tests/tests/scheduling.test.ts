@@ -81,30 +81,27 @@ test.describe.serial('Scheduling', () => {
     await plan.showSchedulingLayout();
   });
 
-  // TODO: Uncomment after https://github.com/NASA-AMMOS/aerie/issues/633 is fixed.
-  // test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
-  //   await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
-  //   await plan.runScheduling();
-  //   await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
-  //   await plan.runScheduling();
-  //   await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
-  // });
+  test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await plan.runScheduling();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
 
-  // TODO: Uncomment after https://github.com/NASA-AMMOS/aerie/issues/633 is fixed.
-  // test('The list of satisfied activities should not be empty', async () => {
-  //   await plan.schedulingGoalExpand.click();
-  //   const satisfiedActivitiesCount = await plan.schedulingSatisfiedActivity.count();
-  //   expect(satisfiedActivitiesCount).toBeGreaterThan(0);
-  // });
+  test('The list of satisfied activities should not be empty', async () => {
+    await plan.schedulingGoalExpand.click();
+    const satisfiedActivitiesCount = await plan.schedulingSatisfiedActivity.count();
+    expect(satisfiedActivitiesCount).toBeGreaterThan(0);
+  });
 
-  // TODO: Uncomment after https://github.com/NASA-AMMOS/aerie/issues/633 is fixed.
-  // test('Running analyze-only should show +0 in that goals badge', async () => {
-  //   await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
-  //   await plan.runAnalysis();
-  //   await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
-  //   await plan.runAnalysis();
-  //   await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
-  // });
+  test('Running analyze-only should show +0 in that goals badge', async () => {
+    await expect(plan.schedulingGoalEnabledCheckbox).toBeChecked();
+    await plan.runAnalysis();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await plan.runAnalysis();
+    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
 
   test('Delete scheduling goal', async () => {
     await schedulingGoals.deleteSchedulingGoal();
