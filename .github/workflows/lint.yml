@@ -1,4 +1,4 @@
-name: lint
+name: Lint
 
 on:
   pull_request:
@@ -17,9 +17,10 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: '18.12.0'
+          node-version: 'lts/*'
+          cache: npm
       - name: Install Dependencies
         run: npm ci
       - name: Svelte Sync

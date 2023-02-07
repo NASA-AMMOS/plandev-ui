@@ -1,4 +1,4 @@
-name: 'CodeQL'
+name: Security Scan
 
 on:
   pull_request:
@@ -40,8 +40,8 @@ jobs:
           pip install nasa-scrub
           python3 -m scrub.tools.parsers.translate_results /home/runner/work/aerie-ui/results/*.sarif /home/runner/work/aerie-ui/results/codeql.scrub ${{ github.workspace }} scrub
           python3 -m scrub.tools.parsers.csv_parser /home/runner/work/aerie-ui/results
-      - name: Upload CodeQL Artifacts
+      - name: Upload Security Scan Results
         uses: actions/upload-artifact@v3
         with:
-          name: codeql-artifacts
+          name: Security Scan Results
           path: /home/runner/work/aerie-ui/results/*

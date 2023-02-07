@@ -1,4 +1,4 @@
-name: test
+name: Test
 
 on:
   pull_request:
@@ -18,9 +18,10 @@ jobs:
       - name: Checkout Repo (UI)
         uses: actions/checkout@v3
       - name: Setup Node (UI)
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: '18.12.0'
+          node-version: 'lts/*'
+          cache: npm
       - name: Start Services (Aerie)
         run: |
           docker compose -f docker-compose-test.yml up -d
@@ -46,14 +47,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: 🎭 End-to-end Test Results
-          path: e2e-test-results
+          name: Test Results
+          path: '**/e2e-test-results'
       - name: Upload Results (Test - unit)
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: ⚡ Unit Test Results
-          path: unit-test-results
+          name: Test Results
+          path: '**/unit-test-results'
       - name: Print Logs for Services (Aerie)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t
