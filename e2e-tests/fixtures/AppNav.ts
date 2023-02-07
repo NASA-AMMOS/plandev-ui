@@ -10,10 +10,10 @@ export class AppNav {
   appMenuItemDocumentation: Locator;
   appMenuItemExpansion: Locator;
   appMenuItemGateway: Locator;
+  appMenuItemGraphQLConsole: Locator;
   appMenuItemLogout: Locator;
   appMenuItemModels: Locator;
   appMenuItemPlans: Locator;
-  appMenuItemPlayground: Locator;
   appMenuItemScheduling: Locator;
 
   constructor(public page: Page) {
@@ -37,12 +37,12 @@ export class AppNav {
     );
     this.appMenuItemExpansion = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Expansion")`);
     this.appMenuItemGateway = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Gateway")`);
+    this.appMenuItemGraphQLConsole = page.locator(
+      `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Console")`,
+    );
     this.appMenuItemLogout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Logout")`);
     this.appMenuItemModels = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Models")`);
     this.appMenuItemPlans = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Plans")`);
-    this.appMenuItemPlayground = page.locator(
-      `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Playground")`,
-    );
     this.appMenuItemScheduling = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Scheduling")`);
     this.page = page;
   }

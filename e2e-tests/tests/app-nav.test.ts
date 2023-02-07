@@ -95,13 +95,14 @@ test.describe.serial('App Nav', () => {
     await gatewayPage.close();
   });
 
-  test(`Clicking on the app menu 'GraphQL Playground' option should open a new tab to the playground page`, async () => {
+  test(`Clicking on the app menu 'GraphQL Console' option should open a new tab to the console page`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const [playgroundPage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemPlayground.click()]);
-    expect(await playgroundPage.title()).toContain('Playground');
-    await playgroundPage.close();
+    const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLConsole.click()]);
+    await consolePage.waitForLoadState('networkidle');
+    expect(await consolePage.title()).toContain('API Explorer | Hasura');
+    await consolePage.close();
   });
 
   test(`Clicking on the app menu 'Documentation' option should open a new tab to the Aerie documentation`, async () => {
