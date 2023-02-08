@@ -22,6 +22,9 @@ export class Plan {
   navButtonScheduling: Locator;
   navButtonSimulation: Locator;
   navButtonView: Locator;
+  navButtonViewMenu: Locator;
+  navButtonViewSaveAsMenuButton: Locator;
+  navButtonViewSavedViewsMenuButton: Locator;
   panelActivityForm: Locator;
   panelActivityTable: Locator;
   panelActivityTypes: Locator;
@@ -34,7 +37,6 @@ export class Plan {
   panelTimeline: Locator;
   panelTimelineEditor: Locator;
   panelViewEditor: Locator;
-  panelViews: Locator;
   planTitle: Locator;
   scheduleButton: Locator;
   schedulingConditionEnabledCheckbox: Locator;
@@ -212,6 +214,11 @@ export class Plan {
     this.navButtonScheduling = page.locator(`.nav-button:has-text("Scheduling")`);
     this.navButtonSimulation = page.locator(`.nav-button:has-text("Simulation")`);
     this.navButtonView = page.locator(`.nav-button:has-text("View")`);
+    this.navButtonViewMenu = page.locator(`.view-menu > .menu`);
+    this.navButtonViewSaveAsMenuButton = page.locator(`.view-menu > .menu .menu-item:has-text("Save as")`);
+    this.navButtonViewSavedViewsMenuButton = page.locator(
+      `.view-menu > .menu .menu-item:has-text("Browse saved views")`,
+    );
     this.page = page;
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
     this.panelActivityTable = page.locator('[data-component-name="ActivityTablePanel"]');
@@ -225,7 +232,6 @@ export class Plan {
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
     this.panelViewEditor = page.locator('[data-component-name="ViewEditorPanel"]');
-    this.panelViews = page.locator('[data-component-name="ViewsPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);
     this.scheduleButton = page.locator('.header-actions > button[aria-label="Schedule"]');
     this.analyzeButton = page.locator('.header-actions > button[aria-label="Analyze"]');

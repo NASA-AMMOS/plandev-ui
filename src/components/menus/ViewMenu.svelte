@@ -2,50 +2,75 @@
 
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
-  import SaveIcon from 'bootstrap-icons/icons/save.svg?component';
+  import ViewGridIcon from '@nasa-jpl/stellar/icons/view_grid_filled.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import { user as userStore } from '../../stores/app';
-  import { view } from '../../stores/views';
-  import effects from '../../utilities/effects';
+  import { view, viewIsModified } from '../../stores/views';
+  import { showSavedViewsModal } from '../../utilities/modal';
+  import { Status } from '../../utilities/status';
+  import NavButton from '../app/NavButton.svelte';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
+
+  const defaultViewName = 'Default View';
+  const dispatch = createEventDispatcher();
 
   let saveViewDisabled: boolean = true;
   let viewMenu: Menu;
 
-  $: saveViewDisabled = $view?.name === '' || $view?.owner !== $userStore?.id;
+  $: saveViewDisabled = $view?.name === '' || $view?.owner !== $userStore?.id || !$viewIsModified;
 
-  function createView() {
+  function saveAsView() {
     if ($view) {
-      effects.createView($userStore?.id, $view.definition);
+      dispatch('createView', { definition: $view.definition, owner: $userStore?.id });
+    }
+  }
+
+  function editView() {
+    if ($view) {
+      dispatch('editView', { definition: $view.definition, owner: $userStore?.id });
     }
   }
 
   function saveView() {
     if ($view && $view.owner === $userStore?.id && !saveViewDisabled) {
-      effects.updateView($view.id, { definition: $view.definition, name: $view.name });
+      dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name });
+    }
+  }
+
+  function resetView() {
+    if ($view) {
+      dispatch('resetView');
     }
   }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="view-menu st-typography-body" on:click|stopPropagation={() => viewMenu.toggle()}>
-  <ChevronDownIcon />
+<NavButton
+  status={$viewIsModified ? Status.Modified : null}
+  title={$view?.name ?? defaultViewName}
+  on:click={() => viewMenu.toggle()}
+>
+  <div class="view-menu-icon"><ViewGridIcon /></div>
+  <div class="view-menu st-typography-body" slot="menu">
+    <ChevronDownIcon />
 
-  <Menu bind:this={viewMenu} offset={[-93, -5]}>
-    <MenuItem on:click={createView}>
-      <PlusIcon />
-      Create View
-    </MenuItem>
-    <MenuItem disabled={saveViewDisabled} on:click={saveView}>
-      <SaveIcon />
-      Save View
-    </MenuItem>
-  </Menu>
-</div>
+    <Menu bind:this={viewMenu} offset={[-120, -5]}>
+      <MenuItem disabled={saveViewDisabled} on:click={saveView}>Save</MenuItem>
+      <MenuItem on:click={saveAsView}>Save as</MenuItem>
+      <MenuItem disabled={!$viewIsModified} on:click={resetView}>Reset to default</MenuItem>
+      <MenuItem on:click={showSavedViewsModal}>Browse saved views</MenuItem>
+      {#if $view?.name && $view.name !== defaultViewName}
+        <hr />
+        <MenuItem on:click={editView}>Rename view</MenuItem>
+      {/if}
+    </Menu>
+  </div>
+</NavButton>
 
 <style>
   .view-menu {
+    --aerie-menu-item-template-columns: auto;
     align-items: center;
     color: white;
     cursor: pointer;
@@ -53,5 +78,17 @@
     height: inherit;
     justify-content: center;
     position: relative;
+  }
+
+  .view-menu hr {
+    background-color: var(--st-gray-30);
+    border: 0;
+    height: 1px;
+    margin: 0 4px;
+  }
+
+  .view-menu-icon > :global(svg) {
+    display: block;
+    height: 16px;
   }
 </style>

@@ -8,6 +8,8 @@ export type ViewActivityTable = {
   id: number;
 };
 
+export type ViewSaveEvent = Partial<View>;
+
 export type ViewIFrame = {
   id: number;
   src: string;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { view, viewDefinitionText } from '../../stores/views';
+  import { initializeView, view, viewDefinitionText } from '../../stores/views';
   import type { ViewDefinition } from '../../types/view';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -14,7 +14,7 @@
 
     try {
       const definition: ViewDefinition = JSON.parse(value);
-      $view = { ...$view, definition };
+      initializeView({ ...$view, definition });
     } catch (e) {
       console.log(e);
     }

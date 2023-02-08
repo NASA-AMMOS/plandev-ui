@@ -4,7 +4,6 @@
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
-  import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { onDestroy } from 'svelte';
   import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
@@ -31,7 +30,6 @@
   import IFramePanel from '../../../components/ui/IFramePanel.svelte';
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
-  import ViewsPanel from '../../../components/view/ViewsPanel.svelte';
   import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
   import { resetConstraintStores } from '../../../stores/constraints';
   import {
@@ -62,8 +60,16 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
-  import { view, viewSetLayout, viewUpdateLayout } from '../../../stores/views';
+  import {
+    initializeView,
+    resetOriginalView,
+    resetView,
+    view,
+    viewSetLayout,
+    viewUpdateLayout,
+  } from '../../../stores/views';
   import type { GridChangeSizesEvent } from '../../../types/grid';
+  import type { ViewSaveEvent } from '../../../types/view';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
@@ -87,7 +93,6 @@
     TimelineEditorPanel,
     TimelinePanel,
     ViewEditorPanel,
-    ViewsPanel,
   };
 
   let planHasBeenLocked = false;
@@ -101,12 +106,12 @@
     $viewTimeRange = $maxTimeRange;
     activityTypes.updateValue(() => data.initialActivityTypes);
 
-    // Asyncronously fetch resource types
+    // Asynchronously fetch resource types
     effects.getResourceTypes($plan.model_id).then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
   }
 
   $: if (data.initialView) {
-    $view = { ...data.initialView };
+    initializeView({ ...data.initialView });
   }
 
   $: if ($plan) {
@@ -172,6 +177,41 @@
       effects.simulate();
     }
   }
+
+  async function onCreateView(event: CustomEvent<ViewSaveEvent>) {
+    const { detail } = event;
+    const { owner, definition } = detail;
+    if (definition) {
+      const success = await effects.createView(owner, definition);
+      if (success) {
+        resetOriginalView();
+      }
+    }
+  }
+
+  async function onEditView(event: CustomEvent<ViewSaveEvent>) {
+    const { detail } = event;
+    const { owner, definition } = detail;
+    if (definition) {
+      const success = await effects.editView(owner, definition);
+      if (success) {
+        resetOriginalView();
+      }
+    }
+  }
+
+  async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
+    const { detail } = event;
+    const { definition, id, name } = detail;
+    const success = await effects.updateView(id, { definition, name });
+    if (success) {
+      resetOriginalView();
+    }
+  }
+
+  function onResetView() {
+    resetView();
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -217,10 +257,12 @@
       >
         <GearWideConnectedIcon />
       </NavButton>
-      <NavButton title="View">
-        <ColumnsIcon />
-        <ViewMenu slot="menu" />
-      </NavButton>
+      <ViewMenu
+        on:createView={onCreateView}
+        on:editView={onEditView}
+        on:saveView={onSaveView}
+        on:resetView={onResetView}
+      />
     </svelte:fragment>
   </Nav>
 

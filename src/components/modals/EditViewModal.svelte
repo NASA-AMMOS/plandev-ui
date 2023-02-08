@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { plan } from '../../stores/plan';
+  import { view } from '../../stores/views';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -13,16 +14,17 @@
 
   const dispatch = createEventDispatcher();
 
-  let newViewName: string = '';
+  let viewName: string = '';
   let selectedModelId: number | null;
-  let createButtonDisabled: boolean = true;
+  let saveButtonDisabled: boolean = true;
 
-  $: createButtonDisabled = newViewName === '';
+  $: saveButtonDisabled = viewName === '';
   $: selectedModelId = $plan.model_id;
+  $: viewName = $view.name;
 
-  function create() {
-    if (!createButtonDisabled) {
-      dispatch('create', { name: newViewName });
+  function save() {
+    if (!saveButtonDisabled) {
+      dispatch('save', { id: $view.id, name: viewName });
     }
   }
 
@@ -30,7 +32,7 @@
     const { key } = event;
     if (key === 'Enter') {
       event.preventDefault();
-      create();
+      save();
     }
   }
 </script>
@@ -38,15 +40,15 @@
 <svelte:window on:keydown={onKeydown} />
 
 <Modal {height} {width}>
-  <ModalHeader on:close>Save new view</ModalHeader>
+  <ModalHeader on:close>Edit view</ModalHeader>
   <ModalContent>
     <fieldset>
       <label for="name">View name</label>
-      <input bind:value={newViewName} autocomplete="off" class="st-input w-100" name="name" required type="text" />
+      <input bind:value={viewName} autocomplete="off" class="st-input w-100" name="name" required type="text" />
     </fieldset>
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={createButtonDisabled} on:click={create}> Save View </button>
+    <button class="st-button" disabled={saveButtonDisabled} on:click={save}> Save View </button>
   </ModalFooter>
 </Modal>

@@ -74,8 +74,8 @@
       }}
       on:toggleRowExpansion={({ detail: { expanded, rowId } }) =>
         viewUpdateRow('expanded', expanded, timelineId, rowId)}
-      on:updateRowHeight={({ detail: { newHeight, rowId } }) => {
-        viewUpdateRow('height', newHeight, timelineId, rowId);
+      on:updateRowHeight={({ detail: { newHeight, rowId, wasAutoAdjusted } }) => {
+        viewUpdateRow('height', newHeight, timelineId, rowId, wasAutoAdjusted);
       }}
       on:updateRows={({ detail: rows }) => {
         viewUpdateTimeline('rows', rows, timelineId);

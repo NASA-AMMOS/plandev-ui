@@ -48,6 +48,7 @@
   button:hover {
     background-color: var(--tab-hover-background-color, var(--st-gray-15));
     color: var(--tab-hover-text-color, var(--st-gray-60));
+    font-weight: var(--tab-hover-text-weight, var(--st-typography-medium-font-weight));
   }
 
   button.selected {

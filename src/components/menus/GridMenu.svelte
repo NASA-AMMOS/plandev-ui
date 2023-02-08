@@ -11,7 +11,6 @@
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import CodeIcon from 'bootstrap-icons/icons/code.svg?component';
-  import ColumnsIcon from 'bootstrap-icons/icons/columns.svg?component';
   import FileEarmarkExcelIcon from 'bootstrap-icons/icons/file-earmark-excel.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
@@ -92,10 +91,6 @@
     <MenuItem on:click={() => updateGridComponent('TimelineEditorPanel')}>
       <ChecklistOnPageIcon />
       Timeline Editor
-    </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ViewsPanel')}>
-      <ColumnsIcon />
-      Views
     </MenuItem>
     <MenuItem on:click={() => updateGridComponent('ViewEditorPanel')}>
       <CodeIcon />

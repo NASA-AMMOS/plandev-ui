@@ -10,7 +10,13 @@
   import { createEventDispatcher, onDestroy, setContext } from 'svelte';
   import { writable } from 'svelte/store';
   import type { PanelId, TabContext, TabId } from '../../../types/tabs';
+  import { classNames } from '../../../utilities/generic';
   import TabList from './TabList.svelte';
+
+  export { className as class };
+  export let tabListClassName: string = undefined;
+
+  let className: string = '';
 
   const dispatch = createEventDispatcher();
 
@@ -67,8 +73,8 @@
   });
 </script>
 
-<div class="tabs">
-  <TabList>
+<div class={classNames('tabs', { [className]: !!className })}>
+  <TabList class={tabListClassName}>
     <slot name="tab-list" />
   </TabList>
   <div class="tab-panels">

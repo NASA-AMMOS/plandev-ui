@@ -164,10 +164,10 @@
     dispatch('toggleRowExpansion', { expanded, rowId });
   }
 
-  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number }>) {
-    const { newHeight, rowId } = event.detail;
+  function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>) {
+    const { newHeight, rowId, wasAutoAdjusted } = event.detail;
     if (timelineGridId === gridId && newHeight < MAX_CANVAS_SIZE) {
-      dispatch('updateRowHeight', { newHeight, rowId });
+      dispatch('updateRowHeight', { newHeight, rowId, wasAutoAdjusted });
     }
   }
 

@@ -2,12 +2,14 @@ import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
+import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
+import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
@@ -186,7 +188,7 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
 /**
  * Shows a CreateViewModal component.
  */
-export async function showCreateViewModal(): Promise<ModalElementValue<{ name: string }>> {
+export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId: number; name: string }>> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
@@ -200,7 +202,33 @@ export async function showCreateViewModal(): Promise<ModalElementValue<{ name: s
         resolve({ confirm: false });
       });
 
-      createViewModal.$on('create', (e: CustomEvent<{ name: string }>) => {
+      createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: true, value: e.detail });
+      });
+    }
+  });
+}
+
+/**
+ * Shows an EditViewModal component.
+ */
+export async function showEditViewModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const editViewModal = new EditViewModal({ target });
+      target.resolve = resolve;
+
+      editViewModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+
+      editViewModal.$on('save', (e: CustomEvent<{ id: number; modelId: number; name: string }>) => {
         target.replaceChildren();
         target.resolve = null;
         resolve({ confirm: true, value: e.detail });
@@ -292,6 +320,26 @@ export async function showPlanMergeRequestsModal(
       target.resolve = resolve;
 
       planMergeRequestsModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+    }
+  });
+}
+
+/**
+ * Shows a SavedViewsModal component.
+ */
+export async function showSavedViewsModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const savedViewsModal = new SavedViewsModal({ props: { height: 400, width: '50%' }, target });
+      target.resolve = resolve;
+
+      savedViewsModal.$on('close', () => {
         target.replaceChildren();
         target.resolve = null;
         resolve({ confirm: false });

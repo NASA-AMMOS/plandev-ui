@@ -16,7 +16,7 @@ import { createModelError, createPlanError, creatingModel, creatingPlan, models,
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
-import { view } from '../stores/views';
+import { applyViewUpdate, view } from '../stores/views';
 import type {
   ActivitiesMap,
   Activity,
@@ -87,7 +87,13 @@ import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { getActivityDirectiveUniqueId } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql from './gql';
-import { showConfirmModal, showCreatePlanBranchModal, showCreateViewModal, showPlanBranchRequestModal } from './modal';
+import {
+  showConfirmModal,
+  showCreatePlanBranchModal,
+  showCreateViewModal,
+  showEditViewModal,
+  showPlanBranchRequestModal,
+} from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
@@ -557,7 +563,7 @@ const effects = {
     }
   },
 
-  async createView(owner: string, definition: ViewDefinition): Promise<void> {
+  async createView(owner: string, definition: ViewDefinition): Promise<boolean> {
     try {
       const { confirm, value = null } = await showCreateViewModal();
 
@@ -570,10 +576,12 @@ const effects = {
         view.update(() => newView);
         setQueryParam('viewId', `${newView.id}`);
         showSuccessToast('View Created Successfully');
+        return true;
       }
     } catch (e) {
       catchError('View Create Failed', e);
       showFailureToast('View Create Failed');
+      return false;
     }
   },
 
@@ -903,6 +911,28 @@ const effects = {
       }
     } catch (e) {
       catchError(e);
+      return false;
+    }
+  },
+
+  async editView(owner: string, definition: ViewDefinition): Promise<boolean> {
+    try {
+      const { confirm, value = null } = await showEditViewModal();
+      if (confirm && value) {
+        const { id, name } = value;
+        const viewUpdateInput: ViewInsertInput = { definition, name, owner };
+        const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view: viewUpdateInput });
+        const {
+          updatedView: { name: updatedName, updated_at },
+        } = data;
+
+        applyViewUpdate({ name: updatedName, updated_at });
+        showSuccessToast('View Edited Successfully');
+        return true;
+      }
+    } catch (e) {
+      catchError('View Edit Failed', e);
+      showFailureToast('View Edit Failed');
       return false;
     }
   },

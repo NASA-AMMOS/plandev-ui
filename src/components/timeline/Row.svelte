@@ -152,7 +152,7 @@
 
       // Only update row height if a change has occurred to avoid loopback
       if (newHeight !== drawHeight) {
-        dispatch('updateRowHeight', { newHeight, rowId: id });
+        dispatch('updateRowHeight', { newHeight, rowId: id, wasAutoAdjusted: true });
       }
     }
   }

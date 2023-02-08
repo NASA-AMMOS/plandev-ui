@@ -1450,7 +1450,12 @@ const gql = {
       updatedView: update_view_by_pk(
         pk_columns: { id: $id }, _set: $view
       ) {
+        created_at
+        definition
         id
+        name
+        owner
+        updated_at
       }
     }
   `,

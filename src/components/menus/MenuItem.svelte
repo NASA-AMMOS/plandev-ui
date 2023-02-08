@@ -6,10 +6,19 @@
   export let disabled: boolean = false;
 
   const dispatch = createEventDispatcher();
+
+  function onClick(event: MouseEvent) {
+    if (disabled) {
+      event.stopPropagation();
+    } else {
+      event.preventDefault();
+      dispatch('click');
+    }
+  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="menu-item" class:disabled on:click|preventDefault={() => dispatch('click')}>
+<div class="menu-item" class:disabled on:click={onClick}>
   <slot />
 </div>
 

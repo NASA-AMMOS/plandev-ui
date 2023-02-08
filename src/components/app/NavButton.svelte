@@ -10,7 +10,11 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="nav-button st-typography-medium" class:selected on:click|preventDefault={() => dispatch('click')}>
+<div
+  class="nav-button st-typography-medium"
+  class:selected
+  on:click|preventDefault|stopPropagation={() => dispatch('click')}
+>
   <span style="color: {status !== null ? getColorForStatus(status) : 'unset'}">
     <slot />
   </span>

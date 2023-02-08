@@ -1,18 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ICellRendererParams } from 'ag-grid-community';
-  import { view, views } from '../../stores/views';
+  import type { ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
+  import { createEventDispatcher } from 'svelte';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { View } from '../../types/view';
-  import effects from '../../utilities/effects';
-  import { setQueryParam } from '../../utilities/generic';
-  import GridMenu from '../menus/GridMenu.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import Panel from '../ui/Panel.svelte';
 
-  export let gridId: number;
+  export let views: View[] = [];
 
   type CellRendererParams = {
     deleteView: (view: View) => void;
@@ -20,6 +16,7 @@
   };
   type ViewCellRendererParams = ICellRendererParams<View> & CellRendererParams;
 
+  const dispatch = createEventDispatcher();
   const columnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -33,7 +30,19 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
-    { field: 'updated_at', filter: 'text', headerName: 'Last Updated', resizable: true, sortable: true },
+    {
+      field: 'updated_at',
+      filter: 'text',
+      headerName: 'Last Edited',
+      resizable: true,
+      sortable: true,
+      valueFormatter: ({ value: updatedAt }: ValueFormatterParams<View, string>) => {
+        const updatedAtDate = new Date(updatedAt);
+        updatedAtDate.setMilliseconds(0);
+
+        return updatedAtDate.toISOString().replace(/.\d+Z$/g, 'Z');
+      },
+    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ViewCellRendererParams) => {
@@ -77,54 +86,26 @@
     },
   ];
 
-  async function deleteView({ id: viewId }: View) {
-    const success = await effects.deleteView(viewId);
-
-    if (success) {
-      if ($view.id === viewId) {
-        const nextView = await effects.getView(null);
-        $view = { ...nextView };
-        setQueryParam('viewId', `${nextView.id}`);
-      }
-    }
+  function deleteView({ id: viewId }: View) {
+    dispatch('deleteView', viewId);
   }
 
   function deleteViews({ detail: views }: CustomEvent<View[]>) {
-    const ids = views.map(({ id }) => id);
-    effects.deleteViews(ids);
+    const viewIds = views.map(({ id }) => id);
+    dispatch('deleteViews', viewIds);
   }
 
-  async function openView({ id: viewId }: View) {
-    const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await effects.getView(query);
-
-    if (view) {
-      $view = { ...newView };
-      setQueryParam('viewId', `${newView.id}`);
-    } else {
-      console.log(`No view found for ID: ${viewId}`);
-    }
+  function openView({ id: viewId }: View) {
+    dispatch('openView', viewId);
   }
 </script>
 
-<Panel>
-  <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Views" />
-  </svelte:fragment>
-
-  <svelte:fragment slot="body">
-    {#if $views.length}
-      <BulkActionDataGrid
-        {columnDefs}
-        isRowSelectable={rowData => rowData.data.owner !== 'system'}
-        items={$views}
-        pluralItemDisplayText="Views"
-        singleItemDisplayText="View"
-        on:bulkDeleteItems={deleteViews}
-        on:rowDoubleClicked={event => openView(event.detail)}
-      />
-    {:else}
-      No Views Found
-    {/if}
-  </svelte:fragment>
-</Panel>
+<BulkActionDataGrid
+  {columnDefs}
+  isRowSelectable={rowData => rowData.data.owner !== 'system'}
+  items={views}
+  pluralItemDisplayText="Views"
+  singleItemDisplayText="View"
+  on:bulkDeleteItems={deleteViews}
+  on:rowDoubleClicked={event => openView(event.detail)}
+/>
