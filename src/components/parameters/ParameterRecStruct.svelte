@@ -7,6 +7,7 @@
   import type { FormParameter } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
   import ParameterBase from './ParameterBase.svelte';
+  import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
 
@@ -68,6 +69,7 @@
       <ChevronDownIcon />
     {/if}
     <ParameterName {formParameter} />
+    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
   </div>
 {:else}
   <div class="parameter-rec-struct p-0" />
@@ -121,7 +123,7 @@
     cursor: pointer;
     display: grid;
     gap: 8px;
-    grid-template-columns: 16px auto;
+    grid-template-columns: 16px auto 16px;
     padding: 8px 0px;
   }
 
