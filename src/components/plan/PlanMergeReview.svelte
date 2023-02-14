@@ -111,7 +111,9 @@
         const { source, target } = conflictingActivity;
 
         return {
-          receivingPlanDirectives: [...previous.receivingPlanDirectives, target],
+          receivingPlanDirectives: target
+            ? [...previous.receivingPlanDirectives, target]
+            : previous.receivingPlanDirectives,
           supplyingPlanDirectives: [
             ...previous.supplyingPlanDirectives,
             {

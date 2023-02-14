@@ -28,7 +28,7 @@ export type PlanMergeNonConflictingActivity = {
   change_type: PlanMergeActivityOutcome;
   merge_request_id: number;
   source: PlanMergeActivityDirective;
-  target: PlanMergeActivityDirective;
+  target: PlanMergeActivityDirective | null;
 };
 
 export type PlanMergeRequestType = 'incoming' | 'outgoing';
