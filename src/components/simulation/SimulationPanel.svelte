@@ -3,6 +3,7 @@
 <script lang="ts">
   import { plan } from '../../stores/plan';
   import {
+    enableSimulation,
     simulation,
     simulationDatasetId,
     simulationDatasetIds,
@@ -14,6 +15,7 @@
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import { Status } from '../../utilities/status';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -68,7 +70,15 @@
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Simulation" />
     <PanelHeaderActions status={$simulationStatus}>
-      <PanelHeaderActionButton title="Simulate" showLabel on:click={() => effects.simulate()} />
+      <PanelHeaderActionButton
+        disabled={!$enableSimulation}
+        tooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+          ? 'Simluation up-to-date'
+          : ''}
+        title="Simulate"
+        showLabel
+        on:click={() => effects.simulate()}
+      />
     </PanelHeaderActions>
   </svelte:fragment>
 

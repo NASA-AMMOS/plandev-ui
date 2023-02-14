@@ -1,8 +1,9 @@
-import { derived, writable, type Writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { plan } from '../stores/plan';
 import type {
   SchedulingCondition,
   SchedulingGoal,
+  SchedulingGoalAnalysis,
   SchedulingSpecCondition,
   SchedulingSpecGoal,
 } from '../types/scheduling';
@@ -38,6 +39,35 @@ export const schedulingSpecGoals = gqlSubscribable<SchedulingSpecGoal[]>(
   { specification_id: selectedSpecId },
   [],
 );
+
+export const latestAnalyses = derived(schedulingSpecGoals, $schedulingSpecGoals => {
+  const analysisIdToSpecGoalMap: Record<number, SchedulingGoalAnalysis[]> = {};
+  let latestAnalysisId = -1;
+
+  $schedulingSpecGoals.forEach(schedulingSpecGoal => {
+    schedulingSpecGoal.goal.analyses.forEach(analysis => {
+      if (!analysisIdToSpecGoalMap[analysis.analysis_id]) {
+        analysisIdToSpecGoalMap[analysis.analysis_id] = [];
+      }
+      analysisIdToSpecGoalMap[analysis.analysis_id].push(analysis);
+      if (analysis.analysis_id > latestAnalysisId) {
+        latestAnalysisId = analysis.analysis_id;
+      }
+    });
+  });
+
+  return analysisIdToSpecGoalMap[latestAnalysisId] || [];
+});
+
+export const schedulingGoalCount = derived(latestAnalyses, $latestAnalyses => Object.keys($latestAnalyses).length);
+export const satisfiedSchedulingGoalCount = derived(
+  latestAnalyses,
+  $latestAnalyses => Object.values($latestAnalyses).filter(analysis => analysis.satisfied).length,
+);
+
+export const enableScheduling: Readable<boolean> = derived([schedulingSpecGoals], ([$schedulingSpecGoals]) => {
+  return $schedulingSpecGoals.filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
+});
 
 /* Helper Functions. */
 

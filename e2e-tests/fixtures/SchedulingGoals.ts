@@ -1,5 +1,4 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
@@ -9,7 +8,6 @@ export class SchedulingGoals {
   confirmModalDeleteButton: Locator;
   goalDefinition: string = `export default (): Goal => Goal.ActivityRecurrenceGoal({ activityTemplate: ActivityTemplates.BakeBananaBread({ temperature: 325.0, tbSugar: 2, glutenFree: false }), interval: Temporal.Duration.from({ hours: 12 }) })`;
   goalDescription: string = 'Add a BakeBananaBread activity every 12 hours';
-  goalName: string;
   inputGoalDefinition: Locator;
   inputGoalDescription: Locator;
   inputGoalModel: Locator;
@@ -17,18 +15,17 @@ export class SchedulingGoals {
   inputGoalName: Locator;
   newButton: Locator;
   saveButton: Locator;
-  tableRow: Locator;
-  tableRowDeleteButton: Locator;
+  tableRowDeleteButtonSelector: (goalName: string) => Locator;
+  tableRowSelector: (goalName: string) => Locator;
 
   constructor(public page: Page, public models: Models) {
-    this.goalName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 
-  async createSchedulingGoal(baseURL: string | undefined) {
+  async createSchedulingGoal(baseURL: string | undefined, goalName: string) {
     await expect(this.saveButton).toBeDisabled();
     await this.selectModel();
-    await this.fillGoalName();
+    await this.fillGoalName(goalName);
     await this.fillGoalDescription();
     await this.fillGoalDefinition();
     await expect(this.saveButton).not.toBeDisabled();
@@ -40,27 +37,27 @@ export class SchedulingGoals {
     await this.page.waitForURL(`${baseURL}/scheduling`);
   }
 
-  async deleteSchedulingGoal() {
+  async deleteSchedulingGoal(goalName: string) {
     await this.goto();
-    await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
+    await expect(this.tableRowSelector(goalName)).toBeVisible();
+    await expect(this.tableRowDeleteButtonSelector(goalName)).not.toBeVisible();
 
-    await this.tableRow.hover();
-    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
-    await this.tableRowDeleteButton.waitFor({ state: 'visible' });
-    await expect(this.tableRowDeleteButton).toBeVisible();
+    await this.tableRowSelector(goalName).hover();
+    await this.tableRowDeleteButtonSelector(goalName).waitFor({ state: 'attached' });
+    await this.tableRowDeleteButtonSelector(goalName).waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButtonSelector(goalName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButtonSelector(goalName).click();
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRow.waitFor({ state: 'detached' });
-    await this.tableRow.waitFor({ state: 'hidden' });
-    await expect(this.tableRow).not.toBeVisible();
+    await this.tableRowSelector(goalName).waitFor({ state: 'detached' });
+    await this.tableRowSelector(goalName).waitFor({ state: 'hidden' });
+    await expect(this.tableRowSelector(goalName)).not.toBeVisible();
   }
 
   async fillGoalDefinition() {
@@ -75,9 +72,9 @@ export class SchedulingGoals {
     await this.inputGoalDescription.evaluate(e => e.blur());
   }
 
-  async fillGoalName() {
+  async fillGoalName(goalName) {
     await this.inputGoalName.focus();
-    await this.inputGoalName.fill(this.goalName);
+    await this.inputGoalName.fill(goalName);
     await this.inputGoalName.evaluate(e => e.blur());
   }
 
@@ -108,9 +105,8 @@ export class SchedulingGoals {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`.ag-row:has-text("${this.goalName}")`);
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.goalName}") >> button[aria-label="Delete Goal"]`,
-    );
+    this.tableRowSelector = (goalName: string) => page.locator(`.ag-row:has-text("${goalName}")`);
+    this.tableRowDeleteButtonSelector = (goalName: string) =>
+      page.locator(`.ag-row:has-text("${goalName}") >> button[aria-label="Delete Goal"]`);
   }
 }

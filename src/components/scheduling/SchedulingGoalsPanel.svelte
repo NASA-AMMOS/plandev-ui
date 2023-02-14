@@ -5,7 +5,7 @@
   import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { plan } from '../../stores/plan';
-  import { schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import { enableScheduling, schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import type { SchedulingSpecGoal } from '../../types/scheduling';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -45,10 +45,10 @@
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Scheduling Goals" />
     <PanelHeaderActions status={$schedulingStatus}>
-      <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)}>
+      <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)} disabled={!$enableScheduling}>
         <ChecklistIcon />
       </PanelHeaderActionButton>
-      <PanelHeaderActionButton title="Schedule" on:click={() => effects.schedule()} />
+      <PanelHeaderActionButton title="Schedule" on:click={() => effects.schedule()} disabled={!$enableScheduling} />
     </PanelHeaderActions>
   </svelte:fragment>
 

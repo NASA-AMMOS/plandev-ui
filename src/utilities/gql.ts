@@ -1236,6 +1236,7 @@ const gql = {
         enabled
         goal {
           analyses(order_by: { request: { specification_revision: desc } }, limit: 2) {
+            analysis_id
             satisfied
             satisfying_activities {
               activity_id

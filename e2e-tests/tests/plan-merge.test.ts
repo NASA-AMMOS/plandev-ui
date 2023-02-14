@@ -66,6 +66,7 @@ test.describe.serial('Plan Merge', () => {
     await page.locator('input[name="start-time"]').click();
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').press('Enter');
+    await page.waitForTimeout(250);
   });
 
   test('Create a merge request from branch to parent plan', async () => {
@@ -82,11 +83,13 @@ test.describe.serial('Plan Merge', () => {
     await page.getByRole('button', { name: '1 incoming, 0 outgoing' }).click();
     await page.getByRole('button', { name: 'Review' }).click();
     await page.waitForURL(`${baseURL}/plans/*/merge`);
+    await page.waitForTimeout(250);
   });
 
   test('Complete the merge review', async ({ baseURL }) => {
     await page.getByRole('button', { name: 'Approve Changes' }).click();
     await page.waitForURL(`${baseURL}/plans/${plans.planId}/merge`);
+    await page.waitForTimeout(250);
   });
 
   test('Make sure the start time of the activity in the parent plan now equals the start time of the activity in branch', async () => {

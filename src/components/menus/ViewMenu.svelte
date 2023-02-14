@@ -1,22 +1,19 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ViewGridIcon from '@nasa-jpl/stellar/icons/view_grid_filled.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { user as userStore } from '../../stores/app';
   import { view, viewIsModified } from '../../stores/views';
   import { showSavedViewsModal } from '../../utilities/modal';
   import { Status } from '../../utilities/status';
-  import NavButton from '../app/NavButton.svelte';
-  import Menu from './Menu.svelte';
+  import PlanNavButton from '../plan/PlanNavButton.svelte';
   import MenuItem from './MenuItem.svelte';
 
   const defaultViewName = 'Default View';
   const dispatch = createEventDispatcher();
 
   let saveViewDisabled: boolean = true;
-  let viewMenu: Menu;
 
   $: saveViewDisabled = $view?.name === '' || $view?.owner !== $userStore?.id || !$viewIsModified;
 
@@ -46,16 +43,10 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<NavButton
-  status={$viewIsModified ? Status.Modified : null}
-  title={$view?.name ?? defaultViewName}
-  on:click={() => viewMenu.toggle()}
->
-  <div class="view-menu-icon"><ViewGridIcon /></div>
-  <div class="view-menu st-typography-body" slot="menu">
-    <ChevronDownIcon />
-
-    <Menu bind:this={viewMenu} offset={[-120, -5]}>
+<div class="view-menu">
+  <PlanNavButton status={$viewIsModified ? Status.Modified : null} title={$view?.name ?? defaultViewName} menuTitle="">
+    <ViewGridIcon />
+    <div class="view-menu st-typography-medium" slot="menu">
       <MenuItem disabled={saveViewDisabled} on:click={saveView}>Save</MenuItem>
       <MenuItem on:click={saveAsView}>Save as</MenuItem>
       <MenuItem disabled={!$viewIsModified} on:click={resetView}>Reset to default</MenuItem>
@@ -64,31 +55,30 @@
         <hr />
         <MenuItem on:click={editView}>Rename view</MenuItem>
       {/if}
-    </Menu>
-  </div>
-</NavButton>
+    </div>
+  </PlanNavButton>
+</div>
 
 <style>
   .view-menu {
     --aerie-menu-item-template-columns: auto;
     align-items: center;
-    color: white;
     cursor: pointer;
-    display: flex;
+    display: grid;
     height: inherit;
     justify-content: center;
     position: relative;
   }
 
   .view-menu hr {
-    background-color: var(--st-gray-30);
+    background-color: var(--st-gray-20);
     border: 0;
     height: 1px;
     margin: 0 4px;
   }
 
-  .view-menu-icon > :global(svg) {
-    display: block;
-    height: 16px;
+  .view-menu :global(.header),
+  .view-menu :global(.nav-button .menu-body) {
+    display: none;
   }
 </style>

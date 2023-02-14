@@ -114,6 +114,10 @@ export const simulationStatus: Readable<Status | null> = derived(
   null,
 );
 
+export const enableSimulation: Readable<boolean> = derived([simulationStatus], ([$simulationStatus]) => {
+  return $simulationStatus === Status.Modified || $simulationStatus === null;
+});
+
 /* Helper Functions. */
 
 export function resetSimulationStores() {

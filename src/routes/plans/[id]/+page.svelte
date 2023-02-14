@@ -3,14 +3,15 @@
 <script lang="ts">
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
-  import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
+  import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
+  import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { onDestroy } from 'svelte';
   import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
   import ActivityTablePanel from '../../../components/activity/ActivityTablePanel.svelte';
   import ActivityTypesPanel from '../../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../../components/app/Nav.svelte';
-  import NavButton from '../../../components/app/NavButton.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
   import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
@@ -21,6 +22,7 @@
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
+  import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
   import SchedulingConditionsPanel from '../../../components/scheduling/SchedulingConditionsPanel.svelte';
   import SchedulingGoalsPanel from '../../../components/scheduling/SchedulingGoalsPanel.svelte';
   import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
@@ -31,7 +33,7 @@
   import SplitGrid from '../../../components/ui/SplitGrid.svelte';
   import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
   import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
-  import { resetConstraintStores } from '../../../stores/constraints';
+  import { checkConstraintsStatus, constraintViolations, resetConstraintStores } from '../../../stores/constraints';
   import {
     allErrors,
     anchorValidationErrors,
@@ -40,6 +42,7 @@
     schedulingErrors,
     simulationDatasetErrors,
   } from '../../../stores/errors';
+  import { planExpansionStatus, selectedExpansionSetId } from '../../../stores/expansion';
   import {
     activityTypes,
     maxTimeRange,
@@ -51,8 +54,16 @@
     viewTimeRange,
   } from '../../../stores/plan';
   import { resourceTypes } from '../../../stores/resource';
-  import { resetSchedulingStores, schedulingStatus } from '../../../stores/scheduling';
   import {
+    enableScheduling,
+    latestAnalyses,
+    resetSchedulingStores,
+    satisfiedSchedulingGoalCount,
+    schedulingGoalCount,
+    schedulingStatus,
+  } from '../../../stores/scheduling';
+  import {
+    enableSimulation,
     externalResources,
     resetSimulationStores,
     resources,
@@ -61,20 +72,14 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
-  import {
-    initializeView,
-    resetOriginalView,
-    resetView,
-    view,
-    viewSetLayout,
-    viewUpdateLayout,
-  } from '../../../stores/views';
+  import { initializeView, resetOriginalView, resetView, view, viewUpdateLayout } from '../../../stores/views';
   import type { GridChangeSizesEvent } from '../../../types/grid';
   import type { ViewSaveEvent } from '../../../types/view';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
+  import { Status } from '../../../utilities/status';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
 
@@ -96,7 +101,10 @@
     ViewEditorPanel,
   };
 
+  let compactNavMode = false;
   let planHasBeenLocked = false;
+  let schedulingAnalysisStatus: Status | null;
+  let windowWidth = 0;
 
   $: if (data.initialPlan) {
     $plan = data.initialPlan;
@@ -142,6 +150,14 @@
   } else if (planHasBeenLocked) {
     closeActiveModal();
     planHasBeenLocked = false;
+  }
+
+  $: compactNavMode = windowWidth < 1100;
+  $: schedulingAnalysisStatus = $schedulingStatus;
+  $: if ($latestAnalyses) {
+    if ($schedulingGoalCount !== $satisfiedSchedulingGoalCount) {
+      schedulingAnalysisStatus = Status.PartialSuccess;
+    }
   }
 
   onDestroy(() => {
@@ -215,7 +231,7 @@
   }
 </script>
 
-<svelte:window on:keydown={onKeydown} />
+<svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={data.initialPlan.name} title="Plans" />
 
@@ -228,36 +244,62 @@
       <PlanMergeRequestsStatusButton />
     </svelte:fragment>
     <svelte:fragment slot="right">
-      <NavButton
-        selected={$view.definition.plan.layout?.gridName === 'Activities'}
-        title="Activities"
-        on:click={() => viewSetLayout('Activities')}
+      <PlanNavButton
+        title={!compactNavMode ? 'Expansion' : ''}
+        buttonText="Expand Activities"
+        menuTitle="Expansion Status"
+        disabled={$selectedExpansionSetId === null}
+        status={$planExpansionStatus}
+        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId)}
       >
-        <ActivityIcon />
-      </NavButton>
-      <NavButton
-        selected={$view.definition.plan.layout?.gridName === 'Constraints'}
-        title="Constraints"
-        on:click={() => viewSetLayout('Constraints')}
+        <PlanIcon />
+        <svelte:fragment slot="metadata">
+          <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
+        </svelte:fragment>
+      </PlanNavButton>
+      <PlanNavButton
+        title={!compactNavMode ? 'Simulation' : ''}
+        menuTitle="Simulation Status"
+        buttonText="Simulate"
+        buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+          ? 'Simluation up-to-date'
+          : ''}
+        status={$simulationStatus}
+        disabled={!$enableSimulation}
+        on:click={() => effects.simulate()}
       >
-        <BracesAsteriskIcon />
-      </NavButton>
-      <NavButton
-        selected={$view.definition.plan.layout?.gridName === 'Scheduling'}
-        status={$schedulingStatus}
-        title="Scheduling"
-        on:click={() => viewSetLayout('Scheduling')}
+        <PlayIcon />
+        <svelte:fragment slot="metadata">
+          <div>Simulation Dataset ID: {$simulationDatasetId}</div>
+        </svelte:fragment>
+      </PlanNavButton>
+      <PlanNavButton
+        title={!compactNavMode ? 'Constraints' : ''}
+        menuTitle="Constraint Status"
+        buttonText="Check Constraints"
+        status={$checkConstraintsStatus}
+        on:click={() => effects.checkConstraints()}
+      >
+        <VerticalCollapseIcon />
+        <svelte:fragment slot="metadata">
+          <div>Constraint violations: {$constraintViolations.length}</div>
+        </svelte:fragment>
+      </PlanNavButton>
+      <PlanNavButton
+        title={!compactNavMode ? 'Scheduling' : ''}
+        menuTitle="Scheduling Analysis Status"
+        buttonText="Analyze Goal Satisfaction"
+        disabled={!$enableScheduling}
+        status={schedulingAnalysisStatus}
+        statusText={schedulingAnalysisStatus === Status.PartialSuccess || schedulingAnalysisStatus === Status.Complete
+          ? `${$satisfiedSchedulingGoalCount} satisfied, ${
+              $schedulingGoalCount - $satisfiedSchedulingGoalCount
+            } unsatisfied`
+          : ''}
+        on:click={() => effects.schedule(true)}
       >
         <CalendarIcon />
-      </NavButton>
-      <NavButton
-        selected={$view.definition.plan.layout?.gridName === 'Simulation'}
-        status={$simulationStatus}
-        title="Simulation"
-        on:click={() => viewSetLayout('Simulation')}
-      >
-        <GearWideConnectedIcon />
-      </NavButton>
+      </PlanNavButton>
       <ViewMenu
         on:createView={onCreateView}
         on:editView={onEditView}

@@ -22,7 +22,7 @@
   }
   .nav {
     align-items: center;
-    background: var(--st-primary);
+    background: #110d3e;
     color: var(--st-primary-background-color);
     display: flex;
     height: var(--nav-header-height);

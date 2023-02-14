@@ -103,17 +103,49 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelViewEditor).toBeVisible();
   });
 
-  test(`Clicking on 'Default View' in the top navigation bar should toggle the view menu`, async () => {
+  test(`Hovering on 'Constraints' in the top navigation bar should show the constraints menu`, async () => {
+    await expect(plan.navButtonConstraintsMenu).not.toBeVisible();
+    plan.navButtonConstraints.hover();
+    await expect(plan.navButtonConstraintsMenu).toBeVisible();
+    plan.planTitle.hover();
+    await expect(plan.navButtonConstraintsMenu).not.toBeVisible();
+  });
+
+  test(`Hovering on 'Simulation' in the top navigation bar should show the simulation menu`, async () => {
+    await expect(plan.navButtonSimulationMenu).not.toBeVisible();
+    plan.navButtonSimulation.hover();
+    await expect(plan.navButtonSimulationMenu).toBeVisible();
+    plan.planTitle.hover();
+    await expect(plan.navButtonSimulationMenu).not.toBeVisible();
+  });
+
+  test(`Hovering on 'Expansion' in the top navigation bar should show the expansion menu`, async () => {
+    await expect(plan.navButtonExpansionMenu).not.toBeVisible();
+    plan.navButtonExpansion.hover();
+    await expect(plan.navButtonExpansionMenu).toBeVisible();
+    plan.planTitle.hover();
+    await expect(plan.navButtonExpansionMenu).not.toBeVisible();
+  });
+
+  test(`Hovering on 'Scheduling' in the top navigation bar should show the scheduling menu`, async () => {
+    await expect(plan.navButtonSchedulingMenu).not.toBeVisible();
+    plan.navButtonScheduling.hover();
+    await expect(plan.navButtonSchedulingMenu).toBeVisible();
+    plan.planTitle.hover();
+    await expect(plan.navButtonSchedulingMenu).not.toBeVisible();
+  });
+
+  test(`Hovering on 'Default View' in the top navigation bar should show the view menu`, async () => {
     await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.click();
+    plan.navButtonView.hover();
     await expect(plan.navButtonViewMenu).toBeVisible();
-    plan.navButtonView.click();
+    plan.planTitle.hover();
     await expect(plan.navButtonViewMenu).not.toBeVisible();
   });
 
   test(`Clicking on 'Saved Views' in the view menu should pop up a SavedViewsModal`, async () => {
     await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.click();
+    plan.navButtonView.hover();
     await expect(plan.navButtonViewMenu).toBeVisible();
     await expect(plan.navButtonViewSavedViewsMenuButton).toBeVisible();
     await plan.navButtonViewSavedViewsMenuButton.click();

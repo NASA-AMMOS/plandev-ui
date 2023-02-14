@@ -17,10 +17,14 @@ export class Plan {
   gridMenu: Locator;
   gridMenuButton: Locator;
   gridMenuItem: (name: string) => Locator;
-  navButtonActivities: Locator;
   navButtonConstraints: Locator;
+  navButtonConstraintsMenu: Locator;
+  navButtonExpansion: Locator;
+  navButtonExpansionMenu: Locator;
   navButtonScheduling: Locator;
+  navButtonSchedulingMenu: Locator;
   navButtonSimulation: Locator;
+  navButtonSimulationMenu: Locator;
   navButtonView: Locator;
   navButtonViewMenu: Locator;
   navButtonViewSaveAsMenuButton: Locator;
@@ -42,10 +46,11 @@ export class Plan {
   schedulingConditionEnabledCheckbox: Locator;
   schedulingConditionListItemSelector: string;
   schedulingConditionNewButton: Locator;
+  schedulingGoal: Locator;
   schedulingGoalDifferenceBadge: Locator;
-  schedulingGoalEnabledCheckbox: Locator;
+  schedulingGoalEnabledCheckboxSelector: (goalName: string) => Locator;
   schedulingGoalExpand: Locator;
-  schedulingGoalListItemSelector: string;
+  schedulingGoalListItemSelector: (goalName: string) => string;
   schedulingGoalNewButton: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
@@ -59,8 +64,8 @@ export class Plan {
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
     this.schedulingConditionListItemSelector = `.scheduling-condition:has-text("${schedulingConditions.conditionName}")`;
-    this.schedulingGoalListItemSelector = `.scheduling-goal:has-text("${schedulingGoals.goalName}")`;
-    this.schedulingStatusSelector = (status: string) => `.status-badge.${status}`;
+    this.schedulingGoalListItemSelector = (goalName: string) => `.scheduling-goal:has-text("${goalName}")`;
+    this.schedulingStatusSelector = (status: string) => `.header-actions > .status-badge.${status}`;
     this.updatePage(page);
   }
 
@@ -87,22 +92,20 @@ export class Plan {
     await this.page.waitForSelector(this.schedulingConditionListItemSelector, { state: 'visible', strict: true });
   }
 
-  async createSchedulingGoal(baseURL: string | undefined) {
+  async createSchedulingGoal(baseURL: string | undefined, goalName: string) {
     const [newSchedulingGoalPage] = await Promise.all([
       this.page.waitForEvent('popup'),
       this.schedulingGoalNewButton.click(),
     ]);
     this.schedulingGoals.updatePage(newSchedulingGoalPage);
     await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?modelId=*&&specId=*`);
-    await this.schedulingGoals.createSchedulingGoal(baseURL);
+    await this.schedulingGoals.createSchedulingGoal(baseURL, goalName);
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
-    await this.page.waitForSelector(this.schedulingGoalListItemSelector, { state: 'visible', strict: true });
+    await this.page.waitForSelector(this.schedulingGoalListItemSelector(goalName), { state: 'visible', strict: true });
   }
 
   async deleteAllActivities() {
-    await this.navButtonActivities.click();
-    await this.activitiesTable.waitFor({ state: 'attached' });
     await expect(this.confirmModal).not.toBeVisible();
 
     await this.activitiesTableFirstRow.click({ button: 'right' });
@@ -115,7 +118,6 @@ export class Plan {
     await expect(this.confirmModal).toBeVisible();
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.page.pause();
     await this.activitiesTableFirstRow.waitFor({ state: 'detached' });
     await this.activitiesTableFirstRow.waitFor({ state: 'hidden' });
     await expect(this.activitiesTableFirstRow).not.toBeVisible();
@@ -150,11 +152,10 @@ export class Plan {
   }
 
   async showConstraintsLayout() {
-    await this.navButtonConstraints.click();
+    await this.showPanel('Constraints');
+    await this.showPanel('Constraint Violations', true);
     await this.panelConstraints.waitFor({ state: 'attached' });
     await this.panelConstraints.waitFor({ state: 'visible' });
-    await this.panelActivityForm.waitFor({ state: 'attached' });
-    await this.panelActivityForm.waitFor({ state: 'visible' });
     await this.panelActivityTable.waitFor({ state: 'attached' });
     await this.panelActivityTable.waitFor({ state: 'visible' });
     await this.panelConstraintViolations.waitFor({ state: 'attached' });
@@ -162,38 +163,37 @@ export class Plan {
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelConstraints).toBeVisible();
-    await expect(this.panelActivityForm).toBeVisible();
     await expect(this.panelActivityTable).toBeVisible();
     await expect(this.panelConstraintViolations).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
-    await expect(this.navButtonConstraints).toHaveClass(/selected/);
   }
 
-  async showPanel(name: string) {
+  async showPanel(name: string, pickLastMenu: boolean = false) {
     await expect(this.gridMenu).not.toBeVisible();
-    await this.gridMenuButton.first().click();
+    if (pickLastMenu) {
+      await this.gridMenuButton.last().click();
+    } else {
+      await this.gridMenuButton.first().click();
+    }
     await this.gridMenu.waitFor({ state: 'attached' });
     await this.gridMenu.waitFor({ state: 'visible' });
     await this.gridMenuItem(name).click();
   }
 
   async showSchedulingLayout() {
-    await this.navButtonScheduling.click();
+    await this.showPanel('Scheduling Goals');
+    await this.showPanel('Scheduling Conditions', true);
     await this.panelSchedulingGoals.waitFor({ state: 'attached' });
     await this.panelSchedulingGoals.waitFor({ state: 'visible' });
     await this.panelSchedulingConditions.waitFor({ state: 'attached' });
     await this.panelSchedulingConditions.waitFor({ state: 'visible' });
-    await this.panelActivityForm.waitFor({ state: 'attached' });
-    await this.panelActivityForm.waitFor({ state: 'visible' });
     await this.panelActivityTable.waitFor({ state: 'attached' });
     await this.panelActivityTable.waitFor({ state: 'visible' });
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelSchedulingGoals).toBeVisible();
-    await expect(this.panelActivityForm).toBeVisible();
     await expect(this.panelActivityTable).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
-    await expect(this.navButtonScheduling).toHaveClass(/selected/);
   }
 
   updatePage(page: Page): void {
@@ -209,16 +209,18 @@ export class Plan {
     this.gridMenuButton = page.locator('.grid-menu');
     this.gridMenuItem = (name: string) =>
       page.locator(`.grid-menu > .menu > .menu-slot > .menu-item:has-text("${name}")`);
-    this.navButtonActivities = page.locator(`.nav-button:has-text("Activities")`);
+    this.navButtonExpansion = page.locator(`.nav-button:has-text("Expansion")`);
+    this.navButtonExpansionMenu = page.locator(`.nav-button:has-text("Expansion") .menu`);
     this.navButtonConstraints = page.locator(`.nav-button:has-text("Constraints")`);
+    this.navButtonConstraintsMenu = page.locator(`.nav-button:has-text("Constraints") .menu`);
     this.navButtonScheduling = page.locator(`.nav-button:has-text("Scheduling")`);
+    this.navButtonSchedulingMenu = page.locator(`.nav-button:has-text("Scheduling") .menu`);
     this.navButtonSimulation = page.locator(`.nav-button:has-text("Simulation")`);
-    this.navButtonView = page.locator(`.nav-button:has-text("View")`);
-    this.navButtonViewMenu = page.locator(`.view-menu > .menu`);
-    this.navButtonViewSaveAsMenuButton = page.locator(`.view-menu > .menu .menu-item:has-text("Save as")`);
-    this.navButtonViewSavedViewsMenuButton = page.locator(
-      `.view-menu > .menu .menu-item:has-text("Browse saved views")`,
-    );
+    this.navButtonSimulationMenu = page.locator(`.nav-button:has-text("Simulation") .menu`);
+    this.navButtonView = page.locator('.view-menu');
+    this.navButtonViewMenu = page.locator(`.view-menu .menu`);
+    this.navButtonViewSaveAsMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Save as")`);
+    this.navButtonViewSavedViewsMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Browse saved views")`);
     this.page = page;
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
     this.panelActivityTable = page.locator('[data-component-name="ActivityTablePanel"]');
@@ -233,16 +235,16 @@ export class Plan {
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
     this.panelViewEditor = page.locator('[data-component-name="ViewEditorPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);
-    this.scheduleButton = page.locator('.header-actions > button[aria-label="Schedule"]');
-    this.analyzeButton = page.locator('.header-actions > button[aria-label="Analyze"]');
-    this.schedulingGoalDifferenceBadge = page.locator('.difference-badge');
-    this.schedulingGoalEnabledCheckbox = page.locator(
-      `.scheduling-goal:has-text("${this.schedulingGoals.goalName}") >> input[type="checkbox"]`,
-    );
-    this.schedulingConditionEnabledCheckbox = page.locator(
-      `.scheduling-condition:has-text("${this.schedulingConditions.conditionName}") >> input[type="checkbox"]`,
-    );
-    this.schedulingGoalExpand = page.locator('span[aria-label="scheduling-goal-expand"]');
+    this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
+    this.analyzeButton = page.locator('.header-actions button[aria-label="Analyze"]');
+    this.schedulingGoal = page.locator('.scheduling-goal').first();
+    this.schedulingGoalDifferenceBadge = this.schedulingGoal.locator('.difference-badge');
+    this.schedulingGoalEnabledCheckboxSelector = (goalName: string) =>
+      page.locator(`.scheduling-goal:has-text("${goalName}") >> input[type="checkbox"]`).first();
+    this.schedulingConditionEnabledCheckbox = page
+      .locator(`.scheduling-condition:has-text("${this.schedulingConditions.conditionName}") >> input[type="checkbox"]`)
+      .first();
+    this.schedulingGoalExpand = page.locator('span[aria-label="scheduling-goal-expand"]').first();
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('li > .satisfied-activity');

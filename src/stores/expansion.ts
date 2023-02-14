@@ -1,6 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import gql from '../utilities/gql';
+import type { Status } from '../utilities/status';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';
 
@@ -28,7 +29,9 @@ export const savingExpansionRule: Writable<boolean> = writable(false);
 
 export const savingExpansionSet: Writable<boolean> = writable(false);
 
-export const expandingPlan: Writable<boolean> = writable(false);
+export const planExpansionStatus: Writable<Status | null> = writable(null);
+
+export const selectedExpansionSetId: Writable<number | null> = writable(null);
 
 /* Derived. */
 

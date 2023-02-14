@@ -1,6 +1,7 @@
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import EditingIcon from '@nasa-jpl/stellar/icons/editing.svg?component';
+  import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import SpinnerIcon from '@nasa-jpl/stellar/icons/spinner.svg?component';
   import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot_horizontal.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
@@ -8,6 +9,7 @@
   import { tooltip } from '../../utilities/tooltip';
 
   export let status: Status | null = null;
+  export let showTooltip: boolean = true;
 
   let color: string = statusColors.gray;
 
@@ -19,7 +21,7 @@
     aria-label={status}
     class="status-badge {status}"
     style="background: {status === Status.Failed ? 'transparent' : color}"
-    use:tooltip={{ content: status, placement: 'bottom' }}
+    use:tooltip={{ content: showTooltip ? status : '', placement: 'bottom' }}
   >
     {#if status === Status.Complete}
       <CheckIcon />
@@ -31,6 +33,8 @@
       <EditingIcon />
     {:else if status === Status.Pending}
       <ThreeDotsIcon />
+    {:else if status === Status.PartialSuccess}
+      <MinusIcon />
     {/if}
   </span>
 {/if}

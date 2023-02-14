@@ -8,7 +8,7 @@ import {
   createDictionaryError,
   creatingDictionary,
   creatingExpansionSequence,
-  expandingPlan,
+  planExpansionStatus,
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
@@ -944,14 +944,14 @@ const effects = {
 
   async expand(expansionSetId: number, simulationDatasetId: number): Promise<void> {
     try {
-      expandingPlan.set(true);
+      planExpansionStatus.set(Status.Incomplete);
       await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
+      planExpansionStatus.set(Status.Complete);
       showSuccessToast('Plan Expanded Successfully');
-      expandingPlan.set(false);
     } catch (e) {
       catchError('Plan Expansion Failed', e);
+      planExpansionStatus.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
-      expandingPlan.set(false);
     }
   },
 

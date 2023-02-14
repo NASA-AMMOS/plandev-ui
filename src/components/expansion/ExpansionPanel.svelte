@@ -4,9 +4,10 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import {
     creatingExpansionSequence,
-    expandingPlan,
     expansionSets,
     filteredExpansionSequences,
+    planExpansionStatus,
+    selectedExpansionSetId,
   } from '../../stores/expansion';
   import { simulationDatasetId } from '../../stores/simulation';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -19,6 +20,8 @@
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
+  import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
+  import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
   export let gridId: number;
 
@@ -87,11 +90,10 @@
 
   let createButtonEnabled: boolean = false;
   let expandButtonEnabled: boolean = false;
-  let selectedExpansionSetId: number | null = null;
   let seqIdInput: string = '';
 
   $: createButtonEnabled = seqIdInput !== '';
-  $: expandButtonEnabled = selectedExpansionSetId !== null;
+  $: expandButtonEnabled = $selectedExpansionSetId !== null;
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence);
@@ -113,15 +115,14 @@
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridId} title="Expansion" />
-    <div class="right">
-      <button
-        class="st-button secondary ellipsis"
-        disabled={!expandButtonEnabled}
-        on:click|stopPropagation={() => effects.expand(selectedExpansionSetId, $simulationDatasetId)}
-      >
-        {$expandingPlan ? 'Expanding... ' : 'Expand'}
-      </button>
-    </div>
+    <PanelHeaderActions status={$planExpansionStatus}>
+      <PanelHeaderActionButton
+        title="Expand"
+        showLabel
+        disabled={$selectedExpansionSetId === null}
+        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId)}
+      />
+    </PanelHeaderActions>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -129,7 +130,7 @@
       <fieldset>
         <label for="expansionSet">Expansion Set</label>
         <select
-          bind:value={selectedExpansionSetId}
+          bind:value={$selectedExpansionSetId}
           class="st-select w-100"
           disabled={!$expansionSets.length}
           name="expansionSet"
