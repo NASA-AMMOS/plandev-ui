@@ -1,5 +1,12 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { ActivitiesByView, ActivitiesMap, Activity, ActivityDirective, ActivityUniqueId } from '../types/activity';
+import type {
+  ActivitiesByView,
+  ActivitiesMap,
+  Activity,
+  ActivityDirective,
+  ActivityUniqueId,
+  AnchorValidationStatus,
+} from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
 import gql from '../utilities/gql';
 import { planId } from './plan';
@@ -9,6 +16,12 @@ import { view } from './views';
 /* Subscriptions. */
 
 export const activityDirectives = gqlSubscribable<ActivityDirective[]>(gql.SUB_ACTIVITY_DIRECTIVES, { planId }, []);
+
+export const anchorValidationStatuses = gqlSubscribable<AnchorValidationStatus[]>(
+  gql.SUB_ANCHOR_VALIDATION_STATUS,
+  { planId },
+  [],
+);
 
 export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefinition[]>(
   gql.SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS,

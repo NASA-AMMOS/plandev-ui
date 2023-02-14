@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import {
+  convertDurationStringToInterval,
   convertDurationStringToUs,
   convertUsToDurationString,
   getDaysInMonth,
@@ -12,8 +13,21 @@ import {
 
 test('convertDurationStringToUs', () => {
   expect(convertDurationStringToUs('2y 318d 6h 16m 19s 200ms 0us')).toEqual(90577779200000);
+  expect(convertDurationStringToUs('100ms -1000us')).toEqual(99000);
   expect(convertDurationStringToUs('200ms 0us')).toEqual(200000);
   expect(convertDurationStringToUs('30s')).toEqual(3e7);
+  expect(convertDurationStringToUs('300')).toEqual(300);
+  expect(() => convertDurationStringToUs('30f')).toThrowError('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
+});
+
+test('convertDurationStringToInterval', () => {
+  expect(convertDurationStringToInterval('2y 318d 6h 16m 19s 200ms 0us')).toEqual(
+    '2 years 318 days 6 hours 16 minutes 19 seconds 200 milliseconds',
+  );
+  expect(convertDurationStringToInterval('1d 5h 23m 0s 300ms')).toEqual('1 day 5 hours 23 minutes 300 milliseconds');
+  expect(convertDurationStringToInterval('1d -5h')).toEqual('19 hours');
+  expect(convertDurationStringToInterval('- 5h 23m 0s 300ms')).toEqual('-5 hours -23 minutes -300 milliseconds');
+
   expect(() => convertDurationStringToUs('30f')).toThrowError('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
 });
 
@@ -21,6 +35,7 @@ test('convertUsToDurationString', () => {
   expect(convertUsToDurationString(90577779200000)).toEqual('2y 318d 6h 16m 19s 200ms');
   expect(convertUsToDurationString(200000)).toEqual('200ms');
   expect(convertUsToDurationString(3e7)).toEqual('30s');
+  expect(convertUsToDurationString(-8.64e10)).toEqual('- 1d');
 });
 
 test('getDaysInMonth', () => {

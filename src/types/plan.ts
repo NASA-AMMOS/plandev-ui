@@ -46,8 +46,11 @@ export type PlanMergeRequestSchema = {
     name: string;
   };
   plan_snapshot_supplying_changes: {
+    duration: string;
     name: string;
+    plan_id: number;
     snapshot_id: number;
+    start_time: string;
   };
   requester_username: string;
   reviewer_username: string;
@@ -75,5 +78,7 @@ export type PlanSlim = Pick<
   Plan,
   'end_time_doy' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time' | 'start_time_doy'
 >;
+
+export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;
 
 export type PlanSchedulingSpec = Pick<Plan, 'id' | 'name' | 'scheduling_specifications' | 'model_id'>;

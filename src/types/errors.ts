@@ -12,6 +12,10 @@ export interface CaughtError extends BaseError {
   type: ErrorTypes.CAUGHT_ERROR;
 }
 
+export interface AnchorValidationError extends BaseError {
+  type: ErrorTypes.ANCHOR_VALIDATION_ERROR;
+}
+
 export interface SchedulingError extends BaseError {
   data: {
     errors: {

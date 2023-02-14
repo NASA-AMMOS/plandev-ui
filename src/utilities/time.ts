@@ -1,5 +1,103 @@
 import parse from 'postgres-interval';
-import type { ParsedDoyString, ParsedYmdString } from '../types/time';
+import type { ParsedDoyString, ParsedDurationString, ParsedYmdString } from '../types/time';
+
+function parseDurationString(durationString: string): ParsedDurationString | never {
+  const validNegationRegex = `((?<isNegative>-)\\s)?`;
+  const validDurationValueRegex = `-?\\d+(?:\\.\\d+)?`;
+  const validYearsDurationRegex = `(?:\\s*(?<years>${validDurationValueRegex})y)`;
+  const validDaysDurationRegex = `(?:\\s*(?<days>${validDurationValueRegex})d)`;
+  const validHoursDurationRegex = `(?:\\s*(?<hours>${validDurationValueRegex})h)`;
+  const validMinutesDurationRegex = `(?:\\s*(?<minutes>${validDurationValueRegex})m(?!s))`;
+  const validSecondsDurationRegex = `(?:\\s*(?<seconds>${validDurationValueRegex})s)`;
+  const validMillisecondsDurationRegex = `(?:\\s*(?<milliseconds>${validDurationValueRegex})ms)`;
+  const validMicrosecondsDurationRegex = `(?:\\s*(?<microseconds>${validDurationValueRegex})us)`;
+
+  const fullValidDurationRegex = new RegExp(
+    `^${validNegationRegex}${validYearsDurationRegex}?${validDaysDurationRegex}?${validHoursDurationRegex}?${validMinutesDurationRegex}?${validSecondsDurationRegex}?${validMillisecondsDurationRegex}?${validMicrosecondsDurationRegex}?$`,
+  );
+
+  const matches = durationString.match(fullValidDurationRegex);
+
+  if (matches !== null) {
+    const {
+      groups: {
+        isNegative = '',
+        years = '0',
+        days = '0',
+        hours = '0',
+        minutes = '0',
+        seconds = '0',
+        milliseconds = '0',
+        microseconds = '0',
+      } = {},
+    } = matches;
+
+    return {
+      days: parseFloat(days),
+      hours: parseFloat(hours),
+      isNegative: !!isNegative,
+      microseconds: parseFloat(microseconds),
+      milliseconds: parseFloat(milliseconds),
+      minutes: parseFloat(minutes),
+      seconds: parseFloat(seconds),
+      years: parseFloat(years),
+    };
+  }
+
+  const fullMicrosecondsRegex = new RegExp(`^${validDurationValueRegex}$`);
+
+  if (fullMicrosecondsRegex.test(durationString)) {
+    const microseconds = parseFloat(durationString);
+    return {
+      days: 0,
+      hours: 0,
+      isNegative: microseconds < 0,
+      microseconds,
+      milliseconds: 0,
+      minutes: 0,
+      seconds: 0,
+      years: 0,
+    };
+  }
+
+  throw Error('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
+}
+
+function addUnit(value: number, unit: string, isNegative: boolean) {
+  return `${isNegative ? '-' : ''}${value} ${value !== 1 ? `${unit}s` : unit}`;
+}
+
+/**
+ * Get a Postgres Interval duration given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
+ * @example convertDurationStringToInterval('8d 6h 16m') -> 8 days 6 hours 16 minutes
+ */
+export function convertDurationStringToInterval(durationString: string): string | never {
+  const parsedDuration = parseDurationString(convertUsToDurationString(convertDurationStringToUs(durationString)));
+
+  const { isNegative, years, days, hours, minutes, seconds, milliseconds, microseconds } = parsedDuration;
+
+  const yearsString = years ? addUnit(years, 'year', isNegative) : '';
+  const daysString = days ? addUnit(days, 'day', isNegative) : '';
+  const hoursString = hours ? addUnit(hours, 'hour', isNegative) : '';
+  const minutesString = minutes ? addUnit(minutes, 'minute', isNegative) : '';
+  const secondsString = seconds ? addUnit(seconds, 'second', isNegative) : '';
+  const millisecondsString = milliseconds ? addUnit(milliseconds, 'millisecond', isNegative) : '';
+  const microsecondsString = microseconds ? addUnit(microseconds, 'microsecond', isNegative) : '';
+
+  const intervalString = [
+    yearsString,
+    daysString,
+    hoursString,
+    minutesString,
+    secondsString,
+    millisecondsString,
+    microsecondsString,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return intervalString ? intervalString : '0';
+}
 
 /**
  * Get a number value in microseconds given a string duration of the format '2y 318d 6h 16m 19s 200ms 0us'.
@@ -14,54 +112,21 @@ export function convertDurationStringToUs(durationString: string): number | neve
   const usPerSecond = 1000000;
   const usPerMillisecond = 1000;
 
-  const validDurationValueRegex = `-?\\d+(?:\\.\\d+)?`;
-  const validYearsDurationRegex = `(?:\\s*(?<years>${validDurationValueRegex})y)`;
-  const validDaysDurationRegex = `(?:\\s*(?<days>${validDurationValueRegex})d)`;
-  const validHoursDurationRegex = `(?:\\s*(?<hours>${validDurationValueRegex})h)`;
-  const validMinutesDurationRegex = `(?:\\s*(?<minutes>${validDurationValueRegex})m(?!s))`;
-  const validSecondsDurationRegex = `(?:\\s*(?<seconds>${validDurationValueRegex})s)`;
-  const validMillisecondsDurationRegex = `(?:\\s*(?<milliseconds>${validDurationValueRegex})ms)`;
-  const validMicrosecondsDurationRegex = `(?:\\s*(?<microseconds>${validDurationValueRegex})us)`;
+  const parsedDuration = parseDurationString(durationString);
 
-  const fullValidDurationRegex = new RegExp(
-    `^${validYearsDurationRegex}?${validDaysDurationRegex}?${validHoursDurationRegex}?${validMinutesDurationRegex}?${validSecondsDurationRegex}?${validMillisecondsDurationRegex}?${validMicrosecondsDurationRegex}?$`,
-  );
+  let durationUs = 0;
 
-  const matches = durationString.match(fullValidDurationRegex);
+  const { isNegative, years, days, hours, minutes, seconds, milliseconds, microseconds } = parsedDuration;
 
-  if (matches !== null) {
-    let durationUs = 0;
+  durationUs += years * usPerYear;
+  durationUs += days * usPerDay;
+  durationUs += hours * usPerHour;
+  durationUs += minutes * usPerMinute;
+  durationUs += seconds * usPerSecond;
+  durationUs += milliseconds * usPerMillisecond;
+  durationUs += microseconds;
 
-    const {
-      groups: {
-        years = '0',
-        days = '0',
-        hours = '0',
-        minutes = '0',
-        seconds = '0',
-        milliseconds = '0',
-        microseconds = '0',
-      } = {},
-    } = matches;
-
-    durationUs += parseFloat(years) * usPerYear;
-    durationUs += parseFloat(days) * usPerDay;
-    durationUs += parseFloat(hours) * usPerHour;
-    durationUs += parseFloat(minutes) * usPerMinute;
-    durationUs += parseFloat(seconds) * usPerSecond;
-    durationUs += parseFloat(milliseconds) * usPerMillisecond;
-    durationUs += parseFloat(microseconds);
-
-    return durationUs;
-  }
-
-  const fullMicrosecondsRegex = new RegExp(`^${validDurationValueRegex}$`);
-
-  if (fullMicrosecondsRegex.test(durationString)) {
-    return parseFloat(durationString);
-  }
-
-  throw Error('Must be of format: 1y 3d 2h 24m 35s 18ms 70us');
+  return durationUs * (isNegative ? -1 : 1);
 }
 
 /**
@@ -81,30 +146,36 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
   const minutesPerHour = 60;
   const secondsPerMinute = 60;
 
-  const years = Math.floor(durationUs / usPerYear);
-  durationUs -= years * usPerYear;
+  const isNegative = durationUs < 0;
+  let absoluteDuration = Math.abs(durationUs);
 
-  const days = Math.floor(durationUs / usPerDay);
-  durationUs -= days * usPerDay;
+  const years = Math.floor(absoluteDuration / usPerYear);
+  absoluteDuration -= years * usPerYear;
 
-  const hours = Math.floor(durationUs / usPerHour) % hoursPerDay;
-  durationUs -= hours * usPerHour;
+  const days = Math.floor(absoluteDuration / usPerDay);
+  absoluteDuration -= days * usPerDay;
 
-  const minutes = Math.floor(durationUs / usPerMinute) % minutesPerHour;
-  durationUs -= minutes * usPerMinute;
+  const hours = Math.floor(absoluteDuration / usPerHour) % hoursPerDay;
+  absoluteDuration -= hours * usPerHour;
 
-  const seconds = Math.floor(durationUs / usPerSecond) % secondsPerMinute;
-  durationUs -= seconds * usPerSecond;
+  const minutes = Math.floor(absoluteDuration / usPerMinute) % minutesPerHour;
+  absoluteDuration -= minutes * usPerMinute;
 
-  const milliseconds = Math.floor(durationUs / usPerMillisecond);
-  durationUs -= milliseconds * usPerMillisecond;
+  const seconds = Math.floor(absoluteDuration / usPerSecond) % secondsPerMinute;
+  absoluteDuration -= seconds * usPerSecond;
 
-  const microseconds = durationUs;
+  const milliseconds = Math.floor(absoluteDuration / usPerMillisecond);
+  absoluteDuration -= milliseconds * usPerMillisecond;
+
+  const microseconds = absoluteDuration;
 
   if (includeZeros) {
-    return `${years}y ${days}d ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms ${microseconds}us`;
+    return `${
+      isNegative ? '- ' : ''
+    }${years}y ${days}d ${hours}h ${minutes}m ${seconds}s ${milliseconds}ms ${microseconds}us`;
   }
 
+  const negativeString = isNegative ? '-' : '';
   const yearsString = years ? `${years}y` : '';
   const daysString = days ? `${days}d` : '';
   const hoursString = hours ? `${hours}h` : '';
@@ -113,7 +184,16 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
   const millisecondsString = milliseconds ? `${milliseconds}ms` : '';
   const microsecondsString = microseconds ? `${microseconds}us` : '';
 
-  return [yearsString, daysString, hoursString, minutesString, secondsString, millisecondsString, microsecondsString]
+  return [
+    negativeString,
+    yearsString,
+    daysString,
+    hoursString,
+    minutesString,
+    secondsString,
+    millisecondsString,
+    microsecondsString,
+  ]
     .filter(Boolean)
     .join(' ');
 }

@@ -136,6 +136,8 @@ const effects = {
       const start_offset = getIntervalFromDoyRange(currentPlan.start_time_doy, start_time_doy);
       const tagsString = formatHasuraStringArray(tags);
       const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
+        anchor_id: null,
+        anchored_to_start: true,
         arguments: argumentsMap,
         metadata,
         name,
@@ -155,6 +157,8 @@ const effects = {
       const uniqueId = getActivityDirectiveUniqueId(currentPlan.id, id);
 
       const activity: Activity = {
+        anchor_id: null,
+        anchored_to_start: true,
         arguments: argumentsMap,
         attributes: null,
         childUniqueIds: [],
@@ -169,6 +173,7 @@ const effects = {
         plan_id: currentPlan.id,
         simulated_activity_id: null,
         source_scheduling_goal_id: null,
+        start_offset,
         start_time_doy,
         tags,
         type,
@@ -1704,9 +1709,30 @@ const effects = {
       activityDirectiveSetInput.arguments = activity.arguments;
     }
 
+    if (activity.anchor_id !== undefined) {
+      activityDirectiveSetInput.anchor_id = activity.anchor_id;
+    }
+
+    if (activity.anchored_to_start !== undefined) {
+      activityDirectiveSetInput.anchored_to_start = activity.anchored_to_start;
+    }
+
     if (activity.start_time_doy) {
       const planStartTimeDoy = get<Plan>(plan).start_time_doy;
-      activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTimeDoy, activity.start_time_doy);
+      const directivesMap = get<ActivitiesMap>(activitiesMap);
+      const { anchor_id } = directivesMap[getActivityDirectiveUniqueId(plan_id, id)];
+      if (anchor_id) {
+        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(
+          directivesMap[getActivityDirectiveUniqueId(plan_id, anchor_id)].start_time_doy,
+          activity.start_time_doy,
+        );
+      } else {
+        activityDirectiveSetInput.start_offset = getIntervalFromDoyRange(planStartTimeDoy, activity.start_time_doy);
+      }
+    }
+
+    if (activity.start_offset) {
+      activityDirectiveSetInput.start_offset = activity.start_offset;
     }
 
     if (activity.tags) {

@@ -34,6 +34,7 @@
   import { resetConstraintStores } from '../../../stores/constraints';
   import {
     allErrors,
+    anchorValidationErrors,
     clearAllErrors,
     clearSchedulingErrors,
     schedulingErrors,
@@ -280,6 +281,9 @@
         </div>
         <div class="separator">|</div>
         <div class="grouped-error-tabs">
+          <ConsoleTab numberOfErrors={$anchorValidationErrors?.length} title="Anchor Validation Errors">
+            <ActivityIcon />
+          </ConsoleTab>
           <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
           <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors">
             <GearWideConnectedIcon />
@@ -289,6 +293,7 @@
     </svelte:fragment>
 
     <ConsoleSection errors={$allErrors} title="All Errors" on:clearMessages={onClearAllErrors} />
+    <ConsoleSection errors={$anchorValidationErrors} title="Anchor Validation Errors" />
     <ConsoleSection errors={$schedulingErrors} title="Scheduling Errors" on:clearMessages={onClearSchedulingErrors} />
     <ConsoleSection errors={$simulationDatasetErrors} isClearable={false} title="Simulation Errors" />
   </Console>

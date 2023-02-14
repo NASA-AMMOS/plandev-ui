@@ -5,6 +5,8 @@ import ActivityDecomposition from './ActivityDecomposition.svelte';
 
 const activitiesMap: ActivitiesMap = {
   directive_0_12: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {},
@@ -22,6 +24,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 29,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2022-062T10:00:00.000',
     tags: [],
     type: 'parent',
@@ -29,6 +32,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'directive_0_12',
   },
   span_68: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -48,6 +53,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 68,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-129T03:38:49.856',
     tags: [],
     type: 'grandchild1',
@@ -55,6 +61,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'span_68',
   },
   span_69: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -74,6 +82,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 69,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-072T03:38:49.856',
     tags: [],
     type: 'grandchild2',
@@ -81,6 +90,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'span_69',
   },
   span_70: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -100,6 +111,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 70,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-072T03:38:49.856',
     tags: [],
     type: 'child1',
@@ -107,6 +119,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'span_70',
   },
   span_71: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -126,6 +140,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 71,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-093T03:38:49.856',
     tags: [],
     type: 'grandchild3',
@@ -133,6 +148,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'span_71',
   },
   span_72: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -152,6 +169,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 72,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-129T03:38:49.856',
     tags: [],
     type: 'child2',
@@ -159,6 +177,8 @@ const activitiesMap: ActivitiesMap = {
     uniqueId: 'span_72',
   },
   span_73: {
+    anchor_id: null,
+    anchored_to_start: true,
     arguments: {},
     attributes: {
       arguments: {
@@ -178,6 +198,7 @@ const activitiesMap: ActivitiesMap = {
     plan_id: 0,
     simulated_activity_id: 73,
     source_scheduling_goal_id: null,
+    start_offset: '00:00:00.00',
     start_time_doy: '2020-150T03:38:49.856',
     tags: [],
     type: 'grandchild4',

@@ -4,7 +4,14 @@
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import { field } from '../../stores/form';
-  import type { ActivitiesMap, Activity, ActivityId, ActivityType, ActivityUniqueId } from '../../types/activity';
+  import type {
+    ActivitiesMap,
+    Activity,
+    ActivityDirectiveId,
+    ActivityId,
+    ActivityType,
+    ActivityUniqueId,
+  } from '../../types/activity';
   import type { ActivityMetadata, ActivityMetadataDefinition } from '../../types/activity-metadata';
   import type { ExpansionSequence } from '../../types/expansion';
   import type { FieldStore } from '../../types/form';
@@ -24,6 +31,7 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Highlight from '../ui/Highlight.svelte';
   import Tags from '../ui/Tags.svelte';
+  import ActivityAnchorForm from './ActivityAnchorForm.svelte';
   import ActivityDecomposition from './ActivityDecomposition.svelte';
 
   export let activity: Activity;
@@ -43,6 +51,8 @@
 
   // Activity vars.
   let activityName: string | null = null;
+  let anchorId: ActivityDirectiveId | null = null;
+  let isAnchoredToStart: boolean = true;
   let argumentsMap: ArgumentsMap | null = null;
   let creationTime: string | null = null;
   let duration: string | null = null;
@@ -59,6 +69,7 @@
   let seq_id: string | null = null;
   let simulated_activity_id: number | null = null;
   let sourceSchedulingGoalId: number | null = null;
+  let startOffset: string = null;
   let startTimeDoy: string | null = null;
   let tags: string[] = [];
   let type: string | null = null;
@@ -78,6 +89,8 @@
 
   $: if (activity) {
     activityName = activity.name;
+    anchorId = activity.anchor_id;
+    isAnchoredToStart = activity.anchored_to_start;
     argumentsMap = activity.arguments;
     creationTime = activity.created_at;
     duration = activity.duration;
@@ -90,6 +103,7 @@
     root_activity = getActivityRootParent(activitiesMap, activity.uniqueId);
     simulated_activity_id = activity.simulated_activity_id;
     sourceSchedulingGoalId = activity.source_scheduling_goal_id;
+    startOffset = activity.start_offset;
     startTimeDoy = activity.start_time_doy;
     tags = activity.tags;
     type = activity.type;
@@ -114,6 +128,7 @@
     seq_id = null;
     simulated_activity_id = null;
     sourceSchedulingGoalId = null;
+    startOffset = '0';
     startTimeDoy = null;
     type = null;
     unfinished = null;
@@ -215,13 +230,25 @@
     }
   }
 
-  async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+  function updateAnchor({ detail: anchorId }: CustomEvent<ActivityId>) {
+    effects.updateActivityDirective(plan_id, id, { anchor_id: anchorId });
+  }
+
+  function updateAnchorEdge({ detail: isStart }: CustomEvent<boolean>) {
+    effects.updateActivityDirective(plan_id, id, { anchored_to_start: isStart });
+  }
+
+  function updateStartOffset({ detail: offset }: CustomEvent<string>) {
+    effects.updateActivityDirective(plan_id, id, { start_offset: offset });
+  }
+
+  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const newArguments = getArguments(argumentsMap, formParameter);
     effects.updateActivityDirective(plan_id, id, { arguments: newArguments });
   }
 
-  async function onChangeActivityMetadata(event: CustomEvent<{ key: string; value: any }>) {
+  function onChangeActivityMetadata(event: CustomEvent<{ key: string; value: any }>) {
     const { detail } = event;
     const { key, value } = detail;
     const newActivityMetadata = getActivityMetadata(metadata, key, value);
@@ -411,7 +438,7 @@
 
         <Highlight highlight={highlightKeysMap.start_time_doy}>
           <DatePickerField
-            disabled={isChild || !editable}
+            disabled={isChild || !editable || !!activity.anchor_id}
             field={startTimeDoyField}
             label="Start Time - YYYY-DDDThh:mm:ss"
             layout="inline"
@@ -420,6 +447,22 @@
             on:keydown={onUpdateStartTime}
           />
         </Highlight>
+
+        {#if !isChild}
+          <ActivityAnchorForm
+            {activity}
+            {activitiesMap}
+            {anchorId}
+            disabled={!editable}
+            {highlightKeysMap}
+            {isAnchoredToStart}
+            planId={plan_id}
+            {startOffset}
+            on:updateAnchor={updateAnchor}
+            on:updateAnchorEdge={updateAnchorEdge}
+            on:updateStartOffset={updateStartOffset}
+          />
+        {/if}
 
         {#if duration !== null}
           <Highlight highlight={highlightKeysMap.end_time}>

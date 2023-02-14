@@ -27,6 +27,22 @@
   }
 
   const defaultColumnDefinitions: Partial<Record<keyof Activity, ActivityColDef>> = {
+    anchor_id: {
+      field: 'anchor_id',
+      filter: 'text',
+      headerName: 'Anchor ID',
+      hide: true,
+      resizable: true,
+      sortable: true,
+    },
+    anchored_to_start: {
+      field: 'anchored_to_start',
+      filter: 'text',
+      headerName: 'Anchored to Start',
+      hide: true,
+      resizable: false,
+      sortable: true,
+    },
     arguments: {
       field: 'arguments',
       filter: 'text',
@@ -99,6 +115,14 @@
       field: 'source_scheduling_goal_id',
       filter: 'number',
       headerName: 'Scheduling Goal ID',
+      hide: true,
+      resizable: true,
+      sortable: true,
+    },
+    start_offset: {
+      field: 'start_offset',
+      filter: 'text',
+      headerName: 'Start Offset',
       hide: true,
       resizable: true,
       sortable: true,
