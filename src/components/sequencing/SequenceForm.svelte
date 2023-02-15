@@ -18,7 +18,7 @@
 
   export let initialSequenceCommandDictionaryId: number | null = null;
   export let initialSequenceCreatedAt: string | null = null;
-  export let initialSequenceDefinition: string = `export default () =>\n  Sequence.new({\n    seqId: '',\n    metadata: {},\n    commands: []\n  });\n`;
+  export let initialSequenceDefinition: string = `export default () =>\n  Sequence.new({\n    seqId: '',\n    metadata: {},\n    steps: []\n  });\n`;
   export let initialSequenceId: number | null = null;
   export let initialSequenceName: string = '';
   export let initialSequenceUpdatedAt: string | null = null;

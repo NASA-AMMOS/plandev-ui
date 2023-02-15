@@ -776,6 +776,8 @@ const gql = {
           metadata
           steps {
             args
+            description
+            models
             metadata
             stem
             time {
