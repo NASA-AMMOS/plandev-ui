@@ -34,7 +34,6 @@
   let startOffsetError: string | null = null;
 
   $: anchoredActivity = anchorId !== null ? activitiesMap[getActivityDirectiveUniqueId(planId, anchorId)] : null;
-  $: anchorInputString = anchoredActivity ? formatActivityAnchorText(anchoredActivity) : defaultAnchorString;
   $: anchorableActivityDirectives = Object.values(activitiesMap)
     .filter(directive => isDirective(directive) && directive.id !== activity.id)
     .map(formatActivityAnchorText);
@@ -50,6 +49,9 @@
     previousActivityId = activity.id;
     isRelativeOffset =
       !!activity.anchor_id || (!activity.anchor_id && !activity.anchored_to_start) || !!startOffsetError;
+
+    anchorInputString = anchoredActivity ? formatActivityAnchorText(anchoredActivity) : defaultAnchorString;
+    validateAnchorInput(anchorInputString);
   }
 
   function formatActivityAnchorText(activity: Activity) {
@@ -74,6 +76,15 @@
     return validationError;
   }
 
+  function getAnchorActivity(inputString: string): Activity | null {
+    const activityId = getIdFromAnchorText(inputString);
+    if (activityId !== '' && !/to plan/i.test(anchorInputString)) {
+      return activitiesMap[getActivityDirectiveUniqueId(planId, parseInt(activityId))];
+    }
+
+    return null;
+  }
+
   function updateAnchor(activity: Activity | null) {
     anchoredActivity = activity;
     if (activity === null) {
@@ -95,28 +106,9 @@
   }
 
   function onUpdateAnchor() {
-    const activityId = getIdFromAnchorText(anchorInputString);
-
-    anchoredActivityError = null;
-
-    if (activityId !== '') {
-      try {
-        const activityToAnchorTo = activitiesMap[getActivityDirectiveUniqueId(planId, parseInt(activityId))];
-
-        if (!activityToAnchorTo) {
-          throw Error('Activity corresponding to chosen anchor was not found');
-        }
-
-        if (activityToAnchorTo.id === activity.id) {
-          throw Error('Current selected activity anchor cannot be itself');
-        }
-
-        updateAnchor(activityToAnchorTo);
-      } catch (e) {
-        anchoredActivityError = e.message;
-      }
-    } else {
-      updateAnchor(null);
+    if (validateAnchorInput(anchorInputString)) {
+      const activityToAnchorTo = getAnchorActivity(anchorInputString);
+      updateAnchor(activityToAnchorTo);
     }
   }
 
@@ -141,6 +133,29 @@
       updateStartOffset(convertDurationStringToInterval(`${value}`));
     } catch (error) {
       startOffsetError = error.message;
+    }
+  }
+
+  function validateAnchorInput(inputString: string): boolean {
+    anchoredActivityError = null;
+    try {
+      const activityId = getIdFromAnchorText(inputString);
+      if (activityId !== '' && !/to plan/i.test(anchorInputString)) {
+        const activityToAnchorTo = activitiesMap[getActivityDirectiveUniqueId(planId, parseInt(activityId))];
+
+        if (!activityToAnchorTo) {
+          throw Error('Activity corresponding to chosen anchor was not found');
+        }
+
+        if (activityToAnchorTo.id === activity.id) {
+          throw Error('Current selected activity anchor cannot be itself');
+        }
+      }
+
+      return true;
+    } catch (e) {
+      anchoredActivityError = e.message;
+      return false;
     }
   }
 </script>
