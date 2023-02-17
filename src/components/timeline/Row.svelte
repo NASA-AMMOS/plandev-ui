@@ -6,10 +6,9 @@
   import { select } from 'd3-selection';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import { selectedRow, view, viewSetSelectedRow, viewUpdateLayout } from '../../stores/views';
+  import { selectedRow, viewSetSelectedRow, viewUpdateGrid } from '../../stores/views';
   import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { GridColumns } from '../../types/grid';
   import type { Resource } from '../../types/simulation';
   import type {
     Axis,
@@ -158,16 +157,10 @@
   }
 
   function onEditRow() {
-    // Open the timeline editor panel on the right. For now we will assume
-    // the right panel is the last component in the view and that the panel is open.
-    // This will be improved after future layout enhancements.
-    const gridColumns = $view.definition.plan.layout as GridColumns;
-    const components = gridColumns.columns.filter(grid => grid.type === 'component');
-    if (components.length) {
-      viewUpdateLayout(components[components.length - 1].id, { componentName: 'TimelineEditorPanel' });
-    }
+    // Open the timeline editor panel on the right.
+    viewUpdateGrid({ rightComponentTop: 'TimelineEditorPanel', rightHidden: false });
 
-    // Set row to edit
+    // Set row to edit.
     viewSetSelectedRow(id);
   }
 </script>

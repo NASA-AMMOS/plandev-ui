@@ -7,16 +7,13 @@
   import { resourcesByViewLayerId } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import effects from '../../utilities/effects';
-  import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import Timeline from './Timeline.svelte';
   import TimelineLockControl from './TimelineLockControl.svelte';
   import TimelineViewControls from './TimelineViewControls.svelte';
 
-  export let gridId: number;
-  export let timelineId: number;
-
+  let timelineId: number = 0;
   let isDeletingDirective: boolean = false;
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
@@ -32,7 +29,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Timeline" />
+    <div />
     <PanelHeaderActions>
       <div class="header-actions">
         <TimelineViewControls
@@ -62,7 +59,6 @@
     <Timeline
       activitiesByView={$activitiesByView}
       constraintViolations={$constraintViolations}
-      {gridId}
       maxTimeRange={$maxTimeRange}
       {timeline}
       resourcesByViewLayerId={$resourcesByViewLayerId}

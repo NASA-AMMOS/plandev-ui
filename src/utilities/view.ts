@@ -208,6 +208,22 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             id: 0,
           },
         ],
+        grid: {
+          columnSizes: '1fr 3px 3fr 3px 1fr',
+          leftComponentBottom: 'SimulationPanel',
+          leftComponentTop: 'ActivityTypesPanel',
+          leftHidden: false,
+          leftRowSizes: '1fr 3px 1fr',
+          leftSplit: false,
+          middleComponentBottom: 'ActivityTablePanel',
+          middleRowSizes: '2fr 3px 1fr',
+          middleSplit: true,
+          rightComponentBottom: 'TimelineEditorPanel',
+          rightComponentTop: 'ActivityFormPanel',
+          rightHidden: false,
+          rightRowSizes: '1fr 3px 1fr',
+          rightSplit: false,
+        },
         iFrames: [
           {
             id: 0,
@@ -215,28 +231,6 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             title: 'Mars-2020-EDL',
           },
         ],
-        layout: {
-          columnSizes: '1fr 3px 3fr 3px 1fr',
-          columns: [
-            { componentName: 'ActivityTypesPanel', id: 1, type: 'component' },
-            { id: 2, track: 1, type: 'gutter' },
-            {
-              id: 3,
-              rowSizes: '2fr 3px 1fr',
-              rows: [
-                { componentName: 'TimelinePanel', id: 4, timelineId: 0, type: 'component' },
-                { id: 5, track: 1, type: 'gutter' },
-                { activityTableId: 0, componentName: 'ActivityTablePanel', id: 6, type: 'component' },
-              ],
-              type: 'rows',
-            },
-            { id: 7, track: 3, type: 'gutter' },
-            { componentName: 'ActivityFormPanel', id: 8, type: 'component' },
-          ],
-          gridName: 'View',
-          id: 0,
-          type: 'columns',
-        },
         timelines: [
           {
             id: 0,

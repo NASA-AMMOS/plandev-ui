@@ -12,6 +12,7 @@
   import { simulationDatasetId } from '../../stores/simulation';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpansionSequence } from '../../types/expansion';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
   import Input from '../form/Input.svelte';
@@ -23,7 +24,7 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   type CellRendererParams = {
     deleteExpansionSequence: (sequence: ExpansionSequence) => void;
@@ -114,7 +115,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Expansion" />
+    <GridMenu {gridSection} title="Expansion" />
     <PanelHeaderActions status={$planExpansionStatus}>
       <PanelHeaderActionButton
         title="Expand"

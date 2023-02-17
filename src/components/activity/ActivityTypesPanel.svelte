@@ -4,13 +4,14 @@
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { activityTypes, plan } from '../../stores/plan';
   import type { ActivityType } from '../../types/activity';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let filterText: string = '';
 
@@ -42,7 +43,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Activity Types" />
+    <GridMenu {gridSection} title="Activity Types" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

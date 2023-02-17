@@ -4,6 +4,7 @@
   import { base } from '$app/paths';
   import { checkConstraintsStatus, constraints } from '../../stores/constraints';
   import type { Constraint } from '../../types/constraint';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -12,7 +13,7 @@
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import ConstraintListItem from './ConstraintListItem.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let filterText: string = '';
   let filteredConstraints: Constraint[] = [];
@@ -26,7 +27,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Constraints" />
+    <GridMenu {gridSection} title="Constraints" />
     <PanelHeaderActions status={$checkConstraintsStatus}>
       <PanelHeaderActionButton title="Check Constraints" showLabel on:click={() => effects.checkConstraints()} />
     </PanelHeaderActions>

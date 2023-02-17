@@ -8,30 +8,17 @@
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { onDestroy } from 'svelte';
-  import ActivityFormPanel from '../../../components/activity/ActivityFormPanel.svelte';
-  import ActivityTablePanel from '../../../components/activity/ActivityTablePanel.svelte';
-  import ActivityTypesPanel from '../../../components/activity/ActivityTypesPanel.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
   import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
-  import ConstraintsPanel from '../../../components/constraints/ConstraintsPanel.svelte';
-  import ConstraintViolationsPanel from '../../../components/constraints/ConstraintViolationsPanel.svelte';
-  import ExpansionPanel from '../../../components/expansion/ExpansionPanel.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
-  import SchedulingConditionsPanel from '../../../components/scheduling/SchedulingConditionsPanel.svelte';
-  import SchedulingGoalsPanel from '../../../components/scheduling/SchedulingGoalsPanel.svelte';
-  import SimulationPanel from '../../../components/simulation/SimulationPanel.svelte';
-  import TimelineEditorPanel from '../../../components/timeline/form/TimelineEditorPanel.svelte';
-  import TimelinePanel from '../../../components/timeline/TimelinePanel.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
-  import IFramePanel from '../../../components/ui/IFramePanel.svelte';
-  import SplitGrid from '../../../components/ui/SplitGrid.svelte';
-  import ViewEditorPanel from '../../../components/view/ViewEditorPanel.svelte';
+  import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
   import { checkConstraintsStatus, constraintViolations, resetConstraintStores } from '../../../stores/constraints';
   import {
@@ -72,8 +59,7 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
-  import { initializeView, resetOriginalView, resetView, view, viewUpdateLayout } from '../../../stores/views';
-  import type { GridChangeSizesEvent } from '../../../types/grid';
+  import { initializeView, resetOriginalView, resetView, view } from '../../../stores/views';
   import type { ViewSaveEvent } from '../../../types/view';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
@@ -84,22 +70,6 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
-
-  const gridComponentsByName: Record<string, any> = {
-    ActivityFormPanel,
-    ActivityTablePanel,
-    ActivityTypesPanel,
-    ConstraintViolationsPanel,
-    ConstraintsPanel,
-    ExpansionPanel,
-    IFramePanel,
-    SchedulingConditionsPanel,
-    SchedulingGoalsPanel,
-    SimulationPanel,
-    TimelineEditorPanel,
-    TimelinePanel,
-    ViewEditorPanel,
-  };
 
   let compactNavMode = false;
   let planHasBeenLocked = false;
@@ -167,18 +137,6 @@
     resetSchedulingStores();
     resetSimulationStores();
   });
-
-  function changeColumnSizes(event: CustomEvent<GridChangeSizesEvent>): void {
-    const { detail } = event;
-    const { gridId, newSizes } = detail;
-    viewUpdateLayout(gridId, { columnSizes: newSizes });
-  }
-
-  function changeRowSizes(event: CustomEvent<GridChangeSizesEvent>): void {
-    const { detail } = event;
-    const { gridId, newSizes } = detail;
-    viewUpdateLayout(gridId, { rowSizes: newSizes });
-  }
 
   function onClearAllErrors() {
     clearAllErrors();
@@ -309,12 +267,8 @@
     </svelte:fragment>
   </Nav>
 
-  <SplitGrid
-    grid={$view?.definition.plan.layout}
-    {gridComponentsByName}
-    on:changeColumnSizes={changeColumnSizes}
-    on:changeRowSizes={changeRowSizes}
-  />
+  <PlanGrid {...$view?.definition.plan.grid} />
+
   <Console>
     <svelte:fragment slot="console-tabs">
       <div class="console-tabs">

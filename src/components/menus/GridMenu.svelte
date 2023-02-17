@@ -7,34 +7,38 @@
   import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/checklist_on_page.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
-  import TimelineIcon from '@nasa-jpl/stellar/icons/timeline.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
   import CodeIcon from 'bootstrap-icons/icons/code.svg?component';
   import FileEarmarkExcelIcon from 'bootstrap-icons/icons/file-earmark-excel.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
-  import { viewUpdateLayout } from '../../stores/views';
+  import { viewUpdateGrid } from '../../stores/views';
+  import type { ViewGrid, ViewGridComponent, ViewGridSection } from '../../types/view';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
   export let title: string = '';
 
   let gridMenu: Menu;
 
-  function updateGridComponent(name: string) {
-    const update: Record<string, any> = { componentName: name };
+  function onClickMenuItem(gridComponent: ViewGridComponent): void {
+    const update: Partial<ViewGrid> = {};
 
-    if (name === 'ActivityTablePanel') {
-      update.activityTableId = 0;
-    } else if (name === 'IFramePanel') {
-      update.iFrameId = 0;
-    } else if (name === 'TimelinePanel') {
-      update.timelineId = 0;
+    if (gridSection === 'LeftTop') {
+      update.leftComponentTop = gridComponent;
+    } else if (gridSection === 'LeftBottom') {
+      update.leftComponentBottom = gridComponent;
+    } else if (gridSection === 'MiddleBottom') {
+      update.middleComponentBottom = gridComponent;
+    } else if (gridSection === 'RightTop') {
+      update.rightComponentTop = gridComponent;
+    } else if (gridSection === 'RightBottom') {
+      update.rightComponentBottom = gridComponent;
     }
 
-    viewUpdateLayout(gridId, update);
+    viewUpdateGrid(update);
   }
 </script>
 
@@ -44,55 +48,51 @@
   <ChevronDownIcon />
 
   <Menu bind:this={gridMenu}>
-    <MenuItem on:click={() => updateGridComponent('ActivityTablePanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ActivityTablePanel')}>
       <TableWithHeaderIcon />
       Activity Table
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ActivityTypesPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ActivityTypesPanel')}>
       <BookIcon />
       Activity Types
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ConstraintsPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ConstraintsPanel')}>
       <BracesAsteriskIcon />
       Constraints
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ConstraintViolationsPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ConstraintViolationsPanel')}>
       <FileEarmarkExcelIcon />
       Constraint Violations
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ExpansionPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
       <CodeSquareIcon />
       Expansion
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('IFramePanel')}>
+    <MenuItem on:click={() => onClickMenuItem('IFramePanel')}>
       <WindowFullscreenIcon />
       External Application
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('SchedulingGoalsPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('SchedulingGoalsPanel')}>
       <CalendarIcon />
       Scheduling Goals
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('SchedulingConditionsPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('SchedulingConditionsPanel')}>
       <CalendarIcon />
       Scheduling Conditions
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ActivityFormPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ActivityFormPanel')}>
       <ActivityIcon />
       Selected Activity
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('SimulationPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('SimulationPanel')}>
       <GearWideConnectedIcon />
       Simulation
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('TimelinePanel')}>
-      <TimelineIcon />
-      Timeline
-    </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('TimelineEditorPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('TimelineEditorPanel')}>
       <ChecklistOnPageIcon />
       Timeline Editor
     </MenuItem>
-    <MenuItem on:click={() => updateGridComponent('ViewEditorPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ViewEditorPanel')}>
       <CodeIcon />
       View Editor
     </MenuItem>

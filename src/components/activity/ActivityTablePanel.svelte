@@ -11,7 +11,7 @@
   import type { ActivityMetadata } from '../../types/activity-metadata';
   import type { TRowData } from '../../types/data-grid';
   import type { ArgumentsMap } from '../../types/parameter';
-  import type { ViewActivityTable } from '../../types/view';
+  import type { ViewActivityTable, ViewGridSection } from '../../types/view';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -19,8 +19,7 @@
   import ActivityTable from './ActivityTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
 
-  export let activityTableId: number;
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   interface ActivityColDef extends ColDef<Activity> {
     field: keyof Activity;
@@ -153,6 +152,7 @@
     },
   };
 
+  let activityTableId: number = 0;
   let activityTable: ViewActivityTable;
   let dataGrid: DataGrid;
   let derivedColumnDefs: ColDef[] = [];
@@ -242,7 +242,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Activity Table" />
+    <GridMenu {gridSection} title="Activity Table" />
     <div class="table-menu">
       <div class="size-actions">
         <button

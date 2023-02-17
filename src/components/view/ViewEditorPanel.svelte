@@ -1,12 +1,12 @@
 <script lang="ts">
   import { initializeView, view, viewDefinitionText } from '../../stores/views';
-  import type { ViewDefinition } from '../../types/view';
+  import type { ViewDefinition, ViewGridSection } from '../../types/view';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>): void {
     const { detail } = event;
@@ -23,7 +23,7 @@
 
 <Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="View Editor" />
+    <GridMenu {gridSection} title="View Editor" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

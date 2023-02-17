@@ -33,6 +33,7 @@
     VerticalGuide,
     XRangeLayer,
   } from '../../../types/timeline';
+  import type { ViewGridSection } from '../../../types/view';
   import { getTarget } from '../../../utilities/generic';
   import { showConfirmModal } from '../../../utilities/modal';
   import { getDoyTime } from '../../../utilities/time';
@@ -58,7 +59,7 @@
   import TimelineEditorLayerSelectedFilters from './TimelineEditorLayerSelectedFilters.svelte';
   import TimelineEditorLayerSettings from './TimelineEditorLayerSettings.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let rows: Row[] = [];
   let timelines: Timeline[] = [];
@@ -440,7 +441,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Timeline Editor" />
+    <GridMenu {gridSection} title="Timeline Editor" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

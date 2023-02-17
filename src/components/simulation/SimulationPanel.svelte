@@ -12,6 +12,7 @@
   } from '../../stores/simulation';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
   import type { Simulation } from '../../types/simulation';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -22,7 +23,7 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let formParameters: FormParameter[] = [];
   let modelParametersMap: ParametersMap = {};
@@ -68,7 +69,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Simulation" />
+    <GridMenu {gridSection} title="Simulation" />
     <PanelHeaderActions status={$simulationStatus}>
       <PanelHeaderActionButton
         disabled={!$enableSimulation}

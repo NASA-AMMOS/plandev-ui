@@ -6,12 +6,13 @@
   import { plan } from '../../stores/plan';
   import { schedulingSpecConditions, selectedSpecId } from '../../stores/scheduling';
   import type { SchedulingSpecCondition } from '../../types/scheduling';
+  import type { ViewGridSection } from '../../types/view';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
@@ -39,7 +40,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Scheduling Conditions" />
+    <GridMenu {gridSection} title="Scheduling Conditions" />
   </svelte:fragment>
 
   <svelte:fragment slot="body">

@@ -29,128 +29,6 @@
       "required": ["resource"],
       "type": "object"
     },
-    "grid": {
-      "description": "Grid specification for specifying grid rows, columns, draggable gutters, and UI components",
-      "oneOf": [
-        { "$ref": "#/definitions/gridColumns" },
-        { "$ref": "#/definitions/gridComponent" },
-        { "$ref": "#/definitions/gridGutter" },
-        { "$ref": "#/definitions/gridRows" }
-      ]
-    },
-    "gridColumns": {
-      "additionalProperties": false,
-      "description": "A CSS grid area with child grid columns",
-      "properties": {
-        "columns": {
-          "items": {
-            "$ref": "#/definitions/grid"
-          },
-          "type": "array"
-        },
-        "columnSizes": {
-          "description": "The grid-template-columns CSS property that defines the sizing of the grid columns",
-          "type": "string"
-        },
-        "gridName": {
-          "$ref": "#/definitions/gridName"
-        },
-        "id": {
-          "$ref": "#/definitions/id"
-        },
-        "type": {
-          "const": "columns"
-        }
-      },
-      "required": ["columns", "columnSizes", "id", "type"],
-      "type": "object"
-    },
-    "gridComponent": {
-      "additionalProperties": false,
-      "description": "A CSS grid area for a specific UI component",
-      "properties": {
-        "activityTableId": {
-          "$ref": "#/definitions/id"
-        },
-        "componentName": {
-          "$ref": "#/definitions/gridComponentName"
-        },
-        "gridName": {
-          "$ref": "#/definitions/gridName"
-        },
-        "iFrameId": {
-          "$ref": "#/definitions/id"
-        },
-        "id": {
-          "$ref": "#/definitions/id"
-        },
-        "timelineId": {
-          "$ref": "#/definitions/id"
-        },
-        "type": {
-          "const": "component"
-        }
-      },
-      "required": ["componentName", "id", "type"],
-      "type": "object"
-    },
-    "gridComponentName": {
-      "description": "Name of the component to display in the grid area",
-      "type": "string"
-    },
-    "gridGutter": {
-      "additionalProperties": false,
-      "description": "A draggable grid gutter",
-      "properties": {
-        "gridName": {
-          "$ref": "#/definitions/gridName"
-        },
-        "id": {
-          "$ref": "#/definitions/id"
-        },
-        "track": {
-          "description": "Index of the gutter among the grid rows or grid columns",
-          "minimum": 0,
-          "type": "number"
-        },
-        "type": {
-          "const": "gutter"
-        }
-      },
-      "required": ["id", "track", "type"],
-      "type": "object"
-    },
-    "gridName": {
-      "description": "Optional name of grid for specifying a layout tied to a specific workflow",
-      "type": "string"
-    },
-    "gridRows": {
-      "additionalProperties": false,
-      "description": "A CSS grid area with child grid rows",
-      "properties": {
-        "gridName": {
-          "$ref": "#/definitions/gridName"
-        },
-        "id": {
-          "$ref": "#/definitions/id"
-        },
-        "rows": {
-          "items": {
-            "$ref": "#/definitions/grid"
-          },
-          "type": "array"
-        },
-        "rowSizes": {
-          "description": "The grid-template-rows CSS property that defines the sizing of the grid rows",
-          "type": "string"
-        },
-        "type": {
-          "const": "rows"
-        }
-      },
-      "required": ["id", "rows", "rowSizes", "type"],
-      "type": "object"
-    },
     "id": {
       "description": "Numeric unique id >= 0",
       "minimum": 0,
@@ -170,6 +48,23 @@
       },
       "required": ["text"],
       "type": "object"
+    },
+    "viewGridComponent": {
+      "description": "Set of components available to view in a grid section",
+      "enum": [
+        "ActivityFormPanel",
+        "ActivityTablePanel",
+        "ActivityTypesPanel",
+        "ConstraintViolationsPanel",
+        "ConstraintsPanel",
+        "ExpansionPanel",
+        "IFramePanel",
+        "SchedulingConditionsPanel",
+        "SchedulingGoalsPanel",
+        "SimulationPanel",
+        "TimelineEditorPanel",
+        "ViewEditorPanel"
+      ]
     },
     "yAxisId": {
       "description": "Id of the associated y-axis. Can be null for no association.",
@@ -210,6 +105,80 @@
           },
           "type": "array"
         },
+        "grid": {
+          "additionalProperties": false,
+          "description": "Defines the different visible sections for a plan",
+          "properties": {
+            "columnSizes": {
+              "description": "Size of each column and gutter using CSS grid notation",
+              "type": "string"
+            },
+            "leftComponentBottom": {
+              "$ref": "#/definitions/viewGridComponent"
+            },
+            "leftComponentTop": {
+              "$ref": "#/definitions/viewGridComponent"
+            },
+            "leftHidden": {
+              "description": "If true hide the left panel, if false show the left panel",
+              "type": "boolean"
+            },
+            "leftRowSizes": {
+              "description": "Size of each left row and gutter using CSS grid notation",
+              "type": "string"
+            },
+            "leftSplit": {
+              "description": "If true the left panel is split into two, if false show single left panel",
+              "type": "boolean"
+            },
+            "middleComponentBottom": {
+              "$ref": "#/definitions/viewGridComponent"
+            },
+            "middleRowSizes": {
+              "description": "Size of each middle row and gutter using CSS grid notation",
+              "type": "string"
+            },
+            "middleSplit": {
+              "description": "If true the middle panel is split into two, if false show single middle panel",
+              "type": "boolean"
+            },
+            "rightComponentBottom": {
+              "$ref": "#/definitions/viewGridComponent"
+            },
+            "rightComponentTop": {
+              "$ref": "#/definitions/viewGridComponent"
+            },
+            "rightHidden": {
+              "description": "If true hide the right panel, if false show the right panel",
+              "type": "boolean"
+            },
+            "rightRowSizes": {
+              "description": "Size of each right row and gutter using CSS grid notation",
+              "type": "string"
+            },
+            "rightSplit": {
+              "description": "If true the right panel is split into two, if false show single right panel",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "columnSizes",
+            "leftComponentBottom",
+            "leftComponentTop",
+            "leftHidden",
+            "leftRowSizes",
+            "leftSplit",
+            "middleComponentBottom",
+            "middleRowSizes",
+            "middleSplit",
+            "rightComponentBottom",
+            "rightComponentTop",
+            "rightHidden",
+            "rightRowSizes",
+            "rightSplit"
+          ],
+          "type": "object"
+        },
         "iFrames": {
           "description": "IFrame specifications for embedding other web pages",
           "type": "array",
@@ -231,9 +200,6 @@
             "required": ["id", "src", "title"],
             "type": "object"
           }
-        },
-        "layout": {
-          "$ref": "#/definitions/grid"
         },
         "timelines": {
           "description": "Timeline specifications for visualizing activities or resources in a timeline",
@@ -512,7 +478,7 @@
           "type": "array"
         }
       },
-      "required": ["activityTables", "iFrames", "layout", "timelines"],
+      "required": ["activityTables", "grid", "iFrames", "timelines"],
       "type": "object"
     }
   },

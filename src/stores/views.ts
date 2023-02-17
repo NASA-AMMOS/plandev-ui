@@ -1,10 +1,8 @@
 import { isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
-import type { Grid } from '../types/grid';
-import type { View, ViewActivityTable } from '../types/view';
+import type { View, ViewActivityTable, ViewGrid } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
-import { activitiesGrid, constraintsGrid, schedulingGrid, simulationGrid, updateGrid } from '../utilities/grid';
 import { TimelineLockStatus } from '../utilities/timeline';
 import { gqlSubscribable } from './subscribable';
 
@@ -109,35 +107,6 @@ export function resetOriginalView() {
 
 export function resetView() {
   view.set(get(originalView));
-}
-
-export function viewSetLayout(title: string) {
-  let layout: Grid;
-
-  if (title === 'Activities') {
-    layout = activitiesGrid;
-  } else if (title === 'Constraints') {
-    layout = constraintsGrid;
-  } else if (title === 'Scheduling') {
-    layout = schedulingGrid;
-  } else if (title === 'Simulation') {
-    layout = simulationGrid;
-  } else {
-    layout = activitiesGrid;
-  }
-
-  const currentView = get(view);
-
-  initializeView({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        layout,
-      },
-    },
-  });
 }
 
 export function viewSetSelectedRow(rowId: number | null): void {
@@ -263,14 +232,17 @@ export function viewUpdateLayer(event: Event) {
   }));
 }
 
-export function viewUpdateLayout(id: number, update: Record<string, any>) {
+export function viewUpdateGrid(update: Partial<ViewGrid>) {
   view.update(currentView => ({
     ...currentView,
     definition: {
       ...currentView.definition,
       plan: {
         ...currentView.definition.plan,
-        layout: updateGrid(currentView.definition.plan.layout, id, update),
+        grid: {
+          ...currentView.definition.plan.grid,
+          ...update,
+        },
       },
     },
   }));

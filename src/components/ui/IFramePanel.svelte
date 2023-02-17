@@ -2,14 +2,14 @@
 
 <script lang="ts">
   import { view, viewUpdateIFrame } from '../../stores/views';
-  import type { ViewIFrame } from '../../types/view';
+  import type { ViewGridSection, ViewIFrame } from '../../types/view';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import IFrame from './IFrame.svelte';
 
-  export let gridId: number;
-  export let iFrameId: number;
+  export let gridSection: ViewGridSection;
 
+  let iFrameId: number = 0;
   let iFrame: ViewIFrame;
   let iFrameSrc: string = '';
 
@@ -20,7 +20,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="External Application" />
+    <GridMenu {gridSection} title="External Application" />
     <input bind:value={iFrameSrc} class="st-input w-100" class:error={iFrameSrc === ''} type="text" />
   </svelte:fragment>
 

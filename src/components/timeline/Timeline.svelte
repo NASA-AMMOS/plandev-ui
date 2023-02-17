@@ -26,7 +26,6 @@
 
   export let activitiesByView: ActivitiesByView = { byLayerId: {}, byTimelineId: {} };
   export let constraintViolations: ConstraintViolation[] = [];
-  export let gridId: number;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let selectedActivityId: ActivityUniqueId | null = null;
@@ -47,7 +46,6 @@
   let rows: Row[] = [];
   let tickCount: number = 10;
   let timelineDiv: HTMLDivElement;
-  let timelineGridId: number;
   let timelineHistogramDiv: HTMLDivElement;
   let timelineHistogramDrawHeight: number = 40;
   let xAxisDiv: HTMLDivElement;
@@ -55,7 +53,6 @@
   let xTicksView: XAxisTick[] = [];
 
   $: rows = timeline?.rows || [];
-  $: timelineGridId = gridId;
   $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
 
   // Compute number of ticks based off draw width
@@ -166,7 +163,7 @@
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>) {
     const { newHeight, rowId, wasAutoAdjusted } = event.detail;
-    if (timelineGridId === gridId && newHeight < MAX_CANVAS_SIZE) {
+    if (newHeight < MAX_CANVAS_SIZE) {
       dispatch('updateRowHeight', { newHeight, rowId, wasAutoAdjusted });
     }
   }
@@ -242,7 +239,6 @@
     style="max-height: {rowsMaxHeight}px"
     on:consider={handleDndConsiderRows}
     on:finalize={handleDndFinalizeRows}
-    on:mouseenter={() => (timelineGridId = gridId)}
     use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
   >
     {#each rows as row (row.id)}

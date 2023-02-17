@@ -13,13 +13,14 @@
   import { activityTypes, modelId } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
   import type { ActivityUniqueId } from '../../types/activity';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import ActivityForm from './ActivityForm.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   // Activity vars.
   let id: number | null = null;
@@ -49,7 +50,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Selected Activity" />
+    <GridMenu {gridSection} title="Selected Activity" />
     <button
       class="st-button icon activity-header-delete"
       disabled={isChild || !$selectedActivity}

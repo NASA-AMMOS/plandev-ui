@@ -7,6 +7,7 @@
   import { plan } from '../../stores/plan';
   import { enableScheduling, schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
   import type { SchedulingSpecGoal } from '../../types/scheduling';
+  import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -15,7 +16,7 @@
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SchedulingGoal from './goals/SchedulingGoal.svelte';
 
-  export let gridId: number;
+  export let gridSection: ViewGridSection;
 
   let activeElement: HTMLElement;
   let filterText: string = '';
@@ -43,7 +44,7 @@
 
 <Panel>
   <svelte:fragment slot="header">
-    <GridMenu {gridId} title="Scheduling Goals" />
+    <GridMenu {gridSection} title="Scheduling Goals" />
     <PanelHeaderActions status={$schedulingStatus}>
       <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)} disabled={!$enableScheduling}>
         <ChecklistIcon />
