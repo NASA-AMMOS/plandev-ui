@@ -7,7 +7,7 @@ import type {
   ActivityUniqueId,
 } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
-import type { PlanMergeActivityDirective, PlanSlimmer } from '../types/plan';
+import type { PlanMergeActivityDirectiveSource, PlanMergeActivityDirectiveTarget, PlanSlimmer } from '../types/plan';
 import type { Span, SpanId } from '../types/simulation';
 import { compare, isEmpty } from './generic';
 import { getDoyTimeFromDuration, getUnixEpochTime } from './time';
@@ -213,10 +213,10 @@ export function decomposeActivityDirectiveId(id: ActivityUniqueId): {
 }
 
 /**
- * Converts a PlanMergeActivityDirective into an Activity for use in plan merge review.
+ * Converts a PlanMergeActivityDirectiveSource or PlanMergeActivityDirectiveTarget into an Activity for use in plan merge review.
  */
 export function deriveActivityFromMergeActivityDirective(
-  activityDirective: PlanMergeActivityDirective,
+  activityDirective: PlanMergeActivityDirectiveSource | PlanMergeActivityDirectiveTarget,
   plan: PlanSlimmer,
 ): Activity {
   return {

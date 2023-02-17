@@ -10,25 +10,27 @@ export type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' 
 
 export type PlanMergeActivityOutcome = 'add' | 'delete' | 'modify' | 'none';
 
-export type PlanMergeActivityDirective = Omit<ActivityDirective, 'plan_id'> & { snapshot_id: number };
+export type PlanMergeActivityDirective = ActivityDirective & { snapshot_id: number };
+
+export type PlanMergeActivityDirectiveTarget = PlanMergeActivityDirective;
+
+export type PlanMergeActivityDirectiveSource = Omit<PlanMergeActivityDirective, 'plan_id'>;
 
 export type PlanMergeConflictingActivity = {
   activity_id: number;
   change_type_source: PlanMergeActivityOutcome;
   change_type_target: PlanMergeActivityOutcome;
   merge_base: PlanMergeActivityDirective;
-  merge_request_id: number;
   resolution: PlanMergeResolution;
-  source: PlanMergeActivityDirective;
-  target: PlanMergeActivityDirective;
+  source: PlanMergeActivityDirectiveSource | null;
+  target: PlanMergeActivityDirectiveTarget | null;
 };
 
 export type PlanMergeNonConflictingActivity = {
   activity_id: number;
   change_type: PlanMergeActivityOutcome;
-  merge_request_id: number;
-  source: PlanMergeActivityDirective;
-  target: PlanMergeActivityDirective | null;
+  source: PlanMergeActivityDirectiveSource | null;
+  target: PlanMergeActivityDirectiveTarget | null;
 };
 
 export type PlanMergeRequestType = 'incoming' | 'outgoing';

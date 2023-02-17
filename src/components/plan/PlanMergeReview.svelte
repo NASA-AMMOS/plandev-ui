@@ -90,37 +90,41 @@
     // build up the complete array of snapshotted receiving and supplying directives
     let { receivingPlanDirectives, supplyingPlanDirectives } = initialConflictingActivities.reduce(
       (previous, conflictingActivity: PlanMergeConflictingActivity) => {
-        const { source, target } = conflictingActivity;
+        const { source, target, change_type_source, change_type_target } = conflictingActivity;
+
+        const receivingPlanDirectives =
+          change_type_target === 'delete'
+            ? [...previous.receivingPlanDirectives]
+            : [...previous.receivingPlanDirectives, target];
+
+        const supplyingPlanDirectives =
+          change_type_source === 'delete'
+            ? [...previous.supplyingPlanDirectives]
+            : [...previous.supplyingPlanDirectives, { ...source, plan_id: supplyingPlanId }];
 
         return {
-          receivingPlanDirectives: [...previous.receivingPlanDirectives, target],
-          supplyingPlanDirectives: [
-            ...previous.supplyingPlanDirectives,
-            {
-              ...source,
-              plan_id: supplyingPlanId,
-            },
-          ],
+          receivingPlanDirectives,
+          supplyingPlanDirectives,
         };
       },
       { receivingPlanDirectives: [], supplyingPlanDirectives: [] },
     );
 
     ({ receivingPlanDirectives, supplyingPlanDirectives } = initialNonConflictingActivities.reduce(
-      (previous, conflictingActivity: PlanMergeNonConflictingActivity) => {
-        const { source, target } = conflictingActivity;
+      (previous, nonConflictingActivity: PlanMergeNonConflictingActivity) => {
+        const { source, target } = nonConflictingActivity;
+
+        const receivingPlanDirectives = target
+          ? [...previous.receivingPlanDirectives, target]
+          : [...previous.receivingPlanDirectives];
+
+        const supplyingPlanDirectives = source
+          ? [...previous.supplyingPlanDirectives, { ...source, plan_id: supplyingPlanId }]
+          : [...previous.supplyingPlanDirectives];
 
         return {
-          receivingPlanDirectives: target
-            ? [...previous.receivingPlanDirectives, target]
-            : previous.receivingPlanDirectives,
-          supplyingPlanDirectives: [
-            ...previous.supplyingPlanDirectives,
-            {
-              ...source,
-              plan_id: supplyingPlanId,
-            },
-          ],
+          receivingPlanDirectives,
+          supplyingPlanDirectives,
         };
       },
       { receivingPlanDirectives, supplyingPlanDirectives },
