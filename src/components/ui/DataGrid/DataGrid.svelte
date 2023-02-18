@@ -220,7 +220,7 @@
 
         // only dispatch `rowSelected` or enforce visibility for single row selections
         if (selectedNodes.length <= 1 || suppressRowClickSelection) {
-          if (scrollToSelection) {
+          if (selectedNodes.length && scrollToSelection) {
             gridOptions?.api?.ensureIndexVisible(selectedNodes[0].rowIndex);
           }
 
