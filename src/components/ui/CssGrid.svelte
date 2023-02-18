@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import Split, { type SplitInstance } from 'split-grid';
-  import { onMount, tick } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
 
   export { className as class };
   export let padding: string = '0';
@@ -10,9 +10,15 @@
   export let gap: string = '0';
   export let rows: string = 'none';
 
+  const dispatch = createEventDispatcher();
+
   let className: string = '';
   let div: HTMLDivElement;
   let split: SplitInstance;
+
+  $: if (columns || rows) {
+    setSplit();
+  }
 
   onMount(() => {
     if (div) {
@@ -24,10 +30,12 @@
     if (div) {
       if (columns !== 'none') {
         const newSizes: string = div.style['grid-template-columns'];
+        dispatch('changeColumnSizes', newSizes);
         columns = newSizes;
       } else if (rows !== 'none') {
         const newSizes: string = div.style['grid-template-rows'];
         rows = newSizes;
+        dispatch('changeRowSizes', newSizes);
       }
     }
   }

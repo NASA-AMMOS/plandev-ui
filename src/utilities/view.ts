@@ -1,7 +1,7 @@
 import type { ActivityType } from '../types/activity';
 import type { ResourceType } from '../types/simulation';
 import type { ActivityLayer, Axis, LineLayer, Row, XRangeLayer } from '../types/timeline';
-import type { View } from '../types/view';
+import type { View, ViewGridColumns, ViewGridRows } from '../types/view';
 
 /**
  * Generates a default generic UI view.
@@ -204,6 +204,48 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
                 sortIndex: null,
                 width: 280,
               },
+              {
+                aggFunc: null,
+                colId: 'anchor_id',
+                flex: null,
+                hide: true,
+                pinned: null,
+                pivot: false,
+                pivotIndex: null,
+                rowGroup: false,
+                rowGroupIndex: null,
+                sort: null,
+                sortIndex: null,
+                width: 200,
+              },
+              {
+                aggFunc: null,
+                colId: 'anchored_to_start',
+                flex: null,
+                hide: true,
+                pinned: null,
+                pivot: false,
+                pivotIndex: null,
+                rowGroup: false,
+                rowGroupIndex: null,
+                sort: null,
+                sortIndex: null,
+                width: 200,
+              },
+              {
+                aggFunc: null,
+                colId: 'start_offset',
+                flex: null,
+                hide: true,
+                pinned: null,
+                pivot: false,
+                pivotIndex: null,
+                rowGroup: false,
+                rowGroupIndex: null,
+                sort: null,
+                sortIndex: null,
+                width: 200,
+              },
             ],
             id: 0,
           },
@@ -213,7 +255,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
           leftComponentBottom: 'SimulationPanel',
           leftComponentTop: 'ActivityTypesPanel',
           leftHidden: false,
-          leftRowSizes: '1fr 3px 1fr',
+          leftRowSizes: '1fr',
           leftSplit: false,
           middleComponentBottom: 'ActivityTablePanel',
           middleRowSizes: '2fr 3px 1fr',
@@ -221,7 +263,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
           rightComponentBottom: 'TimelineEditorPanel',
           rightComponentTop: 'ActivityFormPanel',
           rightHidden: false,
-          rightRowSizes: '1fr 3px 1fr',
+          rightRowSizes: '1fr',
           rightSplit: false,
         },
         iFrames: [
@@ -323,4 +365,84 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
     owner: 'system',
     updated_at: now,
   };
+}
+
+export function parseColumnSizes(
+  columnSizes = '1fr 3px 3fr 3px 1fr',
+  leftHidden: boolean,
+  rightHidden: boolean,
+): ViewGridColumns | null {
+  console.log(leftHidden, rightHidden);
+  if (!leftHidden && !rightHidden) {
+    const matches = columnSizes.match(
+      new RegExp(`^(?<col1>\\S+)\\s(!?\\S+)\\s(?<col2>\\S+)\\s(!?\\S+)\\s(?<col3>\\S+)$`, 'i'),
+    );
+    if (matches) {
+      const { groups: { col1, col2, col3 } = {} } = matches;
+      return {
+        col1,
+        col2,
+        col3,
+      };
+    }
+  } else if (leftHidden && rightHidden) {
+    const matches = columnSizes.match(new RegExp(`^\\s(?<col2>\\S+)$`, 'i'));
+    if (matches) {
+      const { groups: { col2 } = {} } = matches;
+      return {
+        col2,
+      };
+    }
+  } else if (!leftHidden && rightHidden) {
+    const matches = columnSizes.match(new RegExp(`^(?<col1>\\S+)\\s(?!\\S+)\\s(?<col2>\\S+)$`, 'i'));
+    if (matches) {
+      const { groups: { col1, col2 } = {} } = matches;
+      return {
+        col1,
+        col2,
+      };
+    }
+  } else if (leftHidden && !rightHidden) {
+    const matches = columnSizes.match(new RegExp(`^(?<col2>\\S+)\\s(?!\\S+)\\s(?<col3>\\S+)$`, 'i'));
+    if (matches) {
+      const { groups: { col2, col3 } = {} } = matches;
+      return {
+        col2,
+        col3,
+      };
+    }
+  }
+
+  return {
+    col1: '1fr',
+    col2: '3fr',
+    col3: '1fr',
+  };
+}
+
+export function createColumnSizes(
+  { col1 = '1fr', col2 = '3fr', col3 = '1fr' }: ViewGridColumns,
+  leftHidden: boolean,
+  rightHidden: boolean,
+): string {
+  const gutterSize = '3px';
+
+  if (leftHidden && rightHidden) {
+    return col2;
+  } else if (!leftHidden && rightHidden) {
+    return `${col1} ${gutterSize} ${col2}`;
+  } else if (leftHidden && !rightHidden) {
+    return `${col2} ${gutterSize} ${col3}`;
+  }
+
+  return `${col1} ${gutterSize} ${col2} ${gutterSize} ${col3}`;
+}
+
+export function createRowSizes({ row1 = '1fr', row2 = '1fr' }: ViewGridRows, colSplit: boolean): string {
+  const gutterSize = '3px';
+  if (colSplit) {
+    return `${row1} ${gutterSize} ${row2}`;
+  }
+
+  return '1fr';
 }

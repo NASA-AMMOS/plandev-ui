@@ -8,6 +8,11 @@ export type ViewActivityTable = {
 };
 
 export type ViewSaveEvent = Partial<View>;
+export type ViewToggleType = 'left' | 'left-split' | 'bottom' | 'right' | 'right-split';
+export type ViewToggleEvent = {
+  state: boolean;
+  type: ViewToggleType;
+};
 
 export type ViewIFrame = {
   id: number;
@@ -36,6 +41,17 @@ export type ViewGridComponent =
   | 'ViewEditorPanel';
 
 export type ViewGridSection = 'LeftBottom' | 'LeftTop' | 'MiddleBottom' | 'RightBottom' | 'RightTop';
+
+export type ViewGridColumns = {
+  col1?: string;
+  col2?: string;
+  col3?: string;
+};
+
+export type ViewGridRows = {
+  row1?: string;
+  row2?: string;
+};
 
 export type ViewGrid = {
   columnSizes: string;

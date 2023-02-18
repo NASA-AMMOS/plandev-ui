@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import type { ViewGridComponent } from '../../types/view';
   import ActivityFormPanel from '../activity/ActivityFormPanel.svelte';
   import ActivityTablePanel from '../activity/ActivityTablePanel.svelte';
@@ -33,6 +34,8 @@
   export let rightRowSizes: string = '1fr 3px 1fr';
   export let rightSplit: boolean = false;
 
+  const dispatch = createEventDispatcher();
+
   const gridComponentsByName: Record<ViewGridComponent, any> = {
     ActivityFormPanel,
     ActivityTablePanel,
@@ -48,19 +51,27 @@
     ViewEditorPanel,
   };
 
-  $: if (leftHidden && rightHidden) {
-    columnSizes = '1fr';
-  } else if (leftHidden) {
-    columnSizes = '3fr 3px 1fr';
-  } else if (rightHidden) {
-    columnSizes = '1fr 3px 3fr';
+  function onChangeColumnSizes(event: CustomEvent<string>) {
+    dispatch('changeColumnSizes', event.detail);
+  }
+
+  function onChangeLeftRowSizes(event: CustomEvent<string>) {
+    dispatch('changeLeftRowSizes', event.detail);
+  }
+
+  function onChangeMiddleRowSizes(event: CustomEvent<string>) {
+    dispatch('changeMiddleRowSizes', event.detail);
+  }
+
+  function onChangeRightRowSizes(event: CustomEvent<string>) {
+    dispatch('changeRightRowSizes', event.detail);
   }
 </script>
 
-<CssGrid class="plan-grid" columns={columnSizes}>
+<CssGrid class="plan-grid" columns={columnSizes} on:changeColumnSizes={onChangeColumnSizes}>
   {#if !leftHidden}
     {#if leftSplit}
-      <CssGrid class="plan-grid" rows={leftRowSizes}>
+      <CssGrid class="plan-grid" rows={leftRowSizes} on:changeRowSizes={onChangeLeftRowSizes}>
         <div class="plan-grid-component" data-component-name={leftComponentTop}>
           <svelte:component this={gridComponentsByName[leftComponentTop]} gridSection="LeftTop" />
         </div>
@@ -79,7 +90,7 @@
   {/if}
 
   {#if middleSplit}
-    <CssGrid class="plan-grid" rows={middleRowSizes}>
+    <CssGrid class="plan-grid" rows={middleRowSizes} on:changeRowSizes={onChangeMiddleRowSizes}>
       <div class="plan-grid-component" data-component-name="TimelinePanel">
         <TimelinePanel />
       </div>
@@ -95,10 +106,10 @@
   {/if}
 
   {#if !rightHidden}
-    <CssGridGutter track={3} type="column" />
+    <CssGridGutter track={leftHidden ? 1 : 3} type="column" />
 
     {#if rightSplit}
-      <CssGrid class="plan-grid" rows={rightRowSizes}>
+      <CssGrid class="plan-grid" rows={rightRowSizes} on:changeRowSizes={onChangeRightRowSizes}>
         <div class="plan-grid-component" data-component-name={rightComponentTop}>
           <svelte:component this={gridComponentsByName[rightComponentTop]} gridSection="RightTop" />
         </div>

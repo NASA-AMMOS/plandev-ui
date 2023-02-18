@@ -9,6 +9,15 @@ const config = {
       base: '',
     },
   },
+  onwarn(warning, defaultHandler) {
+    // don't warn on components containing only global styles
+    if (warning.code === 'vite-plugin-svelte-css-no-scopable-elements') {
+      return;
+    }
+
+    // handle all other warnings normally
+    defaultHandler(warning);
+  },
   preprocess: preprocess(),
 };
 

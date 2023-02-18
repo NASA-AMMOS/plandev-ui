@@ -59,8 +59,15 @@
     simulationStatus,
     spans,
   } from '../../../stores/simulation';
-  import { initializeView, resetOriginalView, resetView, view } from '../../../stores/views';
-  import type { ViewSaveEvent } from '../../../types/view';
+  import {
+    initializeView,
+    resetOriginalView,
+    resetView,
+    view,
+    viewTogglePanel,
+    viewUpdateGrid,
+  } from '../../../stores/views';
+  import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
@@ -184,8 +191,29 @@
     }
   }
 
+  function onToggleView(event: CustomEvent<ViewToggleEvent>) {
+    const { detail } = event;
+    viewTogglePanel(detail);
+  }
+
   function onResetView() {
     resetView();
+  }
+
+  function onChangeColumnSizes(event: CustomEvent<string>) {
+    viewUpdateGrid({ columnSizes: event.detail });
+  }
+
+  function onChangeLeftRowSizes(event: CustomEvent<string>) {
+    viewUpdateGrid({ leftRowSizes: event.detail });
+  }
+
+  function onChangeMiddleRowSizes(event: CustomEvent<string>) {
+    viewUpdateGrid({ middleRowSizes: event.detail });
+  }
+
+  function onChangeRightRowSizes(event: CustomEvent<string>) {
+    viewUpdateGrid({ rightRowSizes: event.detail });
   }
 </script>
 
@@ -262,12 +290,19 @@
         on:createView={onCreateView}
         on:editView={onEditView}
         on:saveView={onSaveView}
+        on:toggleView={onToggleView}
         on:resetView={onResetView}
       />
     </svelte:fragment>
   </Nav>
 
-  <PlanGrid {...$view?.definition.plan.grid} />
+  <PlanGrid
+    {...$view?.definition.plan.grid}
+    on:changeColumnSizes={onChangeColumnSizes}
+    on:changeLeftRowSizes={onChangeLeftRowSizes}
+    on:changeMiddleRowSizes={onChangeMiddleRowSizes}
+    on:changeRightRowSizes={onChangeRightRowSizes}
+  />
 
   <Console>
     <svelte:fragment slot="console-tabs">
