@@ -35,7 +35,7 @@
     const currentValue = editor.getValue();
     if (value !== currentValue) {
       const scrollTop = editor.getScrollTop(); // setValue can nuke scroll position.
-      editor.getModel().setValue(value);
+      editor.getModel().setValue(value ?? ''); // Make sure value is not null or Monaco throws.
       editor.setScrollPosition({ scrollTop });
     }
   }
