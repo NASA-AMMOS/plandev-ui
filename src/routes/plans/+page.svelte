@@ -162,7 +162,7 @@
   }
 
   function onStartTimeChanged() {
-    if ($startTimeDoyField.value && $endTimeDoyField.value === '') {
+    if ($startTimeDoyField.value && $startTimeDoyField.valid && $endTimeDoyField.value === '') {
       endTimeDoyField.set($startTimeDoyField);
     }
     updateDurationString();

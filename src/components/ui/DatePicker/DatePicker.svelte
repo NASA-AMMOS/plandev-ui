@@ -133,12 +133,14 @@
     }
   }
 
-  function autoCompleteDate(event: Event) {
+  function attemptAutoCompleteDate(event: Event) {
     const { value } = getTarget(event);
 
     const parsedDate = getDateFromString(`${value}`);
     if (parsedDate !== null) {
       setDateString(getDoyTime(parsedDate, parsedDate.getUTCMilliseconds() > 0));
+    } else {
+      setDateString(`${value}`);
     }
   }
 
@@ -210,7 +212,7 @@
     if (key === 'Enter') {
       event.preventDefault();
 
-      autoCompleteDate(event);
+      attemptAutoCompleteDate(event);
       closeDatePicker();
     }
   }
@@ -252,7 +254,7 @@
     {name}
     bind:value={dateString}
     use:popperRef
-    on:change={autoCompleteDate}
+    on:change={attemptAutoCompleteDate}
     on:click={openDatePicker}
     on:focus={openDatePicker}
     on:keydown={onInputKeydown}
