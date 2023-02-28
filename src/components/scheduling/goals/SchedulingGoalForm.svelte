@@ -51,7 +51,12 @@
 
   $: planOptions = plans
     .filter(plan => plan.model_id === goalModelId)
-    .map(({ id, name, scheduling_specifications }) => ({ id, name, specId: scheduling_specifications[0].id }));
+    .map(({ id, name, scheduling_specifications }) => ({
+      id,
+      name,
+      specId: (scheduling_specifications && scheduling_specifications[0]?.id) || null,
+    }));
+
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
   $: saveButtonEnabled = goalDefinition !== '' && goalModelId !== null && goalName !== '' && specId !== null;
   $: goalModified =
@@ -211,8 +216,8 @@
         <select bind:value={specId} class="st-select w-100" name="plan">
           <option value={null} />
           {#each planOptions as plan}
-            <option value={plan.specId}>
-              {plan.name} ({plan.id})
+            <option value={plan.specId} disabled={plan.specId === null}>
+              {plan.name} ({plan.id}) {#if plan.specId === null} (Missing Scheduling Specification) {/if}
             </option>
           {/each}
         </select>

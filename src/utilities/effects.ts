@@ -513,9 +513,11 @@ const effects = {
     }
   },
 
-  async createSchedulingSpec(spec: SchedulingSpecInsertInput): Promise<void> {
+  async createSchedulingSpec(spec: SchedulingSpecInsertInput): Promise<Pick<SchedulingSpec, 'id'>> {
     try {
-      await reqHasura(gql.CREATE_SCHEDULING_SPEC, { spec });
+      const data = await reqHasura<Pick<SchedulingSpec, 'id'>>(gql.CREATE_SCHEDULING_SPEC, { spec });
+      const { createSchedulingSpec: newSchedulingSpec } = data;
+      return newSchedulingSpec;
     } catch (e) {
       catchError(e);
     }
