@@ -200,6 +200,16 @@
     resetView();
   }
 
+  async function onUploadView(event: CustomEvent<{ owner: string }>) {
+    const { detail } = event;
+    const { owner } = detail;
+
+    const success = await effects.uploadView(owner);
+    if (success) {
+      resetOriginalView();
+    }
+  }
+
   function onChangeColumnSizes(event: CustomEvent<string>) {
     viewUpdateGrid({ columnSizes: event.detail });
   }
@@ -292,6 +302,7 @@
         on:saveView={onSaveView}
         on:toggleView={onToggleView}
         on:resetView={onResetView}
+        on:uploadView={onUploadView}
       />
     </svelte:fragment>
   </Nav>

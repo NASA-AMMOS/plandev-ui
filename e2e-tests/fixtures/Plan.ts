@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from './Constraints.js';
 import { Plans } from './Plans.js';
 import { SchedulingConditions } from './SchedulingConditions.js';
@@ -17,6 +18,7 @@ export class Plan {
   gridMenu: Locator;
   gridMenuButton: Locator;
   gridMenuItem: (name: string) => Locator;
+  invalidPlanFilePath: string = 'e2e-tests/data/invalid-view.json';
   navButtonConstraints: Locator;
   navButtonConstraintsMenu: Locator;
   navButtonExpansion: Locator;
@@ -29,6 +31,7 @@ export class Plan {
   navButtonViewMenu: Locator;
   navButtonViewSaveAsMenuButton: Locator;
   navButtonViewSavedViewsMenuButton: Locator;
+  navButtonViewUploadViewMenuButton: Locator;
   panelActivityForm: Locator;
   panelActivityTable: Locator;
   panelActivityTypes: Locator;
@@ -40,7 +43,6 @@ export class Plan {
   panelSimulation: Locator;
   panelTimeline: Locator;
   panelTimelineEditor: Locator;
-  panelViewEditor: Locator;
   planTitle: Locator;
   scheduleButton: Locator;
   schedulingConditionEnabledCheckbox: Locator;
@@ -54,6 +56,7 @@ export class Plan {
   schedulingGoalNewButton: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  validPlanFilePath: string = 'e2e-tests/data/valid-view.json';
 
   constructor(
     public page: Page,
@@ -121,6 +124,20 @@ export class Plan {
     await this.activitiesTableFirstRow.waitFor({ state: 'detached' });
     await this.activitiesTableFirstRow.waitFor({ state: 'hidden' });
     await expect(this.activitiesTableFirstRow).not.toBeVisible();
+  }
+
+  async fillViewInputFile(planFilePath: string = this.validPlanFilePath) {
+    const viewFileInput = this.page.locator('.modal-content input[name="file"]');
+    await viewFileInput.focus();
+    await viewFileInput.setInputFiles(planFilePath);
+    await viewFileInput.evaluate(e => e.blur());
+  }
+
+  async fillViewInputName() {
+    const viewNameInput = this.page.locator('.modal-content input[name="name"]');
+    await viewNameInput.focus();
+    await viewNameInput.fill(uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }));
+    await viewNameInput.evaluate(e => e.blur());
   }
 
   /**
@@ -221,6 +238,7 @@ export class Plan {
     this.navButtonViewMenu = page.locator(`.view-menu .menu`);
     this.navButtonViewSaveAsMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Save as")`);
     this.navButtonViewSavedViewsMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Browse saved views")`);
+    this.navButtonViewUploadViewMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Upload view file")`);
     this.page = page;
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
     this.panelActivityTable = page.locator('[data-component-name="ActivityTablePanel"]');
@@ -233,7 +251,6 @@ export class Plan {
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
-    this.panelViewEditor = page.locator('[data-component-name="ViewEditorPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
     this.analyzeButton = page.locator('.header-actions button[aria-label="Analyze"]');

@@ -10,9 +10,11 @@ import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.
 import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
+import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
+import type { ViewDefinition } from '../types/view';
 
 /**
  * Listens for clicks on the document body and removes the modal children.
@@ -343,6 +345,32 @@ export async function showSavedViewsModal(): Promise<ModalElementValue<{ id: num
         target.replaceChildren();
         target.resolve = null;
         resolve({ confirm: false });
+      });
+    }
+  });
+}
+
+/**
+ * Shows a UploadViewModal component.
+ */
+export async function showUploadViewModal(): Promise<ModalElementValue<{ definition: ViewDefinition; name: string }>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const uploadViewModal = new UploadViewModal({ target });
+      target.resolve = resolve;
+
+      uploadViewModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+
+      uploadViewModal.$on('upload', (e: CustomEvent<{ definition: ViewDefinition; name: string }>) => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: true, value: e.detail });
       });
     }
   });

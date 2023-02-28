@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
+import type { ErrorObject } from 'ajv';
 import { get } from 'svelte/store';
 import { activitiesMap, selectedActivityId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
@@ -93,6 +94,7 @@ import {
   showCreateViewModal,
   showEditViewModal,
   showPlanBranchRequestModal,
+  showUploadViewModal,
 } from './modal';
 import { reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
@@ -1523,6 +1525,38 @@ const effects = {
     }
   },
 
+  async loadViewFromFile(files: FileList): Promise<{ definition: ViewDefinition | null; errors?: string[] }> {
+    try {
+      const file: File = files[0];
+
+      const viewFileString: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          resolve(reader.result as string);
+        };
+
+        reader.onerror = reject;
+
+        reader.readAsText(file);
+      });
+
+      const viewJSON = JSON.parse(viewFileString);
+      const { errors, valid } = await effects.validateViewJSON(viewJSON);
+
+      if (valid) {
+        return { definition: viewJSON };
+      } else {
+        return {
+          definition: null,
+          errors,
+        };
+      }
+    } catch (e) {
+      catchError(e);
+    }
+  },
+
   async login(username: string, password: string): Promise<ReqLoginResponse> {
     try {
       const data = await reqGateway<ReqLoginResponse>(
@@ -1964,6 +1998,27 @@ const effects = {
     }
   },
 
+  async uploadView(owner: string): Promise<boolean> {
+    try {
+      const { confirm, value = null } = await showUploadViewModal();
+      if (confirm && value) {
+        const { name, definition } = value;
+
+        const viewInsertInput: ViewInsertInput = { definition, name, owner };
+        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
+        const { newView } = data;
+
+        view.update(() => newView);
+        setQueryParam('viewId', `${newView.id}`);
+        return true;
+      }
+    } catch (e) {
+      catchError('View Upload Failed', e);
+      showFailureToast('View Upload Failed');
+      return false;
+    }
+  },
+
   async validateActivityArguments(
     activityTypeName: string,
     modelId: number,
@@ -1982,6 +2037,25 @@ const effects = {
       catchError(e);
       const { message } = e;
       return { errors: [message], success: false };
+    }
+  },
+
+  async validateViewJSON(unValidatedView: unknown): Promise<{ errors?: string[]; valid: boolean }> {
+    try {
+      const response = await fetch(`${base}/view/validate`, {
+        body: JSON.stringify(unValidatedView),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const { errors = [], valid } = (await response.json()) as { errors?: ErrorObject[]; valid: boolean };
+      return {
+        errors: errors.map(({ message }) => message),
+        valid,
+      };
+    } catch (e) {
+      catchError(e);
+      const { message } = e;
+      return { errors: [message], valid: false };
     }
   },
 };

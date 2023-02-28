@@ -14,7 +14,6 @@
   import SimulationPanel from '../simulation/SimulationPanel.svelte';
   import TimelineEditorPanel from '../timeline/form/TimelineEditorPanel.svelte';
   import TimelinePanel from '../timeline/TimelinePanel.svelte';
-  import ViewEditorPanel from '../view/ViewEditorPanel.svelte';
   import CssGrid from './CssGrid.svelte';
   import CssGridGutter from './CssGridGutter.svelte';
   import IFramePanel from './IFramePanel.svelte';
@@ -48,7 +47,6 @@
     SchedulingGoalsPanel,
     SimulationPanel,
     TimelineEditorPanel,
-    ViewEditorPanel,
   };
 
   function onChangeColumnSizes(event: CustomEvent<string>) {

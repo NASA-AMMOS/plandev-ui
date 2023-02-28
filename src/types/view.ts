@@ -37,8 +37,7 @@ export type ViewGridComponent =
   | 'SchedulingConditionsPanel'
   | 'SchedulingGoalsPanel'
   | 'SimulationPanel'
-  | 'TimelineEditorPanel'
-  | 'ViewEditorPanel';
+  | 'TimelineEditorPanel';
 
 export type ViewGridSection = 'LeftBottom' | 'LeftTop' | 'MiddleBottom' | 'RightBottom' | 'RightTop';
 
