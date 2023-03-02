@@ -12,6 +12,7 @@
 
   type CellRendererParams = {
     deleteView: (view: View) => void;
+    downloadView: (view: View) => void;
     openView: (view: View) => void;
   };
   type ViewCellRendererParams = ICellRendererParams<View> & CellRendererParams;
@@ -60,6 +61,11 @@
                   },
                 }
               : {}),
+            downloadCallback: params.downloadView,
+            downloadTooltip: {
+              content: 'Download View',
+              placement: 'bottom',
+            },
             rowData: params.data,
             viewCallback: params.openView,
             viewTooltip: {
@@ -74,6 +80,7 @@
       },
       cellRendererParams: {
         deleteView,
+        downloadView,
         openView,
       } as CellRendererParams,
       field: 'actions',
@@ -82,7 +89,7 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 55,
+      width: 81,
     },
   ];
 
@@ -93,6 +100,13 @@
   function deleteViews({ detail: views }: CustomEvent<View[]>) {
     const viewIds = views.map(({ id }) => id);
     dispatch('deleteViews', viewIds);
+  }
+
+  function downloadView(view: View) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(view.definition, null, 2)], { type: 'application/json' }));
+    a.download = view.name;
+    a.click();
   }
 
   function openView({ id: viewId }: View) {

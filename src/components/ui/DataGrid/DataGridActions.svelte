@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
   import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
@@ -16,10 +17,12 @@
   export let rowData: TRowData;
   export let editTooltip: Tooltip = undefined;
   export let deleteTooltip: Tooltip = undefined;
+  export let downloadTooltip: Tooltip = undefined;
   export let viewTooltip: Tooltip = undefined;
 
   export let editCallback: (data: TRowData) => void = undefined;
   export let deleteCallback: (data: TRowData) => void = undefined;
+  export let downloadCallback: (data: TRowData) => void = undefined;
   export let viewCallback: (data: TRowData) => void = undefined;
 </script>
 
@@ -32,6 +35,17 @@
     use:tooltip={viewTooltip}
   >
     <ExpandIcon />
+  </button>
+{/if}
+{#if downloadCallback}
+  <button
+    class="st-button icon"
+    on:click|stopPropagation={() => {
+      downloadCallback(rowData);
+    }}
+    use:tooltip={downloadTooltip}
+  >
+    <DownloadIcon />
   </button>
 {/if}
 {#if editCallback}
