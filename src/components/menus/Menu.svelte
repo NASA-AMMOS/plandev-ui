@@ -18,9 +18,14 @@
 
   export let hideAfterClick: boolean = true;
   export let offset: number[] = [0, 1];
-  export let shown: boolean = false;
   export let isMounted: boolean = false;
   export let placement: Placement = 'bottom-start';
+
+  // The shown state is intentionally private.
+  // Use the accessor functions to change this state.
+  // This is so we can more easily control global state of all Menus on a page.
+  // See 'hideAllMenus' above.
+  let shown: boolean = false;
 
   $: if (isMounted) {
     if (shown) {
@@ -35,6 +40,10 @@
       dispatch('hide');
     }
     shown = false;
+  }
+
+  export function isShown(): boolean {
+    return shown;
   }
 
   export function show(): void {

@@ -24,7 +24,7 @@
   $: if (layer) {
     selectedValuesMap = listToMap(values);
     if (layer.chartType === 'activity') {
-      menuTitle = 'Activty Dictionary';
+      menuTitle = 'Activity Dictionary';
     } else if (layer.chartType === 'line') {
       menuTitle = 'Resource Types';
     } else if (layer.chartType === 'x-range') {
@@ -77,7 +77,7 @@
       bind:this={input}
       bind:value={filterString}
       on:click|stopPropagation={() => {
-        if (!filterMenu.shown) {
+        if (!filterMenu.isShown()) {
           filterMenu.show();
           input.focus();
         }

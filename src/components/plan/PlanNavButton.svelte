@@ -14,14 +14,10 @@
   export let statusText: string = '';
   export let title: string;
 
-  let showMenu = false;
+  let menu: Menu;
 </script>
 
-<div
-  class="nav-button st-typography-medium"
-  on:mouseenter={() => (showMenu = true)}
-  on:mouseleave={() => (showMenu = false)}
->
+<div class="nav-button st-typography-medium" on:mouseenter={() => menu.show()} on:mouseleave={() => menu.hide()}>
   <div class="nav-button-icon-container">
     <slot />
     <span class="nav-button-status">
@@ -35,7 +31,7 @@
       {title}
     </div>
   {/if}
-  <Menu hideAfterClick={false} placement="bottom-start" shown={showMenu} offset={[0, 0]}>
+  <Menu bind:this={menu} hideAfterClick={false} placement="bottom-start" offset={[0, 0]}>
     {#if menuTitle}
       <MenuHeader title={menuTitle} showBorder={false} />
     {/if}
