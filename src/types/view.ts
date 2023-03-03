@@ -12,6 +12,7 @@ export type ViewToggleType = 'left' | 'left-split' | 'bottom' | 'right' | 'right
 export type ViewToggleEvent = {
   state: boolean;
   type: ViewToggleType;
+  update?: Partial<ViewGrid>;
 };
 
 export type ViewIFrame = {

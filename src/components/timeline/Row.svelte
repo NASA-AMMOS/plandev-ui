@@ -6,7 +6,7 @@
   import { select } from 'd3-selection';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import { selectedRow, viewSetSelectedRow, viewUpdateGrid } from '../../stores/views';
+  import { selectedRow, viewSetSelectedRow, viewTogglePanel } from '../../stores/views';
   import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
   import type { Resource } from '../../types/simulation';
@@ -158,7 +158,7 @@
 
   function onEditRow() {
     // Open the timeline editor panel on the right.
-    viewUpdateGrid({ rightComponentTop: 'TimelineEditorPanel', rightHidden: false });
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
 
     // Set row to edit.
     viewSetSelectedRow(id);

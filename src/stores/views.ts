@@ -146,14 +146,13 @@ export function viewSetSelectedTimeline(timelineId: number | null): void {
 }
 
 export function viewTogglePanel(event: ViewToggleEvent) {
-  const { state, type } = event;
+  const { state, type, update = {} } = event;
   const currentView = get(view);
   const grid = currentView?.definition?.plan?.grid ?? {
     columnSizes: '',
     leftHidden: false,
     rightHidden: false,
   };
-
   const { columnSizes, leftHidden, rightHidden } = grid;
 
   const { col1, col2, col3 } = parseColumnSizes(columnSizes, leftHidden, rightHidden);
@@ -164,6 +163,7 @@ export function viewTogglePanel(event: ViewToggleEvent) {
         leftHidden: !state,
         leftRowSizes: createRowSizes({}, false),
         leftSplit: false,
+        ...update,
       });
       break;
     }
@@ -173,6 +173,7 @@ export function viewTogglePanel(event: ViewToggleEvent) {
         leftHidden: !state,
         leftRowSizes: createRowSizes({}, state),
         leftSplit: state,
+        ...update,
       });
       break;
     }
@@ -180,6 +181,7 @@ export function viewTogglePanel(event: ViewToggleEvent) {
       viewUpdateGrid({
         middleRowSizes: createRowSizes({ row1: '2fr', row2: '1fr' }, state),
         middleSplit: state,
+        ...update,
       });
       break;
     }
@@ -189,6 +191,7 @@ export function viewTogglePanel(event: ViewToggleEvent) {
         rightHidden: !state,
         rightRowSizes: createRowSizes({}, false),
         rightSplit: false,
+        ...update,
       });
       break;
     }
@@ -198,6 +201,7 @@ export function viewTogglePanel(event: ViewToggleEvent) {
         rightHidden: !state,
         rightRowSizes: createRowSizes({}, state),
         rightSplit: state,
+        ...update,
       });
       break;
     }

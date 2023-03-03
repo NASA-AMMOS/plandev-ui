@@ -372,7 +372,6 @@ export function parseColumnSizes(
   leftHidden: boolean,
   rightHidden: boolean,
 ): ViewGridColumns | null {
-  console.log(leftHidden, rightHidden);
   if (!leftHidden && !rightHidden) {
     const matches = columnSizes.match(
       new RegExp(`^(?<col1>\\S+)\\s(!?\\S+)\\s(?<col2>\\S+)\\s(!?\\S+)\\s(?<col3>\\S+)$`, 'i'),
