@@ -1,8 +1,10 @@
 import { cleanup, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ModelSlim } from '../../../types/model';
 import type { PlanSchedulingSpec } from '../../../types/plan';
 import SchedulingGoalForm from './SchedulingGoalForm.svelte';
+
+vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
 
 const plans: PlanSchedulingSpec[] = [
   {

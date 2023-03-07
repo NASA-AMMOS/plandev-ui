@@ -1,5 +1,5 @@
 import { cleanup, render } from '@testing-library/svelte';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activityMetadataDefinitions } from '../../stores/activities';
 import { activityTypes } from '../../stores/plan';
 import type {
@@ -9,6 +9,8 @@ import type {
   PlanMergeRequestSchema,
 } from '../../types/plan';
 import PlanMergeReview from './PlanMergeReview.svelte';
+
+vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
 
 const mockMergeRequest: PlanMergeRequestSchema = {
   id: 1,

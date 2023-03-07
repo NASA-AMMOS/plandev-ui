@@ -29,6 +29,7 @@ const config = {
     }),
   ],
   test: {
+    alias: [{ find: /^svelte$/, replacement: 'svelte/internal' }], // https://github.com/vitest-dev/vitest/issues/2834
     environment: 'jsdom',
     include: ['./src/**/*.test.ts'],
     outputFile: {
