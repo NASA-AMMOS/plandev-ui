@@ -446,20 +446,7 @@ const gql = {
           message
           stack
         }
-        seqJson {
-          id
-          metadata
-          steps {
-            args
-            metadata
-            stem
-            time {
-              tag
-              type
-            }
-            type
-          }
-        }
+        seqJson
         status
       }
     }
@@ -771,22 +758,7 @@ const gql = {
           message
           stack
         }
-        seqJson {
-          id
-          metadata
-          steps {
-            args
-            description
-            models
-            metadata
-            stem
-            time {
-              tag
-              type
-            }
-            type
-          }
-        }
+        seqJson
         status
       }
     }
