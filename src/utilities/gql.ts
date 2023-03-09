@@ -742,7 +742,7 @@ const gql = {
   `,
 
   GET_USER_SEQUENCE_FROM_SEQ_JSON: `#graphql
-    query GetUserSequenceFromSeqJson($seqJson: SequenceSeqJsonInput!) {
+    query GetUserSequenceFromSeqJson($seqJson: SequenceSeqJson!) {
       sequence: getEdslForSeqJson(seqJson: $seqJson)
     }
   `,
