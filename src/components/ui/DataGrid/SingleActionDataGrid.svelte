@@ -78,7 +78,7 @@
   }
 
   function onKeyDown(event: KeyboardEvent) {
-    if (isDeleteEvent(event)) {
+    if (selectedItemId !== null && isDeleteEvent(event)) {
       deleteItem();
     }
   }
