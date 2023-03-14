@@ -10,7 +10,7 @@
   import { dndzone } from 'svelte-dnd-action';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { resourceTypes } from '../../../stores/resource';
-  import { resourcesByViewLayerId, simulationDataset } from '../../../stores/simulation';
+  import { externalResources, resourcesByViewLayerId, simulationDataset } from '../../../stores/simulation';
   import {
     selectedRow,
     selectedRowId,
@@ -424,7 +424,10 @@
     if (layer.chartType === 'activity') {
       return $activityTypes.map(t => t.name);
     } else if (layer.chartType === 'line' || layer.chartType === 'x-range') {
-      return $resourceTypes.map(t => t.name);
+      return $resourceTypes
+        .concat($externalResources)
+        .map(t => t.name)
+        .sort();
     }
     return [];
   }
