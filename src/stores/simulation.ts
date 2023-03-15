@@ -89,12 +89,15 @@ export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = deri
 );
 
 export const simulationStatus: Readable<Status | null> = derived(
-  [planRevision, simulationDataset],
-  ([$planRevision, $simulationDataset]) => {
-    if ($simulationDataset) {
+  [planRevision, simulationDataset, simulation],
+  ([$planRevision, $simulationDataset, $simulation]) => {
+    if ($simulationDataset && $simulation) {
       const { status } = $simulationDataset;
 
-      if ($planRevision !== $simulationDataset.plan_revision) {
+      if (
+        $planRevision !== $simulationDataset.plan_revision ||
+        $simulation.revision !== $simulationDataset.simulation_revision
+      ) {
         return Status.Modified;
       }
 

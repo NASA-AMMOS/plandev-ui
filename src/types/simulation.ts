@@ -55,6 +55,7 @@ export type SimulateResponse = {
 export type Simulation = {
   arguments: ArgumentsMap;
   id: number;
+  revision: number;
   template: SimulationTemplate | null;
 };
 
@@ -63,6 +64,7 @@ export type SimulationDataset = {
   id: number;
   plan_revision: number;
   reason: SimulationDatasetError | null;
+  simulation_revision: number;
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 

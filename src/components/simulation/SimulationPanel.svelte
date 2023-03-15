@@ -74,7 +74,7 @@
       <PanelHeaderActionButton
         disabled={!$enableSimulation}
         tooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-          ? 'Simluation up-to-date'
+          ? 'Simulation up-to-date'
           : ''}
         title="Simulate"
         showLabel

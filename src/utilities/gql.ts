@@ -1239,6 +1239,7 @@ const gql = {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         arguments
         id
+        revision
         template: simulation_template {
           arguments
           description
@@ -1255,6 +1256,7 @@ const gql = {
         id
         plan_revision
         reason
+        simulation_revision
         status
       }
     }
