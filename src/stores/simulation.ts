@@ -1,5 +1,15 @@
+import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { Resource, Simulation, SimulationDataset, SimulationTemplate, Span } from '../types/simulation';
+import type {
+  Resource,
+  Simulation,
+  SimulationDataset,
+  SimulationTemplate,
+  Span,
+  SpanId,
+  SpansMap,
+  SpanUtilityMaps,
+} from '../types/simulation';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { modelId, planId, planRevision } from './plan';
@@ -45,7 +55,43 @@ export const simulationDatasetIds = gqlSubscribable<number[]>(
 
 export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(gql.SUB_SIMULATION_TEMPLATES, { modelId }, []);
 
+export const selectedSpanId: Writable<SpanId | null> = writable(null);
+
 /* Derived. */
+
+export const spansMap: Readable<SpansMap> = derived(spans, $spans => keyBy($spans, 'id'));
+
+export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans => {
+  const spanUtilityMaps: SpanUtilityMaps = {
+    directiveIdToSpanIdMap: {},
+    spanIdToChildIdsMap: {},
+    spanIdToDirectiveIdMap: {},
+  };
+
+  $spans.reduce((map, span) => {
+    // Span Child mappings.
+    if (map.spanIdToChildIdsMap[span.id] === undefined) {
+      map.spanIdToChildIdsMap[span.id] = [];
+    }
+    if (span.parent_id !== null) {
+      if (map.spanIdToChildIdsMap[span.parent_id] === undefined) {
+        map.spanIdToChildIdsMap[span.parent_id] = [span.id];
+      } else {
+        map.spanIdToChildIdsMap[span.parent_id].push(span.id);
+      }
+    }
+
+    // Span <-> Directive mappings.
+    const directiveId = span.attributes?.directiveId;
+    if (directiveId !== null && directiveId !== undefined) {
+      map.directiveIdToSpanIdMap[directiveId] = span.id;
+      map.spanIdToDirectiveIdMap[span.id] = directiveId;
+    }
+    return map;
+  }, spanUtilityMaps);
+
+  return spanUtilityMaps;
+});
 
 export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(
   [externalResources, resources, view],
@@ -117,9 +163,14 @@ export const simulationStatus: Readable<Status | null> = derived(
   null,
 );
 
-export const enableSimulation: Readable<boolean> = derived([simulationStatus], ([$simulationStatus]) => {
+export const enableSimulation: Readable<boolean> = derived(simulationStatus, $simulationStatus => {
   return $simulationStatus === Status.Modified || $simulationStatus === null;
 });
+
+export const selectedSpan = derived(
+  [spansMap, selectedSpanId],
+  ([$spansMap, $selectedSpanId]) => $spansMap[$selectedSpanId] || null,
+);
 
 /* Helper Functions. */
 

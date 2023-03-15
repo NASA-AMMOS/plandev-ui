@@ -1,4 +1,6 @@
-import parse from 'postgres-interval';
+import parseInterval from 'postgres-interval';
+import type { ActivityDirectiveId, ActivityDirectivesMap } from '../types/activity';
+import type { SpansMap, SpanUtilityMaps } from '../types/simulation';
 import type { ParsedDoyString, ParsedDurationString, ParsedYmdString } from '../types/time';
 
 function parseDurationString(durationString: string): ParsedDurationString | never {
@@ -199,6 +201,77 @@ export function convertUsToDurationString(durationUs: number, includeZeros: bool
 }
 
 /**
+ * Calculates an activity directive's start time recursively based on what it's anchored to.
+ * @todo Calculate this in the database?
+ */
+export function getActivityDirectiveStartTimeMs(
+  id: ActivityDirectiveId,
+  planStartTimeYmd: string,
+  planEndTimeDoy: string,
+  activityDirectivesMap: ActivityDirectivesMap,
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+  cachedStartTimes: { [activityDirectiveId: ActivityDirectiveId]: number } = {},
+  traversalMap: { [activityDirectiveId: ActivityDirectiveId]: boolean } = {},
+): number | never {
+  // If the start time has already been determined in an earlier iteration
+  if (cachedStartTimes[id]) {
+    return cachedStartTimes[id];
+  }
+
+  const activityDirective = activityDirectivesMap[id];
+
+  if (activityDirective) {
+    const { anchored_to_start, anchor_id } = activityDirective;
+
+    if (anchor_id != null) {
+      if (traversalMap[anchor_id]) {
+        throw Error(`Cycle detected with Activity Directive: ${anchor_id}`);
+      }
+
+      const anchoredSpanId = spanUtilityMaps.directiveIdToSpanIdMap[anchor_id];
+      const anchoredSpan = spansMap[anchoredSpanId];
+
+      const anchoredStartTimeMs = getUnixEpochTimeFromInterval(
+        `${new Date(
+          getUnixEpochTimeFromInterval(
+            `${new Date(
+              getActivityDirectiveStartTimeMs(
+                anchor_id,
+                planStartTimeYmd,
+                planEndTimeDoy,
+                activityDirectivesMap,
+                spansMap,
+                spanUtilityMaps,
+                cachedStartTimes,
+                { ...traversalMap, [anchor_id]: true },
+              ),
+            )}`,
+            anchored_to_start ? '0' : anchoredSpan?.duration ?? '0',
+          ),
+        )}`,
+        activityDirective.start_offset,
+      );
+
+      cachedStartTimes[anchor_id] = anchoredStartTimeMs;
+
+      return anchoredStartTimeMs;
+    }
+
+    const startTimeFromPlanMs = getUnixEpochTimeFromInterval(
+      anchored_to_start ? planStartTimeYmd : `${new Date(getUnixEpochTime(planEndTimeDoy))}`,
+      activityDirective.start_offset,
+    );
+
+    cachedStartTimes[id] = startTimeFromPlanMs;
+
+    return startTimeFromPlanMs;
+  }
+
+  return new Date(planStartTimeYmd).getTime();
+}
+
+/**
  * Get the number of days in a given month (0-11) of a specific year.
  * @example getDaysInMonth(2020, 5) -> 3
  */
@@ -254,10 +327,10 @@ export function getDoyTime(date: Date, includeMsecs = true): string {
 /**
  * Get a day-of-year timestamp from a given an ISO 8601 start time string, and a Postgres Interval duration.
  */
-export function getDoyTimeFromDuration(startTime: string, duration: string, includeMsecs = true): string {
+export function getDoyTimeFromInterval(startTime: string, interval: string, includeMsecs = true): string {
   const startDate = new Date(startTime);
-  const interval = parse(duration);
-  const { days, hours, milliseconds, minutes, seconds } = interval;
+  const parsedInterval = parseInterval(interval);
+  const { days, hours, milliseconds, minutes, seconds } = parsedInterval;
   const endDate = new Date(startDate.getTime());
   endDate.setUTCDate(endDate.getUTCDate() + days);
   endDate.setUTCHours(endDate.getUTCHours() + hours);
@@ -272,10 +345,10 @@ export function getDoyTimeFromDuration(startTime: string, duration: string, incl
  * If duration is null, undefined, or empty string then we just return 0.
  * @note This function assumes 24-hour days.
  */
-export function getDurationInMs(duration: string | null | undefined): number {
-  if (duration !== null && duration !== undefined && duration !== '') {
-    const interval = parse(duration);
-    const { days, hours, milliseconds, minutes, seconds } = interval;
+export function getIntervalInMs(interval: string | null | undefined): number {
+  if (interval !== null && interval !== undefined && interval !== '') {
+    const parsedInterval = parseInterval(interval);
+    const { days, hours, milliseconds, minutes, seconds } = parsedInterval;
     const daysInMs = days * 24 * 60 * 60 * 1000;
     const hoursInMs = hours * 60 * 60 * 1000;
     const minutesInMs = minutes * 60 * 1000;
@@ -291,10 +364,27 @@ export function getDurationInMs(duration: string | null | undefined): number {
 export function getIntervalFromDoyRange(startTime: string, endTime: string): string {
   const startTimeMs = getUnixEpochTime(startTime);
   const endTimeMs = getUnixEpochTime(endTime);
+  return getIntervalUnixEpochTime(startTimeMs, endTimeMs);
+}
+
+/**
+ * Returns a Postgres Interval over the specified range of unix epoch UTC times.
+ */
+export function getIntervalUnixEpochTime(startTimeMs: number, endTimeMs: number): string {
   const differenceMs = endTimeMs - startTimeMs;
+
   const seconds = Math.floor(differenceMs / 1000);
-  const milliseconds = differenceMs % 1000;
-  return `${seconds} seconds ${milliseconds} milliseconds`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  const remainingMilliseconds = differenceMs % 1000;
+
+  const paddedHours = hours.toString().padStart(2, '0');
+  const paddedMinutes = minutes.toString().padStart(2, '0');
+  const paddedSeconds = remainingSeconds.toString().padStart(2, '0');
+  const paddedMilliseconds = remainingMilliseconds.toString().padStart(3, '0');
+
+  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}.${paddedMilliseconds}`;
 }
 
 /**
@@ -312,6 +402,14 @@ export function getUnixEpochTime(doyTimestamp: string): number {
   }
 
   return 0;
+}
+
+/**
+ * Helper to calculate a unix epoch time in UTC from a start time and Postgres interval.
+ */
+export function getUnixEpochTimeFromInterval(startTime: string, interval: string, includeMsecs = true): number {
+  const doyTime = getDoyTimeFromInterval(startTime, interval, includeMsecs);
+  return getUnixEpochTime(doyTime);
 }
 
 /**

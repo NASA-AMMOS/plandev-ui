@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
-import type { View, ViewActivityTable, ViewGrid, ViewToggleEvent } from '../types/view';
+import type { View, ViewGrid, ViewTable, ViewToggleEvent } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { TimelineLockStatus } from '../utilities/timeline';
@@ -208,22 +208,33 @@ export function viewTogglePanel(event: ViewToggleEvent) {
   }
 }
 
-export function viewUpdateActivityTables(update: Partial<ViewActivityTable>, activityTableId: number): void {
+export function viewUpdateActivityDirectivesTable(update: Partial<ViewTable>): void {
   view.update(currentView => ({
     ...currentView,
     definition: {
       ...currentView.definition,
       plan: {
         ...currentView.definition.plan,
-        activityTables: currentView.definition.plan.activityTables.map((table: ViewActivityTable) => {
-          if (table.id === activityTableId) {
-            return {
-              ...table,
-              ...update,
-            };
-          }
-          return table;
-        }),
+        activityDirectivesTable: {
+          ...currentView.definition.plan.activityDirectivesTable,
+          ...update,
+        },
+      },
+    },
+  }));
+}
+
+export function viewUpdateActivitySpansTable(update: Partial<ViewTable>): void {
+  view.update(currentView => ({
+    ...currentView,
+    definition: {
+      ...currentView.definition,
+      plan: {
+        ...currentView.definition.plan,
+        activitySpansTable: {
+          ...currentView.definition.plan.activitySpansTable,
+          ...update,
+        },
       },
     },
   }));

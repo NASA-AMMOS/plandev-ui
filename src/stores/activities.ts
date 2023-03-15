@@ -1,17 +1,18 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type {
-  ActivitiesByView,
-  ActivitiesMap,
-  Activity,
   ActivityDirective,
-  ActivityUniqueId,
+  ActivityDirectiveId,
+  ActivityDirectivesByView,
+  ActivityDirectivesMap,
   AnchorValidationStatus,
 } from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
+import type { SpanId } from '../types/simulation';
 import gql from '../utilities/gql';
 import { planId } from './plan';
+import { selectedSpanId } from './simulation';
 import { gqlSubscribable } from './subscribable';
-import { view } from './views';
+import { view, viewUpdateGrid } from './views';
 
 /* Subscriptions. */
 
@@ -31,75 +32,105 @@ export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefin
 
 /* Writeable. */
 
-export const activitiesMap: Writable<ActivitiesMap> = writable({});
+export const activityDirectivesMap: Writable<ActivityDirectivesMap> = writable({});
 
-export const selectedActivityId: Writable<ActivityUniqueId | null> = writable(null);
+export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> = writable(null);
 
 /* Derived. */
 
-export const activities: Readable<Activity[]> = derived(activitiesMap, $activitiesMap => Object.values($activitiesMap));
+export const activityDirectivesList: Readable<ActivityDirective[]> = derived(
+  activityDirectivesMap,
+  $activityDirectivesMap => Object.values($activityDirectivesMap),
+);
 
-export const activitiesByView: Readable<ActivitiesByView> = derived([activities, view], ([$activities, $view]) => {
-  const { definition } = $view;
-  const { plan } = definition;
-  const { timelines } = plan;
-  const byLayerId: Record<number, Activity[]> = {};
-  const byTimelineId: Record<number, Activity[]> = {};
+export const activityDirectivesByView: Readable<ActivityDirectivesByView> = derived(
+  [activityDirectivesList, view],
+  ([$activityDirectivesList, $view]) => {
+    const { definition } = $view;
+    const { plan } = definition;
+    const { timelines } = plan;
+    const byLayerId: Record<number, ActivityDirective[]> = {};
+    const byTimelineId: Record<number, ActivityDirective[]> = {};
 
-  for (const activity of $activities) {
-    for (const timeline of timelines) {
-      const { rows } = timeline;
+    for (const activityDirective of $activityDirectivesList) {
+      for (const timeline of timelines) {
+        const { rows } = timeline;
 
-      for (const row of rows) {
-        const { layers } = row;
+        for (const row of rows) {
+          const { layers } = row;
 
-        for (const layer of layers) {
-          const { filter } = layer;
+          for (const layer of layers) {
+            const { filter } = layer;
 
-          if (filter.activity !== undefined) {
-            const { activity: activityFilter } = filter;
-            const { types } = activityFilter;
-            const includeActivity = types.indexOf(activity.type) > -1;
+            if (filter.activity !== undefined) {
+              const { activity: activityFilter } = filter;
+              const { types } = activityFilter;
+              const includeActivity = types.indexOf(activityDirective.type) > -1;
 
-            if (includeActivity) {
-              if (byLayerId[layer.id] === undefined) {
-                byLayerId[layer.id] = [activity];
-              } else {
-                byLayerId[layer.id].push(activity);
-              }
+              if (includeActivity) {
+                if (byLayerId[layer.id] === undefined) {
+                  byLayerId[layer.id] = [activityDirective];
+                } else {
+                  byLayerId[layer.id].push(activityDirective);
+                }
 
-              if (byTimelineId[timeline.id] === undefined) {
-                byTimelineId[timeline.id] = [activity];
-              } else {
-                byTimelineId[timeline.id].push(activity);
+                if (byTimelineId[timeline.id] === undefined) {
+                  byTimelineId[timeline.id] = [activityDirective];
+                } else {
+                  byTimelineId[timeline.id].push(activityDirective);
+                }
               }
             }
           }
         }
       }
     }
-  }
 
-  return { byLayerId, byTimelineId };
-});
+    return { byLayerId, byTimelineId };
+  },
+);
 
-export const allActivityTags: Readable<string[]> = derived(activities, $activities => {
-  const tagMap = $activities.reduce((map: Record<string, boolean>, activity: Activity) => {
-    activity.tags.forEach(tag => (map[tag] = true));
-    return map;
-  }, {});
+export const allActivityDirectiveTags: Readable<string[]> = derived(activityDirectivesList, $activityDirectivesList => {
+  const tagMap = $activityDirectivesList.reduce(
+    (map: Record<string, boolean>, activityDirective: ActivityDirective) => {
+      activityDirective.tags.forEach(tag => (map[tag] = true));
+      return map;
+    },
+    {},
+  );
   return Object.keys(tagMap).sort();
 });
 
-export const selectedActivity = derived(
-  [activitiesMap, selectedActivityId],
-  ([$activitiesMap, $selectedActivityId]) => $activitiesMap[$selectedActivityId] || null,
+export const selectedActivityDirective = derived(
+  [activityDirectivesMap, selectedActivityDirectiveId],
+  ([$activityDirectivesMap, $selectedActivityDirectiveId]) =>
+    $activityDirectivesMap[$selectedActivityDirectiveId] || null,
 );
 
 /* Helper Functions. */
 
+export function selectActivity(
+  activityDirectiveId: ActivityDirectiveId | null,
+  spanId: SpanId | null,
+  switchToTable = true,
+): void {
+  if (activityDirectiveId !== null && spanId === null) {
+    selectedSpanId.set(null);
+    selectedActivityDirectiveId.set(activityDirectiveId);
+    if (switchToTable) {
+      viewUpdateGrid({ middleComponentBottom: 'ActivityDirectivesTablePanel' });
+    }
+  } else if (activityDirectiveId === null && spanId !== null) {
+    selectedSpanId.set(spanId);
+    selectedActivityDirectiveId.set(null);
+    if (switchToTable) {
+      viewUpdateGrid({ middleComponentBottom: 'ActivitySpansTablePanel' });
+    }
+  }
+}
+
 export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
-  activitiesMap.set({});
-  selectedActivityId.set(null);
+  activityDirectivesMap.set({});
+  selectedActivityDirectiveId.set(null);
 }

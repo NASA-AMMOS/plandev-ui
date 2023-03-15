@@ -5,20 +5,23 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
-  import type { Activity } from '../../types/activity';
+  import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
+  import type { Span } from '../../types/simulation';
   import type { MouseOver, TimeRange } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
+  import { getDoyTime, getIntervalInMs, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
 
-  export let activities: Activity[] = [];
+  export let activityDirectives: ActivityDirective[] = [];
   export let constraintViolations: ConstraintViolation[] = [];
   export let cursorEnabled: boolean = true;
   export let drawHeight: number = 40;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
   export let mouseOver: MouseOver;
+  export let planStartTimeYmd: string;
+  export let spans: Span[] = [];
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -156,29 +159,43 @@
   $: windowMin = xScaleMax?.range()[1];
 
   // Update histograms if xScaleMax, activities, or constraint violation changes
-  $: if ((xScaleMax || activities || constraintViolations) && windowMin - windowMax > 0) {
+  $: if ((xScaleMax || activityDirectives || constraintViolations) && windowMin - windowMax > 0) {
     activityHistValues = [];
     const windowStartTime = xScaleMax.invert(windowMax).getTime();
     const windowEndTime = xScaleMax.invert(windowMin).getTime();
     const binSize = (windowEndTime - windowStartTime) / numBins - 1;
 
-    // Compute activity histogram
+    // Compute activity histogram for directives and spans
     activityHistValues = Array(numBins).fill(0);
-    activities.forEach(activity => {
-      const activityX = getUnixEpochTime(activity.start_time_doy);
-      const activityDuration = getDurationInMs(activity.duration);
 
-      // Filter out points that do not fall within the plan bounds at all
-      if (activityX > windowEndTime || activityX + activityDuration < windowStartTime) {
+    activityDirectives.forEach(activityDirective => {
+      const activityX = getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
+
+      // Filter out directives that do not fall within the plan bounds at all
+      if (activityX > windowEndTime || activityX < windowStartTime) {
         return;
       }
 
       // Figure out which start bin this is in
       const startBin = Math.floor((activityX - windowStartTime) / binSize);
       activityHistValues[startBin]++;
+    });
+
+    spans.forEach(span => {
+      const spanX = getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset);
+      const spanDuration = getIntervalInMs(span.duration);
+
+      // Filter out spans that do not fall within the plan bounds at all
+      if (spanX > windowEndTime || spanX + spanDuration < windowStartTime) {
+        return;
+      }
+
+      // Figure out which start bin this is in
+      const startBin = Math.floor((spanX - windowStartTime) / binSize);
+      activityHistValues[startBin]++;
 
       // Figure out which other bins this value is in
-      const x = Math.floor(activityDuration / binSize) + 1;
+      const x = Math.floor(spanDuration / binSize) + 1;
       for (let i = 1; i < x; i++) {
         if (startBin + i >= activityHistValues.length) {
           return;

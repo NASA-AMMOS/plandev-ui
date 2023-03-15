@@ -7,27 +7,28 @@
   import TreeParentCollapsedIcon from '@nasa-jpl/stellar/icons/tree_parent_collapsed.svg?component';
   import TreeParentExpandedIcon from '@nasa-jpl/stellar/icons/tree_parent_expanded.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivitiesMap, Activity, ActivityUniqueId } from '../../types/activity';
+  import type { Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
 
-  export let activitiesMap: ActivitiesMap = {};
   export let expanded = true;
-  export let rootUniqueId: ActivityUniqueId | null = null;
-  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let rootSpanId: SpanId | null = null;
+  export let selectedSpanId: SpanId | null = null;
+  export let spansMap: SpansMap = {};
+  export let spanUtilityMaps: SpanUtilityMaps;
 
   const dispatch = createEventDispatcher();
 
-  let activity: Activity | null = null;
-  let childUniqueIds: ActivityUniqueId[] = [];
+  let childIds: SpanId[] = [];
+  let span: Span | null = null;
 
-  $: activity = activitiesMap[rootUniqueId] ?? null;
-  $: isRoot = activity ? !activity.parent_id : true;
-  $: type = activity?.type || '';
-  $: childUniqueIds = activity?.childUniqueIds;
-  $: hasChildren = childUniqueIds ? childUniqueIds.length > 0 : false;
+  $: span = spansMap[rootSpanId] ?? null;
+  $: isRoot = span ? !span.parent_id : true;
+  $: type = span?.type || '';
+  $: childIds = spanUtilityMaps?.spanIdToChildIdsMap[span?.id] ?? [];
+  $: hasChildren = childIds ? childIds.length > 0 : false;
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =
     'activity-decomposition-node activity-decomposition-' +
-    (rootUniqueId === selectedActivityId ? 'selected st-typography-medium' : 'unselected st-typography-body');
+    (rootSpanId === selectedSpanId ? 'selected st-typography-medium' : 'unselected st-typography-body');
   $: buttonClass = 'st-button icon' + (!hasChildren ? ' st-button-no-hover' : '');
 
   function toggle() {
@@ -35,7 +36,7 @@
   }
 </script>
 
-{#if !activity}
+{#if !span}
   <div class="activity-decomposition activity-decomposition-not-found st-typography-medium" {role}>
     Activity not found
   </div>
@@ -59,19 +60,14 @@
       {/if}
     </button>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span on:click={() => dispatch('selectActivity', rootUniqueId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
+    <span on:click={() => dispatch('select', rootSpanId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
   </div>
 
   {#if hasChildren && expanded}
     <ul>
-      {#each childUniqueIds as childUniqueId}
+      {#each childIds as childId}
         <li>
-          <svelte:self
-            {activitiesMap}
-            rootUniqueId={activitiesMap[childUniqueId]?.uniqueId}
-            {selectedActivityId}
-            on:selectActivity
-          />
+          <svelte:self {spansMap} rootSpanId={spansMap[childId]?.id} {selectedSpanId} {spanUtilityMaps} on:select />
         </li>
       {/each}
     </ul>

@@ -3,21 +3,19 @@
 <script lang="ts">
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivitiesMap, Activity, ActivityId } from '../../types/activity';
-  import { getActivityDirectiveUniqueId, isDirective } from '../../utilities/activities';
+  import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import { getTarget } from '../../utilities/generic';
-  import { convertDurationStringToInterval, convertUsToDurationString, getDurationInMs } from '../../utilities/time';
+  import { convertDurationStringToInterval, convertUsToDurationString, getIntervalInMs } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Highlight from '../ui/Highlight.svelte';
 
-  export let activity: Activity;
-  export let activitiesMap: ActivitiesMap = {};
-  export let anchorId: ActivityId | null = null;
+  export let activityDirective: ActivityDirective;
+  export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let anchorId: ActivityDirectiveId | null = null;
   export let disabled: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let isAnchoredToStart: boolean = true;
-  export let planId: number;
   export let startOffset: string = null;
 
   const dispatch = createEventDispatcher();
@@ -25,46 +23,49 @@
   const defaultAnchorString = 'To Plan';
 
   let anchorableActivityDirectives: string[] = [];
-  let anchoredActivity: Activity | null = null;
+  let anchoredActivity: ActivityDirective | null = null;
   let anchorInputString: string = '';
   let anchoredActivityError: string | null = null;
-  let previousActivityId: ActivityId;
+  let previousActivityDirectiveId: ActivityDirectiveId;
   let isRelativeOffset: boolean = false;
   let startOffsetString: string = '';
   let startOffsetError: string | null = null;
 
-  $: anchoredActivity = anchorId !== null ? activitiesMap[getActivityDirectiveUniqueId(planId, anchorId)] : null;
-  $: anchorableActivityDirectives = Object.values(activitiesMap)
-    .filter(directive => isDirective(directive) && directive.id !== activity.id)
-    .map(formatActivityAnchorText);
-  $: startOffsetError = validateStartOffset(startOffsetString, activity);
+  $: anchoredActivity = anchorId !== null ? activityDirectivesMap[anchorId] : null;
+  $: anchorableActivityDirectives = Object.values(activityDirectivesMap)
+    .filter(directive => directive.id !== activityDirective.id)
+    .map(formatActivityDirectiveAnchorText);
+  $: startOffsetError = validateStartOffset(startOffsetString, activityDirective);
 
   $: if (startOffset) {
-    const offsetString = convertUsToDurationString(getDurationInMs(startOffset) * 1000, true);
+    const offsetString = convertUsToDurationString(getIntervalInMs(startOffset) * 1000, true);
     // remove `y` if 0 to keep the string shorter
     startOffsetString = offsetString.replace(/0y\s?/, '');
   }
-  // only set this when the viewed activity is changed
-  $: if (activity.id !== previousActivityId) {
-    previousActivityId = activity.id;
-    isRelativeOffset =
-      !!activity.anchor_id || (!activity.anchor_id && !activity.anchored_to_start) || !!startOffsetError;
 
-    anchorInputString = anchoredActivity ? formatActivityAnchorText(anchoredActivity) : defaultAnchorString;
+  // only set this when the viewed activity is changed
+  $: if (activityDirective.id !== previousActivityDirectiveId) {
+    previousActivityDirectiveId = activityDirective.id;
+    isRelativeOffset =
+      !!activityDirective.anchor_id ||
+      (!activityDirective.anchor_id && !activityDirective.anchored_to_start) ||
+      !!startOffsetError;
+
+    anchorInputString = anchoredActivity ? formatActivityDirectiveAnchorText(anchoredActivity) : defaultAnchorString;
     validateAnchorInput(anchorInputString);
   }
 
-  function formatActivityAnchorText(activity: Activity) {
-    return `${activity.id}${anchorTextDelimiter}${activity.name}`;
+  function formatActivityDirectiveAnchorText(activityDirective: ActivityDirective) {
+    return `${activityDirective.id}${anchorTextDelimiter}${activityDirective.name}`;
   }
 
-  function getIdFromAnchorText(anchorText: string) {
-    return anchorText.split(anchorTextDelimiter)[0];
+  function getActivityDirectiveIdFromAnchorText(anchorText: string): number {
+    return parseInt(anchorText.split(anchorTextDelimiter)[0], 10);
   }
 
-  function validateStartOffset(offsetString: string, activity: Activity) {
-    let validationError = activity.anchor_validations?.reason_invalid
-      ? activity.anchor_validations.reason_invalid
+  function validateStartOffset(offsetString: string, activityDirective: ActivityDirective) {
+    let validationError = activityDirective.anchor_validations?.reason_invalid
+      ? activityDirective.anchor_validations.reason_invalid
       : null;
 
     try {
@@ -76,23 +77,24 @@
     return validationError;
   }
 
-  function getAnchorActivity(inputString: string): Activity | null {
-    const activityId = getIdFromAnchorText(inputString);
-    if (activityId !== '' && !/to plan/i.test(anchorInputString)) {
-      return activitiesMap[getActivityDirectiveUniqueId(planId, parseInt(activityId))];
+  function getAnchorActivityDirective(inputString: string): ActivityDirective | null {
+    const activityDirectiveId = getActivityDirectiveIdFromAnchorText(inputString);
+
+    if (!Number.isNaN(activityDirectiveId) && !/to plan/i.test(anchorInputString)) {
+      return activityDirectivesMap[activityDirectiveId];
     }
 
     return null;
   }
 
-  function updateAnchor(activity: Activity | null) {
-    anchoredActivity = activity;
-    if (activity === null) {
+  function updateAnchor(activityDirective: ActivityDirective | null) {
+    anchoredActivity = activityDirective;
+    if (activityDirective === null) {
       dispatch('updateAnchor', null);
       anchorInputString = defaultAnchorString;
     } else {
       dispatch('updateAnchor', anchoredActivity.id);
-      anchorInputString = formatActivityAnchorText(anchoredActivity);
+      anchorInputString = formatActivityDirectiveAnchorText(anchoredActivity);
     }
   }
 
@@ -107,7 +109,7 @@
 
   function onUpdateAnchor() {
     if (validateAnchorInput(anchorInputString)) {
-      const activityToAnchorTo = getAnchorActivity(anchorInputString);
+      const activityToAnchorTo = getAnchorActivityDirective(anchorInputString);
       updateAnchor(activityToAnchorTo);
     }
   }
@@ -127,7 +129,9 @@
   function onUpdateStartOffset(event: Event) {
     const { value } = getTarget(event);
 
-    startOffsetError = activity.anchor_validations?.reason_invalid ? activity.anchor_validations.reason_invalid : null;
+    startOffsetError = activityDirective.anchor_validations?.reason_invalid
+      ? activityDirective.anchor_validations.reason_invalid
+      : null;
 
     try {
       updateStartOffset(convertDurationStringToInterval(`${value}`));
@@ -138,16 +142,18 @@
 
   function validateAnchorInput(inputString: string): boolean {
     anchoredActivityError = null;
+
     try {
-      const activityId = getIdFromAnchorText(inputString);
-      if (activityId !== '' && !/to plan/i.test(anchorInputString)) {
-        const activityToAnchorTo = activitiesMap[getActivityDirectiveUniqueId(planId, parseInt(activityId))];
+      const activityDirectiveId = getActivityDirectiveIdFromAnchorText(inputString);
+
+      if (!Number.isNaN(activityDirectiveId) && !/to plan/i.test(anchorInputString)) {
+        const activityToAnchorTo = activityDirectivesMap[activityDirectiveId];
 
         if (!activityToAnchorTo) {
           throw Error('Activity corresponding to chosen anchor was not found');
         }
 
-        if (activityToAnchorTo.id === activity.id) {
+        if (activityToAnchorTo.id === activityDirective.id) {
           throw Error('Current selected activity anchor cannot be itself');
         }
       }

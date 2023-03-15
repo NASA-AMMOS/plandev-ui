@@ -49,8 +49,8 @@ test.describe.serial('Plan', () => {
   });
 
   test('Initially the View layout should be displayed', async () => {
+    await expect(plan.panelActivityDirectivesTable).toBeVisible();
     await expect(plan.panelActivityForm).toBeVisible();
-    await expect(plan.panelActivityTable).toBeVisible();
     await expect(plan.panelActivityTypes).toBeVisible();
     await expect(plan.panelTimeline).toBeVisible();
   });

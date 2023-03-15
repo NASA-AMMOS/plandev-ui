@@ -85,11 +85,6 @@
 
   <svelte:fragment slot="body">
     <fieldset>
-      <label for="id">Simulation ID</label>
-      <input value={$simulation?.id} class="st-input w-100" disabled name="id" />
-    </fieldset>
-
-    <fieldset>
       <label for="simulationDatasetId">Simulation Dataset ID</label>
       <select bind:value={$simulationDatasetId} class="st-select w-100" name="simulationDatasetId">
         {#if !$simulationDatasetIds.length}

@@ -1,3 +1,4 @@
+import type { ActivityDirectiveId } from './activity';
 import type { BaseError, SimulationDatasetError } from './errors';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
@@ -94,6 +95,20 @@ export type SpanAttributes = {
 };
 
 export type SpanId = number;
+
+export type SpansMap = Record<SpanId, Span>;
+
+export type SpanIdToDirectiveIdMap = Record<SpanId, ActivityDirectiveId>;
+
+export type DirectiveIdToSpanIdMap = Record<ActivityDirectiveId, SpanId>;
+
+export type SpanIdToChildIdsMap = Record<SpanId, SpanId[]>;
+
+export type SpanUtilityMaps = {
+  directiveIdToSpanIdMap: SpanIdToDirectiveIdMap;
+  spanIdToChildIdsMap: SpanIdToChildIdsMap;
+  spanIdToDirectiveIdMap: SpanIdToDirectiveIdMap;
+};
 
 export type Span = {
   attributes: SpanAttributes;

@@ -10,6 +10,7 @@
   export let disabled: boolean = false;
   export let expanded: boolean = false;
   export let formParameters: FormParameter[] = [];
+  export let hideRightAdornments: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let levelPadding: number = 20;
   export let showName: boolean = true;
@@ -29,6 +30,7 @@
           {disabled}
           {expanded}
           {formParameter}
+          {hideRightAdornments}
           {labelColumnWidth}
           {level}
           {levelPadding}
@@ -36,7 +38,15 @@
           on:change
         />
       {:else}
-        <ParameterBase {disabled} {formParameter} {labelColumnWidth} {level} {levelPadding} on:change />
+        <ParameterBase
+          {disabled}
+          {formParameter}
+          {hideRightAdornments}
+          {labelColumnWidth}
+          {level}
+          {levelPadding}
+          on:change
+        />
       {/if}
     </div>
   </Highlight>

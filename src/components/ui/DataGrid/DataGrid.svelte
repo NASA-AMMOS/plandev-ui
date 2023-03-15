@@ -26,6 +26,8 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
+  import ContextMenu from '../../context-menu/ContextMenu.svelte';
+  import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
   export function autoSizeColumns(keys: (string | Column)[], skipHeader?: boolean) {
     gridOptions?.columnApi?.autoSizeColumns(keys, skipHeader);
@@ -53,7 +55,7 @@
   export let currentSelectedRowId: RowId | null = null;
   export let highlightOnSelection: boolean = true;
   export let idKey: keyof TRowData = 'id';
-  export let preventDefaultOnContextMenu: boolean | undefined = undefined;
+  export let useCustomContextMenu: boolean | undefined = undefined;
   export let rowData: TRowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let scrollToSelection: boolean = false;
@@ -70,6 +72,7 @@
 
   const dispatch = createEventDispatcher();
 
+  let contextMenu: ContextMenu;
   let gridOptions: GridOptions<TRowData>;
   let gridDiv: HTMLDivElement;
   let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
@@ -108,7 +111,7 @@
       selectedRow?.setSelected(false);
     });
 
-    selectedRowIds.forEach(selectedRowId => {
+    selectedRowIdsSet.forEach(selectedRowId => {
       const selectedRow = gridOptions?.api?.getRowNode(`${selectedRowId}`);
       selectedRow?.setSelected(true);
     });
@@ -148,8 +151,33 @@
     return rowClass.join(' ');
   }
 
+  function onAutoSizeContent() {
+    gridOptions?.columnApi?.autoSizeAllColumns();
+  }
+
+  function onAutoSizeSpace() {
+    gridOptions?.api?.sizeColumnsToFit();
+  }
+
   function onColumnStateChange() {
     dispatch('columnStateChange', gridOptions?.columnApi?.getColumnState());
+  }
+
+  function onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
+    if (useCustomContextMenu) {
+      const { data: clickedRow } = event;
+      if (
+        selectedRowIds.length <= 1 &&
+        (!isRowSelectable || isRowSelectable(event.node)) &&
+        !suppressRowClickSelection
+      ) {
+        currentSelectedRowId = getRowId(clickedRow);
+        selectedRowIds = [currentSelectedRowId];
+      }
+
+      contextMenu.show(event.event as MouseEvent);
+    }
+    dispatch('cellContextMenu', event);
   }
 
   onMount(() => {
@@ -160,9 +188,7 @@
       getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}` }),
       isRowSelectable,
-      onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
-        dispatch('cellContextMenu', event);
-      },
+      onCellContextMenu,
       onCellMouseOver(event: CellMouseOverEvent<TRowData>) {
         dispatch('cellMouseOver', event);
       },
@@ -259,7 +285,7 @@
         dispatch('sortChanged', event);
         onColumnStateChangeDebounced();
       },
-      preventDefaultOnContextMenu,
+      preventDefaultOnContextMenu: useCustomContextMenu,
       rowData,
       rowSelection,
       suppressCellFocus,
@@ -271,6 +297,11 @@
 </script>
 
 <div bind:this={gridDiv} class="ag-theme-stellar table" class:highlightOnSelection tabindex="-1" on:focus on:blur />
+
+<ContextMenu bind:this={contextMenu}>
+  <slot name="context-menu" />
+  <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
+</ContextMenu>
 
 <style>
   .table {

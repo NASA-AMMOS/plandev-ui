@@ -26,8 +26,3 @@ export type ConstraintViolation = {
 };
 
 export type ConstraintViolationsMap = Record<Constraint['name'], Omit<ConstraintViolation, 'constraintName'>[]>;
-
-export type MouseOverViolations = {
-  e: MouseEvent;
-  violations: ConstraintViolation[];
-};

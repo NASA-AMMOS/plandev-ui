@@ -11,10 +11,8 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
-  import ContextMenu from '../context-menu/ContextMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
-  import ColumnResizeContextMenu from '../ui/DataGrid/column-menu/ColumnResizeContextMenu.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -29,7 +27,6 @@
   type ExpansionSetRuleSelectionRendererParams = ICellRendererParams<ActivityTypeExpansionRules> & CellRendererParams;
 
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
-  let contextMenu: ContextMenu;
   let dataGrid: DataGrid;
   let lastSelectedExpansionRule: ExpansionRule | null = null;
   let logicEditorActivityType: string | null = null;
@@ -40,7 +37,6 @@
   let setExpansionRuleIds: number[] = [];
   let setDictionaryId: number | null = null;
   let setModelId: number | null = null;
-  let showContextMenu: boolean = true;
 
   $: effects
     .getActivityTypesExpansionRules(setModelId)
@@ -61,22 +57,6 @@
       if (newSetId !== null) {
         goto(`${base}/expansion/sets`);
       }
-    }
-  }
-
-  function onAutoSizeContent() {
-    dataGrid?.autoSizeAllColumns();
-  }
-
-  function onAutoSizeSpace() {
-    dataGrid?.sizeColumnsToFit();
-  }
-
-  function onCellContextMenu(event: CustomEvent) {
-    if (showContextMenu) {
-      const { detail } = event;
-
-      contextMenu.show(detail.event);
     }
   }
 
@@ -185,15 +165,11 @@
               { field: 'name', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
               expansionSetRuleSelectionColumnDef,
             ]}
-            preventDefaultOnContextMenu={showContextMenu}
+            useCustomContextMenu
             rowData={activityTypesExpansionRules.filter(activityType => activityType.expansion_rules.length > 0)}
             shouldAutoGenerateId={true}
             suppressRowClickSelection={true}
-            on:cellContextMenu={onCellContextMenu}
           />
-          <ContextMenu bind:this={contextMenu}>
-            <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
-          </ContextMenu>
         {/if}
       </fieldset>
     </svelte:fragment>

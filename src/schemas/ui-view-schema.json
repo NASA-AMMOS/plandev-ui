@@ -49,11 +49,33 @@
       "required": ["text"],
       "type": "object"
     },
+    "table": {
+      "additionalProperties": false,
+      "description": "Table specification for visualizing tabular data via ag-grid",
+      "properties": {
+        "columnDefs": {
+          "description": "Array of column definition objects that conform to the ag-grid ColumnDef type",
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "columnStates": {
+          "description": "Array of column state objects that conform to the ag-grid ColumnState type",
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["columnDefs", "columnStates"],
+      "type": "object"
+    },
     "viewGridComponent": {
       "description": "Set of components available to view in a grid section",
       "enum": [
+        "ActivityDirectivesTablePanel",
         "ActivityFormPanel",
-        "ActivityTablePanel",
         "ActivityTypesPanel",
         "ConstraintViolationsPanel",
         "ConstraintsPanel",
@@ -77,33 +99,11 @@
       "additionalProperties": false,
       "description": "View configuration for a plan",
       "properties": {
-        "activityTables": {
-          "description": "Activity table specifications for visualizing tabular activity data",
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "columnDefs": {
-                "description": "Array of column definition objects that conform to the ag-grid ColumnDef type",
-                "items": {
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              "columnStates": {
-                "description": "Array of column state objects that conform to the ag-grid ColumnState type",
-                "items": {
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              "id": {
-                "$ref": "#/definitions/id"
-              }
-            },
-            "required": ["columnDefs", "columnStates", "id"],
-            "type": "object"
-          },
-          "type": "array"
+        "activityDirectivesTable": {
+          "$ref": "#/definitions/table"
+        },
+        "activitySpansTable": {
+          "$ref": "#/definitions/table"
         },
         "grid": {
           "additionalProperties": false,
@@ -478,7 +478,7 @@
           "type": "array"
         }
       },
-      "required": ["activityTables", "grid", "iFrames", "timelines"],
+      "required": ["activityDirectivesTable", "activitySpansTable", "grid", "iFrames", "timelines"],
       "type": "object"
     }
   },

@@ -3,10 +3,10 @@
 <script lang="ts">
   import { afterUpdate, createEventDispatcher, tick } from 'svelte';
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
-  import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
-  import type { ConstraintViolation, MouseOverViolations } from '../../types/constraint';
-  import type { Resource } from '../../types/simulation';
-  import type { ActivityPoint, MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
+  import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { Resource, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
   import {
@@ -17,6 +17,7 @@
     durationYear,
     getXScale,
     MAX_CANVAS_SIZE,
+    TimelineLockStatus,
   } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
@@ -24,12 +25,21 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
-  export let activitiesByView: ActivitiesByView = { byLayerId: {}, byTimelineId: {} };
+  export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
+  export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let constraintViolations: ConstraintViolation[] = [];
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
+  export let planEndTimeDoy: string;
+  export let planId: number;
+  export let planStartTimeYmd: string;
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
-  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let selectedSpanId: SpanId | null = null;
+  export let spanUtilityMaps: SpanUtilityMaps;
+  export let spansMap: SpansMap = {};
+  export let spans: Span[] = [];
   export let timeline: Timeline | null = null;
+  export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   const dispatch = createEventDispatcher();
@@ -40,7 +50,6 @@
   let estimatedLabelWidthPx: number = 74; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver;
-  let mouseOverViolations: MouseOverViolations;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
@@ -139,16 +148,7 @@
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
-    const { detail } = event;
-    const { points } = detail;
-
-    if (points.length) {
-      const [point] = points; // TODO: Multiselect points?
-      if (point.type === 'activity') {
-        const activityPoint = point as ActivityPoint;
-        dispatch('mouseDown', activityPoint.uniqueId);
-      }
-    }
+    dispatch('mouseDown', { ...event.detail, timelineId: timeline.id });
   }
 
   function onMouseDownRowMove(event: Event) {
@@ -197,13 +197,15 @@
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
     <TimelineHistogram
-      activities={activitiesByView?.byTimelineId[timeline.id] ?? []}
+      activityDirectives={activityDirectivesByView?.byTimelineId[timeline.id] ?? []}
       {constraintViolations}
       {cursorEnabled}
       drawHeight={timelineHistogramDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
       {mouseOver}
+      {planStartTimeYmd}
+      {spans}
       {viewTimeRange}
       {xScaleView}
       {xScaleMax}
@@ -243,7 +245,8 @@
   >
     {#each rows as row (row.id)}
       <TimelineRow
-        {activitiesByView}
+        {activityDirectivesByView}
+        {activityDirectivesMap}
         autoAdjustHeight={row.autoAdjustHeight}
         {constraintViolations}
         drawHeight={row.height}
@@ -254,18 +257,24 @@
         layers={row.layers}
         name={row.name}
         marginLeft={timeline?.marginLeft}
+        {planEndTimeDoy}
+        {planId}
+        {planStartTimeYmd}
         {resourcesByViewLayerId}
         {rowDragMoveDisabled}
-        {selectedActivityId}
+        {selectedActivityDirectiveId}
+        {selectedSpanId}
+        {spanUtilityMaps}
+        {spansMap}
+        {timelineLockStatus}
         {viewTimeRange}
         {xScaleView}
         {xTicksView}
         yAxes={row.yAxes}
-        on:delete
+        on:deleteActivityDirective
         on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}
-        on:mouseOverViolations={e => (mouseOverViolations = e.detail)}
         on:toggleRowExpansion={onToggleRowExpansion}
         on:updateRowHeight={onUpdateRowHeight}
       />
@@ -273,7 +282,7 @@
   </div>
 
   <!-- Timeline Tooltip. -->
-  <Tooltip {mouseOver} {mouseOverViolations} />
+  <Tooltip {mouseOver} />
 </div>
 
 <style>

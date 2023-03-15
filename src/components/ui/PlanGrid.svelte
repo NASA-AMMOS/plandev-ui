@@ -3,8 +3,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { ViewGridComponent } from '../../types/view';
+  import ActivityDirectivesTablePanel from '../activity/ActivityDirectivesTablePanel.svelte';
   import ActivityFormPanel from '../activity/ActivityFormPanel.svelte';
-  import ActivityTablePanel from '../activity/ActivityTablePanel.svelte';
+  import ActivitySpansTablePanel from '../activity/ActivitySpansTablePanel.svelte';
   import ActivityTypesPanel from '../activity/ActivityTypesPanel.svelte';
   import ConstraintsPanel from '../constraints/ConstraintsPanel.svelte';
   import ConstraintViolationsPanel from '../constraints/ConstraintViolationsPanel.svelte';
@@ -24,7 +25,7 @@
   export let leftHidden: boolean = false;
   export let leftRowSizes: string = '1fr 3px 1fr';
   export let leftSplit: boolean = false;
-  export let middleComponentBottom: ViewGridComponent = 'ActivityTablePanel';
+  export let middleComponentBottom: ViewGridComponent = 'ActivityDirectivesTablePanel';
   export let middleRowSizes: string = '2fr 3px 1fr';
   export let middleSplit: boolean = true;
   export let rightComponentBottom: ViewGridComponent = 'TimelineEditorPanel';
@@ -36,8 +37,9 @@
   const dispatch = createEventDispatcher();
 
   const gridComponentsByName: Record<ViewGridComponent, any> = {
+    ActivityDirectivesTablePanel,
     ActivityFormPanel,
-    ActivityTablePanel,
+    ActivitySpansTablePanel,
     ActivityTypesPanel,
     ConstraintViolationsPanel,
     ConstraintsPanel,

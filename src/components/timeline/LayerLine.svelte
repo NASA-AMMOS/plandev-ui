@@ -16,7 +16,6 @@
   export let id: number;
   export let lineColor: string = '';
   export let lineWidth: number = 1;
-  export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let pointRadius: number = 2;
@@ -54,7 +53,6 @@
   ) {
     draw();
   }
-  $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToLinePoints(resources, pointRadius);
@@ -116,12 +114,6 @@
           ctx.fill(circle);
         }
       }
-    }
-  }
-
-  function onMousedown(e: MouseEvent | undefined): void {
-    if (e) {
-      dispatch('mouseDown', { e, layerId: id, points: [] });
     }
   }
 

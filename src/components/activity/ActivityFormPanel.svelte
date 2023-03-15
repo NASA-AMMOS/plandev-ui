@@ -3,76 +3,69 @@
 <script lang="ts">
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import {
-    activitiesMap,
+    activityDirectivesMap,
     activityMetadataDefinitions,
-    allActivityTags,
-    selectedActivity,
-    selectedActivityId,
+    allActivityDirectiveTags,
+    selectActivity,
+    selectedActivityDirective,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
-  import { activityTypes, modelId } from '../../stores/plan';
-  import { simulationDatasetId } from '../../stores/simulation';
-  import type { ActivityUniqueId } from '../../types/activity';
+  import { activityTypes, modelId, plan } from '../../stores/plan';
+  import { selectedSpan, simulationDatasetId, spansMap, spanUtilityMaps } from '../../stores/simulation';
+  import type { SpanId } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
-  import ActivityForm from './ActivityForm.svelte';
+  import ActivityDirectiveForm from './ActivityDirectiveForm.svelte';
+  import ActivitySpanForm from './ActivitySpanForm.svelte';
 
   export let gridSection: ViewGridSection;
 
-  // Activity vars.
-  let id: number | null = null;
-  let parentUniqueId: ActivityUniqueId | null = null;
-  let plan_id: number | null = null;
-
-  // Other vars.
-  let isChild: boolean;
-
-  $: if ($selectedActivity) {
-    id = $selectedActivity.id;
-    parentUniqueId = $selectedActivity.parentUniqueId;
-    plan_id = $selectedActivity.plan_id;
-  } else {
-    id = null;
-    parentUniqueId = null;
-    plan_id = null;
-  }
-
-  $: isChild = parentUniqueId !== null;
-
-  function selectActivity(event: CustomEvent<ActivityUniqueId>) {
-    const { detail: newSelectedActivityId } = event;
-    $selectedActivityId = newSelectedActivityId;
+  function onSelectSpan(event: CustomEvent<SpanId>) {
+    const { detail: spanId } = event;
+    selectActivity(null, spanId);
   }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Selected Activity" />
-    <button
-      class="st-button icon activity-header-delete"
-      disabled={isChild || !$selectedActivity}
-      on:click|stopPropagation={() => effects.deleteActivityDirective(plan_id, id)}
-      use:tooltip={{ content: 'Delete Activity', placement: 'top' }}
-    >
-      <TrashIcon />
-    </button>
+    {#if $selectedActivityDirective}
+      <button
+        class="st-button icon activity-header-delete"
+        on:click|stopPropagation={() =>
+          effects.deleteActivityDirective($selectedActivityDirective.plan_id, $selectedActivityDirective.id)}
+        use:tooltip={{ content: 'Delete Activity', placement: 'top' }}
+      >
+        <TrashIcon />
+      </button>
+    {/if}
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if $selectedActivity}
-      <ActivityForm
-        activitiesMap={$activitiesMap}
-        activity={$selectedActivity}
+    {#if $selectedActivityDirective}
+      <ActivityDirectiveForm
+        activityDirectivesMap={$activityDirectivesMap}
+        activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$activityTypes}
-        allActivityTags={$allActivityTags}
+        allActivityDirectiveTags={$allActivityDirectiveTags}
+        modelId={$modelId}
+        planStartTimeYmd={$plan.start_time}
+      />
+    {:else if $selectedSpan}
+      <ActivitySpanForm
+        activityTypes={$activityTypes}
         filteredExpansionSequences={$filteredExpansionSequences}
         modelId={$modelId}
+        planStartTimeYmd={$plan.start_time}
         simulationDatasetId={$simulationDatasetId}
-        on:selectActivity={selectActivity}
+        span={$selectedSpan}
+        spansMap={$spansMap}
+        spanUtilityMaps={$spanUtilityMaps}
+        on:select={onSelectSpan}
       />
     {:else}
       <div class="p-2 st-typography-label">No Activity Selected</div>

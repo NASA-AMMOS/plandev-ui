@@ -1,11 +1,18 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { activitiesByView, selectedActivity, selectedActivityId } from '../../stores/activities';
+  import {
+    activityDirectivesByView,
+    activityDirectivesMap,
+    selectActivity,
+    selectedActivityDirectiveId,
+  } from '../../stores/activities';
   import { constraintViolations } from '../../stores/constraints';
-  import { maxTimeRange, planId, viewTimeRange } from '../../stores/plan';
-  import { resourcesByViewLayerId } from '../../stores/simulation';
+  import { maxTimeRange, plan, planId, viewTimeRange } from '../../stores/plan';
+  import { resourcesByViewLayerId, selectedSpanId, spans, spansMap, spanUtilityMaps } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
+  import type { ActivityDirectiveId } from '../../types/activity';
+  import type { MouseDown } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -14,15 +21,21 @@
   import TimelineViewControls from './TimelineViewControls.svelte';
 
   let timelineId: number = 0;
-  let isDeletingDirective: boolean = false;
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
 
-  async function deleteActivityDirective() {
-    if (!isDeletingDirective) {
-      isDeletingDirective = true;
-      await effects.deleteActivityDirective($planId, $selectedActivity.id);
-      isDeletingDirective = false;
+  function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
+    const { detail: activityDirectiveId } = event;
+    effects.deleteActivityDirective($planId, activityDirectiveId);
+  }
+
+  function onMouseDown(event: CustomEvent<MouseDown>) {
+    const { detail } = event;
+    const { activityDirectives, spans } = detail;
+    if (activityDirectives.length) {
+      selectActivity(activityDirectives[0].id, null);
+    } else if (spans.length) {
+      selectActivity(null, spans[0].id);
     }
   }
 </script>
@@ -57,19 +70,27 @@
 
   <svelte:fragment slot="body">
     <Timeline
-      activitiesByView={$activitiesByView}
+      activityDirectivesByView={$activityDirectivesByView}
+      activityDirectivesMap={$activityDirectivesMap}
       constraintViolations={$constraintViolations}
       maxTimeRange={$maxTimeRange}
+      planEndTimeDoy={$plan.end_time_doy}
+      planId={$planId}
+      planStartTimeYmd={$plan.start_time}
       {timeline}
       resourcesByViewLayerId={$resourcesByViewLayerId}
-      selectedActivityId={$selectedActivityId}
+      selectedActivityDirectiveId={$selectedActivityDirectiveId}
+      selectedSpanId={$selectedSpanId}
+      spanUtilityMaps={$spanUtilityMaps}
+      spansMap={$spansMap}
+      spans={$spans}
+      timelineLockStatus={$timelineLockStatus}
       viewTimeRange={$viewTimeRange}
-      on:delete={deleteActivityDirective}
-      on:mouseDown={({ detail: newSelectedActivityId }) => {
-        $selectedActivityId = newSelectedActivityId;
+      on:deleteActivityDirective={deleteActivityDirective}
+      on:mouseDown={onMouseDown}
+      on:toggleRowExpansion={({ detail: { expanded, rowId } }) => {
+        viewUpdateRow('expanded', expanded, timelineId, rowId);
       }}
-      on:toggleRowExpansion={({ detail: { expanded, rowId } }) =>
-        viewUpdateRow('expanded', expanded, timelineId, rowId)}
       on:updateRowHeight={({ detail: { newHeight, rowId, wasAutoAdjusted } }) => {
         viewUpdateRow('height', newHeight, timelineId, rowId, wasAutoAdjusted);
       }}

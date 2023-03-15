@@ -7,6 +7,7 @@
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
+  import { keyBy } from 'lodash-es';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
@@ -19,7 +20,7 @@
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
-  import { activitiesMap, activityDirectives, resetActivityStores } from '../../../stores/activities';
+  import { activityDirectives, activityDirectivesMap, resetActivityStores } from '../../../stores/activities';
   import { checkConstraintsStatus, constraintViolations, resetConstraintStores } from '../../../stores/constraints';
   import {
     allErrors,
@@ -68,7 +69,6 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
-  import { createActivitiesMap } from '../../../utilities/activities';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
@@ -119,7 +119,7 @@
     }
   }
 
-  $: $activitiesMap = createActivitiesMap($plan, $activityDirectives, $spans);
+  $: $activityDirectivesMap = keyBy($activityDirectives, 'id');
 
   $: if ($planLocked) {
     planHasBeenLocked = true;
@@ -258,7 +258,7 @@
         menuTitle="Simulation Status"
         buttonText="Simulate"
         buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-          ? 'Simluation up-to-date'
+          ? 'Simulation up-to-date'
           : ''}
         status={$simulationStatus}
         disabled={!$enableSimulation}

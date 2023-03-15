@@ -6,12 +6,15 @@
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import PlanWithUpArrow from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
+  import { keyBy } from 'lodash-es';
   import { activityMetadataDefinitions } from '../../stores/activities';
   import { activityTypes } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
-  import type { ActivitiesMap, Activity } from '../../types/activity';
+  import type { ActivityDirectivesMap } from '../../types/activity';
   import type {
     Plan,
+    PlanMergeActivityDirectiveSource,
+    PlanMergeActivityDirectiveTarget,
     PlanMergeConflictingActivity,
     PlanMergeNonConflictingActivity,
     PlanMergeRequestSchema,
@@ -19,14 +22,14 @@
     PlanMergeResolution,
     PlanSlimmer,
   } from '../../types/plan';
-  import { createActivitiesMap, deriveActivityFromMergeActivityDirective } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
   import { showMergeReviewEndedModal } from '../../utilities/modal';
-  import { getDoyTimeFromDuration } from '../../utilities/time';
+  import { getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  import ActivityForm from '../activity/ActivityForm.svelte';
+  import ActivityDirectiveForm from '../activity/ActivityDirectiveForm.svelte';
+  import ActivityDirectiveSourceForm from '../activity/ActivityDirectiveSourceForm.svelte';
   import Nav from '../app/Nav.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -52,8 +55,8 @@
   );
 
   let additions: PlanMergeNonConflictingActivity[] = [];
-  let computedSourceActivity: Activity | null;
-  let computedTargetActivity: Activity | null;
+  let computedSourceActivity: PlanMergeActivityDirectiveSource | null;
+  let computedTargetActivity: PlanMergeActivityDirectiveTarget | null;
   let conflicts: PlanMergeConflictingActivity[] = [];
   let deletions: PlanMergeNonConflictingActivity[] = [];
   let keysWithChanges: string[] = [];
@@ -61,13 +64,13 @@
   let mergeComparisonTargetDiv: HTMLElement | null = null;
   let mergeComparisonScrollOrigin: 'source' | 'target' | null = null;
   let modifications: PlanMergeNonConflictingActivity[] = [];
-  let receivingPlanActivitiesMap: ActivitiesMap = {};
+  let receivingPlanActivitiesMap: ActivityDirectivesMap = {};
   let selectedActivityId: number | null;
   let selectedConflictingActivity: PlanMergeConflictingActivity | null;
   let selectedConflictingActivityResolution: PlanMergeResolution | null;
   let selectedMergeType: 'conflict' | 'add' | 'modify' | 'delete' | 'none' | null;
   let selectedNonConflictingActivity: PlanMergeNonConflictingActivity | null;
-  let supplyingPlanActivitiesMap: ActivitiesMap = {};
+  let supplyingPlanActivitiesMap: ActivityDirectivesMap = {};
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
   let supplyingPlan: PlanSlimmer | null;
@@ -80,7 +83,7 @@
         duration: supplyingPlanDuration,
       },
     } = initialMergeRequest;
-    const endTime = `${getDoyTimeFromDuration(supplyingPlanStartTime, supplyingPlanDuration)}`;
+    const endTime = `${getDoyTimeFromInterval(supplyingPlanStartTime, supplyingPlanDuration)}`;
     supplyingPlan = {
       end_time_doy: endTime,
       id: supplyingPlanId,
@@ -129,8 +132,8 @@
       },
       { receivingPlanDirectives, supplyingPlanDirectives },
     ));
-    receivingPlanActivitiesMap = createActivitiesMap(initialPlan, receivingPlanDirectives, []);
-    supplyingPlanActivitiesMap = createActivitiesMap(supplyingPlan, supplyingPlanDirectives, []);
+    receivingPlanActivitiesMap = keyBy(receivingPlanDirectives, 'id');
+    supplyingPlanActivitiesMap = keyBy(supplyingPlanDirectives, 'id');
   }
 
   $: if (initialNonConflictingActivities) {
@@ -194,26 +197,14 @@
     selectedActivityId = selectedNonConflictingActivity.activity_id;
     selectedMergeType = selectedNonConflictingActivity.change_type;
     if (selectedNonConflictingActivity.change_type === 'delete') {
-      computedTargetActivity = deriveActivityFromMergeActivityDirective(
-        selectedNonConflictingActivity.target,
-        initialPlan,
-      );
+      computedTargetActivity = selectedNonConflictingActivity.target;
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
-      computedSourceActivity = deriveActivityFromMergeActivityDirective(
-        selectedNonConflictingActivity.source,
-        supplyingPlan,
-      );
+      computedSourceActivity = selectedNonConflictingActivity.source;
       computedTargetActivity = null;
     } else {
-      computedSourceActivity = deriveActivityFromMergeActivityDirective(
-        selectedNonConflictingActivity.source,
-        supplyingPlan,
-      );
-      computedTargetActivity = deriveActivityFromMergeActivityDirective(
-        selectedNonConflictingActivity.target,
-        initialPlan,
-      );
+      computedSourceActivity = selectedNonConflictingActivity.source;
+      computedTargetActivity = selectedNonConflictingActivity.target;
     }
 
     // Reset comparison scroll positions
@@ -225,18 +216,12 @@
     selectedMergeType = 'conflict';
     // Derive source and target activities
     if (selectedConflictingActivity.source) {
-      computedSourceActivity = deriveActivityFromMergeActivityDirective(
-        selectedConflictingActivity.source,
-        supplyingPlan,
-      );
+      computedSourceActivity = selectedConflictingActivity.source;
     } else {
       computedSourceActivity = null;
     }
     if (selectedConflictingActivity.target) {
-      computedTargetActivity = deriveActivityFromMergeActivityDirective(
-        selectedConflictingActivity.target,
-        initialPlan,
-      );
+      computedTargetActivity = selectedConflictingActivity.target;
     } else {
       computedTargetActivity = null;
     }
@@ -561,18 +546,14 @@
         >
           {#if selectedConflictingActivity || selectedNonConflictingActivity}
             {#if selectedMergeType === 'add' || selectedMergeType === 'modify' || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_source !== 'delete')}
-              <ActivityForm
-                activity={computedSourceActivity}
-                activitiesMap={supplyingPlanActivitiesMap}
+              <ActivityDirectiveSourceForm
+                {computedSourceActivity}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
                 activityTypes={$activityTypes}
-                editable={false}
                 highlightKeys={keysWithChanges}
                 modelId={initialPlan.model_id}
-                showActivityName
-                showDecomposition={false}
-                showHeader={false}
-                showSequencing={false}
+                planId={initialPlan.id}
+                planStartTimeYmd={initialPlan.start_time}
               />
             {:else if (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_source === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>
@@ -624,18 +605,17 @@
         >
           {#if selectedConflictingActivity || selectedNonConflictingActivity}
             {#if selectedMergeType === 'modify' || (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_target !== 'delete')}
-              <ActivityForm
-                activity={computedTargetActivity}
-                activitiesMap={receivingPlanActivitiesMap}
+              <ActivityDirectiveForm
+                activityDirective={computedTargetActivity}
+                activityDirectivesMap={receivingPlanActivitiesMap}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
                 activityTypes={$activityTypes}
                 editable={false}
                 highlightKeys={!!selectedConflictingActivity && keysWithChanges}
                 modelId={initialPlan.model_id}
+                planStartTimeYmd={initialPlan.start_time}
                 showActivityName
-                showDecomposition={false}
                 showHeader={false}
-                showSequencing={false}
               />
             {:else if (selectedMergeType === 'delete' && !computedTargetActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_target === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>

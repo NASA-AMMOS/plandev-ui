@@ -61,7 +61,7 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Change the start time of the activity on the branch', async () => {
-    await page.getByRole('gridcell', { name: 'BiteBanana' }).click();
+    await page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
     await page.waitForSelector('button:has-text("BiteBanana")', { state: 'visible' });
     await page.locator('input[name="start-time"]').click();
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
@@ -93,7 +93,7 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Make sure the start time of the activity in the parent plan now equals the start time of the activity in branch', async () => {
-    await page.getByRole('gridcell', { name: 'BiteBanana' }).click();
+    await page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
     await expect(page.locator('input[name="start-time"]')).toHaveValue(newActivityStartTime);
   });
 });

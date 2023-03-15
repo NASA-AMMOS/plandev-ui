@@ -1,10 +1,9 @@
 import type { ColDef, ColumnState } from 'ag-grid-community';
 import type { Timeline } from './timeline';
 
-export type ViewActivityTable = {
+export type ViewTable = {
   columnDefs: ColDef[];
   columnStates: ColumnState[];
-  id: number;
 };
 
 export type ViewSaveEvent = Partial<View>;
@@ -28,8 +27,9 @@ export type ViewInsertInput = {
 };
 
 export type ViewGridComponent =
+  | 'ActivityDirectivesTablePanel'
   | 'ActivityFormPanel'
-  | 'ActivityTablePanel'
+  | 'ActivitySpansTablePanel'
   | 'ActivityTypesPanel'
   | 'ConstraintViolationsPanel'
   | 'ConstraintsPanel'
@@ -72,7 +72,8 @@ export type ViewGrid = {
 
 export type ViewDefinition = {
   plan: {
-    activityTables: ViewActivityTable[];
+    activityDirectivesTable: ViewTable;
+    activitySpansTable: ViewTable;
     grid: ViewGrid;
     iFrames: ViewIFrame[];
     timelines: Timeline[];

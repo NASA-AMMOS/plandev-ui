@@ -26,7 +26,6 @@
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
   export let id: number;
-  export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let opacity: number = 0.8;
@@ -50,7 +49,6 @@
   $: if (drawHeight && drawWidth && colorScheme && filter && mounted && opacity !== undefined && points && xScaleView) {
     draw();
   }
-  $: onMousedown(mousedown);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
@@ -182,12 +180,6 @@
     const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
     const textWidth = textMetrics.width;
     return { textHeight, textWidth };
-  }
-
-  function onMousedown(e: MouseEvent | undefined): void {
-    if (e) {
-      dispatch('mouseDown', { e, layerId: id, points: [] });
-    }
   }
 
   function onMousemove(e: MouseEvent | undefined): void {

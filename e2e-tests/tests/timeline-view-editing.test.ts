@@ -51,7 +51,7 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Change the start time of the activity', async () => {
-    await page.getByRole('gridcell', { name: 'PickBanana' }).click();
+    await page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
     await plan.showPanel('Selected Activity');
     await page.locator('input[name="start-time"]').first().click();
     await page.locator('input[name="start-time"]').first().fill(newActivityStartTime);

@@ -95,13 +95,13 @@
         }
       }
 
-      dispatch('mouseOverViolations', { e, violations });
+      dispatch('mouseOver', { constraintViolations: violations, e });
     }
   }
 
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('mouseOverViolations', { e, violations: [] });
+      dispatch('mouseOver', { constraintViolations: [], e });
     }
   }
 </script>

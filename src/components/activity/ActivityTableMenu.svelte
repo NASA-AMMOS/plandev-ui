@@ -1,10 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  type T = $$Generic;
+
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import type { Activity } from '../../types/activity';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
@@ -14,7 +15,7 @@
   export let columnStates: ColumnState[] | undefined = [];
 
   type ColumnMenuItem = {
-    field: keyof Activity;
+    field: keyof T;
     isHidden: boolean;
     name: string;
   };
@@ -31,21 +32,21 @@
 
     if (columnState) {
       return {
-        field: derivedColumnDef.field as keyof Activity,
+        field: derivedColumnDef.field as keyof T,
         isHidden: columnState?.hide ?? derivedColumnDef.hide ?? false,
         name: derivedColumnDef.headerName,
       };
     }
 
     return {
-      field: derivedColumnDef.field as keyof Activity,
+      field: derivedColumnDef.field as keyof T,
       isHidden: true,
       name: derivedColumnDef.headerName,
     };
   });
 
   $: displayedColumnMenuItems = columnMenuItems.filter((columnMenuItem: ColumnMenuItem) => {
-    return new RegExp(searchFilter, 'i').test(columnMenuItem.field);
+    return new RegExp(searchFilter, 'i').test(columnMenuItem.field as string);
   });
 
   function onColumnToggleChange(column: ColumnMenuItem) {

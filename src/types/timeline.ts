@@ -1,5 +1,7 @@
 import type { Selection } from 'd3-selection';
-import type { ActivityId, ActivityUniqueId } from './activity';
+import type { ActivityDirective } from './activity';
+import type { ConstraintViolation } from './constraint';
+import type { Span } from './simulation';
 
 export interface ActivityLayer extends Layer {
   activityColor: string;
@@ -9,16 +11,6 @@ export interface ActivityLayer extends Layer {
 export type ActivityLayerFilter = {
   types: string[];
 };
-
-export interface ActivityPoint extends Point {
-  children: ActivityPoint[];
-  duration: number;
-  label: Label;
-  parentUniqueId: ActivityUniqueId | null;
-  parent_id: ActivityId | null;
-  unfinished: boolean;
-  uniqueId: string;
-}
 
 export type Axis = {
   color: string;
@@ -74,18 +66,21 @@ export interface LinePoint extends Point {
 }
 
 export type MouseDown = {
+  activityDirectives: ActivityDirective[];
   e: MouseEvent;
   layerId: number;
-  points: Point[];
   rowId: number;
+  spans: Span[];
   timelineId: number;
-  yAxisId: number | null;
 };
 
 export type MouseOver = {
+  activityDirectives?: ActivityDirective[];
+  constraintViolations?: ConstraintViolation[];
   e: MouseEvent;
   layerId: number;
-  points: Point[];
+  points?: Point[];
+  spans?: Span[];
 };
 
 export interface Point {

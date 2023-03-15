@@ -2,29 +2,27 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
-  import type { ConstraintViolation, MouseOverViolations } from '../../types/constraint';
-  import type { ActivityPoint, LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
+  import type { ActivityDirective } from '../../types/activity';
+  import type { ConstraintViolation } from '../../types/constraint';
+  import type { Span } from '../../types/simulation';
+  import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
 
   export let mouseOver: MouseOver;
-  export let mouseOverViolations: MouseOverViolations;
 
+  let activityDirectives: ActivityDirective[] = [];
+  let constraintViolations: ConstraintViolation[] = [];
   let points: Point[] = [];
-  let violations: ConstraintViolation[] = [];
+  let spans: Span[] = [];
 
   $: onMouseOver(mouseOver);
-  $: onMouseOverViolations(mouseOverViolations);
 
   function onMouseOver(event: MouseOver | undefined) {
     if (event) {
-      points = event.points;
-      show(event.e);
-    }
-  }
-
-  function onMouseOverViolations(event: MouseOverViolations | undefined) {
-    if (event) {
-      violations = event.violations;
+      activityDirectives = event?.activityDirectives ?? [];
+      constraintViolations = event?.constraintViolations ?? [];
+      points = event?.points ?? [];
+      spans = event?.spans ?? [];
       show(event.e);
     }
   }
@@ -34,7 +32,10 @@
   }
 
   function show(event: MouseEvent): void {
-    if (violations.length || points.length) {
+    const showTooltip =
+      activityDirectives.length > 0 || constraintViolations.length > 0 || points.length > 0 || spans.length > 0;
+
+    if (showTooltip) {
       const text = tooltipText();
       const tooltipDiv = tooltip();
       tooltipDiv.html(text); // Set html so we can calculate the true tooltip width.
@@ -76,35 +77,98 @@
     }
   }
 
-  function tooltipText() {
-    let text = '';
-    if (points.length) {
-      text += tooltipTextForPoints();
-    }
-    if (violations.length) {
-      if (points.length) {
-        text += '<hr>';
+  function tooltipText(): string {
+    let tooltipText = '';
+
+    activityDirectives.forEach((activityDirective: ActivityDirective, i: number) => {
+      const text = textForActivityDirective(activityDirective);
+      tooltipText = `${tooltipText} ${text}`;
+
+      if (i !== activityDirectives.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
       }
-      text += tooltipTextForViolations();
+    });
+
+    if (constraintViolations.length && activityDirectives.length) {
+      tooltipText = `${tooltipText}<hr>`;
     }
-    return text;
+
+    constraintViolations.forEach((constraintViolation: ConstraintViolation, i: number) => {
+      const text = textForConstraintViolation(constraintViolation);
+      tooltipText = `${tooltipText} ${text}`;
+
+      if (i !== constraintViolations.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
+      }
+    });
+
+    if (points.length && (constraintViolations.length || activityDirectives.length)) {
+      tooltipText = `${tooltipText}<hr>`;
+    }
+
+    points.forEach((point: Point, i: number) => {
+      if (point.type === 'line') {
+        const text = textForLinePoint(point as LinePoint);
+        tooltipText = `${tooltipText} ${text}`;
+      }
+
+      if (point.type === 'x-range') {
+        const text = textForXRangePoint(point as XRangePoint);
+        tooltipText = `${tooltipText} ${text}`;
+      }
+
+      if (i !== points.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
+      }
+    });
+
+    if (spans.length && (points.length || constraintViolations.length || activityDirectives.length)) {
+      tooltipText = `${tooltipText}<hr>`;
+    }
+
+    spans.forEach((span: Span, i: number) => {
+      const text = textForSpan(span);
+      tooltipText = `${tooltipText} ${text}`;
+
+      if (i !== spans.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
+      }
+    });
+
+    return tooltipText;
   }
 
-  function tooltipTextForActivityPoint(point: ActivityPoint): string {
-    const { id, x } = point;
-    const labelText = point.label?.text || '';
+  function textForActivityDirective(activityDirective: ActivityDirective): string {
+    const { anchor_id, id, name, start_offset, type } = activityDirective;
     return `
       <div>
+        Activity Directive
+        <br>
         Id: ${id}
         <br>
-        Name: ${labelText}
+        Name: ${name}
         <br>
-        Start: ${getDoyTime(new Date(x))}
+        Type: ${type}
+        <br>
+        Start Offset: ${start_offset}
+        <br>
+        Anchored To ID: ${anchor_id ?? 'None'}
       </div>
     `;
   }
 
-  function tooltipTextForLinePoint(point: LinePoint): string {
+  function textForConstraintViolation(constraintViolation: ConstraintViolation): string {
+    const { constraintName } = constraintViolation;
+    return `
+      <div>
+        Constraint Violation
+        <br>
+        Name: ${constraintName}
+      </div>
+    `;
+  }
+
+  function textForLinePoint(point: LinePoint): string {
     const { id, x, y } = point;
     return `
       <div>
@@ -117,57 +181,24 @@
     `;
   }
 
-  function tooltipTextForPoints(): string {
-    let tooltipText = '';
-
-    points.forEach((point: Point, i: number) => {
-      if (point.type === 'activity') {
-        tooltipText = `
-          ${tooltipText}
-          ${tooltipTextForActivityPoint(point as ActivityPoint)}
-        `;
-      }
-      if (point.type === 'line') {
-        tooltipText = `
-          ${tooltipText}
-          ${tooltipTextForLinePoint(point as LinePoint)}
-        `;
-      }
-      if (point.type === 'x-range') {
-        tooltipText = `
-          ${tooltipText}
-          ${tooltipTextForXRangePoint(point as XRangePoint)}
-        `;
-      }
-      if (i !== points.length - 1) {
-        tooltipText += `<hr>`;
-      }
-    });
-
-    return tooltipText;
+  function textForSpan(span: Span): string {
+    const { id, duration, start_offset, type } = span;
+    return `
+      <div>
+        Simulated Activity (Span)
+        <br>
+        Id: ${id}
+        <br>
+        Type: ${type}
+        <br>
+        Start Offset: ${start_offset}
+        <br>
+        Duration: ${duration}
+      </div>
+    `;
   }
 
-  function tooltipTextForViolations(): string {
-    let tooltipText = '';
-
-    violations.forEach((violation: ConstraintViolation, i: number) => {
-      const text = `
-        <div>
-          Constraint Violation
-          <br>
-          Name: ${violation.constraintName}
-        </div>
-      `;
-      tooltipText = `${tooltipText} ${text}`;
-      if (i !== violations.length - 1) {
-        tooltipText += `<hr>`;
-      }
-    });
-
-    return tooltipText;
-  }
-
-  function tooltipTextForXRangePoint(point: XRangePoint): string {
+  function textForXRangePoint(point: XRangePoint): string {
     const { id, x } = point;
     return `
       <div>

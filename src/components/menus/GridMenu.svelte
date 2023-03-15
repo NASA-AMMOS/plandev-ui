@@ -47,9 +47,13 @@
   <ChevronDownIcon />
 
   <Menu bind:this={gridMenu}>
-    <MenuItem on:click={() => onClickMenuItem('ActivityTablePanel')}>
+    <MenuItem on:click={() => onClickMenuItem('ActivityDirectivesTablePanel')}>
       <TableWithHeaderIcon />
-      Activity Table
+      Activity Directives Table
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('ActivitySpansTablePanel')}>
+      <TableWithHeaderIcon />
+      Simulated Activities Table
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ActivityTypesPanel')}>
       <BookIcon />

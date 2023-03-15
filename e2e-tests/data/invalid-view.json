@@ -1,238 +1,282 @@
 {
   "plan": {
-    "activityTables": [
-      {
-        "columnDefs": [
-          {
-            "field": "id",
-            "filter": "text",
-            "headerName": "ID",
-            "resizable": true,
-            "sortable": true
-          },
-          {
-            "field": "type",
-            "filter": "text",
-            "headerName": "Type",
-            "resizable": true,
-            "sortable": true
-          },
-          {
-            "field": "start_time_doy",
-            "filter": "text",
-            "headerName": "Start Time",
-            "resizable": true,
-            "sortable": true
-          },
-          {
-            "field": "duration",
-            "filter": "text",
-            "headerName": "Duration",
-            "resizable": true,
-            "sortable": true
-          }
-        ],
-        "columnStates": [
-          {
-            "aggFunc": null,
-            "colId": "arguments",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "created_at",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "duration",
-            "flex": null,
-            "hide": false,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 281.3900000000001
-          },
-          {
-            "aggFunc": null,
-            "colId": "id",
-            "flex": null,
-            "hide": false,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 280
-          },
-          {
-            "aggFunc": null,
-            "colId": "last_modified_at",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "metadata",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "name",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "source_scheduling_goal_id",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "start_time_doy",
-            "flex": null,
-            "hide": false,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 280
-          },
-          {
-            "aggFunc": null,
-            "colId": "tags",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "type",
-            "flex": null,
-            "hide": false,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 280
-          },
-          {
-            "aggFunc": null,
-            "colId": "anchor_id",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "anchored_to_start",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          },
-          {
-            "aggFunc": null,
-            "colId": "start_offset",
-            "flex": null,
-            "hide": true,
-            "pinned": null,
-            "pivot": false,
-            "pivotIndex": null,
-            "rowGroup": false,
-            "rowGroupIndex": null,
-            "sort": null,
-            "sortIndex": null,
-            "width": 200
-          }
-        ],
-        "id": 0
-      }
-    ],
+    "activityDirectivesTable": {
+      "columnDefs": [
+        {
+          "field": "id",
+          "filter": "text",
+          "headerName": "ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "type",
+          "filter": "text",
+          "headerName": "Type",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "start_time_doy",
+          "filter": "text",
+          "headerName": "Start Time",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "duration",
+          "filter": "text",
+          "headerName": "Duration",
+          "resizable": true,
+          "sortable": true
+        }
+      ],
+      "columnStates": [
+        {
+          "aggFunc": null,
+          "colId": "arguments",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "created_at",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "duration",
+          "flex": null,
+          "hide": false,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 281.3900000000001
+        },
+        {
+          "aggFunc": null,
+          "colId": "id",
+          "flex": null,
+          "hide": false,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 280
+        },
+        {
+          "aggFunc": null,
+          "colId": "last_modified_at",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "metadata",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "name",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "source_scheduling_goal_id",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "start_time_doy",
+          "flex": null,
+          "hide": false,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 280
+        },
+        {
+          "aggFunc": null,
+          "colId": "tags",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "type",
+          "flex": null,
+          "hide": false,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 280
+        },
+        {
+          "aggFunc": null,
+          "colId": "anchor_id",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "anchored_to_start",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        },
+        {
+          "aggFunc": null,
+          "colId": "start_offset",
+          "flex": null,
+          "hide": true,
+          "pinned": null,
+          "pivot": false,
+          "pivotIndex": null,
+          "rowGroup": false,
+          "rowGroupIndex": null,
+          "sort": null,
+          "sortIndex": null,
+          "width": 200
+        }
+      ]
+    },
+    "activitySpansTable": {
+      "columnDefs": [
+        {
+          "field": "id",
+          "filter": "text",
+          "headerName": "ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "dataset_id",
+          "filter": "text",
+          "headerName": "Dataset ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "parent_id",
+          "filter": "text",
+          "headerName": "Parent ID",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "type",
+          "filter": "text",
+          "headerName": "Type",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "start_offset",
+          "filter": "text",
+          "headerName": "Start Offset",
+          "resizable": true,
+          "sortable": true
+        },
+        {
+          "field": "duration",
+          "filter": "text",
+          "headerName": "Duration",
+          "resizable": true,
+          "sortable": true
+        }
+      ],
+      "columnStates": []
+    },
     "grid": {
       "columnSizes": "1fr 3px 3fr 3px 1fr",
       "leftComponentBottom": "SimulationPanel",
@@ -240,7 +284,7 @@
       "leftHidden": false,
       "leftRowSizes": "1fr",
       "leftSplit": false,
-      "middleComponentBottom": "ActivityTablePanel",
+      "middleComponentBottom": "ActivityDirectivesTablePanel",
       "middleRowSizes": "2fr 3px 1fr",
       "middleSplit": true,
       "rightComponentBottom": "TimelineEditorPanel",

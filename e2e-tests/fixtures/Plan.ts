@@ -32,8 +32,8 @@ export class Plan {
   navButtonViewSaveAsMenuButton: Locator;
   navButtonViewSavedViewsMenuButton: Locator;
   navButtonViewUploadViewMenuButton: Locator;
+  panelActivityDirectivesTable: Locator;
   panelActivityForm: Locator;
-  panelActivityTable: Locator;
   panelActivityTypes: Locator;
   panelConstraintViolations: Locator;
   panelConstraints: Locator;
@@ -112,9 +112,9 @@ export class Plan {
     await expect(this.confirmModal).not.toBeVisible();
 
     await this.activitiesTableFirstRow.click({ button: 'right' });
-    await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activities")').click();
+    await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
     await this.activitiesTableFirstRow.click({ button: 'right' });
-    await this.page.locator('.context-menu > .context-menu-item:has-text("Delete 10 Activities")').click();
+    await this.page.locator('.context-menu > .context-menu-item:has-text("Delete 10 Activity Directives")').click();
 
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
@@ -173,14 +173,14 @@ export class Plan {
     await this.showPanel('Constraint Violations', true);
     await this.panelConstraints.waitFor({ state: 'attached' });
     await this.panelConstraints.waitFor({ state: 'visible' });
-    await this.panelActivityTable.waitFor({ state: 'attached' });
-    await this.panelActivityTable.waitFor({ state: 'visible' });
+    await this.panelActivityDirectivesTable.waitFor({ state: 'attached' });
+    await this.panelActivityDirectivesTable.waitFor({ state: 'visible' });
     await this.panelConstraintViolations.waitFor({ state: 'attached' });
     await this.panelConstraintViolations.waitFor({ state: 'visible' });
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelConstraints).toBeVisible();
-    await expect(this.panelActivityTable).toBeVisible();
+    await expect(this.panelActivityDirectivesTable).toBeVisible();
     await expect(this.panelConstraintViolations).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
   }
@@ -204,12 +204,12 @@ export class Plan {
     await this.panelSchedulingGoals.waitFor({ state: 'visible' });
     await this.panelSchedulingConditions.waitFor({ state: 'attached' });
     await this.panelSchedulingConditions.waitFor({ state: 'visible' });
-    await this.panelActivityTable.waitFor({ state: 'attached' });
-    await this.panelActivityTable.waitFor({ state: 'visible' });
+    await this.panelActivityDirectivesTable.waitFor({ state: 'attached' });
+    await this.panelActivityDirectivesTable.waitFor({ state: 'visible' });
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelSchedulingGoals).toBeVisible();
-    await expect(this.panelActivityTable).toBeVisible();
+    await expect(this.panelActivityDirectivesTable).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
   }
 
@@ -240,8 +240,8 @@ export class Plan {
     this.navButtonViewSavedViewsMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Browse saved views")`);
     this.navButtonViewUploadViewMenuButton = page.locator(`.view-menu .menu .menu-item:has-text("Upload view file")`);
     this.page = page;
+    this.panelActivityDirectivesTable = page.locator('[data-component-name="ActivityDirectivesTablePanel"]');
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
-    this.panelActivityTable = page.locator('[data-component-name="ActivityTablePanel"]');
     this.panelActivityTypes = page.locator('[data-component-name="ActivityTypesPanel"]');
     this.panelConstraintViolations = page.locator('[data-component-name="ConstraintViolationsPanel"]');
     this.panelConstraints = page.locator('[data-component-name="ConstraintsPanel"]');

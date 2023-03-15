@@ -1,0 +1,39 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import type { ActivityDirective, ActivityDirectivesMap, ActivityType } from '../../types/activity';
+  import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
+  import type { PlanMergeActivityDirectiveSource } from '../../types/plan';
+  import ActivityDirectiveForm from './ActivityDirectiveForm.svelte';
+
+  export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let activityMetadataDefinitions: ActivityMetadataDefinition[] = [];
+  export let activityTypes: ActivityType[] = [];
+  export let computedSourceActivity: PlanMergeActivityDirectiveSource;
+  export let highlightKeys: string[] = [];
+  export let modelId: number;
+  export let planId: number;
+  export let planStartTimeYmd: string;
+
+  let activityDirective: ActivityDirective;
+
+  $: activityDirective = {
+    ...computedSourceActivity,
+    plan_id: planId,
+  };
+</script>
+
+{#if activityDirective}
+  <ActivityDirectiveForm
+    {activityDirective}
+    {activityDirectivesMap}
+    {activityMetadataDefinitions}
+    {activityTypes}
+    editable={false}
+    {highlightKeys}
+    {modelId}
+    {planStartTimeYmd}
+    showActivityName
+    showHeader={false}
+  />
+{/if}

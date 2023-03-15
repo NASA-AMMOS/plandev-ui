@@ -5,30 +5,28 @@
   import ActivityGroupIcon from '@nasa-jpl/stellar/icons/activity_group.svg?component';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
-  import { activitiesMap, selectedActivityId } from '../../../stores/activities';
-  import { planId } from '../../../stores/plan';
-  import type { Activity } from '../../../types/activity';
+  import { activityDirectivesMap, selectedActivityDirectiveId } from '../../../stores/activities';
+  import type { ActivityDirective } from '../../../types/activity';
   import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
-  import { getActivityDirectiveUniqueId, sortActivities } from '../../../utilities/activities';
+  import { sortActivityDirectives } from '../../../utilities/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
   let analysis: SchedulingGoalAnalysis | null = null;
   let expanded = true;
-  let satisfyingActivities: Activity[] = [];
+  let satisfyingActivities: ActivityDirective[] = [];
 
   $: analysis = analyses[0] || null;
   $: satisfyingActivities = analysis
-    ? analysis.satisfying_activities.reduce((satisfyingActivities: Activity[], { activity_id }) => {
-        const uniqueActivityId = getActivityDirectiveUniqueId($planId, activity_id);
-        const activity = $activitiesMap[uniqueActivityId];
-        if (activity) {
-          satisfyingActivities.push(activity);
+    ? analysis.satisfying_activities.reduce((satisfyingActivities: ActivityDirective[], { activity_id }) => {
+        const activityDirective = $activityDirectivesMap[activity_id];
+        if (activityDirective) {
+          satisfyingActivities.push(activityDirective);
         }
         return satisfyingActivities;
       }, [])
     : [];
-  $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivities);
+  $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivityDirectives);
 </script>
 
 <div class="scheduling-goal-analysis-activities">
@@ -50,16 +48,16 @@
   <ul>
     {#if analysis}
       {#if sortedSatisfyingActivities.length}
-        {#each sortedSatisfyingActivities as activity}
+        {#each sortedSatisfyingActivities as activityDirective}
           <li>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
               class="satisfied-activity st-typography-body"
-              class:selected={$selectedActivityId === activity.uniqueId}
-              on:click={() => ($selectedActivityId = activity.uniqueId)}
+              class:selected={$selectedActivityDirectiveId === activityDirective.id}
+              on:click={() => ($selectedActivityDirectiveId = activityDirective.id)}
             >
               <ActivityIcon />
-              {activity.name}
+              {activityDirective.name}
             </div>
           </li>
         {/each}

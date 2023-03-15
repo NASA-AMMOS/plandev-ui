@@ -125,6 +125,21 @@ export function isMacOs(): boolean {
 }
 
 /**
+ * Turns a list of strings into a string, boolean map.
+ */
+export function keyByBoolean(arr: string[] | undefined): Record<string, boolean> {
+  if (arr) {
+    return arr.reduce((map, key) => {
+      if (!map[key]) {
+        map[key] = true;
+      }
+      return map;
+    }, {});
+  }
+  return {};
+}
+
+/**
  * Parses a string into a number. If string cannot be parsed just returns null.
  */
 export function parseFloatOrNull(value: string | null): number | null {

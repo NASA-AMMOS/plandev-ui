@@ -7,9 +7,14 @@
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { selectedRow, viewSetSelectedRow, viewTogglePanel } from '../../stores/views';
-  import type { ActivitiesByView, ActivityUniqueId } from '../../types/activity';
+  import type {
+    ActivityDirective,
+    ActivityDirectiveId,
+    ActivityDirectivesByView,
+    ActivityDirectivesMap,
+  } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Resource } from '../../types/simulation';
+  import type { Resource, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     Axis,
     HorizontalGuide,
@@ -23,6 +28,7 @@
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
   import { getDoyTime } from '../../utilities/time';
+  import type { TimelineLockStatus } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
@@ -34,7 +40,8 @@
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
 
-  export let activitiesByView: ActivitiesByView = { byLayerId: {}, byTimelineId: {} };
+  export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
+  export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];
   export let drawHeight: number = 0;
@@ -45,9 +52,16 @@
   export let layers: Layer[] = [];
   export let name: string = '';
   export let marginLeft: number = 50;
+  export let planEndTimeDoy: string;
+  export let planId: number;
+  export let planStartTimeYmd: string;
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let rowDragMoveDisabled = true;
-  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let selectedSpanId: SpanId | null = null;
+  export let spanUtilityMaps: SpanUtilityMaps;
+  export let spansMap: SpansMap = {};
+  export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
@@ -66,8 +80,12 @@
   let mousemove: MouseEvent;
   let mouseout: MouseEvent;
   let mouseup: MouseEvent;
-  let mouseDownPointsByLayer: Record<number, Point[]> = {};
+  let mouseDownActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
+  let mouseDownSpansByLayer: Record<number, Span[]> = {};
+  let mouseOverActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
+  let mouseOverConstraintViolations: ConstraintViolation[] = []; // For this row.
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
+  let mouseOverSpansByLayer: Record<number, Span[]> = {};
   let overlaySvg: SVGElement;
 
   $: onDragenter(dragenter);
@@ -124,17 +142,32 @@
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
-    mouseDownPointsByLayer[detail.layerId] = detail.points;
-    const points = Object.values(mouseDownPointsByLayer).flat();
-    const yAxisId = yAxes[0]?.id ?? null;
-    dispatch('mouseDown', { ...detail, points, rowId: id, yAxisId });
+    const { layerId } = detail;
+
+    mouseDownActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
+    mouseDownSpansByLayer[layerId] = detail?.spans ?? [];
+
+    const activityDirectives = Object.values(mouseDownActivityDirectivesByLayer).flat();
+    const spans = Object.values(mouseDownSpansByLayer).flat();
+
+    dispatch('mouseDown', { ...detail, activityDirectives, rowId: id, spans });
   }
 
   function onMouseOver(event: CustomEvent<MouseOver>) {
     const { detail } = event;
-    mouseOverPointsByLayer[detail.layerId] = detail.points;
+    const { layerId } = detail;
+
+    mouseOverActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
+    mouseOverConstraintViolations = detail?.constraintViolations ?? mouseOverConstraintViolations;
+    mouseOverPointsByLayer[layerId] = detail?.points ?? [];
+    mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
+
+    const activityDirectives = Object.values(mouseOverActivityDirectivesByLayer).flat();
+    const constraintViolations = mouseOverConstraintViolations;
     const points = Object.values(mouseOverPointsByLayer).flat();
-    dispatch('mouseOver', { ...detail, points });
+    const spans = Object.values(mouseOverSpansByLayer).flat();
+
+    dispatch('mouseOver', { ...detail, activityDirectives, constraintViolations, points, spans });
   }
 
   function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
@@ -210,7 +243,7 @@
             {mouseout}
             {viewTimeRange}
             {xScaleView}
-            on:mouseOverViolations
+            on:mouseOver={onMouseOver}
           />
           <RowYAxes {drawHeight} {yAxes} />
           <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} {yAxes} />
@@ -224,7 +257,8 @@
         {#if layer.chartType === 'activity'}
           <LayerActivity
             {...layer}
-            activities={activitiesByView?.byLayerId[layer.id] ?? []}
+            activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
+            {activityDirectivesMap}
             {blur}
             {drawHeight}
             {drawWidth}
@@ -234,10 +268,17 @@
             {mousemove}
             {mouseout}
             {mouseup}
-            {selectedActivityId}
+            {planEndTimeDoy}
+            {planId}
+            {planStartTimeYmd}
+            {selectedActivityDirectiveId}
+            {selectedSpanId}
+            {spanUtilityMaps}
+            {spansMap}
+            {timelineLockStatus}
             {viewTimeRange}
             {xScaleView}
-            on:delete
+            on:deleteActivityDirective
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
             on:updateRowHeight={onUpdateRowHeightLayer}
@@ -249,14 +290,12 @@
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
-            {mousedown}
             {mousemove}
             {mouseout}
             resources={resourcesByViewLayerId[layer.id] ?? []}
             {viewTimeRange}
             {xScaleView}
             {yAxes}
-            on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
           />
         {/if}
@@ -266,12 +305,10 @@
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
-            {mousedown}
             {mousemove}
             {mouseout}
             resources={resourcesByViewLayerId[layer.id] ?? []}
             {xScaleView}
-            on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
           />
         {/if}

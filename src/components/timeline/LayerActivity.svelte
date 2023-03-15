@@ -5,17 +5,24 @@
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-  import { activitiesMap } from '../../stores/activities';
-  import { timelineLockStatus } from '../../stores/views';
-  import type { Activity, ActivityUniqueId } from '../../types/activity';
-  import type { ActivityLayerFilter, ActivityPoint, BoundingBox, QuadtreeRect, TimeRange } from '../../types/timeline';
-  import { decomposeActivityDirectiveId, sortActivities } from '../../utilities/activities';
+  import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import type { Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { ActivityLayerFilter, BoundingBox, QuadtreeRect, TimeRange } from '../../types/timeline';
+  import { sortActivityDirectives } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
-  import { getDoyTime, getDurationInMs, getUnixEpochTime } from '../../utilities/time';
+  import {
+    getActivityDirectiveStartTimeMs,
+    getDoyTime,
+    getIntervalInMs,
+    getIntervalUnixEpochTime,
+    getUnixEpochTime,
+    getUnixEpochTimeFromInterval,
+  } from '../../utilities/time';
   import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
 
-  export let activities: Activity[] = [];
+  export let activityDirectives: ActivityDirective[] = [];
+  export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityColor: string = '';
   export let activityHeight: number = 20;
   export let activityRowPadding: number = 20;
@@ -31,8 +38,14 @@
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let mouseup: MouseEvent | undefined;
-  export let selectedActivityId: ActivityUniqueId | null = null;
-  export let showChildren: boolean = true;
+  export let planEndTimeDoy: string;
+  export let planId: number;
+  export let planStartTimeYmd: string;
+  export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let selectedSpanId: SpanId | null = null;
+  export let spanUtilityMaps: SpanUtilityMaps;
+  export let spansMap: SpansMap = {};
+  export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
@@ -43,11 +56,14 @@
   let dpr: number = 1;
   let dragCurrentX: number | null = null;
   let dragOffsetX: number | null = null;
-  let dragPoint: ActivityPoint | null = null;
+  let dragPreviousX: number | null = null;
+  let dragActivityDirectiveActive: ActivityDirective | null = null;
   let dragStartX: number | null = null;
   let maxActivityWidth: number;
-  let quadtree: Quadtree<QuadtreeRect>;
-  let visiblePointsByUniqueId: Record<ActivityUniqueId, ActivityPoint> = {};
+  let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
+  let quadtreeSpans: Quadtree<QuadtreeRect>;
+  let visibleActivityDirectivesById: Record<ActivityDirectiveId, ActivityDirective> = {};
+  let visibleSpansById: Record<SpanId, Span> = {};
 
   $: onBlur(blur);
   $: onFocus(focus);
@@ -59,18 +75,19 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = activityHeight + activityRowPadding;
-
-  $: timelineLocked = $timelineLockStatus === TimelineLockStatus.Locked;
+  $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
 
   $: if (
-    activities &&
+    activityDirectives &&
     activityColor &&
     activityHeight &&
     ctx &&
     drawHeight &&
     drawWidth &&
     filter &&
-    selectedActivityId !== undefined &&
+    selectedActivityDirectiveId !== undefined &&
+    selectedSpanId !== undefined &&
+    spansMap &&
     viewTimeRange &&
     xScaleView
   ) {
@@ -86,113 +103,46 @@
 
   onDestroy(() => removeKeyDownEvent());
 
-  /**
-   * Recursively converts an Activity to an ActivityPoint.
-   * Sorts child activity points in start time ascending order.
-   */
-  function activityToPoint(activity: Activity): ActivityPoint {
-    const children = activity?.childUniqueIds
-      ? [...activity.childUniqueIds]
-          .sort((aId: ActivityUniqueId, bId: ActivityUniqueId): number => {
-            const a = $activitiesMap[aId];
-            const b = $activitiesMap[bId];
+  function dragActivityDirectiveStart(activityDirectives: ActivityDirective[], offsetX: number): void {
+    if (activityDirectives.length) {
+      const [activityDirective] = activityDirectives; // Select just the first one for now.
 
-            if (a && b) {
-              return sortActivities(a, b);
-            }
-
-            return 0;
-          })
-          .reduce((childActivityPoints, childUniqueId: ActivityUniqueId) => {
-            const childActivity = $activitiesMap[childUniqueId];
-
-            if (childActivity) {
-              const childActivityPoint = activityToPoint(childActivity);
-              childActivityPoints.push(childActivityPoint);
-            }
-
-            return childActivityPoints;
-          }, [])
-      : [];
-
-    let activityLabelText = activity.name;
-
-    if (activity.parent_id !== null) {
-      activityLabelText = activity.type;
-    }
-
-    if (activity.unfinished) {
-      activityLabelText = `${activityLabelText} (Unfinished)`;
-    }
-
-    const point: ActivityPoint = {
-      children,
-      duration: getDurationInMs(activity.duration),
-      id: activity.id,
-      label: {
-        color: activity.unfinished ? '#ff7760' : null,
-        text: activityLabelText,
-      },
-      name: activity.name,
-      parentUniqueId: activity.parentUniqueId,
-      parent_id: activity.parent_id,
-      type: 'activity',
-      unfinished: activity.unfinished,
-      uniqueId: activity.uniqueId,
-      x: getUnixEpochTime(activity.start_time_doy),
-    };
-
-    return point;
-  }
-
-  /**
-   * Transforms activities to activity points for rendering.
-   * Sorts activities in start time ascending order.
-   */
-  function activitiesToPoints(activities: Activity[]): ActivityPoint[] {
-    return [...activities].sort(sortActivities).map(activity => activityToPoint(activity));
-  }
-
-  /**
-   * @note We only allow dragging parent activities.
-   */
-  function dragActivityStart(points: ActivityPoint[], offsetX: number): void {
-    if (points.length) {
-      const [point] = points;
-      if (point.parent_id === null) {
-        dragOffsetX = offsetX - xScaleView(point.x);
-        dragPoint = point;
-        dragStartX = dragCurrentX = dragPoint.x;
-      }
+      const x = getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
+      dragOffsetX = offsetX - xScaleView(x);
+      dragActivityDirectiveActive = activityDirective; // Pointer of the active drag activity.
+      dragStartX = x;
+      dragCurrentX = x;
+      dragPreviousX = x;
     }
   }
 
-  function dragActivity(offsetX: number): void {
-    // Only update the x position if the timeline is unlocked
-    if (!timelineLocked && dragPoint && $activitiesMap[dragPoint.uniqueId]) {
+  function dragActivityDirective(offsetX: number): void {
+    if (!timelineLocked && dragActivityDirectiveActive) {
       const x = offsetX - dragOffsetX;
       dragCurrentX = xScaleView.invert(x).getTime();
-      const start_time_doy = getDoyTime(new Date(dragCurrentX));
-      if (dragCurrentX !== dragPoint.x) {
-        $activitiesMap[dragPoint.uniqueId].start_time_doy = start_time_doy;
+      if (dragCurrentX !== dragPreviousX) {
+        const planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
+        const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
+        dragActivityDirectiveActive.start_offset = start_offset; // Update activity in memory.
+        dragPreviousX = dragCurrentX;
         draw();
       }
     }
   }
 
   function dragActivityEnd(): void {
-    if (dragPoint && dragStartX !== null && dragCurrentX !== null) {
-      if (dragStartX !== dragCurrentX && $activitiesMap[dragPoint.uniqueId]) {
-        const start_time_doy = getDoyTime(new Date(dragCurrentX));
-        const dragActivity = $activitiesMap[dragPoint.uniqueId];
-        const { activityId, planId } = decomposeActivityDirectiveId(dragActivity.uniqueId);
-        effects.updateActivityDirective(planId, activityId, { start_time_doy });
+    if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
+      if (dragStartX !== dragCurrentX) {
+        const planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
+        const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
+        effects.updateActivityDirective(planId, dragActivityDirectiveActive.id, { start_offset });
       }
 
-      dragOffsetX = null;
-      dragPoint = null;
-      dragStartX = null;
+      dragActivityDirectiveActive = null;
       dragCurrentX = null;
+      dragOffsetX = null;
+      dragStartX = null;
+      dragPreviousX = null;
     }
   }
 
@@ -209,8 +159,8 @@
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (isDeleteEvent(event) && !!selectedActivityId) {
-      dispatch('delete', selectedActivityId);
+    if (isDeleteEvent(event) && !!selectedActivityDirectiveId) {
+      dispatch('deleteActivityDirective', selectedActivityDirectiveId);
     }
   }
 
@@ -223,38 +173,54 @@
   function onMousedown(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX, offsetY } = e;
-      const points = searchQuadtreeRect<ActivityPoint>(
-        quadtree,
+      const activityDirectives = searchQuadtreeRect<ActivityDirective>(
+        quadtreeActivityDirectives,
         offsetX,
         offsetY,
         activityHeight,
         maxActivityWidth,
-        visiblePointsByUniqueId,
+        visibleActivityDirectivesById,
       );
-      dispatch('mouseDown', { e, layerId: id, points });
-      dragActivityStart(points, offsetX);
+      const spans = searchQuadtreeRect<Span>(
+        quadtreeSpans,
+        offsetX,
+        offsetY,
+        activityHeight,
+        maxActivityWidth,
+        visibleSpansById,
+      );
+      dispatch('mouseDown', { activityDirectives, e, layerId: id, spans });
+      dragActivityDirectiveStart(activityDirectives, offsetX);
     }
   }
 
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX, offsetY } = e;
-      const points = searchQuadtreeRect<ActivityPoint>(
-        quadtree,
+      const activityDirectives = searchQuadtreeRect<ActivityDirective>(
+        quadtreeActivityDirectives,
         offsetX,
         offsetY,
         activityHeight,
         maxActivityWidth,
-        visiblePointsByUniqueId,
+        visibleActivityDirectivesById,
       );
-      dispatch('mouseOver', { e, layerId: id, points });
-      dragActivity(offsetX);
+      const spans = searchQuadtreeRect<Span>(
+        quadtreeSpans,
+        offsetX,
+        offsetY,
+        activityHeight,
+        maxActivityWidth,
+        visibleSpansById,
+      );
+      dispatch('mouseOver', { activityDirectives, e, layerId: id, spans });
+      dragActivityDirective(offsetX);
     }
   }
 
   function onMouseout(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('mouseOver', { e, layerId: id, points: [] });
+      dispatch('mouseOver', { activityDirectives: [], e, layerId: id, spans: [] });
     }
   }
 
@@ -276,28 +242,42 @@
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, drawWidth, drawHeight);
 
-      quadtree = d3Quadtree<QuadtreeRect>()
+      quadtreeActivityDirectives = d3Quadtree<QuadtreeRect>()
         .x(p => p.x)
         .y(p => p.y)
         .extent([
           [0, 0],
           [drawWidth, drawHeight],
         ]);
-      visiblePointsByUniqueId = {};
+      quadtreeSpans = d3Quadtree<QuadtreeRect>()
+        .x(p => p.x)
+        .y(p => p.y)
+        .extent([
+          [0, 0],
+          [drawWidth, drawHeight],
+        ]);
+      visibleActivityDirectivesById = {};
+      visibleSpansById = {};
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
       let totalMaxY = Number.MIN_SAFE_INTEGER;
-
-      const activityPoints: ActivityPoint[] = activitiesToPoints(activities);
       const boundingBoxes: BoundingBox[] = [];
 
-      for (const point of activityPoints) {
-        const isParentActivity = !point.parent_id;
+      const sortedActivityDirectives: ActivityDirective[] = activityDirectives.sort(sortActivityDirectives);
+      for (const activityDirective of sortedActivityDirectives) {
+        const activityDirectiveX = getActivityDirectiveStartTimeMs(
+          activityDirective.id,
+          planStartTimeYmd,
+          planEndTimeDoy,
+          activityDirectivesMap,
+          spansMap,
+          spanUtilityMaps,
+        );
 
-        if (isParentActivity && point.x + point.duration >= viewTimeRange.start && point.x <= viewTimeRange.end) {
-          const x = xScaleView(point.x);
-          const end = xScaleView(point.x + point.duration);
-          const { textWidth } = setLabelContext(point);
+        if (activityDirectiveX >= viewTimeRange.start && activityDirectiveX <= viewTimeRange.end) {
+          const x = xScaleView(activityDirectiveX);
+          const end = xScaleView(activityDirectiveX);
+          const { textWidth } = setLabelContext(activityDirective.name);
           const xEnd = end + textWidth;
 
           let maxX = Number.MIN_SAFE_INTEGER;
@@ -310,7 +290,7 @@
             }
           }
 
-          drawActivity(point, x, y, end);
+          drawActivityDirective(activityDirective, x, y);
 
           if (xEnd > maxX) {
             maxX = xEnd;
@@ -319,18 +299,23 @@
             maxY = y;
           }
 
-          const childrenBoundingBox: BoundingBox = drawChildren(point, y);
+          const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activityDirective.id];
+          const span = spansMap[spanId];
+          if (span) {
+            const childIds = spanUtilityMaps.spanIdToChildIdsMap[span.id];
+            const childrenBoundingBox: BoundingBox = drawSpans(span, childIds, y);
 
-          if (childrenBoundingBox) {
-            if (childrenBoundingBox.maxX > maxX) {
-              maxX = childrenBoundingBox.maxX;
+            if (childrenBoundingBox) {
+              if (childrenBoundingBox.maxX > maxX) {
+                maxX = childrenBoundingBox.maxX;
+              }
+              if (childrenBoundingBox.maxY > maxY) {
+                maxY = childrenBoundingBox.maxY;
+              }
             }
-            if (childrenBoundingBox.maxY > maxY) {
-              maxY = childrenBoundingBox.maxY;
-            }
+
+            boundingBoxes.push({ maxX, maxY });
           }
-
-          boundingBoxes.push({ maxX, maxY });
 
           if (maxY > totalMaxY) {
             totalMaxY = maxY;
@@ -345,53 +330,82 @@
     }
   }
 
-  function drawActivity(point: ActivityPoint, x: number, y: number, end: number) {
-    const { uniqueId } = point;
-    const activityWidth = Math.max(5.0, end - x);
+  function drawActivityDirective(activityDirective: ActivityDirective, x: number, y: number) {
+    const activityWidth = 5.0;
     const rect = new Path2D();
     rect.rect(x, y, activityWidth, activityHeight);
 
-    quadtree.add({
+    quadtreeActivityDirectives.add({
       height: activityHeight,
-      id: uniqueId,
+      id: activityDirective.id,
       width: activityWidth,
       x,
       y,
     });
-    visiblePointsByUniqueId[uniqueId] = point;
+    visibleActivityDirectivesById[activityDirective.id] = activityDirective;
 
     if (activityWidth > maxActivityWidth) {
       maxActivityWidth = activityWidth;
     }
 
-    if (selectedActivityId === uniqueId) {
+    if (selectedActivityDirectiveId === activityDirective.id) {
       ctx.fillStyle = activitySelectedColor;
-    } else if (point.unfinished) {
+    } else {
+      ctx.fillStyle = activityColor;
+    }
+
+    ctx.fill(rect);
+    const { labelText, textMetrics } = setLabelContext(activityDirective.name);
+    ctx.fillText(labelText, x, y, textMetrics.width);
+  }
+
+  function drawSpan(span: Span, x: number, y: number, end: number) {
+    const activityWidth = Math.max(5.0, end - x);
+    const rect = new Path2D();
+    rect.rect(x, y, activityWidth, activityHeight);
+
+    quadtreeSpans.add({
+      height: activityHeight,
+      id: span.id,
+      width: activityWidth,
+      x,
+      y,
+    });
+    visibleSpansById[span.id] = span;
+
+    if (activityWidth > maxActivityWidth) {
+      maxActivityWidth = activityWidth;
+    }
+
+    if (selectedSpanId === span.id) {
+      ctx.fillStyle = activitySelectedColor;
+    } else if (span.duration === null) {
       ctx.fillStyle = activityUnfinishedColor;
     } else {
       ctx.fillStyle = activityColor;
     }
 
     ctx.fill(rect);
-    const hideLabel = point.label?.hidden || false;
-    if (!hideLabel) {
-      const { labelText, textMetrics } = setLabelContext(point);
-      ctx.fillText(labelText, x, y, textMetrics.width);
-    }
+
+    const { labelText, textMetrics } = setLabelContext(span.type);
+    ctx.fillText(labelText, x, y, textMetrics.width);
   }
 
-  function drawChildren(parent: ActivityPoint, parentY: number): BoundingBox | null {
-    if (showChildren && parent?.children?.length) {
+  function drawSpans(span: Span, childIds: SpanId[], parentY: number): BoundingBox | null {
+    if (childIds?.length) {
       const boundingBoxes: BoundingBox[] = [];
 
       let maxX = Number.MIN_SAFE_INTEGER;
       let maxY = Number.MIN_SAFE_INTEGER;
       let y = parentY + rowHeight;
 
-      for (const point of parent.children) {
-        const x = xScaleView(point.x);
-        const end = xScaleView(point.x + point.duration);
-        const { textWidth } = setLabelContext(point);
+      for (const childId of childIds) {
+        const childSpan = spansMap[childId];
+        const startTime = getUnixEpochTimeFromInterval(planStartTimeYmd, childSpan.start_offset);
+        const duration = getIntervalInMs(span.duration);
+        const x = xScaleView(startTime);
+        const end = xScaleView(startTime + duration);
+        const { textWidth } = setLabelContext(`${span.id}`);
         const xEnd = end + textWidth;
 
         for (const boundingBox of boundingBoxes) {
@@ -400,7 +414,7 @@
           }
         }
 
-        drawActivity(point, x, y, end);
+        drawSpan(childSpan, x, y, end);
 
         if (xEnd > maxX) {
           maxX = xEnd;
@@ -409,7 +423,8 @@
           maxY = y;
         }
 
-        const childrenBoundingBox: BoundingBox = drawChildren(point, y);
+        const newChildIds = spanUtilityMaps.spanIdToChildIdsMap[childId];
+        const childrenBoundingBox: BoundingBox = drawSpans(childSpan, newChildIds, y);
 
         if (childrenBoundingBox) {
           if (childrenBoundingBox.maxX > maxX) {
@@ -429,14 +444,13 @@
     return null;
   }
 
-  function setLabelContext(point: ActivityPoint) {
-    const fontSize = point.label?.fontSize || 12;
-    const fontFace = point.label?.fontFace || 'Helvetica Neue';
-    ctx.fillStyle = point.label?.color || '#000000';
+  function setLabelContext(labelText: string) {
+    const fontSize = 12;
+    const fontFace = 'Helvetica Neue';
+    ctx.fillStyle = '#000000';
     ctx.font = `${fontSize}px ${fontFace}`;
-    ctx.textAlign = point.label?.align || 'start';
-    ctx.textBaseline = point.label?.baseline || 'alphabetic';
-    const labelText = point.label?.text || '';
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
     const textMetrics = ctx.measureText(labelText);
     const textWidth = textMetrics.width;
     const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;

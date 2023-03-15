@@ -4,28 +4,28 @@
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
   import type { ColDef, ColumnState, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
-  import { activities, selectedActivityId } from '../../stores/activities';
+  import { activityDirectives, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { planId } from '../../stores/plan';
-  import { view, viewUpdateActivityTables } from '../../stores/views';
-  import type { Activity } from '../../types/activity';
+  import { view, viewUpdateActivityDirectivesTable } from '../../stores/views';
+  import type { ActivityDirective } from '../../types/activity';
   import type { ActivityMetadata } from '../../types/activity-metadata';
   import type { TRowData } from '../../types/data-grid';
   import type { ArgumentsMap } from '../../types/parameter';
-  import type { ViewActivityTable, ViewGridSection } from '../../types/view';
+  import type { ViewGridSection, ViewTable } from '../../types/view';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
-  import ActivityTable from './ActivityTable.svelte';
+  import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
 
   export let gridSection: ViewGridSection;
 
-  interface ActivityColDef extends ColDef<Activity> {
-    field: keyof Activity;
+  interface ActivityDirectiveColDef extends ColDef<ActivityDirective> {
+    field: keyof ActivityDirective;
   }
 
-  const defaultColumnDefinitions: Partial<Record<keyof Activity, ActivityColDef>> = {
+  const defaultColumnDefinitions: Partial<Record<keyof ActivityDirective, ActivityDirectiveColDef>> = {
     anchor_id: {
       field: 'anchor_id',
       filter: 'text',
@@ -45,14 +45,14 @@
     arguments: {
       field: 'arguments',
       filter: 'text',
-      filterValueGetter: (params: ValueGetterParams<Activity>) => {
+      filterValueGetter: (params: ValueGetterParams<ActivityDirective>) => {
         return JSON.stringify(params.data.arguments);
       },
       headerName: 'Arguments',
       hide: true,
       resizable: true,
       sortable: false,
-      valueFormatter: ({ value: argumentsMap }: ValueFormatterParams<Activity, ArgumentsMap>) => {
+      valueFormatter: ({ value: argumentsMap }: ValueFormatterParams<ActivityDirective, ArgumentsMap>) => {
         return JSON.stringify(argumentsMap);
       },
     },
@@ -60,14 +60,6 @@
       field: 'created_at',
       filter: 'text',
       headerName: 'Created At',
-      hide: true,
-      resizable: true,
-      sortable: true,
-    },
-    duration: {
-      field: 'duration',
-      filter: 'text',
-      headerName: 'Duration',
       hide: true,
       resizable: true,
       sortable: true,
@@ -91,7 +83,7 @@
     metadata: {
       field: 'metadata',
       filter: 'text',
-      filterValueGetter: (params: ValueGetterParams<Activity>) => {
+      filterValueGetter: (params: ValueGetterParams<ActivityDirective>) => {
         return JSON.stringify(params.data.metadata);
       },
       headerName: 'Metadata',
@@ -126,14 +118,6 @@
       resizable: true,
       sortable: true,
     },
-    start_time_doy: {
-      field: 'start_time_doy',
-      filter: 'text',
-      headerName: 'Start Time',
-      hide: true,
-      resizable: true,
-      sortable: true,
-    },
     tags: {
       field: 'tags',
       filter: 'text',
@@ -152,14 +136,15 @@
     },
   };
 
-  let activityTableId: number = 0;
-  let activityTable: ViewActivityTable;
+  let activityDirectivesTable: ViewTable;
   let dataGrid: DataGrid;
   let derivedColumnDefs: ColDef[] = [];
 
-  $: activityTable = $view?.definition.plan.activityTables.find(table => table.id === activityTableId);
+  $: activityDirectivesTable = $view?.definition.plan.activityDirectivesTable;
   $: derivedColumnDefs = Object.values(defaultColumnDefinitions).map((defaultColumnDef: ColDef) => {
-    const columnDef = activityTable.columnDefs.find((columnDef: ColDef) => columnDef.field === defaultColumnDef.field);
+    const columnDef = activityDirectivesTable.columnDefs.find(
+      (columnDef: ColDef) => columnDef.field === defaultColumnDef.field,
+    );
     if (columnDef) {
       return {
         ...defaultColumnDef,
@@ -180,69 +165,63 @@
   }
 
   function onColumnToggleChange({ detail: { field, isHidden } }: CustomEvent) {
-    const activityColumnStates: ColumnState[] = activityTable?.columnStates ?? [];
+    const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
     const existingColumnStateIndex: number = activityColumnStates.findIndex(
       (columnState: ColumnState) => field === columnState.colId,
     );
     if (existingColumnStateIndex >= 0) {
-      viewUpdateActivityTables(
-        {
-          columnStates: [
-            ...activityColumnStates.slice(0, existingColumnStateIndex),
-            {
-              ...activityColumnStates[existingColumnStateIndex],
-              hide: isHidden,
-            },
-            ...activityColumnStates.slice(existingColumnStateIndex + 1),
-          ],
-        },
-        activityTableId,
-      );
+      viewUpdateActivityDirectivesTable({
+        columnStates: [
+          ...activityColumnStates.slice(0, existingColumnStateIndex),
+          {
+            ...activityColumnStates[existingColumnStateIndex],
+            hide: isHidden,
+          },
+          ...activityColumnStates.slice(existingColumnStateIndex + 1),
+        ],
+      });
     } else {
-      viewUpdateActivityTables(
-        {
-          columnStates: [
-            ...activityColumnStates,
-            {
-              colId: field,
-              hide: isHidden,
-            },
-          ],
-        },
-        activityTableId,
-      );
+      viewUpdateActivityDirectivesTable({
+        columnStates: [
+          ...activityColumnStates,
+          {
+            colId: field,
+            hide: isHidden,
+          },
+        ],
+      });
     }
   }
 
   function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[]>) {
     const updatedColumnStates = columnStates.filter(columnState => columnState.colId !== 'actions');
+    viewUpdateActivityDirectivesTable({ columnStates: updatedColumnStates });
+  }
 
-    viewUpdateActivityTables({ columnStates: updatedColumnStates }, activityTableId);
+  function onSelectionChanged() {
+    selectActivity($selectedActivityDirectiveId, null, false);
   }
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
-    viewUpdateActivityTables(
-      {
-        columnStates: derivedColumnDefs.map((columnDef: ColDef) => {
-          const activityColumnStates: ColumnState[] = activityTable?.columnStates ?? [];
-          const existingColumnState: ColumnState | undefined = activityColumnStates.find(
-            (columnState: ColumnState) => columnDef.field === columnState.colId,
-          );
+    viewUpdateActivityDirectivesTable({
+      columnStates: derivedColumnDefs.map((columnDef: ColDef) => {
+        const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
+        const existingColumnState: ColumnState | undefined = activityColumnStates.find(
+          (columnState: ColumnState) => columnDef.field === columnState.colId,
+        );
 
-          return {
-            ...existingColumnState,
-            hide,
-          };
-        }),
-      },
-      activityTableId,
-    );
+        return {
+          ...existingColumnState,
+          hide,
+        };
+      }),
+    });
   }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridSection} title="Activity Table" />
+    <GridMenu {gridSection} title="Activity Directives Table" />
     <div class="table-menu">
       <div class="size-actions">
         <button
@@ -264,20 +243,21 @@
         on:toggle-column={onColumnToggleChange}
         on:show-hide-all-columns={onShowHideAllColumns}
         columnDefs={derivedColumnDefs}
-        columnStates={activityTable?.columnStates}
+        columnStates={activityDirectivesTable?.columnStates}
       />
     </div>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <ActivityTable
+    <ActivityDirectivesTable
       bind:dataGrid
-      bind:selectedActivityId={$selectedActivityId}
-      activities={$activities}
+      bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
+      activityDirectives={$activityDirectives}
       columnDefs={derivedColumnDefs ?? []}
-      columnStates={activityTable?.columnStates}
+      columnStates={activityDirectivesTable?.columnStates}
       planId={$planId}
       on:columnStateChange={onColumnStateChange}
+      on:selectionChanged={onSelectionChanged}
     />
   </svelte:fragment>
 </Panel>

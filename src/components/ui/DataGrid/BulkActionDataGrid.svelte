@@ -7,11 +7,9 @@
   import { createEventDispatcher, onDestroy } from 'svelte';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
-  import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
-  import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -31,7 +29,6 @@
 
   const dispatch = createEventDispatcher();
 
-  let contextMenu: ContextMenu;
   let isFiltered: boolean = false;
   let selectedItemIds: RowId[] = [];
 
@@ -58,29 +55,9 @@
     }
   }
 
-  function onAutoSizeContent() {
-    dataGrid?.autoSizeAllColumns();
-  }
-
-  function onAutoSizeSpace() {
-    dataGrid?.sizeColumnsToFit();
-  }
-
   function onBlur() {
     if (browser) {
       document.removeEventListener('keydown', onKeyDown);
-    }
-  }
-
-  function onCellContextMenu(event: CustomEvent) {
-    if (showContextMenu) {
-      const { detail } = event;
-      const { data: clickedRow } = detail;
-      if (selectedItemIds.length <= 1 && (!isRowSelectable || isRowSelectable(detail))) {
-        selectedItemId = getRowId(clickedRow);
-      }
-
-      contextMenu.show(detail.event);
     }
   }
 
@@ -115,14 +92,13 @@
   {getRowId}
   {idKey}
   {isRowSelectable}
-  preventDefaultOnContextMenu={showContextMenu}
+  useCustomContextMenu={showContextMenu}
   rowData={items}
   rowSelection="multiple"
   {scrollToSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
   on:blur={onBlur}
-  on:cellContextMenu={onCellContextMenu}
   on:cellMouseOver
   on:columnMoved
   on:columnPinned
@@ -134,19 +110,19 @@
   on:rowDoubleClicked
   on:rowSelected
   on:selectionChanged
-/>
-{#if showContextMenu}
-  <ContextMenu bind:this={contextMenu}>
-    <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
-    <ContextMenuItem on:click={selectAllItems}>
-      Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
-    </ContextMenuItem>
-    {#if selectedItemIds.length}
-      <ContextMenuItem on:click={bulkDeleteItems}>
-        Delete {selectedItemIds.length}
-        {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+>
+  <svelte:fragment slot="context-menu">
+    {#if showContextMenu}
+      <ContextMenuHeader>Bulk Actions</ContextMenuHeader>
+      <ContextMenuItem on:click={selectAllItems}>
+        Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
       </ContextMenuItem>
+      {#if selectedItemIds.length}
+        <ContextMenuItem on:click={bulkDeleteItems}>
+          Delete {selectedItemIds.length}
+          {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenuItem>
+      {/if}
     {/if}
-    <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
-  </ContextMenu>
-{/if}
+  </svelte:fragment>
+</DataGrid>

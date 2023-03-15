@@ -2,42 +2,37 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
-  import type { Activity, ActivityUniqueId } from '../../types/activity';
+  import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
-  export let activities: Activity[] = [];
+  export let activityDirectives: ActivityDirective[] = [];
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid = undefined;
   export let planId: number;
-  export let selectedActivityId: ActivityUniqueId | null = null;
+  export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
 
   type CellRendererParams = {
-    deleteActivityDirective: (activity: Activity) => void;
+    deleteActivityDirective: (activity: ActivityDirective) => void;
   };
-  type ActivityCellRendererParams = ICellRendererParams<Activity> & CellRendererParams;
+  type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
 
   const activityActionColumnDef: DataGridColumnDef = {
     cellClass: 'action-cell-container',
     cellRenderer: (params: ActivityCellRendererParams) => {
-      const isParent = params.data.parent_id === null;
       const actionsDiv = document.createElement('div');
       actionsDiv.className = 'actions-cell';
       new DataGridActions({
         props: {
-          ...(isParent
-            ? {
-                deleteCallback: params.deleteActivityDirective,
-                deleteTooltip: {
-                  content: 'Delete Activity',
-                  placement: 'bottom',
-                },
-              }
-            : {}),
+          deleteCallback: params.deleteActivityDirective,
+          deleteTooltip: {
+            content: 'Delete Activity Directive',
+            placement: 'bottom',
+          },
           rowData: params.data,
         },
         target: actionsDiv,
@@ -59,7 +54,7 @@
 
   let isDeletingDirective: boolean = false;
 
-  async function deleteActivityDirective({ id, plan_id }: Activity) {
+  async function deleteActivityDirective({ id, plan_id }: ActivityDirective) {
     if (!isDeletingDirective) {
       isDeletingDirective = true;
       await effects.deleteActivityDirective(plan_id, id);
@@ -67,7 +62,7 @@
     }
   }
 
-  async function deleteActivityDirectives({ detail: activities }: CustomEvent<Activity[]>) {
+  async function deleteActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
     if (!isDeletingDirective) {
       isDeletingDirective = true;
       const ids = activities.map(({ id }) => id);
@@ -76,22 +71,23 @@
     }
   }
 
-  function getRowId(activity: Activity): ActivityUniqueId {
-    return activity.uniqueId;
+  function getRowId(activityDirective: ActivityDirective): ActivityDirectiveId {
+    return activityDirective.id;
   }
 </script>
 
 <BulkActionDataGrid
   bind:dataGrid
-  bind:selectedItemId={selectedActivityId}
+  bind:selectedItemId={selectedActivityDirectiveId}
   columnDefs={[...(columnDefs ?? []), activityActionColumnDef]}
   {columnStates}
   {getRowId}
-  items={activities}
-  pluralItemDisplayText="Activities"
+  items={activityDirectives}
+  pluralItemDisplayText="Activity Directives"
   scrollToSelection={true}
-  singleItemDisplayText="Activity"
+  singleItemDisplayText="Activity Directive"
   suppressDragLeaveHidesColumns={false}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:columnStateChange
+  on:selectionChanged
 />
