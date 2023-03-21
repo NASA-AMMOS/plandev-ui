@@ -80,7 +80,7 @@ import type {
   ResourceType,
   SimulateResponse,
   Simulation,
-  SimulationInsertInput,
+  SimulationInitialUpdateInput,
   Span,
 } from '../types/simulation';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
@@ -320,7 +320,7 @@ const effects = {
       const { createPlan } = data;
       const { id, revision, start_time } = createPlan;
 
-      await effects.createSimulation(id, simulation_template_id);
+      await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy);
       await effects.createSchedulingSpec({
         analysis_only: false,
         horizon_end: end_time_doy,
@@ -503,25 +503,6 @@ const effects = {
       await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal });
     } catch (e) {
       catchError(e);
-    }
-  },
-
-  async createSimulation(
-    plan_id: number,
-    simulation_template_id: number | null = null,
-    simulationArguments: ArgumentsMap = {},
-  ): Promise<boolean> {
-    try {
-      const simulationInsertInput: SimulationInsertInput = {
-        arguments: simulationArguments,
-        plan_id,
-        simulation_template_id,
-      };
-      await reqHasura(gql.CREATE_SIMULATION, { simulation: simulationInsertInput });
-      return true;
-    } catch (e) {
-      catchError(e);
-      return false;
     }
   },
 
@@ -1466,6 +1447,27 @@ const effects = {
     }
   },
 
+  async initialSimulationUpdate(
+    plan_id: number,
+    simulation_template_id: number | null = null,
+    simulation_start_time: string | null = null,
+    simulation_end_time: string | null = null,
+  ): Promise<boolean> {
+    try {
+      const simulationInput: SimulationInitialUpdateInput = {
+        arguments: {} as ArgumentsMap,
+        simulation_end_time,
+        simulation_start_time,
+        simulation_template_id,
+      };
+      await reqHasura(gql.INITIAL_SIMULATION_UPDATE, { plan_id: plan_id, simulation: simulationInput });
+      return true;
+    } catch (e) {
+      catchError(e);
+      return false;
+    }
+  },
+
   async insertExpansionSequenceToActivity(
     simulation_dataset_id: number,
     simulated_activity_id: number,
@@ -1891,6 +1893,8 @@ const effects = {
         id: simulationSetInput.id,
         simulation: {
           arguments: simulationSetInput.arguments,
+          simulation_end_time: simulationSetInput?.simulation_end_time ?? null,
+          simulation_start_time: simulationSetInput?.simulation_start_time ?? null,
           simulation_template_id: simulationSetInput?.template?.id ?? null,
         },
       });

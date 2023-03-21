@@ -169,14 +169,6 @@ const gql = {
     }
   `,
 
-  CREATE_SIMULATION: `#graphql
-    mutation CreateSimulation($simulation: simulation_insert_input!) {
-      createSimulation: insert_simulation_one(object: $simulation) {
-        id
-      }
-    }
-  `,
-
   CREATE_USER_SEQUENCE: `#graphql
     mutation CreateUserSequence($sequence: user_sequence_insert_input!) {
       createUserSequence: insert_user_sequence_one(object: $sequence) {
@@ -787,6 +779,16 @@ const gql = {
     }
   `,
 
+  INITIAL_SIMULATION_UPDATE: `#graphql
+    mutation initialSimulationUpdate($plan_id: Int!, $simulation: simulation_set_input!) {
+      update_simulation(where: {plan_id: {_eq: $plan_id}}, _set: $simulation) {
+        returning {
+          id
+        }
+      }
+    }
+  `,
+
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
       sequence: insert_sequence_to_simulated_activity_one(
@@ -1250,6 +1252,8 @@ const gql = {
         arguments
         id
         revision
+        simulation_start_time
+        simulation_end_time
         template: simulation_template {
           arguments
           description

@@ -57,6 +57,8 @@ export type Simulation = {
   arguments: ArgumentsMap;
   id: number;
   revision: number;
+  simulation_end_time: string | null;
+  simulation_start_time: string | null;
   template: SimulationTemplate | null;
 };
 
@@ -69,9 +71,10 @@ export type SimulationDataset = {
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 
-export type SimulationInsertInput = {
+export type SimulationInitialUpdateInput = {
   arguments: ArgumentsMap;
-  plan_id: number;
+  simulation_end_time: string | null;
+  simulation_start_time: string | null;
   simulation_template_id: number | null;
 };
 
