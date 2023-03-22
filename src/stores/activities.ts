@@ -126,6 +126,9 @@ export function selectActivity(
     if (switchToTable) {
       viewUpdateGrid({ middleComponentBottom: 'ActivitySpansTablePanel' });
     }
+  } else {
+    selectedSpanId.set(null);
+    selectedActivityDirectiveId.set(null);
   }
 }
 

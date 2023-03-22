@@ -36,6 +36,8 @@
       selectActivity(activityDirectives[0].id, null);
     } else if (spans.length) {
       selectActivity(null, spans[0].id);
+    } else {
+      selectActivity(null, null);
     }
   }
 </script>

@@ -23,6 +23,15 @@ export type Axis = {
 export type BoundingBox = {
   maxX: number;
   maxY: number;
+  minX: number;
+};
+
+export type PointBounds = {
+  maxXCanvas: number;
+  x: number;
+  xCanvas: number;
+  xEnd: number;
+  xEndCanvas: number;
 };
 
 export type HorizontalGuide = {

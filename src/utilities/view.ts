@@ -303,15 +303,15 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             marginRight: 30,
             rows: [
               {
-                autoAdjustHeight: true,
+                autoAdjustHeight: false,
                 expanded: true,
-                height: 100,
+                height: 200,
                 horizontalGuides: [],
                 id: rowIds++,
                 layers: [
                   {
-                    activityColor: '#283593',
-                    activityHeight: 20,
+                    activityColor: '#fcdd8f',
+                    activityHeight: 16,
                     chartType: 'activity',
                     filter: { activity: { types } },
                     id: layerIds++,

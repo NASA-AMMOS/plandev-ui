@@ -19,6 +19,7 @@
     type RowClickedEvent,
     type RowDoubleClickedEvent,
     type RowSelectedEvent,
+    type SelectionChangedEvent,
     type SortChangedEvent,
   } from 'ag-grid-community';
   import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/columns/columnModel';
@@ -256,7 +257,7 @@
           } as DataGridRowSelection<TRowData>);
         }
       },
-      onSelectionChanged() {
+      onSelectionChanged(event: SelectionChangedEvent) {
         const selectedRows = gridOptions?.api?.getSelectedRows();
         selectedRowIds = selectedRows.map((selectedRow: TRowData) => getRowId(selectedRow));
 
@@ -279,7 +280,9 @@
           });
         }
 
-        dispatch('selectionChanged', selectedRows);
+        if (event.source === 'rowClicked') {
+          dispatch('selectionChanged', selectedRows);
+        }
       },
       onSortChanged(event: SortChangedEvent<TRowData>) {
         dispatch('sortChanged', event);

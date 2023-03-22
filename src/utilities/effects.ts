@@ -16,7 +16,7 @@ import {
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
+import { selectedSpanId, simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
 import { applyViewUpdate, view } from '../stores/views';
 import type {
   ActivityDirective,
@@ -155,6 +155,7 @@ const effects = {
         [id]: newActivityDirective,
       }));
       selectedActivityDirectiveId.set(id);
+      selectedSpanId.set(null);
 
       showSuccessToast('Activity Directive Created Successfully');
     } catch (e) {

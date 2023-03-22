@@ -2,13 +2,17 @@
 
 <script lang="ts">
   import { browser } from '$app/environment';
+  import ActivityAnchorIconSVG from '@nasa-jpl/stellar/icons/activity_anchor.svg?raw';
+  import ActivityDirectiveIconSVG from '@nasa-jpl/stellar/icons/activity_directive.svg?raw';
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
+  import SpanHashMarksSVG from '../../assets/span-hash-marks.svg?raw';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
-  import type { ActivityLayerFilter, BoundingBox, QuadtreeRect, TimeRange } from '../../types/timeline';
-  import { sortActivityDirectives } from '../../utilities/activities';
+  import type { ActivityLayerFilter, BoundingBox, PointBounds, QuadtreeRect, TimeRange } from '../../types/timeline';
+  import { getSpanRootParent, sortActivityDirectives } from '../../utilities/activities';
+  import { hexToRgba, shadeColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import {
@@ -24,11 +28,13 @@
   export let activityDirectives: ActivityDirective[] = [];
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityColor: string = '';
-  export let activityHeight: number = 20;
-  export let activityRowPadding: number = 20;
-  export let activitySelectedColor: string = '#81D4FA';
-  export let activityUnfinishedColor: string = '#ff7760';
+  export let activityHeight: number = 16;
+  export let activityRowPadding: number = 4;
+  export let activitySelectedColor: string = '#a9eaff';
+  export let activityUnfinishedSelectedColor: string = '#ff3b19';
+  export let activityUnfinishedColor: string = '#fc674d';
   export let blur: FocusEvent | undefined;
+  export let debugMode: boolean = false;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
@@ -54,6 +60,7 @@
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let dpr: number = 1;
+  let nativeDirectiveIconWidth: number = 16;
   let dragCurrentX: number | null = null;
   let dragOffsetX: number | null = null;
   let dragPreviousX: number | null = null;
@@ -65,6 +72,24 @@
   let visibleActivityDirectivesById: Record<ActivityDirectiveId, ActivityDirective> = {};
   let visibleSpansById: Record<SpanId, Span> = {};
 
+  // Asset cache
+  const assets: {
+    anchorIcon: HTMLImageElement;
+    directiveIcon: HTMLImageElement;
+    directiveIconShape: Path2D;
+    directiveIconShapeStroke: Path2D;
+    hashMarks: HTMLImageElement;
+    pattern: HTMLCanvasElement;
+  } = {
+    anchorIcon: null,
+    directiveIcon: null,
+    directiveIconShape: null,
+    directiveIconShapeStroke: null,
+    hashMarks: null,
+    pattern: null,
+  };
+  const textMetricsCache: Record<string, TextMetrics> = {};
+
   $: onBlur(blur);
   $: onFocus(focus);
   $: onMousedown(mousedown);
@@ -72,9 +97,15 @@
   $: onMouseout(mouseout);
   $: onMouseup(mouseup);
 
+  $: scaleFactor = activityHeight / nativeDirectiveIconWidth;
+  $: directiveIconWidth = nativeDirectiveIconWidth * scaleFactor;
+  $: anchorIconWidth = directiveIconWidth * scaleFactor;
+  $: anchorIconMarginLeft = 4 * scaleFactor;
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
+  $: directiveIconMarginRight = 2 * scaleFactor;
   $: rowHeight = activityHeight + activityRowPadding;
+  $: spanLabelLeftMargin = 6;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
 
   $: if (
@@ -95,13 +126,35 @@
   }
 
   onMount(() => {
+    preloadStaticAssets();
+  });
+
+  onDestroy(() => removeKeyDownEvent());
+
+  function preloadStaticAssets() {
     if (canvas) {
       ctx = canvas.getContext('2d');
       dpr = window.devicePixelRatio;
     }
-  });
-
-  onDestroy(() => removeKeyDownEvent());
+    assets.directiveIcon = loadSVG(ActivityDirectiveIconSVG);
+    assets.anchorIcon = loadSVG(ActivityAnchorIconSVG);
+    assets.hashMarks = loadSVG(SpanHashMarksSVG);
+    assets.directiveIconShape = new Path2D(
+      'M0 0.470589C0 0.21069 0.21069 0 0.470588 0H8C12.4183 0 16 3.58172 16 8V8C16 12.4183 12.4183 16 8 16H0.470589C0.21069 16 0 15.7893 0 15.5294V0.470589Z',
+    );
+    assets.directiveIconShapeStroke = new Path2D(
+      'M0.5 15.5V0.5H8C12.1421 0.5 15.5 3.85786 15.5 8C15.5 12.1421 12.1421 15.5 8 15.5H0.5Z',
+    );
+  }
+  function loadSVG(svgString) {
+    var svg64 = window.btoa(svgString);
+    var b64Start = 'data:image/svg+xml;base64,';
+    // prepend a "header"
+    var image64 = b64Start + svg64;
+    const image = document.createElement('img');
+    image.src = image64;
+    return image;
+  }
 
   function dragActivityDirectiveStart(activityDirectives: ActivityDirective[], offsetX: number): void {
     if (activityDirectives.length) {
@@ -230,6 +283,122 @@
     }
   }
 
+  function getXForDirective(activityDirective: ActivityDirective) {
+    const start_offset = activityDirective.start_offset;
+    return getUnixEpochTimeFromInterval(planStartTimeYmd, start_offset);
+  }
+
+  function getSpanForActivityDirective(activityDirective: ActivityDirective) {
+    const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activityDirective.id];
+    return spansMap[spanId];
+  }
+
+  function getDirectiveBounds(activityDirective: ActivityDirective): PointBounds {
+    const { textWidth } = setLabelContext(activityDirective.name);
+    const x = getXForDirective(activityDirective);
+    const xCanvas = xScaleView(x);
+    let xEndCanvas = xCanvas + textWidth + directiveIconWidth + directiveIconMarginRight;
+    if (activityDirective.anchor_id !== null) {
+      xEndCanvas += anchorIconWidth + anchorIconMarginLeft;
+    }
+    return {
+      maxXCanvas: xEndCanvas,
+      x,
+      xCanvas,
+      xEnd: x,
+      xEndCanvas,
+    };
+  }
+
+  function getSpanBounds(span: Span): BoundingBox {
+    return drawSpans([span], 0, false);
+  }
+
+  function getLabelForSpan(span: Span): string {
+    return `${span.type}${span.duration === null ? ' (Unfinished)' : ''}`;
+  }
+
+  // Determine starting Y position for the activity directive, taking into account any associated spans
+  function placeActivityDirective(activityDirective: ActivityDirective, maxXPerY: Record<number, number>) {
+    // Get sizes of the points spawned by this point
+    const directiveBounds = getDirectiveBounds(activityDirective); // Directive element
+    let spanBounds: BoundingBox = null;
+
+    // Get matching span bounds if a span exists
+    const span = getSpanForActivityDirective(activityDirective);
+    if (span) {
+      spanBounds = getSpanBounds(span);
+    }
+    // Place the elements where they will fit in packed waterfall
+    let i = rowHeight;
+    let directiveStartY = 0;
+    let foundY = false;
+    while (!foundY) {
+      let maxDirectiveXForY = maxXPerY[i];
+      const directiveXForYExists = maxDirectiveXForY !== undefined;
+      const directiveFits =
+        !directiveXForYExists || (directiveXForYExists && directiveBounds.xCanvas > maxDirectiveXForY);
+      if (directiveFits) {
+        if (!spanBounds) {
+          foundY = true;
+          directiveStartY = i;
+        } else {
+          // Construct actual span bounds for this Y
+          const adjustedSpanBounds = { ...spanBounds };
+          adjustedSpanBounds.maxY += i + rowHeight;
+          // Check span bounds for each y
+          let spanYCheckIndex = i + rowHeight;
+          let allSpansFit = true;
+          while (spanYCheckIndex <= adjustedSpanBounds.maxY) {
+            // TODO span bounds could provide a maxXForY instead of absolute corner bounds?
+            const maxXForSpanY = maxXPerY[spanYCheckIndex];
+            // If the spans bbox is earlier than maxX for that Y we can't fit the bbox
+            if (maxXForSpanY !== undefined && adjustedSpanBounds.minX < maxXForSpanY) {
+              allSpansFit = false;
+              break;
+            }
+            spanYCheckIndex += rowHeight;
+          }
+          if (allSpansFit) {
+            foundY = true;
+            directiveStartY = i;
+          }
+        }
+      }
+      // If the directive does not fit, try the next row
+      i += rowHeight;
+    }
+    const newMaxXPerY = { ...maxXPerY };
+    // Update maxXForY for directive if no entry exists at that Y or if the directive end x is greater than the existing entry
+    if (newMaxXPerY[directiveStartY] === undefined || directiveBounds.maxXCanvas > newMaxXPerY[directiveStartY]) {
+      newMaxXPerY[directiveStartY] = directiveBounds.maxXCanvas;
+    }
+
+    // Construct actual span bounds for this final Y
+    const adjustedSpanBounds = { ...spanBounds };
+    adjustedSpanBounds.maxY = directiveStartY + rowHeight + adjustedSpanBounds.maxY;
+    let childrenYIterator = 0;
+    let spanStartY = 0;
+    if (spanBounds) {
+      childrenYIterator = directiveStartY + rowHeight;
+      spanStartY = spanBounds.maxY + childrenYIterator;
+      while (childrenYIterator < spanStartY) {
+        // TODO span bounds could provide a maxXForY instead of absolute corner bounds?
+        const maxXForSpanY = maxXPerY[childrenYIterator];
+        if (maxXForSpanY === undefined || maxXForSpanY < spanBounds.maxX) {
+          newMaxXPerY[childrenYIterator] = spanBounds.maxX;
+        }
+        childrenYIterator += rowHeight;
+      }
+    }
+    return {
+      directiveBounds,
+      directiveStartY,
+      maxXPerY: newMaxXPerY,
+      spanBounds: adjustedSpanBounds,
+    };
+  }
+
   /**
    * Draws activity points to the canvas context.
    * @note Points must be sorted in time ascending order before calling this function.
@@ -261,7 +430,7 @@
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
       let totalMaxY = Number.MIN_SAFE_INTEGER;
-      const boundingBoxes: BoundingBox[] = [];
+      let maxXPerY: Record<number, number> = {};
 
       const sortedActivityDirectives: ActivityDirective[] = activityDirectives.sort(sortActivityDirectives);
       for (const activityDirective of sortedActivityDirectives) {
@@ -275,51 +444,45 @@
         );
 
         if (activityDirectiveX >= viewTimeRange.start && activityDirectiveX <= viewTimeRange.end) {
-          const x = xScaleView(activityDirectiveX);
-          const end = xScaleView(activityDirectiveX);
-          const { textWidth } = setLabelContext(activityDirective.name);
-          const xEnd = end + textWidth;
+          const {
+            spanBounds,
+            directiveStartY,
+            directiveBounds,
+            maxXPerY: newMaxXPerY,
+          } = placeActivityDirective(activityDirective, maxXPerY);
 
-          let maxX = Number.MIN_SAFE_INTEGER;
-          let maxY = Number.MIN_SAFE_INTEGER;
-          let y = rowHeight;
+          // Update maxXPerY
+          maxXPerY = newMaxXPerY;
 
-          for (const boundingBox of boundingBoxes) {
-            if (x <= boundingBox.maxX) {
-              y = boundingBox.maxY + rowHeight;
-            }
-          }
+          const span = getSpanForActivityDirective(activityDirective);
+          const maxCanvasRowY = Math.floor(drawHeight / rowHeight) * rowHeight;
 
-          drawActivityDirective(activityDirective, x, y);
-
-          if (xEnd > maxX) {
-            maxX = xEnd;
-          }
-          if (y > maxY) {
-            maxY = y;
-          }
-
-          const spanId = spanUtilityMaps.directiveIdToSpanIdMap[activityDirective.id];
-          const span = spansMap[spanId];
+          // Draw spans
+          let constrainedSpanY = -1;
           if (span) {
-            const childIds = spanUtilityMaps.spanIdToChildIdsMap[span.id];
-            const childrenBoundingBox: BoundingBox = drawSpans(span, childIds, y);
-
-            if (childrenBoundingBox) {
-              if (childrenBoundingBox.maxX > maxX) {
-                maxX = childrenBoundingBox.maxX;
-              }
-              if (childrenBoundingBox.maxY > maxY) {
-                maxY = childrenBoundingBox.maxY;
-              }
-            }
-
-            boundingBoxes.push({ maxX, maxY });
+            const spanStartY = directiveStartY;
+            // Wrap spans if overflowing draw height
+            constrainedSpanY =
+              spanBounds.maxY > drawHeight ? (spanBounds.maxY % maxCanvasRowY) - rowHeight : spanStartY;
+            drawSpans([span], constrainedSpanY, true);
           }
 
-          if (maxY > totalMaxY) {
-            totalMaxY = maxY;
+          // Draw directive
+          let constrainedDirectiveY = 0;
+          // If the span exists, use the constrained span Y as the starting point for the directive
+          // so that the directive wraps with the span
+          if (constrainedSpanY > -1) {
+            constrainedDirectiveY = constrainedSpanY;
+          } else {
+            // Wrap directive if overflowing draw height and no span is found
+            constrainedDirectiveY =
+              directiveStartY > drawHeight - rowHeight
+                ? (directiveStartY % maxCanvasRowY) + rowHeight
+                : directiveStartY;
           }
+          drawActivityDirective(activityDirective, directiveBounds.xCanvas, constrainedDirectiveY);
+
+          totalMaxY = Math.max(totalMaxY, directiveStartY, directiveStartY, spanBounds?.maxY || 0);
         }
       }
 
@@ -327,86 +490,195 @@
       if (newHeight > 0 && drawHeight !== newHeight) {
         dispatch('updateRowHeight', { layerId: id, newHeight });
       }
+
+      if (debugMode) {
+        drawDebugInfo(maxXPerY, newHeight);
+      }
     }
   }
 
   function drawActivityDirective(activityDirective: ActivityDirective, x: number, y: number) {
-    const activityWidth = 5.0;
-    const rect = new Path2D();
-    rect.rect(x, y, activityWidth, activityHeight);
+    visibleActivityDirectivesById[activityDirective.id] = activityDirective;
+
+    const primaryHighlight = activityDirective.id === selectedActivityDirectiveId;
+    const spanRootParent = getSpanRootParent(spansMap, selectedSpanId);
+    const secondaryHighlight =
+      selectedSpanId !== null && spanRootParent
+        ? spanUtilityMaps.spanIdToDirectiveIdMap[spanRootParent.id] === activityDirective.id
+        : false;
+
+    // Handle opacity if a point is selected
+    let opacity = 1;
+    if (selectedActivityDirectiveId !== null || selectedSpanId !== null) {
+      if (primaryHighlight) {
+        opacity = 1;
+      } else {
+        opacity = 0.24;
+      }
+    }
+
+    const svgIconOpacity = selectedActivityDirectiveId !== null && !primaryHighlight ? 0.4 : opacity;
+
+    // Draw directive icon
+    setActivityRectContext(primaryHighlight, secondaryHighlight, opacity);
+    drawDirectiveIcon(x, y, svgIconOpacity);
+
+    // Draw label
+    const textMetrics = drawPointLabel(
+      activityDirective.name,
+      x + directiveIconWidth + directiveIconMarginRight,
+      y + activityHeight / 2,
+      primaryHighlight,
+      secondaryHighlight,
+    );
+    let hitboxWidth = directiveIconWidth + directiveIconMarginRight + textMetrics.width;
+
+    // Draw anchor icon
+    if (activityDirective.anchor_id !== null) {
+      drawAnchorIcon(x + hitboxWidth + 4, y, svgIconOpacity);
+      hitboxWidth += anchorIconWidth + anchorIconMarginLeft;
+    }
 
     quadtreeActivityDirectives.add({
       height: activityHeight,
       id: activityDirective.id,
-      width: activityWidth,
+      width: hitboxWidth,
       x,
       y,
     });
-    visibleActivityDirectivesById[activityDirective.id] = activityDirective;
 
-    if (activityWidth > maxActivityWidth) {
-      maxActivityWidth = activityWidth;
+    // Update maxActivityWidth
+    if (hitboxWidth > maxActivityWidth) {
+      maxActivityWidth = hitboxWidth;
     }
 
-    if (selectedActivityDirectiveId === activityDirective.id) {
-      ctx.fillStyle = activitySelectedColor;
-    } else {
-      ctx.fillStyle = activityColor;
+    if (debugMode) {
+      drawDebugHitbox(x, y, hitboxWidth, activityHeight);
     }
-
-    ctx.fill(rect);
-    const { labelText, textMetrics } = setLabelContext(activityDirective.name);
-    ctx.fillText(labelText, x, y, textMetrics.width);
   }
 
-  function drawSpan(span: Span, x: number, y: number, end: number) {
-    const activityWidth = Math.max(5.0, end - x);
-    const rect = new Path2D();
-    rect.rect(x, y, activityWidth, activityHeight);
+  function drawSpan(span: Span, x: number, y: number, end: number, ghosted: boolean = false) {
+    ctx.save();
+    visibleSpansById[span.id] = span;
+    const primaryHighlight = span.id === selectedSpanId;
+    let secondaryHighlight = false;
+    const unfinished = span.duration === null;
+    const rootSpan = getSpanRootParent(spansMap, span.id);
+    if (rootSpan && selectedActivityDirectiveId !== null) {
+      const spanDirectiveId = spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.id];
+      if (spanDirectiveId === selectedActivityDirectiveId) {
+        secondaryHighlight = true;
+      }
+    }
+    if (selectedSpanId) {
+      const rootSelectedSpan = getSpanRootParent(spansMap, selectedSpanId);
+      if (rootSelectedSpan && rootSelectedSpan.id === rootSpan.id) {
+        secondaryHighlight = true;
+      }
+    }
+    // Handle opacity if a point is selected
+    let opacity = 1;
+    if (selectedActivityDirectiveId !== null || selectedSpanId !== null) {
+      if (primaryHighlight) {
+        opacity = 1;
+      } else {
+        opacity = 0.24;
+      }
+    }
+    if (ghosted) {
+      opacity = 0.24;
+    }
 
+    setActivityRectContext(primaryHighlight, secondaryHighlight, opacity, unfinished);
+
+    // Draw span rect
+    const activityWidth = Math.max(4.0, end - x);
+
+    // Check for roundRect support, Firefox does not yet support this as of 3/21/2023
+    const rect = new Path2D();
+    if (rect.roundRect) {
+      rect.roundRect(x, y, activityWidth, activityHeight, 2);
+    } else {
+      rect.rect(x, y, activityWidth, activityHeight);
+    }
+
+    // Draw span rect stroke
+    if (ghosted) {
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = `rgba(0,0,0,${opacity * 0.6})`;
+    } else {
+      ctx.setLineDash([]);
+    }
+    const strokeRect = new Path2D();
+    // Check for roundRect support, Firefox does not yet support this as of 3/21/2023
+    if (strokeRect.roundRect) {
+      strokeRect.roundRect(x + 0.5, y + 0.5, activityWidth - 1, activityHeight - 1, 1);
+    } else {
+      strokeRect.rect(x + 0.5, y + 0.5, activityWidth - 1, activityHeight - 1);
+    }
+    ctx.fill(rect);
+    ctx.stroke(strokeRect);
+
+    // Draw hash marks if requested and if there is room
+    if (ghosted && activityWidth > 8) {
+      const patternCanvas = document.createElement('canvas');
+      patternCanvas.width = 20;
+      patternCanvas.height = 16;
+      patternCanvas.getContext('2d').drawImage(assets.hashMarks, 0, 0);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
+      ctx.fillRect(0, 0, activityWidth, activityHeight);
+      ctx.restore();
+    }
+
+    // TODO deprecate point.label.hidden
+    // Draw label
+    const textMetrics = drawPointLabel(
+      getLabelForSpan(span),
+      x + spanLabelLeftMargin,
+      y + activityHeight / 2,
+      primaryHighlight,
+      secondaryHighlight,
+      unfinished,
+    );
+
+    const hitboxWidth = Math.max(activityWidth, textMetrics.width + spanLabelLeftMargin);
     quadtreeSpans.add({
       height: activityHeight,
       id: span.id,
-      width: activityWidth,
+      width: hitboxWidth,
       x,
       y,
     });
-    visibleSpansById[span.id] = span;
 
-    if (activityWidth > maxActivityWidth) {
-      maxActivityWidth = activityWidth;
+    if (hitboxWidth > maxActivityWidth) {
+      maxActivityWidth = hitboxWidth;
     }
 
-    if (selectedSpanId === span.id) {
-      ctx.fillStyle = activitySelectedColor;
-    } else if (span.duration === null) {
-      ctx.fillStyle = activityUnfinishedColor;
-    } else {
-      ctx.fillStyle = activityColor;
+    if (debugMode) {
+      drawDebugHitbox(x, y, hitboxWidth, activityHeight);
     }
 
-    ctx.fill(rect);
-
-    const { labelText, textMetrics } = setLabelContext(span.type);
-    ctx.fillText(labelText, x, y, textMetrics.width);
+    ctx.restore();
   }
 
-  function drawSpans(span: Span, childIds: SpanId[], parentY: number): BoundingBox | null {
-    if (childIds?.length) {
+  function drawSpans(spans: Span[], parentY: number, draw = true, ghosted = false): BoundingBox | null {
+    if (spans) {
       const boundingBoxes: BoundingBox[] = [];
 
       let maxX = Number.MIN_SAFE_INTEGER;
       let maxY = Number.MIN_SAFE_INTEGER;
+      let minX = Number.MAX_SAFE_INTEGER;
       let y = parentY + rowHeight;
 
-      for (const childId of childIds) {
-        const childSpan = spansMap[childId];
-        const startTime = getUnixEpochTimeFromInterval(planStartTimeYmd, childSpan.start_offset);
+      for (const span of spans) {
+        const startTime = getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset);
         const duration = getIntervalInMs(span.duration);
         const x = xScaleView(startTime);
         const end = xScaleView(startTime + duration);
-        const { textWidth } = setLabelContext(`${span.id}`);
-        const xEnd = end + textWidth;
+        const { textWidth } = setLabelContext(getLabelForSpan(span));
+        const xEnd = Math.max(end, x + textWidth + spanLabelLeftMargin);
 
         for (const boundingBox of boundingBoxes) {
           if (x <= boundingBox.maxX) {
@@ -414,8 +686,13 @@
           }
         }
 
-        drawSpan(childSpan, x, y, end);
+        if (draw) {
+          drawSpan(span, x, y, end, ghosted);
+        }
 
+        if (x < minX) {
+          minX = x;
+        }
         if (xEnd > maxX) {
           maxX = xEnd;
         }
@@ -423,38 +700,151 @@
           maxY = y;
         }
 
-        const newChildIds = spanUtilityMaps.spanIdToChildIdsMap[childId];
-        const childrenBoundingBox: BoundingBox = drawSpans(childSpan, newChildIds, y);
+        const spanChildren = spanUtilityMaps.spanIdToChildIdsMap[span.id].map(id => spansMap[id]);
+        if (spanChildren) {
+          const childrenBoundingBox: BoundingBox = drawSpans(spanChildren, y, draw, ghosted);
 
-        if (childrenBoundingBox) {
-          if (childrenBoundingBox.maxX > maxX) {
-            maxX = childrenBoundingBox.maxX;
-          }
-          if (childrenBoundingBox.maxY > maxY) {
-            maxY = childrenBoundingBox.maxY;
+          if (childrenBoundingBox) {
+            if (childrenBoundingBox.minX < minX) {
+              minX = childrenBoundingBox.minX;
+            }
+            if (childrenBoundingBox.maxX > maxX) {
+              maxX = childrenBoundingBox.maxX;
+            }
+            if (childrenBoundingBox.maxY > maxY) {
+              maxY = childrenBoundingBox.maxY;
+            }
           }
         }
 
-        boundingBoxes.push({ maxX, maxY });
+        boundingBoxes.push({ maxX, maxY, minX });
       }
 
-      return { maxX, maxY };
+      return { maxX, maxY, minX };
     }
 
     return null;
   }
 
-  function setLabelContext(labelText: string) {
+  function setLabelContext(labelText: string, color = '#000000') {
     const fontSize = 12;
-    const fontFace = 'Helvetica Neue';
-    ctx.fillStyle = '#000000';
+    const fontFace = 'Inter';
+    ctx.fillStyle = color;
     ctx.font = `${fontSize}px ${fontFace}`;
     ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
-    const textMetrics = ctx.measureText(labelText);
+    ctx.textBaseline = 'middle';
+    let textMetrics = textMetricsCache[labelText] ?? ctx.measureText(labelText);
     const textWidth = textMetrics.width;
     const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+    textMetricsCache[labelText] = textMetrics; // Cache to avoid recomputing this measurement
     return { labelText, textHeight, textMetrics, textWidth };
+  }
+
+  function setActivityRectContext(
+    primaryHighlight: boolean,
+    secondaryHighlight: boolean,
+    opacity: number,
+    unfinished: boolean = false,
+  ) {
+    // Set fill and stroke styles
+    ctx.strokeStyle = `rgba(0,0,0,${opacity * 0.2})`;
+    if (unfinished) {
+      ctx.fillStyle = hexToRgba(activityUnfinishedColor, opacity);
+    } else if (primaryHighlight) {
+      ctx.fillStyle = activitySelectedColor;
+    } else if (secondaryHighlight) {
+      ctx.fillStyle = hexToRgba(activitySelectedColor, 0.24);
+    } else {
+      ctx.fillStyle = hexToRgba(activityColor, opacity);
+    }
+  }
+
+  function drawDirectiveIcon(x: number, y: number, svgOpacity: number) {
+    // Draw the shape
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, x * dpr, y * dpr);
+    ctx.scale(scaleFactor, scaleFactor);
+    ctx.fill(assets.directiveIconShape);
+    ctx.stroke(assets.directiveIconShapeStroke);
+    ctx.restore();
+
+    // Draw the icon
+    ctx.globalAlpha = svgOpacity;
+    ctx.drawImage(assets.directiveIcon, x + 1, y, activityHeight, activityHeight);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawAnchorIcon(x: number, y: number, svgOpacity: number) {
+    ctx.globalAlpha = svgOpacity;
+    ctx.drawImage(assets.anchorIcon, x, y);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawPointLabel(
+    text: string,
+    x: number,
+    y: number,
+    primaryHighlight: boolean,
+    secondaryHighlight: boolean,
+    unfinished: boolean = false,
+  ) {
+    let color = activityColor;
+    if (unfinished) {
+      color = activityUnfinishedColor;
+    }
+    if (primaryHighlight || secondaryHighlight) {
+      if (unfinished) {
+        color = activityUnfinishedSelectedColor;
+      } else {
+        color = activitySelectedColor;
+      }
+    }
+
+    let textOpacity = 1;
+    if (selectedActivityDirectiveId !== null || selectedSpanId !== null) {
+      if (!primaryHighlight) {
+        if (secondaryHighlight) {
+          textOpacity = 0.8;
+        } else {
+          textOpacity = 0.6;
+        }
+      }
+    }
+
+    const darkenFactor = unfinished ? 1.1 : 2.5;
+    color = hexToRgba(shadeColor(color, darkenFactor), textOpacity); // Tint the color to be darker
+    const { labelText, textMetrics } = setLabelContext(text, color);
+    ctx.fillText(labelText, x, y, textMetrics.width);
+    return textMetrics;
+  }
+
+  function drawDebugHitbox(x: number, y: number, width: number, height: number) {
+    ctx.save();
+    ctx.strokeStyle = 'red';
+    ctx.strokeRect(x, y, width, height);
+    ctx.restore();
+  }
+
+  function drawDebugInfo(maxXPerY: Record<number, number>, height: number) {
+    ctx.save();
+    Object.keys(maxXPerY).forEach(key => {
+      const x = parseFloat(maxXPerY[key]);
+      const rect = new Path2D();
+      rect.rect(x, parseInt(key), 2, rowHeight - 4);
+      ctx.fillStyle = 'red';
+      ctx.fill(rect);
+      ctx.fillText(x.toFixed(2), x + 4, parseInt(key) + 8);
+    });
+
+    for (let i = 0; i < height; i += rowHeight) {
+      ctx.strokeStyle = '#ff00002e';
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(canvasWidthDpr, i);
+      ctx.stroke();
+      ctx.fillText(i.toString(), 0, i, 20);
+    }
+    ctx.restore();
   }
 </script>
 

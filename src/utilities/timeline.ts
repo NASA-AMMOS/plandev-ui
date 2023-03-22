@@ -334,7 +334,7 @@ export function createRow(timelines: Timeline[]): Row {
   const id = getNextRowID(timelines);
 
   return {
-    autoAdjustHeight: true,
+    autoAdjustHeight: false,
     expanded: true,
     height: 200,
     horizontalGuides: [],
@@ -385,8 +385,8 @@ export function createTimelineActivityLayer(timelines: Timeline[]): ActivityLaye
   const id = getNextLayerID(timelines);
 
   return {
-    activityColor: '#283593',
-    activityHeight: 20,
+    activityColor: '#fcdd8f',
+    activityHeight: 16,
     chartType: 'activity',
     filter: {
       activity: {
