@@ -79,11 +79,9 @@
   let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   let previousSelectedRowId: RowId | null = null;
 
-  $: gridOptions?.api?.setRowData(rowData);
-  $: gridOptions?.api?.sizeColumnsToFit();
-  $: gridOptions?.columnApi?.applyColumnState({ applyOrder: true, state: columnStates });
-
   $: {
+    gridOptions?.api?.setRowData(rowData);
+
     const previousSelectedRowIds: RowId[] = [];
     // get all currently selected nodes. we cannot use `getSelectedNodes` because that does not include filtered rows
     gridOptions?.api?.forEachNode((rowNode: RowNode<TRowData>) => {
@@ -117,6 +115,8 @@
       selectedRow?.setSelected(true);
     });
   }
+  $: gridOptions?.api?.sizeColumnsToFit();
+  $: gridOptions?.columnApi?.applyColumnState({ applyOrder: true, state: columnStates });
 
   $: if (!selectedRowIds.length) {
     currentSelectedRowId = null;
@@ -266,7 +266,6 @@
         } else if (!selectedRowIds.includes(currentSelectedRowId)) {
           // select the first displayed selected row in the table if the current selected row is deselected
           let wasCurrentSelectedRowUpdated: boolean = false;
-          currentSelectedRowId = null;
           gridOptions?.api?.forEachNodeAfterFilterAndSort((rowNode: RowNode<TRowData>) => {
             if (!wasCurrentSelectedRowUpdated && rowNode.isSelected()) {
               currentSelectedRowId = getRowId(rowNode.data);
