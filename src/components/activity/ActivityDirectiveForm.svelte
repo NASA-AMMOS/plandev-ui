@@ -250,7 +250,7 @@
 
         <Highlight highlight={highlightKeysMap.start_offset}>
           <DatePickerField
-            disabled={!editable || !!activityDirective.anchor_id}
+            disabled={!editable || activityDirective.anchor_id !== null}
             field={startTimeDoyField}
             label="Start Time - YYYY-DDDThh:mm:ss"
             layout="inline"

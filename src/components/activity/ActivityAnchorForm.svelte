@@ -47,8 +47,8 @@
   $: if (activityDirective.id !== previousActivityDirectiveId) {
     previousActivityDirectiveId = activityDirective.id;
     isRelativeOffset =
-      !!activityDirective.anchor_id ||
-      (!activityDirective.anchor_id && !activityDirective.anchored_to_start) ||
+      activityDirective.anchor_id !== null ||
+      (activityDirective.anchor_id === null && !activityDirective.anchored_to_start) ||
       !!startOffsetError;
 
     anchorInputString = anchoredActivity ? formatActivityDirectiveAnchorText(anchoredActivity) : defaultAnchorString;
