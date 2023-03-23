@@ -4,7 +4,7 @@
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
   import type { ColDef, ColumnState, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
-  import { activityDirectives, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
+  import { activityDirectivesList, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { planId } from '../../stores/plan';
   import { view, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
@@ -252,7 +252,7 @@
     <ActivityDirectivesTable
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
-      activityDirectives={$activityDirectives}
+      activityDirectives={$activityDirectivesList}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       planId={$planId}
