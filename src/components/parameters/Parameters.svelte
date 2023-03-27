@@ -36,6 +36,7 @@
           {levelPadding}
           {showName}
           on:change
+          on:reset
         />
       {:else}
         <ParameterBase
@@ -46,6 +47,7 @@
           {level}
           {levelPadding}
           on:change
+          on:reset
         />
       {/if}
     </div>

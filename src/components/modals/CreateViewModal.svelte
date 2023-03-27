@@ -18,7 +18,7 @@
   let createButtonDisabled: boolean = true;
 
   $: createButtonDisabled = newViewName === '';
-  $: selectedModelId = $plan.model_id;
+  $: selectedModelId = $plan?.model_id;
 
   function create() {
     if (!createButtonDisabled) {

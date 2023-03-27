@@ -36,7 +36,11 @@
         </option>
       {/each}
     </select>
-    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
+    <ParameterBaseRightAdornments
+      hidden={hideRightAdornments}
+      {formParameter}
+      on:reset={() => dispatch('reset', formParameter)}
+    />
   </div>
 </div>
 

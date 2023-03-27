@@ -45,4 +45,4 @@ export type ParameterValidationResponse = {
   success: boolean;
 };
 
-export type ValueSource = 'user' | 'mission' | 'none';
+export type ValueSource = 'user on model' | 'user on preset' | 'preset' | 'mission' | 'none';

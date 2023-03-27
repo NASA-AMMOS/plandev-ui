@@ -26,6 +26,7 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {:else if formParameter.schema.type === 'duration'}
   <ParameterBaseDuration
@@ -36,6 +37,7 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {:else if formParameter.schema.type === 'int'}
   <ParameterBaseNumber
@@ -46,6 +48,7 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {:else if formParameter.schema.type === 'path'}
   <ParameterBasePath {hideRightAdornments} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
@@ -58,6 +61,7 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {:else if formParameter.schema.type === 'string'}
   <ParameterBaseString
@@ -68,6 +72,7 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {:else if formParameter.schema.type === 'variant'}
   <ParameterBaseVariant
@@ -78,5 +83,6 @@
     {levelPadding}
     {formParameter}
     on:change
+    on:reset
   />
 {/if}

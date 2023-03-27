@@ -1,4 +1,4 @@
-import { omitBy } from 'lodash-es';
+import { isEqual, omitBy } from 'lodash-es';
 import type {
   Argument,
   ArgumentsMap,
@@ -20,12 +20,18 @@ import { isEmpty } from './generic';
 export function getArgument(
   value: Argument,
   schema: ValueSchema,
+  presetValue?: Argument,
   defaultValue?: Argument,
 ): { value: any; valueSource: ValueSource } {
   const type = schema.type;
 
-  if (value !== null && value !== undefined) {
-    return { value, valueSource: 'user' };
+  if (value !== null && value !== undefined && presetValue === undefined) {
+    return { value, valueSource: 'user on model' };
+  } else if (value !== null && value !== undefined && presetValue !== undefined) {
+    if (isEqual(value, presetValue)) {
+      return { value, valueSource: 'preset' };
+    }
+    return { value, valueSource: 'user on preset' };
   } else if (defaultValue !== undefined) {
     return { value: defaultValue, valueSource: 'mission' };
   } else if (type === 'series') {
@@ -51,12 +57,14 @@ export function getFormParameters(
   parametersMap: ParametersMap,
   argumentsMap: ArgumentsMap,
   requiredParameters: RequiredParametersList,
+  presetArgumentsMap: ArgumentsMap = {},
   defaultArgumentsMap: ArgumentsMap = {},
 ): FormParameter[] {
   const formParameters = Object.entries(parametersMap).map(([name, { order, schema }]) => {
     const arg: Argument = argumentsMap[name];
+    const preset: Argument = presetArgumentsMap[name];
     const defaultArg: Argument | undefined = defaultArgumentsMap[name];
-    const { value, valueSource } = getArgument(arg, schema, defaultArg);
+    const { value, valueSource } = getArgument(arg, schema, preset, defaultArg);
     const required = requiredParameters.indexOf(name) > -1;
 
     const formParameter: FormParameter = {

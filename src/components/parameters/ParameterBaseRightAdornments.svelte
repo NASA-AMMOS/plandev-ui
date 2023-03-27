@@ -22,7 +22,7 @@
 
 <div class="parameter-base-right-adornment" {hidden}>
   {#if !hideValueSource}
-    <ValueSourceBadge source={formParameter.valueSource} />
+    <ValueSourceBadge source={formParameter.valueSource} on:reset />
   {/if}
   {#if errors.length > 0 && !hideError}
     <InputErrorBadge {errors} />

@@ -56,6 +56,10 @@
     dispatch('change', { ...formParameter, value });
   }
 
+  function onResetSeries() {
+    dispatch('reset', formParameter);
+  }
+
   function toggleExpanded() {
     expanded = !expanded;
   }
@@ -105,7 +109,7 @@
         >
           <PlusIcon />
         </button>
-        <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
+        <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} on:reset={onResetSeries} />
       </CssGrid>
     </div>
   </div>

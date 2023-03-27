@@ -2,6 +2,18 @@
  * GraphQL Query, Mutation, and Subscription strings.
  */
 const gql = {
+  APPLY_PRESET_TO_ACTIVITY: `#graphql
+    mutation ApplyPresetToActivity($presetId: Int!, $activityId: Int!, $planId: Int!) {
+      apply_preset_to_activity(args: {
+        _preset_id: $presetId,
+        _activity_id: $activityId,
+        _plan_id: $planId
+      }) {
+        id
+      }
+    }
+  `,
+
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!) {
       checkConstraintsResponse: constraintViolations(planId: $planId) {
@@ -27,6 +39,18 @@ const gql = {
         start_offset
         tags
         type
+      }
+    }
+  `,
+
+  CREATE_ACTIVITY_PRESET: `#graphql
+    mutation CreateActivityPreset($activityPresetInsertInput: activity_presets_insert_input!) {
+      insert_activity_presets_one(object: $activityPresetInsertInput) {
+        arguments
+        associated_activity_type
+        id
+        model_id
+        name
       }
     }
   `,
@@ -210,6 +234,14 @@ const gql = {
     }
   `,
 
+  DELETE_ACTIVITY_PRESET: `#graphql
+    mutation DeleteActivityPreset($id: Int!) {
+      deleteActivityPreset: delete_activity_presets_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
   DELETE_COMMAND_DICTIONARY: `#graphql
     mutation DeleteCommandDictionary($id: Int!) {
       deleteCommandDictionary: delete_command_dictionary_by_pk(id: $id) {
@@ -283,6 +315,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_PRESET_TO_DIRECTIVE: `#graphql
+    mutation DeletePresetToDirective($plan_id: Int!, $activity_directive_id: Int!, $preset_id: Int!) {
+      delete_preset_to_directive_by_pk(preset_id: $preset_id, activity_id: $activity_directive_id, plan_id: $plan_id) {
+        preset_id
       }
     }
   `,
@@ -904,6 +944,13 @@ const gql = {
           reason_invalid
         }
         anchored_to_start
+        applied_preset {
+          preset_id
+          presets_applied {
+            name
+            arguments
+          }
+        }
         arguments
         created_at
         id
@@ -925,6 +972,21 @@ const gql = {
       activity_directive_metadata_schema(order_by: { key: asc }) {
         key
         schema
+      }
+    }
+  `,
+
+  SUB_ACTIVITY_PRESETS: `#graphql
+    subscription SubActivityPresets($modelId: Int!, $activityTypeName: String!) {
+      activity_presets(where: {
+        model_id: { _eq: $modelId },
+        associated_activity_type: { _eq: $activityTypeName }
+      }) {
+        id
+        model_id
+        name
+        associated_activity_type
+        arguments
       }
     }
   `,
@@ -1330,6 +1392,13 @@ const gql = {
       ) {
         anchor_id
         anchored_to_start
+        applied_preset {
+          preset_id
+          presets_applied {
+            name
+            arguments
+          }
+        }
         arguments
         created_at
         id
@@ -1342,6 +1411,20 @@ const gql = {
         start_offset
         tags
         type
+      }
+    }
+  `,
+
+  UPDATE_ACTIVITY_PRESET: `#graphql
+    mutation UpdateActivityPreset($id: Int!, $activityPresetSetInput: activity_presets_set_input!) {
+      update_activity_presets_by_pk(
+        pk_columns: { id: $id }, _set: $activityPresetSetInput
+      ) {
+        id
+        model_id
+        name
+        associated_activity_type
+        arguments
       }
     }
   `,

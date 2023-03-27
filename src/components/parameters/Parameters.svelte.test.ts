@@ -18,7 +18,7 @@ describe('Parameters component', () => {
           type: 'string',
         },
         value: 'value 2',
-        valueSource: 'user',
+        valueSource: 'user on model',
       },
       {
         errors: null,
@@ -28,7 +28,7 @@ describe('Parameters component', () => {
           type: 'string',
         },
         value: 'value 1',
-        valueSource: 'user',
+        valueSource: 'user on model',
       },
     ];
     const { getAllByRole } = render(Parameters, { formParameters });

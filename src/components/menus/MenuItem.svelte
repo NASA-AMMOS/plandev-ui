@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
 
   export let disabled: boolean = false;
+  export let selected: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -12,13 +13,13 @@
       event.stopPropagation();
     } else {
       event.preventDefault();
-      dispatch('click');
+      dispatch('click', event);
     }
   }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="menu-item" class:disabled on:click={onClick}>
+<div class="menu-item" class:disabled class:selected role="menuitem" on:click={onClick}>
   <slot />
 </div>
 
@@ -46,5 +47,9 @@
   .menu-item.disabled {
     color: var(--st-gray-40);
     cursor: not-allowed;
+  }
+
+  .menu-item.selected {
+    background: var(--st-gray-20);
   }
 </style>

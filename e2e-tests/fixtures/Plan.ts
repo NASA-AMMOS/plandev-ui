@@ -126,6 +126,13 @@ export class Plan {
     await expect(this.activitiesTableFirstRow).not.toBeVisible();
   }
 
+  async fillActivityPresetName(presetName: string) {
+    await this.page.getByRole('button', { name: 'Set Preset' }).click();
+    await this.page.getByPlaceholder('Enter preset name').click();
+    await this.page.getByPlaceholder('Enter preset name').fill(presetName);
+    await this.page.getByPlaceholder('Enter preset name').blur();
+  }
+
   async fillViewInputFile(planFilePath: string = this.validPlanFilePath) {
     const viewFileInput = this.page.locator('.modal-content input[name="file"]');
     await viewFileInput.focus();

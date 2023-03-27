@@ -55,6 +55,10 @@
     dispatch('change', { ...formParameter, value });
   }
 
+  function onResetStruct() {
+    dispatch('reset', formParameter);
+  }
+
   function toggleExpanded() {
     expanded = !expanded;
   }
@@ -69,7 +73,7 @@
       <ChevronDownIcon />
     {/if}
     <ParameterName {formParameter} />
-    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} />
+    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} on:reset={onResetStruct} />
   </div>
 {:else}
   <div class="parameter-rec-struct p-0" />

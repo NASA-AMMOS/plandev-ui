@@ -91,6 +91,7 @@ describe('PlanMergeReview component', () => {
         merge_base: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T17:48:26',
           id: 1,
@@ -110,6 +111,7 @@ describe('PlanMergeReview component', () => {
         target: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T17:48:26',
           id: 1,
@@ -147,6 +149,7 @@ describe('PlanMergeReview component', () => {
         merge_base: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T17:48:26',
           id: 1,
@@ -165,6 +168,7 @@ describe('PlanMergeReview component', () => {
         source: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T17:48:26',
           id: 2,
@@ -202,6 +206,7 @@ describe('PlanMergeReview component', () => {
         source: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T20:41:07',
           id: 6,
@@ -224,6 +229,7 @@ describe('PlanMergeReview component', () => {
         target: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T20:41:09',
           id: 7,
@@ -245,6 +251,7 @@ describe('PlanMergeReview component', () => {
         source: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T20:40:57',
           id: 5,
@@ -261,6 +268,7 @@ describe('PlanMergeReview component', () => {
         target: {
           anchor_id: null,
           anchored_to_start: true,
+          applied_preset: null,
           arguments: {},
           created_at: '2023-02-16T20:40:57',
           id: 5,

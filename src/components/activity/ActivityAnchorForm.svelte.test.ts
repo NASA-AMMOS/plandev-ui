@@ -8,6 +8,7 @@ describe('Activity Anchor Form component', () => {
     12: {
       anchor_id: null,
       anchored_to_start: true,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 12,
@@ -24,6 +25,7 @@ describe('Activity Anchor Form component', () => {
     13: {
       anchor_id: 12,
       anchored_to_start: true,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 13,
@@ -40,6 +42,7 @@ describe('Activity Anchor Form component', () => {
     14: {
       anchor_id: 12,
       anchored_to_start: true,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 14,
@@ -56,6 +59,7 @@ describe('Activity Anchor Form component', () => {
     15: {
       anchor_id: 13,
       anchored_to_start: true,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 15,

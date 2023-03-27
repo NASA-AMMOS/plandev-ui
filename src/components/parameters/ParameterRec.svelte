@@ -36,4 +36,5 @@
   {levelPadding}
   {showName}
   on:change
+  on:reset
 />

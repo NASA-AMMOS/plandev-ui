@@ -48,6 +48,7 @@
       {formParameter}
       additionalErrors={durationStringFormatError ? [durationStringFormatError] : []}
       {hideValueSource}
+      on:reset={() => dispatch('reset', formParameter)}
     />
   </Input>
 </div>

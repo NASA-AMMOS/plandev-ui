@@ -21,6 +21,7 @@ export type ActivityTypeExpansionRules = {
 };
 
 export type ActivityDirectiveId = number;
+export type ActivityPresetId = number;
 
 export type ActivityDirectivesMap = Record<ActivityDirectiveId, ActivityDirective>;
 
@@ -28,6 +29,7 @@ export type ActivityDirective = {
   anchor_id: number | null;
   anchor_validations?: AnchorValidationStatus;
   anchored_to_start: boolean;
+  applied_preset?: AppliedPreset | null;
   arguments: ArgumentsMap;
   created_at: string;
   id: ActivityDirectiveId;
@@ -55,6 +57,30 @@ export type ActivityDirectiveInsertInput = {
 };
 
 export type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
+
+export type AppliedPreset = {
+  activity_id: ActivityDirectiveId;
+  plan_id: number;
+  preset_id: ActivityPresetId;
+  presets_applied: ActivityPreset;
+};
+
+export type ActivityPreset = {
+  arguments: ArgumentsMap;
+  associated_activity_type: string;
+  id: ActivityPresetId;
+  model_id: number;
+  name: string;
+};
+
+export type ActivityPresetInsertInput = {
+  arguments: ArgumentsMap;
+  associated_activity_type: string;
+  model_id: number;
+  name: string;
+};
+
+export type ActivityPresetSetInput = Partial<ActivityPresetInsertInput>;
 
 export type AnchorValidationStatus = {
   activity_id: ActivityDirectiveId;

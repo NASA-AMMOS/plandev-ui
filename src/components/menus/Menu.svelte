@@ -1,13 +1,30 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts" context="module">
-  const hideFns = new Set<() => void>();
+  type MenuType = 'dropdown' | 'input';
+  type HideFns = {
+    dropdown: Set<() => void>;
+    input: Set<() => void>;
+  };
+  const hideFns: HideFns = {
+    dropdown: new Set<() => void>(),
+    input: new Set<() => void>(),
+  };
 
-  export function hideAllMenus() {
+  export function hideAllMenus(type?: MenuType) {
     // TODO: https://github.com/sveltejs/language-tools/issues/1229
-    hideFns.forEach(hide => {
-      hide();
-    });
+    if (type) {
+      hideFns[type].forEach(hide => {
+        hide();
+      });
+    } else {
+      hideFns.dropdown.forEach(hide => {
+        hide();
+      });
+      hideFns.input.forEach(hide => {
+        hide();
+      });
+    }
   }
 </script>
 
@@ -20,6 +37,7 @@
   export let offset: number[] = [0, 1];
   export let isMounted: boolean = false;
   export let placement: Placement = 'bottom-start';
+  export let type: MenuType = 'dropdown';
 
   // The shown state is intentionally private.
   // Use the accessor functions to change this state.
@@ -47,7 +65,7 @@
   }
 
   export function show(): void {
-    hideAllMenus();
+    hideAllMenus(type);
     hideAllTooltips();
     shown = true;
   }
@@ -80,12 +98,12 @@
   };
 
   onMount(() => {
-    hideFns.add(hide);
+    hideFns[type].add(hide);
     isMounted = true;
   });
 
   onDestroy(() => {
-    hideFns.delete(hide);
+    hideFns[type].delete(hide);
   });
 
   function onDocumentKeydown(event: KeyboardEvent) {
@@ -105,7 +123,13 @@
 
 {#if shown}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div class="menu" use:popperRef on:click|stopPropagation={onClick} on:mouseenter={() => hideAllTooltips()}>
+  <div
+    class="menu"
+    role="menu"
+    use:popperRef
+    on:click|stopPropagation={onClick}
+    on:mouseenter={() => hideAllTooltips()}
+  >
     <div class="menu-slot st-typography-medium" use:popperContent={extraOpts}>
       <slot />
     </div>

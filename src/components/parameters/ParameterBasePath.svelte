@@ -39,7 +39,12 @@
         disabled
         type="text"
       />
-      <ParameterBaseRightAdornments hidden={hideRightAdornments} slot="right" {formParameter} />
+      <ParameterBaseRightAdornments
+        hidden={hideRightAdornments}
+        slot="right"
+        {formParameter}
+        on:reset={() => dispatch('reset', formParameter)}
+      />
     </Input>
     <input type="file" on:change={onChange} />
   </div>

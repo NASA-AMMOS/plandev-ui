@@ -30,7 +30,12 @@
       type="number"
       on:change={() => dispatch('change', formParameter)}
     />
-    <ParameterBaseRightAdornments hidden={hideRightAdornments} slot="right" {formParameter} />
+    <ParameterBaseRightAdornments
+      hidden={hideRightAdornments}
+      slot="right"
+      {formParameter}
+      on:reset={() => dispatch('reset', formParameter)}
+    />
   </Input>
 </div>
 

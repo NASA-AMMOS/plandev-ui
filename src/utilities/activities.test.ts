@@ -64,6 +64,7 @@ describe('sortActivityDirectives', () => {
     {
       anchor_id: null,
       anchored_to_start: true,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 1,
@@ -80,6 +81,7 @@ describe('sortActivityDirectives', () => {
     {
       anchor_id: null,
       anchored_to_start: false,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 2,
@@ -96,6 +98,7 @@ describe('sortActivityDirectives', () => {
     {
       anchor_id: null,
       anchored_to_start: false,
+      applied_preset: null,
       arguments: {},
       created_at: '2022-08-03T18:21:51',
       id: 3,
