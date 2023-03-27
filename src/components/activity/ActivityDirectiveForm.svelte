@@ -404,6 +404,7 @@
           <ActivityPresetInput
             {modelId}
             {activityDirective}
+            disabled={!editable}
             hasChanges={numOfUserChanges > 0}
             on:applyPreset={onApplyPresetToActivity}
             on:deletePreset={onDeletePreset}
