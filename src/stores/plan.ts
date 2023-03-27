@@ -8,6 +8,8 @@ import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
 
+export const activityEditingLocked: Writable<boolean> = writable(false);
+
 export const creatingModel: Writable<boolean> = writable(false);
 
 export const createModelError: Writable<string | null> = writable(null);
@@ -71,6 +73,7 @@ export const planRevision = gqlSubscribable<number>(
 /* Helper Functions. */
 
 export function resetPlanStores() {
+  activityEditingLocked.set(false);
   creatingModel.set(false);
   createModelError.set(null);
   createPlanError.set(null);
@@ -80,4 +83,8 @@ export function resetPlanStores() {
   planStartTimeMs.set(0);
   maxTimeRange.set({ end: 0, start: 0 });
   viewTimeRange.set({ end: 0, start: 0 });
+}
+
+export function setActivityEditingLocked(locked: boolean) {
+  activityEditingLocked.set(locked);
 }
