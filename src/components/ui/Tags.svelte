@@ -24,8 +24,10 @@
   }
 
   function closeAutocomplete() {
-    input.value = '';
-    input.dispatchEvent(new Event('keyup'));
+    if (input) {
+      input.value = '';
+      input.dispatchEvent(new Event('keyup'));
+    }
   }
 
   function attemptCloseAutocomplete(event: MouseEvent | FocusEvent) {
@@ -65,7 +67,9 @@
 
   onDestroy(() => {
     // Ensure value is cleared;
-    input.value = '';
+    if (input) {
+      input.value = '';
+    }
 
     // Close autocomplete
     closeAutocomplete();
