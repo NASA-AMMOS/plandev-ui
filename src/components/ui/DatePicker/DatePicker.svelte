@@ -9,6 +9,7 @@
   import type { ParsedDoyString, ParsedYmdString } from '../../../types/time';
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime, parseDoyOrYmdTime } from '../../../utilities/time';
+  import DatePickerActionButton from './DatePickerActionButton.svelte';
   import DatePickerDropdown from './DatePickerDropdown.svelte';
   import Month from './Month.svelte';
 
@@ -281,20 +282,13 @@
       </div>
       <Month {maxDate} {minDate} month={viewMonth} year={viewYear} {selectedDate} on:select={onSelect} />
       <div class="date-picker-actions">
-        <div>
-          <div class="action button" on:mousedown={setToday}>
-            <div class="action-icon"><Calendar /></div>
-            <div class="action-label st-typography-body">Today</div>
-          </div>
-        </div>
-        <div>
-          <div class="action button" on:mousedown={clearDate}>
-            <div class="action-icon">
-              <MagicEraser />
-            </div>
-            <div class="action-label st-typography-body">Clear</div>
-          </div>
-        </div>
+        <DatePickerActionButton on:click={setToday} text="Today">
+          <Calendar />
+        </DatePickerActionButton>
+        <slot />
+        <DatePickerActionButton on:click={clearDate} text="Clear">
+          <MagicEraser />
+        </DatePickerActionButton>
       </div>
     </div>
   {/if}
@@ -351,25 +345,5 @@
     margin-top: 7px;
     padding: 15px 16px;
     row-gap: 7px;
-  }
-
-  .date-picker-actions .action {
-    border-radius: 4px;
-    color: var(--st-gray-70);
-    cursor: pointer;
-    display: inline-flex;
-    padding: 4px;
-  }
-
-  .date-picker-actions .action .action-icon {
-    color: inherit;
-    display: flex;
-    margin-right: 7px;
-    text-align: right;
-    width: 16px;
-  }
-
-  .date-picker-actions .action .action-label {
-    display: inline-block;
   }
 </style>

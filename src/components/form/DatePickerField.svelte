@@ -40,7 +40,9 @@
       on:change={onChange}
       {minDate}
       {maxDate}
-    />
+    >
+      <slot />
+    </DatePicker>
     <FieldError {field} />
   </Input>
 </div>
