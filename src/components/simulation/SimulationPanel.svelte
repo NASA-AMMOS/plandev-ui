@@ -65,7 +65,7 @@
           ...defaultArguments,
           ...($simulation?.template?.arguments ?? {}),
         };
-        formParameters = getFormParameters(modelParametersMap, $simulation.arguments, [], defaultArgumentsMap);
+        formParameters = getFormParameters(modelParametersMap, $simulation.arguments, [], {}, defaultArgumentsMap);
       });
   }
 
