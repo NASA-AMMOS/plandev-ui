@@ -37,5 +37,8 @@ export function getSpanRootParent(spansMap: SpansMap, spanId: SpanId): Span | nu
 export function sortActivityDirectives(a: ActivityDirective, b: ActivityDirective): number {
   const aStartOffsetMs = getIntervalInMs(a.start_offset);
   const bStartOffsetMs = getIntervalInMs(b.start_offset);
+  if (aStartOffsetMs === bStartOffsetMs) {
+    return compare(a.id, b.id);
+  }
   return compare(aStartOffsetMs, bStartOffsetMs);
 }
