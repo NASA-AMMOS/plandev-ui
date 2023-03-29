@@ -1332,7 +1332,9 @@ const gql = {
         id
         plan_revision
         reason
+        simulation_end_time
         simulation_revision
+        simulation_start_time
         status
       }
     }

@@ -67,7 +67,9 @@ export type SimulationDataset = {
   id: number;
   plan_revision: number;
   reason: SimulationDatasetError | null;
+  simulation_end_time: string | null;
   simulation_revision: number;
+  simulation_start_time: string | null;
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 

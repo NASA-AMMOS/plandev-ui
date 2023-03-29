@@ -5,7 +5,7 @@
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Resource, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { Resource, SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type { MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
@@ -35,6 +35,7 @@
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
   export let spans: Span[] = [];
@@ -264,6 +265,7 @@
         {rowDragMoveDisabled}
         {selectedActivityDirectiveId}
         {selectedSpanId}
+        {simulationDataset}
         {spanUtilityMaps}
         {spansMap}
         {timelineLockStatus}

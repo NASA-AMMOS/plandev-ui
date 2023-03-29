@@ -9,7 +9,14 @@
   } from '../../stores/activities';
   import { constraintViolations } from '../../stores/constraints';
   import { maxTimeRange, plan, planId, viewTimeRange } from '../../stores/plan';
-  import { resourcesByViewLayerId, selectedSpanId, spans, spansMap, spanUtilityMaps } from '../../stores/simulation';
+  import {
+    resourcesByViewLayerId,
+    selectedSpanId,
+    simulationDataset,
+    spans,
+    spansMap,
+    spanUtilityMaps,
+  } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { MouseDown } from '../../types/timeline';
@@ -83,6 +90,7 @@
       resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
+      simulationDataset={$simulationDataset}
       spanUtilityMaps={$spanUtilityMaps}
       spansMap={$spansMap}
       spans={$spans}

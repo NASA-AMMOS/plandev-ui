@@ -14,7 +14,7 @@
     ActivityDirectivesMap,
   } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Resource, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { Resource, SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     Axis,
     HorizontalGuide,
@@ -59,6 +59,7 @@
   export let rowDragMoveDisabled = true;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
   export let timelineLockStatus: TimelineLockStatus;
@@ -273,6 +274,7 @@
             {planStartTimeYmd}
             {selectedActivityDirectiveId}
             {selectedSpanId}
+            {simulationDataset}
             {spanUtilityMaps}
             {spansMap}
             {timelineLockStatus}
