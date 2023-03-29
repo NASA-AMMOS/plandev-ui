@@ -27,7 +27,7 @@
     }
   }
 
-  function hide() {
+  export function hide() {
     select('.tooltip').style('opacity', 0).style('z-index', -1).html('');
   }
 

@@ -5,7 +5,12 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="context-menu-item st-typography-body" on:click|preventDefault={() => dispatch('click')}>
+<div
+  class="context-menu-item st-typography-body"
+  on:click|preventDefault={() => dispatch('click')}
+  on:mouseenter
+  on:mouseleave
+>
   <slot />
 </div>
 
@@ -13,6 +18,7 @@
   .context-menu-item {
     cursor: pointer;
     padding: 4px;
+    white-space: nowrap;
   }
 
   .context-menu-item:hover {

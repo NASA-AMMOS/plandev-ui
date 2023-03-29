@@ -8,7 +8,7 @@
   import { activityDirectivesMap, selectedActivityDirectiveId } from '../../../stores/activities';
   import type { ActivityDirective } from '../../../types/activity';
   import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
-  import { sortActivityDirectives } from '../../../utilities/activities';
+  import { sortActivityDirectivesOrSpans } from '../../../utilities/activities';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
 
@@ -26,7 +26,7 @@
         return satisfyingActivities;
       }, [])
     : [];
-  $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivityDirectives);
+  $: sortedSatisfyingActivities = satisfyingActivities.sort(sortActivityDirectivesOrSpans);
 </script>
 
 <div class="scheduling-goal-analysis-activities">

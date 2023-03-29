@@ -1,8 +1,84 @@
-import { reverse } from 'lodash-es';
+import { keyBy, reverse } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
-import type { SpansMap } from '../types/simulation';
-import { getActivityMetadata, getSpanRootParent, sortActivityDirectives } from './activities';
+import type { Span, SpansMap, SpanUtilityMaps } from '../types/simulation';
+import {
+  createSpanUtilityMaps,
+  getActivityMetadata,
+  getAllSpanChildrenIds,
+  getAllSpansForActivityDirective,
+  getSpanRootParent,
+  sortActivityDirectivesOrSpans,
+} from './activities';
+
+const testSpans: Span[] = [
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
+      directiveId: 2,
+    },
+    dataset_id: 1,
+    duration: '02:00:00',
+    id: 1,
+    parent_id: null,
+    start_offset: '00:00:00',
+    type: 'Parent',
+  },
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
+    },
+    dataset_id: 1,
+    duration: '03:00:00',
+    id: 2,
+    parent_id: 1,
+    start_offset: '00:10:00',
+    type: 'Child',
+  },
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
+    },
+    dataset_id: 1,
+    duration: '04:00:00',
+    id: 3,
+    parent_id: 1,
+    start_offset: '00:05:00',
+    type: 'Child',
+  },
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
+      directiveId: 0,
+    },
+    dataset_id: 1,
+    duration: '04:00:00',
+    id: 4,
+    parent_id: null,
+    start_offset: '00:05:00',
+    type: 'BiteBanana',
+  },
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
+      directiveId: 1,
+    },
+    dataset_id: 1,
+    duration: '04:00:00',
+    id: 5,
+    parent_id: null,
+    start_offset: '00:05:00',
+    type: 'BiteBanana',
+  },
+];
+
+const testSpansMap: SpansMap = keyBy(testSpans, 'id');
+const testSpansUtilityMap: SpanUtilityMaps = createSpanUtilityMaps(testSpans);
 
 describe('getActivityMetadata', () => {
   test('Should update activity metadata correctly', () => {
@@ -11,55 +87,16 @@ describe('getActivityMetadata', () => {
 });
 
 describe('getSpanRootParent', () => {
-  const spansMap: SpansMap = {
-    1: {
-      attributes: {
-        arguments: {},
-        computedAttributes: {},
-      },
-      dataset_id: 1,
-      duration: '02:00:00',
-      id: 1,
-      parent_id: null,
-      start_offset: '00:00:00',
-      type: 'Parent',
-    },
-    2: {
-      attributes: {
-        arguments: {},
-        computedAttributes: {},
-      },
-      dataset_id: 1,
-      duration: '03:00:00',
-      id: 2,
-      parent_id: 1,
-      start_offset: '00:10:00',
-      type: 'Child',
-    },
-    3: {
-      attributes: {
-        arguments: {},
-        computedAttributes: {},
-      },
-      dataset_id: 1,
-      duration: '04:00:00',
-      id: 3,
-      parent_id: 1,
-      start_offset: '00:05:00',
-      type: 'Child',
-    },
-  };
-
   test('Should return null for an ID that does not exist', () => {
-    expect(getSpanRootParent(spansMap, 42)).toEqual(null);
+    expect(getSpanRootParent(testSpansMap, 42)).toEqual(null);
   });
 
   test('Should return the parent node when given a child n', () => {
-    expect(getSpanRootParent(spansMap, 2).id).toEqual(1);
+    expect(getSpanRootParent(testSpansMap, 2).id).toEqual(1);
   });
 });
 
-describe('sortActivityDirectives', () => {
+describe('sortActivityDirectivesOrSpans', () => {
   const activityDirectives: ActivityDirective[] = [
     {
       anchor_id: null,
@@ -114,7 +151,87 @@ describe('sortActivityDirectives', () => {
     },
   ];
 
+  const spans: Span[] = [
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 2,
+      },
+      dataset_id: 1,
+      duration: '02:00:00',
+      id: 0,
+      parent_id: null,
+      start_offset: '10:00:00',
+      type: 'Parent',
+    },
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 2,
+      },
+      dataset_id: 1,
+      duration: '02:00:00',
+      id: 1,
+      parent_id: null,
+      start_offset: '09:00:00',
+      type: 'Parent',
+    },
+    {
+      attributes: {
+        arguments: {},
+        computedAttributes: {},
+        directiveId: 2,
+      },
+      dataset_id: 1,
+      duration: '02:00:00',
+      id: 2,
+      parent_id: null,
+      start_offset: '08:00:00',
+      type: 'Parent',
+    },
+  ];
+
   test('Should properly sort directives in time ascending order', () => {
-    expect(activityDirectives.sort(sortActivityDirectives)).toEqual(reverse(activityDirectives));
+    expect(activityDirectives.slice().sort(sortActivityDirectivesOrSpans)).toEqual(reverse(activityDirectives));
+  });
+
+  test('Should properly sort spans in time ascending order', () => {
+    expect(spans.slice().sort(sortActivityDirectivesOrSpans)).toEqual(reverse(spans));
+  });
+});
+
+describe('createSpanUtilityMaps', () => {
+  test('Should create span utility maps for span array', () => {
+    const expectedResult: SpanUtilityMaps = {
+      directiveIdToSpanIdMap: { 0: 4, 1: 5, 2: 1 },
+      spanIdToChildIdsMap: { 1: [2, 3], 2: [], 3: [], 4: [], 5: [] },
+      spanIdToDirectiveIdMap: { 1: 2, 4: 0, 5: 1 },
+    };
+
+    expect(testSpansUtilityMap).to.deep.equal(expectedResult);
+  });
+});
+
+describe('getAllSpansForActivityDirective', () => {
+  test('Should get all spans for an activity directive', () => {
+    const resultingSpanIds = testSpans
+      .slice(0, 3)
+      .map(s => s.id)
+      .sort();
+    expect(
+      getAllSpansForActivityDirective(2, testSpansMap, testSpansUtilityMap)
+        .map(s => s.id)
+        .sort(),
+    ).to.deep.equal(resultingSpanIds);
+  });
+});
+
+describe('getAllSpanChildrenIds', () => {
+  test('Should get all of the child IDs for a span', () => {
+    expect(getAllSpanChildrenIds(1, testSpansUtilityMap)).to.deep.equal([2, 3]);
+    expect(getAllSpanChildrenIds(2, testSpansUtilityMap)).to.deep.equal([]);
+    expect(getAllSpanChildrenIds(4, testSpansUtilityMap)).to.deep.equal([]);
   });
 });

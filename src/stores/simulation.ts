@@ -10,6 +10,7 @@ import type {
   SpansMap,
   SpanUtilityMaps,
 } from '../types/simulation';
+import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { Status } from '../utilities/status';
 import { modelId, planId, planRevision } from './plan';
@@ -62,35 +63,7 @@ export const selectedSpanId: Writable<SpanId | null> = writable(null);
 export const spansMap: Readable<SpansMap> = derived(spans, $spans => keyBy($spans, 'id'));
 
 export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans => {
-  const spanUtilityMaps: SpanUtilityMaps = {
-    directiveIdToSpanIdMap: {},
-    spanIdToChildIdsMap: {},
-    spanIdToDirectiveIdMap: {},
-  };
-
-  $spans.reduce((map, span) => {
-    // Span Child mappings.
-    if (map.spanIdToChildIdsMap[span.id] === undefined) {
-      map.spanIdToChildIdsMap[span.id] = [];
-    }
-    if (span.parent_id !== null) {
-      if (map.spanIdToChildIdsMap[span.parent_id] === undefined) {
-        map.spanIdToChildIdsMap[span.parent_id] = [span.id];
-      } else {
-        map.spanIdToChildIdsMap[span.parent_id].push(span.id);
-      }
-    }
-
-    // Span <-> Directive mappings.
-    const directiveId = span.attributes?.directiveId;
-    if (directiveId !== null && directiveId !== undefined) {
-      map.directiveIdToSpanIdMap[directiveId] = span.id;
-      map.spanIdToDirectiveIdMap[span.id] = directiveId;
-    }
-    return map;
-  }, spanUtilityMaps);
-
-  return spanUtilityMaps;
+  return createSpanUtilityMaps($spans);
 });
 
 export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(

@@ -89,6 +89,8 @@ export type MouseOver = {
   e: MouseEvent;
   layerId: number;
   points?: Point[];
+  selectedActivityDirectiveId?: number;
+  selectedSpanId?: number;
   spans?: Span[];
 };
 

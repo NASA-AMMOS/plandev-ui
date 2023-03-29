@@ -125,6 +125,13 @@ export function isMacOs(): boolean {
 }
 
 /**
+ * Returns true if the mouse event is a right click
+ */
+export function isRightClick(e: MouseEvent) {
+  return ('button' in e && e.button !== 0) || e.ctrlKey;
+}
+
+/**
  * Turns a list of strings into a string, boolean map.
  */
 export function keyByBoolean(arr: string[] | undefined): Record<string, boolean> {
