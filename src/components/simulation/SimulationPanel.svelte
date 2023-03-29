@@ -1,7 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import Calendar from '@nasa-jpl/stellar/icons/calendar.svg?component';
+  import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
+  import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { field } from '../../stores/form';
   import { plan } from '../../stores/plan';
   import {
@@ -194,7 +195,7 @@
             on:keydown={onUpdateStartTime}
           >
             <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
-              <Calendar />
+              <PlanLeftArrow />
             </DatePickerActionButton>
           </DatePickerField>
           <DatePickerField
@@ -206,7 +207,7 @@
             on:keydown={onUpdateEndTime}
           >
             <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
-              <Calendar />
+              <PlanRightArrow />
             </DatePickerActionButton>
           </DatePickerField>
         </div>
