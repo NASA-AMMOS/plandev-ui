@@ -1340,6 +1340,18 @@ const gql = {
     }
   `,
 
+  SUB_SIMULATION_DATASETS: `#graphql
+    subscription SubSimulationDatasetIds($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
+        simulation_datasets(order_by: { id: desc }) {
+          id
+          simulation_end_time
+          simulation_start_time
+        }
+      }
+    }
+`,
+
   SUB_SIMULATION_DATASET_IDS: `#graphql
     subscription SubSimulationDatasetIds($planId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {

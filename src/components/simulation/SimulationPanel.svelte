@@ -4,21 +4,23 @@
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { field } from '../../stores/form';
-  import { plan } from '../../stores/plan';
+  import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
   import {
     enableSimulation,
     simulation,
     simulationDatasetId,
-    simulationDatasetIds,
     simulationStatus,
     simulationTemplates,
   } from '../../stores/simulation';
+  import { gqlSubscribable } from '../../stores/subscribable';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
-  import type { Simulation } from '../../types/simulation';
+  import type { Simulation, SimulationDataset } from '../../types/simulation';
+  import type { GqlSubscribable } from '../../types/subscribable';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
+  import gql from '../../utilities/gql';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
@@ -32,6 +34,7 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
+  import SimulationHistoryDataset from './SimulationHistoryDataset.svelte';
 
   export let gridSection: ViewGridSection;
 
@@ -41,6 +44,7 @@
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
+  let simulationDatasets: GqlSubscribable<SimulationDataset[]>;
 
   $: startTimeDoy =
     $simulation && $simulation.simulation_start_time
@@ -68,6 +72,15 @@
         };
         formParameters = getFormParameters(modelParametersMap, $simulation.arguments, [], {}, defaultArgumentsMap);
       });
+  }
+
+  $: if ($plan) {
+    simulationDatasets = gqlSubscribable<SimulationDataset[]>(
+      gql.SUB_SIMULATION_DATASETS,
+      { planId: $plan.id },
+      null,
+      v => v[0]?.simulation_datasets,
+    );
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
@@ -146,23 +159,6 @@
         <summary>General</summary>
         <div class="details-body">
           <Input layout="inline">
-            <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'top' }} for="simulationDatasetId">
-              Simulation Dataset ID
-            </label>
-            <select bind:value={$simulationDatasetId} class="st-select w-100" name="simulationDatasetId">
-              {#if !$simulationDatasetIds.length}
-                <option value={-1}>No Simulation Datasets</option>
-              {:else}
-                <option value={-1} />
-                {#each $simulationDatasetIds as simDatasetId}
-                  <option value={simDatasetId}>
-                    {simDatasetId}
-                  </option>
-                {/each}
-              {/if}
-            </select>
-          </Input>
-          <Input layout="inline">
             <label use:tooltip={{ content: 'Template Name', placement: 'top' }} for="simulation-templates">
               Template Name
             </label>
@@ -226,5 +222,35 @@
         </div>
       </details>
     </fieldset>
+
+    <fieldset>
+      <details open>
+        <summary>Simulation History</summary>
+        <div class="details-body simulation-history">
+          {#if !$simulationDatasets || !$simulationDatasets.length}
+            <div>No Simulation Datasets</div>
+          {:else}
+            {#each $simulationDatasets as simDataset}
+              <SimulationHistoryDataset
+                simulationDataset={simDataset}
+                planEndTimeMs={$planEndTimeMs}
+                planStartTimeMs={$planStartTimeMs}
+                checked={simDataset.id === $simulationDatasetId}
+                on:click={() => {
+                  simulationDatasetId.set(simDataset.id);
+                }}
+              />
+            {/each}
+          {/if}
+        </div>
+      </details>
+    </fieldset>
   </svelte:fragment>
 </Panel>
+
+<style>
+  .simulation-history {
+    gap: 8px;
+    margin-left: 8px;
+  }
+</style>
