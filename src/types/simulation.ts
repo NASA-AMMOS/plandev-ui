@@ -110,7 +110,7 @@ export type DirectiveIdToSpanIdMap = Record<ActivityDirectiveId, SpanId>;
 export type SpanIdToChildIdsMap = Record<SpanId, SpanId[]>;
 
 export type SpanUtilityMaps = {
-  directiveIdToSpanIdMap: SpanIdToDirectiveIdMap;
+  directiveIdToSpanIdMap: DirectiveIdToSpanIdMap;
   spanIdToChildIdsMap: SpanIdToChildIdsMap;
   spanIdToDirectiveIdMap: SpanIdToDirectiveIdMap;
 };

@@ -70,7 +70,7 @@
     <ContextMenuItem on:click={() => dispatch('deleteActivityDirective', activityDirective.id)}>
       Delete Directive
     </ContextMenuItem>
-    {#if activityDirectiveSpans}
+    {#if activityDirectiveSpans && activityDirectiveSpans.length}
       <ContextSubMenuItem text="Jump to Simulated Activities" parentMenu={contextMenuComponent}>
         {#each activityDirectiveSpans as activityDirectiveSpan}
           <ContextMenuItem on:click={() => dispatch('jumpToSpan', activityDirectiveSpan.id)}>

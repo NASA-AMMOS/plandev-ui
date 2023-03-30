@@ -226,6 +226,9 @@ describe('getAllSpansForActivityDirective', () => {
         .sort(),
     ).to.deep.equal(resultingSpanIds);
   });
+  test('Should return empty array when primary span does not exist for an activity directive', () => {
+    expect(getAllSpansForActivityDirective(99, testSpansMap, testSpansUtilityMap)).to.be.empty;
+  });
 });
 
 describe('getAllSpanChildrenIds', () => {
