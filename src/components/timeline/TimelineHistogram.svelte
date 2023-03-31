@@ -7,7 +7,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Span } from '../../types/simulation';
+  import type { SimulationDataset, Span } from '../../types/simulation';
   import type { MouseOver, TimeRange } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoyTime, getIntervalInMs, getUnixEpochTimeFromInterval } from '../../utilities/time';
@@ -21,6 +21,7 @@
   export let marginLeft: number = 50;
   export let mouseOver: MouseOver;
   export let planStartTimeYmd: string;
+  export let simulationDataset: SimulationDataset | null = null;
   export let spans: Span[] = [];
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleMax: ScaleTime<number, number> | null = null;
@@ -182,7 +183,8 @@
     });
 
     spans.forEach(span => {
-      const spanX = getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset);
+      const startYmd = simulationDataset?.simulation_start_time ?? planStartTimeYmd;
+      const spanX = getUnixEpochTimeFromInterval(startYmd, span.start_offset);
       const spanDuration = getIntervalInMs(span.duration);
 
       // Filter out spans that do not fall within the plan bounds at all

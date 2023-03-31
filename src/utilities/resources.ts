@@ -6,16 +6,16 @@ import { getIntervalInMs } from './time';
  */
 export function sampleProfiles(
   profiles: Profile[] | null,
-  planStartTimeYmd: string | null,
-  duration: string | null,
-  offset?: string,
+  startTimeYmd: string | null,
+  durationInterval: string | null,
+  offsetInterval?: string,
 ): Resource[] {
   const resources: Resource[] = [];
 
-  if (profiles && planStartTimeYmd && duration) {
-    const planOffset = getIntervalInMs(offset);
-    const planStart = new Date(planStartTimeYmd).getTime() + planOffset;
-    const planDuration = getIntervalInMs(duration);
+  if (profiles && startTimeYmd && durationInterval) {
+    const offsetMs = getIntervalInMs(offsetInterval);
+    const start = new Date(startTimeYmd).getTime() + offsetMs;
+    const duration = getIntervalInMs(durationInterval);
 
     for (const profile of profiles) {
       const { name, profile_segments, type: profileType } = profile;
@@ -27,26 +27,26 @@ export function sampleProfiles(
         const nextSegment = profile_segments[i + 1];
 
         const segmentOffset = getIntervalInMs(segment.start_offset);
-        const nextSegmentOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : planDuration;
+        const nextSegmentOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : duration;
 
         const { dynamics } = segment;
 
         if (type === 'discrete') {
           values.push({
-            x: planStart + segmentOffset,
+            x: start + segmentOffset,
             y: dynamics,
           });
           values.push({
-            x: planStart + nextSegmentOffset,
+            x: start + nextSegmentOffset,
             y: dynamics,
           });
         } else if (type === 'real') {
           values.push({
-            x: planStart + segmentOffset,
+            x: start + segmentOffset,
             y: dynamics.initial,
           });
           values.push({
-            x: planStart + nextSegmentOffset,
+            x: start + nextSegmentOffset,
             y: dynamics.initial + dynamics.rate * ((nextSegmentOffset - segmentOffset) / 1000),
           });
         }

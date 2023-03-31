@@ -210,6 +210,7 @@
       marginLeft={timeline?.marginLeft}
       {mouseOver}
       {planStartTimeYmd}
+      {simulationDataset}
       {spans}
       {viewTimeRange}
       {xScaleView}

@@ -95,7 +95,8 @@
         i = j - 1; // Minus since the loop auto increments i at the end of the block.
 
         const xStart = clamp(xScaleView(point.x), 0, drawWidth);
-        const xEnd = nextPoint ? clamp(xScaleView(nextPoint.x), 0, drawWidth) : drawWidth;
+        const xEnd = clamp(xScaleView(nextPoint ? nextPoint.x : points[i].x), 0, drawWidth);
+
         const xWidth = xEnd - xStart;
         const y = 0;
 

@@ -73,7 +73,7 @@
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { Status } from '../../../utilities/status';
-  import { getUnixEpochTime } from '../../../utilities/time';
+  import { getIntervalUnixEpochTime, getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -109,9 +109,14 @@
   $: if ($plan && $simulationDataset !== undefined) {
     if ($simulationDataset !== null) {
       const datasetId = $simulationDataset.dataset_id;
-      effects
-        .getResources(datasetId, $plan.start_time, $plan.duration)
-        .then(newResources => ($resources = newResources));
+      const startYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
+      const duration = $simulationDataset?.simulation_start_time
+        ? getIntervalUnixEpochTime(
+            new Date($simulationDataset.simulation_start_time).getTime(),
+            new Date($simulationDataset.simulation_end_time).getTime(),
+          )
+        : $plan.duration;
+      effects.getResources(datasetId, startYmd, duration).then(newResources => ($resources = newResources));
       effects.getSpans(datasetId).then(newSpans => ($spans = newSpans));
     } else {
       $resources = [];
