@@ -1,8 +1,19 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import DatePicker from './DatePicker.svelte';
 
 describe('DatePicker DatePicker Component', () => {
+  beforeAll(() => {
+    const date = new Date(2020, 1, 1, 1);
+    vi.useFakeTimers();
+    vi.setSystemTime(date);
+  });
+
+  afterAll(() => {
+    vi.setSystemTime(vi.getRealSystemTime());
+    vi.useRealTimers();
+  });
+
   afterEach(() => {
     cleanup();
   });
