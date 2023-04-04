@@ -7,12 +7,12 @@
   export let padHeader: boolean = true;
 </script>
 
-<div class="panel" class:borderLeft class:borderRight class:borderTop>
-  <div class="header" class:padHeader>
+<div class="panel" class:border-left={borderLeft} class:border-right={borderRight} class:border-top={borderTop}>
+  <div class="header" class:pad-header={padHeader}>
     <slot name="header" />
   </div>
 
-  <div class="body" class:padBody style="overflow-y: {overflowYBody};">
+  <div class="body" class:pad-body={padBody} style="overflow-y: {overflowYBody};">
     <slot name="body" />
   </div>
 </div>
@@ -43,20 +43,20 @@
     flex-direction: column;
   }
 
-  .padBody,
-  .padHeader {
+  .pad-body,
+  .pad-header {
     padding: 0.5rem;
   }
 
-  .borderLeft {
+  .border-left {
     border-left: 1px solid var(--st-gray-20);
   }
 
-  .borderRight {
+  .border-right {
     border-right: 1px solid var(--st-gray-20);
   }
 
-  .borderTop {
+  .border-top {
     border-top: 1px solid var(--st-gray-20);
   }
 </style>

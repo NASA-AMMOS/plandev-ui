@@ -40,10 +40,10 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="date-picker-day"
-  class:isOutsideBounds
-  class:isOutsideCurrentMonth
-  class:isSelected
-  class:isToday
+  class:is-outside-bounds={isOutsideBounds}
+  class:is-outside-current-month={isOutsideCurrentMonth}
+  class:is-selected={isSelected}
+  class:is-today={isToday}
   on:click|stopPropagation={onSelect}
 >
   <div class="doy">{getDoy(date)}</div>
@@ -73,27 +73,27 @@
     font-weight: 500;
   }
 
-  .date-picker-day.isSelected {
+  .date-picker-day.is-selected {
     background-color: var(--st-primary-50);
   }
 
-  .date-picker-day.isSelected .doy {
+  .date-picker-day.is-selected .doy {
     color: var(--st-gray-10);
   }
 
-  .date-picker-day.isSelected .date {
+  .date-picker-day.is-selected .date {
     color: var(--st-gray-30);
   }
 
-  .isToday {
+  .is-today {
     background-color: var(--st-gray-20);
   }
 
-  .isOutsideCurrentMonth {
+  .is-outside-current-month {
     opacity: 0.4;
   }
 
-  .isOutsideBounds {
+  .is-outside-bounds {
     cursor: not-allowed;
     opacity: 0.3;
   }

@@ -76,7 +76,7 @@
     background: #2c2850;
   }
 
-  .nav-button:hover :global(.nav-button-status .status-badge.Failed) {
+  .nav-button:hover :global(.nav-button-status .status-badge.failed) {
     filter: drop-shadow(3px 0px 0px #2c2850);
   }
 
@@ -103,7 +103,7 @@
     padding-bottom: 0;
   }
 
-  .nav-button :global(.nav-button-status .status-badge.Failed) {
+  .nav-button :global(.nav-button-status .status-badge.failed) {
     filter: drop-shadow(3px 0px 0px #110d3e);
   }
 

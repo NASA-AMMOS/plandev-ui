@@ -19,7 +19,7 @@
 {#if status !== null}
   <span
     aria-label={status}
-    class="status-badge {status}"
+    class="status-badge {status.toLowerCase()}"
     style="background: {status === Status.Failed ? 'transparent' : color}"
     use:tooltip={{ content: showTooltip ? status : '', placement: 'bottom' }}
   >
