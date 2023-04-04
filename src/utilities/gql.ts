@@ -223,13 +223,40 @@ const gql = {
   `,
 
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
-    mutation DeleteActivityDirectives($plan_id: Int!, $ids: [Int!]!) {
+    mutation DeleteActivityDirectives($plan_id: Int!, $activity_ids: [Int!]!) {
       deleteActivityDirectives: delete_activity_directive(
-        where: { id: { _in: $ids }, _and: { plan_id: { _eq: $plan_id } } }
+        where: { id: { _in: $activity_ids }, _and: { plan_id: { _eq: $plan_id } } }
       ) {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START: `#graphql
+    mutation DeleteActivityDirectivesReanchorPlanStart($plan_id: Int!, $activity_ids: _int4!) {
+      delete_activity_by_pk_reanchor_plan_start_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+        change_type
+        affected_row
+      }
+    }
+  `,
+
+  DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR: `#graphql
+    mutation DeleteActivityDirectivesReanchorToAnchor($plan_id: Int!, $activity_ids: _int4!) {
+      delete_activity_by_pk_reanchor_to_anchor_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+        change_type
+        affected_row
+      }
+    }
+  `,
+
+  DELETE_ACTIVITY_DIRECTIVES_SUBTREE: `#graphql
+    mutation DeleteActivityDirectivesSubtree($plan_id: Int!, $activity_ids: _int4!) {
+      delete_activity_by_pk_delete_subtree_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+        change_type
+        affected_row
       }
     }
   `,
@@ -883,10 +910,10 @@ const gql = {
     }
   `,
 
-  PLAN_MERGE_RESOLVE_CONFLICT: `#graphql
-    mutation PlanMergeResolveConflict($merge_request_id: Int!, $activity_id: Int!, $resolution: resolution_type!) {
-      set_resolution(
-        args: { _merge_request_id: $merge_request_id, _activity_id: $activity_id, _resolution: $resolution }
+  PLAN_MERGE_RESOLVE_ALL_CONFLICTS: `#graphql
+    mutation PlanMergeResolveAllConflicts($merge_request_id: Int!, $resolution: resolution_type!) {
+      set_resolution_bulk (
+        args: { _merge_request_id: $merge_request_id, _resolution: $resolution }
       ) {
         activity_id
         change_type_source
@@ -899,10 +926,10 @@ const gql = {
     }
   `,
 
-  PlAN_MERGE_RESOLVE_ALL_CONFLICTS: `#graphql
-    mutation PlanMergeResolveAllConflicts($merge_request_id: Int!, $resolution: resolution_type!) {
-      set_resolution_bulk (
-        args: { _merge_request_id: $merge_request_id, _resolution: $resolution }
+  PLAN_MERGE_RESOLVE_CONFLICT: `#graphql
+    mutation PlanMergeResolveConflict($merge_request_id: Int!, $activity_id: Int!, $resolution: resolution_type!) {
+      set_resolution(
+        args: { _merge_request_id: $merge_request_id, _activity_id: $activity_id, _resolution: $resolution }
       ) {
         activity_id
         change_type_source
@@ -1597,5 +1624,9 @@ const gql = {
     }
   `,
 };
+
+export function convertToGQLArray(array: string[] | number[]) {
+  return `{${array.join(',')}}`;
+}
 
 export default gql;

@@ -224,7 +224,7 @@ test.describe.serial('Plan', () => {
     await expect(page.locator('.preset-value')).toHaveText('None');
   });
 
-  test('Delete an activity preset should remove it from the list of presets', async () => {
+  test('Deleting an activity preset should remove it from the list of presets', async () => {
     await page.getByRole('button', { name: 'Set Preset' }).click();
     await page.getByRole('menuitem', { name: 'Preset 1' }).click();
 

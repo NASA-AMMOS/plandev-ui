@@ -2,6 +2,7 @@ import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
+import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
@@ -11,6 +12,7 @@ import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
+import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
@@ -205,6 +207,37 @@ export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId
       });
 
       createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: true, value: e.detail });
+      });
+    }
+  });
+}
+
+/**
+ * Shows an DeleteActivitiesModal component.
+ */
+export async function showDeleteActivitiesModal(
+  ids: ActivityDirectiveId[],
+): Promise<ModalElementValue<ActivityDirectiveDeletionMap>> {
+  return new Promise(resolve => {
+    const target: ModalElement = document.querySelector('#svelte-modal');
+
+    if (target) {
+      const deleteActivitiesModal = new DeleteActivitiesModal({
+        props: { activityIds: ids },
+        target,
+      });
+      target.resolve = resolve;
+
+      deleteActivitiesModal.$on('close', () => {
+        target.replaceChildren();
+        target.resolve = null;
+        resolve({ confirm: false });
+      });
+
+      deleteActivitiesModal.$on('delete', (e: CustomEvent<ActivityDirectiveDeletionMap>) => {
         target.replaceChildren();
         target.resolve = null;
         resolve({ confirm: true, value: e.detail });

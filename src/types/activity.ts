@@ -1,3 +1,4 @@
+import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
 import type { ExpansionRule } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
@@ -24,6 +25,9 @@ export type ActivityDirectiveId = number;
 export type ActivityPresetId = number;
 
 export type ActivityDirectivesMap = Record<ActivityDirectiveId, ActivityDirective>;
+export type AnchoredActivityDirectivesMap = Record<ActivityDirectiveId, ActivityDirective[]>;
+
+export type ActivityDirectiveDeletionMap = Record<ActivityDirectiveId, ActivityDeletionAction>;
 
 export type ActivityDirective = {
   anchor_id: number | null;

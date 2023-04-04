@@ -88,12 +88,14 @@ import type {
   Span,
 } from '../types/simulation';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
+import { ActivityDeletionAction } from './activities';
 import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
-import gql from './gql';
+import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
   showCreatePlanBranchModal,
   showCreateViewModal,
+  showDeleteActivitiesModal,
   showEditViewModal,
   showPlanBranchRequestModal,
   showUploadViewModal,
@@ -608,43 +610,83 @@ const effects = {
   },
 
   async deleteActivityDirective(plan_id: number, id: ActivityDirectiveId): Promise<boolean> {
-    try {
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        'Are you sure you want to delete this activity directive?',
-        'Delete Activity Directive',
-      );
-
-      if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVE, { id, plan_id });
-        activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-          delete currentActivityDirectivesMap[id];
-          return { ...currentActivityDirectivesMap };
-        });
-        showSuccessToast('Activity Directive Deleted Successfully');
-        return true;
-      }
-    } catch (e) {
-      catchError('Activity Directive Delete Failed', e);
-      showFailureToast('Activity Directive Delete Failed');
-      return false;
-    }
+    return effects.deleteActivityDirectives(plan_id, [id]);
   },
 
   async deleteActivityDirectives(plan_id: number, ids: ActivityDirectiveId[]): Promise<boolean> {
     try {
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        'Are you sure you want to delete the selected activity directives?',
-        'Delete Activities',
-      );
+      type SortedDeletions = {
+        [key in ActivityDeletionAction]?: ActivityDirectiveId[];
+      };
+
+      const { confirm, value } = await showDeleteActivitiesModal(ids);
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, { ids, plan_id });
-        activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-          ids.forEach(id => delete currentActivityDirectivesMap[id]);
-          return { ...currentActivityDirectivesMap };
-        });
+        const sortedActions = Object.keys(value)
+          .map(Number)
+          .reduce((previousValue: SortedDeletions, activityId: ActivityDirectiveId) => {
+            const action = value[activityId];
+            if (previousValue[action]) {
+              return {
+                ...previousValue,
+                [action]: [...previousValue[action], activityId],
+              };
+            }
+            return {
+              ...previousValue,
+              [action]: [activityId],
+            };
+          }, {});
+
+        const reanchorPlanDeletions = sortedActions[ActivityDeletionAction.ANCHOR_PLAN] ?? [];
+        const reanchorRootDeletions = sortedActions[ActivityDeletionAction.ANCHOR_ROOT] ?? [];
+        const subtreeDeletions = sortedActions[ActivityDeletionAction.DELETE_CHAIN] ?? [];
+        const normalDeletions = sortedActions[ActivityDeletionAction.NORMAL] ?? [];
+
+        if (reanchorRootDeletions.length) {
+          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR, {
+            activity_ids: convertToGQLArray(reanchorRootDeletions),
+            plan_id,
+          });
+          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+            reanchorRootDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
+            return { ...currentActivityDirectivesMap };
+          });
+        }
+
+        if (reanchorPlanDeletions.length) {
+          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START, {
+            activity_ids: convertToGQLArray(reanchorPlanDeletions),
+            plan_id,
+          });
+          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+            reanchorPlanDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
+            return { ...currentActivityDirectivesMap };
+          });
+        }
+
+        if (subtreeDeletions.length) {
+          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_SUBTREE, {
+            activity_ids: convertToGQLArray(subtreeDeletions),
+            plan_id,
+          });
+          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+            subtreeDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
+            return { ...currentActivityDirectivesMap };
+          });
+        }
+
+        if (normalDeletions.length) {
+          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, {
+            activity_ids: normalDeletions,
+            plan_id,
+          });
+          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+            normalDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
+            return { ...currentActivityDirectivesMap };
+          });
+        }
+
         showSuccessToast('Activity Directives Deleted Successfully');
         return true;
       }
@@ -1701,7 +1743,7 @@ const effects = {
 
   async planMergeResolveAllConflicts(merge_request_id: number, resolution: PlanMergeResolution): Promise<void> {
     try {
-      await reqHasura(gql.PlAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution });
+      await reqHasura(gql.PLAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution });
     } catch (e) {
       showFailureToast('Resolve All Merge Request Conflicts Failed');
       catchError('Resolve All Merge Request Conflicts Failed', e);

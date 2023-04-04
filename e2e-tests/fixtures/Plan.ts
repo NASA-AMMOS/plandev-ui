@@ -11,8 +11,6 @@ export class Plan {
   activitiesTableFirstRow: Locator;
   analyzeButton: Locator;
   appError: Locator;
-  confirmModal: Locator;
-  confirmModalDeleteButton: Locator;
   constraintListItemSelector: string;
   constraintNewButton: Locator;
   gridMenu: Locator;
@@ -109,21 +107,11 @@ export class Plan {
   }
 
   async deleteAllActivities() {
-    await expect(this.confirmModal).not.toBeVisible();
-
-    await this.activitiesTableFirstRow.click({ button: 'right' });
+    await this.page.getByRole('gridcell').first().click({ button: 'right' });
     await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
-    await this.activitiesTableFirstRow.click({ button: 'right' });
-    await this.page.locator('.context-menu > .context-menu-item:has-text("Delete 10 Activity Directives")').click();
-
-    await this.confirmModal.waitFor({ state: 'attached' });
-    await this.confirmModal.waitFor({ state: 'visible' });
-    await expect(this.confirmModal).toBeVisible();
-    await expect(this.confirmModalDeleteButton).toBeVisible();
-    await this.confirmModalDeleteButton.click();
-    await this.activitiesTableFirstRow.waitFor({ state: 'detached' });
-    await this.activitiesTableFirstRow.waitFor({ state: 'hidden' });
-    await expect(this.activitiesTableFirstRow).not.toBeVisible();
+    await this.page.getByRole('gridcell').first().click({ button: 'right' });
+    await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
+    await this.page.getByRole('button', { name: 'Confirm' }).click();
   }
 
   async fillActivityPresetName(presetName: string) {
@@ -226,8 +214,6 @@ export class Plan {
     this.activitiesTableFirstRow = page
       .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
       .nth(0);
-    this.confirmModal = page.locator(`.modal:has-text("Delete Activities")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Activities") >> button:has-text("Delete")`);
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.gridMenu = page.locator('.grid-menu > .menu > .menu-slot');
     this.gridMenuButton = page.locator('.grid-menu');
