@@ -7,19 +7,18 @@ import { getIntervalInMs } from './time';
 export function sampleProfiles(
   profiles: Profile[] | null,
   startTimeYmd: string | null,
-  durationInterval: string | null,
   offsetInterval?: string,
 ): Resource[] {
   const resources: Resource[] = [];
 
-  if (profiles && startTimeYmd && durationInterval) {
+  if (profiles && startTimeYmd) {
     const offsetMs = getIntervalInMs(offsetInterval);
     const start = new Date(startTimeYmd).getTime() + offsetMs;
-    const duration = getIntervalInMs(durationInterval);
 
     for (const profile of profiles) {
-      const { name, profile_segments, type: profileType } = profile;
+      const { duration, name, profile_segments, type: profileType } = profile;
       const { schema, type } = profileType;
+      const durationMs = getIntervalInMs(duration);
       const values: ResourceValue[] = [];
 
       for (let i = 0; i < profile_segments.length; ++i) {
@@ -27,7 +26,7 @@ export function sampleProfiles(
         const nextSegment = profile_segments[i + 1];
 
         const segmentOffset = getIntervalInMs(segment.start_offset);
-        const nextSegmentOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : duration;
+        const nextSegmentOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : durationMs;
 
         const { dynamics } = segment;
 

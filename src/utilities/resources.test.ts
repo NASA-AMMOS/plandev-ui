@@ -3,11 +3,11 @@ import type { Profile, Resource } from '../types/simulation';
 import { sampleProfiles } from './resources';
 
 describe('sampleProfiles', () => {
-  test('calculate the correct y-value for real profile segment rate of change', () => {
+  test('Calculate the correct y-value for real profile segment rate of change', () => {
     const profiles: Profile[] = [
       {
         dataset_id: 1,
-        duration: '',
+        duration: '384:00:00',
         id: 1,
         name: '/simple_data/b/volume',
         profile_segments: [
@@ -43,7 +43,7 @@ describe('sampleProfiles', () => {
       },
     ];
 
-    const resources: Resource[] = sampleProfiles(profiles, '2022-09-01T00:00:00+00:00', '384:00:00');
+    const resources: Resource[] = sampleProfiles(profiles, '2022-09-01T00:00:00+00:00');
 
     const expectedResources: Resource[] = [
       {

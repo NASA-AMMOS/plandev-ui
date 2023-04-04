@@ -1291,18 +1291,18 @@ const effects = {
     }
   },
 
-  async getResources(datasetId: number, planStartTime: string, planDuration: string): Promise<Resource[]> {
+  async getResources(datasetId: number, startTimeYmd: string): Promise<Resource[]> {
     try {
       const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId });
       const { profile: profiles } = data;
-      return sampleProfiles(profiles, planStartTime, planDuration);
+      return sampleProfiles(profiles, startTimeYmd);
     } catch (e) {
       catchError(e);
       return [];
     }
   },
 
-  async getResourcesExternal(planId: number, planStartTime: string, planDuration: string): Promise<Resource[]> {
+  async getResourcesExternal(planId: number, startTimeYmd: string): Promise<Resource[]> {
     try {
       const data = await reqHasura<PlanDataset[]>(gql.GET_PROFILES_EXTERNAL, { planId });
       const { plan_dataset: plan_datasets } = data;
@@ -1313,12 +1313,7 @@ const effects = {
           dataset: { profiles },
           offset_from_plan_start,
         } = dataset;
-        const sampledResources: Resource[] = sampleProfiles(
-          profiles,
-          planStartTime,
-          planDuration,
-          offset_from_plan_start,
-        );
+        const sampledResources: Resource[] = sampleProfiles(profiles, startTimeYmd, offset_from_plan_start);
         resources = [...resources, ...sampledResources];
       }
 
