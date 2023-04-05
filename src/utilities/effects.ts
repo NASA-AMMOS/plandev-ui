@@ -1,6 +1,5 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
-import type { ErrorObject } from 'ajv';
 import { get } from 'svelte/store';
 import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
@@ -105,7 +104,7 @@ import { sampleProfiles } from './resources';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
 import { showFailureToast, showSuccessToast } from './toast';
-import { generateDefaultView } from './view';
+import { generateDefaultView, validateViewJSONAgainstSchema } from './view';
 
 /**
  * Functions that have side-effects (e.g. HTTP requests, toasts, popovers, store updates, etc.).
@@ -2170,12 +2169,7 @@ const effects = {
 
   async validateViewJSON(unValidatedView: unknown): Promise<{ errors?: string[]; valid: boolean }> {
     try {
-      const response = await fetch(`${base}/view/validate`, {
-        body: JSON.stringify(unValidatedView),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      });
-      const { errors = [], valid } = (await response.json()) as { errors?: ErrorObject[]; valid: boolean };
+      const { errors, valid } = validateViewJSONAgainstSchema(unValidatedView);
       return {
         errors: errors.map(({ message }) => message),
         valid,

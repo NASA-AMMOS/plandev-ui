@@ -289,7 +289,11 @@ export function getNextTimelineID(timelines: Timeline[]): number {
 /**
  * Returns a new vertical guide
  */
-export function createVerticalGuide(timelines: Timeline[], doyTimestamp: string): VerticalGuide {
+export function createVerticalGuide(
+  timelines: Timeline[],
+  doyTimestamp: string,
+  args: Partial<VerticalGuide> = {},
+): VerticalGuide {
   const id = getNextVerticalGuideID(timelines);
   const defaultLabel = `Guide ${id}`;
 
@@ -297,13 +301,18 @@ export function createVerticalGuide(timelines: Timeline[], doyTimestamp: string)
     id,
     label: { color: '#969696', text: defaultLabel },
     timestamp: doyTimestamp,
+    ...args,
   };
 }
 
 /**
  * Returns a new horizontal guide
  */
-export function createHorizontalGuide(timelines: Timeline[], yAxes: Axis[]): HorizontalGuide {
+export function createHorizontalGuide(
+  timelines: Timeline[],
+  yAxes: Axis[],
+  args: Partial<HorizontalGuide> = {},
+): HorizontalGuide {
   const id = getNextHorizontalGuideID(timelines);
   const defaultLabel = `Guide ${id}`;
 
@@ -324,13 +333,14 @@ export function createHorizontalGuide(timelines: Timeline[], yAxes: Axis[]): Hor
     label: { color: '#969696', text: defaultLabel },
     y,
     yAxisId,
+    ...args,
   };
 }
 
 /**
  * Returns a new row
  */
-export function createRow(timelines: Timeline[]): Row {
+export function createRow(timelines: Timeline[], args: Partial<Row> = {}): Row {
   const id = getNextRowID(timelines);
 
   return {
@@ -342,17 +352,18 @@ export function createRow(timelines: Timeline[]): Row {
     layers: [],
     name: 'Row',
     yAxes: [],
+    ...args,
   };
 }
 
 /**
  * Returns a new y axis
  */
-export function createYAxis(timelines: Timeline[]): Axis {
+export function createYAxis(timelines: Timeline[], args: Partial<Axis> = {}): Axis {
   const id = getNextYAxisID(timelines);
 
   return {
-    color: '',
+    color: '#000000',
     id,
     label: { text: 'Label' },
 
@@ -360,13 +371,14 @@ export function createYAxis(timelines: Timeline[]): Axis {
     // no associated layers for a new y axis?
     scaleDomain: [0, 10],
     tickCount: 4,
+    ...args,
   };
 }
 
 /**
  * Returns a new timeline
  */
-export function createTimeline(timelines: Timeline[]): Timeline {
+export function createTimeline(timelines: Timeline[], args: Partial<Timeline> = {}): Timeline {
   const id = getNextTimelineID(timelines);
 
   return {
@@ -375,13 +387,14 @@ export function createTimeline(timelines: Timeline[]): Timeline {
     marginRight: 0,
     rows: [],
     verticalGuides: [],
+    ...args,
   };
 }
 
 /**
  * Returns a new activity layer
  */
-export function createTimelineActivityLayer(timelines: Timeline[]): ActivityLayer {
+export function createTimelineActivityLayer(timelines: Timeline[], args: Partial<ActivityLayer> = {}): ActivityLayer {
   const id = getNextLayerID(timelines);
 
   return {
@@ -395,13 +408,18 @@ export function createTimelineActivityLayer(timelines: Timeline[]): ActivityLaye
     },
     id,
     yAxisId: null,
+    ...args,
   };
 }
 
 /**
- * Returns a new line layer
+ * Returns a new line layer. Note that the yAxes should be those from the row the layer will be a member of.
  */
-export function createTimelineLineLayer(timelines: Timeline[], yAxes: Axis[]): LineLayer {
+export function createTimelineLineLayer(
+  timelines: Timeline[],
+  yAxes: Axis[],
+  args: Partial<LineLayer> = {},
+): LineLayer {
   const id = getNextLayerID(timelines);
   const yAxisId = yAxes.length > 0 ? yAxes[0].id : 0;
 
@@ -413,23 +431,28 @@ export function createTimelineLineLayer(timelines: Timeline[], yAxes: Axis[]): L
       },
     },
     id,
-    lineColor: 'ff0000',
+    lineColor: '#283593',
     lineWidth: 1,
     pointRadius: 2,
     yAxisId,
+    ...args,
   };
 }
 
 /**
- * Returns a new x-range layer
+ * Returns a new x-range layer. Note that the yAxes should be those from the row the layer will be a member of.
  */
-export function createTimelineXRangeLayer(timelines: Timeline[], yAxes: Axis[]): XRangeLayer {
+export function createTimelineXRangeLayer(
+  timelines: Timeline[],
+  yAxes: Axis[],
+  args: Partial<XRangeLayer> = {},
+): XRangeLayer {
   const id = getNextLayerID(timelines);
   const yAxisId = yAxes.length > 0 ? yAxes[0].id : 0;
 
   return {
     chartType: 'x-range',
-    colorScheme: 'schemeAccent',
+    colorScheme: 'schemeTableau10',
     filter: {
       resource: {
         names: [],
@@ -438,6 +461,7 @@ export function createTimelineXRangeLayer(timelines: Timeline[], yAxes: Axis[]):
     id,
     opacity: 0.8,
     yAxisId,
+    ...args,
   };
 }
 

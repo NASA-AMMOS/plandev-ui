@@ -1,7 +1,17 @@
+import Ajv from 'ajv';
+import jsonSchema from '../schemas/ui-view-schema.json';
 import type { ActivityType } from '../types/activity';
 import type { ResourceType } from '../types/simulation';
-import type { ActivityLayer, Axis, LineLayer, Row, XRangeLayer } from '../types/timeline';
+import type { Layer } from '../types/timeline';
 import type { View, ViewGridColumns, ViewGridRows } from '../types/view';
+import {
+  createRow,
+  createTimeline,
+  createTimelineActivityLayer,
+  createTimelineLineLayer,
+  createTimelineXRangeLayer,
+  createYAxis,
+} from './timeline';
 
 /**
  * Generates a default generic UI view.
@@ -9,9 +19,55 @@ import type { View, ViewGridColumns, ViewGridRows } from '../types/view';
 export function generateDefaultView(activityTypes: ActivityType[] = [], resourceTypes: ResourceType[] = []): View {
   const now = new Date().toISOString();
   const types: string[] = activityTypes.map(({ name }) => name);
-  let rowIds = 0;
-  let layerIds = 0;
-  let yAxisIds = 0;
+
+  const timeline = createTimeline([], { marginLeft: 110, marginRight: 30 });
+  const timelines = [timeline];
+
+  const activityLayer = createTimelineActivityLayer(timelines, {
+    filter: { activity: { types } },
+  });
+  const activityRow = createRow(timelines, {
+    autoAdjustHeight: false,
+    expanded: true,
+    height: 200,
+    layers: [activityLayer],
+    name: 'Activities',
+  });
+  timeline.rows.push(activityRow);
+
+  // Generate a row for every resource
+  resourceTypes.map(resourceType => {
+    const { name, schema } = resourceType;
+    const { type: schemaType } = schema;
+    const isDiscreteSchema = schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
+    const isNumericSchema =
+      schemaType === 'int' ||
+      schemaType === 'real' ||
+      (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
+
+    const yAxis = createYAxis(timelines, {
+      label: { text: name },
+      scaleDomain: isNumericSchema ? [-6, 6] : [],
+      tickCount: isNumericSchema ? 5 : 0,
+    });
+
+    const resourceLayers = isDiscreteSchema
+      ? ([createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
+      : isNumericSchema
+      ? ([createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
+      : ([] as Layer[]);
+
+    const resourceRow = createRow(timelines, {
+      autoAdjustHeight: false,
+      expanded: true,
+      height: 100,
+      layers: resourceLayers,
+      name,
+      yAxes: [yAxis],
+    });
+
+    timeline.rows.push(resourceRow);
+  });
 
   return {
     created_at: now,
@@ -296,91 +352,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             title: 'Mars-2020-EDL',
           },
         ],
-        timelines: [
-          {
-            id: 0,
-            marginLeft: 110,
-            marginRight: 30,
-            rows: [
-              {
-                autoAdjustHeight: false,
-                expanded: true,
-                height: 200,
-                horizontalGuides: [],
-                id: rowIds++,
-                layers: [
-                  {
-                    activityColor: '#fcdd8f',
-                    activityHeight: 16,
-                    chartType: 'activity',
-                    filter: { activity: { types } },
-                    id: layerIds++,
-                    yAxisId: null,
-                  } as ActivityLayer,
-                ],
-                name: 'Activities',
-                yAxes: [],
-              },
-              ...resourceTypes.map(resourceType => {
-                const { name, schema } = resourceType;
-                const { type: schemaType } = schema;
-                const isDiscreteSchema =
-                  schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
-                const isNumericSchema =
-                  schemaType === 'int' ||
-                  schemaType === 'real' ||
-                  (schemaType === 'struct' &&
-                    schema?.items?.rate?.type === 'real' &&
-                    schema?.items?.initial?.type === 'real');
-
-                const yAxis: Axis = {
-                  color: '#000000',
-                  id: yAxisIds++,
-                  label: { text: name },
-                  scaleDomain: isNumericSchema ? [-6, 6] : [],
-                  tickCount: isNumericSchema ? 5 : 0,
-                };
-
-                const row: Row = {
-                  autoAdjustHeight: false,
-                  expanded: true,
-                  height: 100,
-                  horizontalGuides: [],
-                  id: rowIds++,
-                  layers: isDiscreteSchema
-                    ? [
-                        {
-                          chartType: 'x-range',
-                          colorScheme: 'schemeTableau10',
-                          filter: { resource: { names: [name] } },
-                          id: layerIds++,
-                          opacity: 0.8,
-                          yAxisId: yAxis.id,
-                        } as XRangeLayer,
-                      ]
-                    : isNumericSchema
-                    ? [
-                        {
-                          chartType: 'line',
-                          filter: { resource: { names: [name] } },
-                          id: layerIds++,
-                          lineColor: '#283593',
-                          lineWidth: 1,
-                          pointRadius: 2,
-                          yAxisId: yAxis.id,
-                        } as LineLayer,
-                      ]
-                    : [],
-                  name,
-                  yAxes: [yAxis],
-                };
-
-                return row;
-              }),
-            ],
-            verticalGuides: [],
-          },
-        ],
+        timelines,
       },
     },
     id: 0,
@@ -467,4 +439,17 @@ export function createRowSizes({ row1 = '1fr', row2 = '1fr' }: ViewGridRows, col
   }
 
   return '1fr';
+}
+
+export function validateViewJSONAgainstSchema(json: any) {
+  try {
+    const ajv = new Ajv();
+    const validate = ajv.compile(jsonSchema);
+    const valid = validate(json);
+    const errors = valid ? [] : validate.errors;
+    return { errors, valid };
+  } catch (e) {
+    const { message } = e;
+    return { errors: [message], valid: false };
+  }
 }
