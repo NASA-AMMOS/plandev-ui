@@ -3,18 +3,22 @@
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
-  import { view } from '../../stores/views';
+  import { view, viewUpdateGrid } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
-  import type { Span, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { Simulation, SimulationDataset, Span, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import type { MouseOver, VerticalGuide } from '../../types/timeline';
   import { getAllSpansForActivityDirective, getSpanRootParent } from '../../utilities/activities';
+  import effects from '../../utilities/effects';
   import { getDoyTime, getIntervalInMs, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { createVerticalGuide } from '../../utilities/timeline';
   import ContextMenu from '../context-menu/ContextMenu.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import ContextMenuSeparator from '../context-menu/ContextMenuSeparator.svelte';
   import ContextSubMenuItem from '../context-menu/ContextSubMenuItem.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap;
+  export let simulation: Simulation;
+  export let simulationDataset: SimulationDataset | null = null;
   export let spansMap: SpansMap;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let planStartTimeYmd: string;
@@ -50,6 +54,11 @@
     activityDirectiveSpans = null;
   }
 
+  $: startYmd = simulationDataset?.simulation_start_time ?? planStartTimeYmd;
+  $: activityDirectiveStartDate = activityDirective
+    ? new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset))
+    : null;
+
   function jumpToActivityDirective() {
     const rootSpan = getSpanRootParent(spansMap, span.id);
     if (rootSpan) {
@@ -63,13 +72,33 @@
     const newVerticalGuide = createVerticalGuide(timelines, cursorDOY);
     dispatch('updateVerticalGuides', [...verticalGuides, newVerticalGuide]);
   }
+
+  function switchToSimulation() {
+    viewUpdateGrid({ leftComponentTop: 'SimulationPanel' });
+  }
+
+  function updateSimulationStartTime(date: Date) {
+    const doyString = getDoyTime(date, false);
+    const newSimulation: Simulation = { ...simulation, simulation_start_time: doyString };
+    effects.updateSimulation(newSimulation);
+    switchToSimulation();
+  }
+
+  function updateSimulationEndTime(date: Date) {
+    const doyString = getDoyTime(date, false);
+    const newSimulation: Simulation = { ...simulation, simulation_end_time: doyString };
+    effects.updateSimulation(newSimulation);
+    switchToSimulation();
+  }
+
+  function getSpanDate(span: Span, includeDuration: boolean = false) {
+    const duration = includeDuration ? getIntervalInMs(span.duration) : 0;
+    return new Date(getUnixEpochTimeFromInterval(startYmd, span.start_offset) + duration);
+  }
 </script>
 
 <ContextMenu hideAfterClick on:hide bind:this={contextMenuComponent}>
   {#if activityDirective}
-    <ContextMenuItem on:click={() => dispatch('deleteActivityDirective', activityDirective.id)}>
-      Delete Directive
-    </ContextMenuItem>
     {#if activityDirectiveSpans && activityDirectiveSpans.length}
       <ContextSubMenuItem text="Jump to Simulated Activities" parentMenu={contextMenuComponent}>
         {#each activityDirectiveSpans as activityDirectiveSpan}
@@ -78,6 +107,7 @@
           </ContextMenuItem>
         {/each}
       </ContextSubMenuItem>
+      <ContextMenuSeparator />
     {/if}
 
     {#if activityDirective.anchor_id !== null}
@@ -87,31 +117,60 @@
     {/if}
     <ContextMenuItem
       on:click={() => {
-        addVerticalGuide(new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset)));
+        addVerticalGuide(activityDirectiveStartDate);
       }}
     >
       Place Guide at Directive Start
     </ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem on:click={() => updateSimulationStartTime(activityDirectiveStartDate)}>
+      Set Simulation Start at Directive Start
+    </ContextMenuItem>
+    <ContextMenuItem on:click={() => updateSimulationEndTime(activityDirectiveStartDate)}>
+      Set Simulation End at Directive Start
+    </ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem on:click={() => dispatch('deleteActivityDirective', activityDirective.id)}>
+      Delete Directive
+    </ContextMenuItem>
   {:else if span}
     <ContextMenuItem on:click={jumpToActivityDirective}>Jump to Activity Directive</ContextMenuItem>
-    <ContextMenuItem
-      on:click={() => {
-        addVerticalGuide(new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset)));
-      }}
-    >
-      Place Guide at Simulated Activity Start
-    </ContextMenuItem>
-    <ContextMenuItem
-      on:click={() => {
-        const duration = getIntervalInMs(span.duration);
-        addVerticalGuide(new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, span.start_offset) + duration));
-      }}
-    >
-      Place Guide at Simulated Activity End
-    </ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextSubMenuItem text="Place Guide" parentMenu={contextMenuComponent}>
+      <ContextMenuItem on:click={() => addVerticalGuide(getSpanDate(span))}>
+        At Simulated Activity Start
+      </ContextMenuItem>
+      <ContextMenuItem on:click={() => addVerticalGuide(getSpanDate(span, true))}>
+        At Simulated Activity End
+      </ContextMenuItem>
+    </ContextSubMenuItem>
+    <ContextMenuSeparator />
+    <ContextSubMenuItem text="Set Simulation Start" parentMenu={contextMenuComponent}>
+      <ContextMenuItem on:click={() => updateSimulationStartTime(getSpanDate(span))}>
+        At Simulated Activity Start
+      </ContextMenuItem>
+      <ContextMenuItem on:click={() => updateSimulationStartTime(getSpanDate(span, true))}>
+        At Simulated Activity End
+      </ContextMenuItem>
+    </ContextSubMenuItem>
+    <ContextSubMenuItem text="Set Simulation End" parentMenu={contextMenuComponent}>
+      <ContextMenuItem on:click={() => updateSimulationEndTime(getSpanDate(span))}>
+        At Simulated Activity Start
+      </ContextMenuItem>
+      <ContextMenuItem on:click={() => updateSimulationEndTime(getSpanDate(span, true))}>
+        At Simulated Activity End
+      </ContextMenuItem>
+    </ContextSubMenuItem>
   {:else}
     <ContextMenuItem on:click={() => addVerticalGuide(xScaleView.invert(contextMenu.e.offsetX))}>
       Place Guide
+    </ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem on:click={() => updateSimulationStartTime(xScaleView.invert(contextMenu.e.offsetX))}>
+      Set Simulation Start
+    </ContextMenuItem>
+    <ContextMenuItem on:click={() => updateSimulationEndTime(xScaleView.invert(contextMenu.e.offsetX))}>
+      Set Simulation End
     </ContextMenuItem>
   {/if}
 </ContextMenu>

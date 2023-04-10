@@ -12,6 +12,7 @@
   import {
     resourcesByViewLayerId,
     selectedSpanId,
+    simulation,
     simulationDataset,
     spans,
     spansMap,
@@ -100,6 +101,7 @@
       resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
+      simulation={$simulation}
       simulationDataset={$simulationDataset}
       spanUtilityMaps={$spanUtilityMaps}
       spansMap={$spansMap}

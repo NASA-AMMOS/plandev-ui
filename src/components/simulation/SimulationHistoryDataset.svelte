@@ -147,11 +147,11 @@
   .simulation-range-label.start:after {
     background: linear-gradient(90deg, #717171 54.17%, rgba(188, 188, 188, 0) 104.17%);
     content: ' ';
-    height: 13px;
+    height: 16px;
     left: 8px;
     opacity: 0.3;
     position: absolute;
-    top: 1.5px;
+    top: 0;
     width: 12px;
     z-index: -1;
   }
@@ -172,11 +172,11 @@
   .simulation-range-label.end:after {
     background: linear-gradient(270deg, #717171 45.83%, rgba(188, 188, 188, 0) 95.83%);
     content: ' ';
-    height: 12px;
+    height: 16px;
     opacity: 0.3;
     position: absolute;
     right: 8px;
-    top: 1.5px;
+    top: 0px;
     width: 12px;
     z-index: -1;
   }

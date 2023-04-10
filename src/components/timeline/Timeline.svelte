@@ -5,7 +5,15 @@
   import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Resource, SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type {
+    Resource,
+    Simulation,
+    SimulationDataset,
+    Span,
+    SpanId,
+    SpansMap,
+    SpanUtilityMaps,
+  } from '../../types/simulation';
   import type { MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
@@ -23,6 +31,7 @@
   import TimelineContextMenu from './TimelineContextMenu.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
   import TimelineHistogram from './TimelineHistogram.svelte';
+  import TimelineSimulationRange from './TimelineSimulationRange.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
@@ -36,6 +45,7 @@
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let simulation: Simulation | null = null;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -231,6 +241,13 @@
       on:viewTimeRangeChanged
     />
   </div>
+  <TimelineSimulationRange
+    {cursorHeaderHeight}
+    {drawWidth}
+    marginLeft={timeline?.marginLeft}
+    {simulationDataset}
+    {xScaleView}
+  />
   <TimelineCursors
     {cursorHeaderHeight}
     {cursorEnabled}
@@ -305,6 +322,8 @@
     on:jumpToSpan
     on:hide={() => (contextMenu = null)}
     on:updateVerticalGuides
+    {simulation}
+    {simulationDataset}
     {spansMap}
     {spanUtilityMaps}
     {planStartTimeYmd}

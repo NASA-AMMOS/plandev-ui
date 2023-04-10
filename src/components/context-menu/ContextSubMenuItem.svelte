@@ -52,6 +52,7 @@
     align-items: center;
     display: flex;
     gap: 4px;
+    justify-content: space-between;
   }
   .context-sub-menu-item :global(svg) {
     height: 12px;
