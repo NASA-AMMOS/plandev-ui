@@ -111,6 +111,7 @@
   $: rowHeight = activityHeight + activityRowPadding;
   $: spanLabelLeftMargin = 6;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
+  $: planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
 
   $: if (
     activityDirectives &&
@@ -176,9 +177,8 @@
   function dragActivityDirective(offsetX: number): void {
     if (!timelineLocked && dragActivityDirectiveActive) {
       const x = offsetX - dragOffsetX;
-      dragCurrentX = xScaleView.invert(x).getTime();
+      dragCurrentX = Math.max(xScaleView.invert(x).getTime(), planStartTimeMs);
       if (dragCurrentX !== dragPreviousX) {
-        const planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
         dragActivityDirectiveActive.start_offset = start_offset; // Update activity in memory.
         dragPreviousX = dragCurrentX;
@@ -190,7 +190,6 @@
   function dragActivityEnd(): void {
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
       if (dragStartX !== dragCurrentX) {
-        const planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
         effects.updateActivityDirective(planId, dragActivityDirectiveActive.id, { start_offset });
       }
