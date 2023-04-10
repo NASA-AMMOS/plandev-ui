@@ -77,7 +77,7 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   cd aerie
   docker-compose down
-  docker rmi aerie_merlin aerie_scheduler aerie-aerie_merlin_worker_1 aerie-aerie_merlin_worker_2 aerie-aerie_scheduler_worker_1 aerie-aerie_scheduler_worker_2 aerie_sequencing
+  docker rmi aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing
   docker volume prune --force
   ./gradlew clean
   ```
