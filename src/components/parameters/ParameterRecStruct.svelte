@@ -36,7 +36,7 @@
         name: key,
         order: index,
         schema: schema.items[key],
-        value: value ? value[key] || null : null,
+        value: value !== null ? value[key] : null,
         valueSource: formParameter.valueSource,
       };
 
