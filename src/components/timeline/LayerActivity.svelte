@@ -177,7 +177,8 @@
   function dragActivityDirective(offsetX: number): void {
     if (!timelineLocked && dragActivityDirectiveActive) {
       const x = offsetX - dragOffsetX;
-      dragCurrentX = Math.max(xScaleView.invert(x).getTime(), planStartTimeMs);
+      const xMs = xScaleView.invert(x).getTime();
+      dragCurrentX = typeof dragActivityDirectiveActive.anchor_id === 'number' ? xMs : Math.max(xMs, planStartTimeMs);
       if (dragCurrentX !== dragPreviousX) {
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
         dragActivityDirectiveActive.start_offset = start_offset; // Update activity in memory.
@@ -305,8 +306,14 @@
   }
 
   function getXForDirective(activityDirective: ActivityDirective) {
-    const start_offset = activityDirective.start_offset;
-    return getUnixEpochTimeFromInterval(planStartTimeYmd, start_offset);
+    return getActivityDirectiveStartTimeMs(
+      activityDirective.id,
+      planStartTimeYmd,
+      planEndTimeDoy,
+      activityDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+    );
   }
 
   function getSpanForActivityDirective(activityDirective: ActivityDirective) {
@@ -455,14 +462,7 @@
 
       const sortedActivityDirectives: ActivityDirective[] = activityDirectives.sort(sortActivityDirectivesOrSpans);
       for (const activityDirective of sortedActivityDirectives) {
-        const activityDirectiveX = getActivityDirectiveStartTimeMs(
-          activityDirective.id,
-          planStartTimeYmd,
-          planEndTimeDoy,
-          activityDirectivesMap,
-          spansMap,
-          spanUtilityMaps,
-        );
+        const activityDirectiveX = getXForDirective(activityDirective);
 
         if (activityDirectiveX >= viewTimeRange.start && activityDirectiveX <= viewTimeRange.end) {
           const {

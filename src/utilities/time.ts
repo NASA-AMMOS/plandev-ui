@@ -233,9 +233,9 @@ export function getActivityDirectiveStartTimeMs(
       const anchoredSpan = spansMap[anchoredSpanId];
 
       const anchoredStartTimeMs = getUnixEpochTimeFromInterval(
-        `${new Date(
+        new Date(
           getUnixEpochTimeFromInterval(
-            `${new Date(
+            new Date(
               getActivityDirectiveStartTimeMs(
                 anchor_id,
                 planStartTimeYmd,
@@ -246,10 +246,10 @@ export function getActivityDirectiveStartTimeMs(
                 cachedStartTimes,
                 { ...traversalMap, [anchor_id]: true },
               ),
-            )}`,
+            ).toISOString(),
             anchored_to_start ? '0' : anchoredSpan?.duration ?? '0',
           ),
-        )}`,
+        ).toISOString(),
         activityDirective.start_offset,
       );
 
@@ -373,18 +373,22 @@ export function getIntervalFromDoyRange(startTime: string, endTime: string): str
 export function getIntervalUnixEpochTime(startTimeMs: number, endTimeMs: number): string {
   const differenceMs = endTimeMs - startTimeMs;
 
-  const seconds = Math.floor(differenceMs / 1000);
+  const isNegative = differenceMs < 0;
+  const absoluteDifferenceMs = Math.abs(differenceMs);
+
+  const seconds = Math.floor(absoluteDifferenceMs / 1000);
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = seconds % 60;
-  const remainingMilliseconds = differenceMs % 1000;
+  const remainingMilliseconds = absoluteDifferenceMs % 1000;
 
   const paddedHours = hours.toString().padStart(2, '0');
   const paddedMinutes = minutes.toString().padStart(2, '0');
   const paddedSeconds = remainingSeconds.toString().padStart(2, '0');
   const paddedMilliseconds = remainingMilliseconds.toString().padStart(3, '0');
 
-  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}.${paddedMilliseconds}`;
+  const sign = isNegative ? '-' : '';
+  return `${sign}${paddedHours}:${paddedMinutes}:${paddedSeconds}.${paddedMilliseconds}`;
 }
 
 /**
