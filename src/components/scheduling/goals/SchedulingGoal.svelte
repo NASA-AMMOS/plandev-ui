@@ -20,8 +20,10 @@
   export let goal: SchedulingGoal;
   export let priority: number;
   export let specificationId: number;
+  export let simulateAfter: boolean = true;
 
   $: upButtonClass = priority <= 0 ? 'hidden' : '';
+  $: simulateGoal = simulateAfter; // Copied to local var to reflect changed values immediately in the UI
 
   let contextMenu: ContextMenu;
   let expanded = false;
@@ -121,6 +123,18 @@
   </ContextMenuItem>
   <ContextMenuHeader>Modify</ContextMenuHeader>
   <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id)}>Delete Goal</ContextMenuItem>
+  <ContextMenuItem>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div
+      class="scheduling-goal-simulate-toggle"
+      on:click|stopPropagation={() => {
+        simulateGoal = !simulateGoal;
+        effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal });
+      }}
+    >
+      <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
+    </div>
+  </ContextMenuItem>
 </ContextMenu>
 
 <style>
@@ -147,6 +161,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .scheduling-goal-simulate-toggle {
+    align-items: center;
+    display: flex;
+  }
+
+  .scheduling-goal-simulate-toggle input {
+    margin-left: 0;
   }
 
   .left {

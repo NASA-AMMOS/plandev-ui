@@ -73,6 +73,7 @@
           enabled={specGoal.enabled}
           goal={specGoal.goal}
           priority={specGoal.priority}
+          simulateAfter={specGoal.simulate_after}
           specificationId={specGoal.specification_id}
         />
       {/each}

@@ -1330,6 +1330,7 @@ const gql = {
           revision
         }
         priority
+        simulate_after
         specification_id
       }
     }

@@ -73,6 +73,7 @@ export type SchedulingSpecGoal = {
   enabled: boolean;
   goal: SchedulingGoal;
   priority: number;
+  simulate_after: boolean;
   specification_id: number;
 };
 
