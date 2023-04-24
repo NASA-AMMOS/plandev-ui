@@ -1,6 +1,6 @@
-export type DropdownOption = string | number;
+export type DateDropdownOption = string | number;
 
 export type DropdownCustomOption = {
   label: string;
-  value: DropdownOption;
+  value: DateDropdownOption;
 };

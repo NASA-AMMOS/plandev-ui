@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
@@ -10,6 +10,7 @@
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
 
   let component: any;
@@ -34,6 +35,7 @@
   {labelColumnWidth}
   {level}
   {levelPadding}
+  {parameterType}
   {showName}
   on:change
   on:reset

@@ -4,7 +4,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
@@ -18,6 +18,7 @@
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
 
   const dispatch = createEventDispatcher();
@@ -73,7 +74,12 @@
       <ChevronDownIcon />
     {/if}
     <ParameterName {formParameter} />
-    <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} on:reset={onResetStruct} />
+    <ParameterBaseRightAdornments
+      hidden={hideRightAdornments}
+      {formParameter}
+      {parameterType}
+      on:reset={onResetStruct}
+    />
   </div>
 {:else}
   <div class="parameter-rec-struct p-0" />
@@ -91,6 +97,7 @@
             {labelColumnWidth}
             level={++level}
             {levelPadding}
+            {parameterType}
             on:change={onChange}
           />
         {:else}
@@ -101,6 +108,7 @@
             {labelColumnWidth}
             level={++level}
             {levelPadding}
+            {parameterType}
             on:change={onChange}
           />
         {/if}

@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import InputErrorBadge from './InputErrorBadge.svelte';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 
@@ -10,6 +10,7 @@
   export let hidden: boolean = false;
   export let hideValueSource: boolean = false;
   export let hideError: boolean = false;
+  export let parameterType: ParameterType = 'activity';
 
   let errors: string[] = [];
 
@@ -22,7 +23,7 @@
 
 <div class="parameter-base-right-adornment" {hidden}>
   {#if !hideValueSource}
-    <ValueSourceBadge source={formParameter.valueSource} on:reset />
+    <ValueSourceBadge source={formParameter.valueSource} {parameterType} on:reset />
   {/if}
   {#if errors.length > 0 && !hideError}
     <InputErrorBadge {errors} />

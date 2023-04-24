@@ -5,29 +5,25 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
-  import {
-    enableSimulation,
-    simulation,
-    simulationDatasetId,
-    simulationStatus,
-    simulationTemplates,
-  } from '../../stores/simulation';
+  import { enableSimulation, simulation, simulationDatasetId, simulationStatus } from '../../stores/simulation';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
-  import type { Simulation, SimulationDataset } from '../../types/simulation';
+  import type {
+    Simulation,
+    SimulationDataset,
+    SimulationTemplate,
+    SimulationTemplateInsertInput,
+  } from '../../types/simulation';
   import type { GqlSubscribable } from '../../types/subscribable';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
-  import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
-  import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
@@ -35,12 +31,14 @@
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SimulationHistoryDataset from './SimulationHistoryDataset.svelte';
+  import SimulationTemplateInput from './SimulationTemplateInput.svelte';
 
   export let gridSection: ViewGridSection;
 
   let endTimeDoy: string;
   let endTimeDoyField: FieldStore<string>;
   let formParameters: FormParameter[] = [];
+  let numOfUserChanges: number = 0;
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
@@ -56,6 +54,9 @@
       ? getDoyTime(new Date($simulation.simulation_end_time))
       : $plan.end_time_doy;
   $: endTimeDoyField = field<string>(endTimeDoy, [required, timestamp]);
+  $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
+    return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
+  }, 0);
 
   $: modelParametersMap = $plan?.model?.parameters?.parameters ?? {};
   $: if ($simulation) {
@@ -70,7 +71,13 @@
           ...defaultArguments,
           ...($simulation?.template?.arguments ?? {}),
         };
-        formParameters = getFormParameters(modelParametersMap, $simulation.arguments, [], {}, defaultArgumentsMap);
+        formParameters = getFormParameters(
+          modelParametersMap,
+          $simulation.arguments,
+          [],
+          $simulation?.template?.arguments,
+          defaultArgumentsMap,
+        );
       });
   }
 
@@ -95,13 +102,66 @@
     effects.updateSimulation(newSimulation, newFiles);
   }
 
-  async function onChangeSimulationTemplate(event: Event) {
-    const { value } = getTarget(event);
-    const id = value as number;
-    const template = { ...$simulation?.template, id };
-    const newSimulation: Simulation = { ...$simulation, template };
+  function onResetFormParameters(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    const { arguments: argumentsMap } = $simulation;
+    const newArguments = getArguments(argumentsMap, {
+      ...formParameter,
+      value: $simulation.template ? $simulation.template.arguments[formParameter.name] : null,
+    });
+    const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
+    const newSimulation: Simulation = {
+      ...$simulation,
+      arguments: newArguments,
+    };
 
-    effects.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation, newFiles);
+  }
+
+  async function applyTemplateToSimulation(simulationTemplate: SimulationTemplate | null, numOfUserChanges: number) {
+    if (simulationTemplate === null) {
+      effects.updateSimulation({
+        ...$simulation,
+        template: null,
+      });
+    } else {
+      effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges);
+    }
+  }
+
+  async function onApplySimulationTemplate(event: CustomEvent<SimulationTemplate | null>) {
+    const { detail: simulationTemplate } = event;
+    applyTemplateToSimulation(simulationTemplate, numOfUserChanges);
+  }
+
+  async function onDeleteSimulationTemplate(event: CustomEvent<number>) {
+    const { detail: id } = event;
+    await effects.deleteSimulationTemplate(id, $plan.model.name);
+  }
+
+  async function onSaveNewSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
+    const {
+      detail: { description: templateName },
+    } = event;
+    const newSimulationTemplate = await effects.createSimulationTemplate(
+      $simulation.arguments,
+      templateName,
+      $plan.model.id,
+    );
+
+    if (newSimulationTemplate !== null) {
+      await applyTemplateToSimulation(newSimulationTemplate, 0);
+    }
+  }
+
+  async function onSaveSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
+    const {
+      detail: { description: templateName },
+    } = event;
+    effects.updateSimulationTemplate($simulation.template.id, {
+      arguments: $simulation.arguments,
+      description: templateName,
+    });
   }
 
   function updateStartTime(doyString: string) {
@@ -158,30 +218,6 @@
       <details open>
         <summary>General</summary>
         <div class="details-body">
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Template Name', placement: 'top' }} for="simulation-templates">
-              Template Name
-            </label>
-            <select
-              class="st-select w-100"
-              data-type="number"
-              disabled={!$simulationTemplates.length}
-              name="simulation-templates"
-              value={$simulation?.template?.id || null}
-              on:change={onChangeSimulationTemplate}
-            >
-              {#if !$simulationTemplates.length}
-                <option value={null}>Empty</option>
-              {:else}
-                <option value={null} />
-                {#each $simulationTemplates as template}
-                  <option value={template.id}>
-                    {template.description}
-                  </option>
-                {/each}
-              {/if}
-            </select>
-          </Input>
           <DatePickerField
             field={startTimeDoyField}
             label="Start Time"
@@ -214,8 +250,23 @@
       <details open>
         <summary>Arguments</summary>
         <div class="details-body">
+          <div class="simulation-template">
+            <SimulationTemplateInput
+              hasChanges={numOfUserChanges > 0}
+              selectedSimulationTemplate={$simulation?.template}
+              on:applyTemplate={onApplySimulationTemplate}
+              on:deleteTemplate={onDeleteSimulationTemplate}
+              on:saveNewTemplate={onSaveNewSimulationTemplate}
+              on:saveTemplate={onSaveSimulationTemplate}
+            />
+          </div>
           {#if formParameters.length}
-            <Parameters {formParameters} on:change={onChangeFormParameters} />
+            <Parameters
+              {formParameters}
+              parameterType="simulation"
+              on:change={onChangeFormParameters}
+              on:reset={onResetFormParameters}
+            />
           {:else}
             <div class="p-1">No simulation arguments found</div>
           {/if}
@@ -252,5 +303,9 @@
   .simulation-history {
     gap: 8px;
     margin-left: 8px;
+  }
+
+  .simulation-template {
+    margin-left: -7px;
   }
 </style>

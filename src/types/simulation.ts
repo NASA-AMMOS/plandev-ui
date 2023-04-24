@@ -86,6 +86,14 @@ export type SimulationTemplate = {
   id: number;
 };
 
+export type SimulationTemplateInsertInput = {
+  arguments: ArgumentsMap;
+  description: string;
+  model_id: number;
+};
+
+export type SimulationTemplateSetInput = Partial<SimulationTemplateInsertInput>;
+
 export type SimulationDatasetReason = {
   errors: {
     [activityId: string]: BaseError;

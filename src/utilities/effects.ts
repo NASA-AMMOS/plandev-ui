@@ -84,6 +84,9 @@ import type {
   SimulateResponse,
   Simulation,
   SimulationInitialUpdateInput,
+  SimulationTemplate,
+  SimulationTemplateInsertInput,
+  SimulationTemplateSetInput,
   Span,
 } from '../types/simulation';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
@@ -138,6 +141,35 @@ const effects = {
       } catch (e) {
         catchError('Preset Unable To Be Applied To Activity', e);
         showFailureToast('Preset Application Failed');
+      }
+    }
+  },
+
+  async applyTemplateToSimulation(
+    template: SimulationTemplate,
+    simulation: Simulation,
+    numOfUserChanges: number,
+  ): Promise<void> {
+    let confirm: boolean = true;
+    if (numOfUserChanges > 0) {
+      ({ confirm } = await showConfirmModal(
+        'Apply Simulation Template',
+        `There ${numOfUserChanges > 1 ? 'are' : 'is'} currently ${numOfUserChanges} manually edited parameter${
+          numOfUserChanges > 1 ? 's' : ''
+        }. This will remove existing edits and apply template parameters.`,
+        'Apply Template to Simulation',
+      ));
+    }
+
+    if (confirm) {
+      const newSimulation: Simulation = { ...simulation, arguments: template.arguments, template };
+
+      try {
+        await effects.updateSimulation(newSimulation);
+        showSuccessToast('Template Successfully Applied to Simulation');
+      } catch (e) {
+        catchError('Template Unable To Be Applied To Simulation', e);
+        showFailureToast('Template Application Failed');
       }
     }
   },
@@ -572,6 +604,33 @@ const effects = {
     }
   },
 
+  async createSimulationTemplate(
+    argumentsMap: ArgumentsMap,
+    name: string,
+    modelId: number,
+  ): Promise<SimulationTemplate | null> {
+    try {
+      const simulationTemplateInsertInput: SimulationTemplateInsertInput = {
+        arguments: argumentsMap,
+        description: name,
+        model_id: modelId,
+      };
+      const { insert_simulation_template_one: newTemplate } = await reqHasura<SimulationTemplate>(
+        gql.CREATE_SIMULATION_TEMPLATE,
+        {
+          simulationTemplateInsertInput,
+        },
+      );
+
+      showSuccessToast(`Simulation Template ${name} Created Successfully`);
+      return newTemplate;
+    } catch (e) {
+      catchError('Simulation Template Create Failed', e);
+      showFailureToast('Simulation Template Create Failed');
+      return null;
+    }
+  },
+
   async createUserSequence(sequence: UserSequenceInsertInput): Promise<number | null> {
     try {
       const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence });
@@ -936,6 +995,26 @@ const effects = {
     } catch (e) {
       catchError('Scheduling Goal Spec Delete Failed', e);
       showFailureToast('Scheduling Goal Delete Failed');
+      return false;
+    }
+  },
+
+  async deleteSimulationTemplate(id: number, modelName: string): Promise<boolean> {
+    try {
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `This will permanently delete the template for the mission model: ${modelName}`,
+        'Delete Permanently',
+      );
+
+      if (confirm) {
+        await reqHasura(gql.DELETE_SIMULATION_TEMPLATE, { id });
+        showSuccessToast('Simulation Template Deleted Successfully');
+        return true;
+      }
+    } catch (e) {
+      catchError('Simulation Template Delete Failed', e);
+      showFailureToast('Simulation Template Delete Failed');
       return false;
     }
   },
@@ -2071,6 +2150,34 @@ const effects = {
     } catch (e) {
       catchError('Simulation Update Failed', e);
       showFailureToast('Simulation Update Failed');
+    }
+  },
+
+  async updateSimulationTemplate(id: number, partialSimulationTemplate: SimulationTemplateSetInput): Promise<void> {
+    try {
+      const simulationTemplateSetInput: SimulationTemplateSetInput = {};
+
+      if (partialSimulationTemplate.arguments) {
+        simulationTemplateSetInput.arguments = partialSimulationTemplate.arguments;
+      }
+      if (partialSimulationTemplate.description) {
+        simulationTemplateSetInput.description = partialSimulationTemplate.description;
+      }
+      if (partialSimulationTemplate.model_id) {
+        simulationTemplateSetInput.model_id = partialSimulationTemplate.model_id;
+      }
+
+      const {
+        update_simulation_template_by_pk: { description: templateDescription },
+      } = await reqHasura<SimulationTemplate>(gql.UPDATE_SIMULATION_TEMPLATE, {
+        id,
+        simulationTemplateSetInput,
+      });
+
+      showSuccessToast(`Simulation Template ${templateDescription} Updated Successfully`);
+    } catch (e) {
+      catchError('Simulation Template Update Failed', e);
+      showFailureToast('Simulation Template Update Failed');
     }
   },
 

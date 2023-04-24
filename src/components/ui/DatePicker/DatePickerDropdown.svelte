@@ -1,17 +1,17 @@
 <script lang="ts">
-  import type { DropdownCustomOption, DropdownOption } from '../../../types/datepicker';
+  import type { DateDropdownOption, DropdownCustomOption } from '../../../types/datepicker';
   import { classNames } from '../../../utilities/generic';
 
   export { className as class };
   export let value: string | number;
-  export let options: (DropdownOption | DropdownCustomOption)[] = [];
+  export let options: (DateDropdownOption | DropdownCustomOption)[] = [];
 
   let className: string = '';
   let displayValue: string | number = value;
 
   $: displayValue = getDisplayValue(value, options);
 
-  function getDisplayValue(value: string | number, options: (DropdownOption | DropdownCustomOption)[]) {
+  function getDisplayValue(value: string | number, options: (DateDropdownOption | DropdownCustomOption)[]) {
     if ((options[0] as DropdownCustomOption).value !== undefined) {
       const option = options.find((option: DropdownCustomOption) => {
         return option.value === value;
@@ -23,7 +23,7 @@
     return value;
   }
 
-  function getOptionValue(option: DropdownOption | DropdownCustomOption) {
+  function getOptionValue(option: DateDropdownOption | DropdownCustomOption) {
     if ((option as DropdownCustomOption).value !== undefined) {
       return (option as DropdownCustomOption).value;
     }
@@ -31,7 +31,7 @@
     return option;
   }
 
-  function getOptionLabel(option: DropdownOption | DropdownCustomOption) {
+  function getOptionLabel(option: DateDropdownOption | DropdownCustomOption) {
     if ((option as DropdownCustomOption).label !== undefined) {
       return (option as DropdownCustomOption).label;
     }

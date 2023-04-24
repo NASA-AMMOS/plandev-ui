@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
   import ParameterBaseNumber from './ParameterBaseNumber.svelte';
@@ -15,6 +15,7 @@
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let parameterType: ParameterType = 'activity';
 </script>
 
 {#if formParameter.schema.type === 'boolean'}
@@ -25,6 +26,7 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />
@@ -36,6 +38,7 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />
@@ -47,11 +50,21 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />
 {:else if formParameter.schema.type === 'path'}
-  <ParameterBasePath {hideRightAdornments} {labelColumnWidth} {level} {levelPadding} {formParameter} on:change />
+  <ParameterBasePath
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    on:change
+    on:reset
+  />
 {:else if formParameter.schema.type === 'real'}
   <ParameterBaseNumber
     {disabled}
@@ -60,6 +73,7 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />
@@ -71,6 +85,7 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />
@@ -82,6 +97,7 @@
     {level}
     {levelPadding}
     {formParameter}
+    {parameterType}
     on:change
     on:reset
   />

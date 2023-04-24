@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import { compare } from '../../utilities/generic';
   import Highlight from '../ui/Highlight.svelte';
   import ParameterBase from './ParameterBase.svelte';
@@ -13,6 +13,7 @@
   export let hideRightAdornments: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let levelPadding: number = 20;
+  export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
 
   let clientWidth: number;
@@ -34,6 +35,7 @@
           {labelColumnWidth}
           {level}
           {levelPadding}
+          {parameterType}
           {showName}
           on:change
           on:reset
@@ -46,6 +48,7 @@
           {labelColumnWidth}
           {level}
           {levelPadding}
+          {parameterType}
           on:change
           on:reset
         />

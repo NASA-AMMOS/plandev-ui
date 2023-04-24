@@ -6,7 +6,7 @@
   import DashIcon from 'bootstrap-icons/icons/dash.svg?component';
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter } from '../../types/parameter';
+  import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaSeries } from '../../types/schema';
   import { getArgument } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
@@ -23,6 +23,7 @@
   export let labelColumnWidth: number = 200;
   export let level: number = 0;
   export let levelPadding: number = 20;
+  export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
 
   const dispatch = createEventDispatcher();
@@ -109,7 +110,12 @@
         >
           <PlusIcon />
         </button>
-        <ParameterBaseRightAdornments hidden={hideRightAdornments} {formParameter} on:reset={onResetSeries} />
+        <ParameterBaseRightAdornments
+          hidden={hideRightAdornments}
+          {formParameter}
+          {parameterType}
+          on:reset={onResetSeries}
+        />
       </CssGrid>
     </div>
   </div>
@@ -131,6 +137,7 @@
               {labelColumnWidth}
               level={++level}
               {levelPadding}
+              {parameterType}
               on:change={onChange}
             />
           {:else}
@@ -141,6 +148,7 @@
               {labelColumnWidth}
               level={++level}
               {levelPadding}
+              {parameterType}
               on:change={onChange}
             />
           {/if}

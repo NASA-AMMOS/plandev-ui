@@ -25,13 +25,17 @@ export function getArgument(
 ): { value: any; valueSource: ValueSource } {
   const type = schema.type;
 
-  if (value !== null && value !== undefined && presetValue === undefined) {
-    return { value, valueSource: 'user on model' };
-  } else if (value !== null && value !== undefined && presetValue !== undefined) {
-    if (isEqual(value, presetValue)) {
-      return { value, valueSource: 'preset' };
+  if (value !== null && value !== undefined) {
+    if (presetValue === undefined) {
+      return { value, valueSource: 'user on model' };
+    } else {
+      if (isEqual(value, presetValue)) {
+        return { value, valueSource: 'preset' };
+      }
+      return { value, valueSource: 'user on preset' };
     }
-    return { value, valueSource: 'user on preset' };
+  } else if ((value === null || value === undefined) && presetValue !== undefined) {
+    return { value: presetValue, valueSource: 'preset' };
   } else if (defaultValue !== undefined) {
     return { value: defaultValue, valueSource: 'mission' };
   } else if (type === 'series') {

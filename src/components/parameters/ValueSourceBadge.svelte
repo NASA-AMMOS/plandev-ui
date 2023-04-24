@@ -2,12 +2,13 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { ValueSource } from '../../types/parameter';
+  import type { ParameterType, ValueSource } from '../../types/parameter';
   import { classNames, isMacOs } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { tooltip } from '../../utilities/tooltip';
 
   export let source: ValueSource;
+  export let parameterType: ParameterType = 'activity';
 
   const dispatch = createEventDispatcher();
 
@@ -18,23 +19,26 @@
     'value-source-badge-dot--preset': source === 'preset',
     'value-source-badge-dot--user': source === 'user on model' || source === 'user on preset',
   });
-  $: switch (source) {
-    case 'user on model':
-    case 'user on preset':
-      tooltipContent = `<div class="value-source-tooltip-modified">
+  $: {
+    const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
+    switch (source) {
+      case 'user on model':
+      case 'user on preset':
+        tooltipContent = `<div class="value-source-tooltip-modified">
                           <span>Modified</span>
                           <div class="value-source-tooltip-modified-reset">
-                            <span>Reset to ${source === 'user on preset' ? 'Preset' : 'Model'}</span>
+                            <span>Reset to ${source === 'user on preset' ? presetText : 'Model'}</span>
                             <div>${isMacOs() ? '⌘' : 'CTRL'} Click</div>
                           </div>
                         </div>`;
-      break;
-    case 'preset':
-      tooltipContent = 'Activity Preset';
-      break;
-    case 'mission':
-    default:
-      tooltipContent = 'Mission Model';
+        break;
+      case 'preset':
+        tooltipContent = `${presetText} Value`;
+        break;
+      case 'mission':
+      default:
+        tooltipContent = 'Mission Model';
+    }
   }
 
   function onClick(event: MouseEvent) {

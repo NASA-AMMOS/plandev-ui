@@ -193,6 +193,16 @@ const gql = {
     }
   `,
 
+  CREATE_SIMULATION_TEMPLATE: `#graphql
+    mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
+      insert_simulation_template_one(object: $simulationTemplateInsertInput) {
+        arguments
+        description
+        id
+      }
+    }
+  `,
+
   CREATE_USER_SEQUENCE: `#graphql
     mutation CreateUserSequence($sequence: user_sequence_insert_input!) {
       createUserSequence: insert_user_sequence_one(object: $sequence) {
@@ -375,6 +385,14 @@ const gql = {
       deleteSchedulingSpecGoal: delete_scheduling_specification_goals_by_pk(goal_id: $goal_id, specification_id: $specification_id) {
         goal_id,
         specification_id,
+      }
+    }
+  `,
+
+  DELETE_SIMULATION_TEMPLATE: `#graphql
+    mutation DeleteSimulationTemplate($id: Int!) {
+      deleteSimulationTemplate: delete_simulation_template_by_pk(id: $id) {
+        id
       }
     }
   `,
@@ -1579,6 +1597,16 @@ const gql = {
         pk_columns: { id: $id }, _set: $simulation
       ) {
         id
+      }
+    }
+  `,
+
+  UPDATE_SIMULATION_TEMPLATE: `#graphql
+    mutation UpdateSimulationTemplate($id: Int!, $simulationTemplateSetInput: simulation_template_set_input!) {
+      update_simulation_template_by_pk(pk_columns: {id: $id}, _set: $simulationTemplateSetInput) {
+        id
+        description
+        arguments
       }
     }
   `,
