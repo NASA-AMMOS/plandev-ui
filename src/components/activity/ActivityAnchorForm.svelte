@@ -1,14 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval, convertUsToDurationString, getIntervalInMs } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Highlight from '../ui/Highlight.svelte';
+  import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
   export let activityDirective: ActivityDirective;
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -20,21 +21,23 @@
 
   const dispatch = createEventDispatcher();
   const anchorTextDelimiter = ' - ';
-  const defaultAnchorString = 'To Plan';
 
-  let anchorableActivityDirectives: string[] = [];
+  let anchorableActivityDirectives: ActivityDirective[] = [];
   let anchoredActivity: ActivityDirective | null = null;
-  let anchorInputString: string = '';
-  let anchoredActivityError: string | null = null;
   let previousActivityDirectiveId: ActivityDirectiveId;
   let isRelativeOffset: boolean = false;
   let startOffsetString: string = '';
   let startOffsetError: string | null = null;
+  let searchableOptions: DropdownOptions = [];
 
   $: anchoredActivity = anchorId !== null ? activityDirectivesMap[anchorId] : null;
-  $: anchorableActivityDirectives = Object.values(activityDirectivesMap)
-    .filter(directive => directive.id !== activityDirective.id)
-    .map(formatActivityDirectiveAnchorText);
+  $: anchorableActivityDirectives = Object.values(activityDirectivesMap).filter(
+    directive => directive.id !== activityDirective.id,
+  );
+  $: searchableOptions = anchorableActivityDirectives.map((anchorableActivity: ActivityDirective) => ({
+    display: formatActivityDirectiveAnchorText(anchorableActivity),
+    value: anchorableActivity.id,
+  }));
   $: startOffsetError = validateStartOffset(startOffsetString, activityDirective);
 
   $: if (startOffset) {
@@ -50,17 +53,10 @@
       activityDirective.anchor_id !== null ||
       (activityDirective.anchor_id === null && !activityDirective.anchored_to_start) ||
       !!startOffsetError;
-
-    anchorInputString = anchoredActivity ? formatActivityDirectiveAnchorText(anchoredActivity) : defaultAnchorString;
-    validateAnchorInput(anchorInputString);
   }
 
   function formatActivityDirectiveAnchorText(activityDirective: ActivityDirective) {
     return `${activityDirective.id}${anchorTextDelimiter}${activityDirective.name}`;
-  }
-
-  function getActivityDirectiveIdFromAnchorText(anchorText: string): number {
-    return parseInt(anchorText.split(anchorTextDelimiter)[0], 10);
   }
 
   function validateStartOffset(offsetString: string, activityDirective: ActivityDirective) {
@@ -77,11 +73,9 @@
     return validationError;
   }
 
-  function getAnchorActivityDirective(inputString: string): ActivityDirective | null {
-    const activityDirectiveId = getActivityDirectiveIdFromAnchorText(inputString);
-
-    if (!Number.isNaN(activityDirectiveId) && !/to plan/i.test(anchorInputString)) {
-      return activityDirectivesMap[activityDirectiveId];
+  function getAnchorActivityDirective(inputString: SelectedDropdownOptionValue): ActivityDirective | null {
+    if (!Number.isNaN(inputString) && inputString) {
+      return activityDirectivesMap[inputString];
     }
 
     return null;
@@ -91,10 +85,8 @@
     anchoredActivity = activityDirective;
     if (activityDirective === null) {
       dispatch('updateAnchor', null);
-      anchorInputString = defaultAnchorString;
     } else {
       dispatch('updateAnchor', anchoredActivity.id);
-      anchorInputString = formatActivityDirectiveAnchorText(anchoredActivity);
     }
   }
 
@@ -107,11 +99,10 @@
     dispatch('updateStartOffset', offset);
   }
 
-  function onUpdateAnchor() {
-    if (validateAnchorInput(anchorInputString)) {
-      const activityToAnchorTo = getAnchorActivityDirective(anchorInputString);
-      updateAnchor(activityToAnchorTo);
-    }
+  function onSelectAnchor(event: CustomEvent<SelectedDropdownOptionValue>) {
+    const { detail: anchorInputString } = event;
+    const activityToAnchorTo = getAnchorActivityDirective(anchorInputString);
+    updateAnchor(activityToAnchorTo);
   }
 
   function onAnchorToStart() {
@@ -139,31 +130,6 @@
       startOffsetError = error.message;
     }
   }
-
-  function validateAnchorInput(inputString: string): boolean {
-    anchoredActivityError = null;
-
-    try {
-      const activityDirectiveId = getActivityDirectiveIdFromAnchorText(inputString);
-
-      if (!Number.isNaN(activityDirectiveId) && !/to plan/i.test(anchorInputString)) {
-        const activityToAnchorTo = activityDirectivesMap[activityDirectiveId];
-
-        if (!activityToAnchorTo) {
-          throw Error('Activity corresponding to chosen anchor was not found');
-        }
-
-        if (activityToAnchorTo.id === activityDirective.id) {
-          throw Error('Current selected activity anchor cannot be itself');
-        }
-      }
-
-      return true;
-    } catch (e) {
-      anchoredActivityError = e.message;
-      return false;
-    }
-  }
 </script>
 
 <fieldset class="anchor-container">
@@ -172,31 +138,17 @@
     <div class="anchor-form">
       <Highlight highlight={highlightKeysMap.anchor_id}>
         <Input layout="inline">
-          <label use:tooltip={{ content: 'Activity to anchor to', placement: 'top' }} for="anchor_id">Relative to</label
-          >
-          <Input>
-            <div class="search-icon" slot="left">
-              <!-- this conditional is required to trigger the `Input` component to recalculate the internal layout -->
-              {#if isRelativeOffset}<SearchIcon />{/if}
-            </div>
-            <input
-              autocomplete="off"
-              class="st-input w-100"
-              class:error={!!anchoredActivityError}
-              {disabled}
-              list="anchors"
-              name="anchor_id"
-              bind:value={anchorInputString}
-              on:change={onUpdateAnchor}
-              use:tooltip={{ content: anchoredActivityError, placement: 'top' }}
-            />
-            <datalist id="anchors">
-              <option value="To Plan" />
-              {#each anchorableActivityDirectives as anchorableActivity}
-                <option value={anchorableActivity} />
-              {/each}
-            </datalist>
-          </Input>
+          <label use:tooltip={{ content: 'Activity to anchor to', placement: 'top' }} for="anchor_id">
+            Relative to
+          </label>
+          <SearchableDropdown
+            options={searchableOptions}
+            placeholder="To Plan"
+            searchPlaceholder="Search Directives"
+            settingsIconTooltip="Set Anchor"
+            selectedOptionValue={anchorId}
+            on:selectOption={onSelectAnchor}
+          />
         </Input>
       </Highlight>
       <Highlight highlight={highlightKeysMap.anchored_to_start}>
@@ -286,11 +238,5 @@
 
   .anchor-boundaries .anchor-boundary.disabled {
     cursor: not-allowed;
-  }
-
-  .search-icon {
-    align-items: center;
-    color: var(--st-gray-50);
-    display: flex;
   }
 </style>

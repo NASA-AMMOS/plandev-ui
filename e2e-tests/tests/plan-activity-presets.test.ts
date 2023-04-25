@@ -51,7 +51,9 @@ test.beforeAll(async ({ browser }) => {
   await plan.panelActivityForm.getByRole('button', { name: 'Enter a unique name for the new preset' }).click();
   await plan.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'detached' });
 
-  await page.waitForFunction(() => document.querySelector('.selected-display-value')?.innerHTML === 'Preset 2');
+  await page.waitForFunction(
+    () => document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === 'Preset 2',
+  );
 
   await plan.selectActivityPresetByName('None');
 
@@ -92,7 +94,9 @@ test.describe.serial('Plan Activity Presets', () => {
     await page.locator('.modal').waitFor({ state: 'attached' });
     await page.locator('.modal').getByRole('button', { name: 'Delete' }).click();
 
-    await page.waitForFunction(() => document.querySelector('.selected-display-value')?.innerHTML === 'None');
+    await page.waitForFunction(
+      () => document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === 'None',
+    );
 
     expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
   });

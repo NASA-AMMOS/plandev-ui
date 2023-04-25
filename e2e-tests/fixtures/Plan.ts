@@ -107,11 +107,14 @@ export class Plan {
   }
 
   async deleteAllActivities() {
-    await this.page.getByRole('gridcell').first().click({ button: 'right' });
+    await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
     await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
-    await this.page.getByRole('gridcell').first().click({ button: 'right' });
+    await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
     await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
-    await this.page.getByRole('button', { name: 'Confirm' }).click();
+
+    const applyPresetButton = this.page.getByRole('button', { name: 'Confirm' });
+    await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
+    await applyPresetButton.click();
   }
 
   async fillActivityPresetName(presetName: string) {
@@ -170,6 +173,21 @@ export class Plan {
     await this.page.waitForSelector(this.schedulingStatusSelector('Incomplete'), { state: 'visible', strict: true });
     await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'attached', strict: true });
     await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'visible', strict: true });
+  }
+
+  async selectActivityAnchorByIndex(index: number) {
+    await this.panelActivityForm.getByRole('button', { name: 'Set Anchor' }).click();
+
+    await this.panelActivityForm.getByRole('menuitem').nth(index).waitFor({ state: 'attached' });
+    const anchorMenuName = await this.panelActivityForm.getByRole('menuitem').nth(index)?.innerText();
+    await this.panelActivityForm.getByRole('menuitem').nth(index).click();
+    await this.panelActivityForm.getByRole('menuitem').nth(index).waitFor({ state: 'detached' });
+
+    await this.page.waitForFunction(
+      anchorMenuName => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === anchorMenuName,
+      anchorMenuName,
+    );
+    expect(await this.panelActivityForm.getByRole('textbox', { name: anchorMenuName })).toBeVisible();
   }
 
   async selectActivityPresetByName(presetName: string) {

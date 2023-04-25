@@ -33,6 +33,16 @@ test.beforeAll(async ({ browser }) => {
   await plan.goto();
 });
 
+test.beforeEach(async () => {
+  await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
+  await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
+  await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-ThrowBanana' }).click();
+  await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'PickBanana' }).first().click();
+  await plan.panelActivityForm.locator('summary').filter({ hasText: 'Anchor' }).click();
+
+  await plan.selectActivityAnchorByIndex(1);
+});
+
 test.afterEach(async () => {
   await plan.deleteAllActivities();
 });
@@ -48,52 +58,34 @@ test.afterAll(async () => {
 
 test.describe.serial('Plan Activities', () => {
   test('Deleting an activity directive with another directive anchored to it should and selecting re-anchor to plan should re-anchor to plan', async () => {
-    await page.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
-    await page.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
-    await page.getByRole('button', { name: 'CreateActivity-ThrowBanana' }).click();
-    await page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
-    await page.locator('summary').filter({ hasText: 'Anchor' }).click();
-    const firstOptionValue = await page.evaluate(
-      () => (document.getElementById('anchors') as HTMLDataListElement).options[1].value,
-    );
-    await page.getByRole('combobox', { name: 'null' }).fill(firstOptionValue);
-    await page.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click();
-    await page.getByRole('button', { name: 'Delete Activity Directive' }).click();
+    await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click();
+    await plan.panelActivityDirectivesTable.getByRole('button', { name: 'Delete Activity Directive' }).click();
     await page.locator('.modal-content select').nth(1).selectOption('anchor-plan');
     await page.getByRole('button', { name: 'Confirm' }).click();
-    await page.getByRole('gridcell', { name: 'PickBanana' }).nth(1).click();
-    await page.locator('summary').filter({ hasText: 'Anchor' }).click();
-    const anchorValue = await page.evaluate(
-      () => (document.querySelector('input[list][name="anchor_id"]') as HTMLInputElement).value,
+    await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'PickBanana' }).nth(1).click();
+    await plan.panelActivityForm.locator('summary').filter({ hasText: 'Anchor' }).click();
+    await page.waitForFunction(
+      () => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === 'To Plan',
     );
-    expect(anchorValue).toEqual('To Plan');
+
+    await plan.panelActivityForm.locator('summary').filter({ hasText: 'Anchor' }).click();
+    expect(await plan.panelActivityForm.getByRole('textbox', { name: 'To Plan' })).toBeVisible();
   });
 
   test('Deleting multiple activity directives but only 1 has a remaining anchored dependent should prompt for just the one with a remaining dependent', async () => {
-    await page.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
-    await page.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
-    await page.getByRole('button', { name: 'CreateActivity-ThrowBanana' }).click();
-    await page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
+    await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'ThrowBanana' }).nth(1).click();
     await page.locator('summary').filter({ hasText: 'Anchor' }).click();
-    const firstOptionValue = await page.evaluate(
-      () => (document.getElementById('anchors') as HTMLDataListElement).options[1].value,
-    );
-    await page.getByRole('combobox', { name: 'null' }).fill(firstOptionValue);
-    await page.getByRole('gridcell', { name: 'ThrowBanana' }).nth(1).click();
-    await page.locator('summary').filter({ hasText: 'Anchor' }).click();
-    const secondOptionValue = await page.evaluate(
-      () => (document.getElementById('anchors') as HTMLDataListElement).options[2].value,
-    );
-    await page.getByRole('combobox', { name: 'null' }).fill(secondOptionValue);
-    await page.getByRole('combobox', { name: 'null' }).click();
-    await page.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click();
-    await page
+
+    await plan.selectActivityAnchorByIndex(2);
+
+    await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click();
+    await plan.panelActivityDirectivesTable
       .getByRole('gridcell', { name: 'PickBanana' })
       .nth(1)
       .click({
         modifiers: ['Meta'],
       });
-    await page.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click({
+    await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click({
       button: 'right',
     });
     await page.getByText('Delete 2 Activity Directives').click();
