@@ -1,5 +1,5 @@
 {
-  "extends": ["stylelint-config-prettier", "stylelint-config-html/svelte"],
+  "extends": ["stylelint-config-html/svelte"],
   "plugins": ["stylelint-order"],
   "rules": {
     "declaration-empty-line-before": "never",

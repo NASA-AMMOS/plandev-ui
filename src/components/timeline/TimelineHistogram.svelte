@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { brushX, type D3BrushEvent } from 'd3-brush';
+  import { brushX, type BrushSelection, type D3BrushEvent } from 'd3-brush';
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
@@ -141,7 +141,7 @@
 
     brush = select(gTimeSelectorContainer).call(xBrush);
     const extent = [new Date(viewTimeRange.start), new Date(viewTimeRange.end)].map(xScaleMax);
-    brush.call(xBrush.move, extent);
+    brush.call(xBrush.move, extent as BrushSelection);
   }
 
   $: histogramHeight = (drawHeight / 5) * 2;

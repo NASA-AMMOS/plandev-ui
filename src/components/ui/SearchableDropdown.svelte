@@ -82,7 +82,7 @@
 </script>
 
 <div class="searchable-dropdown-container">
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
     class="selected-display st-input w-100"
     class:error
