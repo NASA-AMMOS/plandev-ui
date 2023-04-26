@@ -1,5 +1,5 @@
-name: "\U0001F41E Bug report"
-description: Report an issue with Aerie UI
+name: "\U0001F41E Bug Report"
+description: Report an issue with Aerie UI.
 labels: ['bug']
 body:
   - type: markdown

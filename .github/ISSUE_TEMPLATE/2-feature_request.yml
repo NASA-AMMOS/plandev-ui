@@ -1,5 +1,5 @@
 name: 'Feature Request'
-description: Request a new Aerie UI feature
+description: Request a new Aerie UI feature.
 labels: ['feature']
 body:
   - type: markdown
