@@ -164,7 +164,7 @@
     activityHistValues = [];
     const windowStartTime = xScaleMax.invert(windowMax).getTime();
     const windowEndTime = xScaleMax.invert(windowMin).getTime();
-    const binSize = (windowEndTime - windowStartTime) / numBins - 1;
+    const binSize = (windowEndTime - windowStartTime) / numBins;
 
     // Compute activity histogram for directives and spans
     activityHistValues = Array(numBins).fill(0);
@@ -178,7 +178,7 @@
       }
 
       // Figure out which start bin this is in
-      const startBin = Math.floor((activityX - windowStartTime) / binSize);
+      const startBin = Math.min(Math.floor((activityX - windowStartTime) / binSize), numBins - 1);
       activityHistValues[startBin]++;
     });
 
@@ -193,7 +193,7 @@
       }
 
       // Figure out which start bin this is in
-      const startBin = Math.floor((spanX - windowStartTime) / binSize);
+      const startBin = Math.min(Math.floor((spanX - windowStartTime) / binSize), numBins - 1);
       activityHistValues[startBin]++;
 
       // Figure out which other bins this value is in
