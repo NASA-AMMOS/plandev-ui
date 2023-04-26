@@ -45,7 +45,7 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please describe how to reproduce the problem you ran into. If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided within a reasonable time-frame, the issue will be closed.
+      description: Please describe how to reproduce the problem you ran into. If the description is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided within a reasonable time-frame, the issue will be closed.
       placeholder: Reproduction
     validations:
       required: true
