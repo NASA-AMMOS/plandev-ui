@@ -12,8 +12,8 @@ body:
       label: Checked for duplicates
       description: Have you checked for duplicate issue tickets?
       options:
-        - "Yes - I've already checked"
         - "No - I haven't checked"
+        - "Yes - I've already checked"
     validations:
       required: true
   - type: dropdown
@@ -22,8 +22,8 @@ body:
       label: Alternatives considered
       description: Have you considered alternative solutions to your feature request?
       options:
-        - "Yes - and alternatives don't suffice"
         - "No - I haven't considered"
+        - "Yes - and alternatives don't suffice"
     validations:
       required: true
   - type: textarea
