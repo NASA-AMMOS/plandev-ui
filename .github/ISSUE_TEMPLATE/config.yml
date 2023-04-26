@@ -5,7 +5,7 @@ contact_links:
     about: Issues and feature requests for the main Aerie repo (not UI related).
   - name: Aerie Docs
     url: https://github.com/NASA-AMMOS/aerie-docs/issues/new/choose
-    about: Issues and feature requests for the Aerie Documentation
+    about: Issues and feature requests for the Aerie Documentation.
   - name: Slack Chat
     url: https://jpl.slack.com/archives/C0163E42UBF
     about: Ask questions and discuss with other Aerie users in real time.
