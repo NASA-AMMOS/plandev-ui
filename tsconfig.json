@@ -6,7 +6,8 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "strict": false
   },
   "extends": "./.svelte-kit/tsconfig.json"
 }
