@@ -1,8 +1,8 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
+import { expect, test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
@@ -57,7 +57,7 @@ test.beforeAll(async ({ browser }) => {
 
   await plan.selectActivityPresetByName('None');
 
-  expect(await plan.panelActivityForm.getByRole('textbox', { name: 'None' })).toBeVisible();
+  expect(plan.panelActivityForm.getByRole('textbox', { name: 'None' })).toBeVisible();
 });
 
 test.afterAll(async () => {
@@ -72,14 +72,12 @@ test.afterAll(async () => {
 test.describe.serial('Plan Activity Presets', () => {
   test(`Setting a preset to a directive should update the parameter values`, async () => {
     await plan.selectActivityPresetByName('Preset 1');
-
-    expect(await page.getByRole('textbox', { name: 'Preset 1' })).toBeVisible();
+    expect(page.getByRole('textbox', { name: 'Preset 1' })).toBeVisible();
   });
 
   test(`Removing an activity preset from a directive should reflect that it is no longer present`, async () => {
     await plan.selectActivityPresetByName('None');
-
-    expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
   });
 
   test('Deleting an activity preset should remove it from the list of presets', async () => {
@@ -98,6 +96,6 @@ test.describe.serial('Plan Activity Presets', () => {
       () => document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === 'None',
     );
 
-    expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
   });
 });

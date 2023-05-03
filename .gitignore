@@ -7,4 +7,5 @@ node_modules
 /package
 /static/version.json
 /.svelte-kit
+test-results
 unit-test-results

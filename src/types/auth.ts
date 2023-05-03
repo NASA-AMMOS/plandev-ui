@@ -1,5 +1,7 @@
 import type { User } from './app';
 
+export type JsonWebToken = string;
+
 export type LoginRequestBody = {
   password: string;
   username: string;
@@ -30,9 +32,8 @@ export type LogoutResponse = {
 
 export type ReqLoginResponse = {
   message: string;
-  ssoToken: string | null;
   success: boolean;
-  username: string | null;
+  token: JsonWebToken | null;
 };
 
 export type ReqLogoutResponse = {

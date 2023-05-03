@@ -7,10 +7,10 @@ import effects from '../../../utilities/effects';
 export const POST: RequestHandler = async event => {
   const { locals } = event;
   const { user } = locals;
-  const { ssoToken = '' } = user;
+  const { token = '' } = user;
 
   try {
-    const logoutResponse: ReqLogoutResponse = await effects.logout(ssoToken);
+    const logoutResponse: ReqLogoutResponse = await effects.logout(token);
     const { message, success } = logoutResponse;
 
     if (success) {

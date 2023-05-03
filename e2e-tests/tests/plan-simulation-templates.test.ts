@@ -1,8 +1,8 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
+import { expect, test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 
@@ -59,7 +59,7 @@ test.beforeAll(async ({ browser }) => {
 
   await plan.selectSimulationTemplateByName('None');
 
-  expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
+  expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
 });
 
 test.afterAll(async () => {
@@ -75,13 +75,13 @@ test.describe.serial('Plan Simulation Templates', () => {
   test(`Setting a simulation template to a simulation should update the parameter values`, async () => {
     await plan.selectSimulationTemplateByName('Template 1');
 
-    expect(await plan.panelSimulation.getByRole('textbox', { name: 'Template 1' })).toBeVisible();
+    expect(plan.panelSimulation.getByRole('textbox', { name: 'Template 1' })).toBeVisible();
   });
 
   test(`Removing an simulation template from a simulation should reflect that it is no longer present`, async () => {
     await plan.selectSimulationTemplateByName('None');
 
-    expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
   });
 
   test('Deleting an simulation template should remove it from the list of templates', async () => {
@@ -98,6 +98,6 @@ test.describe.serial('Plan Simulation Templates', () => {
 
     await page.waitForFunction(() => document.querySelector('.selected-display-value')?.innerHTML === 'None');
 
-    expect(await page.getByRole('textbox', { name: 'None' })).toBeVisible();
+    expect(page.getByRole('textbox', { name: 'None' })).toBeVisible();
   });
 });

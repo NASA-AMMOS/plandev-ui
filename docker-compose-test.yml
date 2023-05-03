@@ -10,6 +10,7 @@ services:
     environment:
       AUTH_TYPE: none
       GQL_API_URL: http://localhost:8080/v1/graphql
+      HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
       LOG_FILE: console
       LOG_LEVEL: debug
       NODE_TLS_REJECT_UNAUTHORIZED: '0'
@@ -71,6 +72,7 @@ services:
     container_name: aerie_scheduler
     depends_on: ['aerie_merlin', 'postgres']
     environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
       SCHEDULER_DB: 'aerie_scheduler'
       SCHEDULER_DB_PASSWORD: '${AERIE_PASSWORD}'
@@ -91,6 +93,7 @@ services:
     container_name: aerie_scheduler_worker
     depends_on: ['postgres']
     environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
       MERLIN_LOCAL_STORE: /usr/src/app/merlin_file_store
       SCHEDULER_OUTPUT_MODE: UpdateInputPlanWithNewActivities
@@ -112,6 +115,7 @@ services:
     container_name: aerie_sequencing
     depends_on: ['postgres']
     environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       LOG_FILE: console
       LOG_LEVEL: debug
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
@@ -131,6 +135,7 @@ services:
     container_name: aerie_hasura
     depends_on: ['postgres']
     environment:
+      HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       AERIE_MERLIN_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_merlin'
       AERIE_SCHEDULER_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_scheduler'
       AERIE_SEQUENCING_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_sequencing'
@@ -138,6 +143,7 @@ services:
       HASURA_GRAPHQL_DEV_MODE: 'true'
       HASURA_GRAPHQL_ENABLE_CONSOLE: 'true'
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
       HASURA_GRAPHQL_LOG_LEVEL: info
       HASURA_GRAPHQL_METADATA_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_hasura'
       HASURA_GRAPHQL_METADATA_DIR: /hasura-metadata

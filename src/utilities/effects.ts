@@ -31,7 +31,7 @@ import type {
   ActivityTypeExpansionRules,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
+import type { JsonWebToken, ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
 import type { Constraint, ConstraintInsertInput, ConstraintViolationsMap } from '../types/constraint';
 import type {
   ExpansionRule,
@@ -1736,16 +1736,15 @@ const effects = {
       catchError(e);
       return {
         message: 'An unexpected error occurred',
-        ssoToken: null,
         success: false,
-        username: null,
+        token: null,
       };
     }
   },
 
-  async logout(ssoToken: string): Promise<ReqLogoutResponse> {
+  async logout(token: JsonWebToken): Promise<ReqLogoutResponse> {
     try {
-      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, ssoToken, false);
+      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, token, false);
       return data;
     } catch (e) {
       catchError(e);
@@ -1889,9 +1888,9 @@ const effects = {
     }
   },
 
-  async session(ssoToken: string): Promise<ReqSessionResponse> {
+  async session(token: JsonWebToken): Promise<ReqSessionResponse> {
     try {
-      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, ssoToken, false);
+      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, token, false);
       return data;
     } catch (e) {
       catchError(e);

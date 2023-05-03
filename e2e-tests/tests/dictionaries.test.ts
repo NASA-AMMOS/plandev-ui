@@ -1,5 +1,5 @@
-import { test, type BrowserContext, type Page } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
+import { test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 
 let context: BrowserContext;
 let dictionaries: Dictionaries;

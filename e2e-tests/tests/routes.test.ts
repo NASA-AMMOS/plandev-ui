@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/PlaywrightTest.js';
 
 test('/ redirects to /plans', async ({ baseURL, page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });

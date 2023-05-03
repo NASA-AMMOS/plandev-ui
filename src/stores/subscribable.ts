@@ -3,7 +3,9 @@ import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
 import { run_all } from 'svelte/internal';
-import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
+import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
+import { user as userStore } from '../stores/app';
+import type { User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 
 /**
@@ -98,7 +100,15 @@ export function gqlSubscribable<T>(
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
     if (browser && !client) {
-      const clientOptions: ClientOptions = { url: env.PUBLIC_HASURA_WEB_SOCKET_URL };
+      const user = get<User | null>(userStore);
+      const clientOptions: ClientOptions = {
+        connectionParams: {
+          headers: {
+            Authorization: `Bearer ${user?.token ?? ''}`,
+          },
+        },
+        url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
+      };
       client = createClient(clientOptions);
       subscribeToVariables(initialVariables);
     }

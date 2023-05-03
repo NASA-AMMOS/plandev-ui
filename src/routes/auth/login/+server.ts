@@ -11,10 +11,10 @@ export const POST: RequestHandler = async event => {
 
   try {
     const loginResponse: ReqLoginResponse = await effects.login(username, password);
-    const { message, ssoToken, success, username: id } = loginResponse;
+    const { message, success, token } = loginResponse;
 
     if (success) {
-      const user: User = { id, ssoToken };
+      const user: User = { id: username, token };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
 

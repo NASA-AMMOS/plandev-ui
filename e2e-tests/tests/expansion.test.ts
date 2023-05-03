@@ -1,8 +1,8 @@
-import { test, type BrowserContext, type Page } from '@playwright/test';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { ExpansionRules } from '../fixtures/ExpansionRules.js';
 import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Models } from '../fixtures/Models.js';
+import { test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 
 let context: BrowserContext;
 let dictionaries: Dictionaries;

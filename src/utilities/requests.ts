@@ -12,7 +12,7 @@ export async function reqGateway<T = any>(
   url: string,
   method: string,
   body: any | null,
-  ssoToken: string | null,
+  token: string | null,
   excludeContentType: boolean,
 ): Promise<T> {
   const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
@@ -20,8 +20,8 @@ export async function reqGateway<T = any>(
 
   const options: RequestInit = {
     headers: {
+      Authorization: `Bearer ${user?.token ?? ''}`,
       'Content-Type': 'application/json',
-      'x-auth-sso-token': user?.ssoToken ?? '',
     },
     method,
   };
@@ -30,8 +30,9 @@ export async function reqGateway<T = any>(
     options.body = body;
   }
 
-  if (ssoToken !== null) {
-    options.headers['x-auth-sso-token'] = ssoToken;
+  if (token !== null) {
+    // This overrides the auth header (e.g. if the user is not set yet during SSR).
+    options.headers['Authorization'] = `Bearer ${token ?? ''}`;
   }
 
   if (excludeContentType === true) {
@@ -61,8 +62,8 @@ export async function reqHasura<T = any>(
   const options: RequestInit = {
     body: JSON.stringify({ query, variables }),
     headers: {
+      Authorization: `Bearer ${user?.token ?? ''}`,
       'Content-Type': 'application/json',
-      'x-auth-sso-token': user?.ssoToken ?? '',
     },
     method: 'POST',
     signal,

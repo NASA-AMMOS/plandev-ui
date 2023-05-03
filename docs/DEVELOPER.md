@@ -59,6 +59,8 @@ Before you can run aerie-ui you must install and configure the following product
   ```sh
   AERIE_PASSWORD=aerie
   AERIE_USERNAME=aerie
+  HASURA_GRAPHQL_ADMIN_SECRET=aerie
+  HASURA_GRAPHQL_JWT_SECRET='{ "type": "HS256", "key": "oursupersecretsupersecurekey1234567890" }'
   POSTGRES_PASSWORD=postgres
   POSTGRES_USER=postgres
   ```

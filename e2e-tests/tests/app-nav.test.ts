@@ -1,5 +1,5 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { AppNav } from '../fixtures/AppNav.js';
+import { expect, test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 
 let appNav: AppNav;
 let context: BrowserContext;
@@ -100,8 +100,8 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLConsole.click()]);
-    await consolePage.waitForLoadState('networkidle');
-    expect(await consolePage.title()).toContain('API Explorer | Hasura');
+    await consolePage.waitForTimeout(3000);
+    expect(await consolePage.title()).toContain('Login | Hasura');
     await consolePage.close();
   });
 
@@ -117,16 +117,6 @@ test.describe.serial('App Nav', () => {
     await documentationPage.close();
   });
 
-  test(`Clicking on the app menu 'Logout' option should route to the plans page (auth disabled)`, async ({
-    baseURL,
-  }) => {
-    await appNav.appMenuButton.click();
-    await appNav.appMenu.waitFor({ state: 'attached' });
-    await appNav.appMenu.waitFor({ state: 'visible' });
-    await appNav.appMenuItemLogout.click();
-    await expect(page).toHaveURL(`${baseURL}/plans`);
-  });
-
   test(`Clicking on the app menu 'About' option should open the about modal`, async () => {
     await expect(appNav.aboutModal).not.toBeVisible();
     await appNav.appMenuButton.click();
@@ -140,5 +130,13 @@ test.describe.serial('App Nav', () => {
     await appNav.aboutModal.waitFor({ state: 'detached' });
     await appNav.aboutModal.waitFor({ state: 'hidden' });
     await expect(appNav.aboutModal).not.toBeVisible();
+  });
+
+  test(`Clicking on the app menu 'Logout' option should route to the login page`, async ({ baseURL }) => {
+    await appNav.appMenuButton.click();
+    await appNav.appMenu.waitFor({ state: 'attached' });
+    await appNav.appMenu.waitFor({ state: 'visible' });
+    await appNav.appMenuItemLogout.click();
+    await expect(page).toHaveURL(`${baseURL}/login`);
   });
 });

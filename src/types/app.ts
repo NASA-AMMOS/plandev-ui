@@ -1,6 +1,6 @@
 export type User = {
   id: string;
-  ssoToken: string;
+  token: string;
 };
 
 export type Version = {
