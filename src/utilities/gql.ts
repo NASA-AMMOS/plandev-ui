@@ -465,7 +465,6 @@ const gql = {
         model_id
         name
         plan_id
-        summary
       }
     }
   `,
@@ -1084,7 +1083,6 @@ const gql = {
         model_id
         name
         plan_id
-        summary
       }
     }
   `,
@@ -1098,7 +1096,6 @@ const gql = {
         model_id
         name
         plan_id
-        summary
       }
     }
   `,

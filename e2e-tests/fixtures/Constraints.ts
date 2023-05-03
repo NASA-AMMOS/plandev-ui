@@ -10,13 +10,11 @@ export class Constraints {
   constraintDefinition: string = `export default function peelGreaterThanOrEqual3(): Constraint { return Real.Resource('/peel').greaterThanOrEqual(3); }`;
   constraintDescription: string = 'This is a constraint description.';
   constraintName: string;
-  constraintSummary: string = 'This is a constraint summary.';
   inputConstraintDefinition: Locator;
   inputConstraintDescription: Locator;
   inputConstraintModel: Locator;
   inputConstraintModelSelector: string = 'select[name="model"]';
   inputConstraintName: Locator;
-  inputConstraintSummary: Locator;
   saveButton: Locator;
   tableRow: Locator;
   tableRowDeleteButton: Locator;
@@ -31,7 +29,6 @@ export class Constraints {
     await this.selectModel();
     await this.fillConstraintName();
     await this.fillConstraintDescription();
-    await this.fillConstraintSummary();
     await this.fillConstraintDefinition();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
@@ -83,12 +80,6 @@ export class Constraints {
     await this.inputConstraintName.evaluate(e => e.blur());
   }
 
-  async fillConstraintSummary() {
-    await this.inputConstraintSummary.focus();
-    await this.inputConstraintSummary.fill(this.constraintSummary);
-    await this.inputConstraintSummary.evaluate(e => e.blur());
-  }
-
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -110,7 +101,6 @@ export class Constraints {
     this.inputConstraintDescription = page.locator('input[name="constraint-description"]');
     this.inputConstraintModel = page.locator(this.inputConstraintModelSelector);
     this.inputConstraintName = page.locator('input[name="constraint-name"]');
-    this.inputConstraintSummary = page.locator('textarea[name="constraint-summary"]');
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
     this.tableRow = page.locator(`.ag-row:has-text("${this.constraintName}")`);

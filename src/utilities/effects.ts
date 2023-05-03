@@ -289,7 +289,6 @@ const effects = {
     model_id: number | null,
     name: string,
     plan_id: number | null,
-    summary: string,
   ): Promise<number | null> {
     try {
       const constraintInsertInput: ConstraintInsertInput = {
@@ -298,7 +297,6 @@ const effects = {
         model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
-        summary,
       };
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput });
       const { createConstraint } = data;
@@ -2010,7 +2008,6 @@ const effects = {
     model_id: number,
     name: string,
     plan_id: number,
-    summary: string,
   ): Promise<void> {
     try {
       const constraint: Partial<Constraint> = {
@@ -2019,7 +2016,6 @@ const effects = {
         model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
-        summary,
       };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
       showSuccessToast('Constraint Updated Successfully');

@@ -22,7 +22,6 @@
   export let initialConstraintName: string = '';
   export let initialConstraintModelId: number | null = null;
   export let initialConstraintPlanId: number | null = null;
-  export let initialConstraintSummary: string = '';
   export let initialModels: ModelSlim[] = [];
   export let initialPlans: PlanSlim[] = [];
   export let mode: 'create' | 'edit' = 'create';
@@ -33,7 +32,6 @@
   let constraintName: string = initialConstraintName;
   let constraintModelId: number | null = initialConstraintModelId;
   let constraintPlanId: number | null = initialConstraintPlanId;
-  let constraintSummary: string = initialConstraintSummary;
   let models: ModelSlim[] = initialModels;
   let plans: PlanSlim[] = initialPlans;
   let saveButtonEnabled: boolean = false;
@@ -43,7 +41,6 @@
     model_id: constraintModelId,
     name: constraintName,
     plan_id: constraintPlanId,
-    summary: constraintSummary,
   };
 
   $: saveButtonEnabled =
@@ -54,7 +51,6 @@
     model_id: constraintModelId,
     name: constraintName,
     plan_id: constraintPlanId,
-    summary: constraintSummary,
   });
   $: saveButtonText = mode === 'edit' && !constraintModified ? 'Saved' : 'Save';
   $: saveButtonClass = saveButtonEnabled && constraintModified ? 'primary' : 'secondary';
@@ -73,7 +69,6 @@
       constraintA.definition !== constraintB.definition ||
       constraintA.description !== constraintB.description ||
       constraintA.name !== constraintB.name ||
-      constraintA.summary !== constraintB.summary ||
       constraintA.plan_id !== constraintB.plan_id
     ) {
       return true;
@@ -107,7 +102,6 @@
           constraintModelId,
           constraintName,
           constraintPlanId,
-          constraintSummary,
         );
 
         if (newConstraintId !== null) {
@@ -121,7 +115,6 @@
           constraintModelId,
           constraintName,
           constraintPlanId,
-          constraintSummary,
         );
 
         savedConstraint = {
@@ -130,7 +123,6 @@
           model_id: constraintModelId,
           name: constraintName,
           plan_id: constraintPlanId,
-          summary: constraintSummary,
         };
       }
     }
@@ -213,17 +205,6 @@
           class="st-input w-100"
           name="constraint-description"
           placeholder="Enter Constraint Description (optional)"
-        />
-      </fieldset>
-
-      <fieldset>
-        <label for="constraint-summary">Summary</label>
-        <textarea
-          bind:value={constraintSummary}
-          autocomplete="off"
-          class="st-input w-100"
-          name="constraint-summary"
-          placeholder="Enter Constraint Summary (optional)"
         />
       </fieldset>
     </svelte:fragment>
