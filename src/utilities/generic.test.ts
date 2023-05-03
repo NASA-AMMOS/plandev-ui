@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test, vi } from 'vitest';
-import { attemptStringConversion, clamp, classNames, formatHasuraStringArray, isMacOs } from './generic';
+import { attemptStringConversion, clamp, classNames, filterEmpty, formatHasuraStringArray, isMacOs } from './generic';
 
 const mockNavigator = {
   platform: 'MacIntel',
@@ -50,6 +50,24 @@ describe('classNames', () => {
         baz: false,
       }),
     ).toEqual('foo');
+  });
+});
+
+describe('filterEmpty', () => {
+  test('Should correctly determine if something is not null or undefined', () => {
+    expect(filterEmpty(0)).toEqual(true);
+    expect(filterEmpty(false)).toEqual(true);
+    expect(filterEmpty(null)).toEqual(false);
+    expect(filterEmpty(undefined)).toEqual(false);
+  });
+
+  test('Should correctly filter out null and undefined entries in arrays', () => {
+    expect([0, 1, 2, null, 4, undefined, 5].filter(filterEmpty)).toStrictEqual([0, 1, 2, 4, 5]);
+    expect(['false', false, { foo: 1 }, null, undefined].filter(filterEmpty)).toStrictEqual([
+      'false',
+      false,
+      { foo: 1 },
+    ]);
   });
 });
 

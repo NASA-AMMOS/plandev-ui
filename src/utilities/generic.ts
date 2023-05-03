@@ -13,10 +13,10 @@ export function attemptStringConversion(x: any) {
  * Utility function that returns a list of keys that have changed between two objects of the same type.
  * Optionally keys can be ignored from the comparison.
  */
-export function changedKeys<T>(objA: T, objB: T, ignoreKeys: string[] = []): string[] {
+export function changedKeys<T>(objA: T, objB: T, ignoreKeys: (keyof T)[] = []): string[] {
   const changedKeys: string[] = [];
 
-  Object.keys(objA)
+  (Object.keys(objA as object) as Array<keyof T>)
     .filter(key => ignoreKeys.indexOf(key) < 0)
     .forEach(key => {
       const valueA = objA[key];
@@ -32,7 +32,7 @@ export function changedKeys<T>(objA: T, objB: T, ignoreKeys: string[] = []): str
           valueB === undefined) &&
         valueA !== valueB
       ) {
-        changedKeys.push(key);
+        changedKeys.push(String(key));
       }
 
       if (
@@ -40,7 +40,7 @@ export function changedKeys<T>(objA: T, objB: T, ignoreKeys: string[] = []): str
         typeof valueB === 'object' &&
         JSON.stringify(valueA) !== JSON.stringify(valueB)
       ) {
-        changedKeys.push(key);
+        changedKeys.push(String(key));
       }
     });
 
@@ -67,12 +67,20 @@ export function clamp(num: number, min: number, max: number): number {
  * @example classNames('foo', { bar: true, baz: false }) returns 'foo bar'
  */
 export function classNames(baseClass: string, conditionalClasses?: Record<string, boolean>): string {
-  return Object.keys(conditionalClasses).reduce((partialClassName: string, className: string) => {
-    if (conditionalClasses[className]) {
+  return Object.keys(conditionalClasses ?? {}).reduce((partialClassName: string, className: string) => {
+    if (conditionalClasses?.[className]) {
       return `${partialClassName} ${className}`;
     }
     return partialClassName;
   }, baseClass);
+}
+
+/**
+ * Helper function for filtering out null or undefined entries in an array
+ * @example [0, 1, 2, null, 4, undefined, 5].filter(filterEmpty) return [0, 1, 2, 4, 5]
+ */
+export function filterEmpty<T>(value: T | null | undefined): value is T {
+  return value != null;
 }
 
 /**
@@ -136,7 +144,7 @@ export function isRightClick(e: MouseEvent) {
  */
 export function keyByBoolean(arr: string[] | undefined): Record<string, boolean> {
   if (arr) {
-    return arr.reduce((map, key) => {
+    return arr.reduce((map: Record<string, boolean>, key) => {
       if (!map[key]) {
         map[key] = true;
       }
@@ -150,8 +158,11 @@ export function keyByBoolean(arr: string[] | undefined): Record<string, boolean>
  * Parses a string into a number. If string cannot be parsed just returns null.
  */
 export function parseFloatOrNull(value: string | null): number | null {
-  const valueAsNumber: number = parseFloat(value);
-  return Number.isNaN(valueAsNumber) ? null : valueAsNumber;
+  if (value !== null) {
+    const valueAsNumber: number = parseFloat(value);
+    return Number.isNaN(valueAsNumber) ? null : valueAsNumber;
+  }
+  return null;
 }
 
 /**

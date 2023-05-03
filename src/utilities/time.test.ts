@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import {
+  convertDoyToYmd,
   convertDurationStringToInterval,
   convertDurationStringToUs,
   convertUsToDurationString,
@@ -36,6 +37,13 @@ test('convertUsToDurationString', () => {
   expect(convertUsToDurationString(200000)).toEqual('200ms');
   expect(convertUsToDurationString(3e7)).toEqual('30s');
   expect(convertUsToDurationString(-8.64e10)).toEqual('- 1d');
+});
+
+test('convertDoyToYmd', () => {
+  expect(convertDoyToYmd('2023-001T00:10:12', false)).toEqual('2023-01-01T00:10:12');
+  expect(convertDoyToYmd('2023-001T00:00:00', false)).toEqual('2023-01-01T00:00:00');
+  expect(convertDoyToYmd('2023-032T00:00:00', false)).toEqual('2023-02-01T00:00:00');
+  expect(convertDoyToYmd('2023-048T10:32:44.123', true)).toEqual('2023-02-17T10:32:44.123');
 });
 
 test('getDaysInMonth', () => {

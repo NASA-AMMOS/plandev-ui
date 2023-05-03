@@ -1,6 +1,7 @@
+import { padStart } from 'lodash-es';
 import parseInterval from 'postgres-interval';
 import type { ActivityDirectiveId, ActivityDirectivesMap } from '../types/activity';
-import type { SpansMap, SpanUtilityMaps } from '../types/simulation';
+import type { SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { ParsedDoyString, ParsedDurationString, ParsedYmdString } from '../types/time';
 
 function parseDurationString(durationString: string): ParsedDurationString | never {
@@ -67,6 +68,33 @@ function parseDurationString(durationString: string): ParsedDurationString | nev
 
 function addUnit(value: number, unit: string, isNegative: boolean) {
   return `${isNegative ? '-' : ''}${value} ${value !== 1 ? `${unit}s` : unit}`;
+}
+
+/**
+ * Converts a DOY string (YYYY-DDDDTHH:mm:ss) into a YYYY-MM-DDTHH:mm:ss formatted time string
+ */
+export function convertDoyToYmd(doyString: string, includeMsecs = true): string | null {
+  const parsedDoy: ParsedDoyString = parseDoyOrYmdTime(doyString) as ParsedDoyString;
+
+  if (parsedDoy !== null) {
+    if (parsedDoy.doy !== undefined) {
+      const date = new Date(parsedDoy.year, 0, parsedDoy.doy);
+      const ymdString = `${[
+        date.getFullYear(),
+        padStart(`${date.getUTCMonth() + 1}`, 2, '0'),
+        padStart(`${date.getUTCDate()}`, 2, '0'),
+      ].join('-')}T${parsedDoy.time}`;
+      if (includeMsecs) {
+        return ymdString;
+      }
+      return ymdString.replace(/(\.\d+)/, '');
+    } else {
+      // doyString is already in ymd format
+      return doyString;
+    }
+  }
+
+  return null;
 }
 
 /**

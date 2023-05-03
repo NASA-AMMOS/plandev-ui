@@ -3,15 +3,20 @@
 <script lang="ts">
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
-  import type { ColDef, ColumnState, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
-  import { activityDirectivesList, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { planId } from '../../stores/plan';
+  import type { ColDef, ColumnState, ValueGetterParams } from 'ag-grid-community';
+  import {
+    activityDirectivesList,
+    activityDirectivesMap,
+    selectActivity,
+    selectedActivityDirectiveId,
+  } from '../../stores/activities';
+  import { plan, planId } from '../../stores/plan';
+  import { spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { view, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
-  import type { ActivityMetadata } from '../../types/activity-metadata';
-  import type { TRowData } from '../../types/data-grid';
-  import type { ArgumentsMap } from '../../types/parameter';
   import type { ViewGridSection, ViewTable } from '../../types/view';
+  import { filterEmpty } from '../../utilities/generic';
+  import { getActivityDirectiveStartTimeMs, getDoyTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -21,11 +26,18 @@
 
   export let gridSection: ViewGridSection;
 
+  type ActivityDirectiveColumns = keyof ActivityDirective | 'derived_start_time';
   interface ActivityDirectiveColDef extends ColDef<ActivityDirective> {
-    field: keyof ActivityDirective;
+    field: ActivityDirectiveColumns;
   }
 
-  const defaultColumnDefinitions: Partial<Record<keyof ActivityDirective, ActivityDirectiveColDef>> = {
+  let activityDirectivesTable: ViewTable | undefined;
+  let dataGrid: DataGrid;
+  let defaultColumnDefinitions: Partial<Record<ActivityDirectiveColumns, ActivityDirectiveColDef>> = {};
+  let derivedColumnDefs: ColDef[] = [];
+
+  $: activityDirectivesTable = $view?.definition.plan.activityDirectivesTable;
+  $: defaultColumnDefinitions = {
     anchor_id: {
       field: 'anchor_id',
       filter: 'text',
@@ -45,15 +57,12 @@
     arguments: {
       field: 'arguments',
       filter: 'text',
-      filterValueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        return JSON.stringify(params.data.arguments);
-      },
       headerName: 'Arguments',
       hide: true,
       resizable: true,
       sortable: false,
-      valueFormatter: ({ value: argumentsMap }: ValueFormatterParams<ActivityDirective, ArgumentsMap>) => {
-        return JSON.stringify(argumentsMap);
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        return JSON.stringify(params?.data?.arguments);
       },
     },
     created_at: {
@@ -63,6 +72,33 @@
       hide: true,
       resizable: true,
       sortable: true,
+    },
+    derived_start_time: {
+      field: 'derived_start_time',
+      filter: 'text',
+      headerName: 'Absolute Start Time',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        if ($plan && params && params.data) {
+          return getDoyTime(
+            new Date(
+              getActivityDirectiveStartTimeMs(
+                params.data.id,
+                $plan.start_time,
+                $plan.end_time_doy,
+                $activityDirectivesMap,
+                $spansMap,
+                $spanUtilityMaps,
+              ),
+            ),
+            false,
+          );
+        }
+
+        return '';
+      },
     },
     id: {
       field: 'id',
@@ -83,15 +119,12 @@
     metadata: {
       field: 'metadata',
       filter: 'text',
-      filterValueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        return JSON.stringify(params.data.metadata);
-      },
       headerName: 'Metadata',
       hide: true,
       resizable: true,
       sortable: false,
-      valueFormatter: ({ value: metadata }: ValueFormatterParams<TRowData, ActivityMetadata>) => {
-        return JSON.stringify(metadata);
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        return JSON.stringify(params.data?.metadata);
       },
     },
     name: {
@@ -135,14 +168,8 @@
       sortable: true,
     },
   };
-
-  let activityDirectivesTable: ViewTable;
-  let dataGrid: DataGrid;
-  let derivedColumnDefs: ColDef[] = [];
-
-  $: activityDirectivesTable = $view?.definition.plan.activityDirectivesTable;
   $: derivedColumnDefs = Object.values(defaultColumnDefinitions).map((defaultColumnDef: ColDef) => {
-    const columnDef = activityDirectivesTable.columnDefs.find(
+    const columnDef = activityDirectivesTable?.columnDefs.find(
       (columnDef: ColDef) => columnDef.field === defaultColumnDef.field,
     );
     if (columnDef) {
@@ -204,17 +231,21 @@
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     viewUpdateActivityDirectivesTable({
-      columnStates: derivedColumnDefs.map((columnDef: ColDef) => {
-        const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
-        const existingColumnState: ColumnState | undefined = activityColumnStates.find(
-          (columnState: ColumnState) => columnDef.field === columnState.colId,
-        );
+      columnStates: derivedColumnDefs
+        .map((columnDef: ColDef) => {
+          const activityColumnStates: ColumnState[] = activityDirectivesTable?.columnStates ?? [];
+          const existingColumnState: ColumnState | undefined = activityColumnStates.find(
+            (columnState: ColumnState) => columnDef.field === columnState.colId,
+          );
 
-        return {
-          ...existingColumnState,
-          hide,
-        };
-      }),
+          return existingColumnState
+            ? {
+                ...existingColumnState,
+                hide,
+              }
+            : null;
+        })
+        .filter(filterEmpty),
     });
   }
 </script>

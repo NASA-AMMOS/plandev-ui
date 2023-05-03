@@ -5,10 +5,12 @@
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { selectActivity } from '../../stores/activities';
-  import { selectedSpanId, spans } from '../../stores/simulation';
+  import { selectedSpanId, simulationDataset, spans } from '../../stores/simulation';
   import { view, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { ViewGridSection, ViewTable } from '../../types/view';
+  import { filterEmpty } from '../../utilities/generic';
+  import { convertDoyToYmd, getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -18,11 +20,19 @@
 
   export let gridSection: ViewGridSection;
 
+  type SpanColumns = keyof Span | 'derived_start_time' | 'derived_end_time';
   interface SpanColDef extends ColDef<Span> {
-    field: keyof Span;
+    field: SpanColumns;
   }
 
-  const defaultColumnDefinitions: Partial<Record<keyof Span, SpanColDef>> = {
+  let activitySpansTable: ViewTable | undefined;
+  let dataGrid: DataGrid;
+  let defaultColumnDefinitions: Partial<Record<SpanColumns, SpanColDef>>;
+  let derivedColumnDefs: ColDef[] = [];
+
+  $: activitySpansTable = $view?.definition.plan.activitySpansTable;
+  /* eslint-disable sort-keys */
+  $: defaultColumnDefinitions = {
     dataset_id: {
       field: 'dataset_id',
       filter: 'text',
@@ -30,6 +40,37 @@
       hide: true,
       resizable: true,
       sortable: true,
+    },
+    derived_start_time: {
+      field: 'derived_start_time',
+      filter: 'text',
+      headerName: 'Absolute Start Time',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: params => {
+        if ($simulationDataset && $simulationDataset.simulation_start_time && params.data) {
+          return getDoyTimeFromInterval($simulationDataset?.simulation_start_time, params.data.start_offset);
+        }
+        return '';
+      },
+    },
+    derived_end_time: {
+      field: 'derived_end_time',
+      filter: 'text',
+      headerName: 'Absolute End Time',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: params => {
+        if ($simulationDataset && $simulationDataset.simulation_start_time && params.data) {
+          const startTime = convertDoyToYmd(
+            getDoyTimeFromInterval($simulationDataset?.simulation_start_time, params.data.start_offset),
+          );
+          return startTime ? getDoyTimeFromInterval(startTime, params.data.duration) : '';
+        }
+        return '';
+      },
     },
     duration: {
       field: 'duration',
@@ -72,14 +113,9 @@
       sortable: true,
     },
   };
-
-  let activitySpansTable: ViewTable;
-  let dataGrid: DataGrid;
-  let derivedColumnDefs: ColDef[] = [];
-
-  $: activitySpansTable = $view?.definition.plan.activitySpansTable;
+  /* eslint-enable sort-keys */
   $: derivedColumnDefs = Object.values(defaultColumnDefinitions).map((defaultColumnDef: ColDef) => {
-    const columnDef = activitySpansTable.columnDefs.find(
+    const columnDef = activitySpansTable?.columnDefs.find(
       (columnDef: ColDef) => columnDef.field === defaultColumnDef.field,
     );
     if (columnDef) {
@@ -141,17 +177,21 @@
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     viewUpdateActivitySpansTable({
-      columnStates: derivedColumnDefs.map((columnDef: ColDef) => {
-        const activityColumnStates: ColumnState[] = activitySpansTable?.columnStates ?? [];
-        const existingColumnState: ColumnState | undefined = activityColumnStates.find(
-          (columnState: ColumnState) => columnDef.field === columnState.colId,
-        );
+      columnStates: derivedColumnDefs
+        .map((columnDef: ColDef) => {
+          const activityColumnStates: ColumnState[] = activitySpansTable?.columnStates ?? [];
+          const existingColumnState: ColumnState | undefined = activityColumnStates.find(
+            (columnState: ColumnState) => columnDef.field === columnState.colId,
+          );
 
-        return {
-          ...existingColumnState,
-          hide,
-        };
-      }),
+          return existingColumnState
+            ? {
+                ...existingColumnState,
+                hide,
+              }
+            : null;
+        })
+        .filter(filterEmpty),
     });
   }
 </script>
