@@ -28,6 +28,7 @@
   import { showMergeReviewEndedModal } from '../../utilities/modal';
   import { getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
   import ActivityDirectiveForm from '../activity/ActivityDirectiveForm.svelte';
   import ActivityDirectiveSourceForm from '../activity/ActivityDirectiveSourceForm.svelte';
   import Nav from '../app/Nav.svelte';
@@ -416,92 +417,80 @@
         <div class="merge-review-changes-content">
           {#if conflicts.length}
             <fieldset>
-              <details open style:cursor="pointer">
-                <summary class="st-typography-bold">Conflicts</summary>
-                <div class="details-body">
-                  {#each conflicts as merge}
-                    <button
-                      on:click={() => {
-                        selectedConflictingActivity = merge;
-                        selectedNonConflictingActivity = null;
-                      }}
-                      class="st-button tertiary merge-review-activity-item"
-                      class:active={selectedActivityId === merge.activity_id}
-                    >
-                      <!--
+              <Collapse title="Conflicts" titleClassName="st-typography-bold">
+                {#each conflicts as merge}
+                  <button
+                    on:click={() => {
+                      selectedConflictingActivity = merge;
+                      selectedNonConflictingActivity = null;
+                    }}
+                    class="st-button tertiary merge-review-activity-item"
+                    class:active={selectedActivityId === merge.activity_id}
+                  >
+                    <!--
                         TODO use the merge base activity name here instead? Even if it's renamed?
                         Though I suppose we could be smart and choose the name of the chosen resolution?
                         E.g. if we resolve a conflict using the source activity we display the source activity name
                       -->
-                      {merge.merge_base.name}
-                      {#if merge.resolution !== 'none'}
-                        <span class="merge-review-activity-item-resolution st-typography-medium section-title">
-                          {merge.resolution}
-                        </span>
-                      {/if}
-                    </button>
-                  {/each}
-                </div>
-              </details>
+                    {merge.merge_base.name}
+                    {#if merge.resolution !== 'none'}
+                      <span class="merge-review-activity-item-resolution st-typography-medium section-title">
+                        {merge.resolution}
+                      </span>
+                    {/if}
+                  </button>
+                {/each}
+              </Collapse>
             </fieldset>
           {/if}
           {#if additions.length}
             <fieldset>
-              <details open style:cursor="pointer">
-                <summary class="st-typography-bold">New Activities</summary>
-                <div class="details-body">
-                  {#each additions as merge}
-                    <button
-                      on:click={() => {
-                        selectedNonConflictingActivity = merge;
-                        selectedConflictingActivity = null;
-                      }}
-                      class="st-button tertiary merge-review-activity-item"
-                      class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
-                    >
-                  {/each}
-                </div>
-              </details>
+              <Collapse title="New Activities" titleClassName="st-typography-bold">
+                {#each additions as merge}
+                  <button
+                    on:click={() => {
+                      selectedNonConflictingActivity = merge;
+                      selectedConflictingActivity = null;
+                    }}
+                    class="st-button tertiary merge-review-activity-item"
+                    class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
+                  >
+                {/each}
+              </Collapse>
             </fieldset>
           {/if}
           {#if modifications.length}
             <fieldset>
-              <details open style:cursor="pointer">
-                <summary class="st-typography-bold">Modified Activities</summary>
-                <div class="details-body">
-                  {#each modifications as merge}
-                    <button
-                      on:click={() => {
-                        selectedNonConflictingActivity = merge;
-                        selectedConflictingActivity = null;
-                      }}
-                      class="st-button tertiary merge-review-activity-item"
-                      class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
-                    >
-                  {/each}
-                </div>
-              </details>
+              <Collapse title="Modified Activities" titleClassName="st-typography-bold">
+                {#each modifications as merge}
+                  <button
+                    on:click={() => {
+                      selectedNonConflictingActivity = merge;
+                      selectedConflictingActivity = null;
+                    }}
+                    class="st-button tertiary merge-review-activity-item"
+                    class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
+                  >
+                {/each}
+              </Collapse>
             </fieldset>
           {/if}
           {#if deletions.length}
             <fieldset>
-              <details open style:cursor="pointer">
-                <summary class="st-typography-bold">Removed Activities</summary>
-                <div class="details-body">
-                  {#each deletions as merge}
-                    <button
-                      on:click={() => {
-                        selectedNonConflictingActivity = merge;
-                        selectedConflictingActivity = null;
-                      }}
-                      class="st-button tertiary merge-review-activity-item"
-                      class:active={selectedActivityId === merge.activity_id}
-                    >
-                      {merge.target.name}
-                    </button>
-                  {/each}
-                </div>
-              </details>
+              <Collapse title="Removed Activities">
+                {#each deletions as merge}
+                  <button
+                    on:click={() => {
+                      selectedNonConflictingActivity = merge;
+                      selectedConflictingActivity = null;
+                    }}
+                    class="st-button tertiary merge-review-activity-item"
+                    class:active={selectedActivityId === merge.activity_id}
+                  >
+                    {merge.target.name}
+                  </button>
+                {/each}
+              </Collapse>
             </fieldset>
           {/if}
         </div>
@@ -661,6 +650,15 @@
     border-right: 1px solid var(--st-gray-20);
   }
 
+  .merge-review-content :global(.collapse > button) {
+    padding: 8px 16px;
+  }
+
+  .merge-review-content :global(.collapse .content) {
+    gap: 0;
+    margin: 0;
+  }
+
   .merge-review-metadata {
     display: flex;
     flex-direction: column;
@@ -762,15 +760,6 @@
 
   fieldset {
     padding: 0;
-  }
-
-  summary {
-    padding: 8px 16px;
-  }
-
-  .details-body {
-    gap: 0;
-    margin: 0;
   }
 
   .merge-review-activity-item {

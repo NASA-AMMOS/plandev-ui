@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { afterUpdate, createEventDispatcher, tick } from 'svelte';
-  import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
+  import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
   import type {
@@ -11,21 +11,21 @@
     SimulationDataset,
     Span,
     SpanId,
-    SpansMap,
     SpanUtilityMaps,
+    SpansMap,
   } from '../../types/simulation';
-  import type { MouseDown, MouseOver, Row, Timeline, TimeRange, XAxisTick } from '../../types/timeline';
+  import type { MouseDown, MouseOver, Row, TimeRange, Timeline, XAxisTick } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
   import {
+    MAX_CANVAS_SIZE,
+    TimelineLockStatus,
     customD3Ticks,
     durationHour,
     durationMinute,
     durationMonth,
     durationYear,
     getXScale,
-    MAX_CANVAS_SIZE,
-    TimelineLockStatus,
   } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';

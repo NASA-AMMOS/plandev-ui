@@ -36,29 +36,9 @@ body {
   font-weight: 300;
 }
 
-details:not([open]) > summary::marker {
-  content: url("data:image/svg+xml,%3Csvg width='17' height='8' viewBox='0 0 17 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 4L2 7.4641L2 0.535899L8 4Z' fill='%23222829'/%3E%3C/svg%3E%0A");
-}
-
-details[open] > summary::marker {
-  content: url("data:image/svg+xml,%3Csvg width='17' height='8' viewBox='0 0 17 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 8L0.535899 2L7.4641 2L4 8Z' fill='%23222829'/%3E%3C/svg%3E%0A");
-}
-
 label.error,
 span.error {
   color: var(--st-red);
-}
-
-summary {
-  color: var(--st-typography-medium-color);
-  cursor: pointer;
-  font-family: var(--st-typography-medium-font-family);
-  font-size: var(--st-typography-medium-font-size);
-  font-weight: var(--st-typography-medium-font-weight);
-  letter-spacing: var(--st-typography-medium-letter-spacing);
-  line-height: var(--st-typography-medium-line-height);
-  padding: 8px 0px;
-  user-select: none;
 }
 
 fieldset {
@@ -70,15 +50,8 @@ fieldset {
   letter-spacing: var(--st-typography-body-letter-spacing);
   line-height: var(--st-typography-body-line-height);
   margin: 0;
+  min-width: 0;
   padding: 8px 16px 0px;
-}
-
-.details-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-left: 32px;
-  margin-top: 4px;
 }
 
 .toastify {

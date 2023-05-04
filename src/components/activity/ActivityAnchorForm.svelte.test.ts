@@ -82,21 +82,20 @@ describe('Activity Anchor Form component', () => {
   it('Should not render the form if no anchor is initially present', () => {
     const activityDirective: ActivityDirective = activityDirectivesMap[12];
 
-    const { getAllByRole } = render(ActivityAnchorForm, {
+    const { getByRole } = render(ActivityAnchorForm, {
       activityDirective,
       activityDirectivesMap,
       anchorId: activityDirective.anchor_id,
       isAnchoredToStart: activityDirective.anchored_to_start,
       startOffset: activityDirective.start_offset,
     });
-
-    expect(getAllByRole('group').at(1).hasAttribute('open')).toEqual(false);
+    expect(getByRole('group').getElementsByClassName('content')[0].getAttribute('aria-hidden')).toEqual('true');
   });
 
   it('Should render the form when an anchor is initially present', () => {
     const activityDirective: ActivityDirective = activityDirectivesMap[13];
 
-    const { getAllByRole } = render(ActivityAnchorForm, {
+    const { getByRole } = render(ActivityAnchorForm, {
       activityDirective,
       activityDirectivesMap,
       anchorId: activityDirective.anchor_id,
@@ -104,6 +103,6 @@ describe('Activity Anchor Form component', () => {
       startOffset: activityDirective.start_offset,
     });
 
-    expect(getAllByRole('group').at(1).hasAttribute('open')).toEqual(true);
+    expect(getByRole('group').getElementsByClassName('content')[0].getAttribute('aria-hidden')).toEqual('false');
   });
 });

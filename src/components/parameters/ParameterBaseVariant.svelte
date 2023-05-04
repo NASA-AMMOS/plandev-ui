@@ -55,5 +55,6 @@
   .parameter-base-variant-content {
     align-items: center;
     display: flex;
+    margin-right: 5px;
   }
 </style>

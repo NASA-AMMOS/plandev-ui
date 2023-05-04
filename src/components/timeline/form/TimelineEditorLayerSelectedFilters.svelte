@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { ChartType } from '../../../types/timeline';
+  import Collapse from '../../Collapse.svelte';
   import Chip from '../../ui/Chip.svelte';
 
   export let filters: string[];
@@ -10,7 +11,6 @@
   export let initialItemLimit: number = 10;
 
   let filtersToRender = [];
-  let open = false;
   let showAll = false;
   let verb = '';
 
@@ -37,32 +37,22 @@
       No {chartType === 'activity' ? 'activities' : 'resources'} selected
     </div>
   {:else}
-    <details {open}>
-      <summary style="text-transform: capitalize">{filters.length} {verb}</summary>
-      <div class="filter-items">
-        {#each filtersToRender as item}
-          <Chip label={item} on:click={() => dispatch('remove', { filter: item })} />
-        {/each}
-        {#if filters.length > initialItemLimit}
-          {#if showAll}
-            <button class="item-visibility-button" on:click={() => (showAll = false)}>Show Fewer</button>
-          {:else}
-            <button class="item-visibility-button" on:click={() => (showAll = true)}>Show More</button>
-          {/if}
+    <Collapse title={`${filters.length} ${verb}`} className="filter-items" titleClassName="filter-items-title">
+      {#each filtersToRender as item}
+        <Chip label={item} on:click={() => dispatch('remove', { filter: item })} />
+      {/each}
+      {#if filters.length > initialItemLimit}
+        {#if showAll}
+          <button class="item-visibility-button" on:click={() => (showAll = false)}>Show Fewer</button>
+        {:else}
+          <button class="item-visibility-button" on:click={() => (showAll = true)}>Show More</button>
         {/if}
-      </div>
-    </details>
+      {/if}
+    </Collapse>
   {/if}
 </div>
 
 <style>
-  .filter-items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 8px 0 8px 16px;
-  }
-
   .filter-items-empty {
     align-items: center;
     display: flex;
@@ -81,5 +71,14 @@
 
   .item-visibility-button:hover {
     opacity: 0.8;
+  }
+
+  .timeline-editor-layer-selected-filters :global(.filter-items-title) {
+    text-transform: capitalize;
+  }
+
+  .timeline-editor-layer-selected-filters :global(.collapse.filter-items .content) {
+    gap: 8px;
+    margin: 8px 0 8px 16px;
   }
 </style>

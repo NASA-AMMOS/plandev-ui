@@ -1,11 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
+  import Collapse from '../Collapse.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -59,62 +58,56 @@
   function onResetStruct() {
     dispatch('reset', formParameter);
   }
-
-  function toggleExpanded() {
-    expanded = !expanded;
-  }
 </script>
 
 {#if showName}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div class="parameter-rec-struct" on:click={toggleExpanded}>
-    {#if !expanded}
-      <ChevronRightIcon />
-    {:else}
-      <ChevronDownIcon />
-    {/if}
-    <ParameterName {formParameter} />
-    <ParameterBaseRightAdornments
-      hidden={hideRightAdornments}
-      {formParameter}
-      {parameterType}
-      on:reset={onResetStruct}
-    />
+  <div class="parameter-rec-struct">
+    <Collapse defaultExpanded={expanded}>
+      <div slot="left">
+        <ParameterName {formParameter} />
+      </div>
+      <div class="right" slot="right">
+        <ParameterBaseRightAdornments
+          hidden={hideRightAdornments}
+          {formParameter}
+          {parameterType}
+          on:reset={onResetStruct}
+        />
+      </div>
+      <ul style="padding-inline-start: {levelPadding}px">
+        {#each subFormParameters as subFormParameter (subFormParameter.name)}
+          <li>
+            {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
+              <ParameterRec
+                {disabled}
+                {hideRightAdornments}
+                formParameter={subFormParameter}
+                {labelColumnWidth}
+                level={++level}
+                {levelPadding}
+                {parameterType}
+                on:change={onChange}
+              />
+            {:else}
+              <ParameterBase
+                {disabled}
+                {hideRightAdornments}
+                formParameter={subFormParameter}
+                {labelColumnWidth}
+                level={++level}
+                {levelPadding}
+                {parameterType}
+                on:change={onChange}
+              />
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </Collapse>
   </div>
 {:else}
   <div class="parameter-rec-struct p-0" />
-{/if}
-
-{#if expanded}
-  <ul style="padding-inline-start: {levelPadding}px">
-    {#each subFormParameters as subFormParameter (subFormParameter.name)}
-      <li>
-        {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
-          <ParameterRec
-            {disabled}
-            {hideRightAdornments}
-            formParameter={subFormParameter}
-            {labelColumnWidth}
-            level={++level}
-            {levelPadding}
-            {parameterType}
-            on:change={onChange}
-          />
-        {:else}
-          <ParameterBase
-            {disabled}
-            {hideRightAdornments}
-            formParameter={subFormParameter}
-            {labelColumnWidth}
-            level={++level}
-            {levelPadding}
-            {parameterType}
-            on:change={onChange}
-          />
-        {/if}
-      </li>
-    {/each}
-  </ul>
 {/if}
 
 <style>
@@ -133,13 +126,24 @@
   .parameter-rec-struct {
     align-items: center;
     cursor: pointer;
-    display: grid;
+    display: flex;
     gap: 8px;
-    grid-template-columns: 16px auto 16px;
-    padding: 8px 0px;
   }
 
   .parameter-rec-struct :global(.form-parameter-name .name) {
     cursor: pointer;
+  }
+
+  .parameter-rec-struct :global(.collapse > .collapse-header) {
+    gap: 8px;
+    height: 24px;
+  }
+
+  .parameter-rec-struct :global(.collapse > .content) {
+    margin-left: 0%;
+  }
+
+  .right {
+    margin-right: 5px;
   }
 </style>

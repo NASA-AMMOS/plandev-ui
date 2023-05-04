@@ -7,6 +7,7 @@
   import { getTarget } from '../../utilities/generic';
   import { convertDurationStringToInterval, convertUsToDurationString, getIntervalInMs } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
   import Highlight from '../ui/Highlight.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
@@ -132,86 +133,83 @@
   }
 </script>
 
-<fieldset class="anchor-container">
-  <details bind:open={isRelativeOffset}>
-    <summary use:tooltip={{ content: 'Is Relative To Another Activity Directive', placement: 'top' }}>Anchor</summary>
-    <div class="anchor-form">
-      <Highlight highlight={highlightKeysMap.anchor_id}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Activity to anchor to', placement: 'top' }} for="anchor_id">
-            Relative to
-          </label>
-          <SearchableDropdown
-            options={searchableOptions}
-            placeholder="To Plan"
-            searchPlaceholder="Search Directives"
-            settingsIconTooltip="Set Anchor"
-            selectedOptionValue={anchorId}
-            on:selectOption={onSelectAnchor}
-          />
-        </Input>
-      </Highlight>
-      <Highlight highlight={highlightKeysMap.anchored_to_start}>
-        <Input layout="inline">
-          <label
-            use:tooltip={{ content: 'Where to anchor to activity directive', placement: 'top' }}
-            for="isAnchoredToStart"
+<Collapse
+  className="anchor-collapse"
+  bind:defaultExpanded={isRelativeOffset}
+  title="Anchor"
+  tooltipContent="Is Relative To Another Activity Directive"
+>
+  <div class="anchor-form">
+    <Highlight highlight={highlightKeysMap.anchor_id}>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Activity to anchor to', placement: 'top' }} for="anchor_id">
+          Relative to
+        </label>
+        <SearchableDropdown
+          options={searchableOptions}
+          placeholder="To Plan"
+          searchPlaceholder="Search Directives"
+          settingsIconTooltip="Set Anchor"
+          selectedOptionValue={anchorId}
+          on:selectOption={onSelectAnchor}
+        />
+      </Input>
+    </Highlight>
+    <Highlight highlight={highlightKeysMap.anchored_to_start}>
+      <Input layout="inline">
+        <label
+          use:tooltip={{ content: 'Where to anchor to activity directive', placement: 'top' }}
+          for="isAnchoredToStart"
+        >
+          Anchor
+        </label>
+        <div class="anchor-boundaries">
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class:st-button={isAnchoredToStart}
+            class="secondary anchor-boundary"
+            class:selected={isAnchoredToStart}
+            class:disabled
+            on:click={onAnchorToStart}
           >
-            Anchor
-          </label>
-          <div class="anchor-boundaries">
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div
-              class:st-button={isAnchoredToStart}
-              class="secondary anchor-boundary"
-              class:selected={isAnchoredToStart}
-              class:disabled
-              on:click={onAnchorToStart}
-            >
-              Start
-            </div>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div
-              class:st-button={!isAnchoredToStart}
-              class="secondary anchor-boundary"
-              class:selected={!isAnchoredToStart}
-              class:disabled
-              on:click={onAnchorToEnd}
-            >
-              End
-            </div>
+            Start
           </div>
-        </Input>
-      </Highlight>
-      <Highlight highlight={highlightKeysMap.start_offset}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'The offset duration for the anchor', placement: 'top' }} for="start-offset">
-            Offset
-          </label>
-          <input
-            class="st-input w-100"
-            class:error={!!startOffsetError}
-            {disabled}
-            name="start-offset"
-            bind:value={startOffsetString}
-            on:change={onUpdateStartOffset}
-            use:tooltip={{ content: startOffsetError, placement: 'top' }}
-          />
-        </Input>
-      </Highlight>
-    </div>
-  </details>
-</fieldset>
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class:st-button={!isAnchoredToStart}
+            class="secondary anchor-boundary"
+            class:selected={!isAnchoredToStart}
+            class:disabled
+            on:click={onAnchorToEnd}
+          >
+            End
+          </div>
+        </div>
+      </Input>
+    </Highlight>
+    <Highlight highlight={highlightKeysMap.start_offset}>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'The offset duration for the anchor', placement: 'top' }} for="start-offset">
+          Offset
+        </label>
+        <input
+          class="st-input w-100"
+          class:error={!!startOffsetError}
+          {disabled}
+          name="start-offset"
+          bind:value={startOffsetString}
+          on:change={onUpdateStartOffset}
+          use:tooltip={{ content: startOffsetError, placement: 'top' }}
+        />
+      </Input>
+    </Highlight>
+  </div>
+</Collapse>
 
 <style>
-  .anchor-container {
-    padding: 0;
+  :global(.anchor-collapse) {
+    margin-left: 0;
   }
-
-  .anchor-form {
-    margin-left: 1rem;
-  }
-
   .anchor-boundaries {
     background: var(--st-input-background-color);
     display: grid;
@@ -238,5 +236,9 @@
 
   .anchor-boundaries .anchor-boundary.disabled {
     cursor: not-allowed;
+  }
+
+  :global(.anchor-collapse.collapse .content) {
+    margin-left: 1rem;
   }
 </style>

@@ -23,6 +23,7 @@
   import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
+  import Collapse from '../Collapse.svelte';
   import ActivityMetadataField from '../activityMetadata/ActivityMetadataField.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
@@ -280,172 +281,153 @@
 
 <div class="activity-form">
   <fieldset>
-    <details open>
-      <summary>Definition</summary>
-
-      <div class="details-body">
-        {#if showActivityName}
-          <Highlight highlight={highlightKeysMap.name}>
-            <Input layout="inline">
-              <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
-                Activity Name
-              </label>
-              <input class="st-input w-100" disabled name="activityName" value={activityDirective.name} />
-            </Input>
-          </Highlight>
-        {/if}
-
-        <Highlight highlight={highlightKeysMap.id}>
+    <Collapse title="Definition">
+      {#if showActivityName}
+        <Highlight highlight={highlightKeysMap.name}>
           <Input layout="inline">
-            <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-            <input class="st-input w-100" disabled name="id" value={activityDirective.id} />
-          </Input>
-        </Highlight>
-
-        <Highlight highlight={highlightKeysMap.type}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
-              Activity Type
+            <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
+              Activity Name
             </label>
-            <input class="st-input w-100" disabled name="activity-type" value={activityDirective.type} />
+            <input class="st-input w-100" disabled name="activityName" value={activityDirective.name} />
           </Input>
         </Highlight>
+      {/if}
 
-        <Highlight highlight={highlightKeysMap.start_offset}>
-          <DatePickerField
-            disabled={!editable || activityDirective.anchor_id !== null}
-            field={startTimeDoyField}
-            label="Start Time - YYYY-DDDThh:mm:ss"
-            layout="inline"
-            name="start-time"
-            on:change={onUpdateStartTime}
-            on:keydown={onUpdateStartTime}
-          />
-        </Highlight>
+      <Highlight highlight={highlightKeysMap.id}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
+          <input class="st-input w-100" disabled name="id" value={activityDirective.id} />
+        </Input>
+      </Highlight>
 
-        <ActivityAnchorForm
-          {activityDirective}
-          {activityDirectivesMap}
-          anchorId={activityDirective.anchor_id}
-          disabled={!editable}
-          {highlightKeysMap}
-          isAnchoredToStart={activityDirective.anchored_to_start}
-          startOffset={activityDirective.start_offset}
-          on:updateAnchor={updateAnchor}
-          on:updateAnchorEdge={updateAnchorEdge}
-          on:updateStartOffset={updateStartOffset}
+      <Highlight highlight={highlightKeysMap.type}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
+            Activity Type
+          </label>
+          <input class="st-input w-100" disabled name="activity-type" value={activityDirective.type} />
+        </Input>
+      </Highlight>
+
+      <Highlight highlight={highlightKeysMap.start_offset}>
+        <DatePickerField
+          disabled={!editable || activityDirective.anchor_id !== null}
+          field={startTimeDoyField}
+          label="Start Time - YYYY-DDDThh:mm:ss"
+          layout="inline"
+          name="start-time"
+          on:change={onUpdateStartTime}
+          on:keydown={onUpdateStartTime}
         />
+      </Highlight>
 
-        <Highlight highlight={highlightKeysMap.created_at}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime">
-              Creation Time
-            </label>
-            <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
-          </Input>
-        </Highlight>
+      <ActivityAnchorForm
+        {activityDirective}
+        {activityDirectivesMap}
+        anchorId={activityDirective.anchor_id}
+        disabled={!editable}
+        {highlightKeysMap}
+        isAnchoredToStart={activityDirective.anchored_to_start}
+        startOffset={activityDirective.start_offset}
+        on:updateAnchor={updateAnchor}
+        on:updateAnchorEdge={updateAnchorEdge}
+        on:updateStartOffset={updateStartOffset}
+      />
 
-        <Highlight highlight={highlightKeysMap.last_modified_at}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Last Modified Time', placement: 'top' }} for="lastModifiedTime">
-              Last Modified Time
-            </label>
-            <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
-          </Input>
-        </Highlight>
+      <Highlight highlight={highlightKeysMap.created_at}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime"> Creation Time </label>
+          <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
+        </Input>
+      </Highlight>
 
-        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
-          <Input layout="inline">
-            <label
-              use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
-              for="sourceSchedulingGoalId"
-            >
-              Source Scheduling Goal ID
-            </label>
-            <input
-              class="st-input w-100"
-              disabled
-              name="sourceSchedulingGoalId"
-              value={activityDirective.source_scheduling_goal_id ?? 'None'}
-            />
-          </Input>
-        </Highlight>
+      <Highlight highlight={highlightKeysMap.last_modified_at}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Last Modified Time', placement: 'top' }} for="lastModifiedTime">
+            Last Modified Time
+          </label>
+          <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
+        </Input>
+      </Highlight>
 
-        <Highlight highlight={highlightKeysMap.tags}>
-          <Input layout="inline">
-            <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
-            {#key activityDirective.id}
-              <Tags
-                disabled={!editable}
-                autocompleteValues={allActivityDirectiveTags}
-                name="activityDirectiveTags"
-                on:change={onUpdateTags}
-                tags={activityDirective.tags}
-              />
-            {/key}
-          </Input>
-        </Highlight>
-      </div>
-    </details>
-  </fieldset>
-
-  <fieldset>
-    <details open>
-      <summary>
-        <span class:error={parametersWithErrorsCount > 0}>
-          Parameters
-          {#if parametersWithErrorsCount > 0}
-            ({parametersWithErrorsCount} invalid)
-          {/if}
-        </span>
-      </summary>
-      <div class="details-body">
-        <div class="activity-preset">
-          <ActivityPresetInput
-            {modelId}
-            {activityDirective}
-            disabled={!editable}
-            hasChanges={numOfUserChanges > 0}
-            on:applyPreset={onApplyPresetToActivity}
-            on:deletePreset={onDeletePreset}
-            on:saveNewPreset={onSaveNewPreset}
-            on:savePreset={onSavePreset}
+      <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }} for="sourceSchedulingGoalId">
+            Source Scheduling Goal ID
+          </label>
+          <input
+            class="st-input w-100"
+            disabled
+            name="sourceSchedulingGoalId"
+            value={activityDirective.source_scheduling_goal_id ?? 'None'}
           />
-        </div>
-        <Parameters
-          disabled={!editable}
-          {formParameters}
-          {highlightKeysMap}
-          on:change={onChangeFormParameters}
-          on:reset={onResetFormParameters}
-        />
-        {#if formParameters.length === 0}
-          <div class="st-typography-label">No Parameters Found</div>
-        {/if}
-      </div>
-    </details>
-  </fieldset>
+        </Input>
+      </Highlight>
 
-  <fieldset>
-    <details open>
-      <summary>Annotations</summary>
-      <div class="details-body">
-        {#if activityMetadataDefinitions.length === 0}
-          <div class="st-typography-label">No Annotations Found</div>
-        {/if}
-
-        {#each activityMetadataDefinitions as definition}
-          <Highlight highlight={highlightKeysMap[definition.key]}>
-            <ActivityMetadataField
+      <Highlight highlight={highlightKeysMap.tags}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
+          {#key activityDirective.id}
+            <Tags
               disabled={!editable}
-              on:change={onChangeActivityMetadata}
-              value={getActivityMetadataValue(definition.key)}
-              {definition}
+              autocompleteValues={allActivityDirectiveTags}
+              name="activityDirectiveTags"
+              on:change={onUpdateTags}
+              tags={activityDirective.tags}
             />
-          </Highlight>
-        {/each}
+          {/key}
+        </Input>
+      </Highlight>
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse
+      error={parametersWithErrorsCount > 0}
+      title={`Parameters${parametersWithErrorsCount > 0 ? ` (${parametersWithErrorsCount} invalid)` : ''}`}
+    >
+      <div class="activity-preset">
+        <ActivityPresetInput
+          {modelId}
+          {activityDirective}
+          disabled={!editable}
+          hasChanges={numOfUserChanges > 0}
+          on:applyPreset={onApplyPresetToActivity}
+          on:deletePreset={onDeletePreset}
+          on:saveNewPreset={onSaveNewPreset}
+          on:savePreset={onSavePreset}
+        />
       </div>
-    </details>
+      <Parameters
+        disabled={!editable}
+        {formParameters}
+        {highlightKeysMap}
+        on:change={onChangeFormParameters}
+        on:reset={onResetFormParameters}
+      />
+      {#if formParameters.length === 0}
+        <div class="st-typography-label">No Parameters Found</div>
+      {/if}
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse title="Annotations">
+      {#if activityMetadataDefinitions.length === 0}
+        <div class="st-typography-label">No Annotations Found</div>
+      {/if}
+
+      {#each activityMetadataDefinitions as definition}
+        <Highlight highlight={highlightKeysMap[definition.key]}>
+          <ActivityMetadataField
+            disabled={!editable}
+            on:change={onChangeActivityMetadata}
+            value={getActivityMetadataValue(definition.key)}
+            {definition}
+          />
+        </Highlight>
+      {/each}
+    </Collapse>
   </fieldset>
 </div>
 

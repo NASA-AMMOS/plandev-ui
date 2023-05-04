@@ -39,16 +39,16 @@ test.beforeAll(async ({ browser }) => {
   await page.getByRole('button', { name: 'CreateActivity-child' }).click();
   await page.getByRole('button', { name: 'Simulate' }).click();
 
-  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').fill('199');
-  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').blur();
+  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().fill('199');
+  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().blur();
 
   await plan.fillSimulationTemplateName('Template 1');
 
   await plan.panelSimulation.getByRole('button', { name: 'Enter a unique name for the new template' }).click();
   await plan.panelSimulation.locator('.dropdown-header').waitFor({ state: 'detached' });
 
-  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').fill('120');
-  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').blur();
+  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().fill('120');
+  await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().blur();
 
   await plan.fillSimulationTemplateName('Template 2');
 
@@ -71,7 +71,7 @@ test.afterAll(async () => {
   await context.close();
 });
 
-test.describe.serial('Plan Simulation Templates', () => {
+test.describe.serial('Plan Simulation Templates', async () => {
   test(`Setting a simulation template to a simulation should update the parameter values`, async () => {
     await plan.selectSimulationTemplateByName('Template 1');
 

@@ -7,8 +7,8 @@ import type {
   SimulationTemplate,
   Span,
   SpanId,
-  SpansMap,
   SpanUtilityMaps,
+  SpansMap,
 } from '../types/simulation';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';

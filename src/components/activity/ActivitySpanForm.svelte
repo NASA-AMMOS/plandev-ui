@@ -5,12 +5,13 @@
   import type { ExpansionSequence } from '../../types/expansion';
   import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
-  import type { Span, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { Span, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import { getSpanRootParent } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { getFormParameters } from '../../utilities/parameters';
   import { getDoyTimeFromInterval, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import ActivityDecomposition from './ActivityDecomposition.svelte';
@@ -124,147 +125,126 @@
 
 <div class="activity-span-form">
   <fieldset>
-    <details open>
-      <summary>Definition</summary>
+    <Collapse title="Definition">
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
+        <input class="st-input w-100" disabled name="id" value={span.id} />
+      </Input>
 
-      <div class="details-body">
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
-          <input class="st-input w-100" disabled name="id" value={span.id} />
-        </Input>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activityType"> Activity Type </label>
+        <input class="st-input w-100" disabled name="activityType" value={span.type} />
+      </Input>
 
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activityType"> Activity Type </label>
-          <input class="st-input w-100" disabled name="activityType" value={span.type} />
-        </Input>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
+        <input class="st-input w-100" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
+      </Input>
 
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Parent ID', placement: 'top' }} for="parentId">Parent ID</label>
-          <input class="st-input w-100" disabled name="parentId" value={span.parent_id ?? 'None (Root)'} />
-        </Input>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
+        <input class="st-input w-100" disabled name="duration" value={span.duration ?? 'None'} />
+      </Input>
 
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Duration', placement: 'top' }} for="duration">Duration</label>
-          <input class="st-input w-100" disabled name="duration" value={span.duration ?? 'None'} />
-        </Input>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Simulation Status', placement: 'top' }} for="simulationStatus">
+          Simulation Status
+        </label>
+        <input
+          class="st-input w-100"
+          disabled
+          name="simulationStatus"
+          value={span.duration === null ? 'Unfinished' : span.duration ? 'Finished' : 'None'}
+        />
+      </Input>
 
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Simulation Status', placement: 'top' }} for="simulationStatus">
-            Simulation Status
-          </label>
-          <input
-            class="st-input w-100"
-            disabled
-            name="simulationStatus"
-            value={span.duration === null ? 'Unfinished' : span.duration ? 'Finished' : 'None'}
-          />
-        </Input>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="startTime">Start Time</label>
+        <input class="st-input w-100" disabled name="startTime" value={startTimeDoy} />
+      </Input>
 
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="startTime">Start Time</label>
-          <input class="st-input w-100" disabled name="startTime" value={startTimeDoy} />
-        </Input>
-
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">End Time</label>
-          <input class="st-input w-100" disabled name="endTime" value={endTimeDoy ?? 'None'} />
-        </Input>
-      </div>
-    </details>
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">End Time</label>
+        <input class="st-input w-100" disabled name="endTime" value={endTimeDoy ?? 'None'} />
+      </Input>
+    </Collapse>
   </fieldset>
 
   <fieldset>
-    <details open>
-      <summary>
-        <span class:error={parametersWithErrorsCount > 0}>
-          Parameters
-          {#if parametersWithErrorsCount > 0}
-            ({parametersWithErrorsCount} invalid)
+    <Collapse
+      error={parametersWithErrorsCount > 0}
+      title={`Parameters${parametersWithErrorsCount > 0 ? ` (${parametersWithErrorsCount} invalid)` : ''}`}
+    >
+      <Parameters disabled {formParameters} hideRightAdornments={true} />
+      {#if formParameters.length === 0}
+        <div class="st-typography-label">No Parameters Found</div>
+      {/if}
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse title="Computed Attributes">
+      {#if !hasComputedAttributes}
+        <div class="st-typography-label">No Computed Attributes Found</div>
+      {:else}
+        <Parameters
+          disabled
+          expanded
+          formParameters={formParametersComputedAttributes}
+          levelPadding={0}
+          showName={false}
+        />
+      {/if}
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse title="Decomposition" defaultExpanded={rootSpanHasChildren}>
+      {#if rootSpanHasChildren}
+        <ActivityDecomposition
+          rootSpanId={rootSpan.id}
+          selectedSpanId={span.id}
+          {spanUtilityMaps}
+          {spansMap}
+          on:select
+        />
+      {:else}
+        <div class="st-typography-label">This activity has no children</div>
+      {/if}
+    </Collapse>
+  </fieldset>
+
+  <fieldset>
+    <Collapse title="Sequencing">
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'top' }} for="simulationDatasetId">
+          Simulation Dataset ID
+        </label>
+        <input class="st-input w-100" disabled name="simulationDatasetId" value={simulationDatasetId ?? 'None'} />
+      </Input>
+
+      <Input layout="inline">
+        <label use:tooltip={{ content: 'Sequence ID', placement: 'top' }} for="expansionSet">Sequence ID</label>
+        <select
+          bind:value={seqId}
+          class="st-select w-100"
+          name="sequences"
+          disabled={!filteredExpansionSequences.length}
+          on:change={updateExpansionSequenceToActivity}
+        >
+          {#if !filteredExpansionSequences.length}
+            <option value={null}>No Sequences for Simulation Dataset {simulationDatasetId ?? ''}</option>
+          {:else}
+            <option value={null} />
+            {#each filteredExpansionSequences as sequence}
+              <option value={sequence.seq_id}>
+                {sequence.seq_id}
+              </option>
+            {/each}
           {/if}
-        </span>
-      </summary>
-      <div class="details-body">
-        <Parameters disabled {formParameters} hideRightAdornments={true} />
-        {#if formParameters.length === 0}
-          <div class="st-typography-label">No Parameters Found</div>
-        {/if}
-      </div>
-    </details>
-  </fieldset>
-
-  <fieldset>
-    <details open>
-      <summary>Computed Attributes</summary>
-      <div class="details-body">
-        {#if !hasComputedAttributes}
-          <div class="st-typography-label">No Computed Attributes Found</div>
-        {:else}
-          <Parameters
-            disabled
-            expanded
-            formParameters={formParametersComputedAttributes}
-            levelPadding={0}
-            showName={false}
-          />
-        {/if}
-      </div>
-    </details>
-  </fieldset>
-
-  <fieldset>
-    <details open={rootSpanHasChildren} style:cursor="pointer">
-      <summary>Decomposition</summary>
-      <div class="details-body">
-        {#if rootSpanHasChildren}
-          <ActivityDecomposition
-            rootSpanId={rootSpan.id}
-            selectedSpanId={span.id}
-            {spanUtilityMaps}
-            {spansMap}
-            on:select
-          />
-        {:else}
-          <div class="st-typography-label">This activity has no children</div>
-        {/if}
-      </div>
-    </details>
-  </fieldset>
-
-  <fieldset>
-    <details open>
-      <summary>Sequencing</summary>
-
-      <div class="details-body">
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Simulation Dataset ID', placement: 'top' }} for="simulationDatasetId">
-            Simulation Dataset ID
-          </label>
-          <input class="st-input w-100" disabled name="simulationDatasetId" value={simulationDatasetId ?? 'None'} />
-        </Input>
-
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Sequence ID', placement: 'top' }} for="expansionSet">Sequence ID</label>
-          <select
-            bind:value={seqId}
-            class="st-select w-100"
-            name="sequences"
-            disabled={!filteredExpansionSequences.length}
-            on:change={updateExpansionSequenceToActivity}
-          >
-            {#if !filteredExpansionSequences.length}
-              <option value={null}>No Sequences for Simulation Dataset {simulationDatasetId ?? ''}</option>
-            {:else}
-              <option value={null} />
-              {#each filteredExpansionSequences as sequence}
-                <option value={sequence.seq_id}>
-                  {sequence.seq_id}
-                </option>
-              {/each}
-            {/if}
-          </select>
-        </Input>
-      </div>
-    </details>
+        </select>
+      </Input>
+    </Collapse>
   </fieldset>
 </div>
 

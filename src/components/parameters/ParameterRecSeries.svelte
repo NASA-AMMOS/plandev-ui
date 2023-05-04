@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
-  import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import DashIcon from 'bootstrap-icons/icons/dash.svg?component';
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { createEventDispatcher } from 'svelte';
@@ -10,6 +8,7 @@
   import type { ValueSchemaSeries } from '../../types/schema';
   import { getArgument } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
@@ -61,10 +60,6 @@
     dispatch('reset', formParameter);
   }
 
-  function toggleExpanded() {
-    expanded = !expanded;
-  }
-
   function valueAdd() {
     const { schema } = formParameter;
     const { value: newValue } = getArgument(null, schema.items);
@@ -81,83 +76,74 @@
 
 {#if showName}
   <div class="parameter-rec-series">
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div class="series-left" on:click={toggleExpanded}>
-      <div class="arrow">
-        {#if !expanded}
-          <ChevronRightIcon />
-        {:else}
-          <ChevronDownIcon />
-        {/if}
+    <Collapse defaultExpanded={expanded}>
+      <div slot="left">
+        <ParameterName {formParameter} />
       </div>
-      <ParameterName {formParameter} />
-    </div>
-    <div class="series-right">
-      <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
-        <button
-          class="st-button icon"
-          disabled={subFormParameters?.length === 0 || disabled}
-          on:click|stopPropagation={valueRemove}
-          use:tooltip={{ content: 'Remove Value', placement: 'left' }}
-        >
-          <DashIcon />
-        </button>
-        <button
-          {disabled}
-          class="st-button icon"
-          on:click|stopPropagation={valueAdd}
-          use:tooltip={{ content: 'Add Value', placement: 'left' }}
-        >
-          <PlusIcon />
-        </button>
-        <ParameterBaseRightAdornments
-          hidden={hideRightAdornments}
-          {formParameter}
-          {parameterType}
-          on:reset={onResetSeries}
-        />
-      </CssGrid>
-    </div>
+      <div class="series-right" slot="right">
+        <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
+          <button
+            class="st-button icon"
+            disabled={subFormParameters?.length === 0 || disabled}
+            on:click|stopPropagation={valueRemove}
+            use:tooltip={{ content: 'Remove Value', placement: 'left' }}
+          >
+            <DashIcon />
+          </button>
+          <button
+            {disabled}
+            class="st-button icon"
+            on:click|stopPropagation={valueAdd}
+            use:tooltip={{ content: 'Add Value', placement: 'left' }}
+          >
+            <PlusIcon />
+          </button>
+          <ParameterBaseRightAdornments
+            hidden={hideRightAdornments}
+            {formParameter}
+            {parameterType}
+            on:reset={onResetSeries}
+          />
+        </CssGrid>
+      </div>
+      <ul style="padding-inline-start: {levelPadding}px">
+        {#if subFormParameters?.length}
+          {#each subFormParameters as subFormParameter (subFormParameter.name)}
+            <li>
+              {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
+                <ParameterRec
+                  {disabled}
+                  hideRightAdornments
+                  expanded
+                  formParameter={subFormParameter}
+                  {labelColumnWidth}
+                  level={++level}
+                  {levelPadding}
+                  {parameterType}
+                  on:change={onChange}
+                />
+              {:else}
+                <ParameterBase
+                  {disabled}
+                  formParameter={subFormParameter}
+                  hideRightAdornments
+                  {labelColumnWidth}
+                  level={++level}
+                  {levelPadding}
+                  {parameterType}
+                  on:change={onChange}
+                />
+              {/if}
+            </li>
+          {/each}
+        {:else}
+          <div class="p-1">This series has no values</div>
+        {/if}
+      </ul>
+    </Collapse>
   </div>
 {:else}
   <div class="parameter-rec-series" />
-{/if}
-
-{#if expanded}
-  <ul style="padding-inline-start: {levelPadding}px">
-    {#if subFormParameters?.length}
-      {#each subFormParameters as subFormParameter (subFormParameter.name)}
-        <li>
-          {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
-            <ParameterRec
-              {disabled}
-              hideRightAdornments
-              {expanded}
-              formParameter={subFormParameter}
-              {labelColumnWidth}
-              level={++level}
-              {levelPadding}
-              {parameterType}
-              on:change={onChange}
-            />
-          {:else}
-            <ParameterBase
-              {disabled}
-              formParameter={subFormParameter}
-              hideRightAdornments
-              {labelColumnWidth}
-              level={++level}
-              {levelPadding}
-              {parameterType}
-              on:change={onChange}
-            />
-          {/if}
-        </li>
-      {/each}
-    {:else}
-      <div class="p-1">This series has no values</div>
-    {/if}
-  </ul>
 {/if}
 
 <style>
@@ -173,21 +159,10 @@
     padding: 4px 0px;
   }
 
-  .arrow {
-    display: flex;
-    padding-right: 8px;
-  }
-
   .parameter-rec-series {
     align-items: center;
     cursor: pointer;
     display: flex;
-  }
-
-  .series-left {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
   }
 
   .series-right {
@@ -202,5 +177,14 @@
 
   .parameter-rec-series :global(.form-parameter-name .name) {
     cursor: pointer;
+  }
+
+  .parameter-rec-series :global(.collapse > .collapse-header) {
+    gap: 8px;
+    height: 24px;
+  }
+
+  .parameter-rec-series :global(.collapse > .content) {
+    margin-left: 0px;
   }
 </style>

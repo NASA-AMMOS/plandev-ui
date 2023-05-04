@@ -23,6 +23,7 @@
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
   import { required, timestamp } from '../../utilities/validators';
+  import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
@@ -215,69 +216,62 @@
 
   <svelte:fragment slot="body">
     <fieldset>
-      <details open>
-        <summary>General</summary>
-        <div class="details-body">
-          <DatePickerField
-            field={startTimeDoyField}
-            label="Start Time"
-            layout="inline"
-            name="start-time"
-            on:change={onUpdateStartTime}
-            on:keydown={onUpdateStartTime}
-          >
-            <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
-              <PlanLeftArrow />
-            </DatePickerActionButton>
-          </DatePickerField>
-          <DatePickerField
-            field={endTimeDoyField}
-            label="End Time"
-            layout="inline"
-            name="end-time"
-            on:change={onUpdateEndTime}
-            on:keydown={onUpdateEndTime}
-          >
-            <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
-              <PlanRightArrow />
-            </DatePickerActionButton>
-          </DatePickerField>
-        </div>
-      </details>
+      <Collapse title="General">
+        <DatePickerField
+          field={startTimeDoyField}
+          label="Start Time"
+          layout="inline"
+          name="start-time"
+          on:change={onUpdateStartTime}
+          on:keydown={onUpdateStartTime}
+        >
+          <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
+            <PlanLeftArrow />
+          </DatePickerActionButton>
+        </DatePickerField>
+        <DatePickerField
+          field={endTimeDoyField}
+          label="End Time"
+          layout="inline"
+          name="end-time"
+          on:change={onUpdateEndTime}
+          on:keydown={onUpdateEndTime}
+        >
+          <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
+            <PlanRightArrow />
+          </DatePickerActionButton>
+        </DatePickerField>
+      </Collapse>
     </fieldset>
 
     <fieldset>
-      <details open>
-        <summary>Arguments</summary>
-        <div class="details-body">
-          <div class="simulation-template">
-            <SimulationTemplateInput
-              hasChanges={numOfUserChanges > 0}
-              selectedSimulationTemplate={$simulation?.template}
-              on:applyTemplate={onApplySimulationTemplate}
-              on:deleteTemplate={onDeleteSimulationTemplate}
-              on:saveNewTemplate={onSaveNewSimulationTemplate}
-              on:saveTemplate={onSaveSimulationTemplate}
-            />
-          </div>
-          {#if formParameters.length}
-            <Parameters
-              {formParameters}
-              parameterType="simulation"
-              on:change={onChangeFormParameters}
-              on:reset={onResetFormParameters}
-            />
-          {:else}
-            <div class="p-1">No simulation arguments found</div>
-          {/if}
+      <Collapse title="Arguments">
+        <div class="simulation-template">
+          <SimulationTemplateInput
+            hasChanges={numOfUserChanges > 0}
+            selectedSimulationTemplate={$simulation?.template}
+            on:applyTemplate={onApplySimulationTemplate}
+            on:deleteTemplate={onDeleteSimulationTemplate}
+            on:saveNewTemplate={onSaveNewSimulationTemplate}
+            on:saveTemplate={onSaveSimulationTemplate}
+          />
         </div>
-      </details>
+        {#if formParameters.length}
+          <Parameters
+            {formParameters}
+            parameterType="simulation"
+            on:change={onChangeFormParameters}
+            on:reset={onResetFormParameters}
+          />
+        {:else}
+          <div class="p-1">No simulation arguments found</div>
+        {/if}
+      </Collapse>
     </fieldset>
 
     <fieldset>
-      <details open>
-        <summary>Simulation History</summary>
-        <div class="details-body simulation-history">
+      <Collapse title="Simulation History">
+        <div class="simulation-history">
           {#if !$simulationDatasets || !$simulationDatasets.length}
             <div>No Simulation Datasets</div>
           {:else}
@@ -294,18 +288,23 @@
             {/each}
           {/if}
         </div>
-      </details>
+      </Collapse>
     </fieldset>
   </svelte:fragment>
 </Panel>
 
 <style>
   .simulation-history {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-left: 8px;
   }
 
   .simulation-template {
     margin-left: -7px;
+  }
+
+  :global(.simulation-collapse.collapse .content) {
+    margin: 0;
   }
 </style>

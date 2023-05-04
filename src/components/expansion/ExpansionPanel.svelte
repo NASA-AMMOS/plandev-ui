@@ -15,6 +15,7 @@
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
+  import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -150,55 +151,47 @@
       </fieldset>
 
       <fieldset>
-        <details class="details-container" open style:cursor="pointer">
-          <summary class="details-label">Sequences</summary>
-          <div class="details-body">
-            <Input>
-              <label for="simulationDatasetId">Simulation Dataset ID</label>
-              <input
-                class="st-input w-100"
-                disabled
-                name="simulationDatasetId"
-                value={$simulationDatasetId ?? 'None'}
-              />
-            </Input>
+        <Collapse className="details-container" title="Sequences">
+          <Input>
+            <label for="simulationDatasetId">Simulation Dataset ID</label>
+            <input class="st-input w-100" disabled name="simulationDatasetId" value={$simulationDatasetId ?? 'None'} />
+          </Input>
 
-            <div>
-              {#if $simulationDatasetId === null}
-                <div class="pb-3">First run a simulation before creating a sequence</div>
-              {:else}
-                <CssGrid class="expansion-form" rows="min-content auto">
-                  <CssGrid columns="3fr 1fr" gap="10px">
-                    <input bind:value={seqIdInput} class="st-input" />
-                    <button
-                      class="st-button secondary"
-                      disabled={!createButtonEnabled}
-                      on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
-                    >
-                      {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
-                    </button>
-                  </CssGrid>
-                  <div class="mt-2">
-                    {#if $filteredExpansionSequences.length}
-                      <SingleActionDataGrid
-                        getRowId={rowData => rowData.seq_id}
-                        {columnDefs}
-                        itemDisplayText="Sequence"
-                        items={$filteredExpansionSequences}
-                        on:deleteItem={deleteExpansionSequenceContext}
-                        on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail)}
-                      />
-                    {:else}
-                      <div class="st-typography-label">
-                        No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
-                      </div>
-                    {/if}
-                  </div>
+          {#if $simulationDatasetId === null}
+            <div class="pb-3">First run a simulation before creating a sequence</div>
+          {:else}
+            <div class="expansion-form-container">
+              <CssGrid class="expansion-form" rows="min-content auto">
+                <CssGrid columns="3fr 1fr" gap="10px">
+                  <input bind:value={seqIdInput} class="st-input" />
+                  <button
+                    class="st-button secondary"
+                    disabled={!createButtonEnabled}
+                    on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
+                  >
+                    {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
+                  </button>
                 </CssGrid>
-              {/if}
+                <div class="mt-2">
+                  {#if $filteredExpansionSequences.length}
+                    <SingleActionDataGrid
+                      getRowId={rowData => rowData.seq_id}
+                      {columnDefs}
+                      itemDisplayText="Sequence"
+                      items={$filteredExpansionSequences}
+                      on:deleteItem={deleteExpansionSequenceContext}
+                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail)}
+                    />
+                  {:else}
+                    <div class="st-typography-label">
+                      No Sequences for Simulation Dataset {$simulationDatasetId ?? ''}
+                    </div>
+                  {/if}
+                </div>
+              </CssGrid>
             </div>
-          </div>
-        </details>
+          {/if}
+        </Collapse>
       </fieldset>
     </div>
   </svelte:fragment>
@@ -211,17 +204,18 @@
     height: 100%;
   }
 
-  .details-container {
+  :global(.details-container) {
     height: 100%;
   }
+  :global(.details-container.collapse .content) {
+    height: calc(100%);
+  }
 
-  .details-body {
-    display: grid;
-    grid-template-rows: min-content auto;
+  :global(.details-container.collapse .expansion-form-container) {
     height: calc(100% - 48px);
   }
 
-  .expansion-panel-body .details-container .details-body :global(.expansion-form) {
+  :global(.expansion-form) {
     height: 100%;
   }
 </style>

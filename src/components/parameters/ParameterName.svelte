@@ -11,7 +11,7 @@
   $: tooltipContent = formParameter.required ? `${formParameter.name} (required)` : formParameter.name;
 </script>
 
-<div class="form-parameter-name">
+<div class="form-parameter-name st-typography-body">
   <div
     class="name"
     class:error={formParameter.errors !== null}
