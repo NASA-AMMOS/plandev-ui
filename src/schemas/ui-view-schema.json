@@ -77,7 +77,6 @@
         "ActivityDirectivesTablePanel",
         "ActivityFormPanel",
         "ActivityTypesPanel",
-        "ConstraintViolationsPanel",
         "ConstraintsPanel",
         "ExpansionPanel",
         "IFramePanel",

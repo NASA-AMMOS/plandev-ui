@@ -331,18 +331,26 @@ export function getDoy(date: Date): number {
 }
 
 /**
+ * Get the DOY components for a given JavaScript Date object.
+ */
+export function getDoyTimeComponents(date: Date) {
+  return {
+    doy: getDoy(date).toString().padStart(3, '0'),
+    hours: date.getUTCHours().toString().padStart(2, '0'),
+    mins: date.getUTCMinutes().toString().padStart(2, '0'),
+    msecs: date.getUTCMilliseconds().toString().padStart(3, '0'),
+    secs: date.getUTCSeconds().toString().padStart(2, '0'),
+    year: date.getUTCFullYear().toString(),
+  };
+}
+
+/**
  * Get a day-of-year timestamp from a given JavaScript Date object.
  * @example getDoyTime(new Date(1577779200000)) -> 2019-365T08:00:00.000
  * @note inverse of getUnixEpochTime
  */
 export function getDoyTime(date: Date, includeMsecs = true): string {
-  const year = date.getUTCFullYear();
-  const doy = getDoy(date).toString().padStart(3, '0');
-  const hours = date.getUTCHours().toString().padStart(2, '0');
-  const mins = date.getUTCMinutes().toString().padStart(2, '0');
-  const secs = date.getUTCSeconds().toString().padStart(2, '0');
-  const msecs = date.getUTCMilliseconds().toString().padStart(3, '0');
-
+  const { doy, hours, mins, msecs, secs, year } = getDoyTimeComponents(date);
   let doyTimestamp = `${year}-${doy}T${hours}:${mins}:${secs}`;
 
   if (includeMsecs) {

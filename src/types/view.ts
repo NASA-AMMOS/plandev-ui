@@ -31,7 +31,6 @@ export type ViewGridComponent =
   | 'ActivityFormPanel'
   | 'ActivitySpansTablePanel'
   | 'ActivityTypesPanel'
-  | 'ConstraintViolationsPanel'
   | 'ConstraintsPanel'
   | 'ExpansionPanel'
   | 'IFramePanel'

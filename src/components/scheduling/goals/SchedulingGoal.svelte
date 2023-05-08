@@ -2,14 +2,12 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
-  import CaretRightFillIcon from 'bootstrap-icons/icons/caret-right-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import type { SchedulingGoal } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { tooltip } from '../../../utilities/tooltip';
-  import ContextMenu from '../../context-menu/ContextMenu.svelte';
+  import Collapse from '../../Collapse.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import Input from '../../form/Input.svelte';
@@ -22,11 +20,9 @@
   export let specificationId: number;
   export let simulateAfter: boolean = true;
 
-  $: upButtonClass = priority <= 0 ? 'hidden' : '';
+  $: upButtonHidden = priority <= 0;
   $: simulateGoal = simulateAfter; // Copied to local var to reflect changed values immediately in the UI
 
-  let contextMenu: ContextMenu;
-  let expanded = false;
   let schedulingGoalInput: HTMLInputElement;
 
   function focusInput() {
@@ -56,111 +52,84 @@
   }
 </script>
 
-<div class="scheduling-goal" on:contextmenu|preventDefault={contextMenu.show}>
-  <div class="left st-typography-body" class:disabled={!enabled}>
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span aria-label="scheduling-goal-expand" on:click={() => (expanded = !expanded)}>
-      {#if !expanded}
-        <CaretRightFillIcon />
-      {:else}
-        <CaretDownFillIcon />
-      {/if}
-    </span>
-    <PlanIcon />
-    <span
-      class="scheduling-goal-name st-typography-body"
-      use:tooltip={{ content: goal.name, maxWidth: 'none', placement: 'right' }}
-    >
-      {goal.name}
-    </span>
-  </div>
-  <div class="right">
-    <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
-    <Input>
-      <input
-        bind:this={schedulingGoalInput}
-        bind:value={priority}
-        class="st-input"
-        disabled={!enabled}
-        min="0"
-        style:width="65px"
-        type="number"
-        on:change={() => updatePriority(priority)}
-        on:keydown={onKeyDown}
-      />
-      <div class="priority-buttons">
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="up-button {upButtonClass}" on:click={() => focusInput() && updatePriority(priority - 1)}>
-          <CaretUpFillIcon />
-        </div>
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="down-button" on:click={() => focusInput() && updatePriority(priority + 1)}>
-          <CaretDownFillIcon />
-        </div>
+<div class="scheduling-goal" class:disabled={!enabled}>
+  <Collapse title={goal.name} tooltipContent={goal.name} defaultExpanded={false}>
+    <svelte:fragment slot="right">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <div class="right-content" on:click|stopPropagation>
+        <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
+        <Input>
+          <input
+            bind:this={schedulingGoalInput}
+            bind:value={priority}
+            class="st-input"
+            disabled={!enabled}
+            min="0"
+            style:width="68px"
+            type="number"
+            on:change={() => updatePriority(priority)}
+            on:keydown={onKeyDown}
+          />
+          <div class="priority-buttons">
+            <button
+              use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
+              class="st-button tertiary up-button"
+              class:hidden={upButtonHidden}
+              tabindex={upButtonHidden ? -1 : 0}
+              on:click={() => focusInput() && updatePriority(priority - 1)}
+            >
+              <CaretUpFillIcon />
+            </button>
+            <button
+              use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
+              class="st-button tertiary down-button"
+              on:click={() => focusInput() && updatePriority(priority + 1)}
+            >
+              <CaretDownFillIcon />
+            </button>
+          </div>
+          <input
+            use:tooltip={{ content: enabled ? 'Disable Gcheduling Goal' : 'Enable Scheduling Goal', placement: 'top' }}
+            bind:checked={enabled}
+            style:cursor="pointer"
+            type="checkbox"
+            on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled })}
+          />
+        </Input>
       </div>
-      <input
-        bind:checked={enabled}
-        style:cursor="pointer"
-        type="checkbox"
-        on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled })}
-      />
-    </Input>
-  </div>
+    </svelte:fragment>
+
+    <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
+
+    <svelte:fragment slot="contextMenuContent">
+      <ContextMenuHeader>Actions</ContextMenuHeader>
+      <ContextMenuItem on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}>
+        Edit Goal
+      </ContextMenuItem>
+      <ContextMenuHeader>Modify</ContextMenuHeader>
+      <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id)}>Delete Goal</ContextMenuItem>
+      <ContextMenuItem>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div
+          class="scheduling-goal-simulate-toggle"
+          on:click|stopPropagation={() => {
+            simulateGoal = !simulateGoal;
+            effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal });
+          }}
+        >
+          <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
+        </div>
+      </ContextMenuItem>
+    </svelte:fragment>
+  </Collapse>
 </div>
 
-{#if expanded}
-  <ul class:disabled={!enabled}>
-    <li>
-      <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
-    </li>
-  </ul>
-{/if}
-
-<ContextMenu bind:this={contextMenu}>
-  <ContextMenuHeader>Actions</ContextMenuHeader>
-  <ContextMenuItem on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}>
-    Edit Goal
-  </ContextMenuItem>
-  <ContextMenuHeader>Modify</ContextMenuHeader>
-  <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id)}>Delete Goal</ContextMenuItem>
-  <ContextMenuItem>
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div
-      class="scheduling-goal-simulate-toggle"
-      on:click|stopPropagation={() => {
-        simulateGoal = !simulateGoal;
-        effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal });
-      }}
-    >
-      <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After
-    </div>
-  </ContextMenuItem>
-</ContextMenu>
-
 <style>
-  ul {
-    margin: 0;
-    padding-inline-start: 30px;
-  }
-
-  li {
-    list-style: none;
-  }
-
   .scheduling-goal {
-    align-items: center;
+    align-items: normal;
     cursor: default;
     display: flex;
-    font-size: 0.8rem;
-    padding-bottom: 5px;
-    padding-top: 5px;
-  }
-
-  .scheduling-goal-name {
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex-direction: column;
   }
 
   .scheduling-goal-simulate-toggle {
@@ -172,30 +141,14 @@
     margin-left: 0;
   }
 
-  .left {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
-    gap: 10px;
-    overflow: hidden;
-  }
-
-  ul.disabled *,
-  ul.disabled :global(.st-typography-body),
-  .left.disabled,
-  .left.disabled :global(.st-typography-body) {
+  .scheduling-goal.disabled :global(*:not(.collapse-icon *):not(.context-menu *)) {
     color: var(--st-gray-30) !important;
   }
 
-  .left > span:first-child {
-    color: var(--st-gray-40);
-    cursor: pointer;
-    display: flex;
-  }
-
-  .right {
+  .right-content {
     align-items: center;
     display: flex;
+    gap: 8px;
     justify-content: flex-end;
   }
 
@@ -216,20 +169,21 @@
   .priority-buttons {
     align-items: center;
     display: flex;
-    margin-left: -32px;
+    margin-left: -36px;
   }
 
-  .up-button,
-  .down-button {
+  .priority-buttons :global(button) {
     align-items: center;
     color: var(--st-gray-40);
     cursor: pointer;
     display: flex;
+    min-width: 0;
+    padding: 0;
     pointer-events: painted;
   }
 
-  .up-button:hover,
-  .down-button:hover {
+  .priority-buttons :global(button):hover {
+    background-color: transparent !important;
     color: var(--st-gray-60);
   }
 

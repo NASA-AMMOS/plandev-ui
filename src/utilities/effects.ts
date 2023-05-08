@@ -2,7 +2,7 @@ import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { get } from 'svelte/store';
 import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, constraintViolationsMap } from '../stores/constraints';
+import { checkConstraintsStatus, constraintViolationsResponseMap } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createDictionaryError,
@@ -32,7 +32,7 @@ import type {
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { JsonWebToken, ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
-import type { Constraint, ConstraintInsertInput, ConstraintViolationsMap } from '../types/constraint';
+import type { Constraint, ConstraintInsertInput, ConstraintViolationsResponseMap } from '../types/constraint';
 import type {
   ExpansionRule,
   ExpansionRuleInsertInput,
@@ -178,11 +178,13 @@ const effects = {
     try {
       checkConstraintsStatus.set(Status.Incomplete);
       const { id: planId } = get(plan);
-      const data = await reqHasura<{ violationsMap: ConstraintViolationsMap }>(gql.CHECK_CONSTRAINTS, { planId });
+      const data = await reqHasura<{ violationsMap: ConstraintViolationsResponseMap }>(gql.CHECK_CONSTRAINTS, {
+        planId,
+      });
       const { checkConstraintsResponse } = data;
       const { violationsMap } = checkConstraintsResponse;
 
-      constraintViolationsMap.set(violationsMap);
+      constraintViolationsResponseMap.set(violationsMap);
       checkConstraintsStatus.set(Status.Complete);
       showSuccessToast('Check Constraints Complete');
     } catch (e) {

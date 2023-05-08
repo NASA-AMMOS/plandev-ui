@@ -7,16 +7,16 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../stores/activities';
-  import { constraintViolations } from '../../stores/constraints';
+  import { visibleConstraintViolations } from '../../stores/constraints';
   import { maxTimeRange, plan, planId, viewTimeRange } from '../../stores/plan';
   import {
     resourcesByViewLayerId,
     selectedSpanId,
     simulation,
     simulationDataset,
+    spanUtilityMaps,
     spans,
     spansMap,
-    spanUtilityMaps,
   } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
@@ -92,7 +92,7 @@
     <Timeline
       activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
-      constraintViolations={$constraintViolations}
+      constraintViolations={$visibleConstraintViolations}
       maxTimeRange={$maxTimeRange}
       planEndTimeDoy={$plan.end_time_doy}
       planId={$planId}

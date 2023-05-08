@@ -61,12 +61,6 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelConstraints).toBeVisible();
   });
 
-  test(`Clicking on 'Constraint Violations' in the grid menu should show the constraint violations panel`, async () => {
-    await expect(plan.panelConstraintViolations).not.toBeVisible();
-    await plan.showPanel('Constraint Violations');
-    await expect(plan.panelConstraintViolations).toBeVisible();
-  });
-
   test(`Clicking on 'Expansion' in the grid menu should show the expansion panel`, async () => {
     await expect(plan.panelExpansion).not.toBeVisible();
     await plan.showPanel('Expansion');

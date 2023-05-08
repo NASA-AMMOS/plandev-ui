@@ -7,8 +7,8 @@
   import { schedulingSpecConditions, selectedSpecId } from '../../stores/scheduling';
   import type { SchedulingSpecCondition } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
+  import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
 
@@ -44,35 +44,35 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <CssGrid columns="4fr 1fr" gap="5px">
-      <input
-        bind:value={conditionsFilterText}
-        class="st-input w-100"
-        name="search"
-        placeholder="Filter scheduling conditions"
-      />
+    <CollapsibleListControls
+      placeholder="Filter scheduling conditions"
+      on:input={event => (conditionsFilterText = event.detail.value)}
+    >
       <button
-        class="st-button secondary"
+        slot="right"
         name="new-scheduling-condition"
+        class="st-button secondary"
         on:click={() =>
           window.open(
-            `${base}/scheduling/conditions/new?modelId=${$plan.model.id}&&specId=${$selectedSpecId}`,
+            `${base}/scheduling/conditions/new?modelId=${$plan?.model.id}&&specId=${$selectedSpecId}`,
             '_blank',
           )}
       >
         New
       </button>
-    </CssGrid>
-    {#if !filteredSchedulingSpecConditions.length}
-      <div class="pt-1 st-typography-label">No scheduling conditions found</div>
-    {:else}
-      {#each filteredSchedulingSpecConditions as specCondition (specCondition.condition.id)}
-        <SchedulingCondition
-          enabled={specCondition.enabled}
-          condition={specCondition.condition}
-          specificationId={specCondition.specification_id}
-        />
-      {/each}
-    {/if}
+    </CollapsibleListControls>
+    <div class="pt-2">
+      {#if !filteredSchedulingSpecConditions.length}
+        <div class="pt-1 st-typography-label">No scheduling conditions found</div>
+      {:else}
+        {#each filteredSchedulingSpecConditions as specCondition (specCondition.condition.id)}
+          <SchedulingCondition
+            enabled={specCondition.enabled}
+            condition={specCondition.condition}
+            specificationId={specCondition.specification_id}
+          />
+        {/each}
+      {/if}
+    </div>
   </svelte:fragment>
 </Panel>

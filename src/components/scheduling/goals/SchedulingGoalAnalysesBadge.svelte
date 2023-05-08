@@ -5,6 +5,7 @@
   import XCircleFillIcon from 'bootstrap-icons/icons/x-circle-fill.svg?component';
   import { difference } from 'lodash-es';
   import type { SchedulingGoalAnalysis } from '../../../types/scheduling';
+  import { tooltip } from '../../../utilities/tooltip';
 
   export let analyses: SchedulingGoalAnalysis[] = [];
   export let enabled: boolean;
@@ -28,19 +29,34 @@
 </script>
 
 {#if currentAnalysis}
-  <div class="scheduling-goal-analyses-badge" class:disabled={!enabled}>
+  <div class="scheduling-goal-analyses-badge st-typography-bold" class:disabled={!enabled}>
     {#if satisfyingActivitiesDifference !== null}
-      <div class="difference-badge" class:disabled={!enabled}>
+      <div
+        class="difference-badge"
+        class:disabled={!enabled}
+        use:tooltip={{ content: 'New Satisfied Activities', maxWidth: 'none', placement: 'top' }}
+      >
         +{satisfyingActivitiesDifference}
       </div>
     {/if}
-    {currentAnalysis.satisfying_activities.length}
+    <!-- TODO what do these things actually mean? -->
+    <div use:tooltip={{ content: 'Total Satisfied Activities', maxWidth: 'none', placement: 'top' }}>
+      {currentAnalysis.satisfying_activities.length}
+    </div>
     {#if currentAnalysis.satisfied}
-      <span class="icon satisfied" class:disabled={!enabled}>
+      <span
+        class="icon satisfied"
+        class:disabled={!enabled}
+        use:tooltip={{ content: 'Scheduling Goal Satisfied', maxWidth: 'none', placement: 'top' }}
+      >
         <CheckCircleFillIcon />
       </span>
     {:else}
-      <span class="icon unsatisfied" class:disabled={!enabled}>
+      <span
+        class="icon unsatisfied"
+        class:disabled={!enabled}
+        use:tooltip={{ content: 'Scheduling Goal Unsatisfied', maxWidth: 'none', placement: 'top' }}
+      >
         <XCircleFillIcon />
       </span>
     {/if}
@@ -53,14 +69,10 @@
     background-color: var(--st-gray-10);
     border-radius: 4px;
     color: var(--st-gray-60);
+    cursor: default;
     display: inline-flex;
-    font-family: var(--st-typography-font-family);
-    font-size: var(--st-typography-body-font-size);
-    font-weight: var(--st-typography-bold-font-weight);
     gap: 8px;
     justify-content: space-evenly;
-    letter-spacing: var(--st-typography-body-letter-spacing);
-    line-height: var(--st-typography-body-line-height);
     padding: 2px 5px;
   }
 
@@ -84,12 +96,5 @@
 
   .unsatisfied {
     color: var(--st-red);
-  }
-
-  .difference-badge.disabled,
-  .satisfied.disabled,
-  .scheduling-goal-analyses-badge.disabled,
-  .unsatisfied.disabled {
-    color: var(--st-gray-30);
   }
 </style>

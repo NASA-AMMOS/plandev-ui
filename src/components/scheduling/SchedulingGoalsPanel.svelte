@@ -9,8 +9,8 @@
   import type { SchedulingSpecGoal } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
-  import CssGrid from '../ui/CssGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -54,29 +54,34 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <CssGrid columns="4fr 1fr" gap="5px">
-      <input bind:value={filterText} class="st-input w-100" name="search" placeholder="Filter scheduling goals" />
+    <CollapsibleListControls
+      placeholder="Filter scheduling goals"
+      on:input={event => (filterText = event.detail.value)}
+    >
       <button
-        class="st-button secondary"
+        slot="right"
         name="new-scheduling-goal"
+        class="st-button secondary"
         on:click={() =>
-          window.open(`${base}/scheduling/goals/new?modelId=${$plan.model.id}&&specId=${$selectedSpecId}`, '_blank')}
+          window.open(`${base}/scheduling/goals/new?modelId=${$plan?.model.id}&&specId=${$selectedSpecId}`, '_blank')}
       >
         New
       </button>
-    </CssGrid>
-    {#if !filteredSchedulingSpecGoals.length}
-      <div class="pt-1 st-typography-label">No scheduling goals found</div>
-    {:else}
-      {#each filteredSchedulingSpecGoals as specGoal (specGoal.goal.id)}
-        <SchedulingGoal
-          enabled={specGoal.enabled}
-          goal={specGoal.goal}
-          priority={specGoal.priority}
-          simulateAfter={specGoal.simulate_after}
-          specificationId={specGoal.specification_id}
-        />
-      {/each}
-    {/if}
+    </CollapsibleListControls>
+    <div class="pt-2">
+      {#if !filteredSchedulingSpecGoals.length}
+        <div class="pt-1 st-typography-label">No scheduling goals found</div>
+      {:else}
+        {#each filteredSchedulingSpecGoals as specGoal (specGoal.goal.id)}
+          <SchedulingGoal
+            enabled={specGoal.enabled}
+            goal={specGoal.goal}
+            priority={specGoal.priority}
+            simulateAfter={specGoal.simulate_after}
+            specificationId={specGoal.specification_id}
+          />
+        {/each}
+      {/if}
+    </div>
   </svelte:fragment>
 </Panel>

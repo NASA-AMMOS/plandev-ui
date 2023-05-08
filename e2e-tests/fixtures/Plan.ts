@@ -33,7 +33,6 @@ export class Plan {
   panelActivityDirectivesTable: Locator;
   panelActivityForm: Locator;
   panelActivityTypes: Locator;
-  panelConstraintViolations: Locator;
   panelConstraints: Locator;
   panelExpansion: Locator;
   panelSchedulingConditions: Locator;
@@ -253,18 +252,14 @@ export class Plan {
 
   async showConstraintsLayout() {
     await this.showPanel('Constraints');
-    await this.showPanel('Constraint Violations', true);
     await this.panelConstraints.waitFor({ state: 'attached' });
     await this.panelConstraints.waitFor({ state: 'visible' });
     await this.panelActivityDirectivesTable.waitFor({ state: 'attached' });
     await this.panelActivityDirectivesTable.waitFor({ state: 'visible' });
-    await this.panelConstraintViolations.waitFor({ state: 'attached' });
-    await this.panelConstraintViolations.waitFor({ state: 'visible' });
     await this.panelTimeline.waitFor({ state: 'attached' });
     await this.panelTimeline.waitFor({ state: 'visible' });
     await expect(this.panelConstraints).toBeVisible();
     await expect(this.panelActivityDirectivesTable).toBeVisible();
-    await expect(this.panelConstraintViolations).toBeVisible();
     await expect(this.panelTimeline).toBeVisible();
   }
 
@@ -324,7 +319,6 @@ export class Plan {
     this.panelActivityDirectivesTable = page.locator('[data-component-name="ActivityDirectivesTablePanel"]');
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
     this.panelActivityTypes = page.locator('[data-component-name="ActivityTypesPanel"]');
-    this.panelConstraintViolations = page.locator('[data-component-name="ConstraintViolationsPanel"]');
     this.panelConstraints = page.locator('[data-component-name="ConstraintsPanel"]');
     this.panelExpansion = page.locator('[data-component-name="ExpansionPanel"]');
     this.panelSchedulingConditions = page.locator('[data-component-name="SchedulingConditionsPanel"]');
@@ -342,9 +336,9 @@ export class Plan {
     this.schedulingConditionEnabledCheckbox = page
       .locator(`.scheduling-condition:has-text("${this.schedulingConditions.conditionName}") >> input[type="checkbox"]`)
       .first();
-    this.schedulingGoalExpand = page.locator('span[aria-label="scheduling-goal-expand"]').first();
+    this.schedulingGoalExpand = page.locator('.scheduling-goal > .collapse > button').first();
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
-    this.schedulingSatisfiedActivity = page.locator('li > .satisfied-activity');
+    this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
   }
 }

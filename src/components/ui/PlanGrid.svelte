@@ -8,13 +8,12 @@
   import ActivitySpansTablePanel from '../activity/ActivitySpansTablePanel.svelte';
   import ActivityTypesPanel from '../activity/ActivityTypesPanel.svelte';
   import ConstraintsPanel from '../constraints/ConstraintsPanel.svelte';
-  import ConstraintViolationsPanel from '../constraints/ConstraintViolationsPanel.svelte';
   import ExpansionPanel from '../expansion/ExpansionPanel.svelte';
   import SchedulingConditionsPanel from '../scheduling/SchedulingConditionsPanel.svelte';
   import SchedulingGoalsPanel from '../scheduling/SchedulingGoalsPanel.svelte';
   import SimulationPanel from '../simulation/SimulationPanel.svelte';
-  import TimelineEditorPanel from '../timeline/form/TimelineEditorPanel.svelte';
   import TimelinePanel from '../timeline/TimelinePanel.svelte';
+  import TimelineEditorPanel from '../timeline/form/TimelineEditorPanel.svelte';
   import CssGrid from './CssGrid.svelte';
   import CssGridGutter from './CssGridGutter.svelte';
   import IFramePanel from './IFramePanel.svelte';
@@ -41,7 +40,6 @@
     ActivityFormPanel,
     ActivitySpansTablePanel,
     ActivityTypesPanel,
-    ConstraintViolationsPanel,
     ConstraintsPanel,
     ExpansionPanel,
     IFramePanel,

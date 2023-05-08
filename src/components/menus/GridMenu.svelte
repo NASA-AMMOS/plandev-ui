@@ -7,9 +7,8 @@
   import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/checklist_on_page.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
-  import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
+  import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
-  import FileEarmarkExcelIcon from 'bootstrap-icons/icons/file-earmark-excel.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import WindowFullscreenIcon from 'bootstrap-icons/icons/window-fullscreen.svg?component';
   import { viewUpdateGrid } from '../../stores/views';
@@ -60,12 +59,8 @@
       Activity Types
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ConstraintsPanel')}>
-      <BracesAsteriskIcon />
+      <VerticalCollapseIcon />
       Constraints
-    </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('ConstraintViolationsPanel')}>
-      <FileEarmarkExcelIcon />
-      Constraint Violations
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('ExpansionPanel')}>
       <CodeSquareIcon />

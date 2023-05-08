@@ -8,6 +8,7 @@ import {
   getDaysInYear,
   getDoy,
   getDoyTime,
+  getDoyTimeComponents,
   getUnixEpochTime,
   parseDoyOrYmdTime,
 } from '../../src/utilities/time';
@@ -66,6 +67,18 @@ test('getDaysInYear', () => {
 test('getDoy', () => {
   const doy = getDoy(new Date('1/3/2019'));
   expect(doy).toEqual(3);
+});
+
+test('getDoyTimeComponents', () => {
+  const doyTimeComponents = getDoyTimeComponents(new Date(1683148238813));
+  expect(doyTimeComponents).deep.equal({
+    doy: '123',
+    hours: '21',
+    mins: '10',
+    msecs: '813',
+    secs: '38',
+    year: '2023',
+  });
 });
 
 test('getDoyTime', () => {
