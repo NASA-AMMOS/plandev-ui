@@ -26,7 +26,7 @@
   }
 
   let activitySpansTable: ViewTable | undefined;
-  let dataGrid: DataGrid;
+  let dataGrid: DataGrid<Span>;
   let defaultColumnDefinitions: Partial<Record<SpanColumns, SpanColDef>>;
   let derivedColumnDefs: ColDef[] = [];
 
@@ -166,8 +166,8 @@
     }
   }
 
-  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[]>) {
-    const updatedColumnStates = columnStates.filter(columnState => columnState.colId !== 'actions');
+  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[] | undefined>) {
+    const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
     viewUpdateActivitySpansTable({ columnStates: updatedColumnStates });
   }
 

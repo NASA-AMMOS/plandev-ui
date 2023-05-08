@@ -1,10 +1,15 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  type RowData = $$Generic<TRowData>;
+
+  interface $$Events extends ComponentEvents<DataGrid<RowData>> {
+    bulkDeleteItems: CustomEvent<RowData[]>;
+  }
   import { browser } from '$app/environment';
-  import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
+  import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
-  import { createEventDispatcher, onDestroy } from 'svelte';
+  import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -13,9 +18,9 @@
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
-  export let dataGrid: DataGrid = undefined;
-  export let idKey: keyof TRowData = 'id';
-  export let items: TRowData[];
+  export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let idKey: keyof RowData = 'id';
+  export let items: RowData[];
   export let pluralItemDisplayText: string = '';
   export let scrollToSelection: boolean = false;
   export let selectedItemId: RowId | null = null;
@@ -24,15 +29,15 @@
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
 
-  export let getRowId: (data: TRowData) => RowId = (data: TRowData): RowId => parseInt(data[idKey]);
-  export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
+  export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
+  export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
   let isFiltered: boolean = false;
   let selectedItemIds: RowId[] = [];
 
-  $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
+  $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
     selectedItemIds = [];
@@ -42,7 +47,7 @@
 
   function bulkDeleteItems() {
     const selectedItemIdsMap = keyBy(selectedItemIds);
-    const selectedRows: TRowData[] = items.reduce((selectedRows: TRowData[], row: TRowData) => {
+    const selectedRows: RowData[] = items.reduce((selectedRows: RowData[], row: RowData) => {
       const id = getRowId(row);
       if (selectedItemIdsMap[id] !== undefined) {
         selectedRows.push(row);
@@ -78,8 +83,8 @@
   }
 
   function selectAllItems() {
-    dataGrid.selectAllVisible();
-    dataGrid.focusDataGrid();
+    dataGrid?.selectAllVisible();
+    dataGrid?.focusDataGrid();
   }
 </script>
 

@@ -9,28 +9,32 @@
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
 
+  type RowData = $$Generic<TRowData>;
+
   type Tooltip = {
     content: string;
     placement: Placement;
   };
 
-  export let rowData: TRowData;
-  export let editTooltip: Tooltip = undefined;
-  export let deleteTooltip: Tooltip = undefined;
-  export let downloadTooltip: Tooltip = undefined;
-  export let viewTooltip: Tooltip = undefined;
+  export let rowData: RowData | undefined;
+  export let editTooltip: Tooltip | undefined = undefined;
+  export let deleteTooltip: Tooltip | undefined = undefined;
+  export let downloadTooltip: Tooltip | undefined = undefined;
+  export let viewTooltip: Tooltip | undefined = undefined;
 
-  export let editCallback: (data: TRowData) => void = undefined;
-  export let deleteCallback: (data: TRowData) => void = undefined;
-  export let downloadCallback: (data: TRowData) => void = undefined;
-  export let viewCallback: (data: TRowData) => void = undefined;
+  export let editCallback: ((data: RowData) => void) | undefined = undefined;
+  export let deleteCallback: ((data: RowData) => void) | undefined = undefined;
+  export let downloadCallback: ((data: RowData) => void) | undefined = undefined;
+  export let viewCallback: ((data: RowData) => void) | undefined = undefined;
 </script>
 
 {#if viewCallback}
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      viewCallback(rowData);
+      if (rowData) {
+        viewCallback?.(rowData);
+      }
     }}
     use:tooltip={viewTooltip}
   >
@@ -41,7 +45,9 @@
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      downloadCallback(rowData);
+      if (rowData) {
+        downloadCallback?.(rowData);
+      }
     }}
     use:tooltip={downloadTooltip}
   >
@@ -52,7 +58,9 @@
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      editCallback(rowData);
+      if (rowData) {
+        editCallback?.(rowData);
+      }
     }}
     use:tooltip={editTooltip}
   >
@@ -63,7 +71,9 @@
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      deleteCallback(rowData);
+      if (rowData) {
+        deleteCallback?.(rowData);
+      }
     }}
     use:tooltip={deleteTooltip}
   >

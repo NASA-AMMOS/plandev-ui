@@ -10,7 +10,7 @@
     selectedExpansionSetId,
   } from '../../stores/expansion';
   import { simulationDatasetId } from '../../stores/simulation';
-  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ExpansionSequence } from '../../types/expansion';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -101,7 +101,7 @@
     effects.deleteExpansionSequence(sequence);
   }
 
-  function deleteExpansionSequenceContext(event: CustomEvent<string[]>) {
+  function deleteExpansionSequenceContext(event: CustomEvent<RowId[]>) {
     const selectedSequenceId = event.detail[0];
 
     const sequenceToDelete = $filteredExpansionSequences.find((sequence: ExpansionSequence) => {
@@ -122,7 +122,11 @@
         title="Expand"
         showLabel
         disabled={$selectedExpansionSetId === null}
-        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId)}
+        on:click={() => {
+          if ($selectedExpansionSetId) {
+            effects.expand($selectedExpansionSetId, $simulationDatasetId);
+          }
+        }}
       />
     </PanelHeaderActions>
   </svelte:fragment>

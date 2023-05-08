@@ -21,7 +21,7 @@
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
-  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import type { Plan, PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
@@ -149,15 +149,17 @@
     }
   }
 
-  function deletePlanContext(event: CustomEvent<number[]>) {
-    deletePlan({ id: event.detail[0] });
+  function deletePlanContext(event: CustomEvent<RowId[]>) {
+    deletePlan({ id: event.detail[0] as number });
   }
 
-  function prefetchPlan(plan: Plan) {
-    preloadData(`${base}/plans/${plan.id}`);
+  function prefetchPlan(plan?: Pick<Plan, 'id'>) {
+    if (plan !== undefined) {
+      preloadData(`${base}/plans/${plan.id}`);
+    }
   }
 
-  function showPlan(plan: Plan) {
+  function showPlan(plan: Pick<Plan, 'id'>) {
     goto(`${base}/plans/${plan.id}`);
   }
 

@@ -1,9 +1,28 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  type RowData = $$Generic<TRowData>;
+
+  interface $$Events extends ComponentEvents<SvelteComponent> {
+    cellContextMenu: CustomEvent<CellContextMenuEvent<RowData>>;
+    cellMouseOver: CustomEvent<CellMouseOverEvent<RowData>>;
+    columnMoved: CustomEvent<ColumnMovedEvent<RowData>>;
+    columnPinned: CustomEvent<ColumnPinnedEvent<RowData>>;
+    columnResized: CustomEvent<ColumnResizedEvent<RowData>>;
+    columnStateChange: CustomEvent<ColumnState[] | undefined>;
+    columnVisible: CustomEvent<ColumnVisibleEvent<RowData>>;
+    filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
+    rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
+    rowDoubleClicked: CustomEvent<RowData>;
+    rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
+    selectionChanged: CustomEvent<RowData[]>;
+    sortChanged: CustomEvent<SortChangedEvent<RowData>>;
+  }
+
+  import { filterEmpty } from '../../../utilities/generic';
+
   import {
     Grid,
-    RowNode,
     type CellContextMenuEvent,
     type CellMouseOverEvent,
     type ColDef,
@@ -25,7 +44,7 @@
   import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/columns/columnModel';
   import type { RedrawRowsParams } from 'ag-grid-community/dist/lib/rendering/rowRenderer';
   import { debounce } from 'lodash-es';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { SvelteComponent, createEventDispatcher, onMount, type ComponentEvents } from 'svelte';
   import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
@@ -43,7 +62,7 @@
   export function selectAllVisible() {
     gridOptions?.api?.selectAllFiltered();
   }
-  export function redrawRows(params?: RedrawRowsParams<TRowData>) {
+  export function redrawRows(params?: RedrawRowsParams<RowData>) {
     gridOptions?.api?.redrawRows(params);
   }
   export function sizeColumnsToFit(params?: ISizeColumnsToFitParams) {
@@ -55,9 +74,9 @@
   export let columnShiftResize: boolean = false;
   export let currentSelectedRowId: RowId | null = null;
   export let highlightOnSelection: boolean = true;
-  export let idKey: keyof TRowData = 'id';
+  export let idKey: keyof RowData = 'id';
   export let useCustomContextMenu: boolean | undefined = undefined;
-  export let rowData: TRowData[] = [];
+  export let rowData: RowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let scrollToSelection: boolean = false;
   export let selectedRowIds: RowId[] = [];
@@ -66,15 +85,15 @@
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
 
-  export let getRowId: (data: TRowData) => RowId = (data: TRowData): number => {
+  export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
     return parseInt(data[idKey]);
   };
-  export let isRowSelectable: (node: IRowNode<TRowData>) => boolean = undefined;
+  export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
   let contextMenu: ContextMenu;
-  let gridOptions: GridOptions<TRowData>;
+  let gridOptions: GridOptions<RowData>;
   let gridDiv: HTMLDivElement;
   let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   let previousSelectedRowId: RowId | null = null;
@@ -84,8 +103,8 @@
 
     const previousSelectedRowIds: RowId[] = [];
     // get all currently selected nodes. we cannot use `getSelectedNodes` because that does not include filtered rows
-    gridOptions?.api?.forEachNode((rowNode: RowNode<TRowData>) => {
-      if (rowNode.isSelected()) {
+    gridOptions?.api?.forEachNode((rowNode: IRowNode<RowData>) => {
+      if (rowNode.data && rowNode.isSelected()) {
         previousSelectedRowIds.push(getRowId(rowNode.data));
       }
     });
@@ -129,12 +148,12 @@
       rowNodes: [
         gridOptions?.api?.getRowNode(`${currentSelectedRowId}`),
         gridOptions?.api?.getRowNode(`${previousSelectedRowId}`),
-      ],
+      ].filter(filterEmpty),
     });
     previousSelectedRowId = currentSelectedRowId;
   }
 
-  function getRowClass(params: RowClassParams<TRowData>) {
+  function getRowClass(params: RowClassParams<RowData>) {
     const rowClass: string[] = [];
 
     if (isRowSelectable) {
@@ -145,7 +164,7 @@
       rowClass.push('ag-selectable-row');
     }
 
-    if (currentSelectedRowId === getRowId(params.data)) {
+    if (params.data && currentSelectedRowId === getRowId(params.data)) {
       rowClass.push('ag-current-row-selected');
     }
 
@@ -164,10 +183,11 @@
     dispatch('columnStateChange', gridOptions?.columnApi?.getColumnState());
   }
 
-  function onCellContextMenu(event: CellContextMenuEvent<TRowData>) {
+  function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
     if (useCustomContextMenu) {
       const { data: clickedRow } = event;
       if (
+        clickedRow &&
         selectedRowIds.length <= 1 &&
         (!isRowSelectable || isRowSelectable(event.node)) &&
         !suppressRowClickSelection
@@ -187,33 +207,33 @@
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
       columnDefs,
       getRowClass,
-      ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: TRowData }) => `${getRowId(params.data)}` }),
+      ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isRowSelectable,
       onCellContextMenu,
-      onCellMouseOver(event: CellMouseOverEvent<TRowData>) {
+      onCellMouseOver(event: CellMouseOverEvent<RowData>) {
         dispatch('cellMouseOver', event);
       },
-      onColumnMoved(event: ColumnMovedEvent<TRowData>) {
+      onColumnMoved(event: ColumnMovedEvent<RowData>) {
         dispatch('columnMoved', event);
         onColumnStateChangeDebounced();
       },
-      onColumnPinned(event: ColumnPinnedEvent<TRowData>) {
+      onColumnPinned(event: ColumnPinnedEvent<RowData>) {
         dispatch('columnPinned', event);
         onColumnStateChangeDebounced();
       },
-      onColumnResized(event: ColumnResizedEvent<TRowData>) {
+      onColumnResized(event: ColumnResizedEvent<RowData>) {
         dispatch('columnResized', event);
         onColumnStateChangeDebounced();
       },
-      onColumnVisible(event: ColumnVisibleEvent<TRowData>) {
+      onColumnVisible(event: ColumnVisibleEvent<RowData>) {
         dispatch('columnVisible', event);
         onColumnStateChangeDebounced();
       },
       onFilterChanged() {
-        const selectedRows: TRowData[] = [];
+        const selectedRows: RowData[] = [];
 
-        gridOptions?.api?.forEachNodeAfterFilter((rowNode: RowNode<TRowData>) => {
-          if (rowNode.isSelected()) {
+        gridOptions?.api?.forEachNodeAfterFilter((rowNode: IRowNode<RowData>) => {
+          if (rowNode.data && rowNode.isSelected()) {
             selectedRows.push(rowNode.data);
           }
         });
@@ -223,58 +243,60 @@
         // re-throw `selectionChanged` with only the visible rows after filtering
         dispatch('selectionChanged', selectedRows);
       },
-      onRowClicked({ data, node }: RowClickedEvent<TRowData>) {
+      onRowClicked({ data, node }: RowClickedEvent<RowData>) {
         const isSelected = node.isSelected();
         dispatch('rowClicked', {
-          data: data,
+          data,
           isSelected,
-        } as DataGridRowSelection<TRowData>);
+        } as DataGridRowSelection<RowData>);
 
-        if (!suppressRowClickSelection && isSelected) {
+        if (data && !suppressRowClickSelection && isSelected) {
           currentSelectedRowId = getRowId(data);
 
           dispatch('rowSelected', {
-            data: data,
+            data,
             isSelected,
-          } as DataGridRowSelection<TRowData>);
+          } as DataGridRowSelection<RowData>);
         }
       },
-      onRowDoubleClicked(event: RowDoubleClickedEvent<TRowData>) {
-        dispatch('rowDoubleClicked', event.data);
+      onRowDoubleClicked(event: RowDoubleClickedEvent<RowData>) {
+        if (event.data) {
+          dispatch('rowDoubleClicked', event.data);
+        }
       },
-      onRowSelected(event: RowSelectedEvent<TRowData>) {
-        const selectedNodes = gridOptions?.api?.getSelectedNodes();
+      onRowSelected({ data, node }: RowSelectedEvent<RowData>) {
+        const selectedNodes = gridOptions?.api?.getSelectedNodes() ?? [];
 
         // only dispatch `rowSelected` or enforce visibility for single row selections
         if (selectedNodes.length <= 1 || suppressRowClickSelection) {
-          if (selectedNodes.length && scrollToSelection) {
+          if (selectedNodes.length && scrollToSelection && selectedNodes[0].rowIndex !== null) {
             gridOptions?.api?.ensureIndexVisible(selectedNodes[0].rowIndex);
           }
 
           dispatch('rowSelected', {
-            data: event.data,
-            isSelected: event.node.isSelected(),
-          } as DataGridRowSelection<TRowData>);
+            data,
+            isSelected: node.isSelected(),
+          } as DataGridRowSelection<RowData>);
         }
       },
       onSelectionChanged(event: SelectionChangedEvent) {
-        const selectedRows = gridOptions?.api?.getSelectedRows();
-        selectedRowIds = selectedRows.map((selectedRow: TRowData) => getRowId(selectedRow));
+        const selectedRows = gridOptions?.api?.getSelectedRows() ?? [];
+        selectedRowIds = selectedRows.map((selectedRow: RowData) => getRowId(selectedRow));
 
         if (selectedRows.length === 1) {
           currentSelectedRowId = getRowId(selectedRows[0]);
-        } else if (!selectedRowIds.includes(currentSelectedRowId)) {
+        } else if (currentSelectedRowId != null && !selectedRowIds.includes(currentSelectedRowId)) {
           // select the first displayed selected row in the table if the current selected row is deselected
           let wasCurrentSelectedRowUpdated: boolean = false;
-          gridOptions?.api?.forEachNodeAfterFilterAndSort((rowNode: RowNode<TRowData>) => {
-            if (!wasCurrentSelectedRowUpdated && rowNode.isSelected()) {
+          gridOptions?.api?.forEachNodeAfterFilterAndSort((rowNode: IRowNode<RowData>) => {
+            if (!wasCurrentSelectedRowUpdated && rowNode.data && rowNode.isSelected()) {
               currentSelectedRowId = getRowId(rowNode.data);
               wasCurrentSelectedRowUpdated = true;
 
               dispatch('rowSelected', {
                 data: rowNode.data,
                 isSelected: rowNode.isSelected(),
-              } as DataGridRowSelection<TRowData>);
+              } as DataGridRowSelection<RowData>);
             }
           });
         }
@@ -283,7 +305,7 @@
           dispatch('selectionChanged', selectedRows);
         }
       },
-      onSortChanged(event: SortChangedEvent<TRowData>) {
+      onSortChanged(event: SortChangedEvent<RowData>) {
         dispatch('sortChanged', event);
         onColumnStateChangeDebounced();
       },

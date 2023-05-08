@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
-  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
@@ -106,16 +106,16 @@
     }
   }
 
-  function deleteRuleContext(event: CustomEvent<number[]>) {
-    deleteRule({ id: event.detail[0] });
+  function deleteRuleContext(event: CustomEvent<RowId[]>) {
+    deleteRule({ id: event.detail[0] as number });
   }
 
   function editRule({ id }: Pick<ExpansionRule, 'id'>) {
     goto(`${base}/expansion/rules/edit/${id}`);
   }
 
-  function editRuleContext(event: CustomEvent<number[]>) {
-    editRule({ id: event.detail[0] });
+  function editRuleContext(event: CustomEvent<RowId[]>) {
+    editRule({ id: event.detail[0] as number });
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {

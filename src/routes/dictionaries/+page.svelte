@@ -12,7 +12,7 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
   import { commandDictionaries } from '../../stores/sequencing';
-  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { CommandDictionary } from '../../types/sequencing';
   import effects from '../../utilities/effects';
 
@@ -84,8 +84,8 @@
     effects.deleteCommandDictionary(id);
   }
 
-  function deleteCommandDictionaryContext(event: CustomEvent<number[]>) {
-    deleteCommandDictionary({ id: event.detail[0] });
+  function deleteCommandDictionaryContext(event: CustomEvent<RowId[]>) {
+    deleteCommandDictionary({ id: event.detail[0] as number });
   }
 </script>
 

@@ -8,13 +8,13 @@
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
-  export let dataGrid: DataGrid = undefined;
+  export let dataGrid: DataGrid<Span> | undefined = undefined;
   export let selectedSpanId: SpanId | null = null;
   export let spans: Span[] = [];
 
   let selectedItemIds: RowId[] = [];
 
-  $: if (!selectedItemIds.includes(selectedSpanId) && selectedSpanId != null) {
+  $: if (selectedSpanId != null && !selectedItemIds.includes(selectedSpanId)) {
     selectedItemIds = [selectedSpanId];
   } else if (selectedSpanId === null) {
     selectedItemIds = [];

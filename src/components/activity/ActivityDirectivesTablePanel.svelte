@@ -32,7 +32,7 @@
   }
 
   let activityDirectivesTable: ViewTable | undefined;
-  let dataGrid: DataGrid;
+  let dataGrid: DataGrid<ActivityDirective>;
   let defaultColumnDefinitions: Partial<Record<ActivityDirectiveColumns, ActivityDirectiveColDef>> = {};
   let derivedColumnDefs: ColDef[] = [];
 
@@ -220,8 +220,8 @@
     }
   }
 
-  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[]>) {
-    const updatedColumnStates = columnStates.filter(columnState => columnState.colId !== 'actions');
+  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[] | undefined>) {
+    const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
     viewUpdateActivityDirectivesTable({ columnStates: updatedColumnStates });
   }
 

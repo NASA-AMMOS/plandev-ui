@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { userSequences, userSequencesColumns } from '../../stores/sequencing';
-  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
@@ -95,7 +95,7 @@
     return includesId || includesName;
   });
   $: if (selectedSequence !== null) {
-    const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence.id);
+    const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
     if (found === -1) {
       selectedSequence = null;
     }
@@ -114,16 +114,16 @@
     }
   }
 
-  function deleteSequenceContext(event: CustomEvent<number[]>) {
-    deleteSequence({ id: event.detail[0] });
+  function deleteSequenceContext(event: CustomEvent<RowId[]>) {
+    deleteSequence({ id: event.detail[0] as number });
   }
 
   function editSequence({ id }: Pick<UserSequence, 'id'>) {
     goto(`${base}/sequencing/edit/${id}`);
   }
 
-  function editSequenceContext(event: CustomEvent<number[]>) {
-    editSequence({ id: event.detail[0] });
+  function editSequenceContext(event: CustomEvent<RowId[]>) {
+    editSequence({ id: event.detail[0] as number });
   }
 
   async function getUserSequenceSeqJson(): Promise<void> {

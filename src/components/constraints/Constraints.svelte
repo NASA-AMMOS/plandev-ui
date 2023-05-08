@@ -6,7 +6,7 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { constraintsAll, constraintsColumns } from '../../stores/constraints';
   import type { Constraint } from '../../types/constraint';
-  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
   import Input from '../form/Input.svelte';
@@ -106,7 +106,7 @@
     return includesId || includesName;
   });
   $: if (selectedConstraint !== null) {
-    const found = $constraintsAll.findIndex(constraint => constraint.id === selectedConstraint.id);
+    const found = $constraintsAll.findIndex(constraint => constraint.id === selectedConstraint?.id);
     if (found === -1) {
       selectedConstraint = null;
     }
@@ -125,16 +125,16 @@
     }
   }
 
-  function deleteConstraintContext(event: CustomEvent<number[]>) {
-    deleteConstraint({ id: event.detail[0] });
+  function deleteConstraintContext(event: CustomEvent<RowId[]>) {
+    deleteConstraint({ id: event.detail[0] as number });
   }
 
   function editConstraint({ id }: Pick<Constraint, 'id'>) {
     goto(`${base}/constraints/edit/${id}`);
   }
 
-  function editConstraintContext(event: CustomEvent<number[]>) {
-    editConstraint({ id: event.detail[0] });
+  function editConstraintContext(event: CustomEvent<RowId[]>) {
+    editConstraint({ id: event.detail[0] as number });
   }
 
   function getConstraintModelId(selectedConstraint: Constraint | null): number | null {

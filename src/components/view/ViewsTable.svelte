@@ -47,7 +47,7 @@
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ViewCellRendererParams) => {
-        const isEditable = params.data.owner !== 'system';
+        const isEditable = params?.data?.owner !== 'system';
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
@@ -109,14 +109,14 @@
     a.click();
   }
 
-  function openView({ id: viewId }: View) {
+  function openView({ id: viewId }: Partial<View>) {
     dispatch('openView', viewId);
   }
 </script>
 
 <BulkActionDataGrid
   {columnDefs}
-  isRowSelectable={rowData => rowData.data.owner !== 'system'}
+  isRowSelectable={rowData => rowData?.data?.owner !== 'system'}
   items={views}
   pluralItemDisplayText="Views"
   singleItemDisplayText="View"

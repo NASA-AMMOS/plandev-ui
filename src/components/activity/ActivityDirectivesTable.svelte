@@ -12,7 +12,7 @@
   export let activityDirectives: ActivityDirective[] = [];
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
-  export let dataGrid: DataGrid = undefined;
+  export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
   export let planId: number;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
 
@@ -48,6 +48,7 @@
     resizable: false,
     sortable: false,
     suppressAutoSize: true,
+    suppressMovable: true,
     suppressSizeToFit: true,
     width: 25,
   };

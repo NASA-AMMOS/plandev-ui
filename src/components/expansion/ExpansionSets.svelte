@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
-  import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule, ExpansionSet } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -93,8 +93,8 @@
     }
   }
 
-  function deleteSetContext(event: CustomEvent<number[]>) {
-    deleteSet({ id: event.detail[0] });
+  function deleteSetContext(event: CustomEvent<RowId[]>) {
+    deleteSet({ id: event.detail[0] as number });
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {

@@ -27,7 +27,7 @@
   type ExpansionSetRuleSelectionRendererParams = ICellRendererParams<ActivityTypeExpansionRules> & CellRendererParams;
 
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
-  let dataGrid: DataGrid;
+  let dataGrid: DataGrid<ActivityTypeExpansionRules>;
   let lastSelectedExpansionRule: ExpansionRule | null = null;
   let logicEditorActivityType: string | null = null;
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
@@ -51,7 +51,7 @@
   $: saveButtonEnabled = setDictionaryId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
 
   async function saveSet() {
-    if (mode === 'create') {
+    if (mode === 'create' && setDictionaryId && setModelId) {
       const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
 
       if (newSetId !== null) {
@@ -82,15 +82,17 @@
     autoHeight: true,
     cellRenderer: (params: ExpansionSetRuleSelectionRendererParams) => {
       const selectionDiv = document.createElement('div');
-      new ExpansionSetRuleSelection({
-        props: {
-          activityName: params.data.name,
-          expansionRules: params.data.expansion_rules,
-          selectExpansionRule: params.selectExpansionRule,
-          selectedExpansionRules,
-        },
-        target: selectionDiv,
-      });
+      if (params.data) {
+        new ExpansionSetRuleSelection({
+          props: {
+            activityName: params.data.name,
+            expansionRules: params.data.expansion_rules,
+            selectExpansionRule: params.selectExpansionRule,
+            selectedExpansionRules,
+          },
+          target: selectionDiv,
+        });
+      }
 
       return selectionDiv;
     },
@@ -100,7 +102,7 @@
     field: 'expansion_rules',
     filter: 'text',
     filterValueGetter: (params: ValueGetterParams<ActivityTypeExpansionRules>) => {
-      return params.data.expansion_rules.map(rule => `Rule ${rule.id}`).join(' ');
+      return params.data?.expansion_rules.map(rule => `Rule ${rule.id}`).join(' ');
     },
     headerName: 'Expansion Rule',
     resizable: true,

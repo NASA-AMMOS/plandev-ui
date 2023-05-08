@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import type { DataGridColumnDef } from '../../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
   import type { SchedulingGoal } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
@@ -85,7 +85,7 @@
     return includesId || includesName;
   });
   $: if (selectedGoal !== null) {
-    const found = schedulingGoals.findIndex(goal => goal.id === selectedGoal.id);
+    const found = schedulingGoals.findIndex(goal => goal.id === selectedGoal?.id);
     if (found === -1) {
       selectedGoal = null;
     }
@@ -95,16 +95,16 @@
     dispatch('deleteGoal', id);
   }
 
-  function deleteGoalContext(event: CustomEvent<number[]>) {
-    deleteGoal({ id: event.detail[0] });
+  function deleteGoalContext(event: CustomEvent<RowId[]>) {
+    deleteGoal({ id: event.detail[0] as number });
   }
 
   function editGoal({ id }: Pick<SchedulingGoal, 'id'>) {
     goto(`${base}/scheduling/goals/edit/${id}`);
   }
 
-  function editGoalContext(event: CustomEvent<number[]>) {
-    editGoal({ id: event.detail[0] });
+  function editGoalContext(event: CustomEvent<RowId[]>) {
+    editGoal({ id: event.detail[0] as number });
   }
 </script>
 

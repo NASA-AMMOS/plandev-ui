@@ -1,10 +1,16 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  type RowData = $$Generic<TRowData>;
+
+  interface $$Events extends ComponentEvents<DataGrid<RowData>> {
+    deleteItem: CustomEvent<RowId[]>;
+    editItem: CustomEvent<RowId[]>;
+  }
   import { browser } from '$app/environment';
-  import type { ColDef, ColumnState, RowNode } from 'ag-grid-community';
-  import { createEventDispatcher, onDestroy } from 'svelte';
-  import type { TRowData } from '../../../types/data-grid';
+  import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
+  import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
+  import type { RowId, TRowData } from '../../../types/data-grid';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
@@ -12,24 +18,22 @@
 
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
-  export let dataGrid: DataGrid = undefined;
+  export let dataGrid: DataGrid<RowData> | undefined = undefined;
   export let hasEdit: boolean = false;
-  export let idKey: keyof TRowData = 'id';
-  export let items: TRowData[];
+  export let idKey: keyof RowData = 'id';
+  export let items: RowData[];
   export let itemDisplayText: string;
-  export let selectedItemId: number | null = null;
+  export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
 
-  export let getRowId: (data: TRowData) => number = (data: TRowData): number => {
-    return parseInt(data[idKey]);
-  };
-  export let isRowSelectable: (node: RowNode<TRowData>) => boolean = undefined;
+  export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
+  export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
-  let selectedItemIds: number[] = [];
+  let selectedItemIds: RowId[] = [];
 
-  $: if (!selectedItemIds.includes(selectedItemId) && selectedItemId != null) {
+  $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
     selectedItemIds = [];

@@ -15,7 +15,7 @@
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { createModelError, creatingModel, models } from '../../stores/plan';
-  import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import effects from '../../utilities/effects';
   import type { PageData } from './$types';
@@ -87,10 +87,12 @@
     effects.deleteModel(model);
   }
 
-  function deleteModelContext(event: CustomEvent<number[]>) {
-    const selectedModelId = event.detail[0];
+  function deleteModelContext(event: CustomEvent<RowId[]>) {
+    const selectedModelId = event.detail[0] as number;
     const modelToDelete = $models.find((model: ModelSlim) => model.id === selectedModelId);
-    deleteModel(modelToDelete);
+    if (modelToDelete) {
+      deleteModel(modelToDelete);
+    }
   }
 
   function showModel(model: ModelSlim) {

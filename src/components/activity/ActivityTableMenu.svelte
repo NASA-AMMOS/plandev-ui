@@ -1,11 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  type T = $$Generic;
+  type T = $$Generic<TRowData>;
 
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { TRowData } from '../../types/data-grid';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
@@ -32,16 +33,16 @@
 
     if (columnState) {
       return {
-        field: derivedColumnDef.field as keyof T,
+        field: (derivedColumnDef.field as keyof T) ?? '',
         isHidden: columnState?.hide ?? derivedColumnDef.hide ?? false,
-        name: derivedColumnDef.headerName,
+        name: derivedColumnDef.headerName ?? '',
       };
     }
 
     return {
-      field: derivedColumnDef.field as keyof T,
+      field: (derivedColumnDef.field as keyof T) ?? '',
       isHidden: true,
-      name: derivedColumnDef.headerName,
+      name: derivedColumnDef.headerName ?? '',
     };
   });
 

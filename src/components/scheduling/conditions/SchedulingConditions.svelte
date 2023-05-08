@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import type { DataGridColumnDef } from '../../../types/data-grid';
+  import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
   import type { SchedulingCondition } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
@@ -85,7 +85,7 @@
     return includesId || includesName;
   });
   $: if (selectedCondition !== null) {
-    const found = schedulingConditions.findIndex(condition => condition.id === selectedCondition.id);
+    const found = schedulingConditions.findIndex(condition => condition.id === selectedCondition?.id);
     if (found === -1) {
       selectedCondition = null;
     }
@@ -95,16 +95,16 @@
     dispatch('deleteCondition', id);
   }
 
-  function deleteConditionContext(event: CustomEvent<number[]>) {
-    deleteCondition({ id: event.detail[0] });
+  function deleteConditionContext(event: CustomEvent<RowId[]>) {
+    deleteCondition({ id: event.detail[0] as number });
   }
 
   function editCondition({ id }: Pick<SchedulingCondition, 'id'>) {
     goto(`${base}/scheduling/conditions/edit/${id}`);
   }
 
-  function editConditionContext(event: CustomEvent<number[]>) {
-    editCondition({ id: event.detail[0] });
+  function editConditionContext(event: CustomEvent<RowId[]>) {
+    editCondition({ id: event.detail[0] as number });
   }
 </script>
 
