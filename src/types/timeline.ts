@@ -34,6 +34,12 @@ export type PointBounds = {
   xEndCanvas: number;
 };
 
+export type SpanTimeBounds = {
+  duration: number;
+  end: number;
+  start: number;
+};
+
 export type HorizontalGuide = {
   id: number;
   label: Label;
