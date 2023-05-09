@@ -13,6 +13,7 @@
   let activityDirectives: ActivityDirective[] = [];
   let constraintViolations: ConstraintViolation[] = [];
   let points: Point[] = [];
+  let gaps: Point[] = [];
   let spans: Span[] = [];
 
   $: onMouseOver(mouseOver);
@@ -21,8 +22,10 @@
     if (event) {
       activityDirectives = event?.activityDirectives ?? [];
       constraintViolations = event?.constraintViolations ?? [];
+      gaps = event?.gaps ?? [];
       points = event?.points ?? [];
       spans = event?.spans ?? [];
+
       show(event.e);
     }
   }
@@ -33,7 +36,11 @@
 
   function show(event: MouseEvent): void {
     const showTooltip =
-      activityDirectives.length > 0 || constraintViolations.length > 0 || points.length > 0 || spans.length > 0;
+      activityDirectives.length > 0 ||
+      constraintViolations.length > 0 ||
+      points.length > 0 ||
+      spans.length > 0 ||
+      gaps.length > 0;
 
     if (showTooltip) {
       const text = tooltipText();
@@ -79,6 +86,18 @@
 
   function tooltipText(): string {
     let tooltipText = '';
+
+    if (gaps.length) {
+      // For now we render a single static "No Value" message for any number of gaps,
+      // as long as there aren't other data points to render at the same location
+      if (!points.length && !constraintViolations.length && !activityDirectives.length && !spans.length) {
+        return `
+          <div>
+            No Value
+          </div>
+        `;
+      }
+    }
 
     activityDirectives.forEach((activityDirective: ActivityDirective, i: number) => {
       const text = textForActivityDirective(activityDirective);

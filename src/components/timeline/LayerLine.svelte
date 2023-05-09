@@ -94,6 +94,7 @@
       const line = d3Line<LinePoint>()
         .x(d => xScaleView(d.x))
         .y(d => yScale(d.y))
+        .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
         .curve(curveLinear);
       ctx.beginPath();
       line.context(ctx)(points);

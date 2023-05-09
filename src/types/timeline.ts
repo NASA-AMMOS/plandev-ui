@@ -87,6 +87,7 @@ export type MouseOver = {
   activityDirectives?: ActivityDirective[];
   constraintViolations?: ConstraintViolation[];
   e: MouseEvent;
+  gaps?: Point[];
   layerId: number;
   points?: Point[];
   selectedActivityDirectiveId?: number;
@@ -182,5 +183,6 @@ export interface XRangeLayer extends Layer {
 }
 
 export interface XRangePoint extends Point {
+  is_gap?: boolean;
   label: Label;
 }

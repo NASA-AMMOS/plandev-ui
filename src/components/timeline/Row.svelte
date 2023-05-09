@@ -14,7 +14,7 @@
     ActivityDirectivesMap,
   } from '../../types/activity';
   import type { ConstraintViolation } from '../../types/constraint';
-  import type { Resource, SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
+  import type { Resource, SimulationDataset, Span, SpanId, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import type {
     Axis,
     HorizontalGuide,
@@ -32,6 +32,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
+  import LayerGaps from './LayerGaps.svelte';
   import LayerLine from './LayerLine.svelte';
   import LayerXRange from './LayerXRange.svelte';
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
@@ -88,6 +89,7 @@
   let mouseOverConstraintViolations: ConstraintViolation[] = []; // For this row.
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
   let mouseOverSpansByLayer: Record<number, Span[]> = {};
+  let mouseOverGapsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
 
   $: onDragenter(dragenter);
@@ -163,13 +165,15 @@
     mouseOverConstraintViolations = detail?.constraintViolations ?? mouseOverConstraintViolations;
     mouseOverPointsByLayer[layerId] = detail?.points ?? [];
     mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
+    mouseOverGapsByLayer[layerId] = detail?.gaps ?? mouseOverGapsByLayer[layerId] ?? [];
 
     const activityDirectives = Object.values(mouseOverActivityDirectivesByLayer).flat();
     const constraintViolations = mouseOverConstraintViolations;
     const points = Object.values(mouseOverPointsByLayer).flat();
     const spans = Object.values(mouseOverSpansByLayer).flat();
+    const gaps = Object.values(mouseOverGapsByLayer).flat();
 
-    dispatch('mouseOver', { ...detail, activityDirectives, constraintViolations, points, spans });
+    dispatch('mouseOver', { ...detail, activityDirectives, constraintViolations, gaps, points, spans });
   }
 
   function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
@@ -288,6 +292,19 @@
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
             on:updateRowHeight={onUpdateRowHeightLayer}
+          />
+        {/if}
+        {#if layer.chartType === 'line' || layer.chartType === 'x-range'}
+          <LayerGaps
+            {...layer}
+            {drawHeight}
+            {drawWidth}
+            filter={layer.filter.resource}
+            {mousemove}
+            {mouseout}
+            resources={resourcesByViewLayerId[layer.id] ?? []}
+            {xScaleView}
+            on:mouseOver={onMouseOver}
           />
         {/if}
         {#if layer.chartType === 'line'}

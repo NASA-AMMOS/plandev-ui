@@ -28,23 +28,27 @@ export function sampleProfiles(
         const segmentOffset = getIntervalInMs(segment.start_offset);
         const nextSegmentOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : durationMs;
 
-        const { dynamics } = segment;
+        const { dynamics, is_gap } = segment;
 
         if (type === 'discrete') {
           values.push({
+            is_gap,
             x: start + segmentOffset,
             y: dynamics,
           });
           values.push({
+            is_gap,
             x: start + nextSegmentOffset,
             y: dynamics,
           });
         } else if (type === 'real') {
           values.push({
+            is_gap,
             x: start + segmentOffset,
             y: dynamics.initial,
           });
           values.push({
+            is_gap,
             x: start + nextSegmentOffset,
             y: dynamics.initial + dynamics.rate * ((nextSegmentOffset - segmentOffset) / 1000),
           });

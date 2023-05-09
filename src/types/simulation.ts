@@ -43,8 +43,9 @@ export type ResourceType = {
 };
 
 export type ResourceValue = {
+  is_gap?: boolean;
   x: number;
-  y: number | string;
+  y: number | string | null;
 };
 
 export type SimulateResponse = {
