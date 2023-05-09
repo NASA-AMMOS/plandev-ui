@@ -77,7 +77,7 @@
   let name = '';
   let version = '';
 
-  $: createButtonDisabled = !files || name === '' || version === '';
+  $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
 
   onMount(() => {
     models.updateValue(() => data.initialModels);
@@ -98,6 +98,13 @@
   function showModel(model: ModelSlim) {
     goto(`${base}/plans?modelId=${model.id}`);
   }
+
+  async function submitForm(e: SubmitEvent) {
+    await effects.createModel(name, version, files);
+    if ($createModelError === null && e.target instanceof HTMLFormElement) {
+      e.target.reset();
+    }
+  }
 </script>
 
 <PageTitle title="Models" />
@@ -114,7 +121,7 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={() => effects.createModel(name, version, files)}>
+        <form on:submit|preventDefault={submitForm}>
           <AlertError class="m-2" error={$createModelError} />
 
           <fieldset>

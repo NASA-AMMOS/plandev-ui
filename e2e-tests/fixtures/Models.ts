@@ -7,6 +7,7 @@ export class Models {
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
   createButton: Locator;
+  creatingButton: Locator;
   inputFile: Locator;
   inputName: Locator;
   inputVersion: Locator;
@@ -81,7 +82,8 @@ export class Models {
     this.alertError = page.locator('.alert-error');
     this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
-    this.createButton = page.locator('text=Create');
+    this.createButton = page.getByRole('button', { name: 'Create' });
+    this.creatingButton = page.getByRole('button', { name: 'Creating...' });
     this.inputFile = page.locator('input[name="file"]');
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
