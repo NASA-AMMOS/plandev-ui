@@ -18,7 +18,7 @@
   export let disabled: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let isAnchoredToStart: boolean = true;
-  export let startOffset: string = null;
+  export let startOffset: string | null = null;
 
   const dispatch = createEventDispatcher();
   const anchorTextDelimiter = ' - ';
@@ -68,15 +68,15 @@
     try {
       convertDurationStringToInterval(`${offsetString}`);
     } catch (error) {
-      validationError = error.message;
+      validationError = (error as Error).message;
     }
 
     return validationError;
   }
 
   function getAnchorActivityDirective(inputString: SelectedDropdownOptionValue): ActivityDirective | null {
-    if (!Number.isNaN(inputString) && inputString) {
-      return activityDirectivesMap[inputString];
+    if (inputString !== null && !Number.isNaN(inputString)) {
+      return activityDirectivesMap[inputString as number];
     }
 
     return null;
@@ -84,7 +84,7 @@
 
   function updateAnchor(activityDirective: ActivityDirective | null) {
     anchoredActivity = activityDirective;
-    if (activityDirective === null) {
+    if (anchoredActivity === null) {
       dispatch('updateAnchor', null);
     } else {
       dispatch('updateAnchor', anchoredActivity.id);
@@ -128,7 +128,7 @@
     try {
       updateStartOffset(convertDurationStringToInterval(`${value}`));
     } catch (error) {
-      startOffsetError = error.message;
+      startOffsetError = (error as Error).message;
     }
   }
 </script>
@@ -146,6 +146,7 @@
           Relative to
         </label>
         <SearchableDropdown
+          {disabled}
           options={searchableOptions}
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
