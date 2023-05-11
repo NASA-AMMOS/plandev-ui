@@ -14,7 +14,15 @@
     SpanUtilityMaps,
     SpansMap,
   } from '../../types/simulation';
-  import type { MouseDown, MouseOver, Row, TimeRange, Timeline, XAxisTick } from '../../types/timeline';
+  import type {
+    DirectiveVisibilityToggleMap,
+    MouseDown,
+    MouseOver,
+    Row,
+    TimeRange,
+    Timeline,
+    XAxisTick,
+  } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { getDoy, getDoyTime } from '../../utilities/time';
   import {
@@ -51,20 +59,21 @@
   export let spansMap: SpansMap = {};
   export let spans: Span[] = [];
   export let timeline: Timeline | null = null;
+  export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
   export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   const dispatch = createEventDispatcher();
 
   let clientWidth: number = 0;
-  let contextMenu: MouseOver;
+  let contextMenu: MouseOver | null;
   let contextMenuComponent: TimelineContextMenu;
   let tooltip: Tooltip;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
   let estimatedLabelWidthPx: number = 74; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
-  let mouseOver: MouseOver;
+  let mouseOver: MouseOver | null;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
@@ -77,7 +86,7 @@
   let xTicksView: XAxisTick[] = [];
 
   $: rows = timeline?.rows || [];
-  $: drawWidth = clientWidth > 0 ? clientWidth - timeline?.marginLeft - timeline?.marginRight : 0;
+  $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
 
   // Compute number of ticks based off draw width
   $: if (drawWidth) {
@@ -163,7 +172,7 @@
   }
 
   function onMouseDown(event: CustomEvent<MouseDown>) {
-    dispatch('mouseDown', { ...event.detail, timelineId: timeline.id });
+    dispatch('mouseDown', { ...event.detail, timelineId: timeline?.id });
   }
 
   function onMouseDownRowMove(event: Event) {
@@ -174,6 +183,10 @@
   function onToggleRowExpansion(event: CustomEvent<{ expanded: boolean; rowId: number }>) {
     const { rowId, expanded } = event.detail;
     dispatch('toggleRowExpansion', { expanded, rowId });
+  }
+
+  function onToggleDirectiveVisibility(rowId: number, visible: boolean) {
+    dispatch('toggleDirectiveVisibility', { rowId, visible });
   }
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>) {
@@ -212,7 +225,9 @@
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
     <TimelineHistogram
-      activityDirectives={activityDirectivesByView?.byTimelineId[timeline.id] ?? []}
+      activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]
+        ? activityDirectivesByView.byTimelineId[timeline.id]
+        : []}
       {constraintViolations}
       {cursorEnabled}
       drawHeight={timelineHistogramDrawHeight}
@@ -287,6 +302,7 @@
         {rowDragMoveDisabled}
         {selectedActivityDirectiveId}
         {selectedSpanId}
+        showDirectives={timelineDirectiveVisibilityToggles[row.id]}
         {simulationDataset}
         {spanUtilityMaps}
         {spansMap}
@@ -304,6 +320,7 @@
         on:mouseDownRowMove={onMouseDownRowMove}
         on:mouseOver={e => (mouseOver = e.detail)}
         on:toggleRowExpansion={onToggleRowExpansion}
+        on:toggleDirectiveVisibility={e => onToggleDirectiveVisibility(row.id, e.detail)}
         on:updateRowHeight={onUpdateRowHeight}
       />
     {/each}

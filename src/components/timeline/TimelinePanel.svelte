@@ -20,7 +20,7 @@
   } from '../../stores/simulation';
   import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
-  import type { MouseDown } from '../../types/timeline';
+  import type { DirectiveVisibilityToggleMap, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
@@ -29,12 +29,34 @@
   import TimelineViewControls from './TimelineViewControls.svelte';
 
   let timelineId: number = 0;
+  let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
 
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
+  $: timelineDirectiveVisibilityToggles = timeline
+    ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles)
+    : {};
 
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
     effects.deleteActivityDirective($planId, activityDirectiveId);
+  }
+
+  function generateDirectiveVisibilityToggles(
+    timeline: TimelineType,
+    currentVisibilityMap: DirectiveVisibilityToggleMap,
+    visible?: boolean,
+  ): DirectiveVisibilityToggleMap {
+    return (timeline?.rows ?? []).reduce((prevToggles: DirectiveVisibilityToggleMap, row: Row) => {
+      const { id, layers } = row;
+      const containsActivityLayer: boolean = layers.find(layer => layer.chartType === 'activity') !== undefined;
+      if (containsActivityLayer) {
+        return {
+          ...prevToggles,
+          ...toggleDirectiveVisibility(id, visible ?? currentVisibilityMap[id] ?? true),
+        };
+      }
+      return prevToggles;
+    }, {});
   }
 
   function jumpToActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
@@ -58,6 +80,23 @@
       selectActivity(null, null);
     }
   }
+
+  function onToggleAllDirectiveVisibility(visible: boolean) {
+    timelineDirectiveVisibilityToggles = timeline
+      ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles, visible)
+      : {};
+  }
+
+  function onToggleDirectiveVisibility(rowId: number, visible: boolean) {
+    timelineDirectiveVisibilityToggles = {
+      ...timelineDirectiveVisibilityToggles,
+      ...toggleDirectiveVisibility(rowId, visible),
+    };
+  }
+
+  function toggleDirectiveVisibility(rowId: number, visible: boolean) {
+    return { [rowId]: visible };
+  }
 </script>
 
 <Panel padBody={false}>
@@ -67,7 +106,9 @@
       <div class="header-actions">
         <TimelineViewControls
           maxTimeRange={$maxTimeRange}
+          {timelineDirectiveVisibilityToggles}
           viewTimeRange={$viewTimeRange}
+          on:toggleDirectiveVisibility={({ detail }) => onToggleAllDirectiveVisibility(detail)}
           on:viewTimeRangeChanged={({ detail: newViewTimeRange }) => {
             $viewTimeRange = newViewTimeRange;
           }}
@@ -98,6 +139,7 @@
       planId={$planId}
       planStartTimeYmd={$plan.start_time}
       {timeline}
+      {timelineDirectiveVisibilityToggles}
       resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
@@ -112,6 +154,7 @@
       on:jumpToActivityDirective={jumpToActivityDirective}
       on:jumpToSpan={jumpToSpan}
       on:mouseDown={onMouseDown}
+      on:toggleDirectiveVisibility={({ detail: { rowId, visible } }) => onToggleDirectiveVisibility(rowId, visible)}
       on:toggleRowExpansion={({ detail: { expanded, rowId } }) => {
         viewUpdateRow('expanded', expanded, timelineId, rowId);
       }}

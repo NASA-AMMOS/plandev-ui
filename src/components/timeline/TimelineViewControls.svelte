@@ -5,13 +5,17 @@
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { TimeRange } from '../../types/timeline';
+  import type { DirectiveVisibilityToggleMap, TimeRange } from '../../types/timeline';
   import { tooltip } from '../../utilities/tooltip';
+  import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let minZoomMS = 100; // Min zoom of one minute
   export let nudgePercent = 0.05;
+  export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
+
+  let allDirectivesVisible: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -22,6 +26,13 @@
   // TODO implement a more sophisticated zooming step that based off time instead of percentage for the high zoom
   // cases or even the whole range
   $: zoomActionPercent = viewTimeRangePercentZoom < 0.1 ? 0.005 : 0.05;
+  $: {
+    const rowVisibilities = Object.values(timelineDirectiveVisibilityToggles);
+    const allSame = rowVisibilities.every(val => val === rowVisibilities[0]);
+    if (allSame) {
+      allDirectivesVisible = rowVisibilities[0];
+    }
+  }
 
   function onKeydown(e: KeyboardEvent & { currentTarget: EventTarget & Window; target: HTMLElement }) {
     // If user holds shift while not focused on an input then activate the temporary unlock.
@@ -91,6 +102,10 @@
   function onResetViewTimeRange() {
     dispatch('viewTimeRangeChanged', maxTimeRange);
   }
+
+  function onToggleDirectiveVisibility() {
+    dispatch('toggleDirectiveVisibility', !allDirectivesVisible);
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -135,10 +150,23 @@
 >
   <RotateCounterClockwiseIcon />
 </button>
+{#if Object.keys(timelineDirectiveVisibilityToggles).length > 0}
+  <TimelineViewDirectiveControls
+    directivesVisible={allDirectivesVisible}
+    offTooltipContent="Show Directives on all Timeline Rows"
+    onTooltipContent="Hide Directives on all Timeline Rows"
+    tooltipPlacement="bottom"
+    on:toggleDirectiveVisibility={onToggleDirectiveVisibility}
+  />
+{/if}
 
 <style>
   .st-button {
     border: 1px solid var(--st-gray-30);
     color: var(--st-gray-70);
+  }
+
+  .st-button:hover :global(svg) {
+    color: var(--st-gray-80);
   }
 </style>

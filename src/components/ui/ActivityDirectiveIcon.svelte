@@ -3,15 +3,21 @@
 <script lang="ts">
   import ActivityDirectiveIconSVG from '@nasa-jpl/stellar/icons/activity_directive.svg?component';
 
-  export let label: string = undefined;
-  export let backgroundColor: string = '#fcbd21';
-  export let color: string = '#000000';
+  export let backgroundColor: string | undefined = undefined;
+  export let color: string | undefined = undefined;
+  export let label: string | undefined = undefined;
+  export let opacity: number = 1;
+  export let size: string | undefined = '16px';
 </script>
 
 <div class="container">
   <div class="directive-icon-container">
-    <div class="directive-background" style="background-color: {backgroundColor};" />
-    <div class="directive-icon" style="color: {color};"><ActivityDirectiveIconSVG /></div>
+    <div
+      class="directive-icon"
+      style="background-color: {backgroundColor ?? '#fcbd21'};color: {color ?? '#000000'};opacity: {opacity}"
+    >
+      <ActivityDirectiveIconSVG width={size} height={size} />
+    </div>
   </div>
   {#if label}
     <span class="icon-label">{label}</span>

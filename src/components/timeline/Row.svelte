@@ -40,6 +40,7 @@
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
+  import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -60,6 +61,7 @@
   export let rowDragMoveDisabled = true;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let showDirectives: boolean = true;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -207,7 +209,16 @@
 <div class="row-root" class:active-row={$selectedRow ? $selectedRow.id === id : false}>
   <!-- Row Header. -->
   <RowHeader {expanded} rowId={id} title={name} {rowDragMoveDisabled} on:mouseDownRowMove on:toggleRowExpansion>
-    <div slot="right">
+    <div slot="right" class="row-controls">
+      {#if hasActivityLayer}
+        <TimelineViewDirectiveControls
+          directivesVisible={showDirectives}
+          offTooltipContent="Show Directives on this Timeline Row"
+          onTooltipContent="Hide Directives on this Timeline Row"
+          useBorder={false}
+          on:toggleDirectiveVisibility
+        />
+      {/if}
       <button
         use:tooltip={{ content: 'Edit Row', placement: 'top' }}
         class="st-button icon row-edit-button"
@@ -266,6 +277,7 @@
             {...layer}
             activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
             {activityDirectivesMap}
+            {showDirectives}
             {blur}
             {contextmenu}
             {drawHeight}
@@ -378,6 +390,10 @@
 
   :global(.row-root:hover .row-header .row-drag-handle-container) {
     opacity: 1;
+  }
+
+  .row-root .row-controls {
+    display: flex;
   }
 
   .row.row-collapsed {

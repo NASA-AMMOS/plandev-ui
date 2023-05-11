@@ -58,6 +58,7 @@
   export let planStartTimeYmd: string;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
+  export let showDirectives: boolean = true;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -126,6 +127,7 @@
     activityDirectives &&
     activityColor &&
     activityHeight &&
+    showDirectives !== undefined &&
     ctx &&
     drawHeight &&
     drawWidth &&
@@ -361,9 +363,11 @@
     maxXPerY: Record<number, number>,
     directiveBounds: PointBounds,
     initialSpanBounds: BoundingBox,
+    showDirectives: boolean = true,
   ) {
     // Place the elements where they will fit in packed waterfall
-    let i = rowHeight;
+    const directiveRowHeight = showDirectives ? rowHeight : 0;
+    let i = directiveRowHeight;
     let directiveStartY = 0;
     let foundY = false;
     while (!foundY) {
@@ -413,7 +417,7 @@
     let childrenYIterator = 0;
     let spanStartY = 0;
     if (initialSpanBounds) {
-      childrenYIterator = directiveStartY + rowHeight;
+      childrenYIterator = directiveStartY + directiveRowHeight;
       spanStartY = initialSpanBounds.maxY + childrenYIterator;
       while (childrenYIterator < spanStartY) {
         // TODO span bounds could provide a maxXForY instead of absolute corner bounds?
@@ -483,7 +487,7 @@
             spanBounds,
             directiveStartY,
             maxXPerY: newMaxXPerY,
-          } = placeActivityDirective(maxXPerY, directiveBounds, initialSpanBounds);
+          } = placeActivityDirective(maxXPerY, directiveBounds, initialSpanBounds, showDirectives);
 
           // Update maxXPerY
           maxXPerY = newMaxXPerY;
@@ -513,7 +517,9 @@
                 ? (directiveStartY % maxCanvasRowY) + rowHeight
                 : directiveStartY;
           }
-          drawActivityDirective(activityDirective, directiveBounds.xCanvas, constrainedDirectiveY);
+          if (showDirectives) {
+            drawActivityDirective(activityDirective, directiveBounds.xCanvas, constrainedDirectiveY);
+          }
 
           totalMaxY = Math.max(totalMaxY, directiveStartY, directiveStartY, spanBounds?.maxY || 0);
         }
