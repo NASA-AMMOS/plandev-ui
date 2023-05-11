@@ -1,9 +1,18 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import DataGrid from './DataGrid.svelte';
 
 const numOfRows = 10;
 const testRowData = [...new Array(numOfRows)].map((_, i) => ({ id: i, name: `test ${i}` }));
+
+vi.stubGlobal(
+  'ResizeObserver',
+  vi.fn(() => ({
+    disconnect: vi.fn(),
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+  })),
+);
 
 describe('DataGrid Component', () => {
   afterEach(() => {

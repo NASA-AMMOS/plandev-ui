@@ -16,6 +16,7 @@
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
 
+  export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
@@ -70,6 +71,7 @@
   bind:this={dataGrid}
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
+  {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
   {getRowId}

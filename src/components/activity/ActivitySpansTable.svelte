@@ -29,6 +29,7 @@
   bind:this={dataGrid}
   bind:currentSelectedRowId={selectedSpanId}
   bind:selectedRowIds={selectedItemIds}
+  autoSizeColumnsToFit={false}
   columnDefs={[...(columnDefs ?? [])]}
   {columnStates}
   {getRowId}

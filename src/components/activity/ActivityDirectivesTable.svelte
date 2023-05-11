@@ -80,6 +80,7 @@
 <BulkActionDataGrid
   bind:dataGrid
   bind:selectedItemId={selectedActivityDirectiveId}
+  autoSizeColumnsToFit={false}
   columnDefs={[...(columnDefs ?? []), activityActionColumnDef]}
   {columnStates}
   {getRowId}
