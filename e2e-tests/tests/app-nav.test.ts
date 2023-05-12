@@ -95,13 +95,12 @@ test.describe.serial('App Nav', () => {
     await gatewayPage.close();
   });
 
-  test(`Clicking on the app menu 'GraphQL Console' option should open a new tab to the console page`, async () => {
+  test(`Clicking on the app menu 'GraphQL Playground' option should open a new tab to the playground page`, async () => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
-    const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLConsole.click()]);
-    await consolePage.waitForTimeout(3000);
-    expect(await consolePage.title()).toContain('Login | Hasura');
+    const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLPlayground.click()]);
+    expect(await consolePage.title()).toContain('Altair');
     await consolePage.close();
   });
 

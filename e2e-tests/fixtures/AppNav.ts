@@ -10,7 +10,7 @@ export class AppNav {
   appMenuItemDocumentation: Locator;
   appMenuItemExpansion: Locator;
   appMenuItemGateway: Locator;
-  appMenuItemGraphQLConsole: Locator;
+  appMenuItemGraphQLPlayground: Locator;
   appMenuItemLogout: Locator;
   appMenuItemModels: Locator;
   appMenuItemPlans: Locator;
@@ -37,8 +37,8 @@ export class AppNav {
     );
     this.appMenuItemExpansion = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Expansion")`);
     this.appMenuItemGateway = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Gateway")`);
-    this.appMenuItemGraphQLConsole = page.locator(
-      `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Console")`,
+    this.appMenuItemGraphQLPlayground = page.locator(
+      `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Playground")`,
     );
     this.appMenuItemLogout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Logout")`);
     this.appMenuItemModels = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Models")`);

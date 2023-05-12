@@ -75,11 +75,9 @@
       <DiagramIcon />
       Gateway
     </MenuItem>
-    <MenuItem
-      on:click={() => window.open(`${env.PUBLIC_HASURA_CLIENT_URL.replace('v1/graphql', 'console')}`, '_newtab')}
-    >
+    <MenuItem on:click={() => window.open(`${env.PUBLIC_GATEWAY_CLIENT_URL}/api-playground`, '_newtab')}>
       <GraphQLIcon />
-      GraphQL Console
+      GraphQL Playground
     </MenuItem>
     <MenuItem on:click={() => window.open('https://nasa-ammos.github.io/aerie-docs/', '_newtab')}>
       <JournalsIcon />
