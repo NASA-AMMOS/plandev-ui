@@ -1358,11 +1358,11 @@ const effects = {
     }
   },
 
-  async getResourceTypes(missionModelId: number): Promise<ResourceType[]> {
+  async getResourceTypes(model_id: number): Promise<ResourceType[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { missionModelId });
-      const { resourceTypes } = data;
-      return resourceTypes;
+      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { model_id });
+      const { resource_types } = data;
+      return resource_types;
     } catch (e) {
       catchError(e);
       return [];

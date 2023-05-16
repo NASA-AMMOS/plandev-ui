@@ -681,8 +681,8 @@ const gql = {
   `,
 
   GET_RESOURCE_TYPES: `#graphql
-    query GetResourceTypes($missionModelId: ID!) {
-      resourceTypes(missionModelId: $missionModelId) {
+    query GetResourceTypes($model_id: Int!) {
+      resource_types: resource_type(where: { model_id: { _eq: $model_id } }) {
         name
         schema
       }
