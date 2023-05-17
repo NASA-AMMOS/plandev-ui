@@ -1,0 +1,3 @@
+# The worker files here are build artifacts, so don't include
+*.worker.js
+*.worker.js.map

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
   import { userSequencesRows } from '../../stores/sequencing';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
@@ -48,6 +49,14 @@
     a.download = sequenceName;
     a.click();
   }
+
+  function fullyLoaded(
+    event: CustomEvent<{ model: Editor.ITextModel; worker: languages.typescript.TypeScriptWorker }>,
+  ) {
+    const { model, worker } = event.detail;
+    const model_id = model.id;
+    console.log(`Model ${model_id} loaded!`, worker);
+  }
 </script>
 
 <CssGrid bind:rows={$userSequencesRows}>
@@ -73,6 +82,7 @@
         tabSize={2}
         value={sequenceDefinition}
         on:didChangeModelContent
+        on:fullyLoaded={fullyLoaded}
       />
     </svelte:fragment>
   </Panel>

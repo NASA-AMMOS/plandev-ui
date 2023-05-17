@@ -219,3 +219,33 @@ export function setQueryParam(key: string, value: string): void {
 export function sleep(milliseconds = 250): Promise<void> {
   return new Promise(resolve => setTimeout(() => resolve(), milliseconds));
 }
+
+export class ShouldRetryError extends Error {}
+
+/** Retry a promise n times with delay and exponential backoff */
+export async function promiseRetry<T>(
+  promise: () => Promise<T>,
+  initial_retry_count: number,
+  retry_delay: number,
+): Promise<T> {
+  async function __promiseRetry(promise: () => Promise<T>, remaining_retry_count: number): Promise<T> {
+    try {
+      const res = await promise();
+      return res;
+    } catch (e) {
+      if (!(e instanceof ShouldRetryError)) {
+        throw e;
+      }
+      if (remaining_retry_count <= 0) {
+        console.log('caught', e);
+
+        throw e;
+      }
+      setTimeout(() => {
+        __promiseRetry(promise, remaining_retry_count - 1);
+      }, retry_delay ** (1 + 0.1 * (initial_retry_count - remaining_retry_count + 1)));
+    }
+  }
+
+  return __promiseRetry(promise, initial_retry_count);
+}

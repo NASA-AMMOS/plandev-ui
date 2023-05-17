@@ -1,5 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import svg from '@poppanator/sveltekit-svg';
+import { WorkerBuildPlugin } from './vite.worker-build-plugin';
 
 /** @type {import('vite').UserConfig} */
 const config = {
@@ -27,6 +28,12 @@ const config = {
         ],
       },
     }),
+    WorkerBuildPlugin(
+      ['./src/workers/customTS.worker.ts', './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js'],
+      {
+        log: true,
+      },
+    ),
   ],
   test: {
     alias: [{ find: /^svelte$/, replacement: 'svelte/internal' }], // https://github.com/vitest-dev/vitest/issues/2834
