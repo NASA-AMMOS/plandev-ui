@@ -30,7 +30,7 @@
     schedulingErrors,
     simulationDatasetErrors,
   } from '../../../stores/errors';
-  import { planExpansionStatus, selectedExpansionSetId } from '../../../stores/expansion';
+  import { planExpansionStatus, resetExpansionStores, selectedExpansionSetId } from '../../../stores/expansion';
   import {
     activityTypes,
     maxTimeRange,
@@ -137,6 +137,7 @@
   onDestroy(() => {
     resetActivityStores();
     resetConstraintStores();
+    resetExpansionStores();
     resetPlanStores();
     resetSchedulingStores();
     resetSimulationStores();

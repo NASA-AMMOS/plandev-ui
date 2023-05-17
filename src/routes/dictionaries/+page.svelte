@@ -10,11 +10,11 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { createDictionaryError, creatingDictionary } from '../../stores/expansion';
   import { commandDictionaries } from '../../stores/sequencing';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { CommandDictionary } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
 
   type CellRendererParams = {
     deleteCommandDictionary: (dictionary: CommandDictionary) => void;
@@ -76,9 +76,27 @@
   ];
 
   let createButtonDisabled: boolean = false;
+  let createDictionaryError: string | null = null;
+  let creatingDictionary: boolean = false;
   let files: FileList;
 
   $: createButtonDisabled = !files;
+
+  async function createCommandDictionary(files: FileList) {
+    createDictionaryError = null;
+    creatingDictionary = true;
+
+    try {
+      const newCommandDictionary = await effects.createCommandDictionary(files);
+      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) => [newCommandDictionary, ...dictionaries]);
+      showSuccessToast('Command Dictionary Created Successfully');
+    } catch (e) {
+      createDictionaryError = e.message;
+      showFailureToast('Command Dictionary Create Failed');
+    }
+
+    creatingDictionary = false;
+  }
 
   function deleteCommandDictionary({ id }: Pick<CommandDictionary, 'id'>) {
     effects.deleteCommandDictionary(id);
@@ -103,8 +121,8 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={() => effects.createCommandDictionary(files)}>
-          <AlertError class="m-2" error={$createDictionaryError} />
+        <form on:submit|preventDefault={() => createCommandDictionary(files)}>
+          <AlertError class="m-2" error={createDictionaryError} />
 
           <fieldset>
             <label for="file">AMPCS Command Dictionary XML File</label>
@@ -113,7 +131,7 @@
 
           <fieldset>
             <button class="st-button w-100" disabled={createButtonDisabled} type="submit">
-              {$creatingDictionary ? 'Creating...' : 'Create'}
+              {creatingDictionary ? 'Creating...' : 'Create'}
             </button>
           </fieldset>
         </form>

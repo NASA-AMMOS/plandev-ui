@@ -15,10 +15,6 @@ export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_S
 
 /* Writeable. */
 
-export const creatingDictionary: Writable<boolean> = writable(false);
-
-export const createDictionaryError: Writable<string | null> = writable(null);
-
 export const creatingExpansionSequence: Writable<boolean> = writable(false);
 
 export const expansionRulesColumns: Writable<string> = writable('1fr 3px 2fr');
@@ -40,3 +36,11 @@ export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived
   ([$expansionSequences, $simulationDatasetId]) =>
     $expansionSequences.filter(sequence => sequence.simulation_dataset_id === $simulationDatasetId),
 );
+
+export function resetExpansionStores(): void {
+  creatingExpansionSequence.set(false);
+  savingExpansionRule.set(false);
+  savingExpansionSet.set(false);
+  planExpansionStatus.set(null);
+  selectedExpansionSetId.set(null);
+}

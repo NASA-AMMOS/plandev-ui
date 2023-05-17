@@ -5,8 +5,6 @@ import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/ac
 import { checkConstraintsStatus, constraintViolationsResponseMap } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
-  createDictionaryError,
-  creatingDictionary,
   creatingExpansionSequence,
   planExpansionStatus,
   savingExpansionRule,
@@ -263,26 +261,12 @@ const effects = {
     }
   },
 
-  async createCommandDictionary(files: FileList): Promise<void> {
-    try {
-      createDictionaryError.set(null);
-      creatingDictionary.set(true);
-
-      const file: File = files[0];
-      const dictionary = await file.text();
-      const data = await reqHasura<CommandDictionary>(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
-      const { createCommandDictionary: newCommandDictionary } = data;
-
-      showSuccessToast('Command Dictionary Created Successfully');
-      createDictionaryError.set(null);
-      creatingDictionary.set(false);
-      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) => [newCommandDictionary, ...dictionaries]);
-    } catch (e) {
-      catchError('Command Dictionary Create Failed', e);
-      showFailureToast('Command Dictionary Create Failed');
-      createDictionaryError.set(e.message);
-      creatingDictionary.set(false);
-    }
+  async createCommandDictionary(files: FileList): Promise<CommandDictionary | never> {
+    const file: File = files[0];
+    const dictionary = await file.text();
+    const data = await reqHasura<CommandDictionary>(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+    const { createCommandDictionary: newCommandDictionary } = data;
+    return newCommandDictionary;
   },
 
   async createConstraint(
