@@ -62,7 +62,6 @@ const gql = {
         created_at
         id
         mission
-        updated_at
         version
       }
     }
@@ -123,8 +122,8 @@ const gql = {
   `,
 
   CREATE_PLAN_MERGE_REQUEST: `#graphql
-    mutation CreatePlanMergeRequest($requester_username: String!, $source_plan_id: Int!, $target_plan_id: Int!) {
-      create_merge_request(args: { requester_username: $requester_username, source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
+    mutation CreatePlanMergeRequest($source_plan_id: Int!, $target_plan_id: Int!) {
+      create_merge_request(args: { source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
         merge_request_id
       }
     }
@@ -888,8 +887,8 @@ const gql = {
   `,
 
   PLAN_MERGE_BEGIN: `#graphql
-    mutation PlanMergeBegin($merge_request_id: Int!, $reviewer_username: String!) {
-      begin_merge(args: { merge_request_id: $merge_request_id, reviewer_username: $reviewer_username } ) {
+    mutation PlanMergeBegin($merge_request_id: Int!) {
+      begin_merge(args: { merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -990,7 +989,7 @@ const gql = {
         anchored_to_start
         applied_preset {
           preset_id
-          presets_applied {
+          preset_applied {
             name
             arguments
           }
@@ -1063,7 +1062,6 @@ const gql = {
         created_at
         id
         mission
-        updated_at
         version
       }
     }
@@ -1451,7 +1449,7 @@ const gql = {
         anchored_to_start
         applied_preset {
           preset_id
-          presets_applied {
+          preset_applied {
             name
             arguments
           }

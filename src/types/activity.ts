@@ -65,8 +65,8 @@ export type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
 export type AppliedPreset = {
   activity_id: ActivityDirectiveId;
   plan_id: number;
+  preset_applied: ActivityPreset;
   preset_id: ActivityPresetId;
-  presets_applied: ActivityPreset;
 };
 
 export type ActivityPreset = {

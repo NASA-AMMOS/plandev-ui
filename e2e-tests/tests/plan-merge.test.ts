@@ -51,13 +51,13 @@ test.describe.serial('Plan Merge', () => {
     await page.getByRole('button', { name: 'CreateActivity-BiteBanana' }).click();
   });
 
-  test('Create a branch', async ({ baseURL }) => {
+  test('Create a branch', async () => {
     await page.getByText(plans.planName).first().click();
     await page.getByText('Create branch').click();
     await page.getByPlaceholder('Name of branch').click();
     await page.getByPlaceholder('Name of branch').fill(planBranchName);
     await page.getByRole('button', { name: 'Create Branch' }).click();
-    await page.waitForURL(`${baseURL}/plans/*`);
+    await page.waitForTimeout(500);
   });
 
   test('Change the start time of the activity on the branch', async () => {

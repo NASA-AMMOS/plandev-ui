@@ -489,7 +489,6 @@ const effects = {
   ): Promise<number | null> {
     try {
       const data = await reqHasura<{ merge_request_id: number }>(gql.CREATE_PLAN_MERGE_REQUEST, {
-        requester_username,
         source_plan_id,
         target_plan_id,
       });
@@ -1738,9 +1737,9 @@ const effects = {
     }
   },
 
-  async planMergeBegin(merge_request_id: number, reviewer_username: string): Promise<boolean> {
+  async planMergeBegin(merge_request_id: number): Promise<boolean> {
     try {
-      await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id, reviewer_username });
+      await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id });
       return true;
     } catch (error) {
       showFailureToast('Begin Merge Failed');

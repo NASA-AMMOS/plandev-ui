@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
-  import { user } from '../../stores/app';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
   import type { PlanMergeRequest, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
@@ -74,7 +73,7 @@
     if (planMergeRequest.type === 'incoming') {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
-      const success = await effects.planMergeBegin(planMergeRequest.id, $user.id);
+      const success = await effects.planMergeBegin(planMergeRequest.id);
       if (success) {
         dispatch('close');
         goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`);

@@ -3,7 +3,6 @@ export type CommandDictionary = {
   created_at: string;
   id: number;
   mission: string;
-  updated_at: string;
   version: string;
 };
 

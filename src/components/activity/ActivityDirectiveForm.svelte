@@ -70,7 +70,7 @@
           activityType.parameters,
           activityDirective.arguments,
           activityType.required_parameters,
-          activityDirective.applied_preset?.presets_applied?.arguments,
+          activityDirective.applied_preset?.preset_applied?.arguments,
           defaultArgumentsMap,
         );
       });
@@ -152,7 +152,7 @@
     const newArguments = getArguments(argumentsMap, {
       ...formParameter,
       value: activityDirective.applied_preset
-        ? activityDirective.applied_preset.presets_applied.arguments[formParameter.name]
+        ? activityDirective.applied_preset.preset_applied.arguments[formParameter.name]
         : null,
     });
     effects.updateActivityDirective(plan_id, id, { arguments: newArguments });
