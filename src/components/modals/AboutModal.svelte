@@ -1,14 +1,28 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { version } from '../../stores/app';
+  import { base } from '$app/paths';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import type { Version } from '../../types/app';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
   const dispatch = createEventDispatcher();
+
+  let version: Version = {
+    branch: 'unknown',
+    commit: 'unknown',
+    commitUrl: '',
+    date: new Date().toLocaleString(),
+    name: 'aerie-ui',
+  };
+
+  onMount(async () => {
+    const versionResponse = await fetch(`${base}/version.json`);
+    version = await versionResponse.json();
+  });
 </script>
 
 <Modal height={200}>
@@ -21,12 +35,12 @@
       Technology Transfer at the California Institute of Technology.
     </div>
     <div class="mt-3">
-      {$version.name} -
-      <a href={$version.commitUrl} rel="noopener noreferrer" target="_blank">
-        {$version.branch}:{$version.commit}
+      {version.name} -
+      <a href={version.commitUrl} rel="noopener noreferrer" target="_blank">
+        {version.branch}:{version.commit}
       </a>
       -
-      {$version.date}
+      {version.date}
     </div>
   </ModalContent>
   <ModalFooter>
