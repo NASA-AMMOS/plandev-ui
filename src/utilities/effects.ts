@@ -463,18 +463,14 @@ const effects = {
     }
   },
 
-  async createPlanBranchRequest(
-    plan: Plan,
-    action: PlanBranchRequestAction,
-    requester_username: string,
-  ): Promise<void> {
+  async createPlanBranchRequest(plan: Plan, action: PlanBranchRequestAction): Promise<void> {
     try {
       const { confirm, value } = await showPlanBranchRequestModal(plan, action);
 
       if (confirm) {
         const { source_plan_id, target_plan_id } = value;
         if (action === 'merge') {
-          await effects.createPlanMergeRequest(requester_username, source_plan_id, target_plan_id);
+          await effects.createPlanMergeRequest(source_plan_id, target_plan_id);
         }
       }
     } catch (e) {
@@ -482,11 +478,7 @@ const effects = {
     }
   },
 
-  async createPlanMergeRequest(
-    requester_username: string,
-    source_plan_id: number,
-    target_plan_id: number,
-  ): Promise<number | null> {
+  async createPlanMergeRequest(source_plan_id: number, target_plan_id: number): Promise<number | null> {
     try {
       const data = await reqHasura<{ merge_request_id: number }>(gql.CREATE_PLAN_MERGE_REQUEST, {
         source_plan_id,

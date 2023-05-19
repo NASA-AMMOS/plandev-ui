@@ -1119,7 +1119,6 @@ const gql = {
         metadata
         seq_id
         simulation_dataset_id
-        updated_at
       }
     }
   `,
