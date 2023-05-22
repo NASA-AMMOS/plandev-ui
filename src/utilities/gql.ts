@@ -17,7 +17,7 @@ const gql = {
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!) {
       checkConstraintsResponse: constraintViolations(planId: $planId) {
-        violationsMap: constraintViolations
+        violations
       }
     }
   `,

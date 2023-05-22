@@ -23,11 +23,10 @@ export type ConstraintViolation = {
   constraintId: Constraint['id'];
   constraintName: Constraint['name'];
   gaps: TimeRange[];
+  type: ConstraintType;
   windows: TimeRange[];
 };
 
 export type ConstraintViolationsMap = Record<Constraint['id'], ConstraintViolation[]>;
-
-export type ConstraintViolationsResponseMap = Record<Constraint['name'], Omit<ConstraintViolation, 'constraintName'>[]>;
 
 export type ConstraintVisibilityMap = Record<Constraint['id'], boolean>;

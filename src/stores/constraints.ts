@@ -1,11 +1,6 @@
 import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import type {
-  Constraint,
-  ConstraintViolation,
-  ConstraintViolationsMap,
-  ConstraintViolationsResponseMap,
-} from '../types/constraint';
+import type { Constraint, ConstraintViolation } from '../types/constraint';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { modelId, planId, planStartTimeMs } from './plan';
@@ -39,46 +34,26 @@ export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>
 
 export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
-export const constraintViolationsResponseMap: Writable<ConstraintViolationsResponseMap> = writable({});
+export const constraintViolationsResponse: Writable<ConstraintViolation[]> = writable([]);
 
 export const constraintsColumns: Writable<string> = writable('1fr 3px 2fr');
 
 /* Derived. */
 
-export const sanitizeConstraintName = (constraintName: string) => {
-  return constraintName.indexOf('plan/') > -1 || constraintName.indexOf('model/') > -1
-    ? constraintName.replace('plan/', '').replace('model/', '')
-    : constraintName;
-};
-
-export const constraintViolationsMap: Readable<ConstraintViolationsMap> = derived(
-  [constraintViolationsResponseMap, planStartTimeMs, constraints],
-  ([$constraintViolationsResponseMap, $planStartTimeMs, $constraints]) =>
-    Object.entries($constraintViolationsResponseMap).reduce((map, [constraintName, violations]) => {
-      // TODO remove this name translation once the constraint violations are properly stored in the DB
-      const translatedConstraintName = sanitizeConstraintName(constraintName);
-      const matchingConstraint = $constraints.find(constraint => constraint.name === translatedConstraintName);
-
-      if (matchingConstraint) {
-        map[matchingConstraint.id] = violations.map(({ associations, gaps, windows }) => ({
-          associations,
-          constraintId: matchingConstraint.id,
-          constraintName: translatedConstraintName,
-          gaps,
-          windows: windows.map(({ end, start }) => ({
-            end: $planStartTimeMs + end / 1000,
-            start: $planStartTimeMs + start / 1000,
-          })),
-        }));
-      }
-
-      return map;
-    }, {}),
-);
-
 export const constraintViolations: Readable<ConstraintViolation[]> = derived(
-  [constraintViolationsMap],
-  ([$constraintViolationsMap]) => Object.values($constraintViolationsMap).flat(),
+  [constraintViolationsResponse, planStartTimeMs],
+  ([$constraintViolationsResponse, $planStartTimeMs]) =>
+    $constraintViolationsResponse.reduce((list, violation) => {
+      list.push({
+        ...violation,
+        windows: violation.windows.map(({ end, start }) => ({
+          end: $planStartTimeMs + end / 1000,
+          start: $planStartTimeMs + start / 1000,
+        })),
+      });
+
+      return list;
+    }, []),
 );
 
 export const visibleConstraintViolations: Readable<ConstraintViolation[]> = derived(
@@ -104,5 +79,5 @@ export function setAllConstraintsVisible(visible: boolean) {
 
 export function resetConstraintStores(): void {
   checkConstraintsStatus.set(null);
-  constraintViolationsResponseMap.set({});
+  constraintViolationsResponse.set([]);
 }
