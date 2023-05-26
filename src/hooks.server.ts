@@ -15,12 +15,16 @@ export const handle: Handle = async ({ event, resolve }) => {
     const { success } = await effects.session(user.token);
 
     if (success) {
+      const permissibleQueries = await effects.getUserQueries(user.token);
       event.locals.user = user;
+      event.locals.permissibleQueries = permissibleQueries ?? {};
     } else {
       event.locals.user = null;
+      event.locals.permissibleQueries = {};
     }
   } else {
     event.locals.user = null;
+    event.locals.permissibleQueries = {};
   }
 
   return await resolve(event);

@@ -5,14 +5,21 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import { user as userStore } from '../../stores/app';
+  import { permissibleQueries as permissibleQueriesStore, user as userStore } from '../../stores/app';
   import type { LoginResponseBody } from '../../types/auth';
 
-  let error = null;
+  let error: string | null = null;
+  let fullError: string | null = null;
   let loginButtonText = 'Login';
   let password = '';
   let username = '';
   let usernameInput: HTMLInputElement | null = null;
+
+  $: if ($permissibleQueriesStore && !Object.keys($permissibleQueriesStore).length) {
+    error = 'You are not authorized';
+    fullError =
+      'You are not authorized to access the page that you attempted to view. Please contact a tool administrator to request access.';
+  }
 
   onMount(() => {
     if (usernameInput) {
@@ -40,12 +47,12 @@
         await goto(`${base}/plans`);
       } else {
         console.log(message);
-        error = message;
+        error = message ?? null;
         loginButtonText = 'Login';
       }
     } catch (e) {
       console.log(e);
-      error = e.message;
+      error = (e as Error).message;
       loginButtonText = 'Login';
     }
   }
@@ -55,7 +62,7 @@
   <form on:submit|preventDefault={login} class="form">
     <div class="title st-typography-displayBody">Log in to Aerie</div>
 
-    <AlertError class="m-2" {error} />
+    <AlertError class="m-2" {error} {fullError} />
 
     <fieldset>
       <label for="username"> Username </label>

@@ -2,6 +2,7 @@
 
 declare namespace App {
   interface Locals {
+    permissibleQueries: Record<string, true>;
     user: User | null;
   }
 }

@@ -4,6 +4,7 @@
   export { className as class };
   export { styleName as style };
   export let error: string | null = '';
+  export let fullError: string | null = null;
 
   let className: string = '';
   let styleName: string = '';
@@ -14,7 +15,7 @@
     class="alert-error {className}"
     style={styleName}
     use:tooltip={{
-      content: error,
+      content: fullError ?? error,
       maxWidth: 'none',
       placement: 'top',
       theme: 'error',

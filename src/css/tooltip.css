@@ -31,6 +31,10 @@
   color: var(--st-red);
 }
 
+.tippy-box[data-theme~='error'] > .tippy-content {
+  color: #721c24;
+}
+
 .tippy-box[data-theme~='error'][data-placement^='top'] > .tippy-arrow:before {
   border-top-color: #f8d7da;
 }
