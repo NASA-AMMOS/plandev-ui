@@ -92,4 +92,5 @@
   on:bulkDeleteItems={deleteActivityDirectives}
   on:columnStateChange
   on:selectionChanged
+  on:rowDoubleClicked
 />

@@ -18,7 +18,7 @@
     spans,
     spansMap,
   } from '../../stores/simulation';
-  import { timelineLockStatus, view, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
+  import { timelineLockStatus, view, viewTogglePanel, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { DirectiveVisibilityToggleMap, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
   import effects from '../../utilities/effects';
@@ -39,6 +39,15 @@
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
     effects.deleteActivityDirective($planId, activityDirectiveId);
+  }
+
+  function openSelectedActivityPanel(event: CustomEvent) {
+    const {
+      detail: { selectedActivityDirectiveId, selectedSpanId },
+    } = event;
+    if (selectedActivityDirectiveId !== null || selectedSpanId !== null) {
+      viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ActivityFormPanel' } });
+    }
   }
 
   function generateDirectiveVisibilityToggles(
@@ -151,6 +160,7 @@
       timelineLockStatus={$timelineLockStatus}
       viewTimeRange={$viewTimeRange}
       on:deleteActivityDirective={deleteActivityDirective}
+      on:dblClick={openSelectedActivityPanel}
       on:jumpToActivityDirective={jumpToActivityDirective}
       on:jumpToSpan={jumpToSpan}
       on:mouseDown={onMouseDown}

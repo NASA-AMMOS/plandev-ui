@@ -75,6 +75,7 @@
 
   let blur: FocusEvent;
   let contextmenu: MouseEvent;
+  let dblclick: MouseEvent;
   let dragenter: DragEvent;
   let dragleave: DragEvent;
   let dragover: DragEvent;
@@ -246,6 +247,7 @@
       on:mousemove={e => (mousemove = e)}
       on:mouseout={e => (mouseout = e)}
       on:mouseup={e => (mouseup = e)}
+      on:dblclick={e => (dblclick = e)}
     />
 
     <!-- SVG Elements. -->
@@ -284,6 +286,7 @@
             {drawWidth}
             filter={layer.filter.activity}
             {focus}
+            {dblclick}
             {mousedown}
             {mousemove}
             {mouseout}
@@ -301,6 +304,7 @@
             {xScaleView}
             on:contextMenu
             on:deleteActivityDirective
+            on:dblClick
             on:mouseDown={onMouseDown}
             on:mouseOver={onMouseOver}
             on:updateRowHeight={onUpdateRowHeightLayer}

@@ -42,10 +42,10 @@
     span = null;
     activityDirectiveSpans = null;
 
-    if (typeof selectedActivityDirectiveId === 'number') {
+    if (selectedActivityDirectiveId !== null) {
       activityDirective = activityDirectivesMap[selectedActivityDirectiveId];
       activityDirectiveSpans = getAllSpansForActivityDirective(selectedActivityDirectiveId, spansMap, spanUtilityMaps);
-    } else if (typeof selectedSpanId === 'number') {
+    } else if (selectedSpanId !== null) {
       span = spansMap[selectedSpanId];
     }
   } else {

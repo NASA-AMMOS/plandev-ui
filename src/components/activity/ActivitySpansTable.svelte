@@ -40,4 +40,5 @@
   suppressDragLeaveHidesColumns={false}
   on:columnStateChange
   on:selectionChanged
+  on:rowDoubleClicked
 />

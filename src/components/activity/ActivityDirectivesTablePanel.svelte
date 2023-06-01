@@ -12,7 +12,7 @@
   } from '../../stores/activities';
   import { plan, planId } from '../../stores/plan';
   import { spanUtilityMaps, spansMap } from '../../stores/simulation';
-  import { view, viewUpdateActivityDirectivesTable } from '../../stores/views';
+  import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
   import type { ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
@@ -229,6 +229,10 @@
     selectActivity($selectedActivityDirectiveId, null, false);
   }
 
+  function onRowDoubleClicked() {
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ActivityFormPanel' } });
+  }
+
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     viewUpdateActivityDirectivesTable({
       columnStates: derivedColumnDefs
@@ -289,6 +293,7 @@
       planId={$planId}
       on:columnStateChange={onColumnStateChange}
       on:selectionChanged={onSelectionChanged}
+      on:rowDoubleClicked={onRowDoubleClicked}
     />
   </svelte:fragment>
 </Panel>

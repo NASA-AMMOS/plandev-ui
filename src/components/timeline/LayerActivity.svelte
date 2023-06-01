@@ -44,6 +44,7 @@
   export let blur: FocusEvent | undefined;
   export let contextmenu: MouseEvent | undefined;
   export let debugMode: boolean = false;
+  export let dblclick: MouseEvent | undefined;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
@@ -104,6 +105,7 @@
 
   $: onBlur(blur);
   $: onContextmenu(contextmenu);
+  $: onDblclick(dblclick);
   $: onFocus(focus);
   $: onMousedown(mousedown);
   $: onMousemove(mousemove);
@@ -308,6 +310,17 @@
     const showContextMenu = !!e && isRightClick(e);
     if (showContextMenu) {
       dispatch('contextMenu', {
+        e,
+        layerId: id,
+        selectedActivityDirectiveId,
+        selectedSpanId,
+      });
+    }
+  }
+
+  function onDblclick(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('dblClick', {
         e,
         layerId: id,
         selectedActivityDirectiveId,

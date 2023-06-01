@@ -6,7 +6,7 @@
   import type { ColDef, ColumnState } from 'ag-grid-community';
   import { selectActivity } from '../../stores/activities';
   import { selectedSpanId, simulationDataset, spans } from '../../stores/simulation';
-  import { view, viewUpdateActivitySpansTable } from '../../stores/views';
+  import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
   import type { ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
@@ -175,6 +175,10 @@
     selectActivity(null, $selectedSpanId, false);
   }
 
+  function onRowDoubleClicked() {
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'ActivityFormPanel' } });
+  }
+
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     viewUpdateActivitySpansTable({
       columnStates: derivedColumnDefs
@@ -234,6 +238,7 @@
       spans={$spans}
       on:columnStateChange={onColumnStateChange}
       on:selectionChanged={onSelectionChanged}
+      on:rowDoubleClicked={onRowDoubleClicked}
     />
   </svelte:fragment>
 </Panel>

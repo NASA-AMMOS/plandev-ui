@@ -315,6 +315,7 @@
           contextMenu = e.detail;
           tooltip.hide();
         }}
+        on:dblClick
         on:deleteActivityDirective
         on:mouseDown={onMouseDown}
         on:mouseDownRowMove={onMouseDownRowMove}
