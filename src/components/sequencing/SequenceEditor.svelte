@@ -12,6 +12,7 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
+  export let disableSeqJSONGeneration: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceCommandDictionaryId: number | null = null;
   export let sequenceDefinition: string = '';
@@ -94,8 +95,10 @@
       <SectionTitle>Seq JSON (Read-only)</SectionTitle>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => dispatch('generate')}> Generate </button>
-        <button class="st-button secondary ellipsis" on:click={downloadSeqJson}> Download </button>
+        {#if !disableSeqJSONGeneration}
+          <button class="st-button secondary ellipsis" on:click={() => dispatch('generate')}>Generate</button>
+        {/if}
+        <button class="st-button secondary ellipsis" on:click={downloadSeqJson}>Download</button>
       </div>
     </svelte:fragment>
     <svelte:fragment slot="body">

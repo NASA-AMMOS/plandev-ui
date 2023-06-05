@@ -1,3 +1,4 @@
+import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 
 export type ExpansionRule = {
@@ -37,3 +38,37 @@ export type ExpansionSet = {
 };
 
 export type SeqId = Pick<ExpansionSequence, 'seq_id'>;
+
+export type ActivityInstanceJoin = {
+  simulated_activity: {
+    activity_type_name: string;
+    id: number;
+  };
+};
+
+export type ExpandedSequence = {
+  created_at: string;
+  edsl_string: string;
+  expanded_sequence: SeqJson;
+  id: number;
+  seq_id: string;
+  sequence: {
+    activity_instance_joins: ActivityInstanceJoin[];
+  };
+};
+
+export type ExpansionRun = {
+  created_at: string;
+  expanded_sequences: ExpandedSequence[];
+  expansion_set: ExpansionSet;
+  id: number;
+  simulation_dataset: {
+    dataset_id: number;
+    simulation: {
+      plan: {
+        id: number;
+        name: string;
+      };
+    };
+  };
+};

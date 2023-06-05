@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { page } from '$app/stores';
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
@@ -55,6 +56,7 @@
     externalResources,
     resetSimulationStores,
     resources,
+    selectedSpanId,
     simulationDataset,
     simulationDatasetId,
     simulationStatus,
@@ -70,6 +72,7 @@
   } from '../../../stores/views';
   import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import effects from '../../../utilities/effects';
+  import { removeQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { Status } from '../../../utilities/status';
@@ -88,7 +91,21 @@
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
-    $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
+
+    const querySimulationDatasetId = $page.url.searchParams.get('simulationDatasetId');
+    if (querySimulationDatasetId) {
+      $simulationDatasetId = parseInt(querySimulationDatasetId);
+      removeQueryParam('simulationDatasetId');
+    } else {
+      $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
+    }
+
+    const queryActivityId = $page.url.searchParams.get('activityId');
+    if (queryActivityId) {
+      $selectedSpanId = parseInt(queryActivityId);
+      removeQueryParam('activityId');
+    }
+
     $viewTimeRange = $maxTimeRange;
     activityTypes.updateValue(() => data.initialActivityTypes);
 

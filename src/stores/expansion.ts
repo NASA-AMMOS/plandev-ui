@@ -21,6 +21,8 @@ export const expansionRulesColumns: Writable<string> = writable('1fr 3px 2fr');
 
 export const expansionSetsColumns: Writable<string> = writable('1fr 3px 2fr');
 
+export const expansionRunsColumns: Writable<string> = writable('1fr 3px 2fr');
+
 export const savingExpansionRule: Writable<boolean> = writable(false);
 
 export const savingExpansionSet: Writable<boolean> = writable(false);

@@ -34,6 +34,7 @@ import type { Constraint, ConstraintInsertInput, ConstraintViolation } from '../
 import type {
   ExpansionRule,
   ExpansionRuleInsertInput,
+  ExpansionRun,
   ExpansionSequence,
   ExpansionSequenceInsertInput,
   ExpansionSequenceToActivityInsertInput,
@@ -1399,6 +1400,17 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async getExpansionRuns(): Promise<ExpansionRun[]> {
+    try {
+      const data = await reqHasura(gql.GET_EXPANSION_RUNS);
+      const { expansionRuns } = data;
+      return expansionRuns;
+    } catch (e) {
+      catchError(e as Error);
+      return [];
     }
   },
 
