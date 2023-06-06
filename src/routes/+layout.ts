@@ -8,6 +8,6 @@ export const load: LayoutLoad = async ({ data }) => {
   // TODO: Remove this for SSR!
   // See: https://kit.svelte.dev/docs/state-management#no-side-effects-in-load
   userStore.set(data?.user);
-  permissibleQueriesStore.set(data?.permissibleQueries);
+  permissibleQueriesStore.set(data?.permissibleQueries ?? null);
   return { ...data };
 };

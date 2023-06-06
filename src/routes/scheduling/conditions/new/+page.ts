@@ -5,9 +5,9 @@ import { parseFloatOrNull } from '../../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, url }) => {
-  const { user } = await parent();
+  const { user, permissibleQueries } = await parent();
 
-  if (!user) {
+  if (!user || (permissibleQueries && !Object.keys(permissibleQueries).length)) {
     throw redirect(302, `${base}/login`);
   }
 

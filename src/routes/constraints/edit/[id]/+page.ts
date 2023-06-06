@@ -5,9 +5,9 @@ import { parseFloatOrNull } from '../../../../utilities/generic';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
-  const { user } = await parent();
+  const { user, permissibleQueries } = await parent();
 
-  if (!user) {
+  if (!user || (permissibleQueries && !Object.keys(permissibleQueries).length)) {
     throw redirect(302, `${base}/login`);
   }
 
@@ -15,15 +15,18 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   if (constraintIdParam !== null && constraintIdParam !== undefined) {
     const constraintId = parseFloatOrNull(constraintIdParam);
-    const initialConstraint = await effects.getConstraint(constraintId);
-    const { models: initialModels, plans: initialPlans } = await effects.getPlansAndModels();
 
-    if (initialConstraint !== null) {
-      return {
-        initialConstraint,
-        initialModels,
-        initialPlans,
-      };
+    if (constraintId !== null) {
+      const initialConstraint = await effects.getConstraint(constraintId);
+      const { models: initialModels, plans: initialPlans } = await effects.getPlansAndModels();
+
+      if (initialConstraint !== null) {
+        return {
+          initialConstraint,
+          initialModels,
+          initialPlans,
+        };
+      }
     }
   }
 

@@ -20,11 +20,11 @@ export const handle: Handle = async ({ event, resolve }) => {
       event.locals.permissibleQueries = permissibleQueries ?? {};
     } else {
       event.locals.user = null;
-      event.locals.permissibleQueries = {};
+      event.locals.permissibleQueries = null;
     }
   } else {
     event.locals.user = null;
-    event.locals.permissibleQueries = {};
+    event.locals.permissibleQueries = null;
   }
 
   return await resolve(event);

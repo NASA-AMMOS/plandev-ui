@@ -1,12 +1,11 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
-import { permissibleQueries as permissibleQueriesStore } from '../../stores/app';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
-  const { user } = await parent();
+  const { user, permissibleQueries } = await parent();
 
-  if (user && Object.keys(permissibleQueriesStore).length) {
+  if (user && permissibleQueries && Object.keys(permissibleQueries).length) {
     throw redirect(302, `${base}/plans`);
   }
 
