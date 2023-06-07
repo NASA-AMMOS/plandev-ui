@@ -1,5 +1,6 @@
 import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
+import type { UserId } from './app';
 import type { ExpansionRule } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
@@ -75,6 +76,7 @@ export type ActivityPreset = {
   id: ActivityPresetId;
   model_id: number;
   name: string;
+  owner: UserId;
 };
 
 export type ActivityPresetInsertInput = {

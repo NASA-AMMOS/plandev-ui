@@ -11,7 +11,9 @@
   import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { RowId, TRowData } from '../../../types/data-grid';
+  import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
@@ -28,12 +30,33 @@
   export let scrollToSelection: boolean = false;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
+  export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
+  export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
+  let deletePermission: boolean = true;
+  let editPermission: boolean = true;
   let selectedItemIds: RowId[] = [];
 
+  $: if (typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') {
+    const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+    if (selectedItem) {
+      if (typeof hasDeletePermission === 'function') {
+        deletePermission = hasDeletePermission(selectedItem);
+      }
+      if (typeof hasEditPermission === 'function') {
+        editPermission = hasEditPermission(selectedItem);
+      }
+    }
+  }
+  $: if (typeof hasDeletePermission === 'boolean') {
+    deletePermission = hasDeletePermission;
+  }
+  $: if (typeof hasEditPermission === 'boolean') {
+    editPermission = hasEditPermission;
+  }
   $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
@@ -43,11 +66,15 @@
   onDestroy(() => onBlur());
 
   function editItem() {
-    dispatch('editItem', selectedItemIds);
+    if (editPermission) {
+      dispatch('editItem', selectedItemIds);
+    }
   }
 
   function deleteItem() {
-    dispatch('deleteItem', selectedItemIds);
+    if (deletePermission) {
+      dispatch('deleteItem', selectedItemIds);
+    }
   }
 
   function onBlur() {
@@ -96,14 +123,43 @@
   <svelte:fragment slot="context-menu">
     <ContextMenuHeader>Actions</ContextMenuHeader>
     {#if hasEdit}
-      <ContextMenuItem on:click={editItem}>
+      <ContextMenuItem
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: editPermission,
+              permissionError: 'You do not have permission to edit.',
+            },
+          ],
+        ]}
+        on:click={editItem}
+      >
         Edit {itemDisplayText}
       </ContextMenuItem>
     {/if}
     {#if selectedItemId !== null}
-      <ContextMenuItem on:click={deleteItem}>
+      <ContextMenuItem
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: deletePermission,
+              permissionError: 'You do not have permission to delete.',
+            },
+          ],
+        ]}
+        on:click={deleteItem}
+      >
         Delete {itemDisplayText}
       </ContextMenuItem>
     {/if}
   </svelte:fragment>
 </DataGrid>
+
+<style>
+  :global(.context-menu-item.disabled) {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+</style>

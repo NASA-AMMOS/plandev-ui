@@ -51,6 +51,7 @@ const gql = {
         id
         model_id
         name
+        owner
       }
     }
   `,
@@ -114,7 +115,11 @@ const gql = {
   CREATE_PLAN: `#graphql
     mutation CreatePlan($plan: plan_insert_input!) {
       createPlan: insert_plan_one(object: $plan) {
+        collaborators {
+          collaborator
+        }
         id
+        owner
         revision
         start_time
       }
@@ -602,6 +607,9 @@ const gql = {
           id
           name
         }
+        collaborators {
+          collaborator
+        }
         duration
         id
         is_locked
@@ -616,6 +624,7 @@ const gql = {
         }
         model_id
         name
+        owner
         parent_plan {
           id
           name
@@ -643,10 +652,14 @@ const gql = {
         version
       }
       plans: plan(order_by: { id: desc }) {
+        collaborators {
+          collaborator
+        }
         duration
         id
         model_id
         name
+        owner
         revision
         start_time
       }
@@ -662,11 +675,15 @@ const gql = {
         version
       }
       plans: plan(order_by: { id: desc }) {
+        collaborators {
+          collaborator
+        }
         scheduling_specifications {
           id
         }
         model_id
         name
+        owner
         id
       }
     }
@@ -1077,6 +1094,7 @@ const gql = {
         name
         associated_activity_type
         arguments
+        owner
       }
     }
   `,

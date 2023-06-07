@@ -1,5 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
+
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 </script>
@@ -10,6 +13,7 @@
   on:click|preventDefault={() => dispatch('click')}
   on:mouseenter
   on:mouseleave
+  use:useActions={use}
 >
   <slot />
 </div>

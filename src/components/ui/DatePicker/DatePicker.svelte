@@ -9,6 +9,7 @@
   import type { ParsedDoyString, ParsedYmdString } from '../../../types/time';
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime, parseDoyOrYmdTime } from '../../../utilities/time';
+  import { useActions, type ActionArray } from '../../../utilities/useActions';
   import DatePickerActionButton from './DatePickerActionButton.svelte';
   import DatePickerDropdown from './DatePickerDropdown.svelte';
   import Month from './Month.svelte';
@@ -26,6 +27,7 @@
   export let name: string = '';
   export let maxDate: Date = new Date(Date.UTC(currentYear + 20, 11)); // add 20 years;
   export let minDate: Date = new Date(Date.UTC(currentYear - 20, 0)); // subtract 20 years
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -192,12 +194,16 @@
 
   function onChangeViewMonth(event: Event) {
     const { valueAsNumber } = getTarget(event);
-    viewMonth = valueAsNumber;
+    if (valueAsNumber != null) {
+      viewMonth = valueAsNumber;
+    }
   }
 
   function onChangeViewYear(event: Event) {
     const { valueAsNumber } = getTarget(event);
-    viewYear = valueAsNumber;
+    if (valueAsNumber != null) {
+      viewYear = valueAsNumber;
+    }
   }
 
   function onDocumentKeydown(event: KeyboardEvent) {
@@ -255,6 +261,7 @@
     {name}
     bind:value={dateString}
     use:popperRef
+    use:useActions={use}
     on:change={attemptAutoCompleteDate}
     on:click={openDatePicker}
     on:focus={openDatePicker}

@@ -11,8 +11,12 @@
 
   $: displayValue = getDisplayValue(value, options);
 
+  function isCustomOption(options: (DateDropdownOption | DropdownCustomOption)[]): options is DropdownCustomOption[] {
+    return (options[0] as DropdownCustomOption).value != null;
+  }
+
   function getDisplayValue(value: string | number, options: (DateDropdownOption | DropdownCustomOption)[]) {
-    if ((options[0] as DropdownCustomOption).value !== undefined) {
+    if (isCustomOption(options)) {
       const option = options.find((option: DropdownCustomOption) => {
         return option.value === value;
       });

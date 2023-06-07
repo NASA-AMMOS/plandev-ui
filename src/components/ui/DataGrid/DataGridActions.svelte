@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { permissionHandler } from '../../../utilities/permissionHandler';
+
   import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
   import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
@@ -20,6 +22,8 @@
   export let editTooltip: Tooltip | undefined = undefined;
   export let deleteTooltip: Tooltip | undefined = undefined;
   export let downloadTooltip: Tooltip | undefined = undefined;
+  export let hasDeletePermission: boolean = true;
+  export let hasEditPermission: boolean = true;
   export let viewTooltip: Tooltip | undefined = undefined;
 
   export let editCallback: ((data: RowData) => void) | undefined = undefined;
@@ -58,11 +62,15 @@
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      if (rowData) {
+      if (rowData && hasEditPermission === true) {
         editCallback?.(rowData);
       }
     }}
-    use:tooltip={editTooltip}
+    use:tooltip={hasEditPermission ? editTooltip : undefined}
+    use:permissionHandler={{
+      hasPermission: hasEditPermission,
+      permissionError: `You do not have permission to ${editTooltip?.content ?? 'edit'}.`,
+    }}
   >
     <PenIcon />
   </button>
@@ -71,11 +79,15 @@
   <button
     class="st-button icon"
     on:click|stopPropagation={() => {
-      if (rowData) {
+      if (rowData && hasDeletePermission === true) {
         deleteCallback?.(rowData);
       }
     }}
-    use:tooltip={deleteTooltip}
+    use:tooltip={hasDeletePermission ? deleteTooltip : undefined}
+    use:permissionHandler={{
+      hasPermission: hasDeletePermission,
+      permissionError: `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
+    }}
   >
     <TrashIcon />
   </button>

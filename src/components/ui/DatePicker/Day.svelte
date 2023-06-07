@@ -15,7 +15,9 @@
   let isToday: boolean = false;
 
   $: isToday = isSameDay(date, new Date());
-  $: isSelected = isSameDay(date, selectedDate);
+  $: if (selectedDate !== null) {
+    isSelected = isSameDay(date, selectedDate);
+  }
   $: isOutsideBounds = minDate.getTime() > date.getTime() || date.getTime() > maxDate.getTime();
   $: isOutsideCurrentMonth = month !== date.getUTCMonth();
 

@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import type { User } from '../../../types/app';
+import type { BaseUser } from '../../../types/app';
 import type { LoginRequestBody, ReqLoginResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
@@ -14,7 +14,7 @@ export const POST: RequestHandler = async event => {
     const { message, success, token } = loginResponse;
 
     if (success) {
-      const user: User = { id: username, token };
+      const user: BaseUser = { id: username, token };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
 

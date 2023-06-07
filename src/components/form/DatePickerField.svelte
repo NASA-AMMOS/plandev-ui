@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
+  import type { ActionArray } from '../../utilities/useActions';
   import DatePicker from '../ui/DatePicker/DatePicker.svelte';
   import FieldError from './FieldError.svelte';
   import Input from './Input.svelte';
@@ -13,8 +14,9 @@
   export let name: string = '';
   export let label: string = '';
   export let layout: 'inline' | 'stacked' | null = 'stacked';
-  export let maxDate: Date | null = undefined;
-  export let minDate: Date | null = undefined;
+  export let maxDate: Date | undefined = undefined;
+  export let minDate: Date | undefined = undefined;
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -40,6 +42,7 @@
       on:change={onChange}
       {minDate}
       {maxDate}
+      {use}
     >
       <slot />
     </DatePicker>

@@ -32,6 +32,7 @@ const mockMergeRequest: PlanMergeRequestSchema = {
 
 const mockInitialPlan: Plan = {
   child_plans: [{ id: 2, name: 'Branch 1' }],
+  collaborators: [{ collaborator: 'tester 2' }],
   duration: '168:00:00',
   end_time_doy: '2023-054T00:00:00',
   id: 1,
@@ -48,6 +49,7 @@ const mockInitialPlan: Plan = {
   },
   model_id: 1,
   name: 'Demo Plan',
+  owner: 'tester 1',
   parent_plan: null,
   revision: 3,
   scheduling_specifications: [{ id: 1 }],

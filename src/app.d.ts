@@ -2,7 +2,7 @@
 
 declare namespace App {
   interface Locals {
-    permissibleQueries: Record<string, true> | null;
+    permissibleQueries: import('./types/permissions').PermissibleQueriesMap | null;
     user: User | null;
   }
 }

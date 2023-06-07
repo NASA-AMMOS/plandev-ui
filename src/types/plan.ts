@@ -1,10 +1,15 @@
 import type { ActivityDirective } from './activity';
+import type { UserId } from './app';
 import type { Model } from './model';
 import type { SchedulingSpec } from './scheduling';
 
 export type Plan = PlanSchema & { end_time_doy: string; start_time_doy: string };
 
 export type PlanBranchRequestAction = 'merge' | 'pull';
+
+export type PlanCollaborator = {
+  collaborator: UserId;
+};
 
 export type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' | 'start_time'>;
 
@@ -63,12 +68,14 @@ export type PlanMergeResolution = 'none' | 'source' | 'target';
 
 export type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
+  collaborators: PlanCollaborator[];
   duration: string;
   id: number;
   is_locked: boolean;
   model: Model;
   model_id: number;
   name: string;
+  owner: UserId;
   parent_plan: Pick<PlanSchema, 'id' | 'name'> | null;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
@@ -78,7 +85,7 @@ export type PlanSchema = {
 
 export type PlanSlim = Pick<
   Plan,
-  'end_time_doy' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time' | 'start_time_doy'
+  'collaborators' | 'end_time_doy' | 'id' | 'model_id' | 'name' | 'owner' | 'revision' | 'start_time' | 'start_time_doy'
 >;
 
 export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;

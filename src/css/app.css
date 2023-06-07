@@ -58,6 +58,20 @@ fieldset {
   color: var(--st-white);
 }
 
+.permission-disabled {
+  /* using !important so that components do not need to know of permissions */
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+.permission-disabled:hover {
+  cursor: not-allowed;
+}
+
+.st-button.permission-disabled {
+  opacity: var(--st-button-disabled-opacity);
+}
+
 /* Remove safari input margin */
 .st-input {
   margin: 0;

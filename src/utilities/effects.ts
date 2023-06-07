@@ -48,7 +48,7 @@ import type {
   ParameterValidationError,
   ParameterValidationResponse,
 } from '../types/parameter';
-import type { PermissibleQueryResponse } from '../types/permissions';
+import type { PermissibleQueriesMap, PermissibleQueryResponse } from '../types/permissions';
 import type {
   Plan,
   PlanBranchRequestAction,
@@ -107,7 +107,7 @@ import {
   showPlanBranchRequestModal,
   showUploadViewModal,
 } from './modal';
-import queryPermissions from './queryPermissions';
+import { queryPermissions } from './permissions';
 import { reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
@@ -474,11 +474,14 @@ const effects = {
         name,
         start_time: start_time_doy, // Postgres accepts DOY dates for it's 'timestamptz' type.
       };
-      const data = await reqHasura<Pick<PlanSchema, 'id' | 'revision' | 'start_time'>>(gql.CREATE_PLAN, {
-        plan: planInsertInput,
-      });
+      const data = await reqHasura<Pick<PlanSchema, 'collaborators' | 'id' | 'owner' | 'revision' | 'start_time'>>(
+        gql.CREATE_PLAN,
+        {
+          plan: planInsertInput,
+        },
+      );
       const { createPlan } = data;
-      const { id, revision, start_time } = createPlan;
+      const { collaborators, id, owner, revision, start_time } = createPlan;
 
       if (!(await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy))) {
         throw Error('Failed to update simulation.');
@@ -498,10 +501,12 @@ const effects = {
       }
 
       const plan: PlanSlim = {
+        collaborators,
         end_time_doy,
         id,
         model_id,
         name,
+        owner,
         revision,
         start_time,
         start_time_doy,
@@ -1544,7 +1549,10 @@ const effects = {
     try {
       const data = (await reqHasura(gql.GET_PLANS_AND_MODELS)) as {
         models: ModelSlim[];
-        plans: Pick<Plan, 'duration' | 'id' | 'model_id' | 'name' | 'revision' | 'start_time'>[];
+        plans: Pick<
+          Plan,
+          'collaborators' | 'duration' | 'id' | 'model_id' | 'name' | 'owner' | 'revision' | 'start_time'
+        >[];
       };
       const { models, plans } = data;
 
@@ -1797,7 +1805,7 @@ const effects = {
     }
   },
 
-  async getUserQueries(userToken?: string): Promise<Record<string, true> | null> {
+  async getUserQueries(userToken?: string): Promise<PermissibleQueriesMap | null> {
     try {
       const data = await reqHasura<PermissibleQueryResponse>(gql.GET_PERMISSIBLE_QUERIES, {}, undefined, userToken);
       const {

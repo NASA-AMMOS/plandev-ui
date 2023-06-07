@@ -3,12 +3,13 @@ import { redirect } from '@sveltejs/kit';
 import type { UserSequence } from '../../../../types/sequencing';
 import effects from '../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../utilities/generic';
+import { hasNoAuthorization } from '../../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
   const { user, permissibleQueries } = await parent();
 
-  if (!user || (permissibleQueries && !Object.keys(permissibleQueries).length)) {
+  if (!user || hasNoAuthorization(permissibleQueries)) {
     throw redirect(302, `${base}/login`);
   }
 
