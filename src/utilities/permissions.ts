@@ -15,7 +15,7 @@ import type {
   UpdatePermissionCheck,
 } from '../types/permissions';
 
-const ADMIN_ROLE = 'admin';
+export const ADMIN_ROLE = 'admin';
 
 function getPermission(queries: string[]): boolean {
   const permissibleQueries = get(permissibleQueriesStore);
