@@ -20,6 +20,7 @@
   } from '../../stores/simulation';
   import { timelineLockStatus, view, viewTogglePanel, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { DirectiveVisibilityToggleMap, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import Panel from '../ui/Panel.svelte';
@@ -27,6 +28,8 @@
   import Timeline from './Timeline.svelte';
   import TimelineLockControl from './TimelineLockControl.svelte';
   import TimelineViewControls from './TimelineViewControls.svelte';
+
+  export let user: User | null;
 
   let timelineId: number = 0;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
@@ -38,7 +41,7 @@
 
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
-    effects.deleteActivityDirective($planId, activityDirectiveId);
+    effects.deleteActivityDirective($planId, activityDirectiveId, user);
   }
 
   function openSelectedActivityPanel(event: CustomEvent) {
@@ -158,6 +161,7 @@
       spansMap={$spansMap}
       spans={$spans}
       timelineLockStatus={$timelineLockStatus}
+      {user}
       viewTimeRange={$viewTimeRange}
       on:deleteActivityDirective={deleteActivityDirective}
       on:dblClick={openSelectedActivityPanel}

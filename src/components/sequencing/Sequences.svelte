@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { userSequences, userSequencesColumns } from '../../stores/sequencing';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
@@ -16,6 +17,8 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import SequenceEditor from './SequenceEditor.svelte';
+
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteSequence: (sequence: UserSequence) => void;
@@ -102,7 +105,7 @@
   }
 
   async function deleteSequence({ id }: Pick<UserSequence, 'id'>) {
-    const success = await effects.deleteUserSequence(id);
+    const success = await effects.deleteUserSequence(id, user);
 
     if (success) {
       userSequences.filterValueById(id);
@@ -135,6 +138,7 @@
       const responseMessage = await effects.getUserSequenceSeqJson(
         selectedSequence.authoring_command_dict_id,
         selectedSequence.definition,
+        user,
         abortController.signal,
       );
 
@@ -185,6 +189,7 @@
           hasEdit={true}
           itemDisplayText="Sequence"
           items={filteredSequences}
+          {user}
           on:deleteItem={deleteSequenceContext}
           on:editItem={editSequenceContext}
           on:rowSelected={toggleSequence}
@@ -204,6 +209,7 @@
     sequenceSeqJson={selectedSequenceSeqJson}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
+    {user}
     on:generate={getUserSequenceSeqJson}
   />
 </CssGrid>

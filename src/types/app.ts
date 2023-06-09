@@ -1,3 +1,5 @@
+import type { PermissibleQueriesMap } from './permissions';
+
 export type UserId = string;
 
 export type BaseUser = {
@@ -8,6 +10,7 @@ export type BaseUser = {
 export type User = BaseUser & {
   allowedRoles: string[];
   defaultRole: string;
+  permissibleQueries: PermissibleQueriesMap;
 };
 
 export type ParsedUserToken = {

@@ -8,6 +8,7 @@
   import { models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import type { ActivityTypeExpansionRules } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
@@ -20,6 +21,7 @@
   import ExpansionSetRuleSelection from './ExpansionSetRuleSelection.svelte';
 
   export let mode: 'create' | 'edit' = 'create';
+  export let user: User | null;
 
   type CellRendererParams = {
     selectExpansionRule: (name: string, rule: ExpansionRule) => void;
@@ -39,7 +41,7 @@
   let setModelId: number | null = null;
 
   $: effects
-    .getActivityTypesExpansionRules(setModelId)
+    .getActivityTypesExpansionRules(setModelId, user)
     .then(activity_types => (activityTypesExpansionRules = activity_types));
 
   $: logicEditorActivityType = lastSelectedExpansionRule?.activity_type ?? null;
@@ -52,7 +54,7 @@
 
   async function saveSet() {
     if (mode === 'create' && setDictionaryId && setModelId) {
-      const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds);
+      const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds, user);
 
       if (newSetId !== null) {
         goto(`${base}/expansion/sets`);
@@ -186,6 +188,7 @@
     ruleLogic={logicEditorRuleLogic}
     ruleModelId={setModelId}
     title={logicEditorTitle}
+    {user}
   />
 </CssGrid>
 

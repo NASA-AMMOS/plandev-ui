@@ -5,11 +5,11 @@ import { hasNoAuthorization } from '../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'disabled' || (user && !hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'disabled' || (user && !hasNoAuthorization(user))) {
     throw redirect(302, `${base}/plans`);
   }
 
-  return {};
+  return { user };
 };

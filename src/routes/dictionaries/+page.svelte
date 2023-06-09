@@ -15,6 +15,9 @@
   import type { CommandDictionary } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
+  import type { PageData } from './$types';
+
+  export let data: PageData;
 
   type CellRendererParams = {
     deleteCommandDictionary: (dictionary: CommandDictionary) => void;
@@ -87,7 +90,7 @@
     creatingDictionary = true;
 
     try {
-      const newCommandDictionary = await effects.createCommandDictionary(files);
+      const newCommandDictionary = await effects.createCommandDictionary(files, data.user);
       commandDictionaries.updateValue((dictionaries: CommandDictionary[]) => [newCommandDictionary, ...dictionaries]);
       showSuccessToast('Command Dictionary Created Successfully');
     } catch (e) {
@@ -99,7 +102,7 @@
   }
 
   function deleteCommandDictionary({ id }: Pick<CommandDictionary, 'id'>) {
-    effects.deleteCommandDictionary(id);
+    effects.deleteCommandDictionary(id, data.user);
   }
 
   function deleteCommandDictionaryContext(event: CustomEvent<RowId[]>) {
@@ -149,6 +152,7 @@
             {columnDefs}
             itemDisplayText="Command Dictionary"
             items={$commandDictionaries}
+            user={data.user}
             on:deleteItem={deleteCommandDictionaryContext}
           />
         {:else}

@@ -11,9 +11,9 @@ import { hasNoAuthorization } from '../../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
@@ -21,21 +21,24 @@ export const load: PageLoad = async ({ parent, params }) => {
   const planId = parseFloat(id);
 
   if (!Number.isNaN(planId)) {
-    const initialPlan = await effects.getPlan(planId);
+    const initialPlan = await effects.getPlan(planId, user);
 
     if (initialPlan) {
       if (!initialPlan.is_locked) {
         throw redirect(302, `${base}/plans/${id}`);
       }
 
-      const initialMergeRequest: PlanMergeRequestSchema | null = await effects.getPlanMergeRequestInProgress(planId);
+      const initialMergeRequest: PlanMergeRequestSchema | null = await effects.getPlanMergeRequestInProgress(
+        planId,
+        user,
+      );
       let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
       let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
 
       if (initialMergeRequest) {
         const { id: mergeRequestId } = initialMergeRequest;
-        initialConflictingActivities = await effects.getPlanMergeConflictingActivities(mergeRequestId);
-        initialNonConflictingActivities = await effects.getPlanMergeNonConflictingActivities(mergeRequestId);
+        initialConflictingActivities = await effects.getPlanMergeConflictingActivities(mergeRequestId, user);
+        initialNonConflictingActivities = await effects.getPlanMergeNonConflictingActivities(mergeRequestId, user);
       }
 
       return {
@@ -43,6 +46,7 @@ export const load: PageLoad = async ({ parent, params }) => {
         initialMergeRequest,
         initialNonConflictingActivities,
         initialPlan,
+        user,
       };
     }
   }

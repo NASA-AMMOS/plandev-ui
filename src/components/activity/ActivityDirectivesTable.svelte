@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import effects from '../../utilities/effects';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
@@ -15,6 +16,7 @@
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
   export let planId: number;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteActivityDirective: (activity: ActivityDirective) => void;
@@ -58,7 +60,7 @@
   async function deleteActivityDirective({ id, plan_id }: ActivityDirective) {
     if (!isDeletingDirective) {
       isDeletingDirective = true;
-      await effects.deleteActivityDirective(plan_id, id);
+      await effects.deleteActivityDirective(plan_id, id, user);
       isDeletingDirective = false;
     }
   }
@@ -67,7 +69,7 @@
     if (!isDeletingDirective) {
       isDeletingDirective = true;
       const ids = activities.map(({ id }) => id);
-      await effects.deleteActivityDirectives(planId, ids);
+      await effects.deleteActivityDirectives(planId, ids, user);
       isDeletingDirective = false;
     }
   }

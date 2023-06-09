@@ -4,6 +4,7 @@
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
   import { activityTypes, plan } from '../../stores/plan';
   import type { ActivityType } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
@@ -12,6 +13,7 @@
   import Panel from '../ui/Panel.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   let filterText: string = '';
 
@@ -21,7 +23,7 @@
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
     const { start_time_doy } = $plan;
-    effects.createActivityDirective({}, start_time_doy, activityType.name, activityType.name, [], {});
+    effects.createActivityDirective({}, start_time_doy, activityType.name, activityType.name, [], {}, user);
   }
 
   function onDragEnd(): void {

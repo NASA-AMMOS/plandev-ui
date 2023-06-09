@@ -6,6 +6,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { plan } from '../../stores/plan';
   import { enableScheduling, schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import type { User } from '../../types/app';
   import type { SchedulingSpecGoal } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -17,6 +18,7 @@
   import SchedulingGoal from './goals/SchedulingGoal.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   let activeElement: HTMLElement;
   let filterText: string = '';
@@ -46,10 +48,18 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Scheduling Goals" />
     <PanelHeaderActions status={$schedulingStatus}>
-      <PanelHeaderActionButton title="Analyze" on:click={() => effects.schedule(true)} disabled={!$enableScheduling}>
+      <PanelHeaderActionButton
+        title="Analyze"
+        on:click={() => effects.schedule(true, user)}
+        disabled={!$enableScheduling}
+      >
         <ChecklistIcon />
       </PanelHeaderActionButton>
-      <PanelHeaderActionButton title="Schedule" on:click={() => effects.schedule()} disabled={!$enableScheduling} />
+      <PanelHeaderActionButton
+        title="Schedule"
+        on:click={() => effects.schedule(false, user)}
+        disabled={!$enableScheduling}
+      />
     </PanelHeaderActions>
   </svelte:fragment>
 
@@ -79,6 +89,7 @@
             priority={specGoal.priority}
             simulateAfter={specGoal.simulate_after}
             specificationId={specGoal.specification_id}
+            {user}
           />
         {/each}
       {/if}

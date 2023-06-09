@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
+  import type { User } from '../../../types/app';
   import type { SchedulingCondition } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import Collapse from '../../Collapse.svelte';
@@ -12,6 +13,7 @@
   export let enabled: boolean;
   export let condition: SchedulingCondition;
   export let specificationId: number;
+  export let user: User | null;
 </script>
 
 <div class="scheduling-condition" class:disabled={!enabled}>
@@ -23,7 +25,7 @@
             bind:checked={enabled}
             style:cursor="pointer"
             type="checkbox"
-            on:change={() => effects.updateSchedulingSpecCondition(condition.id, specificationId, { enabled })}
+            on:change={() => effects.updateSchedulingSpecCondition(condition.id, specificationId, { enabled }, user)}
           />
         </Input>
       </div>
@@ -34,9 +36,9 @@
         Edit Condition
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteSchedulingCondition(condition.id)}
-        >Delete Condition</ContextMenuItem
-      >
+      <ContextMenuItem on:click={() => effects.deleteSchedulingCondition(condition.id, user)}>
+        Delete Condition
+      </ContextMenuItem>
     </svelte:fragment>
   </Collapse>
 </div>

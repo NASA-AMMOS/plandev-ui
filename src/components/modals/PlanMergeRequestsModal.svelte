@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
   import { planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
+  import type { User } from '../../types/app';
   import type { PlanMergeRequest, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
@@ -17,6 +18,7 @@
 
   export let height: number = 550;
   export let selectedFilter: PlanMergeRequestTypeFilter = 'all';
+  export let user: User | null;
   export let width: number = 550;
 
   const dispatch = createEventDispatcher();
@@ -73,13 +75,13 @@
     if (planMergeRequest.type === 'incoming') {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
-      const success = await effects.planMergeBegin(planMergeRequest.id);
+      const success = await effects.planMergeBegin(planMergeRequest.id, user);
       if (success) {
         dispatch('close');
         goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`);
       }
     } else if (planMergeRequest.type === 'outgoing') {
-      await effects.planMergeRequestWithdraw(planMergeRequest.id);
+      await effects.planMergeRequestWithdraw(planMergeRequest.id, user);
     }
 
     planMergeRequest.pending = false;

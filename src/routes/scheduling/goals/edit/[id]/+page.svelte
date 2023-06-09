@@ -23,4 +23,5 @@
   models={data.models}
   plans={data.plans}
   mode="edit"
+  user={data.user}
 />

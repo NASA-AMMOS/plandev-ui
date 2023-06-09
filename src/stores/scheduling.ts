@@ -24,20 +24,22 @@ export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specifica
 
 /* Subscriptions. */
 
-export const schedulingConditions = gqlSubscribable<SchedulingCondition[]>(gql.SUB_SCHEDULING_CONDITIONS, {}, []);
+export const schedulingConditions = gqlSubscribable<SchedulingCondition[]>(gql.SUB_SCHEDULING_CONDITIONS, {}, [], null);
 
-export const schedulingGoals = gqlSubscribable<SchedulingGoal[]>(gql.SUB_SCHEDULING_GOALS, {}, []);
+export const schedulingGoals = gqlSubscribable<SchedulingGoal[]>(gql.SUB_SCHEDULING_GOALS, {}, [], null);
 
 export const schedulingSpecConditions = gqlSubscribable<SchedulingSpecCondition[]>(
   gql.SUB_SCHEDULING_SPEC_CONDITIONS,
   { specification_id: selectedSpecId },
   [],
+  null,
 );
 
 export const schedulingSpecGoals = gqlSubscribable<SchedulingSpecGoal[]>(
   gql.SUB_SCHEDULING_SPEC_GOALS,
   { specification_id: selectedSpecId },
   [],
+  null,
 );
 
 export const latestAnalyses = derived(schedulingSpecGoals, $schedulingSpecGoals => {

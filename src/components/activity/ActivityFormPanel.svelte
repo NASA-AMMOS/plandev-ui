@@ -13,7 +13,8 @@
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { activityEditingLocked, activityTypes, modelId, plan, setActivityEditingLocked } from '../../stores/plan';
-  import { selectedSpan, simulationDatasetId, spansMap, spanUtilityMaps } from '../../stores/simulation';
+  import { selectedSpan, simulationDatasetId, spanUtilityMaps, spansMap } from '../../stores/simulation';
+  import type { User } from '../../types/app';
   import type { SpanId } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -25,6 +26,7 @@
   import ActivitySpanForm from './ActivitySpanForm.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   function onSelectSpan(event: CustomEvent<SpanId>) {
     const { detail: spanId } = event;
@@ -57,7 +59,7 @@
         <button
           class="st-button icon activity-header-delete"
           on:click|stopPropagation={() =>
-            effects.deleteActivityDirective($selectedActivityDirective.plan_id, $selectedActivityDirective.id)}
+            effects.deleteActivityDirective($selectedActivityDirective.plan_id, $selectedActivityDirective.id, user)}
           use:tooltip={{ content: 'Delete Activity', placement: 'top' }}
         >
           <TrashIcon />
@@ -77,6 +79,7 @@
         editable={!$activityEditingLocked}
         modelId={$modelId}
         planStartTimeYmd={$plan.start_time}
+        {user}
       />
     {:else if $selectedSpan}
       <ActivitySpanForm
@@ -88,6 +91,7 @@
         span={$selectedSpan}
         spansMap={$spansMap}
         spanUtilityMaps={$spanUtilityMaps}
+        {user}
         on:select={onSelectSpan}
       />
     {:else}

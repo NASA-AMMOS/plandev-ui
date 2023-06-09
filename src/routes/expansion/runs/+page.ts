@@ -6,13 +6,13 @@ import { hasNoAuthorization } from '../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
-  const { permissibleQueries, user } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
-  const expansionRuns = await effects.getExpansionRuns();
+  const expansionRuns = await effects.getExpansionRuns(user);
 
   return { expansionRuns };
 };

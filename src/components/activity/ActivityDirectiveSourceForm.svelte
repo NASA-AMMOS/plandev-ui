@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { ActivityDirective, ActivityDirectivesMap, ActivityType } from '../../types/activity';
   import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
+  import type { User } from '../../types/app';
   import type { PlanMergeActivityDirectiveSource } from '../../types/plan';
   import ActivityDirectiveForm from './ActivityDirectiveForm.svelte';
 
@@ -14,6 +15,7 @@
   export let modelId: number;
   export let planId: number;
   export let planStartTimeYmd: string;
+  export let user: User | null;
 
   let activityDirective: ActivityDirective;
 
@@ -35,5 +37,6 @@
     {planStartTimeYmd}
     showActivityName
     showHeader={false}
+    {user}
   />
 {/if}

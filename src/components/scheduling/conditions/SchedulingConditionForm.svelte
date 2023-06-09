@@ -3,8 +3,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { user as userStore } from '../../../stores/app';
   import { schedulingColumns } from '../../../stores/scheduling';
+  import type { User } from '../../../types/app';
   import type { ModelSlim } from '../../../types/model';
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingCondition, SchedulingSpecConditionInsertInput } from '../../../types/scheduling';
@@ -28,6 +28,7 @@
   export let mode: 'create' | 'edit' = 'create';
   export let models: ModelSlim[] = [];
   export let plans: PlanSchedulingSpec[] = [];
+  export let user: User | null;
 
   let conditionAuthor: string | null = initialConditionAuthor;
   let conditionCreatedDate: string | null = initialConditionCreatedDate;
@@ -94,8 +95,8 @@
           conditionDefinition,
           conditionDescription,
           conditionName,
-          $userStore?.id,
           conditionModelId,
+          user,
         );
 
         if (newCondition !== null) {
@@ -106,7 +107,7 @@
             enabled: true,
             specification_id: specId,
           };
-          await effects.createSchedulingSpecCondition(specConditionInsertInput);
+          await effects.createSchedulingSpecCondition(specConditionInsertInput, user);
 
           goto(`${base}/scheduling/conditions/edit/${newConditionId}`);
         }
@@ -117,10 +118,10 @@
           model_id: conditionModelId,
           name: conditionName,
         };
-        const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition);
+        const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, user);
         if (updatedCondition) {
           if (specId !== savedSpecId) {
-            await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId);
+            await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId, user);
             savedSpecId = specId;
           }
 
@@ -231,6 +232,7 @@
     scheduleItemDefinition={conditionDefinition}
     scheduleItemModelId={conditionModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Scheduling Condition - Definition Editor"
+    {user}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

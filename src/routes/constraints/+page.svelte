@@ -10,4 +10,4 @@
 
 <PageTitle title="Constraints" />
 
-<Constraints initialPlans={data.initialPlans} />
+<Constraints initialPlans={data.initialPlans} user={data.user} />

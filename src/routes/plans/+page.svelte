@@ -66,7 +66,7 @@
               content: 'Delete Plan',
               placement: 'bottom',
             },
-            hasDeletePermission: params.data ? featurePermissions.plan.canDelete(params.data) : false,
+            hasDeletePermission: params.data ? featurePermissions.plan.canDelete(data.user, params.data) : false,
             rowData: params.data,
           },
           target: actionsDiv,
@@ -86,7 +86,7 @@
       width: 25,
     },
   ];
-  const canCreate: boolean = featurePermissions.plan.canCreate();
+  const canCreate: boolean = featurePermissions.plan.canCreate(data.user);
   const permissionError: string = 'You do not have permission to create a plan';
 
   let durationString: string = 'None';
@@ -139,6 +139,7 @@
       $nameField.value,
       $startTimeDoyField.value,
       $simTemplateField.value,
+      data.user,
     );
 
     if (newPlan) {
@@ -147,7 +148,7 @@
   }
 
   async function deletePlan({ id }: Pick<Plan, 'id'>): Promise<void> {
-    const success = await effects.deletePlan(id);
+    const success = await effects.deletePlan(id, data.user);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
@@ -336,6 +337,7 @@
             hasDeletePermission={featurePermissions.plan.canDelete}
             itemDisplayText="Plan"
             items={filteredPlans}
+            user={data.user}
             on:cellMouseOver={({ detail }) => prefetchPlan(detail.data)}
             on:deleteItem={deletePlanContext}
             on:rowClicked={({ detail }) => showPlan(detail.data)}

@@ -110,7 +110,9 @@
     activityTypes.updateValue(() => data.initialActivityTypes);
 
     // Asynchronously fetch resource types
-    effects.getResourceTypes($plan.model_id).then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
+    effects
+      .getResourceTypes($plan.model_id, data.user)
+      .then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
   }
 
   $: if (data.initialView) {
@@ -118,15 +120,17 @@
   }
 
   $: if ($plan) {
-    effects.getResourcesExternal($plan.id, $plan.start_time).then(newResources => ($externalResources = newResources));
+    effects
+      .getResourcesExternal($plan.id, $plan.start_time, data.user)
+      .then(newResources => ($externalResources = newResources));
   }
 
   $: if ($plan && $simulationDataset !== undefined) {
     if ($simulationDataset !== null) {
       const datasetId = $simulationDataset.dataset_id;
       const startTimeYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
-      effects.getResources(datasetId, startTimeYmd).then(newResources => ($resources = newResources));
-      effects.getSpans(datasetId).then(newSpans => ($spans = newSpans));
+      effects.getResources(datasetId, startTimeYmd, data.user).then(newResources => ($resources = newResources));
+      effects.getSpans(datasetId, data.user).then(newSpans => ($spans = newSpans));
     } else {
       $resources = [];
       $spans = [];
@@ -171,7 +175,7 @@
   function onKeydown(event: KeyboardEvent): void {
     if (isSaveEvent(event)) {
       event.preventDefault();
-      effects.simulate();
+      effects.simulate(data.user);
     }
   }
 
@@ -179,7 +183,7 @@
     const { detail } = event;
     const { owner, definition } = detail;
     if (definition) {
-      const success = await effects.createView(owner, definition);
+      const success = await effects.createView(owner, definition, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -190,7 +194,7 @@
     const { detail } = event;
     const { owner, definition } = detail;
     if (definition) {
-      const success = await effects.editView(owner, definition);
+      const success = await effects.editView(owner, definition, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -200,7 +204,7 @@
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition, id, name } = detail;
-    const success = await effects.updateView(id, { definition, name });
+    const success = await effects.updateView(id, { definition, name }, data.user);
     if (success) {
       resetOriginalView();
     }
@@ -219,7 +223,7 @@
     const { detail } = event;
     const { owner } = detail;
 
-    const success = await effects.uploadView(owner);
+    const success = await effects.uploadView(owner, data.user);
     if (success) {
       resetOriginalView();
     }
@@ -249,10 +253,10 @@
 <CssGrid class="plan-container" rows="var(--nav-header-height) auto 36px">
   <Nav>
     <div slot="title">
-      <PlanMenu plan={data.initialPlan} />
+      <PlanMenu plan={data.initialPlan} user={data.user} />
     </div>
     <svelte:fragment slot="left">
-      <PlanMergeRequestsStatusButton />
+      <PlanMergeRequestsStatusButton user={data.user} />
     </svelte:fragment>
     <svelte:fragment slot="right">
       <PlanNavButton
@@ -261,7 +265,7 @@
         menuTitle="Expansion Status"
         disabled={$selectedExpansionSetId === null}
         status={$planExpansionStatus}
-        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId)}
+        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId, data.user)}
       >
         <PlanIcon />
         <svelte:fragment slot="metadata">
@@ -277,7 +281,7 @@
           : ''}
         status={$simulationStatus}
         disabled={!$enableSimulation}
-        on:click={() => effects.simulate()}
+        on:click={() => effects.simulate(data.user)}
       >
         <PlayIcon />
         <svelte:fragment slot="metadata">
@@ -289,7 +293,7 @@
         menuTitle="Constraint Status"
         buttonText="Check Constraints"
         status={$checkConstraintsStatus}
-        on:click={() => effects.checkConstraints()}
+        on:click={() => effects.checkConstraints(data.user)}
       >
         <VerticalCollapseIcon />
         <svelte:fragment slot="metadata">
@@ -307,11 +311,12 @@
               $schedulingGoalCount - $satisfiedSchedulingGoalCount
             } unsatisfied`
           : ''}
-        on:click={() => effects.schedule(true)}
+        on:click={() => effects.schedule(true, data.user)}
       >
         <CalendarIcon />
       </PlanNavButton>
       <ViewMenu
+        user={data.user}
         on:createView={onCreateView}
         on:editView={onEditView}
         on:saveView={onSaveView}
@@ -324,6 +329,7 @@
 
   <PlanGrid
     {...$view?.definition.plan.grid}
+    user={data.user}
     on:changeColumnSizes={onChangeColumnSizes}
     on:changeLeftRowSizes={onChangeLeftRowSizes}
     on:changeMiddleRowSizes={onChangeMiddleRowSizes}

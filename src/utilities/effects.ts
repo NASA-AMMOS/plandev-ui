@@ -29,7 +29,8 @@ import type {
   ActivityTypeExpansionRules,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { JsonWebToken, ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
+import type { BaseUser, User } from '../types/app';
+import type { ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
 import type { Constraint, ConstraintInsertInput, ConstraintViolation } from '../types/constraint';
 import type {
   ExpansionRule,
@@ -128,9 +129,10 @@ const effects = {
     activityId: ActivityDirectiveId,
     planId: number,
     numOfUserChanges: number,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.APPLY_PRESET_TO_ACTIVITY()) {
+      if (!queryPermissions.APPLY_PRESET_TO_ACTIVITY(user)) {
         throwPermissionError('apply a preset to an activity directive');
       }
 
@@ -147,11 +149,15 @@ const effects = {
       }
 
       if (confirm) {
-        await reqHasura(gql.APPLY_PRESET_TO_ACTIVITY, {
-          activityId,
-          planId,
-          presetId,
-        });
+        await reqHasura(
+          gql.APPLY_PRESET_TO_ACTIVITY,
+          {
+            activityId,
+            planId,
+            presetId,
+          },
+          user,
+        );
         showSuccessToast('Preset Successfully Applied to Activity');
       }
     } catch (e) {
@@ -164,9 +170,10 @@ const effects = {
     template: SimulationTemplate,
     simulation: Simulation,
     numOfUserChanges: number,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SIMULATION()) {
+      if (!queryPermissions.UPDATE_SIMULATION(user)) {
         throwPermissionError('apply a template to a simulation');
       }
 
@@ -184,7 +191,7 @@ const effects = {
       if (confirm) {
         const newSimulation: Simulation = { ...simulation, arguments: template.arguments, template };
 
-        await effects.updateSimulation(newSimulation);
+        await effects.updateSimulation(newSimulation, user);
         showSuccessToast('Template Successfully Applied to Simulation');
       }
     } catch (e) {
@@ -193,15 +200,19 @@ const effects = {
     }
   },
 
-  async checkConstraints(): Promise<void> {
+  async checkConstraints(user: User | null): Promise<void> {
     try {
       checkConstraintsStatus.set(Status.Incomplete);
       const currentPlan = get(plan);
       if (currentPlan !== null) {
         const { id: planId } = currentPlan;
-        const data = await reqHasura<{ violations: ConstraintViolation[] }>(gql.CHECK_CONSTRAINTS, {
-          planId,
-        });
+        const data = await reqHasura<{ violations: ConstraintViolation[] }>(
+          gql.CHECK_CONSTRAINTS,
+          {
+            planId,
+          },
+          user,
+        );
         const { checkConstraintsResponse } = data;
         const { violations } = checkConstraintsResponse;
 
@@ -225,9 +236,10 @@ const effects = {
     name: string,
     tags: string[],
     metadata: ActivityMetadata,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_ACTIVITY_DIRECTIVE()) {
+      if (!queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user)) {
         throwPermissionError('add a directive to the plan');
       }
 
@@ -246,9 +258,13 @@ const effects = {
           tags: tagsString,
           type,
         };
-        const data = await reqHasura<ActivityDirective>(gql.CREATE_ACTIVITY_DIRECTIVE, {
-          activityDirectiveInsertInput,
-        });
+        const data = await reqHasura<ActivityDirective>(
+          gql.CREATE_ACTIVITY_DIRECTIVE,
+          {
+            activityDirectiveInsertInput,
+          },
+          user,
+        );
         const { insert_activity_directive_one: newActivityDirective } = data;
         const { id } = newActivityDirective;
 
@@ -274,9 +290,10 @@ const effects = {
     associatedActivityType: string,
     name: string,
     modelId: number,
+    user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_ACTIVITY_PRESET()) {
+      if (!queryPermissions.CREATE_ACTIVITY_PRESET(user)) {
         throwPermissionError('create an activity preset');
       }
 
@@ -288,9 +305,7 @@ const effects = {
       };
       const {
         insert_activity_presets_one: { id, name: presetName },
-      } = await reqHasura<ActivityPreset>(gql.CREATE_ACTIVITY_PRESET, {
-        activityPresetInsertInput,
-      });
+      } = await reqHasura<ActivityPreset>(gql.CREATE_ACTIVITY_PRESET, { activityPresetInsertInput }, user);
 
       showSuccessToast(`Activity Preset ${presetName} Created Successfully`);
       return id;
@@ -301,15 +316,15 @@ const effects = {
     }
   },
 
-  async createCommandDictionary(files: FileList): Promise<CommandDictionary | null> {
+  async createCommandDictionary(files: FileList, user: User | null): Promise<CommandDictionary | null> {
     try {
-      if (!queryPermissions.CREATE_COMMAND_DICTIONARY()) {
+      if (!queryPermissions.CREATE_COMMAND_DICTIONARY(user)) {
         throwPermissionError('upload a command dictionary');
       }
 
       const file: File = files[0];
       const dictionary = await file.text();
-      const data = await reqHasura<CommandDictionary>(gql.CREATE_COMMAND_DICTIONARY, { dictionary });
+      const data = await reqHasura<CommandDictionary>(gql.CREATE_COMMAND_DICTIONARY, { dictionary }, user);
       const { createCommandDictionary: newCommandDictionary } = data;
       return newCommandDictionary;
     } catch (e) {
@@ -324,9 +339,10 @@ const effects = {
     model_id: number | null,
     name: string,
     plan_id: number | null,
+    user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_CONSTRAINT()) {
+      if (!queryPermissions.CREATE_CONSTRAINT(user)) {
         throwPermissionError('create a constraint');
       }
 
@@ -337,7 +353,7 @@ const effects = {
         name,
         plan_id,
       };
-      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput });
+      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput }, user);
       const { createConstraint } = data;
       const { id } = createConstraint;
 
@@ -350,14 +366,14 @@ const effects = {
     }
   },
 
-  async createExpansionRule(rule: ExpansionRuleInsertInput): Promise<number | null> {
+  async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_EXPANSION_RULE()) {
+      if (!queryPermissions.CREATE_EXPANSION_RULE(user)) {
         throwPermissionError('create an expansion rule');
       }
 
       savingExpansionRule.set(true);
-      const data = await reqHasura(gql.CREATE_EXPANSION_RULE, { rule });
+      const data = await reqHasura(gql.CREATE_EXPANSION_RULE, { rule }, user);
       const { createExpansionRule } = data;
       const { id } = createExpansionRule;
       showSuccessToast('Expansion Rule Created Successfully');
@@ -371,9 +387,9 @@ const effects = {
     }
   },
 
-  async createExpansionSequence(seqId: string, simulationDatasetId: number): Promise<void> {
+  async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_EXPANSION_SEQUENCE()) {
+      if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('create an expansion sequence');
       }
 
@@ -383,7 +399,7 @@ const effects = {
         seq_id: seqId,
         simulation_dataset_id: simulationDatasetId,
       };
-      await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence });
+      await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       showSuccessToast('Expansion Sequence Created Successfully');
       creatingExpansionSequence.set(false);
     } catch (e) {
@@ -393,14 +409,19 @@ const effects = {
     }
   },
 
-  async createExpansionSet(dictionaryId: number, modelId: number, expansionRuleIds: number[]): Promise<number | null> {
+  async createExpansionSet(
+    dictionaryId: number,
+    modelId: number,
+    expansionRuleIds: number[],
+    user: User | null,
+  ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_EXPANSION_SET()) {
+      if (!queryPermissions.CREATE_EXPANSION_SET(user)) {
         throwPermissionError('create an expansion set');
       }
 
       savingExpansionSet.set(true);
-      const data = await reqHasura(gql.CREATE_EXPANSION_SET, { dictionaryId, expansionRuleIds, modelId });
+      const data = await reqHasura(gql.CREATE_EXPANSION_SET, { dictionaryId, expansionRuleIds, modelId }, user);
       const { createExpansionSet } = data;
       const { id } = createExpansionSet;
       showSuccessToast('Expansion Set Created Successfully');
@@ -414,18 +435,18 @@ const effects = {
     }
   },
 
-  async createModel(name: string, version: string, files: FileList): Promise<void> {
+  async createModel(name: string, version: string, files: FileList, user: User | null): Promise<void> {
     try {
       createModelError.set(null);
 
-      if (!queryPermissions.CREATE_MODEL()) {
+      if (!queryPermissions.CREATE_MODEL(user)) {
         throwPermissionError('upload a model');
       }
 
       creatingModel.set(true);
 
       const file: File = files[0];
-      const jar_id = await effects.uploadFile(file);
+      const jar_id = await effects.uploadFile(file, user);
 
       if (jar_id !== null) {
         const modelInsertInput: ModelInsertInput = {
@@ -434,7 +455,7 @@ const effects = {
           name,
           version,
         };
-        const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput });
+        const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput }, user);
         const { createModel } = data;
         const { id } = createModel;
         const model: ModelSlim = { id, jar_id, name, version };
@@ -458,11 +479,12 @@ const effects = {
     name: string,
     start_time_doy: string,
     simulation_template_id: number | null,
+    user: User | null,
   ): Promise<PlanSlim | null> {
     try {
       createPlanError.set(null);
 
-      if (!queryPermissions.CREATE_PLAN()) {
+      if (!queryPermissions.CREATE_PLAN(user)) {
         throwPermissionError('create a plan');
       }
 
@@ -479,23 +501,27 @@ const effects = {
         {
           plan: planInsertInput,
         },
+        user,
       );
       const { createPlan } = data;
       const { collaborators, id, owner, revision, start_time } = createPlan;
 
-      if (!(await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy))) {
+      if (!(await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy, user))) {
         throw Error('Failed to update simulation.');
       }
 
       if (
-        !(await effects.createSchedulingSpec({
-          analysis_only: false,
-          horizon_end: end_time_doy,
-          horizon_start: start_time_doy,
-          plan_id: id,
-          plan_revision: revision,
-          simulation_arguments: {},
-        }))
+        !(await effects.createSchedulingSpec(
+          {
+            analysis_only: false,
+            horizon_end: end_time_doy,
+            horizon_start: start_time_doy,
+            plan_id: id,
+            plan_revision: revision,
+            simulation_arguments: {},
+          },
+          user,
+        ))
       ) {
         throw Error('Failed to create scheduling spec.');
       }
@@ -527,9 +553,9 @@ const effects = {
     }
   },
 
-  async createPlanBranch(plan: Plan): Promise<void> {
+  async createPlanBranch(plan: Plan, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DUPLICATE_PLAN()) {
+      if (!queryPermissions.DUPLICATE_PLAN(user)) {
         throwPermissionError('create a branch');
       }
 
@@ -537,17 +563,20 @@ const effects = {
 
       if (confirm && value) {
         const { name, plan } = value;
-        const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id });
+        const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id }, user);
         const { duplicate_plan } = data;
         const { new_plan_id } = duplicate_plan;
-        await effects.createSchedulingSpec({
-          analysis_only: false,
-          horizon_end: plan.end_time_doy,
-          horizon_start: plan.start_time_doy,
-          plan_id: new_plan_id,
-          plan_revision: 0,
-          simulation_arguments: {},
-        });
+        await effects.createSchedulingSpec(
+          {
+            analysis_only: false,
+            horizon_end: plan.end_time_doy,
+            horizon_start: plan.start_time_doy,
+            plan_id: new_plan_id,
+            plan_revision: 0,
+            simulation_arguments: {},
+          },
+          user,
+        );
         goto(`${base}/plans/${duplicate_plan.new_plan_id}`);
         showSuccessToast('Branch Created Successfully');
       }
@@ -557,9 +586,9 @@ const effects = {
     }
   },
 
-  async createPlanBranchRequest(plan: Plan, action: PlanBranchRequestAction): Promise<void> {
+  async createPlanBranchRequest(plan: Plan, action: PlanBranchRequestAction, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST()) {
+      if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST(user)) {
         throwPermissionError('create a branch merge request');
       }
 
@@ -568,7 +597,7 @@ const effects = {
       if (confirm && value) {
         const { source_plan_id, target_plan_id } = value;
         if (action === 'merge') {
-          await effects.createPlanMergeRequest(source_plan_id, target_plan_id);
+          await effects.createPlanMergeRequest(source_plan_id, target_plan_id, user);
         }
       }
     } catch (e) {
@@ -576,16 +605,24 @@ const effects = {
     }
   },
 
-  async createPlanMergeRequest(source_plan_id: number, target_plan_id: number): Promise<number | null> {
+  async createPlanMergeRequest(
+    source_plan_id: number,
+    target_plan_id: number,
+    user: User | null,
+  ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST()) {
+      if (!queryPermissions.CREATE_PLAN_MERGE_REQUEST(user)) {
         throwPermissionError('create a branch merge request');
       }
 
-      const data = await reqHasura<{ merge_request_id: number }>(gql.CREATE_PLAN_MERGE_REQUEST, {
-        source_plan_id,
-        target_plan_id,
-      });
+      const data = await reqHasura<{ merge_request_id: number }>(
+        gql.CREATE_PLAN_MERGE_REQUEST,
+        {
+          source_plan_id,
+          target_plan_id,
+        },
+        user,
+      );
       const { create_merge_request } = data;
       const { merge_request_id } = create_merge_request;
       showSuccessToast('Merge Request Created Successfully');
@@ -601,25 +638,27 @@ const effects = {
     definition: string,
     description: string,
     name: string,
-    userId: string,
     modelId: number,
+    user: User | null,
   ): Promise<SchedulingCondition | null> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_CONDITION()) {
+      if (!queryPermissions.CREATE_SCHEDULING_CONDITION(user)) {
         throwPermissionError('create a scheduling condition');
       }
 
       const conditionInsertInput: SchedulingConditionInsertInput = {
-        author: userId,
+        author: user?.id ?? 'unknown',
         definition,
         description,
-        last_modified_by: userId,
+        last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
       };
-      const data = await reqHasura<SchedulingCondition>(gql.CREATE_SCHEDULING_CONDITION, {
-        condition: conditionInsertInput,
-      });
+      const data = await reqHasura<SchedulingCondition>(
+        gql.CREATE_SCHEDULING_CONDITION,
+        { condition: conditionInsertInput },
+        user,
+      );
       const { createSchedulingCondition: newCondition } = data;
 
       showSuccessToast('Scheduling Condition Created Successfully');
@@ -635,23 +674,23 @@ const effects = {
     definition: string,
     description: string,
     name: string,
-    userId: string,
     modelId: number,
+    user: User | null,
   ): Promise<SchedulingGoal | null> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_GOAL()) {
+      if (!queryPermissions.CREATE_SCHEDULING_GOAL(user)) {
         throwPermissionError('create a scheduling goal');
       }
 
       const goalInsertInput: SchedulingGoalInsertInput = {
-        author: userId,
+        author: user?.id ?? 'unknown',
         definition,
         description,
-        last_modified_by: userId,
+        last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
       };
-      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal: goalInsertInput });
+      const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal: goalInsertInput }, user);
       const { createSchedulingGoal: newGoal } = data;
 
       showSuccessToast('Scheduling Goal Created Successfully');
@@ -663,13 +702,16 @@ const effects = {
     }
   },
 
-  async createSchedulingSpec(spec: SchedulingSpecInsertInput): Promise<Pick<SchedulingSpec, 'id'> | null> {
+  async createSchedulingSpec(
+    spec: SchedulingSpecInsertInput,
+    user: User | null,
+  ): Promise<Pick<SchedulingSpec, 'id'> | null> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_SPEC()) {
+      if (!queryPermissions.CREATE_SCHEDULING_SPEC(user)) {
         throwPermissionError('create a scheduling spec');
       }
 
-      const data = await reqHasura<Pick<SchedulingSpec, 'id'>>(gql.CREATE_SCHEDULING_SPEC, { spec });
+      const data = await reqHasura<Pick<SchedulingSpec, 'id'>>(gql.CREATE_SCHEDULING_SPEC, { spec }, user);
       const { createSchedulingSpec: newSchedulingSpec } = data;
       return newSchedulingSpec;
     } catch (e) {
@@ -678,25 +720,28 @@ const effects = {
     }
   },
 
-  async createSchedulingSpecCondition(spec_condition: SchedulingSpecConditionInsertInput): Promise<void> {
+  async createSchedulingSpecCondition(
+    spec_condition: SchedulingSpecConditionInsertInput,
+    user: User | null,
+  ): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_SPEC_CONDITION()) {
+      if (!queryPermissions.CREATE_SCHEDULING_SPEC_CONDITION(user)) {
         throwPermissionError('create a scheduling spec condition');
       }
 
-      await reqHasura(gql.CREATE_SCHEDULING_SPEC_CONDITION, { spec_condition });
+      await reqHasura(gql.CREATE_SCHEDULING_SPEC_CONDITION, { spec_condition }, user);
     } catch (e) {
       catchError(e as Error);
     }
   },
 
-  async createSchedulingSpecGoal(spec_goal: SchedulingSpecGoalInsertInput): Promise<void> {
+  async createSchedulingSpecGoal(spec_goal: SchedulingSpecGoalInsertInput, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_SPEC_GOAL()) {
+      if (!queryPermissions.CREATE_SCHEDULING_SPEC_GOAL(user)) {
         throwPermissionError('create a scheduling spec goal');
       }
 
-      await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal });
+      await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal }, user);
     } catch (e) {
       catchError(e as Error);
     }
@@ -706,9 +751,10 @@ const effects = {
     argumentsMap: ArgumentsMap,
     name: string,
     modelId: number,
+    user: User | null,
   ): Promise<SimulationTemplate | null> {
     try {
-      if (!queryPermissions.CREATE_SIMULATION_TEMPLATE()) {
+      if (!queryPermissions.CREATE_SIMULATION_TEMPLATE(user)) {
         throwPermissionError('create a simulation template');
       }
 
@@ -719,9 +765,8 @@ const effects = {
       };
       const { insert_simulation_template_one: newTemplate } = await reqHasura<SimulationTemplate>(
         gql.CREATE_SIMULATION_TEMPLATE,
-        {
-          simulationTemplateInsertInput,
-        },
+        { simulationTemplateInsertInput },
+        user,
       );
 
       showSuccessToast(`Simulation Template ${name} Created Successfully`);
@@ -733,13 +778,13 @@ const effects = {
     }
   },
 
-  async createUserSequence(sequence: UserSequenceInsertInput): Promise<number | null> {
+  async createUserSequence(sequence: UserSequenceInsertInput, user: User | null): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_USER_SEQUENCE()) {
+      if (!queryPermissions.CREATE_USER_SEQUENCE(user)) {
         throwPermissionError('create a user sequence');
       }
 
-      const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence });
+      const data = await reqHasura<Pick<UserSequence, 'id'>>(gql.CREATE_USER_SEQUENCE, { sequence }, user);
       const { createUserSequence } = data;
       const { id } = createUserSequence;
       showSuccessToast('User Sequence Created Successfully');
@@ -751,9 +796,9 @@ const effects = {
     }
   },
 
-  async createView(owner: string, definition: ViewDefinition): Promise<boolean> {
+  async createView(owner: string, definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.CREATE_VIEW()) {
+      if (!queryPermissions.CREATE_VIEW(user)) {
         throwPermissionError('create a view');
       }
 
@@ -762,7 +807,7 @@ const effects = {
       if (confirm && value) {
         const { name } = value;
         const viewInsertInput: ViewInsertInput = { definition, name, owner };
-        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
+        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput }, user);
         const { newView } = data;
 
         view.update(() => newView);
@@ -778,20 +823,20 @@ const effects = {
     return false;
   },
 
-  async deleteActivityDirective(plan_id: number, id: ActivityDirectiveId): Promise<boolean> {
+  async deleteActivityDirective(plan_id: number, id: ActivityDirectiveId, user: User | null): Promise<boolean> {
     try {
       if (
         !(
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_SUBTREE()
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_SUBTREE(user)
         )
       ) {
         throwPermissionError('delete an activity directive');
       }
 
-      return effects.deleteActivityDirectives(plan_id, [id]);
+      return effects.deleteActivityDirectives(plan_id, [id], user);
     } catch (e) {
       catchError('Activity Directive Delete Failed', e as Error);
     }
@@ -799,14 +844,14 @@ const effects = {
     return false;
   },
 
-  async deleteActivityDirectives(plan_id: number, ids: ActivityDirectiveId[]): Promise<boolean> {
+  async deleteActivityDirectives(plan_id: number, ids: ActivityDirectiveId[], user: User | null): Promise<boolean> {
     try {
       if (
         !(
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR() &&
-          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_SUBTREE()
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR(user) &&
+          queryPermissions.DELETE_ACTIVITY_DIRECTIVES_SUBTREE(user)
         )
       ) {
         throwPermissionError('delete activity directives');
@@ -841,10 +886,14 @@ const effects = {
         const normalDeletions = sortedActions[ActivityDeletionAction.NORMAL] ?? [];
 
         if (reanchorRootDeletions.length) {
-          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR, {
-            activity_ids: convertToGQLArray(reanchorRootDeletions),
-            plan_id,
-          });
+          await reqHasura(
+            gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR,
+            {
+              activity_ids: convertToGQLArray(reanchorRootDeletions),
+              plan_id,
+            },
+            user,
+          );
           activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
             reanchorRootDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
             return { ...currentActivityDirectivesMap };
@@ -852,10 +901,14 @@ const effects = {
         }
 
         if (reanchorPlanDeletions.length) {
-          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START, {
-            activity_ids: convertToGQLArray(reanchorPlanDeletions),
-            plan_id,
-          });
+          await reqHasura(
+            gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START,
+            {
+              activity_ids: convertToGQLArray(reanchorPlanDeletions),
+              plan_id,
+            },
+            user,
+          );
           activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
             reanchorPlanDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
             return { ...currentActivityDirectivesMap };
@@ -863,10 +916,14 @@ const effects = {
         }
 
         if (subtreeDeletions.length) {
-          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES_SUBTREE, {
-            activity_ids: convertToGQLArray(subtreeDeletions),
-            plan_id,
-          });
+          await reqHasura(
+            gql.DELETE_ACTIVITY_DIRECTIVES_SUBTREE,
+            {
+              activity_ids: convertToGQLArray(subtreeDeletions),
+              plan_id,
+            },
+            user,
+          );
           activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
             subtreeDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
             return { ...currentActivityDirectivesMap };
@@ -874,10 +931,14 @@ const effects = {
         }
 
         if (normalDeletions.length) {
-          await reqHasura(gql.DELETE_ACTIVITY_DIRECTIVES, {
-            activity_ids: normalDeletions,
-            plan_id,
-          });
+          await reqHasura(
+            gql.DELETE_ACTIVITY_DIRECTIVES,
+            {
+              activity_ids: normalDeletions,
+              plan_id,
+            },
+            user,
+          );
           activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
             normalDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
             return { ...currentActivityDirectivesMap };
@@ -895,9 +956,9 @@ const effects = {
     return false;
   },
 
-  async deleteActivityPreset(id: ActivityPresetId, modelName: string): Promise<boolean> {
+  async deleteActivityPreset(id: ActivityPresetId, modelName: string, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_ACTIVITY_PRESET()) {
+      if (!queryPermissions.DELETE_ACTIVITY_PRESET(user)) {
         throwPermissionError('delete an activity preset');
       }
 
@@ -908,7 +969,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_ACTIVITY_PRESET, { id });
+        await reqHasura(gql.DELETE_ACTIVITY_PRESET, { id }, user);
         showSuccessToast('Activity Preset Deleted Successfully');
         return true;
       }
@@ -920,9 +981,9 @@ const effects = {
     return false;
   },
 
-  async deleteCommandDictionary(id: number): Promise<void> {
+  async deleteCommandDictionary(id: number, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_COMMAND_DICTIONARY()) {
+      if (!queryPermissions.DELETE_COMMAND_DICTIONARY(user)) {
         throwPermissionError('delete this command dictionary');
       }
 
@@ -933,7 +994,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id });
+        await reqHasura(gql.DELETE_COMMAND_DICTIONARY, { id }, user);
         showSuccessToast('Command Dictionary Deleted Successfully');
         commandDictionaries.filterValueById(id);
       }
@@ -943,9 +1004,9 @@ const effects = {
     }
   },
 
-  async deleteConstraint(id: number): Promise<boolean> {
+  async deleteConstraint(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_CONSTRAINT()) {
+      if (!queryPermissions.DELETE_CONSTRAINT(user)) {
         throwPermissionError('delete this constraint');
       }
 
@@ -956,7 +1017,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_CONSTRAINT, { id });
+        await reqHasura(gql.DELETE_CONSTRAINT, { id }, user);
         showSuccessToast('Constraint Deleted Successfully');
         return true;
       }
@@ -968,9 +1029,9 @@ const effects = {
     return false;
   },
 
-  async deleteExpansionRule(id: number): Promise<boolean> {
+  async deleteExpansionRule(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_EXPANSION_RULE()) {
+      if (!queryPermissions.DELETE_EXPANSION_RULE(user)) {
         throwPermissionError('delete an expansion rule');
       }
 
@@ -981,7 +1042,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_EXPANSION_RULE, { id });
+        await reqHasura(gql.DELETE_EXPANSION_RULE, { id }, user);
         showSuccessToast('Expansion Rule Deleted Successfully');
         return true;
       }
@@ -993,9 +1054,9 @@ const effects = {
     return false;
   },
 
-  async deleteExpansionSequence(sequence: ExpansionSequence): Promise<void> {
+  async deleteExpansionSequence(sequence: ExpansionSequence, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_EXPANSION_SEQUENCE()) {
+      if (!queryPermissions.DELETE_EXPANSION_SEQUENCE(user)) {
         throwPermissionError('delete an expansion sequence');
       }
 
@@ -1007,7 +1068,7 @@ const effects = {
 
       if (confirm) {
         const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
-        await reqHasura(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId });
+        await reqHasura(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId }, user);
         showSuccessToast('Expansion Sequence Deleted Successfully');
       }
     } catch (e) {
@@ -1019,16 +1080,21 @@ const effects = {
   async deleteExpansionSequenceToActivity(
     simulation_dataset_id: number,
     simulated_activity_id: number,
+    user: User | null,
   ): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY()) {
+      if (!queryPermissions.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY(user)) {
         throwPermissionError('delete an expansion sequence from an activity');
       }
 
-      await reqHasura<SeqId>(gql.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY, {
-        simulated_activity_id,
-        simulation_dataset_id,
-      });
+      await reqHasura<SeqId>(
+        gql.DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY,
+        {
+          simulated_activity_id,
+          simulation_dataset_id,
+        },
+        user,
+      );
       showSuccessToast('Expansion Sequence Deleted From Activity Successfully');
       return true;
     } catch (e) {
@@ -1038,9 +1104,9 @@ const effects = {
     }
   },
 
-  async deleteExpansionSet(id: number): Promise<boolean> {
+  async deleteExpansionSet(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_EXPANSION_SET()) {
+      if (!queryPermissions.DELETE_EXPANSION_SET(user)) {
         throwPermissionError('delete an expansion set');
       }
 
@@ -1051,7 +1117,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_EXPANSION_SET, { id });
+        await reqHasura(gql.DELETE_EXPANSION_SET, { id }, user);
         showSuccessToast('Expansion Set Deleted Successfully');
         return true;
       }
@@ -1064,9 +1130,9 @@ const effects = {
     }
   },
 
-  async deleteFile(id: number): Promise<boolean> {
+  async deleteFile(id: number, user: User | null): Promise<boolean> {
     try {
-      await reqGateway(`/file/${id}`, 'DELETE', null, null, false);
+      await reqGateway(`/file/${id}`, 'DELETE', null, user, false);
       return true;
     } catch (e) {
       catchError(e as Error);
@@ -1074,9 +1140,9 @@ const effects = {
     }
   },
 
-  async deleteModel(model: ModelSlim): Promise<void> {
+  async deleteModel(model: ModelSlim, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.DELETE_MODEL()) {
+      if (!queryPermissions.DELETE_MODEL(user)) {
         throwPermissionError('delete this model');
       }
 
@@ -1088,8 +1154,8 @@ const effects = {
 
       if (confirm) {
         const { id, jar_id } = model;
-        await effects.deleteFile(jar_id);
-        await reqHasura(gql.DELETE_MODEL, { id });
+        await effects.deleteFile(jar_id, user);
+        await reqHasura(gql.DELETE_MODEL, { id }, user);
         showSuccessToast('Model Deleted Successfully');
         models.filterValueById(id);
       }
@@ -1099,16 +1165,16 @@ const effects = {
     }
   },
 
-  async deletePlan(id: number): Promise<boolean> {
+  async deletePlan(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_PLAN()) {
+      if (!queryPermissions.DELETE_PLAN(user)) {
         throwPermissionError('delete this plan');
       }
 
       const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this plan?', 'Delete Plan');
 
       if (confirm) {
-        await reqHasura(gql.DELETE_PLAN, { id });
+        await reqHasura(gql.DELETE_PLAN, { id }, user);
         showSuccessToast('Plan Deleted Successfully');
         return true;
       }
@@ -1121,9 +1187,9 @@ const effects = {
     }
   },
 
-  async deleteSchedulingCondition(id: number): Promise<boolean> {
+  async deleteSchedulingCondition(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_SCHEDULING_CONDITION()) {
+      if (!queryPermissions.DELETE_SCHEDULING_CONDITION(user)) {
         throwPermissionError('delete this scheduling condition');
       }
 
@@ -1134,7 +1200,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_SCHEDULING_CONDITION, { id });
+        await reqHasura(gql.DELETE_SCHEDULING_CONDITION, { id }, user);
         showSuccessToast('Scheduling Condition Deleted Successfully');
         return true;
       } else {
@@ -1147,9 +1213,9 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoal(id: number): Promise<boolean> {
+  async deleteSchedulingGoal(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_SCHEDULING_GOAL()) {
+      if (!queryPermissions.DELETE_SCHEDULING_GOAL(user)) {
         throwPermissionError('delete this scheduling goal');
       }
 
@@ -1160,7 +1226,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id });
+        await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id }, user);
         showSuccessToast('Scheduling Goal Deleted Successfully');
         return true;
       } else {
@@ -1173,13 +1239,13 @@ const effects = {
     }
   },
 
-  async deleteSchedulingSpecGoal(goal_id: number, specification_id: number): Promise<boolean> {
+  async deleteSchedulingSpecGoal(goal_id: number, specification_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_SCHEDULING_SPEC_GOAL()) {
+      if (!queryPermissions.DELETE_SCHEDULING_SPEC_GOAL(user)) {
         throwPermissionError('delete this scheduling goal');
       }
 
-      await reqHasura(gql.DELETE_SCHEDULING_SPEC_GOAL, { goal_id, specification_id });
+      await reqHasura(gql.DELETE_SCHEDULING_SPEC_GOAL, { goal_id, specification_id }, user);
       return true;
     } catch (e) {
       catchError('Scheduling Goal Spec Delete Failed', e as Error);
@@ -1188,9 +1254,9 @@ const effects = {
     }
   },
 
-  async deleteSimulationTemplate(id: number, modelName: string): Promise<boolean> {
+  async deleteSimulationTemplate(id: number, modelName: string, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_SIMULATION_TEMPLATE()) {
+      if (!queryPermissions.DELETE_SIMULATION_TEMPLATE(user)) {
         throwPermissionError('delete this simulation template');
       }
 
@@ -1201,7 +1267,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_SIMULATION_TEMPLATE, { id });
+        await reqHasura(gql.DELETE_SIMULATION_TEMPLATE, { id }, user);
         showSuccessToast('Simulation Template Deleted Successfully');
         return true;
       }
@@ -1213,9 +1279,9 @@ const effects = {
     return false;
   },
 
-  async deleteUserSequence(id: number): Promise<boolean> {
+  async deleteUserSequence(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_USER_SEQUENCE()) {
+      if (!queryPermissions.DELETE_USER_SEQUENCE(user)) {
         throwPermissionError('delete this user sequence');
       }
 
@@ -1226,7 +1292,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_USER_SEQUENCE, { id });
+        await reqHasura(gql.DELETE_USER_SEQUENCE, { id }, user);
         showSuccessToast('User Sequence Deleted Successfully');
         return true;
       }
@@ -1239,16 +1305,16 @@ const effects = {
     }
   },
 
-  async deleteView(id: number): Promise<boolean> {
+  async deleteView(id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_VIEW()) {
+      if (!queryPermissions.DELETE_VIEW(user)) {
         throwPermissionError('delete this view');
       }
 
       const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
 
       if (confirm) {
-        await reqHasura(gql.DELETE_VIEW, { id });
+        await reqHasura(gql.DELETE_VIEW, { id }, user);
         return true;
       }
     } catch (e) {
@@ -1258,9 +1324,9 @@ const effects = {
     return false;
   },
 
-  async deleteViews(ids: number[]): Promise<boolean> {
+  async deleteViews(ids: number[], user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_VIEWS()) {
+      if (!queryPermissions.DELETE_VIEWS(user)) {
         throwPermissionError('delete these views');
       }
 
@@ -1271,7 +1337,7 @@ const effects = {
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_VIEWS, { ids });
+        await reqHasura(gql.DELETE_VIEWS, { ids }, user);
         return true;
       }
     } catch (e) {
@@ -1281,9 +1347,9 @@ const effects = {
     return false;
   },
 
-  async editView(owner: string, definition: ViewDefinition): Promise<boolean> {
+  async editView(owner: string, definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.UPDATE_VIEW()) {
+      if (!queryPermissions.UPDATE_VIEW(user)) {
         throwPermissionError('edit this view');
       }
 
@@ -1291,7 +1357,7 @@ const effects = {
       if (confirm && value) {
         const { id, name } = value;
         const viewUpdateInput: ViewInsertInput = { definition, name, owner };
-        const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view: viewUpdateInput });
+        const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view: viewUpdateInput }, user);
         const {
           updatedView: { name: updatedName, updated_at },
         } = data;
@@ -1308,15 +1374,15 @@ const effects = {
     return false;
   },
 
-  async expand(expansionSetId: number, simulationDatasetId: number): Promise<void> {
+  async expand(expansionSetId: number, simulationDatasetId: number, user: User | null): Promise<void> {
     try {
       planExpansionStatus.set(Status.Incomplete);
 
-      if (!queryPermissions.EXPAND()) {
+      if (!queryPermissions.EXPAND(user)) {
         throwPermissionError('expand this plan');
       }
 
-      await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId });
+      await reqHasura(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
       planExpansionStatus.set(Status.Complete);
       showSuccessToast('Plan Expanded Successfully');
     } catch (e) {
@@ -1326,10 +1392,10 @@ const effects = {
     }
   },
 
-  async getActivityTypes(modelId: number): Promise<ActivityType[]> {
+  async getActivityTypes(modelId: number, user: User | null): Promise<ActivityType[]> {
     try {
       const query = convertToQuery(gql.SUB_ACTIVITY_TYPES);
-      const data = await reqHasura<ActivityType[]>(query, { modelId });
+      const data = await reqHasura<ActivityType[]>(query, { modelId }, user);
       const { activity_type: activityTypes } = data;
       return activityTypes;
     } catch (e) {
@@ -1338,10 +1404,17 @@ const effects = {
     }
   },
 
-  async getActivityTypesExpansionRules(modelId: number | null | undefined): Promise<ActivityTypeExpansionRules[]> {
+  async getActivityTypesExpansionRules(
+    modelId: number | null | undefined,
+    user: User | null,
+  ): Promise<ActivityTypeExpansionRules[]> {
     if (modelId !== null && modelId !== undefined) {
       try {
-        const data = await reqHasura<ActivityTypeExpansionRules[]>(gql.GET_ACTIVITY_TYPES_EXPANSION_RULES, { modelId });
+        const data = await reqHasura<ActivityTypeExpansionRules[]>(
+          gql.GET_ACTIVITY_TYPES_EXPANSION_RULES,
+          { modelId },
+          user,
+        );
         const { activity_types } = data;
         return activity_types;
       } catch (e) {
@@ -1353,9 +1426,9 @@ const effects = {
     }
   },
 
-  async getConstraint(id: number): Promise<Constraint | null> {
+  async getConstraint(id: number, user: User | null): Promise<Constraint | null> {
     try {
-      const data = await reqHasura<Constraint>(gql.GET_CONSTRAINT, { id });
+      const data = await reqHasura<Constraint>(gql.GET_CONSTRAINT, { id }, user);
       const { constraint } = data;
       return constraint;
     } catch (e) {
@@ -1368,13 +1441,18 @@ const effects = {
     modelId: number,
     activityTypeName: string,
     argumentsMap: ArgumentsMap,
+    user: User | null,
   ): Promise<EffectiveArguments | null> {
     try {
-      const data = await reqHasura<EffectiveArguments>(gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS, {
-        activityTypeName,
-        arguments: argumentsMap,
-        modelId,
-      });
+      const data = await reqHasura<EffectiveArguments>(
+        gql.GET_EFFECTIVE_ACTIVITY_ARGUMENTS,
+        {
+          activityTypeName,
+          arguments: argumentsMap,
+          modelId,
+        },
+        user,
+      );
       const { effectiveActivityArguments } = data;
       return effectiveActivityArguments;
     } catch (e) {
@@ -1383,12 +1461,20 @@ const effects = {
     }
   },
 
-  async getEffectiveModelArguments(modelId: number, argumentsMap: ArgumentsMap): Promise<EffectiveArguments | null> {
+  async getEffectiveModelArguments(
+    modelId: number,
+    argumentsMap: ArgumentsMap,
+    user: User | null,
+  ): Promise<EffectiveArguments | null> {
     try {
-      const data = await reqHasura<EffectiveArguments>(gql.GET_EFFECTIVE_MODEL_ARGUMENTS, {
-        arguments: argumentsMap,
-        modelId,
-      });
+      const data = await reqHasura<EffectiveArguments>(
+        gql.GET_EFFECTIVE_MODEL_ARGUMENTS,
+        {
+          arguments: argumentsMap,
+          modelId,
+        },
+        user,
+      );
       const { effectiveModelArguments } = data;
       return effectiveModelArguments;
     } catch (e) {
@@ -1397,9 +1483,9 @@ const effects = {
     }
   },
 
-  async getExpansionRule(id: number): Promise<ExpansionRule | null> {
+  async getExpansionRule(id: number, user: User | null): Promise<ExpansionRule | null> {
     try {
-      const data = await reqHasura(gql.GET_EXPANSION_RULE, { id });
+      const data = await reqHasura(gql.GET_EXPANSION_RULE, { id }, user);
       const { expansionRule } = data;
       return expansionRule;
     } catch (e) {
@@ -1408,9 +1494,9 @@ const effects = {
     }
   },
 
-  async getExpansionRuns(): Promise<ExpansionRun[]> {
+  async getExpansionRuns(user: User | null): Promise<ExpansionRun[]> {
     try {
-      const data = await reqHasura(gql.GET_EXPANSION_RUNS);
+      const data = await reqHasura(gql.GET_EXPANSION_RUNS, {}, user);
       const { expansionRuns } = data;
       return expansionRuns;
     } catch (e) {
@@ -1419,12 +1505,20 @@ const effects = {
     }
   },
 
-  async getExpansionSequenceId(simulated_activity_id: number, simulation_dataset_id: number): Promise<string | null> {
+  async getExpansionSequenceId(
+    simulated_activity_id: number,
+    simulation_dataset_id: number,
+    user: User | null,
+  ): Promise<string | null> {
     try {
-      const data = await reqHasura<SeqId>(gql.GET_EXPANSION_SEQUENCE_ID, {
-        simulated_activity_id,
-        simulation_dataset_id,
-      });
+      const data = await reqHasura<SeqId>(
+        gql.GET_EXPANSION_SEQUENCE_ID,
+        {
+          simulated_activity_id,
+          simulation_dataset_id,
+        },
+        user,
+      );
       const { expansionSequence } = data;
 
       if (expansionSequence) {
@@ -1439,12 +1533,20 @@ const effects = {
     }
   },
 
-  async getExpansionSequenceSeqJson(seqId: string, simulationDatasetId: number): Promise<string | null> {
+  async getExpansionSequenceSeqJson(
+    seqId: string,
+    simulationDatasetId: number,
+    user: User | null,
+  ): Promise<string | null> {
     try {
-      const data = await reqHasura<GetSeqJsonResponse>(gql.GET_EXPANSION_SEQUENCE_SEQ_JSON, {
-        seqId,
-        simulationDatasetId,
-      });
+      const data = await reqHasura<GetSeqJsonResponse>(
+        gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
+        {
+          seqId,
+          simulationDatasetId,
+        },
+        user,
+      );
       const { getSequenceSeqJson } = data;
       const { errors, seqJson, status } = getSequenceSeqJson;
 
@@ -1461,9 +1563,9 @@ const effects = {
     }
   },
 
-  async getModels(): Promise<ModelSlim[]> {
+  async getModels(user: User | null): Promise<ModelSlim[]> {
     try {
-      const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS);
+      const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS, {}, user);
       const { models = [] } = data;
       return models;
     } catch (e) {
@@ -1472,9 +1574,9 @@ const effects = {
     }
   },
 
-  async getPlan(id: number): Promise<Plan | null> {
+  async getPlan(id: number, user: User | null): Promise<Plan | null> {
     try {
-      const data = await reqHasura<PlanSchema>(gql.GET_PLAN, { id });
+      const data = await reqHasura<PlanSchema>(gql.GET_PLAN, { id }, user);
       const { plan: planSchema } = data;
 
       if (planSchema) {
@@ -1494,10 +1596,13 @@ const effects = {
     }
   },
 
-  async getPlanMergeConflictingActivities(merge_request_id: number): Promise<PlanMergeConflictingActivity[]> {
+  async getPlanMergeConflictingActivities(
+    merge_request_id: number,
+    user: User | null,
+  ): Promise<PlanMergeConflictingActivity[]> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES);
-      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id });
+      const data = await reqHasura<PlanMergeConflictingActivity[]>(query, { merge_request_id }, user);
       const { conflictingActivities } = data;
       return conflictingActivities;
     } catch (e) {
@@ -1506,11 +1611,18 @@ const effects = {
     }
   },
 
-  async getPlanMergeNonConflictingActivities(merge_request_id: number): Promise<PlanMergeNonConflictingActivity[]> {
+  async getPlanMergeNonConflictingActivities(
+    merge_request_id: number,
+    user: User | null,
+  ): Promise<PlanMergeNonConflictingActivity[]> {
     try {
-      const data = await reqHasura<PlanMergeNonConflictingActivity[]>(gql.GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES, {
-        merge_request_id,
-      });
+      const data = await reqHasura<PlanMergeNonConflictingActivity[]>(
+        gql.GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES,
+        {
+          merge_request_id,
+        },
+        user,
+      );
       const { nonConflictingActivities } = data;
       return nonConflictingActivities;
     } catch (e) {
@@ -1519,10 +1631,10 @@ const effects = {
     }
   },
 
-  async getPlanMergeRequestInProgress(planId: number): Promise<PlanMergeRequestSchema | null> {
+  async getPlanMergeRequestInProgress(planId: number, user: User | null): Promise<PlanMergeRequestSchema | null> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_MERGE_REQUEST_IN_PROGRESS);
-      const data = await reqHasura<PlanMergeRequestSchema[]>(query, { planId });
+      const data = await reqHasura<PlanMergeRequestSchema[]>(query, { planId }, user);
       const { merge_requests } = data;
       const [merge_request] = merge_requests; // Query uses 'limit: 1' so merge_requests.length === 1.
       return merge_request;
@@ -1532,10 +1644,10 @@ const effects = {
     }
   },
 
-  async getPlanRevision(planId: number): Promise<number | null> {
+  async getPlanRevision(planId: number, user: User | null): Promise<number | null> {
     try {
       const query = convertToQuery(gql.SUB_PLAN_REVISION);
-      const data = await reqHasura<Pick<Plan, 'revision'>>(query, { planId });
+      const data = await reqHasura<Pick<Plan, 'revision'>>(query, { planId }, user);
       const { plan } = data;
       const { revision } = plan;
       return revision;
@@ -1545,9 +1657,9 @@ const effects = {
     }
   },
 
-  async getPlansAndModels(): Promise<{ models: ModelSlim[]; plans: PlanSlim[] }> {
+  async getPlansAndModels(user: User | null): Promise<{ models: ModelSlim[]; plans: PlanSlim[] }> {
     try {
-      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS)) as {
+      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS, {}, user)) as {
         models: ModelSlim[];
         plans: Pick<
           Plan,
@@ -1572,12 +1684,12 @@ const effects = {
     }
   },
 
-  async getPlansAndModelsForScheduling(): Promise<{
+  async getPlansAndModelsForScheduling(user: User | null): Promise<{
     models: ModelSlim[];
     plans: PlanSchedulingSpec[];
   }> {
     try {
-      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS_FOR_SCHEDULING)) as {
+      const data = (await reqHasura(gql.GET_PLANS_AND_MODELS_FOR_SCHEDULING, {}, user)) as {
         models: ModelSlim[];
         plans: PlanSchedulingSpec[];
       };
@@ -1590,9 +1702,9 @@ const effects = {
     }
   },
 
-  async getResourceTypes(model_id: number): Promise<ResourceType[]> {
+  async getResourceTypes(model_id: number, user: User | null): Promise<ResourceType[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { model_id });
+      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { model_id }, user);
       const { resource_types } = data;
       return resource_types;
     } catch (e) {
@@ -1601,9 +1713,9 @@ const effects = {
     }
   },
 
-  async getResources(datasetId: number, startTimeYmd: string): Promise<Resource[]> {
+  async getResources(datasetId: number, startTimeYmd: string, user: User | null): Promise<Resource[]> {
     try {
-      const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId });
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId }, user);
       const { profile: profiles } = data;
       return sampleProfiles(profiles, startTimeYmd);
     } catch (e) {
@@ -1612,9 +1724,9 @@ const effects = {
     }
   },
 
-  async getResourcesExternal(planId: number, startTimeYmd: string): Promise<Resource[]> {
+  async getResourcesExternal(planId: number, startTimeYmd: string, user: User | null): Promise<Resource[]> {
     try {
-      const data = await reqHasura<PlanDataset[]>(gql.GET_PROFILES_EXTERNAL, { planId });
+      const data = await reqHasura<PlanDataset[]>(gql.GET_PROFILES_EXTERNAL, { planId }, user);
       const { plan_dataset: plan_datasets } = data;
       let resources: Resource[] = [];
 
@@ -1634,10 +1746,10 @@ const effects = {
     }
   },
 
-  async getSchedulingCondition(id: number | null | undefined): Promise<SchedulingCondition | null> {
+  async getSchedulingCondition(id: number | null | undefined, user: User | null): Promise<SchedulingCondition | null> {
     if (id !== null && id !== undefined) {
       try {
-        const data = await reqHasura<SchedulingCondition>(gql.GET_SCHEDULING_CONDITION, { id });
+        const data = await reqHasura<SchedulingCondition>(gql.GET_SCHEDULING_CONDITION, { id }, user);
         const { condition } = data;
         return condition;
       } catch (e) {
@@ -1649,10 +1761,10 @@ const effects = {
     }
   },
 
-  async getSchedulingGoal(id: number | null | undefined): Promise<SchedulingGoal | null> {
+  async getSchedulingGoal(id: number | null | undefined, user: User | null): Promise<SchedulingGoal | null> {
     if (id !== null && id !== undefined) {
       try {
-        const data = await reqHasura<SchedulingGoal>(gql.GET_SCHEDULING_GOAL, { id });
+        const data = await reqHasura<SchedulingGoal>(gql.GET_SCHEDULING_GOAL, { id }, user);
         const { goal } = data;
         return goal;
       } catch (e) {
@@ -1666,12 +1778,17 @@ const effects = {
 
   async getSchedulingSpecConditionsForCondition(
     condition_id: number | null,
+    user: User | null,
   ): Promise<SchedulingSpecCondition[] | null> {
     if (condition_id !== null) {
       try {
-        const data = await reqHasura<SchedulingSpecCondition[]>(gql.GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION, {
-          condition_id,
-        });
+        const data = await reqHasura<SchedulingSpecCondition[]>(
+          gql.GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION,
+          {
+            condition_id,
+          },
+          user,
+        );
         const { scheduling_specification_conditions } = data;
         return scheduling_specification_conditions;
       } catch (e) {
@@ -1683,10 +1800,10 @@ const effects = {
     }
   },
 
-  async getSchedulingSpecGoalsForGoal(goal_id: number | null): Promise<SchedulingSpecGoal[] | null> {
+  async getSchedulingSpecGoalsForGoal(goal_id: number | null, user: User | null): Promise<SchedulingSpecGoal[] | null> {
     if (goal_id !== null) {
       try {
-        const data = await reqHasura<SchedulingSpecGoal[]>(gql.GET_SCHEDULING_SPEC_GOALS_FOR_GOAL, { goal_id });
+        const data = await reqHasura<SchedulingSpecGoal[]>(gql.GET_SCHEDULING_SPEC_GOALS_FOR_GOAL, { goal_id }, user);
         const { scheduling_specification_goals } = data;
         return scheduling_specification_goals;
       } catch (e) {
@@ -1698,9 +1815,9 @@ const effects = {
     }
   },
 
-  async getSpans(datasetId: number): Promise<Span[]> {
+  async getSpans(datasetId: number, user: User | null): Promise<Span[]> {
     try {
-      const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId });
+      const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId }, user);
       const { span: spans } = data;
       return spans;
     } catch (e) {
@@ -1712,13 +1829,18 @@ const effects = {
   async getTsFilesActivityType(
     activityTypeName: string | null | undefined,
     modelId: number | null | undefined,
+    user: User | null,
   ): Promise<TypeScriptFile[]> {
     if (activityTypeName !== null && activityTypeName !== undefined && modelId !== null && modelId !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_ACTIVITY_TYPE, {
-          activityTypeName,
-          modelId,
-        });
+        const data = await reqHasura<DslTypeScriptResponse>(
+          gql.GET_TYPESCRIPT_ACTIVITY_TYPE,
+          {
+            activityTypeName,
+            modelId,
+          },
+          user,
+        );
         const { dslTypeScriptResponse } = data;
         const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
@@ -1737,12 +1859,17 @@ const effects = {
     }
   },
 
-  async getTsFilesCommandDictionary(commandDictionaryId: number | null | undefined): Promise<TypeScriptFile[]> {
+  async getTsFilesCommandDictionary(
+    commandDictionaryId: number | null | undefined,
+    user: User | null,
+  ): Promise<TypeScriptFile[]> {
     if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_COMMAND_DICTIONARY, {
-          commandDictionaryId,
-        });
+        const data = await reqHasura<DslTypeScriptResponse>(
+          gql.GET_TYPESCRIPT_COMMAND_DICTIONARY,
+          { commandDictionaryId },
+          user,
+        );
         const { dslTypeScriptResponse } = data;
         const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
@@ -1761,10 +1888,14 @@ const effects = {
     }
   },
 
-  async getTsFilesConstraints(model_id: number, plan_id: number | null): Promise<TypeScriptFile[]> {
+  async getTsFilesConstraints(model_id: number, plan_id: number | null, user: User | null): Promise<TypeScriptFile[]> {
     if (model_id !== null && model_id !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id, plan_id });
+        const data = await reqHasura<DslTypeScriptResponse>(
+          gql.GET_TYPESCRIPT_CONSTRAINTS,
+          { model_id, plan_id },
+          user,
+        );
         const { dslTypeScriptResponse } = data;
         const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
@@ -1783,10 +1914,10 @@ const effects = {
     }
   },
 
-  async getTsFilesScheduling(model_id: number | null | undefined): Promise<TypeScriptFile[]> {
+  async getTsFilesScheduling(model_id: number | null | undefined, user: User | null): Promise<TypeScriptFile[]> {
     if (model_id !== null && model_id !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id });
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_SCHEDULING, { model_id }, user);
         const { dslTypeScriptResponse } = data;
         const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
@@ -1805,9 +1936,9 @@ const effects = {
     }
   },
 
-  async getUserQueries(userToken?: string): Promise<PermissibleQueriesMap | null> {
+  async getUserQueries(user: BaseUser | null): Promise<PermissibleQueriesMap> {
     try {
-      const data = await reqHasura<PermissibleQueryResponse>(gql.GET_PERMISSIBLE_QUERIES, {}, undefined, userToken);
+      const data = await reqHasura<PermissibleQueryResponse>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);
       const {
         queries: {
           mutationType: { fields: mutationQueries },
@@ -1823,13 +1954,13 @@ const effects = {
       }, {});
     } catch (e) {
       catchError(e as Error);
-      return null;
+      return {};
     }
   },
 
-  async getUserSequence(id: number): Promise<UserSequence | null> {
+  async getUserSequence(id: number, user: User | null): Promise<UserSequence | null> {
     try {
-      const data = await reqHasura<UserSequence>(gql.GET_USER_SEQUENCE, { id });
+      const data = await reqHasura<UserSequence>(gql.GET_USER_SEQUENCE, { id }, user);
       const { userSequence } = data;
       return userSequence;
     } catch (e) {
@@ -1838,9 +1969,9 @@ const effects = {
     }
   },
 
-  async getUserSequenceFromSeqJson(seqJson: SeqJson): Promise<string> {
+  async getUserSequenceFromSeqJson(seqJson: SeqJson, user: User | null): Promise<string> {
     try {
-      const data = await reqHasura<string>(gql.GET_USER_SEQUENCE_FROM_SEQ_JSON, { seqJson });
+      const data = await reqHasura<string>(gql.GET_USER_SEQUENCE_FROM_SEQ_JSON, { seqJson }, user);
       const { sequence } = data;
       return sequence;
     } catch (e) {
@@ -1851,12 +1982,14 @@ const effects = {
   async getUserSequenceSeqJson(
     commandDictionaryId: number | null,
     sequenceDefinition: string | null,
+    user: User | null,
     signal: AbortSignal | undefined = undefined,
   ): Promise<string> {
     try {
       const data = await reqHasura<GetSeqJsonResponse>(
         gql.GET_USER_SEQUENCE_SEQ_JSON,
         { commandDictionaryId, sequenceDefinition },
+        user,
         signal,
       );
       const { getUserSequenceSeqJson } = data;
@@ -1876,6 +2009,7 @@ const effects = {
 
   async getView(
     query: URLSearchParams | null,
+    user: User | null,
     activityTypes: ActivityType[] = [],
     resourceTypes: ResourceType[] = [],
   ): Promise<View | null> {
@@ -1885,7 +2019,7 @@ const effects = {
         const viewIdAsNumber = parseFloatOrNull(viewId);
 
         if (viewIdAsNumber !== null) {
-          const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber });
+          const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber }, user);
           const { view } = data;
 
           if (view !== null) {
@@ -1906,9 +2040,10 @@ const effects = {
     simulation_template_id: number | null = null,
     simulation_start_time: string | null = null,
     simulation_end_time: string | null = null,
+    user: User | null,
   ): Promise<boolean> {
     try {
-      if (!queryPermissions.INITIAL_SIMULATION_UPDATE()) {
+      if (!queryPermissions.INITIAL_SIMULATION_UPDATE(user)) {
         throwPermissionError('update a simulation');
       }
 
@@ -1918,7 +2053,7 @@ const effects = {
         simulation_start_time,
         simulation_template_id,
       };
-      await reqHasura(gql.INITIAL_SIMULATION_UPDATE, { plan_id: plan_id, simulation: simulationInput });
+      await reqHasura(gql.INITIAL_SIMULATION_UPDATE, { plan_id: plan_id, simulation: simulationInput }, user);
       return true;
     } catch (e) {
       catchError(e as Error);
@@ -1930,14 +2065,15 @@ const effects = {
     simulation_dataset_id: number,
     simulated_activity_id: number,
     seq_id: string,
+    user: User | null,
   ): Promise<string | null> {
     try {
-      if (!queryPermissions.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY()) {
+      if (!queryPermissions.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY(user)) {
         throwPermissionError('add an expansion sequence to an activity');
       }
 
       const input: ExpansionSequenceToActivityInsertInput = { seq_id, simulated_activity_id, simulation_dataset_id };
-      const data = await reqHasura<{ seq_id: string }>(gql.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY, { input });
+      const data = await reqHasura<{ seq_id: string }>(gql.INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY, { input }, user);
       const { sequence } = data;
 
       if (sequence) {
@@ -2011,9 +2147,9 @@ const effects = {
     }
   },
 
-  async logout(token: JsonWebToken): Promise<ReqLogoutResponse> {
+  async logout(user: User | null): Promise<ReqLogoutResponse> {
     try {
-      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, token, false);
+      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, user, false);
       return data;
     } catch (e) {
       catchError(e as Error);
@@ -2021,13 +2157,13 @@ const effects = {
     }
   },
 
-  async planMergeBegin(merge_request_id: number): Promise<boolean> {
+  async planMergeBegin(merge_request_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_BEGIN()) {
+      if (!queryPermissions.PLAN_MERGE_BEGIN(user)) {
         throwPermissionError('begin a merge');
       }
 
-      await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id });
+      await reqHasura(gql.PLAN_MERGE_BEGIN, { merge_request_id }, user);
       return true;
     } catch (error) {
       showFailureToast('Begin Merge Failed');
@@ -2036,13 +2172,13 @@ const effects = {
     }
   },
 
-  async planMergeCancel(merge_request_id: number): Promise<boolean> {
+  async planMergeCancel(merge_request_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_CANCEL()) {
+      if (!queryPermissions.PLAN_MERGE_CANCEL(user)) {
         throwPermissionError('cancel this merge request');
       }
 
-      await reqHasura(gql.PLAN_MERGE_CANCEL, { merge_request_id });
+      await reqHasura(gql.PLAN_MERGE_CANCEL, { merge_request_id }, user);
       showSuccessToast('Canceled Merge Request');
       return true;
     } catch (error) {
@@ -2052,13 +2188,13 @@ const effects = {
     }
   },
 
-  async planMergeCommit(merge_request_id: number): Promise<boolean> {
+  async planMergeCommit(merge_request_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_COMMIT()) {
+      if (!queryPermissions.PLAN_MERGE_COMMIT(user)) {
         throwPermissionError('approve this merge request');
       }
 
-      await reqHasura(gql.PLAN_MERGE_COMMIT, { merge_request_id });
+      await reqHasura(gql.PLAN_MERGE_COMMIT, { merge_request_id }, user);
       showSuccessToast('Approved Merge Request Changes');
       return true;
     } catch (error) {
@@ -2068,13 +2204,13 @@ const effects = {
     }
   },
 
-  async planMergeDeny(merge_request_id: number): Promise<boolean> {
+  async planMergeDeny(merge_request_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_DENY()) {
+      if (!queryPermissions.PLAN_MERGE_DENY(user)) {
         throwPermissionError('deny this merge request');
       }
 
-      await reqHasura(gql.PLAN_MERGE_DENY, { merge_request_id });
+      await reqHasura(gql.PLAN_MERGE_DENY, { merge_request_id }, user);
       showSuccessToast('Denied Merge Request Changes');
       return true;
     } catch (error) {
@@ -2084,13 +2220,13 @@ const effects = {
     }
   },
 
-  async planMergeRequestWithdraw(merge_request_id: number): Promise<boolean> {
+  async planMergeRequestWithdraw(merge_request_id: number, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.PLAN_MERGE_REQUEST_WITHDRAW()) {
+      if (!queryPermissions.PLAN_MERGE_REQUEST_WITHDRAW(user)) {
         throwPermissionError('withdraw this merge request');
       }
 
-      await reqHasura(gql.PLAN_MERGE_REQUEST_WITHDRAW, { merge_request_id });
+      await reqHasura(gql.PLAN_MERGE_REQUEST_WITHDRAW, { merge_request_id }, user);
       showSuccessToast('Withdrew Merge Request');
       return true;
     } catch (error) {
@@ -2100,13 +2236,17 @@ const effects = {
     }
   },
 
-  async planMergeResolveAllConflicts(merge_request_id: number, resolution: PlanMergeResolution): Promise<void> {
+  async planMergeResolveAllConflicts(
+    merge_request_id: number,
+    resolution: PlanMergeResolution,
+    user: User | null,
+  ): Promise<void> {
     try {
-      if (!queryPermissions.PLAN_MERGE_RESOLVE_ALL_CONFLICTS()) {
+      if (!queryPermissions.PLAN_MERGE_RESOLVE_ALL_CONFLICTS(user)) {
         throwPermissionError('resolve merge request conflicts');
       }
 
-      await reqHasura(gql.PLAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution });
+      await reqHasura(gql.PLAN_MERGE_RESOLVE_ALL_CONFLICTS, { merge_request_id, resolution }, user);
     } catch (e) {
       showFailureToast('Resolve All Merge Request Conflicts Failed');
       catchError('Resolve All Merge Request Conflicts Failed', e as Error);
@@ -2117,13 +2257,14 @@ const effects = {
     merge_request_id: number,
     activity_id: ActivityDirectiveId,
     resolution: PlanMergeResolution,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.PLAN_MERGE_RESOLVE_CONFLICT()) {
+      if (!queryPermissions.PLAN_MERGE_RESOLVE_CONFLICT(user)) {
         throwPermissionError('resolve merge request conflicts');
       }
 
-      await reqHasura(gql.PLAN_MERGE_RESOLVE_CONFLICT, { activity_id, merge_request_id, resolution });
+      await reqHasura(gql.PLAN_MERGE_RESOLVE_CONFLICT, { activity_id, merge_request_id, resolution }, user);
     } catch (e) {
       showFailureToast('Resolve Merge Request Conflict Failed');
       catchError('Resolve Merge Request Conflict Failed', e as Error);
@@ -2134,13 +2275,14 @@ const effects = {
     plan_id: number,
     activity_directive_id: ActivityDirectiveId,
     preset_id: ActivityPresetId,
+    user: User | null,
   ): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_PRESET_TO_DIRECTIVE()) {
+      if (!queryPermissions.DELETE_PRESET_TO_DIRECTIVE(user)) {
         throwPermissionError('remove the preset from this activity directive');
       }
 
-      await reqHasura(gql.DELETE_PRESET_TO_DIRECTIVE, { activity_directive_id, plan_id, preset_id });
+      await reqHasura(gql.DELETE_PRESET_TO_DIRECTIVE, { activity_directive_id, plan_id, preset_id }, user);
       showSuccessToast('Removed Activity Preset Successfully');
       return true;
     } catch (e) {
@@ -2150,18 +2292,18 @@ const effects = {
     }
   },
 
-  async schedule(analysis_only: boolean = false): Promise<void> {
+  async schedule(analysis_only: boolean = false, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_SPEC()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPEC(user)) {
         throwPermissionError(`run ${analysis_only ? 'scheduling analysis' : 'scheduling'}`);
       }
 
       const currentPlan = get(plan);
       const specificationId = get(selectedSpecId);
       if (currentPlan !== null && specificationId !== null) {
-        const plan_revision = await effects.getPlanRevision(currentPlan.id);
+        const plan_revision = await effects.getPlanRevision(currentPlan.id, user);
         if (plan_revision !== null) {
-          await effects.updateSchedulingSpec(specificationId, { analysis_only, plan_revision });
+          await effects.updateSchedulingSpec(specificationId, { analysis_only, plan_revision }, user);
         } else {
           throw Error(`Plan revision for plan ${currentPlan.id} was not found.`);
         }
@@ -2169,7 +2311,7 @@ const effects = {
         let incomplete = true;
         schedulingStatus.set(Status.Incomplete);
         do {
-          const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId });
+          const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId }, user);
           const { schedule } = data;
           const { reason, status } = schedule;
 
@@ -2199,9 +2341,9 @@ const effects = {
     }
   },
 
-  async session(token: JsonWebToken): Promise<ReqSessionResponse> {
+  async session(user: BaseUser | null): Promise<ReqSessionResponse> {
     try {
-      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, token, false);
+      const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, user, false);
       return data;
     } catch (e) {
       catchError(e as Error);
@@ -2209,15 +2351,15 @@ const effects = {
     }
   },
 
-  async simulate(): Promise<void> {
+  async simulate(user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.SIMULATE()) {
+      if (!queryPermissions.SIMULATE(user)) {
         throwPermissionError('simulate this plan');
       }
 
       const currentPlan = get(plan);
       if (currentPlan !== null) {
-        const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId: currentPlan.id });
+        const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId: currentPlan.id }, user);
         const { simulate } = data;
         const { simulationDatasetId: newSimulationDatasetId } = simulate;
         simulationDatasetId.set(newSimulationDatasetId);
@@ -2239,9 +2381,10 @@ const effects = {
     plan_id: number,
     id: ActivityDirectiveId,
     partialActivityDirective: Partial<ActivityDirective>,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVE()) {
+      if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVE(user)) {
         throwPermissionError('update this activity directive');
       }
 
@@ -2275,11 +2418,15 @@ const effects = {
         activityDirectiveSetInput.metadata = partialActivityDirective.metadata;
       }
 
-      const data = await reqHasura<ActivityDirective>(gql.UPDATE_ACTIVITY_DIRECTIVE, {
-        activityDirectiveSetInput,
-        id,
-        plan_id,
-      });
+      const data = await reqHasura<ActivityDirective>(
+        gql.UPDATE_ACTIVITY_DIRECTIVE,
+        {
+          activityDirectiveSetInput,
+          id,
+          plan_id,
+        },
+        user,
+      );
       const { update_activity_directive_by_pk: updatedDirective } = data;
       activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => ({
         ...currentActivityDirectivesMap,
@@ -2292,9 +2439,13 @@ const effects = {
     }
   },
 
-  async updateActivityPreset(id: ActivityPresetId, partialActivityPreset: ActivityPresetSetInput): Promise<void> {
+  async updateActivityPreset(
+    id: ActivityPresetId,
+    partialActivityPreset: ActivityPresetSetInput,
+    user: User | null,
+  ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_ACTIVITY_PRESET()) {
+      if (!queryPermissions.UPDATE_ACTIVITY_PRESET(user)) {
         throwPermissionError('update this activity preset');
       }
 
@@ -2315,10 +2466,7 @@ const effects = {
 
       const {
         update_activity_presets_by_pk: { name: presetName },
-      } = await reqHasura<ActivityPreset>(gql.UPDATE_ACTIVITY_PRESET, {
-        activityPresetSetInput,
-        id,
-      });
+      } = await reqHasura<ActivityPreset>(gql.UPDATE_ACTIVITY_PRESET, { activityPresetSetInput, id }, user);
 
       showSuccessToast(`Activity Preset ${presetName} Updated Successfully`);
     } catch (e) {
@@ -2334,9 +2482,10 @@ const effects = {
     model_id: number,
     name: string,
     plan_id: number,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_CONSTRAINT()) {
+      if (!queryPermissions.UPDATE_CONSTRAINT(user)) {
         throwPermissionError('update this constraint');
       }
 
@@ -2347,7 +2496,7 @@ const effects = {
         name,
         plan_id,
       };
-      await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id });
+      await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id }, user);
       showSuccessToast('Constraint Updated Successfully');
     } catch (e) {
       catchError('Constraint Update Failed', e as Error);
@@ -2355,15 +2504,15 @@ const effects = {
     }
   },
 
-  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>): Promise<string | null> {
+  async updateExpansionRule(id: number, rule: Partial<ExpansionRule>, user: User | null): Promise<string | null> {
     try {
       savingExpansionRule.set(true);
 
-      if (!queryPermissions.UPDATE_EXPANSION_RULE()) {
+      if (!queryPermissions.UPDATE_EXPANSION_RULE(user)) {
         throwPermissionError('update this expansion rule');
       }
 
-      const data = await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule });
+      const data = await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule }, user);
       const { updateExpansionRule } = data;
       const { updated_at } = updateExpansionRule;
       showSuccessToast('Expansion Rule Updated Successfully');
@@ -2380,13 +2529,14 @@ const effects = {
   async updateSchedulingCondition(
     id: number,
     condition: Partial<SchedulingCondition>,
+    user: User | null,
   ): Promise<Pick<SchedulingCondition, 'id' | 'last_modified_by' | 'modified_date'> | null> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_CONDITION()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_CONDITION(user)) {
         throwPermissionError('update this expansion rule');
       }
 
-      const data = await reqHasura(gql.UPDATE_SCHEDULING_CONDITION, { condition, id });
+      const data = await reqHasura(gql.UPDATE_SCHEDULING_CONDITION, { condition, id }, user);
       const { updateSchedulingCondition: updatedCondition } = data;
 
       showSuccessToast('Scheduling Condition Updated Successfully');
@@ -2401,13 +2551,14 @@ const effects = {
   async updateSchedulingGoal(
     id: number,
     goal: Partial<SchedulingGoal>,
+    user: User | null,
   ): Promise<Pick<SchedulingGoal, 'id' | 'last_modified_by' | 'modified_date'> | null> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_GOAL()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_GOAL(user)) {
         throwPermissionError('update this scheduling goal');
       }
 
-      const data = await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id });
+      const data = await reqHasura(gql.UPDATE_SCHEDULING_GOAL, { goal, id }, user);
       const { updateSchedulingGoal: updatedGoal } = data;
 
       showSuccessToast('Scheduling Goal Updated Successfully');
@@ -2419,13 +2570,13 @@ const effects = {
     }
   },
 
-  async updateSchedulingSpec(id: number, spec: Partial<SchedulingSpec>): Promise<void> {
+  async updateSchedulingSpec(id: number, spec: Partial<SchedulingSpec>, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_SPEC()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPEC(user)) {
         throwPermissionError('update this scheduling spec');
       }
 
-      await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec });
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec }, user);
     } catch (e) {
       catchError(e as Error);
     }
@@ -2435,13 +2586,14 @@ const effects = {
     condition_id: number,
     specification_id: number,
     spec_condition: Partial<SchedulingSpecCondition>,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_CONDITION_ID()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_CONDITION_ID(user)) {
         throwPermissionError('update this scheduling spec condition');
       }
 
-      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_CONDITION, { condition_id, spec_condition, specification_id });
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_CONDITION, { condition_id, spec_condition, specification_id }, user);
       showSuccessToast('Scheduling Spec Condition Updated Successfully');
     } catch (e) {
       catchError('Scheduling Spec Condition Update Failed', e as Error);
@@ -2453,17 +2605,22 @@ const effects = {
     condition_id: number,
     specification_id: number,
     new_specification_id: number,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_CONDITION_ID()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_CONDITION_ID(user)) {
         throwPermissionError('update this scheduling spec condition');
       }
 
-      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_CONDITION_ID, {
-        condition_id,
-        new_specification_id,
-        specification_id,
-      });
+      await reqHasura(
+        gql.UPDATE_SCHEDULING_SPEC_CONDITION_ID,
+        {
+          condition_id,
+          new_specification_id,
+          specification_id,
+        },
+        user,
+      );
       showSuccessToast('Scheduling Spec Condition Updated Successfully');
     } catch (e) {
       catchError('Scheduling Spec Condition Update Failed', e as Error);
@@ -2475,13 +2632,14 @@ const effects = {
     goal_id: number,
     specification_id: number,
     spec_goal: Partial<SchedulingSpecGoal>,
+    user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL()) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL(user)) {
         throwPermissionError('update this scheduling spec goal');
       }
 
-      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_GOAL, { goal_id, spec_goal, specification_id });
+      await reqHasura(gql.UPDATE_SCHEDULING_SPEC_GOAL, { goal_id, spec_goal, specification_id }, user);
       showSuccessToast('Scheduling Spec Goal Updated Successfully');
     } catch (e) {
       catchError('Scheduling Spec Goal Update Failed', e as Error);
@@ -2489,22 +2647,26 @@ const effects = {
     }
   },
 
-  async updateSimulation(simulationSetInput: Simulation, newFiles: File[] = []): Promise<void> {
+  async updateSimulation(simulationSetInput: Simulation, user: User | null, newFiles: File[] = []): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SIMULATION()) {
+      if (!queryPermissions.UPDATE_SIMULATION(user)) {
         throwPermissionError('update this simulation');
       }
 
-      await reqHasura<Pick<Simulation, 'id'>>(gql.UPDATE_SIMULATION, {
-        id: simulationSetInput.id,
-        simulation: {
-          arguments: simulationSetInput.arguments,
-          simulation_end_time: simulationSetInput?.simulation_end_time ?? null,
-          simulation_start_time: simulationSetInput?.simulation_start_time ?? null,
-          simulation_template_id: simulationSetInput?.template?.id ?? null,
+      await reqHasura<Pick<Simulation, 'id'>>(
+        gql.UPDATE_SIMULATION,
+        {
+          id: simulationSetInput.id,
+          simulation: {
+            arguments: simulationSetInput.arguments,
+            simulation_end_time: simulationSetInput?.simulation_end_time ?? null,
+            simulation_start_time: simulationSetInput?.simulation_start_time ?? null,
+            simulation_template_id: simulationSetInput?.template?.id ?? null,
+          },
         },
-      });
-      await effects.uploadFiles(newFiles);
+        user,
+      );
+      await effects.uploadFiles(newFiles, user);
       showSuccessToast('Simulation Updated Successfully');
     } catch (e) {
       catchError('Simulation Update Failed', e as Error);
@@ -2512,9 +2674,13 @@ const effects = {
     }
   },
 
-  async updateSimulationTemplate(id: number, partialSimulationTemplate: SimulationTemplateSetInput): Promise<void> {
+  async updateSimulationTemplate(
+    id: number,
+    partialSimulationTemplate: SimulationTemplateSetInput,
+    user: User | null,
+  ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SIMULATION_TEMPLATE()) {
+      if (!queryPermissions.UPDATE_SIMULATION_TEMPLATE(user)) {
         throwPermissionError('update this simulation template');
       }
 
@@ -2532,10 +2698,14 @@ const effects = {
 
       const {
         update_simulation_template_by_pk: { description: templateDescription },
-      } = await reqHasura<SimulationTemplate>(gql.UPDATE_SIMULATION_TEMPLATE, {
-        id,
-        simulationTemplateSetInput,
-      });
+      } = await reqHasura<SimulationTemplate>(
+        gql.UPDATE_SIMULATION_TEMPLATE,
+        {
+          id,
+          simulationTemplateSetInput,
+        },
+        user,
+      );
 
       showSuccessToast(`Simulation Template ${templateDescription} Updated Successfully`);
     } catch (e) {
@@ -2544,13 +2714,17 @@ const effects = {
     }
   },
 
-  async updateUserSequence(id: number, sequence: Partial<UserSequence>): Promise<string | null> {
+  async updateUserSequence(id: number, sequence: Partial<UserSequence>, user: User | null): Promise<string | null> {
     try {
-      if (!queryPermissions.UPDATE_USER_SEQUENCE()) {
+      if (!queryPermissions.UPDATE_USER_SEQUENCE(user)) {
         throwPermissionError('update this user sequence');
       }
 
-      const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(gql.UPDATE_USER_SEQUENCE, { id, sequence });
+      const data = await reqHasura<Pick<UserSequence, 'id' | 'updated_at'>>(
+        gql.UPDATE_USER_SEQUENCE,
+        { id, sequence },
+        user,
+      );
       const { updateUserSequence } = data;
       const { updated_at } = updateUserSequence;
       showSuccessToast('User Sequence Updated Successfully');
@@ -2562,13 +2736,13 @@ const effects = {
     }
   },
 
-  async updateView(id: number, view: Partial<View>): Promise<boolean> {
+  async updateView(id: number, view: Partial<View>, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.UPDATE_VIEW()) {
+      if (!queryPermissions.UPDATE_VIEW(user)) {
         throwPermissionError('update this view');
       }
 
-      await reqHasura<Pick<View, 'id'>>(gql.UPDATE_VIEW, { id, view });
+      await reqHasura<Pick<View, 'id'>>(gql.UPDATE_VIEW, { id, view }, user);
       showSuccessToast('View Updated Successfully');
       return true;
     } catch (e) {
@@ -2578,11 +2752,11 @@ const effects = {
     }
   },
 
-  async uploadFile(file: File): Promise<number | null> {
+  async uploadFile(file: File, user: User | null): Promise<number | null> {
     try {
       const body = new FormData();
       body.append('file', file, file.name);
-      const data = await reqGateway<{ id: number }>('/file', 'POST', body, null, true);
+      const data = await reqGateway<{ id: number }>('/file', 'POST', body, user, true);
       const { id } = data;
       return id;
     } catch (e) {
@@ -2591,10 +2765,10 @@ const effects = {
     }
   },
 
-  async uploadFiles(files: File[]): Promise<boolean> {
+  async uploadFiles(files: File[], user: User | null): Promise<boolean> {
     try {
       for (const file of files) {
-        await effects.uploadFile(file);
+        await effects.uploadFile(file, user);
       }
       return true;
     } catch (e) {
@@ -2603,9 +2777,9 @@ const effects = {
     }
   },
 
-  async uploadView(owner: string): Promise<boolean> {
+  async uploadView(owner: string, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.CREATE_VIEW()) {
+      if (!queryPermissions.CREATE_VIEW(user)) {
         throwPermissionError('upload a new view');
       }
 
@@ -2614,7 +2788,7 @@ const effects = {
         const { name, definition } = value;
 
         const viewInsertInput: ViewInsertInput = { definition, name, owner };
-        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput });
+        const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput }, user);
         const { newView } = data;
 
         view.update(() => newView);
@@ -2633,13 +2807,18 @@ const effects = {
     activityTypeName: string,
     modelId: number,
     argumentsMap: ArgumentsMap,
+    user: User | null,
   ): Promise<ParameterValidationResponse> {
     try {
-      const data = await reqHasura<ParameterValidationResponse>(gql.VALIDATE_ACTIVITY_ARGUMENTS, {
-        activityTypeName,
-        arguments: argumentsMap,
-        modelId,
-      });
+      const data = await reqHasura<ParameterValidationResponse>(
+        gql.VALIDATE_ACTIVITY_ARGUMENTS,
+        {
+          activityTypeName,
+          arguments: argumentsMap,
+          modelId,
+        },
+        user,
+      );
 
       const { validateActivityArguments } = data;
       return validateActivityArguments;

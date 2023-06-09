@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { user } from '../../stores/app';
   import { initializeView, view, views } from '../../stores/views';
+  import type { User } from '../../types/app';
   import type { View } from '../../types/view';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
@@ -17,15 +17,16 @@
 
   export let height: number | string = 150;
   export let width: number | string = 380;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
   let userViews: View[] = [];
 
-  $: userViews = $views.filter((view: View) => view.owner === $user.id);
+  $: userViews = $views.filter((view: View) => view.owner === user.id);
 
   async function deleteView({ detail: viewId }: CustomEvent<number>) {
-    const success = await effects.deleteView(viewId);
+    const success = await effects.deleteView(viewId, user);
 
     if (success) {
       if ($view.id === viewId) {
@@ -35,7 +36,7 @@
   }
 
   async function deleteViews({ detail: viewIds }: CustomEvent<number[]>) {
-    const success = await effects.deleteViews(viewIds);
+    const success = await effects.deleteViews(viewIds, user);
 
     if (success) {
       if (viewIds.includes($view.id)) {
@@ -45,14 +46,14 @@
   }
 
   async function goToNextView() {
-    const nextView = await effects.getView(null);
+    const nextView = await effects.getView(null, user);
     initializeView({ ...nextView });
     setQueryParam('viewId', `${nextView.id}`);
   }
 
   async function openView({ detail: viewId }: CustomEvent<number>) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
-    const newView = await effects.getView(query);
+    const newView = await effects.getView(query, user);
 
     if (view) {
       initializeView({ ...newView });

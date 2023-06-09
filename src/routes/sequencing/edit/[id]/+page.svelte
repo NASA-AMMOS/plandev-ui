@@ -15,4 +15,5 @@
   initialSequenceId={data.initialSequence.id}
   initialSequenceUpdatedAt={data.initialSequence.updated_at}
   mode="edit"
+  user={data.user}
 />

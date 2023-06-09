@@ -44,6 +44,7 @@ describe('Scheduling Goal Form component', () => {
       initialGoalModelId: models[0].id,
       models,
       plans,
+      user: { allowedRoles: ['admin'], defaultRole: 'admin', id: 'foo', permissibleQueries: {}, token: '' },
     });
 
     const planDropdown: HTMLSelectElement = container.querySelector('.st-select[name="plan"]');

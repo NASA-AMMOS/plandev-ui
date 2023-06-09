@@ -7,4 +7,4 @@
   export let data: PageData;
 </script>
 
-<ExpansionRuns expansionRuns={data.expansionRuns} />
+<ExpansionRuns expansionRuns={data.expansionRuns} user={data.user} />

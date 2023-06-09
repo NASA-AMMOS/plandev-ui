@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { schedulingColumns, schedulingConditions, schedulingGoals } from '../../stores/scheduling';
+  import type { User } from '../../types/app';
   import type { DataGridRowSelection } from '../../types/data-grid';
   import type { SchedulingCondition, SchedulingGoal } from '../../types/scheduling';
   import effects from '../../utilities/effects';
@@ -10,6 +11,8 @@
   import SchedulingConditions from './conditions/SchedulingConditions.svelte';
   import SchedulingGoals from './goals/SchedulingGoals.svelte';
   import SchedulingEditor from './SchedulingEditor.svelte';
+
+  export let user: User | null;
 
   let selectedCondition: SchedulingCondition | null = null;
   let selectedGoal: SchedulingGoal | null = null;
@@ -31,7 +34,7 @@
   }
 
   async function deleteCondition({ id }: Pick<SchedulingCondition, 'id'>) {
-    const success = await effects.deleteSchedulingCondition(id);
+    const success = await effects.deleteSchedulingCondition(id, user);
 
     if (success) {
       schedulingConditions.filterValueById(id);
@@ -43,7 +46,7 @@
   }
 
   async function deleteGoal({ id }: Pick<SchedulingGoal, 'id'>) {
-    const success = await effects.deleteSchedulingGoal(id);
+    const success = await effects.deleteSchedulingGoal(id, user);
 
     if (success) {
       schedulingGoals.filterValueById(id);
@@ -104,6 +107,7 @@
     <SchedulingGoals
       {selectedGoal}
       schedulingGoals={$schedulingGoals}
+      {user}
       on:deleteGoal={deleteGoalContext}
       on:rowSelected={toggleGoal}
     />
@@ -111,6 +115,7 @@
     <SchedulingConditions
       {selectedCondition}
       schedulingConditions={$schedulingConditions}
+      {user}
       on:deleteCondition={deleteConditionContext}
       on:rowSelected={toggleCondition}
     />
@@ -123,5 +128,6 @@
     scheduleItemModelId={selectedItem?.model_id}
     readOnly={true}
     title={editorTitle}
+    {user}
   />
 </CssGrid>

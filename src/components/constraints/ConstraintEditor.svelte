@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -12,11 +13,14 @@
   export let constraintPlanId: number | null = null;
   export let readOnly: boolean = false;
   export let title: string = 'Constraint - Definition Editor';
+  export let user: User | null;
 
   let constraintsTsFiles: TypeScriptFile[];
   let monaco: Monaco;
 
-  $: effects.getTsFilesConstraints(constraintModelId, constraintPlanId).then(tsFiles => (constraintsTsFiles = tsFiles));
+  $: effects
+    .getTsFilesConstraints(constraintModelId, constraintPlanId, user)
+    .then(tsFiles => (constraintsTsFiles = tsFiles));
 
   $: if (monaco !== undefined && constraintsTsFiles !== undefined) {
     const { languages } = monaco;

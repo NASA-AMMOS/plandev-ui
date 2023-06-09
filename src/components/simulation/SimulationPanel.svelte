@@ -7,6 +7,7 @@
   import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
   import { enableSimulation, simulation, simulationDatasetId, simulationStatus } from '../../stores/simulation';
   import { gqlSubscribable } from '../../stores/subscribable';
+  import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
   import type {
@@ -35,6 +36,7 @@
   import SimulationTemplateInput from './SimulationTemplateInput.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   let endTimeDoy: string;
   let endTimeDoyField: FieldStore<string>;
@@ -62,7 +64,7 @@
   $: modelParametersMap = $plan?.model?.parameters?.parameters ?? {};
   $: if ($simulation) {
     effects
-      .getEffectiveModelArguments($plan.model.id, $simulation.arguments)
+      .getEffectiveModelArguments($plan.model.id, $simulation.arguments, user)
       .then(({ arguments: defaultArguments }) => {
         // Displayed simulation arguments are either user input arguments,
         // simulation template arguments, or default arguments.
@@ -87,6 +89,7 @@
       gql.SUB_SIMULATION_DATASETS,
       { planId: $plan.id },
       null,
+      user,
       v => v[0]?.simulation_datasets,
     );
   }
@@ -100,7 +103,7 @@
       arguments: newArgumentsMap,
     };
 
-    effects.updateSimulation(newSimulation, newFiles);
+    effects.updateSimulation(newSimulation, user, newFiles);
   }
 
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
@@ -116,17 +119,20 @@
       arguments: newArguments,
     };
 
-    effects.updateSimulation(newSimulation, newFiles);
+    effects.updateSimulation(newSimulation, user, newFiles);
   }
 
   async function applyTemplateToSimulation(simulationTemplate: SimulationTemplate | null, numOfUserChanges: number) {
     if (simulationTemplate === null) {
-      effects.updateSimulation({
-        ...$simulation,
-        template: null,
-      });
+      effects.updateSimulation(
+        {
+          ...$simulation,
+          template: null,
+        },
+        user,
+      );
     } else {
-      effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges);
+      effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges, user);
     }
   }
 
@@ -137,7 +143,7 @@
 
   async function onDeleteSimulationTemplate(event: CustomEvent<number>) {
     const { detail: id } = event;
-    await effects.deleteSimulationTemplate(id, $plan.model.name);
+    await effects.deleteSimulationTemplate(id, $plan.model.name, user);
   }
 
   async function onSaveNewSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
@@ -148,6 +154,7 @@
       $simulation.arguments,
       templateName,
       $plan.model.id,
+      user,
     );
 
     if (newSimulationTemplate !== null) {
@@ -159,20 +166,24 @@
     const {
       detail: { description: templateName },
     } = event;
-    effects.updateSimulationTemplate($simulation.template.id, {
-      arguments: $simulation.arguments,
-      description: templateName,
-    });
+    effects.updateSimulationTemplate(
+      $simulation.template.id,
+      {
+        arguments: $simulation.arguments,
+        description: templateName,
+      },
+      user,
+    );
   }
 
   function updateStartTime(doyString: string) {
     const newSimulation: Simulation = { ...$simulation, simulation_start_time: doyString };
-    effects.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation, user);
   }
 
   function updateEndTime(doyString: string) {
     const newSimulation: Simulation = { ...$simulation, simulation_end_time: doyString };
-    effects.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation, user);
   }
 
   function onUpdateStartTime() {
@@ -209,7 +220,7 @@
           : ''}
         title="Simulate"
         showLabel
-        on:click={() => effects.simulate()}
+        on:click={() => effects.simulate(user)}
       />
     </PanelHeaderActions>
   </svelte:fragment>

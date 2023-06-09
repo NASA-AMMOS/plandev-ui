@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../../types/app';
   import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
   import type { SchedulingGoal } from '../../../types/scheduling';
   import Input from '../../form/Input.svelte';
@@ -15,6 +16,7 @@
 
   export let schedulingGoals: SchedulingGoal[] = [];
   export let selectedGoal: SchedulingGoal | null | undefined = null;
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteGoal: (goal: SchedulingGoal) => void;
@@ -134,6 +136,7 @@
         itemDisplayText="Goal"
         items={filteredGoals}
         selectedItemId={selectedGoal?.id ?? null}
+        {user}
         on:deleteItem={deleteGoalContext}
         on:editItem={editGoalContext}
         on:rowSelected

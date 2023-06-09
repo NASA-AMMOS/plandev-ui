@@ -14,6 +14,7 @@
   import { spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
   import { getActivityDirectiveStartTimeMs, getDoyTime } from '../../utilities/time';
@@ -25,6 +26,7 @@
   import ActivityTableMenu from './ActivityTableMenu.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   type ActivityDirectiveColumns = keyof ActivityDirective | 'derived_start_time';
   interface ActivityDirectiveColDef extends ColDef<ActivityDirective> {
@@ -291,6 +293,7 @@
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       planId={$planId}
+      {user}
       on:columnStateChange={onColumnStateChange}
       on:selectionChanged={onSelectionChanged}
       on:rowDoubleClicked={onRowDoubleClicked}

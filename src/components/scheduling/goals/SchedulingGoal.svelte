@@ -4,6 +4,7 @@
   import { base } from '$app/paths';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
+  import type { User } from '../../../types/app';
   import type { SchedulingGoal } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { tooltip } from '../../../utilities/tooltip';
@@ -19,6 +20,7 @@
   export let priority: number;
   export let specificationId: number;
   export let simulateAfter: boolean = true;
+  export let user: User | null;
 
   $: upButtonHidden = priority <= 0;
   $: simulateGoal = simulateAfter; // Copied to local var to reflect changed values immediately in the UI
@@ -34,7 +36,7 @@
   }
 
   function updatePriority(priority: number) {
-    effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority });
+    effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority }, user);
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -93,7 +95,7 @@
             bind:checked={enabled}
             style:cursor="pointer"
             type="checkbox"
-            on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled })}
+            on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled }, user)}
           />
         </Input>
       </div>
@@ -107,14 +109,14 @@
         Edit Goal
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id)}>Delete Goal</ContextMenuItem>
+      <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id, user)}>Delete Goal</ContextMenuItem>
       <ContextMenuItem>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div
           class="scheduling-goal-simulate-toggle"
           on:click|stopPropagation={() => {
             simulateGoal = !simulateGoal;
-            effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal });
+            effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal }, user);
           }}
         >
           <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After

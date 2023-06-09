@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { constraintsAll, constraintsColumns } from '../../stores/constraints';
+  import type { User } from '../../types/app';
   import type { Constraint } from '../../types/constraint';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { PlanSlim } from '../../types/plan';
@@ -17,6 +18,8 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
+
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteConstraint: (constraint: Constraint) => void;
@@ -114,7 +117,7 @@
   $: constraintModelId = getConstraintModelId(selectedConstraint);
 
   async function deleteConstraint({ id }: Pick<Constraint, 'id'>) {
-    const success = await effects.deleteConstraint(id);
+    const success = await effects.deleteConstraint(id, user);
 
     if (success) {
       filteredConstraints = filteredConstraints.filter(constraint => constraint.id !== id);
@@ -193,6 +196,7 @@
           hasEdit={true}
           itemDisplayText="Constraint"
           items={filteredConstraints}
+          {user}
           on:deleteItem={deleteConstraintContext}
           on:editItem={editConstraintContext}
           on:rowSelected={toggleConstraint}
@@ -210,5 +214,6 @@
     {constraintModelId}
     readOnly={true}
     title="Constraint - Definition Editor (Read-only)"
+    {user}
   />
 </CssGrid>

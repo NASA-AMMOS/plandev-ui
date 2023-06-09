@@ -13,6 +13,7 @@ import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
+import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
@@ -275,12 +276,15 @@ export async function showEditViewModal(): Promise<ModalElementValue<{ id: numbe
 /**
  * Shows a SequenceModal with the supplied arguments.
  */
-export async function showExpansionSequenceModal(expansionSequence: ExpansionSequence): Promise<ModalElementValue> {
+export async function showExpansionSequenceModal(
+  expansionSequence: ExpansionSequence,
+  user: User | null,
+): Promise<ModalElementValue> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
-      const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence }, target });
+      const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence, user }, target });
       target.resolve = resolve;
 
       sequenceModal.$on('close', () => {
@@ -345,13 +349,14 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
  * Shows a PlanMergeRequestsModal with the supplied arguments.
  */
 export async function showPlanMergeRequestsModal(
+  user: User | null,
   selectedFilter?: PlanMergeRequestTypeFilter,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
-      const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter }, target });
+      const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
       target.resolve = resolve;
 
       planMergeRequestsModal.$on('close', () => {
@@ -366,12 +371,14 @@ export async function showPlanMergeRequestsModal(
 /**
  * Shows a SavedViewsModal component.
  */
-export async function showSavedViewsModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
+export async function showSavedViewsModal(
+  user: User | null,
+): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
   return new Promise(resolve => {
     const target: ModalElement = document.querySelector('#svelte-modal');
 
     if (target) {
-      const savedViewsModal = new SavedViewsModal({ props: { height: 400, width: '50%' }, target });
+      const savedViewsModal = new SavedViewsModal({ props: { height: 400, user, width: '50%' }, target });
       target.resolve = resolve;
 
       savedViewsModal.$on('close', () => {

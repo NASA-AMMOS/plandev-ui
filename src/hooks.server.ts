@@ -8,9 +8,14 @@ import { ADMIN_ROLE } from './utilities/permissions';
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (env.PUBLIC_LOGIN_PAGE === 'disabled') {
-    const permissibleQueries = await effects.getUserQueries('');
-    event.locals.user = { allowedRoles: [ADMIN_ROLE], defaultRole: ADMIN_ROLE, id: 'unknown', token: '' };
-    event.locals.permissibleQueries = permissibleQueries ?? {};
+    const permissibleQueries = await effects.getUserQueries(null);
+    event.locals.user = {
+      allowedRoles: [ADMIN_ROLE],
+      defaultRole: ADMIN_ROLE,
+      id: 'unknown',
+      permissibleQueries,
+      token: '',
+    };
   } else {
     const cookieHeader = event.request.headers.get('cookie') ?? '';
     const cookies = parse(cookieHeader);
@@ -19,26 +24,24 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (userCookie) {
       const userBuffer = Buffer.from(userCookie, 'base64');
       const userStr = userBuffer.toString('utf-8');
-      const parsedUser: BaseUser = JSON.parse(userStr);
-      const { success } = await effects.session(parsedUser.token);
-      const decodedToken: ParsedUserToken = jwtDecode(parsedUser.token);
+      const baseUser: BaseUser = JSON.parse(userStr);
+      const { success } = await effects.session(baseUser);
+      const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
 
       if (success) {
+        const permissibleQueries = await effects.getUserQueries(baseUser);
         const user: User = {
-          ...parsedUser,
+          ...baseUser,
           allowedRoles: decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'],
           defaultRole: decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'],
+          permissibleQueries,
         };
-        const permissibleQueries = await effects.getUserQueries(user.token);
         event.locals.user = user;
-        event.locals.permissibleQueries = permissibleQueries ?? {};
       } else {
         event.locals.user = null;
-        event.locals.permissibleQueries = null;
       }
     } else {
       event.locals.user = null;
-      event.locals.permissibleQueries = null;
     }
   }
 

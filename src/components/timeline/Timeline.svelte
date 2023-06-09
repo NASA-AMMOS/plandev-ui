@@ -4,6 +4,7 @@
   import { afterUpdate, createEventDispatcher, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ConstraintViolation } from '../../types/constraint';
   import type {
     Resource,
@@ -62,6 +63,7 @@
   export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
   export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -307,6 +309,7 @@
         {spanUtilityMaps}
         {spansMap}
         {timelineLockStatus}
+        {user}
         {viewTimeRange}
         {xScaleView}
         {xTicksView}
@@ -347,6 +350,7 @@
     {planStartTimeYmd}
     verticalGuides={timeline?.verticalGuides}
     {xScaleView}
+    {user}
   />
 </div>
 

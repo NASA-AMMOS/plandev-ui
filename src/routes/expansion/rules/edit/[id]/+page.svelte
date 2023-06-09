@@ -16,4 +16,5 @@
   initialRuleModelId={data.initialRule.authoring_mission_model_id}
   initialRuleUpdatedAt={data.initialRule.updated_at}
   mode="edit"
+  user={data.user}
 />

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -13,13 +14,16 @@
   export let ruleLogic: string = '';
   export let ruleModelId: number | null = null;
   export let title: string = 'Expansion Rule - Logic Editor';
+  export let user: User | null;
 
   let activityTypeTsFiles: TypeScriptFile[] = [];
   let commandDictionaryTsFiles: TypeScriptFile[] = [];
   let monaco: Monaco;
 
-  $: effects.getTsFilesCommandDictionary(ruleDictionaryId).then(tsFiles => (commandDictionaryTsFiles = tsFiles));
-  $: effects.getTsFilesActivityType(ruleActivityType, ruleModelId).then(tsFiles => (activityTypeTsFiles = tsFiles));
+  $: effects.getTsFilesCommandDictionary(ruleDictionaryId, user).then(tsFiles => (commandDictionaryTsFiles = tsFiles));
+  $: effects
+    .getTsFilesActivityType(ruleActivityType, ruleModelId, user)
+    .then(tsFiles => (activityTypeTsFiles = tsFiles));
 
   $: if (monaco !== undefined && (commandDictionaryTsFiles !== undefined || activityTypeTsFiles !== undefined)) {
     const { languages } = monaco;

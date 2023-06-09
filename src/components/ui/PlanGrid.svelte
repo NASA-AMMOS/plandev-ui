@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../types/app';
   import type { ViewGridComponent } from '../../types/view';
   import ActivityDirectivesTablePanel from '../activity/ActivityDirectivesTablePanel.svelte';
   import ActivityFormPanel from '../activity/ActivityFormPanel.svelte';
@@ -32,6 +33,7 @@
   export let rightHidden: boolean = false;
   export let rightRowSizes: string = '1fr 3px 1fr';
   export let rightSplit: boolean = false;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -71,16 +73,16 @@
     {#if leftSplit}
       <CssGrid class="plan-grid" rows={leftRowSizes} on:changeRowSizes={onChangeLeftRowSizes}>
         <div class="plan-grid-component" data-component-name={leftComponentTop}>
-          <svelte:component this={gridComponentsByName[leftComponentTop]} gridSection="LeftTop" />
+          <svelte:component this={gridComponentsByName[leftComponentTop]} gridSection="LeftTop" {user} />
         </div>
         <CssGridGutter track={1} type="row" />
         <div class="plan-grid-component" data-component-name={leftComponentBottom}>
-          <svelte:component this={gridComponentsByName[leftComponentBottom]} gridSection="LeftBottom" />
+          <svelte:component this={gridComponentsByName[leftComponentBottom]} gridSection="LeftBottom" {user} />
         </div>
       </CssGrid>
     {:else}
       <div class="plan-grid-component" data-component-name={leftComponentTop}>
-        <svelte:component this={gridComponentsByName[leftComponentTop]} gridSection="LeftTop" />
+        <svelte:component this={gridComponentsByName[leftComponentTop]} gridSection="LeftTop" {user} />
       </div>
     {/if}
 
@@ -90,16 +92,16 @@
   {#if middleSplit}
     <CssGrid class="plan-grid" rows={middleRowSizes} on:changeRowSizes={onChangeMiddleRowSizes}>
       <div class="plan-grid-component" data-component-name="TimelinePanel">
-        <TimelinePanel />
+        <TimelinePanel {user} />
       </div>
       <CssGridGutter track={1} type="row" />
       <div class="plan-grid-component" data-component-name={middleComponentBottom}>
-        <svelte:component this={gridComponentsByName[middleComponentBottom]} gridSection="MiddleBottom" />
+        <svelte:component this={gridComponentsByName[middleComponentBottom]} gridSection="MiddleBottom" {user} />
       </div>
     </CssGrid>
   {:else}
     <div class="plan-grid-component" data-component-name="TimelinePanel">
-      <TimelinePanel />
+      <TimelinePanel {user} />
     </div>
   {/if}
 
@@ -109,16 +111,16 @@
     {#if rightSplit}
       <CssGrid class="plan-grid" rows={rightRowSizes} on:changeRowSizes={onChangeRightRowSizes}>
         <div class="plan-grid-component" data-component-name={rightComponentTop}>
-          <svelte:component this={gridComponentsByName[rightComponentTop]} gridSection="RightTop" />
+          <svelte:component this={gridComponentsByName[rightComponentTop]} gridSection="RightTop" {user} />
         </div>
         <CssGridGutter track={1} type="row" />
         <div class="plan-grid-component" data-component-name={rightComponentBottom}>
-          <svelte:component this={gridComponentsByName[rightComponentBottom]} gridSection="RightBottom" />
+          <svelte:component this={gridComponentsByName[rightComponentBottom]} gridSection="RightBottom" {user} />
         </div>
       </CssGrid>
     {:else}
       <div class="plan-grid-component" data-component-name={rightComponentTop}>
-        <svelte:component this={gridComponentsByName[rightComponentTop]} gridSection="RightTop" />
+        <svelte:component this={gridComponentsByName[rightComponentTop]} gridSection="RightTop" {user} />
       </div>
     {/if}
   {/if}

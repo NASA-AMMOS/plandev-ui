@@ -6,9 +6,9 @@ import { hasNoAuthorization } from '../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params, url }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
   const planId = parseFloat(id);
 
   if (!Number.isNaN(planId)) {
-    let initialPlan = await effects.getPlan(planId);
+    let initialPlan = await effects.getPlan(planId, user);
 
     if (initialPlan) {
       if (initialPlan.is_locked) {
@@ -26,14 +26,17 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       // if plan doesn't have a scheduling spec, create one at this point
       if (!initialPlan.scheduling_specifications.length) {
         const { start_time_doy, end_time_doy, revision } = initialPlan;
-        const schedulingSpec = await effects.createSchedulingSpec({
-          analysis_only: false,
-          horizon_end: end_time_doy,
-          horizon_start: start_time_doy,
-          plan_id: planId,
-          plan_revision: revision,
-          simulation_arguments: {},
-        });
+        const schedulingSpec = await effects.createSchedulingSpec(
+          {
+            analysis_only: false,
+            horizon_end: end_time_doy,
+            horizon_start: start_time_doy,
+            plan_id: planId,
+            plan_revision: revision,
+            simulation_arguments: {},
+          },
+          user,
+        );
 
         initialPlan = {
           ...initialPlan,
@@ -41,13 +44,14 @@ export const load: PageLoad = async ({ parent, params, url }) => {
         };
       }
 
-      const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id);
-      const initialView = await effects.getView(url.searchParams, initialActivityTypes, []);
+      const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id, user);
+      const initialView = await effects.getView(url.searchParams, user, initialActivityTypes, []);
 
       return {
         initialActivityTypes,
         initialPlan,
         initialView,
+        user,
       };
     }
   }

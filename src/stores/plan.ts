@@ -36,14 +36,15 @@ export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id
 
 /* Subscriptions. */
 
-export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, []);
+export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
 
-export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
+export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
 
 export const planLocked = gqlSubscribable<boolean>(
   gql.SUB_PLAN_LOCKED,
   { planId },
   false,
+  null,
   ({ is_locked }) => is_locked,
 );
 
@@ -51,6 +52,7 @@ export const planMergeRequestsIncoming = gqlSubscribable<PlanMergeRequest[]>(
   gql.SUB_PLAN_MERGE_REQUESTS_INCOMING,
   { planId },
   [],
+  null,
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'incoming' })),
 );
@@ -59,6 +61,7 @@ export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
   gql.SUB_PLAN_MERGE_REQUESTS_OUTGOING,
   { planId },
   [],
+  null,
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'outgoing' })),
 );
@@ -67,6 +70,7 @@ export const planRevision = gqlSubscribable<number>(
   gql.SUB_PLAN_REVISION,
   { planId },
   -1,
+  null,
   ({ revision }: Pick<Plan, 'revision'>) => revision,
 );
 

@@ -10,6 +10,7 @@
   import { browser } from '$app/environment';
   import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
+  import type { User } from '../../../types/app';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
@@ -33,6 +34,7 @@
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -44,10 +46,10 @@
     const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
     if (selectedItem) {
       if (typeof hasDeletePermission === 'function') {
-        deletePermission = hasDeletePermission(selectedItem);
+        deletePermission = hasDeletePermission(user, selectedItem);
       }
       if (typeof hasEditPermission === 'function') {
-        editPermission = hasEditPermission(selectedItem);
+        editPermission = hasEditPermission(user, selectedItem);
       }
     }
   }

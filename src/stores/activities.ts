@@ -16,18 +16,25 @@ import { view, viewUpdateGrid } from './views';
 
 /* Subscriptions. */
 
-export const activityDirectives = gqlSubscribable<ActivityDirective[]>(gql.SUB_ACTIVITY_DIRECTIVES, { planId }, []);
+export const activityDirectives = gqlSubscribable<ActivityDirective[]>(
+  gql.SUB_ACTIVITY_DIRECTIVES,
+  { planId },
+  [],
+  null,
+);
 
 export const anchorValidationStatuses = gqlSubscribable<AnchorValidationStatus[]>(
   gql.SUB_ANCHOR_VALIDATION_STATUS,
   { planId },
   [],
+  null,
 );
 
 export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefinition[]>(
   gql.SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS,
   {},
   [],
+  null,
 );
 
 /* Writeable. */

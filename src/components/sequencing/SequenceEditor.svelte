@@ -4,6 +4,7 @@
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
   import { userSequencesRows } from '../../stores/sequencing';
+  import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -19,6 +20,7 @@
   export let sequenceName: string = '';
   export let sequenceSeqJson: string = '';
   export let title: string = 'Sequence - Definition Editor';
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -26,7 +28,7 @@
   let monaco: Monaco;
 
   $: effects
-    .getTsFilesCommandDictionary(sequenceCommandDictionaryId)
+    .getTsFilesCommandDictionary(sequenceCommandDictionaryId, user)
     .then(tsFiles => (commandDictionaryTsFiles = tsFiles));
 
   $: if (monaco !== undefined) {

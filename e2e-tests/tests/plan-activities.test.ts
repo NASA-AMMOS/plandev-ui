@@ -69,7 +69,7 @@ test.describe.serial('Plan Activities', () => {
     );
 
     await plan.panelActivityForm.getByRole('group').filter({ hasText: 'Anchor' }).first().click();
-    expect(await plan.panelActivityForm.getByRole('textbox', { name: 'To Plan' })).toBeVisible();
+    expect(plan.panelActivityForm.getByRole('textbox', { name: 'To Plan' })).toBeVisible();
   });
 
   test('Deleting multiple activity directives but only 1 has a remaining anchored dependent should prompt for just the one with a remaining dependent', async () => {

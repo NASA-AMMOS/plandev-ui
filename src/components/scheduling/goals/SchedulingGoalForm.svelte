@@ -3,8 +3,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { user as userStore } from '../../../stores/app';
   import { schedulingGoalsColumns } from '../../../stores/scheduling';
+  import type { User } from '../../../types/app';
   import type { ModelSlim } from '../../../types/model';
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingGoal, SchedulingSpecGoalInsertInput } from '../../../types/scheduling';
@@ -30,6 +30,7 @@
   export let mode: 'create' | 'edit' = 'create';
   export let plans: PlanSchedulingSpec[] = [];
   export let models: ModelSlim[] = [];
+  export let user: User | null;
 
   let goalAuthor: string | null = initialGoalAuthor;
   let goalCreatedDate: string | null = initialGoalCreatedDate;
@@ -97,8 +98,8 @@
           goalDefinition,
           goalDescription,
           goalName,
-          $userStore?.id,
           goalModelId,
+          user,
         );
 
         if (newGoal !== null) {
@@ -109,7 +110,7 @@
             goal_id: newGoalId,
             specification_id: specId,
           };
-          await effects.createSchedulingSpecGoal(specGoalInsertInput);
+          await effects.createSchedulingSpecGoal(specGoalInsertInput, user);
 
           goto(`${base}/scheduling/goals/edit/${newGoalId}`);
         }
@@ -133,14 +134,17 @@
           model_id: goalModelId,
           name: goalName,
         };
-        const updatedGoal = await effects.updateSchedulingGoal(goalId, goal);
+        const updatedGoal = await effects.updateSchedulingGoal(goalId, goal, user);
         if (updatedGoal) {
           if (specId !== savedSpecId) {
             // If changing plans/specId, first delete existing scheduling_spec_goal record and re-insert a new one
             // this is to allow the insert triggers to keep priorities in sync.
-            const deletedSchedulingSpecGoal = await effects.deleteSchedulingSpecGoal(goalId, savedSpecId);
+            const deletedSchedulingSpecGoal = await effects.deleteSchedulingSpecGoal(goalId, savedSpecId, user);
             if (deletedSchedulingSpecGoal) {
-              await effects.createSchedulingSpecGoal({ enabled: true, goal_id: goalId, specification_id: specId });
+              await effects.createSchedulingSpecGoal(
+                { enabled: true, goal_id: goalId, specification_id: specId },
+                user,
+              );
               savedSpecId = specId;
             }
           }
@@ -254,6 +258,7 @@
     scheduleItemDefinition={goalDefinition}
     scheduleItemModelId={goalModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Scheduling Goal - Definition Editor"
+    {user}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

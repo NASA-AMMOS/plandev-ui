@@ -2,6 +2,7 @@ import { cleanup, render } from '@testing-library/svelte';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activityMetadataDefinitions } from '../../stores/activities';
 import { activityTypes } from '../../stores/plan';
+import type { User } from '../../types/app';
 import type {
   Plan,
   PlanMergeConflictingActivity,
@@ -58,6 +59,8 @@ const mockInitialPlan: Plan = {
   start_time_doy: '2023-047T00:00:00',
 };
 
+const user: User = { allowedRoles: ['admin'], defaultRole: 'admin', id: 'foo', permissibleQueries: {}, token: '' };
+
 describe('PlanMergeReview component', () => {
   beforeAll(() => {
     activityMetadataDefinitions.updateValue(() => []);
@@ -79,6 +82,7 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities: [],
       initialPlan: { ...mockInitialPlan },
+      user,
     });
 
     expect(component).toBeTruthy();
@@ -137,6 +141,7 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
+      user,
     });
 
     expect(component).toBeTruthy();
@@ -194,6 +199,7 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
+      user,
     });
 
     expect(component).toBeTruthy();
@@ -293,6 +299,7 @@ describe('PlanMergeReview component', () => {
       initialMergeRequest: { ...mockMergeRequest },
       initialNonConflictingActivities,
       initialPlan: { ...mockInitialPlan },
+      user,
     });
 
     expect(component).toBeTruthy();

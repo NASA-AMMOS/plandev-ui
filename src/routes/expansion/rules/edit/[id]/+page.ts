@@ -6,9 +6,9 @@ import { hasNoAuthorization } from '../../../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
@@ -16,11 +16,12 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   if (ruleIdParam !== null && ruleIdParam !== undefined) {
     const ruleIdAsNumber = parseFloat(ruleIdParam);
-    const initialRule = await effects.getExpansionRule(ruleIdAsNumber);
+    const initialRule = await effects.getExpansionRule(ruleIdAsNumber, user);
 
     if (initialRule !== null) {
       return {
         initialRule,
+        user,
       };
     }
   }

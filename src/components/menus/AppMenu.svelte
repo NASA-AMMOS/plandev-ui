@@ -18,7 +18,6 @@
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
-  import { user as userStore } from '../../stores/app';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -27,7 +26,6 @@
 
   async function logout() {
     await fetch(`${base}/auth/logout`, { method: 'POST' });
-    $userStore = null;
     await invalidateAll();
     await goto(`${base}/login`);
   }

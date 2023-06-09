@@ -14,6 +14,7 @@
     ActivityType,
   } from '../../types/activity';
   import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
+  import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import { getActivityMetadata } from '../../utilities/activities';
@@ -45,6 +46,7 @@
   export let planStartTimeYmd: string;
   export let showActivityName: boolean = false;
   export let showHeader: boolean = true;
+  export let user: User | null;
 
   let editingActivityName: boolean = false;
   let numOfUserChanges: number = 0;
@@ -64,7 +66,7 @@
 
   $: if (activityType && activityDirective.arguments) {
     effects
-      .getEffectiveActivityArguments(modelId, activityType.name, activityDirective.arguments)
+      .getEffectiveActivityArguments(modelId, activityType.name, activityDirective.arguments, user)
       .then(({ arguments: defaultArgumentsMap }) => {
         formParameters = getFormParameters(
           activityType.parameters,
@@ -101,9 +103,16 @@
         activityDirective.plan_id,
         activityDirective.id,
         activityDirective.applied_preset.preset_id,
+        user,
       );
     } else {
-      await effects.applyPresetToActivity(presetId, activityDirective.id, activityDirective.plan_id, numOfUserChanges);
+      await effects.applyPresetToActivity(
+        presetId,
+        activityDirective.id,
+        activityDirective.plan_id,
+        numOfUserChanges,
+        user,
+      );
     }
   }
 
@@ -112,17 +121,17 @@
   }
   function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId>) {
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { anchor_id: anchorId });
+    effects.updateActivityDirective(plan_id, id, { anchor_id: anchorId }, user);
   }
 
   function updateAnchorEdge({ detail: isStart }: CustomEvent<boolean>) {
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { anchored_to_start: isStart });
+    effects.updateActivityDirective(plan_id, id, { anchored_to_start: isStart }, user);
   }
 
   function updateStartOffset({ detail: offset }: CustomEvent<string>) {
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { start_offset: offset });
+    effects.updateActivityDirective(plan_id, id, { start_offset: offset }, user);
   }
 
   async function onActivityNameKeyup(event: KeyboardEvent) {
@@ -143,7 +152,7 @@
     const { detail: formParameter } = event;
     const { arguments: argumentsMap, id, plan_id } = activityDirective;
     const newArguments = getArguments(argumentsMap, formParameter);
-    effects.updateActivityDirective(plan_id, id, { arguments: newArguments });
+    effects.updateActivityDirective(plan_id, id, { arguments: newArguments }, user);
   }
 
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
@@ -155,7 +164,7 @@
         ? activityDirective.applied_preset.preset_applied.arguments[formParameter.name]
         : null,
     });
-    effects.updateActivityDirective(plan_id, id, { arguments: newArguments });
+    effects.updateActivityDirective(plan_id, id, { arguments: newArguments }, user);
   }
 
   function onChangeActivityMetadata(event: CustomEvent<{ key: string; value: any }>) {
@@ -163,19 +172,25 @@
     const { key, value } = detail;
     const { id, metadata, plan_id } = activityDirective;
     const newActivityMetadata = getActivityMetadata(metadata, key, value);
-    effects.updateActivityDirective(plan_id, id, { metadata: newActivityMetadata });
+    effects.updateActivityDirective(plan_id, id, { metadata: newActivityMetadata }, user);
   }
 
   async function onDeletePreset(event: CustomEvent<ActivityPresetId>) {
     const { detail: id } = event;
-    await effects.deleteActivityPreset(id, $plan.model.name);
+    await effects.deleteActivityPreset(id, $plan.model.name, user);
   }
 
   async function onSaveNewPreset(event: CustomEvent<ActivityPresetInsertInput>) {
     const {
       detail: { name },
     } = event;
-    const id = await effects.createActivityPreset(activityDirective.arguments, activityDirective.type, name, modelId);
+    const id = await effects.createActivityPreset(
+      activityDirective.arguments,
+      activityDirective.type,
+      name,
+      modelId,
+      user,
+    );
     if (id !== null) {
       await applyPresetToActivity(id, 0);
     }
@@ -184,17 +199,21 @@
   async function onSavePreset(event: CustomEvent<ActivityPresetInsertInput>) {
     const { detail } = event;
     const { name } = detail;
-    await effects.updateActivityPreset(activityDirective.applied_preset.preset_id, {
-      arguments: activityDirective.arguments,
-      name,
-    });
+    await effects.updateActivityPreset(
+      activityDirective.applied_preset.preset_id,
+      {
+        arguments: activityDirective.arguments,
+        name,
+      },
+      user,
+    );
   }
 
   async function onUpdateActivityName() {
     if ($activityNameField.dirty) {
       if ($activityNameField.value) {
         const { id, plan_id } = activityDirective;
-        effects.updateActivityDirective(plan_id, id, { name: $activityNameField.value });
+        effects.updateActivityDirective(plan_id, id, { name: $activityNameField.value }, user);
       } else {
         resetActivityName();
       }
@@ -207,7 +226,7 @@
       const { id, plan_id } = activityDirective;
       const planStartTimeDoy = getDoyTime(new Date(planStartTimeYmd));
       const start_offset = getIntervalFromDoyRange(planStartTimeDoy, $startTimeDoyField.value);
-      effects.updateActivityDirective(plan_id, id, { start_offset });
+      effects.updateActivityDirective(plan_id, id, { start_offset }, user);
     }
   }
 
@@ -215,20 +234,20 @@
     const { detail } = event;
     const { tags } = detail;
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { tags });
+    effects.updateActivityDirective(plan_id, id, { tags }, user);
   }
 
   function resetActivityName() {
     const initialValue = $activityNameField.initialValue;
     activityNameField.reset(initialValue);
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { name: initialValue });
+    effects.updateActivityDirective(plan_id, id, { name: initialValue }, user);
   }
 
   async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments) {
       const { type } = activityDirective;
-      const { errors, success } = await effects.validateActivityArguments(type, modelId, newArguments);
+      const { errors, success } = await effects.validateActivityArguments(type, modelId, newArguments, user);
 
       if (!success) {
         parameterErrorMap = errors.reduce((map, error) => {
@@ -392,6 +411,7 @@
           {activityDirective}
           disabled={!editable}
           hasChanges={numOfUserChanges > 0}
+          {user}
           on:applyPreset={onApplyPresetToActivity}
           on:deletePreset={onDeletePreset}
           on:saveNewPreset={onSaveNewPreset}

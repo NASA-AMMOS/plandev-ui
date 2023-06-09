@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -11,11 +12,12 @@
   export let scheduleItemModelId: number | null = null;
   export let readOnly: boolean = false;
   export let title: string = 'Scheduling Item - Definition Editor';
+  export let user: User | null;
 
   let monaco: Monaco;
   let schedulingTsFiles: TypeScriptFile[];
 
-  $: effects.getTsFilesScheduling(scheduleItemModelId).then(tsFiles => (schedulingTsFiles = tsFiles));
+  $: effects.getTsFilesScheduling(scheduleItemModelId, user).then(tsFiles => (schedulingTsFiles = tsFiles));
 
   $: if (monaco !== undefined && schedulingTsFiles !== undefined) {
     const { languages } = monaco;

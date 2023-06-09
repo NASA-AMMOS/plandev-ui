@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -13,11 +14,12 @@
   const dispatch = createEventDispatcher();
 
   export let expansionSequence: ExpansionSequence;
+  export let user: User | null;
 
   let seqJsonStr: string | null = null;
 
   $: effects
-    .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id)
+    .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id, user)
     .then((result: string) => (seqJsonStr = result));
 </script>
 

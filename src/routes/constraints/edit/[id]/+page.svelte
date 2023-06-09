@@ -17,4 +17,5 @@
   initialModels={data.initialModels}
   initialPlans={data.initialPlans}
   mode="edit"
+  user={data.user}
 />

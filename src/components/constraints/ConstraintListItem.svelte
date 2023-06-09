@@ -7,6 +7,7 @@
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../types/app';
   import type { Constraint, ConstraintViolation } from '../../types/constraint';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
@@ -19,6 +20,7 @@
   export let violation: ConstraintViolation;
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -87,7 +89,9 @@
         Edit Constraint
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteConstraint(constraint.id)}>Delete Constraint</ContextMenuItem>
+      <ContextMenuItem on:click={() => effects.deleteConstraint(constraint.id, user)}>
+        Delete Constraint
+      </ContextMenuItem>
     </svelte:fragment>
   </Collapse>
 </div>

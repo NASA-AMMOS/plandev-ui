@@ -13,6 +13,7 @@
     ActivityDirectivesByView,
     ActivityDirectivesMap,
   } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ConstraintViolation } from '../../types/constraint';
   import type { Resource, SimulationDataset, Span, SpanId, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import type {
@@ -70,6 +71,7 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
   export let yAxes: Axis[] = [];
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -143,7 +145,7 @@
       const unixEpochTime = xScaleView.invert(offsetX).getTime();
       const start_time = getDoyTime(new Date(unixEpochTime));
       const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {});
+      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, [], {}, user);
     }
   }
 
@@ -300,6 +302,7 @@
             {spanUtilityMaps}
             {spansMap}
             {timelineLockStatus}
+            {user}
             {viewTimeRange}
             {xScaleView}
             on:contextMenu

@@ -10,6 +10,7 @@
     selectedExpansionSetId,
   } from '../../stores/expansion';
   import { simulationDatasetId } from '../../stores/simulation';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ExpansionSequence } from '../../types/expansion';
   import type { ViewGridSection } from '../../types/view';
@@ -26,10 +27,11 @@
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteExpansionSequence: (sequence: ExpansionSequence) => void;
-    openExpansionSequence: (sequence: ExpansionSequence) => void;
+    openExpansionSequence: (sequence: ExpansionSequence, user: User) => void;
   };
   type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
 
@@ -65,7 +67,7 @@
               placement: 'bottom',
             },
             rowData: params.data,
-            viewCallback: params.openExpansionSequence,
+            viewCallback: data => params.openExpansionSequence(data, user),
             viewTooltip: {
               content: 'Open Sequence',
               placement: 'bottom',
@@ -98,7 +100,7 @@
   $: expandButtonEnabled = $selectedExpansionSetId !== null;
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
-    effects.deleteExpansionSequence(sequence);
+    effects.deleteExpansionSequence(sequence, user);
   }
 
   function deleteExpansionSequenceContext(event: CustomEvent<RowId[]>) {
@@ -124,7 +126,7 @@
         disabled={$selectedExpansionSetId === null}
         on:click={() => {
           if ($selectedExpansionSetId) {
-            effects.expand($selectedExpansionSetId, $simulationDatasetId);
+            effects.expand($selectedExpansionSetId, $simulationDatasetId, user);
           }
         }}
       />
@@ -171,7 +173,8 @@
                   <button
                     class="st-button secondary"
                     disabled={!createButtonEnabled}
-                    on:click|stopPropagation={() => effects.createExpansionSequence(seqIdInput, $simulationDatasetId)}
+                    on:click|stopPropagation={() =>
+                      effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}
                   >
                     {$creatingExpansionSequence ? 'Creating... ' : 'Create'}
                   </button>
@@ -183,8 +186,9 @@
                       {columnDefs}
                       itemDisplayText="Sequence"
                       items={$filteredExpansionSequences}
+                      {user}
                       on:deleteItem={deleteExpansionSequenceContext}
-                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail)}
+                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail, user)}
                     />
                   {:else}
                     <div class="st-typography-label">

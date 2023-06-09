@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
@@ -12,15 +13,16 @@
   import MenuItem from '../menus/MenuItem.svelte';
 
   export let plan: Plan;
+  export let user: User | null;
 
   let planMenu: Menu;
 
   function createMergePlanBranchRequest() {
-    effects.createPlanBranchRequest(plan, 'merge');
+    effects.createPlanBranchRequest(plan, 'merge', user);
   }
 
   function createPlanBranch() {
-    effects.createPlanBranch(plan);
+    effects.createPlanBranch(plan, user);
   }
 
   function showPlanBranches() {
@@ -28,7 +30,7 @@
   }
 
   function showPlanMergeRequests() {
-    showPlanMergeRequestsModal();
+    showPlanMergeRequestsModal(user);
   }
 </script>
 

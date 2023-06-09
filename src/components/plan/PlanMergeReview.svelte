@@ -11,6 +11,7 @@
   import { activityTypes } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirectivesMap } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type {
     Plan,
     PlanMergeActivityDirectiveSource,
@@ -40,11 +41,13 @@
   export let initialMergeRequest: PlanMergeRequestSchema;
   export let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
   export let initialPlan: Plan;
+  export let user: User | null;
 
   const conflictingMergeActivities = gqlSubscribable<PlanMergeConflictingActivity[]>(
     gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES,
     { merge_request_id: initialMergeRequest.id },
     initialConflictingActivities,
+    user,
   );
   const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
     gql.SUB_PLAN_MERGE_REQUEST_STATUS,
@@ -52,6 +55,7 @@
       mergeRequestId: initialMergeRequest.id,
     },
     initialMergeRequest.status,
+    user,
     ({ status }) => status,
   );
 
@@ -258,7 +262,7 @@
   }
 
   async function onApproveChanges() {
-    const success = await effects.planMergeCommit(initialMergeRequest.id);
+    const success = await effects.planMergeCommit(initialMergeRequest.id, user);
     if (success) {
       userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
@@ -266,7 +270,7 @@
   }
 
   async function onDenyChanges() {
-    const success = await effects.planMergeDeny(initialMergeRequest.id);
+    const success = await effects.planMergeDeny(initialMergeRequest.id, user);
     if (success) {
       userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
@@ -274,7 +278,7 @@
   }
 
   async function onCancel() {
-    const success = await effects.planMergeCancel(initialMergeRequest.id);
+    const success = await effects.planMergeCancel(initialMergeRequest.id, user);
     if (success) {
       userInitiatedMergeRequestResolution = true;
       goto(`${base}/plans/${initialPlan.id}`);
@@ -284,7 +288,7 @@
   function onResolveAll(e: Event) {
     const { value } = getTarget(e);
     const resolution = value as PlanMergeResolution;
-    effects.planMergeResolveAllConflicts(initialMergeRequest.id, resolution);
+    effects.planMergeResolveAllConflicts(initialMergeRequest.id, resolution, user);
 
     // Set resolutions for all conflicts
     if ($conflictingMergeActivities && $conflictingMergeActivities.length) {
@@ -329,7 +333,7 @@
   }
 
   async function resolveConflict(activityId: number, resolution: PlanMergeResolution) {
-    await effects.planMergeResolveConflict(initialMergeRequest.id, activityId, resolution);
+    await effects.planMergeResolveConflict(initialMergeRequest.id, activityId, resolution, user);
 
     conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
       return activities.map(activity => {
@@ -543,6 +547,7 @@
                 modelId={initialPlan.model_id}
                 planId={initialPlan.id}
                 planStartTimeYmd={initialPlan.start_time}
+                {user}
               />
             {:else if (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_source === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>
@@ -605,6 +610,7 @@
                 planStartTimeYmd={initialPlan.start_time}
                 showActivityName
                 showHeader={false}
+                {user}
               />
             {:else if (selectedMergeType === 'delete' && !computedTargetActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_target === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>

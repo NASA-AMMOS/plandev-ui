@@ -1,3 +1,4 @@
+import type { User } from './app';
 import type { Plan } from './plan';
 
 export type PermissibleQueriesMap = Record<string, true>;
@@ -19,21 +20,21 @@ export type PermissibleQuery = {
 
 export type PermissionCheck<T = null> = ReadPermissionCheck<T> | CreatePermissionCheck | UpdatePermissionCheck<T>;
 
-export type ReadPermissionCheck<T = null> = (asset?: T) => boolean;
+export type ReadPermissionCheck<T = null> = (user: User, asset?: T) => boolean;
 
-export type CreatePermissionCheck = () => boolean;
+export type CreatePermissionCheck = (user: User) => boolean;
 
-export type UpdatePermissionCheck<T = null> = (asset: T) => boolean;
+export type UpdatePermissionCheck<T = null> = (user: User, asset: T) => boolean;
 
 export type PlanAssetPermissionCheck<T = null> =
   | PlanAssetReadPermissionCheck
   | PlanAssetCreatePermissionCheck
   | PlanAssetUpdatePermissionCheck<T>;
 
-export type PlanAssetReadPermissionCheck = () => boolean;
+export type PlanAssetReadPermissionCheck = (user: User) => boolean;
 
-export type PlanAssetCreatePermissionCheck = (plan: PlanWithOwners) => boolean;
+export type PlanAssetCreatePermissionCheck = (user: User, plan: PlanWithOwners) => boolean;
 
-export type PlanAssetUpdatePermissionCheck<T = null> = (plan: PlanWithOwners, asset: T) => boolean;
+export type PlanAssetUpdatePermissionCheck<T = null> = (user: User, plan: PlanWithOwners, asset: T) => boolean;
 
 export type PlanWithOwners = Pick<Plan, 'id' | 'owner' | 'collaborators'>;

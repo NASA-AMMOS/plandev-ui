@@ -6,15 +6,16 @@ import { hasNoAuthorization } from '../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
-  const initialModels = await effects.getModels();
+  const initialModels = await effects.getModels(user);
 
   return {
     initialModels,
+    user,
   };
 };

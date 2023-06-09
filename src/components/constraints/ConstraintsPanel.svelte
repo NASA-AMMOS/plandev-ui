@@ -18,6 +18,7 @@
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
   import { plan, viewTimeRange } from '../../stores/plan';
+  import type { User } from '../../types/app';
   import type { Constraint, ConstraintViolation } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
   import type { ViewGridSection } from '../../types/view';
@@ -35,6 +36,7 @@
   import ConstraintListItem from './ConstraintListItem.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   let showAll: boolean = true;
   let filterText: string = '';
@@ -170,7 +172,7 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Constraints" />
     <PanelHeaderActions status={$checkConstraintsStatus}>
-      <PanelHeaderActionButton title="Check Constraints" on:click={() => effects.checkConstraints()}>
+      <PanelHeaderActionButton title="Check Constraints" on:click={() => effects.checkConstraints(user)}>
         <ChecklistIcon />
       </PanelHeaderActionButton>
     </PanelHeaderActions>
@@ -267,6 +269,7 @@
             visible={$constraintVisibilityMap[constraint.id]}
             violation={filteredConstraintViolationMap[constraint.id]}
             totalViolationCount={constraintViolationMap[constraint.id]?.windows?.length}
+            {user}
             on:toggleVisibility={toggleVisibility}
           />
         {/each}

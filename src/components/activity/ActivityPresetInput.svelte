@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirective, ActivityPreset } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type {
     DropdownOption,
     DropdownOptionValue,
@@ -21,6 +22,7 @@
   export let hasChanges: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let modelId: number;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -28,6 +30,7 @@
     gql.SUB_ACTIVITY_PRESETS,
     { activityTypeName: activityDirective.type, modelId },
     [],
+    user,
   );
   let options: DropdownOptions = [];
 

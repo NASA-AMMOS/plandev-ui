@@ -7,19 +7,19 @@ import { hasNoAuthorization } from '../../../../../utilities/permissions';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
-  const { user, permissibleQueries } = await parent();
+  const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(permissibleQueries))) {
+  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
     throw redirect(302, `${base}/login`);
   }
 
   const { id: conditionIdParam } = params;
-  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling();
+  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling(user);
 
   if (conditionIdParam !== null && conditionIdParam !== undefined) {
     const conditionId = parseFloatOrNull(conditionIdParam);
-    const initialCondition = await effects.getSchedulingCondition(conditionId);
-    const schedulingSpecConditions = await effects.getSchedulingSpecConditionsForCondition(conditionId);
+    const initialCondition = await effects.getSchedulingCondition(conditionId, user);
+    const schedulingSpecConditions = await effects.getSchedulingSpecConditionsForCondition(conditionId, user);
 
     if (initialCondition !== null) {
       return {
@@ -27,6 +27,7 @@ export const load: PageLoad = async ({ parent, params }) => {
         initialSpecId: schedulingSpecConditions?.[0]?.specification_id,
         models,
         plans,
+        user,
       };
     }
   }

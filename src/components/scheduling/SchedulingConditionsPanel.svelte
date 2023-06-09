@@ -5,6 +5,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { plan } from '../../stores/plan';
   import { schedulingSpecConditions, selectedSpecId } from '../../stores/scheduling';
+  import type { User } from '../../types/app';
   import type { SchedulingSpecCondition } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
@@ -13,6 +14,7 @@
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
 
   export let gridSection: ViewGridSection;
+  export let user: User | null;
 
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
@@ -70,6 +72,7 @@
             enabled={specCondition.enabled}
             condition={specCondition.condition}
             specificationId={specCondition.specification_id}
+            {user}
           />
         {/each}
       {/if}

@@ -84,7 +84,7 @@
   });
 
   function deleteModel(model: ModelSlim) {
-    effects.deleteModel(model);
+    effects.deleteModel(model, data.user);
   }
 
   function deleteModelContext(event: CustomEvent<RowId[]>) {
@@ -100,7 +100,7 @@
   }
 
   async function submitForm(e: SubmitEvent) {
-    await effects.createModel(name, version, files);
+    await effects.createModel(name, version, files, data.user);
     if ($createModelError === null && e.target instanceof HTMLFormElement) {
       e.target.reset();
     }
@@ -169,6 +169,7 @@
             {columnDefs}
             itemDisplayText="Model"
             items={$models}
+            user={data.user}
             on:deleteItem={deleteModelContext}
             on:rowClicked={({ detail }) => showModel(detail.data)}
           />

@@ -2,8 +2,7 @@
 
 declare namespace App {
   interface Locals {
-    permissibleQueries: import('./types/permissions').PermissibleQueriesMap | null;
-    user: User | null;
+    user: import('./types/app').User | null;
   }
 }
 

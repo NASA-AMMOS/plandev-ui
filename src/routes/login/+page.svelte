@@ -5,8 +5,11 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
-  import { permissibleQueries as permissibleQueriesStore, user as userStore } from '../../stores/app';
   import type { LoginResponseBody } from '../../types/auth';
+  import { hasNoAuthorization } from '../../utilities/permissions';
+  import type { PageData } from './$types';
+
+  export let data: PageData;
 
   let error: string | null = null;
   let fullError: string | null = null;
@@ -15,7 +18,7 @@
   let username = '';
   let usernameInput: HTMLInputElement | null = null;
 
-  $: if ($userStore !== null && $permissibleQueriesStore && !Object.keys($permissibleQueriesStore).length) {
+  $: if (hasNoAuthorization(data.user)) {
     error = 'You are not authorized';
     fullError =
       'You are not authorized to access the page that you attempted to view. Please contact a tool administrator to request access.';
@@ -39,10 +42,9 @@
       };
       const response = await fetch(`${base}/auth/login`, options);
       const loginResponse: LoginResponseBody = await response.json();
-      const { message, success, user = null } = loginResponse;
+      const { message, success } = loginResponse;
 
       if (success) {
-        $userStore = user;
         await invalidateAll();
         await goto(`${base}/plans`);
       } else {

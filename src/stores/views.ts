@@ -9,7 +9,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const views = gqlSubscribable<View[]>(gql.SUB_VIEWS, {}, []);
+export const views = gqlSubscribable<View[]>(gql.SUB_VIEWS, {}, [], null);
 
 /* Writeable. */
 

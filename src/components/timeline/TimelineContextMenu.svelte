@@ -5,6 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import { view, viewUpdateGrid } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { Simulation, SimulationDataset, Span, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import type { MouseOver, VerticalGuide } from '../../types/timeline';
   import { getAllSpansForActivityDirective, getSpanRootParent } from '../../utilities/activities';
@@ -25,6 +26,7 @@
   export let contextMenu: MouseOver | undefined;
   export let verticalGuides: VerticalGuide[];
   export let xScaleView: ScaleTime<number, number> | null = null;
+  export let user: User | null;
 
   const dispatch = createEventDispatcher();
   let contextMenuComponent: ContextMenu;
@@ -80,14 +82,14 @@
   function updateSimulationStartTime(date: Date) {
     const doyString = getDoyTime(date, false);
     const newSimulation: Simulation = { ...simulation, simulation_start_time: doyString };
-    effects.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation, user);
     switchToSimulation();
   }
 
   function updateSimulationEndTime(date: Date) {
     const doyString = getDoyTime(date, false);
     const newSimulation: Simulation = { ...simulation, simulation_end_time: doyString };
-    effects.updateSimulation(newSimulation);
+    effects.updateSimulation(newSimulation, user);
     switchToSimulation();
   }
 

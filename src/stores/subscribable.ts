@@ -3,9 +3,8 @@ import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
 import { run_all } from 'svelte/internal';
-import { get, type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
-import { user as userStore } from '../stores/app';
-import type { User } from '../types/app';
+import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
+import type { BaseUser, User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
 
 /**
@@ -15,6 +14,7 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
+  user: User,
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();
@@ -64,6 +64,32 @@ export function gqlSubscribable<T>(
     });
   }
 
+  /**
+   * Helper that parses a user cookie to get a token.
+   * @todo We should migrate away from doing this and just pass the
+   * user to the subscription during initialization.
+   */
+  function getTokenFromUserCookie(): string {
+    if (browser && document?.cookie) {
+      const userCookie = document.cookie.split('user=')[1];
+
+      if (userCookie) {
+        try {
+          const decodedUserCookie = atob(userCookie);
+          const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
+          return parsedUserCookie.token;
+        } catch (e) {
+          console.log(e);
+          return '';
+        }
+      } else {
+        console.log(`No 'user' cookie found`);
+      }
+    }
+
+    return '';
+  }
+
   function resubscribe() {
     subscribers.forEach(subscriber => {
       subscriber.unsubscribe();
@@ -100,15 +126,16 @@ export function gqlSubscribable<T>(
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
     if (browser && !client) {
-      const user = get<User | null>(userStore);
+      const token = user?.token ?? getTokenFromUserCookie();
       const clientOptions: ClientOptions = {
         connectionParams: {
           headers: {
-            Authorization: `Bearer ${user?.token ?? ''}`,
+            Authorization: `Bearer ${token}`,
           },
         },
         url: env.PUBLIC_HASURA_WEB_SOCKET_URL,
       };
+
       client = createClient(clientOptions);
       subscribeToVariables(initialVariables);
     }

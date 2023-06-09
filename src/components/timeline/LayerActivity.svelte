@@ -9,6 +9,7 @@
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import SpanHashMarksSVG from '../../assets/span-hash-marks.svg?raw';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     ActivityLayerFilter,
@@ -64,6 +65,7 @@
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
   export let timelineLockStatus: TimelineLockStatus;
+  export let user: User | null;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
@@ -205,7 +207,7 @@
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
       if (dragStartX !== dragCurrentX) {
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
-        effects.updateActivityDirective(planId, dragActivityDirectiveActive.id, { start_offset });
+        effects.updateActivityDirective(planId, dragActivityDirectiveActive.id, { start_offset }, user);
       }
 
       dragActivityDirectiveActive = null;

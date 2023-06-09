@@ -6,6 +6,7 @@
   import { expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
   import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
+  import type { User } from '../../types/app';
   import type { ExpansionRule, ExpansionRuleInsertInput } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
@@ -25,6 +26,7 @@
   export let initialRuleModelId: number | null = null;
   export let initialRuleUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
+  export let user: User | null;
 
   let ruleActivityType: string | null = initialRuleActivityType;
   let ruleCreatedAt: string | null = initialRuleCreatedAt;
@@ -81,7 +83,7 @@
           authoring_mission_model_id: ruleModelId,
           expansion_logic: ruleLogic,
         };
-        const newRuleId = await effects.createExpansionRule(newRule);
+        const newRuleId = await effects.createExpansionRule(newRule, user);
 
         if (newRuleId !== null) {
           goto(`${base}/expansion/rules/edit/${newRuleId}`);
@@ -93,7 +95,7 @@
           authoring_mission_model_id: ruleModelId,
           expansion_logic: ruleLogic,
         };
-        const updated_at = await effects.updateExpansionRule(ruleId, updatedRule);
+        const updated_at = await effects.updateExpansionRule(ruleId, updatedRule, user);
         if (updated_at !== null) {
           ruleUpdatedAt = updated_at;
           savedRule = updatedRule;
@@ -192,6 +194,7 @@
     {ruleLogic}
     {ruleModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Expansion Rule - Logic Editor"
+    {user}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

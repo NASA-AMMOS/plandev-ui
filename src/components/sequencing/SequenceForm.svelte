@@ -4,8 +4,8 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
-  import { user as userStore } from '../../stores/app';
   import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
+  import type { User } from '../../types/app';
   import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
@@ -23,6 +23,7 @@
   export let initialSequenceName: string = '';
   export let initialSequenceUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
+  export let user: User | null;
 
   let savedSequenceDefinition: string = mode === 'create' ? '' : initialSequenceDefinition;
   let seqJsonFiles: FileList;
@@ -54,14 +55,14 @@
     const file: File = seqJsonFiles[0];
     const text = await file.text();
     const seqJson = JSON.parse(text);
-    const sequence = await effects.getUserSequenceFromSeqJson(seqJson);
+    const sequence = await effects.getUserSequenceFromSeqJson(seqJson, user);
     sequenceDefinition = sequence;
     sequenceSeqJson = text;
   }
 
   async function getUserSequenceSeqJson(): Promise<void> {
     sequenceSeqJson = 'Generating Seq JSON...';
-    sequenceSeqJson = await effects.getUserSequenceSeqJson(sequenceCommandDictionaryId, sequenceDefinition);
+    sequenceSeqJson = await effects.getUserSequenceSeqJson(sequenceCommandDictionaryId, sequenceDefinition, user);
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
@@ -85,9 +86,9 @@
           authoring_command_dict_id: sequenceCommandDictionaryId,
           definition: sequenceDefinition,
           name: sequenceName,
-          owner: $userStore?.id,
+          owner: user?.id ?? 'unknown',
         };
-        const newSequenceId = await effects.createUserSequence(newSequence);
+        const newSequenceId = await effects.createUserSequence(newSequence, user);
 
         if (newSequenceId !== null) {
           goto(`${base}/sequencing/edit/${newSequenceId}`);
@@ -98,7 +99,7 @@
           definition: sequenceDefinition,
           name: sequenceName,
         };
-        const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence);
+        const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence, user);
         if (updated_at !== null) {
           sequenceUpdatedAt = updated_at;
         }
@@ -194,6 +195,7 @@
     {sequenceName}
     {sequenceSeqJson}
     title="{mode === 'create' ? 'New' : 'Edit'} Sequence - Definition Editor"
+    {user}
     on:didChangeModelContent={onDidChangeModelContent}
     on:generate={getUserSequenceSeqJson}
   />

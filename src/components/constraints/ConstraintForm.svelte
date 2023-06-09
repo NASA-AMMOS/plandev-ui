@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { constraintsColumns } from '../../stores/constraints';
+  import type { User } from '../../types/app';
   import type { Constraint } from '../../types/constraint';
   import type { ModelSlim } from '../../types/model';
   import type { PlanSlim } from '../../types/plan';
@@ -25,6 +26,7 @@
   export let initialModels: ModelSlim[] = [];
   export let initialPlans: PlanSlim[] = [];
   export let mode: 'create' | 'edit' = 'create';
+  export let user: User | null;
 
   let constraintDefinition: string = initialConstraintDefinition;
   let constraintDescription: string = initialConstraintDescription;
@@ -102,6 +104,7 @@
           constraintModelId,
           constraintName,
           constraintPlanId,
+          user,
         );
 
         if (newConstraintId !== null) {
@@ -115,6 +118,7 @@
           constraintModelId,
           constraintName,
           constraintPlanId,
+          user,
         );
 
         savedConstraint = {
@@ -217,6 +221,7 @@
     {constraintModelId}
     {constraintPlanId}
     title="{mode === 'create' ? 'New' : 'Edit'} Constraint - Definition Editor"
+    {user}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ActivityType } from '../../types/activity';
+  import type { User } from '../../types/app';
   import type { ExpansionSequence } from '../../types/expansion';
   import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
   import type { ValueSchema } from '../../types/schema';
@@ -24,6 +25,7 @@
   export let span: Span;
   export let spansMap: SpansMap = {};
   export let spanUtilityMaps: SpanUtilityMaps;
+  export let user: User | null;
 
   let endTimeDoy: string | null = null;
   let formParametersComputedAttributes: FormParameter[] = [];
@@ -50,7 +52,7 @@
 
   $: if (activityType && span.attributes.arguments) {
     effects
-      .getEffectiveActivityArguments(modelId, activityType.name, span.attributes.arguments)
+      .getEffectiveActivityArguments(modelId, activityType.name, span.attributes.arguments, user)
       .then(({ arguments: defaultArgumentsMap }) => {
         formParameters = getFormParameters(
           activityType.parameters,
@@ -70,7 +72,7 @@
   }
 
   $: if (simulationDatasetId !== null) {
-    effects.getExpansionSequenceId(span.id, simulationDatasetId).then(newSeqId => (seqId = newSeqId));
+    effects.getExpansionSequenceId(span.id, simulationDatasetId, user).then(newSeqId => (seqId = newSeqId));
   }
 
   $: setFormParametersComputedAttributes(
@@ -98,9 +100,9 @@
 
   async function updateExpansionSequenceToActivity() {
     if (seqId === null) {
-      await effects.deleteExpansionSequenceToActivity(simulationDatasetId, span.id);
+      await effects.deleteExpansionSequenceToActivity(simulationDatasetId, span.id, user);
     } else {
-      await effects.insertExpansionSequenceToActivity(simulationDatasetId, span.id, seqId);
+      await effects.insertExpansionSequenceToActivity(simulationDatasetId, span.id, seqId, user);
     }
   }
 

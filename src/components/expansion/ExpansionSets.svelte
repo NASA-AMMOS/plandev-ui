@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule, ExpansionSet } from '../../types/expansion';
   import effects from '../../utilities/effects';
@@ -16,6 +17,8 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
+
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteSet: (sequence: ExpansionSet) => void;
@@ -81,7 +84,7 @@
   $: selectedExpansionRuleIds = selectedExpansionRule ? [selectedExpansionRule.id] : [];
 
   async function deleteSet({ id }: Pick<ExpansionSet, 'id'>) {
-    const success = await effects.deleteExpansionSet(id);
+    const success = await effects.deleteExpansionSet(id, user);
 
     if (success) {
       expansionSets.filterValueById(id);
@@ -143,6 +146,7 @@
             {columnDefs}
             itemDisplayText="Expansion Set"
             items={$expansionSets}
+            {user}
             on:deleteItem={deleteSetContext}
             on:rowSelected={toggleSet}
           />
@@ -196,5 +200,6 @@
     ruleLogic={selectedExpansionRule?.expansion_logic ?? 'No Expansion Rule Selected'}
     ruleModelId={selectedExpansionRule?.authoring_mission_model_id}
     title="Expansion Rule - Logic Editor (Read-only)"
+    {user}
   />
 </CssGrid>

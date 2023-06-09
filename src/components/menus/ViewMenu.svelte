@@ -13,14 +13,16 @@
   import ViewGridRightPanelSplitEmpty from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_empty.svg?component';
   import ViewGridRightPanelSplitFilled from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_filled.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { user as userStore } from '../../stores/app';
   import { view, viewIsModified } from '../../stores/views';
+  import type { User } from '../../types/app';
   import type { ViewToggleType } from '../../types/view';
   import { showSavedViewsModal } from '../../utilities/modal';
   import { Status } from '../../utilities/status';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ToggleableIcon from '../ui/ToggleableIcon.svelte';
   import MenuItem from './MenuItem.svelte';
+
+  export let user: User | null;
 
   const defaultViewName = 'Default View';
   const dispatch = createEventDispatcher();
@@ -32,7 +34,7 @@
   let rightSplitPanelIsOn: boolean = false;
   let saveViewDisabled: boolean = true;
 
-  $: saveViewDisabled = $view?.name === '' || $view?.owner !== $userStore?.id || !$viewIsModified;
+  $: saveViewDisabled = $view?.name === '' || $view?.owner !== user?.id || !$viewIsModified;
   $: if ($view.definition.plan.grid) {
     leftPanelIsOn = !$view.definition.plan.grid.leftHidden && !$view.definition.plan.grid.leftSplit;
     leftSplitPanelIsOn = !$view.definition.plan.grid.leftHidden && $view.definition.plan.grid.leftSplit;
@@ -43,13 +45,13 @@
 
   function editView() {
     if ($view) {
-      dispatch('editView', { definition: $view.definition, owner: $userStore?.id });
+      dispatch('editView', { definition: $view.definition, owner: user.id });
     }
   }
 
   function saveAsView() {
     if ($view) {
-      dispatch('createView', { definition: $view.definition, owner: $userStore?.id });
+      dispatch('createView', { definition: $view.definition, owner: user.id });
     }
   }
 
@@ -60,7 +62,7 @@
   }
 
   function saveView() {
-    if ($view && $view.owner === $userStore?.id && !saveViewDisabled) {
+    if ($view && $view.owner === user.id && !saveViewDisabled) {
       dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name });
     }
   }
@@ -70,7 +72,7 @@
   }
 
   function uploadView() {
-    dispatch('uploadView', { owner: $userStore?.id });
+    dispatch('uploadView', { owner: user.id });
   }
 </script>
 
@@ -119,7 +121,7 @@
         Reset to {$view?.name && $view.name !== defaultViewName ? 'last saved' : 'default'}
       </MenuItem>
       <MenuItem on:click={uploadView}>Upload view file</MenuItem>
-      <MenuItem on:click={showSavedViewsModal}>Browse saved views</MenuItem>
+      <MenuItem on:click={() => showSavedViewsModal(user)}>Browse saved views</MenuItem>
       {#if $view?.name && $view.name !== defaultViewName}
         <hr />
         <MenuItem on:click={editView}>Rename view</MenuItem>

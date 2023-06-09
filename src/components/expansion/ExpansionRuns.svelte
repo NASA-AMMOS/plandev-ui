@@ -4,6 +4,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun } from '../../types/expansion';
   import SequenceEditor from '../sequencing/SequenceEditor.svelte';
@@ -15,6 +16,7 @@
   import ExpandedSequencesDownloadButton from './ExpandedSequencesDownloadButton.svelte';
 
   export let expansionRuns: ExpansionRun[] = [];
+  export let user: User | null;
 
   const columnDefs: DataGridColumnDef[] = [
     {
@@ -177,5 +179,6 @@
     sequenceSeqJson={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
     readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
+    {user}
   />
 </CssGrid>
