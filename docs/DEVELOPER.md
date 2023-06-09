@@ -35,6 +35,7 @@ Before you can run aerie-ui you must install and configure the following product
 - [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based Aerie services. If you're on OSX you can use [brew](https://brew.sh/):
 
   ```shell
+  brew tap homebrew/cask-versions
   brew install --cask temurin19
   ```
 
