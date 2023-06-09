@@ -656,11 +656,11 @@
     border-right: 1px solid var(--st-gray-20);
   }
 
-  .merge-review-content :global(.collapse > button) {
+  .merge-review-changes-content :global(.collapse > button.collapse-header) {
     padding: 8px 16px;
   }
 
-  .merge-review-content :global(.collapse .content) {
+  .merge-review-changes-content :global(.collapse .content) {
     gap: 0;
     margin: 0;
   }

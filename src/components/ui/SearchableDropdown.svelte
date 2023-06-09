@@ -36,11 +36,13 @@
   export let settingsIconTooltipPlacement: string = 'top';
 
   export function hideMenu() {
-    dispatch('hideMenu');
-    presetMenu.hide();
+    if (presetMenu) {
+      dispatch('hideMenu');
+      presetMenu.hide();
+    }
   }
   export function openMenu() {
-    if (!disabled) {
+    if (!disabled && presetMenu) {
       dispatch('openMenu');
       presetMenu.show();
     }
@@ -49,7 +51,7 @@
   const dispatch = createEventDispatcher();
 
   let displayedOptions: DisplayOptions = [];
-  let presetMenu: Menu;
+  let presetMenu: Menu | undefined;
   let searchFilter: string = '';
   let selectedOption: DropdownOption | undefined;
 
