@@ -46,6 +46,7 @@ const mockInitialPlan: Plan = {
     parameters: {
       parameters: {},
     },
+    plans: [{ id: 1 }],
     version: '1.0.0',
   },
   model_id: 1,

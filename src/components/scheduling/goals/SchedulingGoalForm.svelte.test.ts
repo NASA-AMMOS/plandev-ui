@@ -30,6 +30,7 @@ const models: ModelSlim[] = [
     id: 1,
     jar_id: 1,
     name: 'BananaNation',
+    plans: [],
     version: '1.0.0',
   },
 ];

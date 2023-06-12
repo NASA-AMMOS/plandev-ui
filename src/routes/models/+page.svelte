@@ -15,9 +15,12 @@
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { createModelError, creatingModel, models } from '../../stores/plan';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -27,7 +30,8 @@
   };
   type ModelCellRendererParams = ICellRendererParams<ModelSlim> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
+  const creationPermissionError: string = 'You do not have permission to upload a model';
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'number',
@@ -40,51 +44,64 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'version', filter: 'number', headerName: 'Version', sortable: true, width: 120 },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: ModelCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deleteModel,
-            deleteTooltip: {
-              content: 'Delete Model',
-              placement: 'bottom',
-            },
-            rowData: params.data,
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        deleteModel,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 25,
-    },
   ];
 
+  let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createButtonDisabled: boolean = false;
   let files: FileList;
+  let hasCreatePermission: boolean = false;
+  let hasDeletePermission: boolean = false;
   let name = '';
+  let user: User | null = null;
   let version = '';
 
   $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
+  $: {
+    user = data.user;
+    hasCreatePermission = featurePermissions.model.canCreate(user);
+    hasDeletePermission = featurePermissions.model.canDelete(user);
+    columnDefs = [
+      ...baseColumnDefs,
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: ModelCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              deleteCallback: params.deleteModel,
+              deleteTooltip: {
+                content: 'Delete Model',
+                placement: 'bottom',
+              },
+              hasDeletePermission,
+              rowData: params.data,
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          deleteModel,
+        } as CellRendererParams,
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 25,
+      },
+    ];
+  }
 
   onMount(() => {
     models.updateValue(() => data.initialModels);
   });
 
   function deleteModel(model: ModelSlim) {
-    effects.deleteModel(model, data.user);
+    effects.deleteModel(model, user);
   }
 
   function deleteModelContext(event: CustomEvent<RowId[]>) {
@@ -100,7 +117,7 @@
   }
 
   async function submitForm(e: SubmitEvent) {
-    await effects.createModel(name, version, files, data.user);
+    await effects.createModel(name, version, files, user);
     if ($createModelError === null && e.target instanceof HTMLFormElement) {
       e.target.reset();
     }
@@ -126,7 +143,17 @@
 
           <fieldset>
             <label for="name">Name</label>
-            <input bind:value={name} autocomplete="off" class="st-input w-100" name="name" required />
+            <input
+              bind:value={name}
+              autocomplete="off"
+              class="st-input w-100"
+              name="name"
+              required
+              use:permissionHandler={{
+                hasPermission: hasCreatePermission,
+                permissionError: creationPermissionError,
+              }}
+            />
           </fieldset>
 
           <fieldset>
@@ -138,12 +165,26 @@
               name="version"
               placeholder="0.0.0"
               required
+              use:permissionHandler={{
+                hasPermission: hasCreatePermission,
+                permissionError: creationPermissionError,
+              }}
             />
           </fieldset>
 
           <fieldset>
             <label for="file">Jar File</label>
-            <input class="w-100" name="file" required type="file" bind:files />
+            <input
+              class="w-100"
+              name="file"
+              required
+              type="file"
+              bind:files
+              use:permissionHandler={{
+                hasPermission: hasCreatePermission,
+                permissionError: creationPermissionError,
+              }}
+            />
           </fieldset>
 
           <fieldset>
@@ -167,9 +208,10 @@
         {#if $models.length}
           <SingleActionDataGrid
             {columnDefs}
+            {hasDeletePermission}
             itemDisplayText="Model"
             items={$models}
-            user={data.user}
+            {user}
             on:deleteItem={deleteModelContext}
             on:rowClicked={({ detail }) => showModel(detail.data)}
           />

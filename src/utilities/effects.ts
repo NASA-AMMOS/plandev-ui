@@ -458,7 +458,7 @@ const effects = {
         const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput }, user);
         const { createModel } = data;
         const { id } = createModel;
-        const model: ModelSlim = { id, jar_id, name, version };
+        const model: ModelSlim = { id, jar_id, name, plans: [], version };
 
         showSuccessToast('Model Created Successfully');
         createModelError.set(null);

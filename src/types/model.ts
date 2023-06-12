@@ -10,7 +10,8 @@ export type ModelSchema = {
   mission: string;
   name: string;
   parameters: { parameters: ParametersMap };
+  plans: { id: number }[];
   version: string;
 };
 
-export type ModelSlim = Pick<Model, 'id' | 'jar_id' | 'name' | 'version'>;
+export type ModelSlim = Pick<Model, 'id' | 'jar_id' | 'name' | 'plans' | 'version'>;

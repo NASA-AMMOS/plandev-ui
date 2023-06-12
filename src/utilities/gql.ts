@@ -578,6 +578,9 @@ const gql = {
         id
         jar_id,
         name
+        plans {
+          id
+        }
         version
       }
     }
@@ -649,6 +652,9 @@ const gql = {
         id
         jar_id
         name
+        plans {
+          id
+        }
         version
       }
       plans: plan(order_by: { id: desc }) {
@@ -672,6 +678,9 @@ const gql = {
         id
         jar_id
         name
+        plans {
+          id
+        }
         version
       }
       plans: plan(order_by: { id: desc }) {
@@ -1024,7 +1033,7 @@ const gql = {
 
   SCHEDULE: `#graphql
     query Schedule($specificationId: Int!) {
-      schedule(specificationId: $specificationId){
+      schedule(specificationId: $specificationId) {
         reason
         status
       }
@@ -1212,6 +1221,9 @@ const gql = {
         id
         jar_id,
         name
+        plans {
+          id
+        }
         version
       }
     }
