@@ -47,6 +47,7 @@
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let autoAdjustHeight: boolean = false;
   export let constraintViolations: ConstraintViolation[] = [];
+  export let dpr: number = 0;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let expanded: boolean = true;
@@ -284,6 +285,7 @@
             {showDirectives}
             {blur}
             {contextmenu}
+            {dpr}
             {drawHeight}
             {drawWidth}
             filter={layer.filter.activity}
@@ -316,6 +318,7 @@
         {#if layer.chartType === 'line' || layer.chartType === 'x-range'}
           <LayerGaps
             {...layer}
+            {dpr}
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
@@ -329,6 +332,7 @@
         {#if layer.chartType === 'line'}
           <LayerLine
             {...layer}
+            {dpr}
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}
@@ -344,6 +348,7 @@
         {#if layer.chartType === 'x-range'}
           <LayerXRange
             {...layer}
+            {dpr}
             {drawHeight}
             {drawWidth}
             filter={layer.filter.resource}

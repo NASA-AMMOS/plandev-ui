@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { afterUpdate, createEventDispatcher, tick } from 'svelte';
+  import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -70,12 +70,14 @@
   let clientWidth: number = 0;
   let contextMenu: MouseOver | null;
   let contextMenuComponent: TimelineContextMenu;
+  let dpr: number = 1;
   let tooltip: Tooltip;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
   let estimatedLabelWidthPx: number = 74; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver | null;
+  let removeDPRChangeListener: () => void | null = null;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
@@ -145,6 +147,32 @@
   afterUpdate(() => {
     setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
   });
+
+  onDestroy(() => {
+    if (removeDPRChangeListener !== null) {
+      removeDPRChangeListener();
+    }
+  });
+
+  onMount(() => {
+    detectDPRChange();
+  });
+
+  function detectDPRChange() {
+    // Adapted from https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#monitoring_screen_resolution_or_zoom_level_changes
+
+    if (removeDPRChangeListener !== null) {
+      removeDPRChangeListener();
+    }
+
+    // Create new change listener using current DPR
+    const mqString = `(resolution: ${window.devicePixelRatio}dppx)`;
+    const deviceMedia = matchMedia(mqString);
+    deviceMedia.addEventListener('change', detectDPRChange);
+    removeDPRChangeListener = () => deviceMedia.removeEventListener('change', detectDPRChange);
+
+    dpr = window.devicePixelRatio;
+  }
 
   function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
     const { detail } = e;
@@ -289,6 +317,7 @@
         {activityDirectivesMap}
         autoAdjustHeight={row.autoAdjustHeight}
         {constraintViolations}
+        {dpr}
         drawHeight={row.height}
         {drawWidth}
         expanded={row.expanded}

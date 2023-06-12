@@ -46,6 +46,7 @@
   export let contextmenu: MouseEvent | undefined;
   export let debugMode: boolean = false;
   export let dblclick: MouseEvent | undefined;
+  export let dpr: number = 1;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
@@ -73,7 +74,6 @@
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
-  let dpr: number = 1;
   let nativeDirectiveIconWidth: number = 16;
   let dragCurrentX: number | null = null;
   let dragOffsetX: number | null = null;
@@ -132,9 +132,12 @@
     activityColor &&
     activityHeight &&
     showDirectives !== undefined &&
+    canvasHeightDpr &&
+    canvasWidthDpr &&
     ctx &&
     drawHeight &&
     drawWidth &&
+    dpr &&
     filter &&
     selectedActivityDirectiveId !== undefined &&
     selectedSpanId !== undefined &&
@@ -154,7 +157,6 @@
   function preloadStaticAssets() {
     if (canvas) {
       ctx = canvas.getContext('2d');
-      dpr = window.devicePixelRatio;
     }
     assets.directiveIcon = loadSVG(ActivityDirectiveIconSVG);
     assets.anchorIcon = loadSVG(ActivityAnchorIconSVG);

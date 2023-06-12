@@ -10,6 +10,7 @@
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
+  export let dpr: number = 1;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
@@ -24,7 +25,6 @@
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
-  let dpr: number = 1;
   let maxXWidth: number;
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
@@ -34,7 +34,19 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
-  $: if (drawHeight && drawWidth && colorScheme && filter && mounted && opacity !== undefined && points && xScaleView) {
+  $: if (
+    canvasHeightDpr &&
+    canvasWidthDpr &&
+    dpr &&
+    drawHeight &&
+    drawWidth &&
+    colorScheme &&
+    filter &&
+    mounted &&
+    opacity !== undefined &&
+    points &&
+    xScaleView
+  ) {
     draw();
   }
   $: onMousemove(mousemove);
@@ -44,7 +56,6 @@
   onMount(() => {
     if (canvas) {
       ctx = canvas.getContext('2d');
-      dpr = window.devicePixelRatio;
     }
     mounted = true;
   });

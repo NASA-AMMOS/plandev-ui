@@ -9,6 +9,7 @@
   import type { Axis, LinePoint, QuadtreePoint, ResourceLayerFilter, TimeRange } from '../../types/timeline';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 
+  export let dpr: number = 1;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   // TODO make an issue to remove these unneeded filters from LayerLine, LayerRange, etc
@@ -29,7 +30,6 @@
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
-  let dpr: number = 1;
   let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreePoint>;
   let visiblePointsById: Record<number, LinePoint> = {};
@@ -37,8 +37,11 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: if (
+    canvasHeightDpr &&
+    canvasWidthDpr &&
     drawHeight &&
     drawWidth &&
+    dpr &&
     // TODO swap filter out for resources which are recomputed when the view changes (i.e. filter changes)
     filter &&
     lineColor &&
@@ -60,7 +63,6 @@
   onMount(() => {
     if (canvas) {
       ctx = canvas.getContext('2d');
-      dpr = window.devicePixelRatio;
     }
     mounted = true;
   });
