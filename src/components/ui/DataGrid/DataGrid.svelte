@@ -102,6 +102,23 @@
   let resizeObserver: ResizeObserver | null = null;
 
   $: {
+    const seenSet = new Set<RowId>();
+    rowData.forEach(rowDatum => {
+      if (!seenSet.has(getRowId(rowDatum))) {
+        // Non duplicate case
+        seenSet.add(getRowId(rowDatum));
+      } else {
+        // Found duplicate, write error message
+        console.error(
+          `%c Grid Problems? Look Here!
+A DataGrid has had multiple rows keyed over the same ID - ensure no two rows have the same value for the \`${String(
+            idKey,
+          )}\` property at the same time, even for a moment. The offending ID is ${getRowId(rowDatum)}
+This has been seen to result in unintended and often glitchy behavior, which often requires a page reload to resolve.`,
+          'font-weight:bold;',
+        );
+      }
+    });
     gridOptions?.api?.setRowData(rowData);
 
     const previousSelectedRowIds: RowId[] = [];

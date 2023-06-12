@@ -91,7 +91,18 @@
 
     try {
       const newCommandDictionary = await effects.createCommandDictionary(files, data.user);
-      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) => [newCommandDictionary, ...dictionaries]);
+
+      const seenSet = new Set<number>();
+      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) =>
+        [newCommandDictionary, ...dictionaries].filter(val => {
+          if (!seenSet.has(val.id)) {
+            seenSet.add(val.id);
+            return true;
+          } else {
+            return false;
+          }
+        }),
+      );
       showSuccessToast('Command Dictionary Created Successfully');
     } catch (e) {
       createDictionaryError = e.message;
