@@ -45,8 +45,6 @@
       resizable: true,
       sortable: true,
     },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-    { field: 'updated_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SequencesCellRendererParams) => {
@@ -169,12 +167,7 @@
       <SectionTitle>Sequences</SectionTitle>
 
       <Input>
-        <input
-          bind:value={filterText}
-          class="st-input"
-          placeholder="Filter sequences"
-          style="max-width: 300px; width: 100%;"
-        />
+        <input bind:value={filterText} class="st-input" placeholder="Filter sequences" style="width: 100%;" />
       </Input>
 
       <div class="right">

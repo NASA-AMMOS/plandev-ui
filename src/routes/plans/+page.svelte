@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -28,7 +28,7 @@
   import { removeQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertUsToDurationString, getUnixEpochTime } from '../../utilities/time';
+  import { convertUsToDurationString, getShortISOForDate, getUnixEpochTime } from '../../utilities/time';
   import { min, required, timestamp } from '../../utilities/validators';
   import type { PageData } from './$types';
 
@@ -52,8 +52,56 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
-    { field: 'start_time_doy', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
-    { field: 'end_time_doy', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
+    {
+      field: 'start_time_doy',
+      filter: 'text',
+      headerName: 'Start Time',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.start_time_doy) {
+          return params.data?.start_time_doy.split('T')[0];
+        }
+      },
+    },
+    {
+      field: 'end_time_doy',
+      filter: 'text',
+      headerName: 'End Time',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.end_time_doy) {
+          return params.data?.end_time_doy.split('T')[0];
+        }
+      },
+    },
+    {
+      field: 'created_at',
+      filter: 'text',
+      headerName: 'Date Created',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.created_at) {
+          return getShortISOForDate(new Date(params.data?.created_at));
+        }
+      },
+    },
+    {
+      field: 'updated_at',
+      filter: 'text',
+      headerName: 'Updated At',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.updated_at) {
+          return getShortISOForDate(new Date(params.data?.updated_at));
+        }
+      },
+    },
+    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
+    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: PlanCellRendererParams) => {

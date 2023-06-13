@@ -37,6 +37,9 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
+    { field: 'author', filter: 'string', headerName: 'Author', sortable: true, width: 100 },
+    { field: 'last_modified_by', filter: 'string', headerName: 'Last Modified By', sortable: true, width: 100 },
+    { field: 'description', filter: 'string', headerName: 'Description', sortable: true, width: 120 },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SchedulingConditionsCellRendererParams) => {
@@ -115,12 +118,7 @@
     <SectionTitle>Scheduling Conditions</SectionTitle>
 
     <Input>
-      <input
-        bind:value={filterText}
-        class="st-input"
-        placeholder="Filter conditions"
-        style="max-width: 300px; width: 100%;"
-      />
+      <input bind:value={filterText} class="st-input" placeholder="Filter conditions" style="width: 100%;" />
     </Input>
 
     <div class="right">

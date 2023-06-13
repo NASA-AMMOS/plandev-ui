@@ -34,15 +34,18 @@ const mockMergeRequest: PlanMergeRequestSchema = {
 const mockInitialPlan: Plan = {
   child_plans: [{ id: 2, name: 'Branch 1' }],
   collaborators: [{ collaborator: 'tester 2' }],
+  created_at: '2023-02-16T00:00:00',
   duration: '168:00:00',
   end_time_doy: '2023-054T00:00:00',
   id: 1,
   is_locked: true,
   model: {
+    created_at: '2023-02-16T00:00:00',
     id: 1,
     jar_id: 1,
     mission: '',
     name: 'Demo Model',
+    owner: 'spacecaptain',
     parameters: {
       parameters: {},
     },
@@ -51,13 +54,15 @@ const mockInitialPlan: Plan = {
   },
   model_id: 1,
   name: 'Demo Plan',
-  owner: 'tester 1',
+  owner: 'spacecaptain',
   parent_plan: null,
   revision: 3,
   scheduling_specifications: [{ id: 1 }],
   simulations: [{ simulation_datasets: [{ id: 1 }] }],
   start_time: '2023-02-16T00:00:00',
   start_time_doy: '2023-047T00:00:00',
+  updated_at: '2023-02-16T00:00:00',
+  updated_by: 'redshirt',
 };
 
 const user: User = { allowedRoles: ['admin'], defaultRole: 'admin', id: 'foo', permissibleQueries: {}, token: '' };

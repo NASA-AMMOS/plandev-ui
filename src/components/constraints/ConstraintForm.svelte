@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { constraintsColumns } from '../../stores/constraints';
+  import { constraintsFormColumns } from '../../stores/constraints';
   import type { User } from '../../types/app';
   import type { Constraint } from '../../types/constraint';
   import type { ModelSlim } from '../../types/model';
@@ -100,11 +100,11 @@
       if (mode === 'create') {
         const newConstraintId = await effects.createConstraint(
           constraintDefinition,
-          constraintDescription,
           constraintModelId,
           constraintName,
           constraintPlanId,
           user,
+          constraintDescription,
         );
 
         if (newConstraintId !== null) {
@@ -114,11 +114,11 @@
         await effects.updateConstraint(
           constraintId,
           constraintDefinition,
-          constraintDescription,
           constraintModelId,
           constraintName,
           constraintPlanId,
           user,
+          constraintDescription,
         );
 
         savedConstraint = {
@@ -137,7 +137,7 @@
 
 <PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
-<CssGrid bind:columns={$constraintsColumns}>
+<CssGrid bind:columns={$constraintsFormColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Constraint' : 'Edit Constraint'}</SectionTitle>
@@ -203,7 +203,7 @@
 
       <fieldset>
         <label for="constraint-description">Description</label>
-        <input
+        <textarea
           bind:value={constraintDescription}
           autocomplete="off"
           class="st-input w-100"

@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import { expansionSetsColumns, savingExpansionSet } from '../../stores/expansion';
+  import { expansionSetsFormColumns, savingExpansionSet } from '../../stores/expansion';
   import { models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import type { ActivityTypeExpansionRules } from '../../types/activity';
@@ -39,6 +39,7 @@
   let setExpansionRuleIds: number[] = [];
   let setDictionaryId: number | null = null;
   let setModelId: number | null = null;
+  let setDescription: string = '';
 
   $: effects
     .getActivityTypesExpansionRules(setModelId, user)
@@ -54,7 +55,13 @@
 
   async function saveSet() {
     if (mode === 'create' && setDictionaryId && setModelId) {
-      const newSetId = await effects.createExpansionSet(setDictionaryId, setModelId, setExpansionRuleIds, user);
+      const newSetId = await effects.createExpansionSet(
+        setDictionaryId,
+        setModelId,
+        setExpansionRuleIds,
+        user,
+        setDescription,
+      );
 
       if (newSetId !== null) {
         goto(`${base}/expansion/sets`);
@@ -111,7 +118,7 @@
   };
 </script>
 
-<CssGrid bind:columns={$expansionSetsColumns}>
+<CssGrid bind:columns={$expansionSetsFormColumns}>
   <Panel>
     <svelte:fragment slot="header">
       <SectionTitle>New Expansion Set</SectionTitle>
@@ -155,6 +162,17 @@
             </option>
           {/each}
         </select>
+      </fieldset>
+
+      <fieldset>
+        <label for="description">Description</label>
+        <textarea
+          bind:value={setDescription}
+          autocomplete="off"
+          class="st-input w-100"
+          name="description"
+          placeholder="Enter Expansion Set Description (optional)"
+        />
       </fieldset>
 
       <fieldset class="expansion-rules-table">

@@ -6,7 +6,7 @@ export type SchedulingGoal = {
   author: string | null;
   created_date: string;
   definition: string;
-  description: string | null;
+  description?: string;
   id: number;
   last_modified_by: string | null;
   model_id: number;
@@ -19,7 +19,7 @@ export type SchedulingCondition = {
   author: string | null;
   created_date: string;
   definition: string;
-  description: string | null;
+  description?: string;
   id: number;
   last_modified_by: string | null;
   model_id: number;

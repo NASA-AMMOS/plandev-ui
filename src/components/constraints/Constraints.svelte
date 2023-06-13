@@ -40,7 +40,7 @@
       suppressSizeToFit: true,
       width: 60,
     },
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'name', filter: 'text', headerName: 'Name', minWidth: 80, resizable: true, sortable: true },
     {
       field: 'model_id',
       filter: 'number',
@@ -58,6 +58,24 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       width: 80,
+    },
+    {
+      field: 'owner',
+      filter: 'string',
+      headerName: 'Owner',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
+    },
+    {
+      field: 'updated_by',
+      filter: 'string',
+      headerName: 'Updated By',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 120,
     },
     {
       cellClass: 'action-cell-container',
@@ -176,12 +194,7 @@
       <SectionTitle>Constraints</SectionTitle>
 
       <Input>
-        <input
-          bind:value={filterText}
-          class="st-input"
-          placeholder="Filter constraints"
-          style="max-width: 300px; width: 100%;"
-        />
+        <input bind:value={filterText} class="st-input" placeholder="Filter constraints" style="width: 100%;" />
       </Input>
 
       <div class="right">

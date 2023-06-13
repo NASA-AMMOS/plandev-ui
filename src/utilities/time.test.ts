@@ -9,6 +9,8 @@ import {
   getDoy,
   getDoyTime,
   getDoyTimeComponents,
+  getShortISOForDate,
+  getTimeAgo,
   getUnixEpochTime,
   parseDoyOrYmdTime,
 } from '../../src/utilities/time';
@@ -126,4 +128,23 @@ test('parseDoyOrYmdTime', () => {
 
   expect(parseDoyOrYmdTime('2019-365T08:80:00.1234')).toEqual(null);
   expect(parseDoyOrYmdTime('2022-20-2T00:00:00')).toEqual(null);
+});
+
+test('getTimeAgo', () => {
+  const time = new Date('2023-05-23T00:00:00.000Z');
+  expect(getTimeAgo(new Date())).toEqual('Now');
+  expect(getTimeAgo(new Date(time.getTime() - 100), time)).toEqual('Now');
+  expect(getTimeAgo(new Date(time.getTime() - 1000), time)).toEqual('1s ago');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60), time)).toEqual('1m ago');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60 * 60), time)).toEqual('1h ago');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60 * 60 * 23), time)).toEqual('23h ago');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60 * 60 * 24), time)).toEqual('2023-05-22');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60 * 60 * 24), time, 1000 * 60 * 60 * 24)).toEqual('1d ago');
+  expect(getTimeAgo(new Date(time.getTime() - 1000 * 60 * 60 * 24 * 366), time, 1000 * 60 * 60 * 24 * 366)).toEqual(
+    '1y ago',
+  );
+});
+
+test('getShortISOForDate', () => {
+  expect(getShortISOForDate(new Date('2023-05-23T00:00:00.000Z'))).toEqual('2023-05-23T00:00:00');
 });

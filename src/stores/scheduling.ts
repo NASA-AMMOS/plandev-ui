@@ -13,8 +13,9 @@ import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
 
-export const schedulingColumns: Writable<string> = writable('1fr 3px 2fr');
-export const schedulingConditionsColumns: Writable<string> = writable('1fr 3px 2fr');
+export const schedulingColumns: Writable<string> = writable('2fr 3px 1fr');
+export const schedulingFormColumns: Writable<string> = writable('1fr 3px 2fr');
+export const schedulingConditionsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 export const schedulingGoalsColumns: Writable<string> = writable('1fr 3px 2fr');
 export const schedulingStatus: Writable<Status | null> = writable(null);
 

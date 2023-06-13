@@ -107,7 +107,7 @@ export class Plans {
     this.alertError = page.locator('.alert-error');
     this.confirmModal = page.locator(`.modal:has-text("Delete Plan")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Plan") >> button:has-text("Delete")`);
-    this.createButton = page.locator('text=Create');
+    this.createButton = page.getByRole('button', { name: 'Create' });
     this.durationDisplay = page.locator('input[name="duration"]');
     this.inputEndTime = page.locator('input[name="end-time"]');
     this.inputModel = page.locator(this.inputModelSelector);

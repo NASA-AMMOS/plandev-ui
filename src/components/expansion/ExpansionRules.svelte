@@ -37,7 +37,22 @@
       suppressSizeToFit: true,
       width: 60,
     },
-    { field: 'activity_type', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
+    {
+      field: 'name',
+      filter: 'text',
+      headerName: 'Name',
+      minWidth: 120,
+      resizable: true,
+      sortable: true,
+    },
+    {
+      field: 'activity_type',
+      filter: 'text',
+      headerName: 'Activity Type',
+      minWidth: 200,
+      resizable: true,
+      sortable: true,
+    },
     {
       field: 'authoring_command_dict_id',
       filter: 'number',
@@ -46,8 +61,9 @@
       sortable: true,
     },
     { field: 'authoring_mission_model_id', filter: 'number', headerName: 'Model ID', sortable: true },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-    { field: 'updated_at', filter: 'text', headerName: 'Updated At', resizable: true, sortable: true },
+    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
+    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
+    { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionRuleCellRendererParams) => {
@@ -140,12 +156,7 @@
       <SectionTitle>Expansion Rules</SectionTitle>
 
       <Input>
-        <input
-          bind:value={filterText}
-          class="st-input"
-          placeholder="Filter rules"
-          style="max-width: 300px; width: 100%;"
-        />
+        <input bind:value={filterText} class="st-input" placeholder="Filter rules" style="width: 100%;" />
       </Input>
 
       <div class="right">

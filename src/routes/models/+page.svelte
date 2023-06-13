@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import { onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
@@ -43,6 +43,20 @@
       width: 60,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
+    {
+      field: 'created_at',
+      filter: 'text',
+      headerName: 'Date Created',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ModelSlim>) => {
+        if (params.data?.created_at) {
+          return new Date(params.data?.created_at).toISOString().slice(0, 19);
+        }
+      },
+    },
+    { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
     { field: 'version', filter: 'number', headerName: 'Version', sortable: true, width: 120 },
   ];
 
@@ -54,6 +68,7 @@
   let name = '';
   let user: User | null = null;
   let version = '';
+  let description = '';
 
   $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
   $: {
@@ -117,7 +132,7 @@
   }
 
   async function submitForm(e: SubmitEvent) {
-    await effects.createModel(name, version, files, user);
+    await effects.createModel(name, version, files, data.user, description);
     if ($createModelError === null && e.target instanceof HTMLFormElement) {
       e.target.reset();
     }
@@ -169,6 +184,17 @@
                 hasPermission: hasCreatePermission,
                 permissionError: creationPermissionError,
               }}
+            />
+          </fieldset>
+
+          <fieldset>
+            <label for="description">Description</label>
+            <textarea
+              bind:value={description}
+              autocomplete="off"
+              class="st-input w-100"
+              name="description"
+              placeholder="Enter Model Description (optional)"
             />
           </fieldset>
 

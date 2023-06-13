@@ -5,6 +5,7 @@ import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/ac
 import { checkConstraintsStatus, constraintViolationsResponse } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
+  createExpansionRuleError,
   creatingExpansionSequence,
   planExpansionStatus,
   savingExpansionRule,
@@ -335,11 +336,11 @@ const effects = {
 
   async createConstraint(
     definition: string,
-    description: string,
     model_id: number | null,
     name: string,
     plan_id: number | null,
     user: User | null,
+    description?: string,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT(user)) {
@@ -348,10 +349,10 @@ const effects = {
 
       const constraintInsertInput: ConstraintInsertInput = {
         definition,
-        description,
         model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
+        ...(description && { description }),
       };
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput }, user);
       const { createConstraint } = data;
@@ -368,6 +369,8 @@ const effects = {
 
   async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
     try {
+      createExpansionRuleError.set(null);
+
       if (!queryPermissions.CREATE_EXPANSION_RULE(user)) {
         throwPermissionError('create an expansion rule');
       }
@@ -383,6 +386,7 @@ const effects = {
       catchError('Expansion Rule Create Failed', e as Error);
       showFailureToast('Expansion Rule Create Failed');
       savingExpansionRule.set(false);
+      createExpansionRuleError.set((e as Error).message);
       return null;
     }
   },
@@ -414,6 +418,7 @@ const effects = {
     modelId: number,
     expansionRuleIds: number[],
     user: User | null,
+    description?: string,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SET(user)) {
@@ -421,7 +426,16 @@ const effects = {
       }
 
       savingExpansionSet.set(true);
-      const data = await reqHasura(gql.CREATE_EXPANSION_SET, { dictionaryId, expansionRuleIds, modelId }, user);
+      const data = await reqHasura(
+        gql.CREATE_EXPANSION_SET,
+        {
+          dictionaryId,
+          expansionRuleIds,
+          modelId,
+          ...(description && { description }),
+        },
+        user,
+      );
       const { createExpansionSet } = data;
       const { id } = createExpansionSet;
       showSuccessToast('Expansion Set Created Successfully');
@@ -435,7 +449,13 @@ const effects = {
     }
   },
 
-  async createModel(name: string, version: string, files: FileList, user: User | null): Promise<void> {
+  async createModel(
+    name: string,
+    version: string,
+    files: FileList,
+    user: User | null,
+    description?: string,
+  ): Promise<void> {
     try {
       createModelError.set(null);
 
@@ -450,6 +470,7 @@ const effects = {
 
       if (jar_id !== null) {
         const modelInsertInput: ModelInsertInput = {
+          description,
           jar_id,
           mission: '',
           name,
@@ -457,8 +478,17 @@ const effects = {
         };
         const data = await reqHasura(gql.CREATE_MODEL, { model: modelInsertInput }, user);
         const { createModel } = data;
-        const { id } = createModel;
-        const model: ModelSlim = { id, jar_id, name, plans: [], version };
+        const { id, created_at, owner } = createModel;
+        const model: ModelSlim = {
+          created_at,
+          id,
+          jar_id,
+          name,
+          owner,
+          plans: [],
+          version,
+          ...(description && { description }),
+        };
 
         showSuccessToast('Model Created Successfully');
         createModelError.set(null);
@@ -496,7 +526,7 @@ const effects = {
         name,
         start_time: start_time_doy, // Postgres accepts DOY dates for it's 'timestamptz' type.
       };
-      const data = await reqHasura<Pick<PlanSchema, 'collaborators' | 'id' | 'owner' | 'revision' | 'start_time'>>(
+      const data = await reqHasura<PlanSlim>(
         gql.CREATE_PLAN,
         {
           plan: planInsertInput,
@@ -504,7 +534,8 @@ const effects = {
         user,
       );
       const { createPlan } = data;
-      const { collaborators, id, owner, revision, start_time } = createPlan;
+      const { collaborators, created_at, duration, id, owner, revision, start_time, updated_at, updated_by } =
+        createPlan;
 
       if (!(await effects.initialSimulationUpdate(id, simulation_template_id, start_time_doy, end_time_doy, user))) {
         throw Error('Failed to update simulation.');
@@ -528,6 +559,8 @@ const effects = {
 
       const plan: PlanSlim = {
         collaborators,
+        created_at,
+        duration,
         end_time_doy,
         id,
         model_id,
@@ -536,6 +569,8 @@ const effects = {
         revision,
         start_time,
         start_time_doy,
+        updated_at,
+        updated_by,
       };
 
       showSuccessToast('Plan Created Successfully');
@@ -636,10 +671,10 @@ const effects = {
 
   async createSchedulingCondition(
     definition: string,
-    description: string,
     name: string,
     modelId: number,
     user: User | null,
+    description?: string,
   ): Promise<SchedulingCondition | null> {
     try {
       if (!queryPermissions.CREATE_SCHEDULING_CONDITION(user)) {
@@ -649,10 +684,10 @@ const effects = {
       const conditionInsertInput: SchedulingConditionInsertInput = {
         author: user?.id ?? 'unknown',
         definition,
-        description,
         last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
+        ...(description && { description }),
       };
       const data = await reqHasura<SchedulingCondition>(
         gql.CREATE_SCHEDULING_CONDITION,
@@ -672,10 +707,10 @@ const effects = {
 
   async createSchedulingGoal(
     definition: string,
-    description: string,
     name: string,
     modelId: number,
     user: User | null,
+    description?: string,
   ): Promise<SchedulingGoal | null> {
     try {
       if (!queryPermissions.CREATE_SCHEDULING_GOAL(user)) {
@@ -685,10 +720,10 @@ const effects = {
       const goalInsertInput: SchedulingGoalInsertInput = {
         author: user?.id ?? 'unknown',
         definition,
-        description,
         last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
+        ...(description && { description }),
       };
       const data = await reqHasura<SchedulingGoal>(gql.CREATE_SCHEDULING_GOAL, { goal: goalInsertInput }, user);
       const { createSchedulingGoal: newGoal } = data;
@@ -1661,10 +1696,7 @@ const effects = {
     try {
       const data = (await reqHasura(gql.GET_PLANS_AND_MODELS, {}, user)) as {
         models: ModelSlim[];
-        plans: Pick<
-          Plan,
-          'collaborators' | 'duration' | 'id' | 'model_id' | 'name' | 'owner' | 'revision' | 'start_time'
-        >[];
+        plans: PlanSlim[];
       };
       const { models, plans } = data;
 
@@ -2478,11 +2510,11 @@ const effects = {
   async updateConstraint(
     id: number,
     definition: string,
-    description: string,
     model_id: number,
     name: string,
     plan_id: number,
     user: User | null,
+    description?: string,
   ): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_CONSTRAINT(user)) {
@@ -2491,10 +2523,10 @@ const effects = {
 
       const constraint: Partial<Constraint> = {
         definition,
-        description,
         model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
+        ...(description && { description }),
       };
       await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id }, user);
       showSuccessToast('Constraint Updated Successfully');
@@ -2507,6 +2539,7 @@ const effects = {
   async updateExpansionRule(id: number, rule: Partial<ExpansionRule>, user: User | null): Promise<string | null> {
     try {
       savingExpansionRule.set(true);
+      createExpansionRuleError.set(null);
 
       if (!queryPermissions.UPDATE_EXPANSION_RULE(user)) {
         throwPermissionError('update this expansion rule');
@@ -2522,6 +2555,7 @@ const effects = {
       catchError('Expansion Rule Update Failed', e as Error);
       showFailureToast('Expansion Rule Update Failed');
       savingExpansionRule.set(false);
+      createExpansionRuleError.set((e as Error).message);
       return null;
     }
   },
@@ -2684,17 +2718,11 @@ const effects = {
         throwPermissionError('update this simulation template');
       }
 
-      const simulationTemplateSetInput: SimulationTemplateSetInput = {};
-
-      if (partialSimulationTemplate.arguments) {
-        simulationTemplateSetInput.arguments = partialSimulationTemplate.arguments;
-      }
-      if (partialSimulationTemplate.description) {
-        simulationTemplateSetInput.description = partialSimulationTemplate.description;
-      }
-      if (partialSimulationTemplate.model_id) {
-        simulationTemplateSetInput.model_id = partialSimulationTemplate.model_id;
-      }
+      const simulationTemplateSetInput: SimulationTemplateSetInput = {
+        ...(partialSimulationTemplate.arguments && { arguments: partialSimulationTemplate.arguments }),
+        ...(partialSimulationTemplate.description && { description: partialSimulationTemplate.description }),
+        ...(partialSimulationTemplate.model_id && { model_id: partialSimulationTemplate.model_id }),
+      };
 
       const {
         update_simulation_template_by_pk: { description: templateDescription },

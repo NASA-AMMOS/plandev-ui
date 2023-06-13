@@ -93,11 +93,12 @@ const gql = {
   `,
 
   CREATE_EXPANSION_SET: `#graphql
-    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!) {
+    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $description: String) {
       createExpansionSet(
         commandDictionaryId: $dictionaryId,
         missionModelId: $modelId,
-        expansionIds: $expansionRuleIds
+        expansionIds: $expansionRuleIds,
+        description: $description
       ) {
         id
       }
@@ -108,6 +109,8 @@ const gql = {
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: insert_mission_model_one(object: $model) {
         id
+        created_at
+        owner
       }
     }
   `,
@@ -115,13 +118,17 @@ const gql = {
   CREATE_PLAN: `#graphql
     mutation CreatePlan($plan: plan_insert_input!) {
       createPlan: insert_plan_one(object: $plan) {
+        created_at
         collaborators {
           collaborator
         }
+        duration
         id
         owner
         revision
         start_time
+        updated_at
+        updated_by
       }
     }
   `,
@@ -455,12 +462,16 @@ const gql = {
   GET_CONSTRAINT: `#graphql
     query GetConstraint($id: Int!) {
       constraint: constraint_by_pk(id: $id) {
+        created_at
         definition
         description
         id
         model_id
         name
+        owner
         plan_id
+        updated_at
+        updated_by
       }
     }
   `,
@@ -499,9 +510,13 @@ const gql = {
         authoring_command_dict_id
         authoring_mission_model_id
         created_at
+        description
         expansion_logic
         id
+        name
+        owner
         updated_at
+        updated_by
       }
     }
   `,
@@ -575,12 +590,15 @@ const gql = {
   GET_MODELS: `#graphql
     query GetModels {
       models: mission_model {
+        created_at
+        description
         id
-        jar_id,
+        jar_id
         name
         plans {
           id
         }
+        owner
         version
       }
     }
@@ -613,6 +631,7 @@ const gql = {
         collaborators {
           collaborator
         }
+        created_at
         duration
         id
         is_locked
@@ -642,6 +661,8 @@ const gql = {
           }
         }
         start_time
+        updated_at
+        updated_by
       }
     }
   `,
@@ -661,6 +682,7 @@ const gql = {
         collaborators {
           collaborator
         }
+        created_at
         duration
         id
         model_id
@@ -668,6 +690,8 @@ const gql = {
         owner
         revision
         start_time
+        updated_at
+        updated_by
       }
     }
   `,
@@ -1149,12 +1173,16 @@ const gql = {
           { plan_id: { _eq: $planId } }
         ]
       }, order_by: { name: asc }) {
+        created_at
         definition
         description
         id
         model_id
         name
+        owner
         plan_id
+        updated_at
+        updated_by
       }
     }
   `,
@@ -1162,12 +1190,16 @@ const gql = {
   SUB_CONSTRAINTS_ALL: `#graphql
     subscription SubConstraintsAll {
       constraints: constraint(order_by: { name: asc }) {
+        created_at
         definition
         description
         id
         model_id
         name
+        owner
         plan_id
+        updated_at
+        updated_by
       }
     }
   `,
@@ -1179,9 +1211,13 @@ const gql = {
         authoring_command_dict_id
         authoring_mission_model_id
         created_at
+        description
         expansion_logic
         id
+        name
+        owner
         updated_at
+        updated_by
       }
     }
   `,
@@ -1202,6 +1238,7 @@ const gql = {
       expansionSets: expansion_set(order_by: { id: desc }) {
         command_dict_id
         created_at
+        description
         expansion_rules {
           activity_type
           authoring_command_dict_id
@@ -1211,6 +1248,10 @@ const gql = {
         }
         id
         mission_model_id
+        name
+        owner
+        updated_at
+        updated_by
       }
     }
   `,
@@ -1218,12 +1259,15 @@ const gql = {
   SUB_MODELS: `#graphql
     subscription SubModels {
       models: mission_model(order_by: { name: asc }) {
+        created_at
+        description
         id
-        jar_id,
+        jar_id
         name
         plans {
           id
         }
+        owner
         version
       }
     }
@@ -1449,6 +1493,8 @@ const gql = {
         id
         plan_revision
         reason
+        requested_at
+        requested_by
         simulation_end_time
         simulation_revision
         simulation_start_time
@@ -1462,6 +1508,8 @@ const gql = {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
         simulation_datasets(order_by: { id: desc }) {
           id
+          requested_at
+          requested_by
           simulation_end_time
           simulation_start_time
         }

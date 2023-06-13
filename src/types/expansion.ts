@@ -6,12 +6,16 @@ export type ExpansionRule = {
   authoring_command_dict_id: number;
   authoring_mission_model_id: number;
   created_at: string;
+  description: string;
   expansion_logic: string;
   id: number;
+  name: string;
+  owner: string;
   updated_at: string;
+  updated_by: string;
 };
 
-export type ExpansionRuleInsertInput = Omit<ExpansionRule, 'created_at' | 'id' | 'updated_at'>;
+export type ExpansionRuleInsertInput = Omit<ExpansionRule, 'created_at' | 'id' | 'updated_at' | 'updated_by' | 'owner'>;
 
 export type ExpansionSequenceToActivityInsertInput = {
   seq_id: string;
@@ -24,7 +28,6 @@ export type ExpansionSequence = {
   metadata: any;
   seq_id: string;
   simulation_dataset_id: number;
-  updated_at: string;
 };
 
 export type ExpansionSequenceInsertInput = Omit<ExpansionSequence, 'created_at' | 'updated_at'>;
@@ -32,9 +35,14 @@ export type ExpansionSequenceInsertInput = Omit<ExpansionSequence, 'created_at' 
 export type ExpansionSet = {
   command_dict_id: number;
   created_at: string;
+  description: string;
   expansion_rules: ExpansionRule[];
   id: number;
   mission_model_id: number;
+  name: string;
+  owner: string;
+  updated_at: string;
+  updated_by: string;
 };
 
 export type SeqId = Pick<ExpansionSequence, 'seq_id'>;

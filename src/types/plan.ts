@@ -69,6 +69,7 @@ export type PlanMergeResolution = 'none' | 'source' | 'target';
 export type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
   collaborators: PlanCollaborator[];
+  created_at: string;
   duration: string;
   id: number;
   is_locked: boolean;
@@ -81,11 +82,25 @@ export type PlanSchema = {
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
   simulations: [{ simulation_datasets: [{ id: number }] }];
   start_time: string;
+  updated_at: string;
+  updated_by: string;
 };
 
 export type PlanSlim = Pick<
   Plan,
-  'collaborators' | 'end_time_doy' | 'id' | 'model_id' | 'name' | 'owner' | 'revision' | 'start_time' | 'start_time_doy'
+  | 'created_at'
+  | 'collaborators'
+  | 'duration'
+  | 'end_time_doy'
+  | 'id'
+  | 'model_id'
+  | 'name'
+  | 'owner'
+  | 'revision'
+  | 'start_time'
+  | 'start_time_doy'
+  | 'updated_at'
+  | 'updated_by'
 >;
 
 export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;

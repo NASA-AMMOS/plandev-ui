@@ -5,6 +5,7 @@
   import PinPlayIcon from '@nasa-jpl/stellar/icons/pin_play.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { SimulationDataset } from '../../types/simulation';
+  import { getDoyTime, getTimeAgo } from '../../utilities/time';
   import Input from '../form/Input.svelte';
 
   export let checked: boolean = false;
@@ -16,9 +17,11 @@
   const planDuration = planEndTimeMs - planStartTimeMs;
 
   let timeVizRangeLeft = 0;
-  let timeVizRangeWidth = 100;
+  let timeVizRangeWidth = 0;
   let startTimeText = '';
   let endTimeText = '';
+
+  $: timeVizRangeWidthStyle = timeVizRangeWidth < 1 ? '4px' : `${timeVizRangeWidth}%`;
 
   $: {
     // Compute time range left and width
@@ -29,32 +32,38 @@
       if (simulationStartTimeMS === planStartTimeMs) {
         startTimeText = 'Plan Start';
       } else {
-        startTimeText = simulationDataset.simulation_start_time.split('+')[0];
+        startTimeText = getDoyTime(new Date(simulationDataset.simulation_start_time)).split('+')[0];
       }
 
       if (simulationDataset.simulation_end_time) {
         const simulationEndTimeMS = new Date(simulationDataset.simulation_end_time).getTime();
-        timeVizRangeWidth = ((simulationEndTimeMS - simulationStartTimeMS) / planDuration) * 100 || 100;
-        endTimeText = simulationDataset.simulation_start_time.split('+')[0];
+        timeVizRangeWidth = ((simulationEndTimeMS - simulationStartTimeMS) / planDuration) * 100 || 0;
 
         if (simulationEndTimeMS === planEndTimeMs) {
           endTimeText = 'Plan End';
         } else {
-          endTimeText = simulationDataset.simulation_end_time.split('+')[0];
+          endTimeText = getDoyTime(new Date(simulationDataset.simulation_end_time)).split('+')[0];
         }
       }
     }
   }
 </script>
 
-<button class="simulation-dataset st-typography-label" on:click={() => dispatch('click')}>
+<button class="simulation-dataset st-typography-label" class:active={checked} on:click={() => dispatch('click')}>
   <div class="simulation-dataset-top-row">
-    <Input class="simulation-dataset-input">
-      <input {checked} type="checkbox" tabIndex={-1} />
-    </Input>
-
-    <div>
-      Simulation ID: {simulationDataset.id}
+    <div class="simulation-dataset-input-container">
+      <Input class="simulation-dataset-input">
+        <input {checked} type="checkbox" tabIndex={-1} />
+      </Input>
+      ID: {simulationDataset.id}
+    </div>
+    <div class="simulation-dataset-metadata">
+      <div class="simulation-dataset-metadata-time-ago">
+        {getTimeAgo(new Date(simulationDataset.requested_at))}
+      </div>
+      <div class="simulation-dataset-metadata-user">
+        @{simulationDataset.requested_by || 'Unknown User'}
+      </div>
     </div>
   </div>
 
@@ -65,7 +74,10 @@
 
   <div class="simulation-range-visualiztion">
     <div class="simulation-range-background">
-      <div class="simulation-range-fill" style={`margin-left: ${timeVizRangeLeft}%; width: ${timeVizRangeWidth}%`} />
+      <div
+        class="simulation-range-fill"
+        style={`margin-left: ${timeVizRangeLeft}%; width: ${timeVizRangeWidthStyle}`}
+      />
     </div>
   </div>
 </button>
@@ -80,7 +92,16 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    opacity: 0.8;
     padding: 8px;
+  }
+
+  .simulation-dataset.active {
+    opacity: 1;
+  }
+
+  .simulation-dataset.active {
+    opacity: 1;
   }
 
   .simulation-dataset:hover {
@@ -92,6 +113,32 @@
     display: flex;
     gap: 8px;
     height: 24px;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .simulation-dataset-input-container {
+    display: flex;
+    gap: 8px;
+  }
+
+  .simulation-dataset-metadata {
+    display: flex;
+    gap: 8px;
+  }
+
+  .simulation-dataset-metadata {
+    color: var(--st-gray-50) dataset-metadata-time-ago;
+    display: flex;
+    gap: 8px;
+  }
+
+  .simulation-dataset-metadata-user {
+    color: var(--st-gray-70);
+  }
+
+  .simulation-dataset-metadata-time-ago {
+    color: var(--st-gray-50);
   }
 
   .simulation-dataset-top-row :global(.input.simulation-dataset-input) {
@@ -117,8 +164,13 @@
   }
 
   .simulation-range-label :global(svg) {
+    color: var(--st-gray-40);
     flex-shrink: 0;
     z-index: 0;
+  }
+
+  .simulation-dataset.active .simulation-range-label :global(svg) {
+    color: var(--st-gray-60);
   }
 
   .simulation-range-label.start {
@@ -149,7 +201,7 @@
     content: ' ';
     height: 16px;
     left: 8px;
-    opacity: 0.3;
+    opacity: 0.15;
     position: absolute;
     top: 0;
     width: 12px;
@@ -173,12 +225,17 @@
     background: linear-gradient(270deg, #717171 45.83%, rgba(188, 188, 188, 0) 95.83%);
     content: ' ';
     height: 16px;
-    opacity: 0.3;
+    opacity: 0.15;
     position: absolute;
     right: 8px;
     top: 0px;
     width: 12px;
     z-index: -1;
+  }
+
+  .simulation-dataset.active .simulation-range-label.start:after,
+  .simulation-dataset.active .simulation-range-label.end:after {
+    opacity: 0.3;
   }
 
   .simulation-range-visualiztion {
@@ -198,6 +255,5 @@
     background: var(--st-gray-90);
     border-radius: 2px;
     height: 2px;
-    width: 50px; /* temporary */
   }
 </style>

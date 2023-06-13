@@ -27,9 +27,11 @@ const plans: PlanSchedulingSpec[] = [
 
 const models: ModelSlim[] = [
   {
+    created_at: '2023-02-16T00:00:00',
     id: 1,
     jar_id: 1,
     name: 'BananaNation',
+    owner: 'bananafarmer',
     plans: [],
     version: '1.0.0',
   },

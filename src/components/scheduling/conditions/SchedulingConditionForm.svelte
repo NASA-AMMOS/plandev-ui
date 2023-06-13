@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { schedulingColumns } from '../../../stores/scheduling';
+  import { schedulingConditionsFormColumns } from '../../../stores/scheduling';
   import type { User } from '../../../types/app';
   import type { ModelSlim } from '../../../types/model';
   import type { PlanSchedulingSpec } from '../../../types/plan';
@@ -93,10 +93,10 @@
       if (mode === 'create') {
         const newCondition = await effects.createSchedulingCondition(
           conditionDefinition,
-          conditionDescription,
           conditionName,
           conditionModelId,
           user,
+          conditionDescription,
         );
 
         if (newCondition !== null) {
@@ -135,7 +135,7 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<CssGrid bind:columns={$schedulingColumns}>
+<CssGrid bind:columns={$schedulingConditionsFormColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Scheduling Condition' : 'Edit Scheduling Condition'}</SectionTitle>

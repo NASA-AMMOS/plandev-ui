@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Dictionaries } from './Dictionaries.js';
 import { Models } from './Models.js';
@@ -15,6 +16,8 @@ export class ExpansionRules {
   inputEditor: Locator;
   inputModel: Locator;
   inputModelSelector: string = 'select[name="modelId"]';
+  inputName: Locator;
+  inputNameSelector: string = 'input[name="name"]';
   newButton: Locator;
   ruleActivityType = 'PeelBanana';
   ruleLogic: string = `export default function({ activityInstance: ActivityType }): ExpansionReturn { return [C.FSW_CMD_0({ boolean_arg_0: true, enum_arg_0: "OFF", float_arg_0: 0.0 })]; }`;
@@ -36,6 +39,7 @@ export class ExpansionRules {
     await this.selectCommandDictionary();
     await this.selectModel();
     await this.selectActivityType();
+    await this.fillInputName();
     await this.fillInputEditor();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
@@ -73,6 +77,13 @@ export class ExpansionRules {
     await this.inputEditor.focus();
     await this.inputEditor.fill(this.ruleLogic);
     await this.inputEditor.evaluate(e => e.blur());
+  }
+
+  async fillInputName() {
+    const expansionRuleName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    await this.inputName.focus();
+    await this.inputName.fill(expansionRuleName);
+    await this.inputName.evaluate(e => e.blur());
   }
 
   async goto() {
@@ -118,6 +129,7 @@ export class ExpansionRules {
     this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
     this.inputEditor = page.locator('.panel >> textarea.inputarea');
     this.inputModel = page.locator(this.inputModelSelector);
+    this.inputName = page.locator(this.inputNameSelector);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);

@@ -479,3 +479,22 @@
 .ag-theme-stellar .ag-cell-value {
   letter-spacing: var(--st-table-th-letter-spacing);
 }
+
+.ag-picker-field-display {
+  color: var(--st-typography-medium-color);
+  font-family: var(--st-typography-medium-font-family);
+  font-size: var(--st-typography-medium-font-size);
+  font-weight: var(--st-typography-medium-font-weight);
+  letter-spacing: var(--st-typography-medium-letter-spacing);
+  line-height: var(--st-typography-medium-line-height);
+}
+
+.ag-filter-condition,
+.ag-text-field-input {
+  color: var(--st-typography-body-color);
+  font-family: var(--st-typography-body-font-family);
+  font-size: var(--st-typography-body-font-size);
+  font-weight: var(--st-typography-body-font-weight);
+  letter-spacing: var(--st-typography-body-letter-spacing);
+  line-height: var(--st-typography-body-line-height);
+}

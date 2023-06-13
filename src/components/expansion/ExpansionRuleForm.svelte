@@ -3,7 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { expansionRulesColumns, savingExpansionRule } from '../../stores/expansion';
+  import { createExpansionRuleError, expansionRulesFormColumns, savingExpansionRule } from '../../stores/expansion';
   import { activityTypes, models } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import type { User } from '../../types/app';
@@ -11,6 +11,7 @@
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
   import PageTitle from '../app/PageTitle.svelte';
+  import AlertError from '../ui/AlertError.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -18,38 +19,46 @@
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let initialRuleActivityType: string | null = null;
+  export let initialRuleDescription: string | null = null;
   export let initialRuleCreatedAt: string | null = null;
   export let initialRuleDictionaryId: number | null = null;
   export let initialRuleId: number | null = null;
   export let initialRuleLogic: string =
     'export default function MyExpansion(props: {\n  activityInstance: ActivityType\n}): ExpansionReturn {\n  const { activityInstance } = props;\n  return [];\n}\n';
   export let initialRuleModelId: number | null = null;
+  export let initialRuleName: string = '';
   export let initialRuleUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
 
   let ruleActivityType: string | null = initialRuleActivityType;
   let ruleCreatedAt: string | null = initialRuleCreatedAt;
+  let ruleDescription: string | null = initialRuleDescription;
   let ruleDictionaryId: number | null = initialRuleDictionaryId;
   let ruleId: number | null = initialRuleId;
   let ruleLogic: string = initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
+  let ruleName: string = initialRuleName;
   let ruleUpdatedAt: string | null = initialRuleUpdatedAt;
   let saveButtonEnabled: boolean = false;
   let savedRule: Partial<ExpansionRule> = {
     activity_type: ruleActivityType,
     authoring_command_dict_id: ruleDictionaryId,
     authoring_mission_model_id: ruleModelId,
+    description: ruleDescription,
     expansion_logic: ruleLogic,
+    name: ruleName,
   };
 
   $: activityTypes.setVariables({ modelId: ruleModelId ?? -1 });
-  $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '';
+  $: saveButtonEnabled = ruleActivityType !== null && ruleLogic !== '' && ruleName !== '';
   $: ruleModified = diffRule(savedRule, {
     activity_type: ruleActivityType,
     authoring_command_dict_id: ruleDictionaryId,
     authoring_mission_model_id: ruleModelId,
+    description: ruleDescription,
     expansion_logic: ruleLogic,
+    name: ruleName,
   });
   $: saveButtonText = mode === 'edit' && !ruleModified ? 'Saved' : 'Save';
   $: saveButtonClass = ruleModified && saveButtonEnabled ? 'primary' : 'secondary';
@@ -82,6 +91,8 @@
           authoring_command_dict_id: ruleDictionaryId,
           authoring_mission_model_id: ruleModelId,
           expansion_logic: ruleLogic,
+          name: ruleName,
+          ...(ruleDescription && { description: ruleDescription }),
         };
         const newRuleId = await effects.createExpansionRule(newRule, user);
 
@@ -94,6 +105,8 @@
           authoring_command_dict_id: ruleDictionaryId,
           authoring_mission_model_id: ruleModelId,
           expansion_logic: ruleLogic,
+          name: ruleName,
+          ...(ruleDescription && { description: ruleDescription }),
         };
         const updated_at = await effects.updateExpansionRule(ruleId, updatedRule, user);
         if (updated_at !== null) {
@@ -109,7 +122,7 @@
 
 <PageTitle title={pageTitle} />
 
-<CssGrid bind:columns={$expansionRulesColumns}>
+<CssGrid bind:columns={$expansionRulesFormColumns}>
   <Panel overflowYBody="hidden">
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</SectionTitle>
@@ -125,6 +138,8 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
+      <AlertError class="m-2" error={$createExpansionRuleError} />
+
       {#if mode === 'edit'}
         <fieldset>
           <label for="ruleId">Rule ID</label>
@@ -182,6 +197,30 @@
             </option>
           {/each}
         </select>
+      </fieldset>
+
+      <fieldset>
+        <label for="name">Name</label>
+        <input
+          autocomplete="off"
+          bind:value={ruleName}
+          class="st-input w-100"
+          name="name"
+          placeholder="Enter a rule name (required)"
+          required
+        />
+      </fieldset>
+
+      <fieldset>
+        <label for="description">Description</label>
+        <textarea
+          bind:value={ruleDescription}
+          autocomplete="off"
+          class="st-input w-100"
+          name="description"
+          placeholder="Enter a rule description (optional)"
+          required
+        />
       </fieldset>
     </svelte:fragment>
   </Panel>

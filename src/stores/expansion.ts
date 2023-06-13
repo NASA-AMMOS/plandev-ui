@@ -17,9 +17,15 @@ export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_S
 
 export const creatingExpansionSequence: Writable<boolean> = writable(false);
 
-export const expansionRulesColumns: Writable<string> = writable('1fr 3px 2fr');
+export const createExpansionRuleError: Writable<string | null> = writable(null);
 
-export const expansionSetsColumns: Writable<string> = writable('1fr 3px 2fr');
+export const expansionRulesColumns: Writable<string> = writable('2fr 3px 1fr');
+
+export const expansionRulesFormColumns: Writable<string> = writable('1fr 3px 2fr');
+
+export const expansionSetsColumns: Writable<string> = writable('2fr 3px 1fr');
+
+export const expansionSetsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 
 export const expansionRunsColumns: Writable<string> = writable('1fr 3px 2fr');
 
@@ -40,6 +46,7 @@ export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived
 );
 
 export function resetExpansionStores(): void {
+  createExpansionRuleError.set(null);
   creatingExpansionSequence.set(false);
   savingExpansionRule.set(false);
   savingExpansionSet.set(false);

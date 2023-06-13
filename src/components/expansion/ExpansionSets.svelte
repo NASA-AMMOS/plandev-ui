@@ -36,6 +36,7 @@
       suppressSizeToFit: true,
       width: 60,
     },
+    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
       field: 'command_dict_id',
       filter: 'number',
@@ -44,7 +45,9 @@
       sortable: true,
     },
     { field: 'mission_model_id', filter: 'number', headerName: 'Model ID', resizable: true, sortable: true },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
+    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
+    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
+    { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionSetCellRendererParams) => {
@@ -98,6 +101,10 @@
 
   function deleteSetContext(event: CustomEvent<RowId[]>) {
     deleteSet({ id: event.detail[0] as number });
+  }
+
+  function editRule({ id }: Pick<ExpansionRule, 'id'>) {
+    goto(`${base}/expansion/rules/edit/${id}`);
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {
@@ -178,6 +185,41 @@
                 width: 60,
               },
               { field: 'activity_type', filter: 'text', headerName: 'Activity Type', sortable: true },
+              {
+                cellClass: 'action-cell-container',
+                cellRenderer: params => {
+                  const actionsDiv = document.createElement('div');
+                  actionsDiv.className = 'actions-cell';
+                  new DataGridActions({
+                    props: {
+                      deleteCallback: params.deleteRule,
+                      deleteTooltip: {
+                        content: 'Delete Rule',
+                        placement: 'bottom',
+                      },
+                      editCallback: params.editRule,
+                      editTooltip: {
+                        content: 'Edit Rule',
+                        placement: 'bottom',
+                      },
+                      rowData: params.data,
+                    },
+                    target: actionsDiv,
+                  });
+
+                  return actionsDiv;
+                },
+                cellRendererParams: {
+                  editRule,
+                },
+                field: 'actions',
+                headerName: '',
+                resizable: false,
+                sortable: false,
+                suppressAutoSize: true,
+                suppressSizeToFit: true,
+                width: 55,
+              },
             ]}
             rowData={selectedExpansionSet?.expansion_rules}
             rowSelection="single"

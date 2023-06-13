@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
-  import { commandDictionaries, userSequencesColumns } from '../../stores/sequencing';
+  import { commandDictionaries, userSequenceFormColumns } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
@@ -116,7 +116,7 @@
 
 <PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
-<CssGrid bind:columns={$userSequencesColumns}>
+<CssGrid bind:columns={$userSequenceFormColumns}>
   <Panel overflowYBody="hidden" padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Sequence' : 'Edit Sequence'}</SectionTitle>

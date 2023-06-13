@@ -96,10 +96,10 @@
       if (mode === 'create') {
         const newGoal = await effects.createSchedulingGoal(
           goalDefinition,
-          goalDescription,
           goalName,
           goalModelId,
           user,
+          goalDescription,
         );
 
         if (newGoal !== null) {

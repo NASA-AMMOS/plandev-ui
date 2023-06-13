@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import {
     creatingExpansionSequence,
@@ -12,10 +13,11 @@
   import { simulationDatasetId } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
-  import type { ExpansionSequence } from '../../types/expansion';
+  import type { ExpansionSequence, ExpansionSet } from '../../types/expansion';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
+  import { getShortISOForDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -53,7 +55,6 @@
       sortable: true,
     },
     { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-    { field: 'updated_at', filter: 'text', headerName: 'Updated At', resizable: true, sortable: true },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionSequenceCellRendererParams) => {
@@ -95,9 +96,11 @@
   let createButtonEnabled: boolean = false;
   let expandButtonEnabled: boolean = false;
   let seqIdInput: string = '';
+  let selectedExpansionSet: ExpansionSet | null;
 
   $: createButtonEnabled = seqIdInput !== '';
   $: expandButtonEnabled = $selectedExpansionSetId !== null;
+  $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId);
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence, user);
@@ -136,7 +139,10 @@
   <svelte:fragment slot="body">
     <div class="expansion-panel-body">
       <fieldset>
-        <label for="expansionSet">Expansion Set</label>
+        <label for="expansionSet" class="expansion-set-selector">
+          Expansion Set
+          <a href={`${base}/expansion/sets`} target="_blank" rel="noopener noreferrer">View All Expansion Sets</a>
+        </label>
         <select
           bind:value={$selectedExpansionSetId}
           class="st-select w-100"
@@ -149,11 +155,53 @@
             <option value={null} />
             {#each $expansionSets as set}
               <option value={set.id}>
-                Expansion Set {set.id}
+                {set.name} ({set.id})
               </option>
             {/each}
           {/if}
         </select>
+      </fieldset>
+      <fieldset>
+        <Collapse className="details-container" title="Expansion Set Details" defaultExpanded={false}>
+          {#if !selectedExpansionSet}
+            <div class="st-typography-label">No Expansion Set Selected</div>
+          {:else}
+            <div class="expansion-set-details">
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Mission Modal ID:</span>
+                <span>{selectedExpansionSet.mission_model_id}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Command Dictionary ID:</span>
+                <span>{selectedExpansionSet.command_dict_id}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Name:</span>
+                <span>{selectedExpansionSet.name}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Created At:</span>
+                <span>{getShortISOForDate(new Date(selectedExpansionSet.created_at))}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Owner:</span>
+                <span>{selectedExpansionSet.owner}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Updated At:</span>
+                <span>{getShortISOForDate(new Date(selectedExpansionSet.updated_at))}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Updated By:</span>
+                <span>{selectedExpansionSet.updated_by}</span>
+              </div>
+              <div class="expansion-set-detail">
+                <span class="st-typography-label">Description:</span>
+                <span>{selectedExpansionSet.description}</span>
+              </div>
+            </div>
+          {/if}
+        </Collapse>
       </fieldset>
 
       <fieldset>
@@ -210,6 +258,36 @@
     display: grid;
     grid-template-rows: min-content auto;
     height: 100%;
+  }
+
+  .expansion-set-selector {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .expansion-set-selector a:visited {
+    color: blue;
+  }
+
+  .expansion-set-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .expansion-set-detail {
+    display: flex;
+  }
+  .expansion-set-details span:first-child {
+    display: flex;
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .expansion-set-details span:last-child {
+    display: flex;
+    flex: 1;
   }
 
   :global(.details-container) {
