@@ -498,3 +498,7 @@
   letter-spacing: var(--st-typography-body-letter-spacing);
   line-height: var(--st-typography-body-line-height);
 }
+
+.ag-theme-stellar .ag-header-cell-resize {
+  z-index: 0;
+}
