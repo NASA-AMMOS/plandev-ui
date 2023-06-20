@@ -6,6 +6,7 @@ describe('hasNoAuthorization', () => {
     expect(hasNoAuthorization(null)).toEqual(true);
     expect(
       hasNoAuthorization({
+        activeRole: 'user',
         allowedRoles: ['admin', 'user'],
         defaultRole: 'user',
         id: 'foo',
@@ -16,6 +17,7 @@ describe('hasNoAuthorization', () => {
 
     expect(
       hasNoAuthorization({
+        activeRole: 'user',
         allowedRoles: ['admin', 'user'],
         defaultRole: 'user',
         id: 'foo',

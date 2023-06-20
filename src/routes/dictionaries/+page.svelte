@@ -91,21 +91,22 @@
 
     try {
       const newCommandDictionary = await effects.createCommandDictionary(files, data.user);
-
-      const seenSet = new Set<number>();
-      commandDictionaries.updateValue((dictionaries: CommandDictionary[]) =>
-        [newCommandDictionary, ...dictionaries].filter(val => {
-          if (!seenSet.has(val.id)) {
-            seenSet.add(val.id);
-            return true;
-          } else {
-            return false;
-          }
-        }),
-      );
-      showSuccessToast('Command Dictionary Created Successfully');
+      if (newCommandDictionary !== null) {
+        const seenSet = new Set<number>();
+        commandDictionaries.updateValue((dictionaries: CommandDictionary[]) =>
+          [newCommandDictionary, ...dictionaries].filter(val => {
+            if (!seenSet.has(val.id)) {
+              seenSet.add(val.id);
+              return true;
+            } else {
+              return false;
+            }
+          }),
+        );
+        showSuccessToast('Command Dictionary Created Successfully');
+      }
     } catch (e) {
-      createDictionaryError = e.message;
+      createDictionaryError = (e as Error).message;
       showFailureToast('Command Dictionary Create Failed');
     }
 
@@ -124,7 +125,7 @@
 <PageTitle title="Command Dictionaries" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav>
+  <Nav user={data.user}>
     <span slot="title">Command Dictionaries</span>
   </Nav>
 

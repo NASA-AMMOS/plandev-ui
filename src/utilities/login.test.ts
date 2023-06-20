@@ -33,6 +33,7 @@ describe('login util functions', () => {
       expect(shouldRedirectToLogin(null)).toEqual(true);
       expect(
         shouldRedirectToLogin({
+          activeRole: 'user',
           allowedRoles: ['admin', 'user'],
           defaultRole: 'user',
           id: 'foo',
@@ -43,6 +44,7 @@ describe('login util functions', () => {
 
       expect(
         shouldRedirectToLogin({
+          activeRole: 'user',
           allowedRoles: ['admin', 'user'],
           defaultRole: 'user',
           id: 'foo',
@@ -60,6 +62,7 @@ describe('login util functions', () => {
       expect(shouldRedirectToLogin(null)).toEqual(false);
       expect(
         shouldRedirectToLogin({
+          activeRole: 'user',
           allowedRoles: ['admin', 'user'],
           defaultRole: 'user',
           id: 'foo',
@@ -70,6 +73,7 @@ describe('login util functions', () => {
 
       expect(
         shouldRedirectToLogin({
+          activeRole: 'user',
           allowedRoles: ['admin', 'user'],
           defaultRole: 'user',
           id: 'foo',

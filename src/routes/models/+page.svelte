@@ -142,7 +142,7 @@
 <PageTitle title="Models" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav>
+  <Nav user={data.user}>
     <span slot="title">Models</span>
   </Nav>
 

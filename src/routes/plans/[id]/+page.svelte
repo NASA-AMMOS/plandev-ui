@@ -139,7 +139,7 @@
 
   $: $activityDirectivesMap = keyBy($activityDirectives, 'id');
 
-  $: if ($planLocked) {
+  $: if ($plan && $planLocked) {
     planHasBeenLocked = true;
     showPlanLockedModal($plan.id);
   } else if (planHasBeenLocked) {
@@ -182,7 +182,7 @@
   async function onCreateView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { owner, definition } = detail;
-    if (definition) {
+    if (owner != null && definition) {
       const success = await effects.createView(owner, definition, data.user);
       if (success) {
         resetOriginalView();
@@ -193,7 +193,7 @@
   async function onEditView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { owner, definition } = detail;
-    if (definition) {
+    if (owner != null && definition) {
       const success = await effects.editView(owner, definition, data.user);
       if (success) {
         resetOriginalView();
@@ -204,9 +204,11 @@
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition, id, name } = detail;
-    const success = await effects.updateView(id, { definition, name }, data.user);
-    if (success) {
-      resetOriginalView();
+    if (id != null) {
+      const success = await effects.updateView(id, { definition, name }, data.user);
+      if (success) {
+        resetOriginalView();
+      }
     }
   }
 
@@ -251,7 +253,7 @@
 <PageTitle subTitle={data.initialPlan.name} title="Plans" />
 
 <CssGrid class="plan-container" rows="var(--nav-header-height) auto 36px">
-  <Nav>
+  <Nav user={data.user}>
     <div slot="title">
       <PlanMenu plan={data.initialPlan} user={data.user} />
     </div>
@@ -265,7 +267,11 @@
         menuTitle="Expansion Status"
         disabled={$selectedExpansionSetId === null}
         status={$planExpansionStatus}
-        on:click={() => effects.expand($selectedExpansionSetId, $simulationDatasetId, data.user)}
+        on:click={() => {
+          if ($selectedExpansionSetId != null) {
+            effects.expand($selectedExpansionSetId, $simulationDatasetId, data.user);
+          }
+        }}
       >
         <PlanIcon />
         <svelte:fragment slot="metadata">

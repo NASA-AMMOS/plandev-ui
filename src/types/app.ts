@@ -7,18 +7,22 @@ export type BaseUser = {
   token: string;
 };
 
+export type UserRole = string | 'admin';
+
 export type User = BaseUser & {
-  allowedRoles: string[];
-  defaultRole: string;
+  activeRole: UserRole;
+  allowedRoles: UserRole[];
+  defaultRole: UserRole;
   permissibleQueries: PermissibleQueriesMap | null;
 };
 
 export type ParsedUserToken = {
+  activeRole: UserRole;
   camToken: string;
   exp: number;
   'https://hasura.io/jwt/claims': {
-    'x-hasura-allowed-roles': string[];
-    'x-hasura-default-role': string;
+    'x-hasura-allowed-roles': UserRole[];
+    'x-hasura-default-role': UserRole;
     'x-hasura-user-id': string;
   };
   iat: number;

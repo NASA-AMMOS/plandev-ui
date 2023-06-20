@@ -2,7 +2,7 @@ import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import type { BaseUser } from '../../../types/app';
-import type { LoginRequestBody, ReqLoginResponse } from '../../../types/auth';
+import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
 export const POST: RequestHandler = async event => {
@@ -10,10 +10,10 @@ export const POST: RequestHandler = async event => {
   const { password, username } = body;
 
   try {
-    const loginResponse: ReqLoginResponse = await effects.login(username, password);
+    const loginResponse: ReqAuthResponse = await effects.login(username, password);
     const { message, success, token } = loginResponse;
 
-    if (success) {
+    if (success && token) {
       const user: BaseUser = { id: username, token };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
@@ -24,6 +24,6 @@ export const POST: RequestHandler = async event => {
     }
   } catch (e) {
     console.log(e);
-    return json({ message: e.message, success: false });
+    return json({ message: (e as Error).message, success: false });
   }
 };

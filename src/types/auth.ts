@@ -1,6 +1,10 @@
-import type { User } from './app';
+import type { User, UserRole } from './app';
 
 export type JsonWebToken = string;
+
+export type ChangeUserRoleRequestBody = {
+  role: UserRole;
+};
 
 export type LoginRequestBody = {
   password: string;
@@ -30,7 +34,7 @@ export type LogoutResponse = {
   status?: number;
 };
 
-export type ReqLoginResponse = {
+export type ReqAuthResponse = {
   message: string;
   success: boolean;
   token: JsonWebToken | null;

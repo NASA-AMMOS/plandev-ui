@@ -1,5 +1,23 @@
 <script lang="ts">
+  import { invalidateAll } from '$app/navigation';
   import AppMenu from '../../components/menus/AppMenu.svelte';
+  import type { User, UserRole } from '../../types/app';
+  import { getTarget } from '../../utilities/generic';
+  import { changeUserRole } from '../../utilities/permissions';
+
+  export let user: User | null;
+
+  let userRoles: UserRole[] = [];
+
+  $: userRoles = user?.allowedRoles ?? [];
+
+  async function changeRole(event: Event) {
+    const { value } = getTarget(event);
+    if (value) {
+      await changeUserRole(value as string);
+      await invalidateAll();
+    }
+  }
 </script>
 
 <div class="nav">
@@ -13,6 +31,13 @@
   </div>
   <div class="right">
     <slot name="right" />
+    {#if userRoles.length > 1}
+      <select value={user?.activeRole} class="st-select" on:change={changeRole}>
+        {#each userRoles as userRole}
+          <option value={userRole}>{userRole}</option>
+        {/each}
+      </select>
+    {/if}
   </div>
 </div>
 

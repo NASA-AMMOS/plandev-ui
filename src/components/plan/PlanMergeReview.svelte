@@ -144,9 +144,11 @@
   $: if (initialNonConflictingActivities) {
     // Updated selectedNonConflictingActivity with the refreshed version if needed
     if (selectedNonConflictingActivity) {
-      selectedNonConflictingActivity = initialNonConflictingActivities.find(
-        merge => merge.activity_id === selectedNonConflictingActivity.activity_id,
-      );
+      const { activity_id: activityId } = selectedNonConflictingActivity;
+      const selectedActivity = initialNonConflictingActivities.find(merge => merge.activity_id === activityId);
+      if (selectedActivity) {
+        selectedNonConflictingActivity = selectedActivity;
+      }
     }
 
     // Compute additions, deletions, and modifications
@@ -347,7 +349,7 @@
 </script>
 
 <div class="flex">
-  <Nav>
+  <Nav {user}>
     <span class="" slot="title">Merge Review</span>
   </Nav>
   <div class="merge-review-content">

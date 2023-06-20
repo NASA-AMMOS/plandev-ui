@@ -30,8 +30,8 @@ import type {
   ActivityTypeExpansionRules,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { BaseUser, User } from '../types/app';
-import type { ReqLoginResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
+import type { BaseUser, User, UserRole } from '../types/app';
+import type { ReqAuthResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
 import type { Constraint, ConstraintInsertInput, ConstraintViolation } from '../types/constraint';
 import type {
   ExpansionRule,
@@ -198,6 +198,20 @@ const effects = {
     } catch (e) {
       catchError('Template Unable To Be Applied To Simulation', e as Error);
       showFailureToast('Template Application Failed');
+    }
+  },
+
+  async changeUserRole(role: UserRole, user: User | null): Promise<ReqAuthResponse> {
+    try {
+      const data = await reqGateway<ReqAuthResponse>('/auth/changeRole', 'POST', JSON.stringify({ role }), user, false);
+      return data;
+    } catch (e) {
+      catchError(e as Error);
+      return {
+        message: 'An unexpected error occurred',
+        success: false,
+        token: null,
+      };
     }
   },
 
@@ -2159,9 +2173,9 @@ const effects = {
     };
   },
 
-  async login(username: string, password: string): Promise<ReqLoginResponse> {
+  async login(username: string, password: string): Promise<ReqAuthResponse> {
     try {
-      const data = await reqGateway<ReqLoginResponse>(
+      const data = await reqGateway<ReqAuthResponse>(
         '/auth/login',
         'POST',
         JSON.stringify({ password, username }),

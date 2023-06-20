@@ -57,6 +57,8 @@ export async function reqHasura<T = any>(
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
     'Content-Type': 'application/json',
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
   };
   const options: RequestInit = {
     body: JSON.stringify({ query, variables }),

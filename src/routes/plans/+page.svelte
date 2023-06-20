@@ -21,6 +21,7 @@
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import type { Plan, PlanSlim } from '../../types/plan';
@@ -39,7 +40,7 @@
   };
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'number',
@@ -101,47 +102,21 @@
       },
     },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
-    { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: PlanCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deletePlan,
-            deleteTooltip: {
-              content: 'Delete Plan',
-              placement: 'bottom',
-            },
-            hasDeletePermission: params.data ? featurePermissions.plan.canDelete(data.user, params.data) : false,
-            rowData: params.data,
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        deletePlan,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 25,
-    },
+    { field: 'start_time_doy', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
+    { field: 'end_time_doy', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
   ];
-  const canCreate: boolean = featurePermissions.plan.canCreate(data.user);
   const permissionError: string = 'You do not have permission to create a plan';
 
+  let canCreate: boolean = false;
+  let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let durationString: string = 'None';
   let filterText: string = '';
   let models: ModelSlim[];
   let nameInputField: HTMLInputElement;
   let plans: PlanSlim[];
+  let user: User | null = null;
+
+  let redrawRows: () => void;
 
   let endTimeDoyField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
@@ -151,6 +126,46 @@
 
   $: plans = data.plans;
   $: models = data.models;
+  $: {
+    user = data.user;
+    canCreate = user ? featurePermissions.plan.canCreate(user) : false;
+    columnDefs = [
+      ...baseColumnDefs,
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: PlanCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              deleteCallback: params.deletePlan,
+              deleteTooltip: {
+                content: 'Delete Plan',
+                placement: 'bottom',
+              },
+              hasDeletePermission: params.data && user ? featurePermissions.plan.canDelete(user, params.data) : false,
+              rowData: params.data,
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          deletePlan,
+        } as CellRendererParams,
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 25,
+      },
+    ];
+    // Need to force the table to redraw the DataGridAction cells after the user's role is changed
+    redrawRows?.();
+  }
   $: createButtonEnabled =
     $endTimeDoyField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&
@@ -187,7 +202,7 @@
       $nameField.value,
       $startTimeDoyField.value,
       $simTemplateField.value,
-      data.user,
+      user,
     );
 
     if (newPlan) {
@@ -196,7 +211,7 @@
   }
 
   async function deletePlan({ id }: Pick<Plan, 'id'>): Promise<void> {
-    const success = await effects.deletePlan(id, data.user);
+    const success = await effects.deletePlan(id, user);
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
@@ -242,7 +257,7 @@
 <PageTitle title="Plans" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
-  <Nav>
+  <Nav {user}>
     <span slot="title">Plans</span>
   </Nav>
 
@@ -381,11 +396,12 @@
       <svelte:fragment slot="body">
         {#if filteredPlans.length}
           <SingleActionDataGrid
+            bind:redrawRows
             {columnDefs}
             hasDeletePermission={featurePermissions.plan.canDelete}
             itemDisplayText="Plan"
             items={filteredPlans}
-            user={data.user}
+            {user}
             on:cellMouseOver={({ detail }) => prefetchPlan(detail.data)}
             on:deleteItem={deletePlanContext}
             on:rowClicked={({ detail }) => showPlan(detail.data)}

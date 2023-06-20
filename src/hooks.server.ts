@@ -10,6 +10,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (!isLoginEnabled()) {
     const permissibleQueries = await effects.getUserQueries(null);
     event.locals.user = {
+      activeRole: ADMIN_ROLE,
       allowedRoles: [ADMIN_ROLE],
       defaultRole: ADMIN_ROLE,
       id: 'unknown',
@@ -32,6 +33,7 @@ export const handle: Handle = async ({ event, resolve }) => {
         const permissibleQueries = await effects.getUserQueries(baseUser);
         const user: User = {
           ...baseUser,
+          activeRole: decodedToken.activeRole,
           allowedRoles: decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'],
           defaultRole: decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'],
           permissibleQueries,

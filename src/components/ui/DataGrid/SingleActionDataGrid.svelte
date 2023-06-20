@@ -8,7 +8,7 @@
     editItem: CustomEvent<RowId[]>;
   }
   import { browser } from '$app/environment';
-  import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
+  import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { User } from '../../../types/app';
   import type { RowId, TRowData } from '../../../types/data-grid';
@@ -34,6 +34,7 @@
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+  export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
   export let user: User | null;
 
   const dispatch = createEventDispatcher();
@@ -42,7 +43,7 @@
   let editPermission: boolean = true;
   let selectedItemIds: RowId[] = [];
 
-  $: if (typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') {
+  $: if ((typeof hasDeletePermission === 'function' || typeof hasEditPermission === 'function') && user) {
     const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
     if (selectedItem) {
       if (typeof hasDeletePermission === 'function') {
@@ -100,6 +101,7 @@
   bind:this={dataGrid}
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
+  bind:redrawRows
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}

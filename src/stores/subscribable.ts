@@ -14,7 +14,7 @@ export function gqlSubscribable<T>(
   query: string,
   initialVariables: QueryVariables | null = null,
   initialValue: T | null = null,
-  user: User,
+  user: User | null,
   transformer: (v: any) => T = v => v,
 ): GqlSubscribable<T> {
   const subscribers: Set<Subscription<T>> = new Set();

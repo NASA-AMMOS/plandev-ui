@@ -65,7 +65,14 @@ const mockInitialPlan: Plan = {
   updated_by: 'redshirt',
 };
 
-const user: User = { allowedRoles: ['admin'], defaultRole: 'admin', id: 'foo', permissibleQueries: {}, token: '' };
+const user: User = {
+  activeRole: 'admin',
+  allowedRoles: ['admin'],
+  defaultRole: 'admin',
+  id: 'foo',
+  permissibleQueries: {},
+  token: '',
+};
 
 describe('PlanMergeReview component', () => {
   beforeAll(() => {
