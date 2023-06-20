@@ -1,15 +1,14 @@
 import { base } from '$app/paths';
-import { env } from '$env/dynamic/public';
 import { redirect } from '@sveltejs/kit';
 import effects from '../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../utilities/generic';
-import { hasNoAuthorization } from '../../../../utilities/permissions';
+import { shouldRedirectToLogin } from '../../../../utilities/login';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
 
-  if (env.PUBLIC_LOGIN_PAGE === 'enabled' && (!user || hasNoAuthorization(user))) {
+  if (shouldRedirectToLogin(user)) {
     throw redirect(302, `${base}/login`);
   }
 

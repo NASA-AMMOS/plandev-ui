@@ -330,7 +330,7 @@ const featurePermissions: FeaturePermissions = {
 };
 
 function hasNoAuthorization(user: User | null) {
-  return user && !Object.keys(user.permissibleQueries).length;
+  return !user || (user.permissibleQueries && !Object.keys(user.permissibleQueries).length);
 }
 
 export { featurePermissions, hasNoAuthorization, queryPermissions };

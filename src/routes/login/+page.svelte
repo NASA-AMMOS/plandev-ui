@@ -18,7 +18,7 @@
   let username = '';
   let usernameInput: HTMLInputElement | null = null;
 
-  $: if (hasNoAuthorization(data.user)) {
+  $: if (data.user?.permissibleQueries && hasNoAuthorization(data.user)) {
     error = 'You are not authorized';
     fullError =
       'You are not authorized to access the page that you attempted to view. Please contact a tool administrator to request access.';

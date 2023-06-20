@@ -1,13 +1,13 @@
-import { env } from '$env/dynamic/public';
 import type { Handle } from '@sveltejs/kit';
 import { parse } from 'cookie';
 import jwtDecode from 'jwt-decode';
 import type { BaseUser, ParsedUserToken, User } from './types/app';
 import effects from './utilities/effects';
+import { isLoginEnabled } from './utilities/login';
 import { ADMIN_ROLE } from './utilities/permissions';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  if (env.PUBLIC_LOGIN_PAGE === 'disabled') {
+  if (!isLoginEnabled()) {
     const permissibleQueries = await effects.getUserQueries(null);
     event.locals.user = {
       allowedRoles: [ADMIN_ROLE],

@@ -10,7 +10,7 @@ export type BaseUser = {
 export type User = BaseUser & {
   allowedRoles: string[];
   defaultRole: string;
-  permissibleQueries: PermissibleQueriesMap;
+  permissibleQueries: PermissibleQueriesMap | null;
 };
 
 export type ParsedUserToken = {
