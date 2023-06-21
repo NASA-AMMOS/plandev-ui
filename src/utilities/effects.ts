@@ -2012,7 +2012,7 @@ const effects = {
     }
   },
 
-  async getUserQueries(user: BaseUser | null): Promise<PermissibleQueriesMap | null> {
+  async getUserQueries(user: User | null): Promise<PermissibleQueriesMap | null> {
     try {
       const data = await reqHasura<PermissibleQueryResponse>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);
       const {

@@ -30,15 +30,18 @@ export const handle: Handle = async ({ event, resolve }) => {
       const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
 
       if (success) {
-        const permissibleQueries = await effects.getUserQueries(baseUser);
         const user: User = {
           ...baseUser,
           activeRole: decodedToken.activeRole,
           allowedRoles: decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'],
           defaultRole: decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'],
+          permissibleQueries: null,
+        };
+        const permissibleQueries = await effects.getUserQueries(user);
+        event.locals.user = {
+          ...user,
           permissibleQueries,
         };
-        event.locals.user = user;
       } else {
         event.locals.user = null;
       }

@@ -70,6 +70,8 @@
   let version = '';
   let description = '';
 
+  let redrawRows: () => void;
+
   $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
   $: {
     user = data.user;
@@ -109,6 +111,8 @@
         width: 25,
       },
     ];
+    // Need to force the table to redraw the DataGridAction cells after the user's role is changed
+    redrawRows?.();
   }
 
   onMount(() => {
@@ -233,6 +237,7 @@
       <svelte:fragment slot="body">
         {#if $models.length}
           <SingleActionDataGrid
+            bind:redrawRows
             {columnDefs}
             {hasDeletePermission}
             itemDisplayText="Model"
