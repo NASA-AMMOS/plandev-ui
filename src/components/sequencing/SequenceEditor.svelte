@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
   import { userSequencesRows } from '../../stores/sequencing';
@@ -24,12 +25,18 @@
 
   const dispatch = createEventDispatcher();
 
+  let commandDictionaryJson: AmpcsCommandDictionary | null = null;
   let commandDictionaryTsFiles: TypeScriptFile[] = [];
   let monaco: Monaco;
+  let sequenceEditorModel: Editor.ITextModel;
 
   $: effects
     .getTsFilesCommandDictionary(sequenceCommandDictionaryId, user)
     .then(tsFiles => (commandDictionaryTsFiles = tsFiles));
+
+  $: effects
+    .getParsedAmpcsCommandDictionary(sequenceCommandDictionaryId, user)
+    .then(parsedDictionary => (commandDictionaryJson = parsedDictionary));
 
   $: if (monaco !== undefined) {
     const { languages } = monaco;
@@ -46,6 +53,10 @@
     typescriptDefaults.setExtraLibs(commandDictionaryTsFiles);
   }
 
+  $: if (monaco !== undefined && commandDictionaryJson !== undefined) {
+    workerUpdateModel();
+  }
+
   function downloadSeqJson() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([sequenceSeqJson], { type: 'application/json' }));
@@ -53,12 +64,37 @@
     a.click();
   }
 
-  function fullyLoaded(
+  function workerFullyLoaded(
     event: CustomEvent<{ model: Editor.ITextModel; worker: languages.typescript.TypeScriptWorker }>,
   ) {
     const { model, worker } = event.detail;
     const model_id = model.id;
-    console.log(`Model ${model_id} loaded!`, worker);
+
+    worker.updateModelConfig({
+      command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+      model_id,
+      should_inject: true,
+    });
+  }
+
+  /**
+   * Used to update the custom worker to use the selected command dictionary.
+   */
+  async function workerUpdateModel() {
+    try {
+      const tsWorker = await monaco.languages.typescript.getTypeScriptWorker();
+      const worker = await tsWorker();
+
+      if (commandDictionaryJson && sequenceEditorModel) {
+        worker.updateModelConfig({
+          command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+          model_id: sequenceEditorModel.id,
+          should_inject: true,
+        });
+      }
+    } catch (reason) {
+      console.log('Failed to pass the command dictionary to the custom worker.', reason);
+    }
   }
 </script>
 
@@ -75,6 +111,7 @@
     <svelte:fragment slot="body">
       <MonacoEditor
         bind:monaco
+        bind:model={sequenceEditorModel}
         automaticLayout={true}
         fixedOverflowWidgets={true}
         language="typescript"
@@ -85,7 +122,7 @@
         tabSize={2}
         value={sequenceDefinition}
         on:didChangeModelContent
-        on:fullyLoaded={fullyLoaded}
+        on:fullyLoaded={workerFullyLoaded}
       />
     </svelte:fragment>
   </Panel>

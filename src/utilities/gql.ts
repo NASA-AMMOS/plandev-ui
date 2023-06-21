@@ -604,6 +604,14 @@ const gql = {
     }
   `,
 
+  GET_PARSED_COMMAND_DICTIONARY: `#graphql
+    query GetParsedCommandDictionary($commandDictionaryId: Int!) {
+      command_dictionary(where: { id: { _eq: $commandDictionaryId } }) {
+        parsed_json
+      }
+    }
+  `,
+
   GET_PERMISSIBLE_QUERIES: `#graphql
     query GetPermissibleQueries {
       queries: __schema {

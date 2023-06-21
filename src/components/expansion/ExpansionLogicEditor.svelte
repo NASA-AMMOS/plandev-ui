@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
@@ -17,13 +19,20 @@
   export let user: User | null;
 
   let activityTypeTsFiles: TypeScriptFile[] = [];
+  let commandDictionaryJson: AmpcsCommandDictionary | null = null;
   let commandDictionaryTsFiles: TypeScriptFile[] = [];
+  let editorModel: Editor.ITextModel;
   let monaco: Monaco;
 
   $: effects.getTsFilesCommandDictionary(ruleDictionaryId, user).then(tsFiles => (commandDictionaryTsFiles = tsFiles));
+
   $: effects
     .getTsFilesActivityType(ruleActivityType, ruleModelId, user)
     .then(tsFiles => (activityTypeTsFiles = tsFiles));
+
+  $: effects
+    .getParsedAmpcsCommandDictionary(ruleDictionaryId, user)
+    .then(parsedDictionary => (commandDictionaryJson = parsedDictionary));
 
   $: if (monaco !== undefined && (commandDictionaryTsFiles !== undefined || activityTypeTsFiles !== undefined)) {
     const { languages } = monaco;
@@ -33,6 +42,43 @@
 
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['esnext'], strictNullChecks: true });
     typescriptDefaults.setExtraLibs([...commandDictionaryTsFiles, ...activityTypeTsFiles]);
+  }
+
+  $: if (monaco !== undefined && commandDictionaryJson !== undefined) {
+    workerUpdateModel();
+  }
+
+  function workerFullyLoaded(
+    event: CustomEvent<{ model: Editor.ITextModel; worker: languages.typescript.TypeScriptWorker }>,
+  ) {
+    const { model, worker } = event.detail;
+    const model_id = model.id;
+
+    worker.updateModelConfig({
+      command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+      model_id,
+      should_inject: true,
+    });
+  }
+
+  /**
+   * Used to update the custom worker to use the selected command dictionary.
+   */
+  async function workerUpdateModel() {
+    try {
+      const tsWorker = await monaco.languages.typescript.getTypeScriptWorker();
+      const worker = await tsWorker();
+
+      if (commandDictionaryJson && editorModel) {
+        worker.updateModelConfig({
+          command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+          model_id: editorModel.id,
+          should_inject: true,
+        });
+      }
+    } catch (reason) {
+      console.log('Failed to pass the command dictionary to the custom worker.', reason);
+    }
   }
 </script>
 
@@ -48,6 +94,7 @@
   <svelte:fragment slot="body">
     <MonacoEditor
       bind:monaco
+      bind:model={editorModel}
       automaticLayout={true}
       fixedOverflowWidgets={true}
       language="typescript"
@@ -58,6 +105,7 @@
       tabSize={2}
       value={ruleLogic}
       on:didChangeModelContent
+      on:fullyLoaded={workerFullyLoaded}
     />
   </svelte:fragment>
 </Panel>

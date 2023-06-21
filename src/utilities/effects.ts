@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
+import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
 import { checkConstraintsStatus, constraintViolationsResponse } from '../stores/constraints';
@@ -1620,6 +1621,35 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return [];
+    }
+  },
+
+  async getParsedAmpcsCommandDictionary(
+    commandDictionaryId: number | null | undefined,
+    user: User | null,
+  ): Promise<AmpcsCommandDictionary | null> {
+    if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
+      try {
+        const data = await reqHasura<[{ parsed_json: AmpcsCommandDictionary }]>(
+          gql.GET_PARSED_COMMAND_DICTIONARY,
+          { commandDictionaryId },
+          user,
+        );
+        const { command_dictionary } = data;
+
+        if (!Array.isArray(command_dictionary) || !command_dictionary.length) {
+          catchError(`Unable to find command dictionary with id ${commandDictionaryId}`);
+          return null;
+        } else {
+          const [{ parsed_json }] = command_dictionary;
+          return parsed_json;
+        }
+      } catch (e) {
+        catchError(e);
+        return null;
+      }
+    } else {
+      return null;
     }
   },
 

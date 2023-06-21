@@ -1,12 +1,18 @@
 import tsc from 'typescript';
-import type { Diagnostic as ResponseDiagnostic } from '../types/monaco-internal';
+import type { Diagnostic as ResponseDiagnostic } from '../../types/monaco-internal';
+import { CustomErrorCodes } from '../customCodes';
+import { getDescendants, makeDiagnostic } from '../workerHelpers';
 
-enum CustomCodes {
-  InvalidAbsoluteTimeString = -1,
-  InvalidRelativeTimeString = -2,
-}
+const DOY_REGEX = /^(\d{4})-(\d{3})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
+const HMS_REGEX = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 
-export function generateDiagnostics(fileName: string, languageService: tsc.LanguageService): ResponseDiagnostic[] {
+/**
+ * Generates sequencing diagnostics for a given file using the provided language service.
+ * @param {string} fileName - The name of the file to generate diagnostics for.
+ * @param {tsc.LanguageService} languageService - The language service to use for generating diagnostics.
+ * @returns {ResponseDiagnostic[]} - An array of response diagnostics representing sequencing errors.
+ */
+export function generateTimeDiagnostics(fileName: string, languageService: tsc.LanguageService): ResponseDiagnostic[] {
   return [
     ...generateRelativeTimeStringDiagnostics(fileName, languageService),
     ...generateAbsoluteTimeStringDiagnostics(fileName, languageService),
@@ -14,25 +20,11 @@ export function generateDiagnostics(fileName: string, languageService: tsc.Langu
 }
 
 /**
- * Creates a list of all descents of the given node matching the selector, recursively
- * @param node The tsc Node we want to use as our root
- * @param selector A selector function run on every recursive child Node
- * @returns A list of nodes matching the selector
+ * Generates sequencing diagnostics for relative time hh:mm:ss[.sss] in a given file.
+ * @param {string} fileName - The name of the file to generate diagnostics for.
+ * @param {tsc.LanguageService} languageService - The language service to use for generating diagnostics.
+ * @returns {ResponseDiagnostic[]} - An array of response diagnostics representing sequencing errors related to relative time strings.
  */
-function getDescendants(node: tsc.Node, selector: (node: tsc.Node) => boolean): tsc.Node[] {
-  const selectedNodes = [];
-  if (selector(node)) {
-    selectedNodes.push(node);
-  }
-  for (const child of node.getChildren()) {
-    selectedNodes.push(...getDescendants(child, selector));
-  }
-  return selectedNodes;
-}
-
-const DOY_REGEX = /^(\d{4})-(\d{3})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
-const HMS_REGEX = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
-
 function generateRelativeTimeStringDiagnostics(
   fileName: string,
   languageService: tsc.LanguageService,
@@ -68,28 +60,14 @@ function generateRelativeTimeStringDiagnostics(
     if (tsc.isTaggedTemplateExpression(relativeTimeNode)) {
       if (tsc.isNoSubstitutionTemplateLiteral(relativeTimeNode.template)) {
         if (!HMS_REGEX.test(relativeTimeNode.template.text)) {
-          diagnostics.push({
-            category: tsc.DiagnosticCategory.Error,
-            code: CustomCodes.InvalidRelativeTimeString,
-            file: { fileName: sourceFile.fileName },
-            length: relativeTimeNode.template.getEnd() - relativeTimeNode.template.getStart(sourceFile),
-            messageText: `Incorrectly formatted relative time string. Expected format: hh:mm:ss[.sss]`,
-            start: relativeTimeNode.template.getStart(sourceFile),
-          });
+          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidRelativeTime(), sourceFile, relativeTimeNode));
         }
       }
     } else if (tsc.isCallExpression(relativeTimeNode)) {
       const firstArg = relativeTimeNode.arguments[0];
       if (tsc.isStringLiteral(firstArg) || tsc.isNoSubstitutionTemplateLiteral(firstArg)) {
         if (!HMS_REGEX.test(firstArg.text)) {
-          diagnostics.push({
-            category: tsc.DiagnosticCategory.Error,
-            code: CustomCodes.InvalidRelativeTimeString,
-            file: { fileName: sourceFile.fileName },
-            length: firstArg.getEnd() - firstArg.getStart(sourceFile),
-            messageText: `Incorrectly formatted relative time string. Expected format: hh:mm:ss[.sss]`,
-            start: firstArg.getStart(sourceFile),
-          });
+          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidRelativeTime(), sourceFile, relativeTimeNode));
         }
       }
     }
@@ -98,6 +76,12 @@ function generateRelativeTimeStringDiagnostics(
   return diagnostics;
 }
 
+/**
+ * Generates sequencing diagnostics for absolute time YYYY-DOYThh:mm:ss[.sss] in a given file.
+ * @param {string} fileName - The name of the file to generate diagnostics for.
+ * @param {tsc.LanguageService} languageService - The language service to use for generating diagnostics.
+ * @returns {ResponseDiagnostic[]} - An array of response diagnostics representing sequencing errors related to absolute time strings.
+ */
 function generateAbsoluteTimeStringDiagnostics(
   fileName: string,
   languageService: tsc.LanguageService,
@@ -133,28 +117,14 @@ function generateAbsoluteTimeStringDiagnostics(
     if (tsc.isTaggedTemplateExpression(absoluteTimeNode)) {
       if (tsc.isNoSubstitutionTemplateLiteral(absoluteTimeNode.template)) {
         if (!DOY_REGEX.test(absoluteTimeNode.template.text)) {
-          diagnostics.push({
-            category: tsc.DiagnosticCategory.Error,
-            code: CustomCodes.InvalidAbsoluteTimeString,
-            file: { fileName: sourceFile.fileName },
-            length: absoluteTimeNode.template.getEnd() - absoluteTimeNode.template.getStart(sourceFile),
-            messageText: `Incorrectly formatted absolute time string. Expected format: YYYY-DOYThh:mm:ss[.sss]`,
-            start: absoluteTimeNode.template.getStart(sourceFile),
-          });
+          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidAbsoluteTime(), sourceFile, absoluteTimeNode));
         }
       }
     } else if (tsc.isCallExpression(absoluteTimeNode)) {
       const firstArg = absoluteTimeNode.arguments[0];
       if (tsc.isStringLiteral(firstArg) || tsc.isNoSubstitutionTemplateLiteral(firstArg)) {
         if (!DOY_REGEX.test(firstArg.text)) {
-          diagnostics.push({
-            category: tsc.DiagnosticCategory.Error,
-            code: CustomCodes.InvalidAbsoluteTimeString,
-            file: { fileName: sourceFile.fileName },
-            length: firstArg.getEnd() - firstArg.getStart(sourceFile),
-            messageText: `Incorrectly formatted absolute time string. Expected format: YYYY-DOYThh:mm:ss[.sss]`,
-            start: firstArg.getStart(sourceFile),
-          });
+          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidAbsoluteTime(), sourceFile, absoluteTimeNode));
         }
       }
     }

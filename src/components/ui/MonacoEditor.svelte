@@ -92,13 +92,14 @@
     // https://github.com/microsoft/monaco-editor/issues/115
 
     // If we accidentally call the `getTypeScriptWorker()` function to early, it throws.
-    //  Just use retry with exponential back-off to get it!
+    // Just use retry with exponential back-off to get it!
     promiseRetry(
       async () => {
         let getWorker: (...uris: Uri[]) => Promise<TypeScriptWorker>;
         let tsWorker: TypeScriptWorker;
+
         // Errors in this block indicate failure to find a loaded worker
-        //  so transform to the specific error type we care about
+        // so transform to the specific error type we care about.
         try {
           getWorker = await monaco.languages.typescript.getTypeScriptWorker();
           tsWorker = await getWorker();
@@ -107,7 +108,8 @@
         }
 
         // Errors in the dispatch won't trigger the retry and will just fail.
-        dispatch('fullyLoaded', { model: editor.getModel(), worker: tsWorker });
+        model = editor.getModel(); // Set here so parents can bind to the model easily.
+        dispatch('fullyLoaded', { model, worker: tsWorker });
       },
       5,
       10,

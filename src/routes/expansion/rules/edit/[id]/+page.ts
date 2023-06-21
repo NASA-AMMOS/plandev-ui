@@ -15,13 +15,16 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   if (ruleIdParam !== null && ruleIdParam !== undefined) {
     const ruleIdAsNumber = parseFloat(ruleIdParam);
-    const initialRule = await effects.getExpansionRule(ruleIdAsNumber, user);
 
-    if (initialRule !== null) {
-      return {
-        initialRule,
-        user,
-      };
+    if (!Number.isNaN(ruleIdAsNumber)) {
+      const initialRule = await effects.getExpansionRule(ruleIdAsNumber, user);
+
+      if (initialRule !== null) {
+        return {
+          initialRule,
+          user,
+        };
+      }
     }
   }
 
