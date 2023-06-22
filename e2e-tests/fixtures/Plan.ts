@@ -69,6 +69,15 @@ export class Plan {
     this.updatePage(page);
   }
 
+  async createBranch(name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })) {
+    await this.page.getByText(this.plans.planName).first().click();
+    await this.page.getByText('Create branch').click();
+    await this.page.getByPlaceholder('Name of branch').click();
+    await this.page.getByPlaceholder('Name of branch').fill(name);
+    await this.page.getByRole('button', { name: 'Create Branch' }).click();
+    await this.page.waitForTimeout(500);
+  }
+
   async createConstraint(baseURL: string | undefined) {
     const [newConstraintPage] = await Promise.all([this.page.waitForEvent('popup'), this.constraintNewButton.click()]);
     this.constraints.updatePage(newConstraintPage);

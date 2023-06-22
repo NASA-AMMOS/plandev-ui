@@ -52,12 +52,7 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Create a branch', async () => {
-    await page.getByText(plans.planName).first().click();
-    await page.getByText('Create branch').click();
-    await page.getByPlaceholder('Name of branch').click();
-    await page.getByPlaceholder('Name of branch').fill(planBranchName);
-    await page.getByRole('button', { name: 'Create Branch' }).click();
-    await page.waitForTimeout(500);
+    await plan.createBranch(planBranchName);
   });
 
   test('Change the start time of the activity on the branch', async () => {

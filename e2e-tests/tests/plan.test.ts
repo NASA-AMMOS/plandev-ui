@@ -92,6 +92,7 @@ test.describe.serial('Plan', () => {
   });
 
   test(`Hovering on 'Constraints' in the top navigation bar should show the constraints menu`, async () => {
+    await page.pause();
     await expect(plan.navButtonConstraintsMenu).not.toBeVisible();
     plan.navButtonConstraints.hover();
     await expect(plan.navButtonConstraintsMenu).toBeVisible();
@@ -186,5 +187,24 @@ test.describe.serial('Plan', () => {
     await expect(page.locator('.modal-content .error')).not.toBeVisible();
     await page.locator('.modal .st-button:has-text("Upload View")').click();
     await expect(page.locator('.modal')).not.toBeVisible();
+  });
+
+  test(`Changing to a new plan should clear the selected activity`, async () => {
+    // Create an activity which will be auto selected
+    await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
+
+    // Switch to a new branch and ensure no activity is selected
+    await plan.createBranch();
+    await expect(plan.panelActivityForm.getByText('No Activity Selected')).toBeVisible();
+
+    // Re-select the activity
+    await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
+
+    // Switch to parent plan and ensure no activity is selected
+    await page.getByRole('link', { name: plans.planName }).click();
+    await expect(plan.panelActivityForm.getByText('No Activity Selected')).toBeVisible();
+
+    // Cleanup
+    await plan.deleteAllActivities();
   });
 });
