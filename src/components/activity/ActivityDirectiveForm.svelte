@@ -17,6 +17,7 @@
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import type { ActivityDirectiveTagsInsertInput, TagsInsertInput } from '../../types/tags';
   import { getActivityMetadata } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { classNames, keyByBoolean } from '../../utilities/generic';
@@ -230,11 +231,18 @@
     }
   }
 
-  function onUpdateTags(event: CustomEvent<{ tags: string[] }>) {
+  async function onUpdateTags(event: CustomEvent<{ tags: string[] }>) {
     const { detail } = event;
-    const { tags } = detail;
+    const { tags: tagNames } = detail;
     const { id, plan_id } = activityDirective;
-    effects.updateActivityDirective(plan_id, id, { tags }, user);
+    const tagsToInsert: TagsInsertInput[] = tagNames.map(name => ({ color: '#e0e8f9', name }));
+    const newTags = await effects.createTags(tagsToInsert, user);
+    const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = newTags.map(({ id: tag_id }) => ({
+      directive_id: id,
+      plan_id,
+      tag_id,
+    }));
+    await effects.createActivityDirectiveTags(activityDirectiveTags, user);
   }
 
   function resetActivityName() {
@@ -388,11 +396,11 @@
           <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
           {#key activityDirective.id}
             <Tags
-              disabled={!editable}
               autocompleteValues={allActivityDirectiveTags}
+              disabled={!editable}
               name="activityDirectiveTags"
+              tags={activityDirective.tags.map(({ tag }) => tag.name)}
               on:change={onUpdateTags}
-              tags={activityDirective.tags}
             />
           {/key}
         </Input>

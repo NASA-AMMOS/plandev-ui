@@ -77,6 +77,9 @@ const queryPermissions = {
   CREATE_ACTIVITY_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['insert_activity_directive_one'], user);
   },
+  CREATE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_activity_directive_tags'], user);
+  },
   CREATE_ACTIVITY_PRESET: (user: User | null): boolean => {
     return getPermission(['insert_activity_presets_one'], user);
   },
@@ -121,6 +124,9 @@ const queryPermissions = {
   },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return getPermission(['insert_simulation_template_one'], user);
+  },
+  CREATE_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_tags'], user);
   },
   CREATE_USER_SEQUENCE: (user: User | null): boolean => {
     return getPermission(['insert_user_sequence_one'], user);

@@ -100,7 +100,7 @@ export const activityDirectivesByView: Readable<ActivityDirectivesByView> = deri
 export const allActivityDirectiveTags: Readable<string[]> = derived(activityDirectivesList, $activityDirectivesList => {
   const tagMap = $activityDirectivesList.reduce(
     (map: Record<string, boolean>, activityDirective: ActivityDirective) => {
-      activityDirective.tags.forEach(tag => (map[tag] = true));
+      activityDirective.tags.forEach(({ tag }) => (map[tag.name] = true));
       return map;
     },
     {},

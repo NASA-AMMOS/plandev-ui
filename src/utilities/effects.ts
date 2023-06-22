@@ -97,9 +97,10 @@ import type {
   SimulationTemplateSetInput,
   Span,
 } from '../types/simulation';
+import type { ActivityDirectiveTagsInsertInput, Tag, TagsInsertInput } from '../types/tags';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
-import { convertToQuery, formatHasuraStringArray, parseFloatOrNull, setQueryParam, sleep } from './generic';
+import { convertToQuery, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
@@ -250,7 +251,6 @@ const effects = {
     start_time_doy: string,
     type: string,
     name: string,
-    tags: string[],
     metadata: ActivityMetadata,
     user: User | null,
   ): Promise<void> {
@@ -262,7 +262,6 @@ const effects = {
       const currentPlan = get(plan);
       if (currentPlan !== null) {
         const start_offset = getIntervalFromDoyRange(currentPlan.start_time_doy, start_time_doy);
-        const tagsString = formatHasuraStringArray(tags);
         const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
           anchor_id: null,
           anchored_to_start: true,
@@ -271,7 +270,6 @@ const effects = {
           name,
           plan_id: currentPlan.id,
           start_offset,
-          tags: tagsString,
           type,
         };
         const data = await reqHasura<ActivityDirective>(
@@ -298,6 +296,26 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Create Failed', e as Error);
       showFailureToast('Activity Directive Create Failed');
+    }
+  },
+
+  async createActivityDirectiveTags(
+    tags: ActivityDirectiveTagsInsertInput[],
+    user: User | null,
+  ): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_ACTIVITY_DIRECTIVE_TAGS(user)) {
+        throwPermissionError('create activity directive tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_ACTIVITY_DIRECTIVE_TAGS, { tags }, user);
+      const { insert_activity_directive_tags } = data;
+      const { affected_rows } = insert_activity_directive_tags;
+      return affected_rows;
+    } catch (e) {
+      catchError('Create Activity Directive Tags Failed', e as Error);
+      showFailureToast('Create Activity Directive Tags Failed');
+      return null;
     }
   },
 
@@ -824,6 +842,23 @@ const effects = {
     } catch (e) {
       catchError('Simulation Template Create Failed', e as Error);
       showFailureToast('Simulation Template Create Failed');
+      return null;
+    }
+  },
+
+  async createTags(tags: TagsInsertInput[], user: User | null): Promise<Tag[] | null> {
+    try {
+      if (!queryPermissions.CREATE_TAGS(user)) {
+        throwPermissionError('create tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number; returning: Tag[] }>(gql.CREATE_TAGS, { tags }, user);
+      const { insert_tags } = data;
+      const { returning } = insert_tags;
+      return returning;
+    } catch (e) {
+      catchError('Create Tags Failed', e as Error);
+      showFailureToast('Create Tags Failed');
       return null;
     }
   },
@@ -2480,10 +2515,6 @@ const effects = {
 
       if (partialActivityDirective.start_offset) {
         activityDirectiveSetInput.start_offset = partialActivityDirective.start_offset;
-      }
-
-      if (partialActivityDirective.tags) {
-        activityDirectiveSetInput.tags = formatHasuraStringArray(partialActivityDirective.tags);
       }
 
       if (partialActivityDirective.name) {

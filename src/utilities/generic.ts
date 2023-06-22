@@ -84,13 +84,6 @@ export function filterEmpty<T>(value: T | null | undefined): value is T {
 }
 
 /**
- * Returns a string formatted in the Hasura string array format of '{1,2,...n}'.
- */
-export function formatHasuraStringArray(stringArray: string[]): string {
-  return `{${stringArray.join(',')}}`;
-}
-
-/**
  * Returns a target based on an Event.
  */
 export function getTarget(event: Event) {

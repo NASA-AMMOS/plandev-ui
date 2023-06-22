@@ -32,7 +32,7 @@
 
   function attemptCloseAutocomplete(event: MouseEvent | FocusEvent) {
     // Find autocomplete element
-    const autocompleteElement = container.getElementsByClassName('svelte-tags-input-matchs-parent');
+    const autocompleteElement = container.getElementsByClassName('svelte-tags-input-matches-parent');
 
     // If element does not exist it is not showing in the DOM
     if (autocompleteElement.length !== 1) {
@@ -150,7 +150,7 @@
     opacity: 1;
   }
 
-  :global(.svelte-tags-input-matchs) {
+  :global(.svelte-tags-input-matches) {
     overflow: auto !important;
     z-index: 1 !important;
   }
@@ -167,7 +167,7 @@
     cursor: not-allowed !important;
   }
 
-  :global(.svelte-tags-input-matchs) {
+  :global(.svelte-tags-input-matches) {
     border: var(--st-input-border) !important;
     border: 1px solid var(--st-gray-20) !important;
     border-radius: 4px !important;
@@ -177,7 +177,7 @@
     padding: 8px !important;
   }
 
-  :global(.svelte-tags-input-matchs li) {
+  :global(.svelte-tags-input-matches li) {
     color: var(--st-typography-body-color);
     font-family: var(--st-typography-body-font-family);
     font-size: var(--st-typography-body-font-size);
@@ -186,7 +186,7 @@
     line-height: var(--st-typography-body-line-height);
   }
 
-  :global(.svelte-tags-input-matchs li strong) {
+  :global(.svelte-tags-input-matches li strong) {
     color: var(--st-typography-bold-color);
     font-family: var(--st-typography-bold-font-family);
     font-size: var(--st-typography-bold-font-size);
@@ -195,7 +195,7 @@
     line-height: var(--st-typography-bold-line-height);
   }
 
-  :global(.svelte-tags-input-matchs li:hover, .svelte-tags-input-matchs li:focus) {
+  :global(.svelte-tags-input-matches li:hover, .svelte-tags-input-matches li:focus) {
     background: var(--st-gray-15) !important;
     color: inherit !important;
   }

@@ -4,6 +4,7 @@ import type { UserId } from './app';
 import type { ExpansionRule } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
+import type { Tag } from './tags';
 
 export type ActivityDirectivesByView = {
   byLayerId: Record<number, ActivityDirective[]>;
@@ -45,7 +46,7 @@ export type ActivityDirective = {
   plan_id: number;
   source_scheduling_goal_id: number;
   start_offset: string;
-  tags: string[];
+  tags: { tag: Tag }[];
   type: string;
 };
 
@@ -57,7 +58,6 @@ export type ActivityDirectiveInsertInput = {
   name: string;
   plan_id: number;
   start_offset: string;
-  tags: string; // Hasura does not accept arrays so this must be in the form of "{1,2,3,...,n}"
   type: string;
 };
 

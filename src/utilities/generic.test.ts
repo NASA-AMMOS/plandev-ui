@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test, vi } from 'vitest';
-import { attemptStringConversion, clamp, classNames, filterEmpty, formatHasuraStringArray, isMacOs } from './generic';
+import { attemptStringConversion, clamp, classNames, filterEmpty, isMacOs } from './generic';
 
 const mockNavigator = {
   platform: 'MacIntel',
@@ -68,15 +68,6 @@ describe('filterEmpty', () => {
       false,
       { foo: 1 },
     ]);
-  });
-});
-
-describe('formatHasuraStringArray', () => {
-  test('Should generate the correct string given a string array', () => {
-    expect(formatHasuraStringArray(['foo', 'bar'])).toEqual('{foo,bar}');
-  });
-  test('Should generate the correct string given an empty string array', () => {
-    expect(formatHasuraStringArray([])).toEqual('{}');
   });
 });
 

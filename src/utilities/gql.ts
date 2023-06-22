@@ -37,8 +37,25 @@ const gql = {
         plan_id
         source_scheduling_goal_id
         start_offset
-        tags
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
         type
+      }
+    }
+  `,
+
+  CREATE_ACTIVITY_DIRECTIVE_TAGS: `#graphql
+    mutation CreateActivityDirectiveTags($tags: [activity_directive_tags_insert_input!]!) {
+      insert_activity_directive_tags(objects: $tags, on_conflict: {
+        constraint: activity_directive_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
       }
     }
   `,
@@ -210,6 +227,24 @@ const gql = {
         arguments
         description
         id
+      }
+    }
+  `,
+
+  CREATE_TAGS: `#graphql
+    mutation CreateTags($tags: [tags_insert_input!]!) {
+      insert_tags(objects: $tags, on_conflict: {
+        constraint: tags_name_key,
+        update_columns: [color]
+      }) {
+        affected_rows
+        returning {
+          color
+          created_at
+          id
+          name
+          owner
+        }
       }
     }
   `,
@@ -1109,7 +1144,13 @@ const gql = {
         plan_id
         source_scheduling_goal_id
         start_offset
-        tags
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
         type
       }
     }
@@ -1596,7 +1637,13 @@ const gql = {
         plan_id
         source_scheduling_goal_id
         start_offset
-        tags
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
         type
       }
     }
