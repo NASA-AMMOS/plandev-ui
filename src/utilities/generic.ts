@@ -1,3 +1,5 @@
+import { browser } from '$app/environment';
+
 /**
  * Returns the string version of an object of unknown type or returns null if this operation fails.
  */
@@ -170,6 +172,10 @@ export function convertToQuery(gql: string): string {
  * Removes a query param from the current URL.
  */
 export function removeQueryParam(key: string): void {
+  if (!browser) {
+    return;
+  }
+
   const { history, location } = window;
   const { hash, host, pathname, protocol, search } = location;
 

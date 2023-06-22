@@ -6,6 +6,8 @@ import { run_all } from 'svelte/internal';
 import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
 import type { BaseUser, User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
+import { logout } from '../utilities/login';
+import { EXPIRED_JWT } from '../utilities/permissions';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -35,10 +37,15 @@ export function gqlSubscribable<T>(
         },
         {
           complete: () => ({}),
-          error: error => {
+          error: async (error: Error | CloseEvent) => {
             console.log('subscribe error');
             console.log(error);
-            subscribers.forEach(({ next }) => next(initialValue));
+
+            if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
+              await logout(EXPIRED_JWT);
+            } else {
+              subscribers.forEach(({ next }) => next(initialValue));
+            }
           },
           next: ({ data }) => {
             const [key] = Object.keys(data);

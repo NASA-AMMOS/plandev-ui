@@ -17,6 +17,9 @@ import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'admin';
 
+export const INVALID_JWT = 'invalid-jwt';
+export const EXPIRED_JWT = 'JWTExpired';
+
 function getPermission(queries: string[], user: User | null): boolean {
   if (user && user.permissibleQueries) {
     return queries.reduce((prevValue: boolean, queryName) => {

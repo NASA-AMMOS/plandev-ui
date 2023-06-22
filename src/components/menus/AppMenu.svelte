@@ -1,7 +1,7 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
-  import { goto, invalidateAll, preloadData } from '$app/navigation';
+  import { goto, preloadData } from '$app/navigation';
   import { base } from '$app/paths';
   import { env } from '$env/dynamic/public';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -18,17 +18,12 @@
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
+  import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
 
   let appMenu: Menu;
-
-  async function logout() {
-    await fetch(`${base}/auth/logout`, { method: 'POST' });
-    await invalidateAll();
-    await goto(`${base}/login`);
-  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
