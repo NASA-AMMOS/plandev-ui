@@ -23,19 +23,19 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasEdit: boolean = false;
+  export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let itemDisplayText: string;
   export let selectedItemId: RowId | null = null;
   export let scrollToSelection: boolean = false;
+  export let user: User | null;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
-  export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
-  export let hasEditPermission: PermissionCheck<RowData> | boolean = true;
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
-  export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
@@ -64,6 +64,9 @@
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
     selectedItemIds = [];
+  }
+  $: if (user !== undefined) {
+    redrawRows?.();
   }
 
   onDestroy(() => onBlur());

@@ -74,10 +74,22 @@
         <Tab class="view-tab">My Views</Tab>
       </svelte:fragment>
       <TabPanel>
-        <ViewsTable views={$views} on:deleteView={deleteView} on:deleteViews={deleteViews} on:openView={openView} />
+        <ViewsTable
+          {user}
+          views={$views}
+          on:deleteView={deleteView}
+          on:deleteViews={deleteViews}
+          on:openView={openView}
+        />
       </TabPanel>
       <TabPanel>
-        <ViewsTable views={userViews} on:deleteView={deleteView} on:deleteViews={deleteViews} on:openView={openView} />
+        <ViewsTable
+          {user}
+          views={userViews}
+          on:deleteView={deleteView}
+          on:deleteViews={deleteViews}
+          on:openView={openView}
+        />
       </TabPanel>
     </Tabs>
   </ModalContent>

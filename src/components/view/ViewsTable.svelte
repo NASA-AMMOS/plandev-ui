@@ -3,12 +3,14 @@
 <script lang="ts">
   import type { ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { View } from '../../types/view';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
   export let views: View[] = [];
+  export let user: User | null;
 
   type CellRendererParams = {
     deleteView: (view: View) => void;
@@ -120,6 +122,7 @@
   items={views}
   pluralItemDisplayText="Views"
   singleItemDisplayText="View"
+  {user}
   on:bulkDeleteItems={deleteViews}
   on:rowDoubleClicked={event => openView(event.detail)}
 />

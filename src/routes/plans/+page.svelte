@@ -116,8 +116,6 @@
   let plans: PlanSlim[];
   let user: User | null = null;
 
-  let redrawRows: () => void;
-
   let endTimeDoyField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [required]);
@@ -163,8 +161,6 @@
         width: 25,
       },
     ];
-    // Need to force the table to redraw the DataGridAction cells after the user's role is changed
-    redrawRows?.();
   }
   $: createButtonEnabled =
     $endTimeDoyField.dirtyAndValid &&
@@ -396,7 +392,6 @@
       <svelte:fragment slot="body">
         {#if filteredPlans.length}
           <SingleActionDataGrid
-            bind:redrawRows
             {columnDefs}
             hasDeletePermission={featurePermissions.plan.canDelete}
             itemDisplayText="Plan"

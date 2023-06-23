@@ -91,6 +91,7 @@
   scrollToSelection={true}
   singleItemDisplayText="Activity Directive"
   suppressDragLeaveHidesColumns={false}
+  {user}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:columnStateChange
   on:selectionChanged

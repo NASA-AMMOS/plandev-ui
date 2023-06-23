@@ -7,9 +7,10 @@
     bulkDeleteItems: CustomEvent<RowData[]>;
   }
   import { browser } from '$app/environment';
-  import type { ColDef, ColumnState, IRowNode } from 'ag-grid-community';
+  import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
+  import type { User } from '../../../types/app';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -29,9 +30,11 @@
   export let singleItemDisplayText: string = '';
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let user: User | null;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
+  export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -42,6 +45,9 @@
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
     selectedItemIds = [];
+  }
+  $: if (user !== undefined) {
+    redrawRows?.();
   }
 
   onDestroy(() => onBlur());
@@ -93,6 +99,7 @@
   bind:this={dataGrid}
   bind:currentSelectedRowId={selectedItemId}
   bind:selectedRowIds={selectedItemIds}
+  bind:redrawRows
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
