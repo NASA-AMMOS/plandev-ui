@@ -386,11 +386,6 @@ const gql = {
           id
         }
       }
-      deleteSimulation: delete_simulation(where: { plan_id: { _eq: $id } }) {
-        returning {
-          id
-        }
-      }
     }
   `,
 

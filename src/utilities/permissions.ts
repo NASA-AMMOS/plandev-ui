@@ -174,7 +174,7 @@ const queryPermissions = {
     return getPermission(['delete_mission_model_by_pk'], user);
   },
   DELETE_PLAN: (user: User | null): boolean => {
-    return getPermission(['delete_plan_by_pk', 'delete_scheduling_specification', 'delete_simulation'], user);
+    return getPermission(['delete_plan_by_pk', 'delete_scheduling_specification'], user);
   },
   DELETE_PRESET_TO_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['delete_preset_to_directive_by_pk'], user);
