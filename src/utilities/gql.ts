@@ -815,8 +815,8 @@ const gql = {
   `,
 
   GET_RESOURCE_TYPES: `#graphql
-    query GetResourceTypes($model_id: Int!) {
-      resource_types: resource_type(where: { model_id: { _eq: $model_id } }) {
+    query GetResourceTypes($model_id: Int!, $limit: Int) {
+      resource_types: resource_type(where: { model_id: { _eq: $model_id } }, order_by: { name: asc }, limit: $limit) {
         name
         schema
       }

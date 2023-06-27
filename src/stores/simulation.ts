@@ -2,6 +2,7 @@ import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type {
   Resource,
+  ResourceType,
   Simulation,
   SimulationDataset,
   SimulationTemplate,
@@ -24,6 +25,8 @@ export const simulationDatasetId: Writable<number> = writable(-1);
 export const externalResources: Writable<Resource[]> = writable([]);
 
 export const resources: Writable<Resource[]> = writable([]);
+
+export const resourceTypes: Writable<ResourceType[]> = writable([]);
 
 export const spans: Writable<Span[]> = writable([]);
 

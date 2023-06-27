@@ -9,8 +9,12 @@
   import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
-  import { resourceTypes } from '../../../stores/resource';
-  import { externalResources, resourcesByViewLayerId, simulationDataset } from '../../../stores/simulation';
+  import {
+    externalResources,
+    resourceTypes,
+    resourcesByViewLayerId,
+    simulationDataset,
+  } from '../../../stores/simulation';
   import {
     selectedRow,
     selectedRowId,

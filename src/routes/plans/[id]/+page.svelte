@@ -48,7 +48,6 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
-  import { resourceTypes } from '../../../stores/resource';
   import {
     enableScheduling,
     latestAnalyses,
@@ -61,6 +60,7 @@
     enableSimulation,
     externalResources,
     resetSimulationStores,
+    resourceTypes,
     resources,
     selectedSpanId,
     simulationDataset,

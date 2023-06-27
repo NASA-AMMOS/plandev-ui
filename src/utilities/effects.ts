@@ -1813,9 +1813,9 @@ const effects = {
     }
   },
 
-  async getResourceTypes(model_id: number, user: User | null): Promise<ResourceType[]> {
+  async getResourceTypes(model_id: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
     try {
-      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { model_id }, user);
+      const data = await reqHasura<ResourceType[]>(gql.GET_RESOURCE_TYPES, { limit, model_id }, user);
       const { resource_types } = data;
       return resource_types;
     } catch (e) {
