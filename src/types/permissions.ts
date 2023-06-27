@@ -35,6 +35,6 @@ export type PlanAssetReadPermissionCheck = (user: User) => boolean;
 
 export type PlanAssetCreatePermissionCheck = (user: User, plan: PlanWithOwners) => boolean;
 
-export type PlanAssetUpdatePermissionCheck<T = null> = (user: User, plan: PlanWithOwners, asset: T) => boolean;
+export type PlanAssetUpdatePermissionCheck<T = null> = (user: User, plan: PlanWithOwners, asset?: T) => boolean;
 
 export type PlanWithOwners = Pick<Plan, 'id' | 'owner' | 'collaborators'>;

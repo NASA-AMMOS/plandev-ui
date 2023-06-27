@@ -14,7 +14,9 @@
   initialConstraintModelId={data.initialConstraint.model_id}
   initialConstraintName={data.initialConstraint.name}
   initialConstraintPlanId={data.initialConstraint.plan_id}
+  initialModelMap={data.initialModelMap}
   initialModels={data.initialModels}
+  initialPlanMap={data.initialPlanMap}
   initialPlans={data.initialPlans}
   mode="edit"
   user={data.user}

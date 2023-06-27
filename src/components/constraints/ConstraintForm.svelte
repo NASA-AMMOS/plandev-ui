@@ -10,6 +10,8 @@
   import type { PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import PageTitle from '../app/PageTitle.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -23,10 +25,14 @@
   export let initialConstraintName: string = '';
   export let initialConstraintModelId: number | null = null;
   export let initialConstraintPlanId: number | null = null;
+  export let initialModelMap: Record<number, ModelSlim> = {};
   export let initialModels: ModelSlim[] = [];
+  export let initialPlanMap: Record<number, PlanSlim> = {};
   export let initialPlans: PlanSlim[] = [];
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
+
+  const permissionError = 'You do not have permission to edit this constraint.';
 
   let constraintDefinition: string = initialConstraintDefinition;
   let constraintDescription: string = initialConstraintDescription;
@@ -34,6 +40,7 @@
   let constraintName: string = initialConstraintName;
   let constraintModelId: number | null = initialConstraintModelId;
   let constraintPlanId: number | null = initialConstraintPlanId;
+  let hasPermission: boolean = false;
   let models: ModelSlim[] = initialModels;
   let plans: PlanSlim[] = initialPlans;
   let saveButtonEnabled: boolean = false;
@@ -45,8 +52,6 @@
     plan_id: constraintPlanId,
   };
 
-  $: saveButtonEnabled =
-    constraintDefinition !== '' && constraintName !== '' && (constraintModelId !== null || constraintPlanId !== null);
   $: constraintModified = diffConstraints(savedConstraint, {
     definition: constraintDefinition,
     description: constraintDescription,
@@ -54,16 +59,54 @@
     name: constraintName,
     plan_id: constraintPlanId,
   });
-  $: saveButtonText = mode === 'edit' && !constraintModified ? 'Saved' : 'Save';
-  $: saveButtonClass = saveButtonEnabled && constraintModified ? 'primary' : 'secondary';
+  $: {
+    if (constraintPlanId !== null) {
+      hasPermission = hasPlanPermission(initialPlanMap[constraintPlanId], mode, user);
+    } else if (constraintModelId !== null) {
+      hasPermission = hasModelPermission(constraintModelId, mode, user);
+    } else {
+      hasPermission = plans.reduce((prevPermission: boolean, plan) => {
+        return prevPermission || hasPlanPermission(plan, mode, user);
+      }, false);
+    }
+  }
   $: pageTitle = mode === 'edit' ? 'Constraints' : 'New Constraint';
   $: pageSubtitle = mode === 'edit' ? savedConstraint.name : '';
+  $: saveButtonEnabled =
+    constraintDefinition !== '' && constraintName !== '' && (constraintModelId !== null || constraintPlanId !== null);
+  $: saveButtonText = mode === 'edit' && !constraintModified ? 'Saved' : 'Save';
+  $: saveButtonClass = saveButtonEnabled && constraintModified ? 'primary' : 'secondary';
 
   $: if (constraintPlanId !== null) {
     const plan = initialPlans.find(plan => plan.id === constraintPlanId);
     if (plan) {
       constraintModelId = plan.model_id;
     }
+  }
+
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user): boolean {
+    const model = initialModelMap[modelId];
+    if (model) {
+      return model.plans.reduce((prevPermission: boolean, { id }) => {
+        const plan = initialPlanMap[id];
+        if (plan) {
+          return (
+            prevPermission ||
+            (mode === 'create'
+              ? featurePermissions.constraints.canCreate(user, plan)
+              : featurePermissions.constraints.canUpdate(user, plan))
+          );
+        }
+      }, false);
+    }
+
+    return true;
+  }
+
+  function hasPlanPermission(plan: PlanSlim, mode: 'create' | 'edit', user): boolean {
+    return mode === 'create'
+      ? featurePermissions.constraints.canCreate(user, plan)
+      : featurePermissions.constraints.canUpdate(user, plan);
   }
 
   function diffConstraints(constraintA: Partial<Constraint>, constraintB: Partial<Constraint>) {
@@ -146,7 +189,15 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/constraints`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button {saveButtonClass} ellipsis" disabled={!saveButtonEnabled} on:click={saveConstraint}>
+        <button
+          class="st-button {saveButtonClass} ellipsis"
+          disabled={!saveButtonEnabled}
+          on:click={saveConstraint}
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
+        >
           {saveButtonText}
         </button>
       </div>
@@ -167,10 +218,14 @@
           class="st-select w-100"
           disabled={constraintPlanId !== null}
           name="model"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         >
           <option value={null} />
           {#each models as model}
-            <option value={model.id}>
+            <option value={model.id} disabled={!hasModelPermission(model.id, mode, user)}>
               {model.name} ({model.id})
             </option>
           {/each}
@@ -179,10 +234,18 @@
 
       <fieldset>
         <label for="plan">Plan</label>
-        <select bind:value={constraintPlanId} class="st-select w-100" name="plan">
+        <select
+          bind:value={constraintPlanId}
+          class="st-select w-100"
+          name="plan"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each plans as plan}
-            <option value={plan.id}>
+            <option value={plan.id} disabled={!hasPlanPermission(plan, mode, user)}>
               {plan.name} ({plan.id})
             </option>
           {/each}
@@ -198,6 +261,10 @@
           name="constraint-name"
           placeholder="Enter Constraint Name (required)"
           required
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
 
@@ -209,6 +276,10 @@
           class="st-input w-100"
           name="constraint-description"
           placeholder="Enter Constraint Description (optional)"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
     </svelte:fragment>
@@ -220,6 +291,7 @@
     {constraintDefinition}
     {constraintModelId}
     {constraintPlanId}
+    readOnly={!hasPermission}
     title="{mode === 'create' ? 'New' : 'Edit'} Constraint - Definition Editor"
     {user}
     on:didChangeModelContent={onDidChangeModelContent}

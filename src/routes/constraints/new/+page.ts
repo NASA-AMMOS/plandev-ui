@@ -11,10 +11,17 @@ export const load: PageLoad = async ({ parent }) => {
     throw redirect(302, `${base}/login`);
   }
 
-  const { models: initialModels, plans: initialPlans } = await effects.getPlansAndModels(user);
+  const {
+    modelMap: initialModelMap,
+    models: initialModels,
+    planMap: initialPlanMap,
+    plans: initialPlans,
+  } = await effects.getPlansAndModelsForConstraints(user);
 
   return {
+    initialModelMap,
     initialModels,
+    initialPlanMap,
     initialPlans,
     user,
   };

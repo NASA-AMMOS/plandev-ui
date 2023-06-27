@@ -7,4 +7,11 @@
   export let data: PageData;
 </script>
 
-<ConstraintForm initialModels={data.initialModels} initialPlans={data.initialPlans} mode="create" user={data.user} />
+<ConstraintForm
+  initialModelMap={data.initialModelMap}
+  initialModels={data.initialModels}
+  initialPlanMap={data.initialPlanMap}
+  initialPlans={data.initialPlans}
+  mode="create"
+  user={data.user}
+/>

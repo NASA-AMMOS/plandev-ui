@@ -1795,6 +1795,37 @@ const effects = {
     }
   },
 
+  async getPlansAndModelsForConstraints(user: User | null): Promise<{
+    modelMap: Record<number, ModelSlim>;
+    models: ModelSlim[];
+    planMap: Record<number, PlanSlim>;
+    plans: PlanSlim[];
+  }> {
+    try {
+      const { models, plans } = await effects.getPlansAndModels(user);
+      const planMap: Record<number, PlanSlim> = plans.reduce((prevMap: Record<number, PlanSlim>, plan: PlanSlim) => {
+        return {
+          ...prevMap,
+          [plan.id]: plan,
+        };
+      }, {});
+      const modelMap: Record<number, ModelSlim> = models.reduce(
+        (prevMap: Record<number, ModelSlim>, model: ModelSlim) => {
+          return {
+            ...prevMap,
+            [model.id]: model,
+          };
+        },
+        {},
+      );
+
+      return { modelMap, models, planMap, plans };
+    } catch (e) {
+      catchError(e as Error);
+      return { modelMap: {}, models: [], planMap: {}, plans: [] };
+    }
+  },
+
   async getPlansAndModelsForScheduling(user: User | null): Promise<{
     models: ModelSlim[];
     plans: PlanSchedulingSpec[];
