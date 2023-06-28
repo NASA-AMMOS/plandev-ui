@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { plan } from '../../stores/plan';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -14,11 +13,9 @@
   const dispatch = createEventDispatcher();
 
   let newViewName: string = '';
-  let selectedModelId: number | null;
   let createButtonDisabled: boolean = true;
 
   $: createButtonDisabled = newViewName === '';
-  $: selectedModelId = $plan?.model_id;
 
   function create() {
     if (!createButtonDisabled) {

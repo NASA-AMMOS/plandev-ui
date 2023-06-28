@@ -61,7 +61,6 @@
 </script>
 
 {#if showName}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="parameter-rec-struct">
     <Collapse defaultExpanded={expanded}>
       <div slot="left">

@@ -11,10 +11,10 @@
   let styleName: string = '';
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="list-item st-typography-body {className}"
   {draggable}
+  role="none"
   style={styleName}
   on:click={e => dispatch('click', e)}
   on:dragend={e => dispatch('dragend', e)}

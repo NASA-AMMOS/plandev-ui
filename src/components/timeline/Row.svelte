@@ -238,6 +238,7 @@
     <svg
       bind:this={overlaySvg}
       class="overlay"
+      role="none"
       style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px"
       on:blur={e => (blur = e)}
       on:contextmenu={e => (contextmenu = e)}

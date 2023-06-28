@@ -159,8 +159,7 @@
     </div>
     {#if numberOfDependentActivities > 0}
       <div class="anchor-help">
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="anchor-help-toggle" on:click={onToggleHelp}>
+        <div class="anchor-help-toggle" role="none" on:click={onToggleHelp}>
           {#if isHelpOpen}
             Hide help
           {:else}

@@ -17,7 +17,12 @@
   let menu: Menu;
 </script>
 
-<div class="nav-button st-typography-medium" on:mouseenter={() => menu.show()} on:mouseleave={() => menu.hide()}>
+<div
+  class="nav-button st-typography-medium"
+  role="none"
+  on:mouseenter={() => menu.show()}
+  on:mouseleave={() => menu.hide()}
+>
   <div class="nav-button-icon-container">
     <slot />
     <span class="nav-button-status">

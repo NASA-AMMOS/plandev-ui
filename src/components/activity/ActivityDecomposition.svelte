@@ -59,8 +59,9 @@
         <TreeLeafIcon />
       {/if}
     </button>
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <span on:click={() => dispatch('select', rootSpanId)} on:dblclick={toggle} class={nodeClass}>{type}</span>
+    <span role="none" on:click={() => dispatch('select', rootSpanId)} on:dblclick={toggle} class={nodeClass}>
+      {type}
+    </span>
   </div>
 
   {#if hasChildren && expanded}

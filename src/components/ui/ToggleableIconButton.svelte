@@ -1,4 +1,5 @@
 <script lang="ts">
+  // eslint-disable-next-line
   interface $$Events {
     toggle: CustomEvent<boolean>;
   }

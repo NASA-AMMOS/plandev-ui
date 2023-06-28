@@ -13,7 +13,7 @@ interface PermissionHandlerProps extends Partial<Omit<Props, 'content'>> {
 export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
   node: Element,
   { permissionError, ...params }: PermissionHandlerProps = {},
-): ActionReturn => {
+): ActionReturn<any, any> => {
   // Determine the title to show. We want to prefer
   // the permissionError content passed in first, then the
   // HTML title attribute then the aria-label

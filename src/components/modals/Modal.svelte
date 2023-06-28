@@ -9,8 +9,13 @@
 </script>
 
 <div class="modal-container">
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div class="modal st-typography-body" style:height={heightStyle} style:width={widthStyle} on:click|stopPropagation>
+  <div
+    class="modal st-typography-body"
+    role="none"
+    style:height={heightStyle}
+    style:width={widthStyle}
+    on:click|stopPropagation
+  >
     <slot />
   </div>
 </div>

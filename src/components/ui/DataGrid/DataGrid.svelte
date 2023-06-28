@@ -3,6 +3,7 @@
 <script lang="ts">
   type RowData = $$Generic<TRowData>;
 
+  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<SvelteComponent> {
     cellContextMenu: CustomEvent<CellContextMenuEvent<RowData>>;
     cellMouseOver: CustomEvent<CellMouseOverEvent<RowData>>;

@@ -35,7 +35,7 @@
 
 <svelte:window on:mouseup={onMouseUp} />
 
-<div class="row-drag-handle-height" on:mousedown={onMouseDown} />
+<div class="row-drag-handle-height" role="none" on:mousedown={onMouseDown} />
 
 <style>
   div {

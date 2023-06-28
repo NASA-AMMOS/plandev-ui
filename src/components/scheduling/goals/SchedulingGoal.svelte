@@ -57,8 +57,7 @@
 <div class="scheduling-goal" class:disabled={!enabled}>
   <Collapse title={goal.name} tooltipContent={goal.name} defaultExpanded={false}>
     <svelte:fragment slot="right">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <div class="right-content" on:click|stopPropagation>
+      <div class="right-content" role="none" on:click|stopPropagation>
         <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
         <Input>
           <input
@@ -91,7 +90,7 @@
             </button>
           </div>
           <input
-            use:tooltip={{ content: enabled ? 'Disable Gcheduling Goal' : 'Enable Scheduling Goal', placement: 'top' }}
+            use:tooltip={{ content: enabled ? 'Disable Scheduling Goal' : 'Enable Scheduling Goal', placement: 'top' }}
             bind:checked={enabled}
             style:cursor="pointer"
             type="checkbox"
@@ -111,9 +110,9 @@
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id, user)}>Delete Goal</ContextMenuItem>
       <ContextMenuItem>
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div
           class="scheduling-goal-simulate-toggle"
+          role="none"
           on:click|stopPropagation={() => {
             simulateGoal = !simulateGoal;
             effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal }, user);

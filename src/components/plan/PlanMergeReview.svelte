@@ -21,13 +21,11 @@
     PlanMergeRequestSchema,
     PlanMergeRequestStatus,
     PlanMergeResolution,
-    PlanSlimmer,
   } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
   import { showMergeReviewEndedModal } from '../../utilities/modal';
-  import { getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ActivityDirectiveForm from '../activity/ActivityDirectiveForm.svelte';
@@ -75,25 +73,13 @@
   let selectedConflictingActivityResolution: PlanMergeResolution | null;
   let selectedMergeType: 'conflict' | 'add' | 'modify' | 'delete' | 'none' | null;
   let selectedNonConflictingActivity: PlanMergeNonConflictingActivity | null;
-  let supplyingPlanActivitiesMap: ActivityDirectivesMap = {};
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
-  let supplyingPlan: PlanSlimmer | null;
 
   $: if (initialPlan && initialMergeRequest) {
     const {
-      plan_snapshot_supplying_changes: {
-        plan_id: supplyingPlanId,
-        start_time: supplyingPlanStartTime,
-        duration: supplyingPlanDuration,
-      },
+      plan_snapshot_supplying_changes: { plan_id: supplyingPlanId },
     } = initialMergeRequest;
-    const endTime = `${getDoyTimeFromInterval(supplyingPlanStartTime, supplyingPlanDuration)}`;
-    supplyingPlan = {
-      end_time_doy: endTime,
-      id: supplyingPlanId,
-      start_time: supplyingPlanStartTime,
-    };
 
     // build up the complete array of snapshotted receiving and supplying directives
     let { receivingPlanDirectives, supplyingPlanDirectives } = initialConflictingActivities.reduce(
@@ -138,7 +124,6 @@
       { receivingPlanDirectives, supplyingPlanDirectives },
     ));
     receivingPlanActivitiesMap = keyBy(receivingPlanDirectives, 'id');
-    supplyingPlanActivitiesMap = keyBy(supplyingPlanDirectives, 'id');
   }
 
   $: if (initialNonConflictingActivities) {

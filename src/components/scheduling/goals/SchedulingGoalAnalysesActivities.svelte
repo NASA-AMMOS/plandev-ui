@@ -29,7 +29,6 @@
   {#if analysis && sortedSatisfyingActivities.length}
     <div class="scheduling-goal-analysis-activities-list">
       {#each sortedSatisfyingActivities as activityDirective}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <button
           class="st-button tertiary satisfied-activity"
           class:selected={$selectedActivityDirectiveId === activityDirective.id}

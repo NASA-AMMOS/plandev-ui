@@ -71,8 +71,7 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="grid-menu st-typography-medium" on:click|stopPropagation={() => tableMenu.toggle()}>
+<div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => tableMenu.toggle()}>
   <div class="button"><div class="button-title">...</div></div>
   <Menu bind:this={tableMenu} hideAfterClick={false}>
     <MenuHeader title="Columns" showBorder={false} />

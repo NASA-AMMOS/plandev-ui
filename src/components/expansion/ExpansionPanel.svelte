@@ -94,12 +94,10 @@
   ];
 
   let createButtonEnabled: boolean = false;
-  let expandButtonEnabled: boolean = false;
   let seqIdInput: string = '';
   let selectedExpansionSet: ExpansionSet | null;
 
   $: createButtonEnabled = seqIdInput !== '';
-  $: expandButtonEnabled = $selectedExpansionSetId !== null;
   $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId);
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {

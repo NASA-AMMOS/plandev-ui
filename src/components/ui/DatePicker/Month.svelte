@@ -30,6 +30,7 @@
     <div>Fri</div>
     <div>Sat</div>
   </div>
+  <!-- eslint-disable-next-line -->
   {#each Array(numOfWeeks) as _, i}
     <Week {maxDate} {minDate} {year} {month} week={i} {selectedDate} on:select />
   {/each}

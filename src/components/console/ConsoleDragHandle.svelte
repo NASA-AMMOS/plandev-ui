@@ -48,7 +48,7 @@
 <svelte:window on:mouseup={onMouseUp} />
 
 <div class="console-drag-handle-container">
-  <div class="console-drag-handle-height" on:mousedown|preventDefault={onMouseDown} />
+  <div class="console-drag-handle-height" role="none" on:mousedown|preventDefault={onMouseDown} />
 </div>
 
 <style>

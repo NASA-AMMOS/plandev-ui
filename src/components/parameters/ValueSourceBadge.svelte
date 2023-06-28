@@ -49,9 +49,9 @@
 </script>
 
 {#if source !== 'none'}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="value-source-badge-dot-root"
+    role="none"
     use:tooltip={{ allowHTML: true, content: tooltipContent, placement: 'top' }}
     on:click={onClick}
   >

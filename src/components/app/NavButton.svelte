@@ -9,10 +9,10 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="nav-button st-typography-medium"
   class:selected
+  role="none"
   on:click|preventDefault|stopPropagation={() => dispatch('click')}
 >
   <span style="color: {status !== null ? getColorForStatus(status) : 'unset'}">

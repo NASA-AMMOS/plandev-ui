@@ -7,6 +7,9 @@ const config = {
   build: {
     minify: true,
   },
+  css: {
+    devSourcemap: true,
+  },
   plugins: [
     sveltekit(),
     svg({

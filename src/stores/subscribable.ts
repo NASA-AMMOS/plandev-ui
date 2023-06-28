@@ -2,7 +2,6 @@ import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { createClient, type Client, type ClientOptions } from 'graphql-ws';
 import { isEqual } from 'lodash-es';
-import { run_all } from 'svelte/internal';
 import type { Readable, Subscriber, Unsubscriber, Updater } from 'svelte/store';
 import type { BaseUser, User } from '../types/app';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
@@ -116,7 +115,7 @@ export function gqlSubscribable<T>(
   }
 
   function subscribeToVariables(initialVariables: QueryVariables): void {
-    run_all(variableUnsubscribers);
+    variableUnsubscribers.forEach(unsubscribe => unsubscribe());
     variableUnsubscribers = [];
 
     for (const [name, variable] of Object.entries(initialVariables)) {
@@ -157,7 +156,7 @@ export function gqlSubscribable<T>(
       subscribers.delete(subscriber);
 
       if (subscribers.size === 0 && client) {
-        run_all(variableUnsubscribers);
+        variableUnsubscribers.forEach(unsubscribe => unsubscribe());
         variableUnsubscribers = [];
         client.dispose();
         client = null;

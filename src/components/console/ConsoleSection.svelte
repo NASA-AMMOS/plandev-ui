@@ -23,8 +23,12 @@
     <div class="console-header">
       <div>{title}</div>
       {#if isClearable}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="clear-console" on:click={onClear} use:tooltip={{ content: `Clear ${title}`, placement: 'left' }}>
+        <div
+          class="clear-console"
+          role="none"
+          on:click={onClear}
+          use:tooltip={{ content: `Clear ${title}`, placement: 'left' }}
+        >
           <RemoveAllIcon />
         </div>
       {/if}

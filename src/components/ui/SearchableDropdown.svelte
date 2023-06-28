@@ -1,6 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<SvelteComponent> {
     hideMenu: CustomEvent;
     openMenu: CustomEvent;

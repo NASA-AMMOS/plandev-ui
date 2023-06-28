@@ -26,8 +26,7 @@
   let appMenu: Menu;
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="app-menu" on:click|stopPropagation={() => appMenu.toggle()}>
+<div class="app-menu" role="none" on:click|stopPropagation={() => appMenu.toggle()}>
   <div class="app-icon"><AerieWordmarkDark /></div>
 
   <ChevronDownIcon />

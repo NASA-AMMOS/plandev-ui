@@ -59,8 +59,7 @@
           <div class="console-tabs">
             <slot name="console-tabs" />
           </div>
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <div class="console-toggle" on:click={onToggle}>
+          <div class="console-toggle" role="none" on:click={onToggle}>
             {#if isOpen}
               <ChevronDownIcon />
             {:else}

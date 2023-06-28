@@ -41,8 +41,8 @@
     </div>
     <BranchIcon />
   {/if}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div class="plan-menu st-typography-medium" on:click|stopPropagation={() => planMenu.toggle()}>
+
+  <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
     <div class="plan-title">{plan.name}<ChevronDownIcon /></div>
     <Menu bind:this={planMenu}>
       <MenuItem on:click={createPlanBranch}>
@@ -63,8 +63,7 @@
     </Menu>
   </div>
   {#if plan.child_plans.length > 0}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div class="plan-branches st-typography-medium" on:click|stopPropagation={showPlanBranches}>
+    <div class="plan-branches st-typography-medium" on:click|stopPropagation={showPlanBranches} role="none">
       {plan.child_plans.length} branch{plan.child_plans.length > 1 ? 'es' : ''}
     </div>
   {/if}

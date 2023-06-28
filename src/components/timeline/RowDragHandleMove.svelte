@@ -11,6 +11,7 @@
 
 <div
   class="row-drag-handle-move"
+  role="none"
   style={disabled ? 'cursor: grab' : 'cursor: grabbing'}
   on:mousedown={() => dispatch('mouseDownRowMove')}
 >

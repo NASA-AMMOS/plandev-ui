@@ -165,23 +165,23 @@
           Anchor
         </label>
         <div class="anchor-boundaries">
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
           <div
             class:st-button={isAnchoredToStart}
             class="secondary anchor-boundary"
             class:selected={isAnchoredToStart}
             class:disabled
+            role="none"
             on:click={onAnchorToStart}
           >
             Start
           </div>
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
           <div
             class:st-button={!isAnchoredToStart}
             class="secondary anchor-boundary"
             class:selected={!isAnchoredToStart}
             class:disabled
             on:click={onAnchorToEnd}
+            role="none"
           >
             End
           </div>

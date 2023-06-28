@@ -106,7 +106,6 @@
   <ModalHeader on:close>Merge Requests</ModalHeader>
   <ModalContent style="overflow: auto;padding: 0">
     <div class="plan-merge-requests-container">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
       <div class="plan-merge-requests-row">
         <div class="plan-merge-requests-tabs">
           <button on:click={() => (selectedFilter = 'incoming')} class={selectedFilterClass('incoming')}>

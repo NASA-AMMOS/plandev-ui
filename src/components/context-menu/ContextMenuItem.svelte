@@ -7,9 +7,9 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="context-menu-item st-typography-body"
+  role="none"
   on:click|preventDefault={() => dispatch('click')}
   on:mouseenter
   on:mouseleave

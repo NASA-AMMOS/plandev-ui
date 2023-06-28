@@ -39,13 +39,13 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="date-picker-day"
   class:is-outside-bounds={isOutsideBounds}
   class:is-outside-current-month={isOutsideCurrentMonth}
   class:is-selected={isSelected}
   class:is-today={isToday}
+  role="none"
   on:click|stopPropagation={onSelect}
 >
   <div class="doy">{getDoy(date)}</div>

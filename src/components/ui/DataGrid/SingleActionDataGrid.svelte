@@ -3,6 +3,7 @@
 <script lang="ts">
   type RowData = $$Generic<TRowData>;
 
+  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<DataGrid<RowData>> {
     deleteItem: CustomEvent<RowId[]>;
     editItem: CustomEvent<RowId[]>;

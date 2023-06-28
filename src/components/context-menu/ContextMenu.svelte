@@ -62,10 +62,10 @@
 <svelte:body on:click={() => hide(true)} />
 
 {#if shown}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     bind:this={div}
     class="context-menu"
+    role="none"
     style:left={`${x}px`}
     style:top={`${y}px`}
     transition:fade={{ duration: 50 }}

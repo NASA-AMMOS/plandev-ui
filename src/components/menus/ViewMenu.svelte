@@ -76,7 +76,6 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="view-menu st-typography-medium">
   <PlanNavButton status={$viewIsModified ? Status.Modified : null} title={$view?.name ?? defaultViewName} menuTitle="">
     <ViewGridIcon />

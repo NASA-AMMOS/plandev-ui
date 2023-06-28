@@ -2,7 +2,6 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { plan } from '../../stores/plan';
   import { view } from '../../stores/views';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -15,11 +14,9 @@
   const dispatch = createEventDispatcher();
 
   let viewName: string = '';
-  let selectedModelId: number | null;
   let saveButtonDisabled: boolean = true;
 
   $: saveButtonDisabled = viewName === '';
-  $: selectedModelId = $plan.model_id;
   $: viewName = $view.name;
 
   function save() {

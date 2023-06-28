@@ -40,8 +40,7 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="grid-menu st-typography-medium" on:click|stopPropagation={() => gridMenu.toggle()}>
+<div class="grid-menu st-typography-medium" role="none" on:click|stopPropagation={() => gridMenu.toggle()}>
   <div class="title">{title}</div>
   <ChevronDownIcon />
 
