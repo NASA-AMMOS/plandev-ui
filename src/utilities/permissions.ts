@@ -329,6 +329,7 @@ interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermi
 interface FeaturePermissions {
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: AssignablePlanAssetCRUDPermission<ActivityPreset>;
+  commandDictionary: CRUDPermission<void>;
   constraints: PlanAssetCRUDPermission<AssetWithOwner>;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner>;
@@ -353,6 +354,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, preset) => isUserOwner(user, preset) && queryPermissions.DELETE_ACTIVITY_PRESET(user),
     canRead: user => queryPermissions.SUB_ACTIVITY_PRESETS(user),
     canUpdate: (user, preset) => isUserOwner(user, preset) && queryPermissions.UPDATE_ACTIVITY_PRESET(user),
+  },
+  commandDictionary: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_COMMAND_DICTIONARY(user),
+    canDelete: user => isUserAdmin(user) || queryPermissions.DELETE_COMMAND_DICTIONARY(user),
+    canRead: () => false, // Not implemented
+    canUpdate: () => false, // Not implemented
   },
   constraints: {
     canCreate: (user, plan) =>
