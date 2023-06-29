@@ -33,4 +33,4 @@ export type UserSequence = {
   updated_at: string;
 };
 
-export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'updated_at'>;
+export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;

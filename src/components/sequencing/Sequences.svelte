@@ -9,6 +9,7 @@
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -26,7 +27,7 @@
   };
   type SequencesCellRendererParams = ICellRendererParams<UserSequence> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'text',
@@ -45,6 +46,29 @@
       resizable: true,
       sortable: true,
     },
+  ];
+
+  let abortController: AbortController;
+  let columnDefs = baseColumnDefs;
+  let filterText: string = '';
+  let filteredSequences: UserSequence[] = [];
+  let selectedSequence: UserSequence | null = null;
+  let selectedSequenceSeqJson: string = 'No Sequence Selected';
+
+  $: filteredSequences = $userSequences.filter(sequence => {
+    const filterTextLowerCase = filterText.toLowerCase();
+    const includesId = `${sequence.id}`.includes(filterTextLowerCase);
+    const includesName = sequence.name.toLocaleLowerCase().includes(filterTextLowerCase);
+    return includesId || includesName;
+  });
+  $: if (selectedSequence !== null) {
+    const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
+    if (found === -1) {
+      selectedSequence = null;
+    }
+  }
+  $: columnDefs = [
+    ...baseColumnDefs,
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SequencesCellRendererParams) => {
@@ -62,6 +86,8 @@
               content: 'Edit Sequence',
               placement: 'bottom',
             },
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
+            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
             rowData: params.data,
           },
           target: actionsDiv,
@@ -82,25 +108,6 @@
       width: 55,
     },
   ];
-
-  let abortController: AbortController;
-  let filterText: string = '';
-  let filteredSequences: UserSequence[] = [];
-  let selectedSequence: UserSequence | null = null;
-  let selectedSequenceSeqJson: string = 'No Sequence Selected';
-
-  $: filteredSequences = $userSequences.filter(sequence => {
-    const filterTextLowerCase = filterText.toLowerCase();
-    const includesId = `${sequence.id}`.includes(filterTextLowerCase);
-    const includesName = sequence.name.toLocaleLowerCase().includes(filterTextLowerCase);
-    return includesId || includesName;
-  });
-  $: if (selectedSequence !== null) {
-    const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
-    if (found === -1) {
-      selectedSequence = null;
-    }
-  }
 
   async function deleteSequence({ id }: Pick<UserSequence, 'id'>) {
     const success = await effects.deleteUserSequence(id, user);
@@ -150,6 +157,14 @@
     }
   }
 
+  function hasDeletePermission(user: User | null, sequence: UserSequence) {
+    return featurePermissions.sequences.canDelete(user, sequence);
+  }
+
+  function hasEditPermission(user: User | null, sequence: UserSequence) {
+    return featurePermissions.sequences.canUpdate(user, sequence);
+  }
+
   async function toggleSequence(event: CustomEvent<DataGridRowSelection<UserSequence>>) {
     const { detail } = event;
     const { data: clickedSequence, isSelected } = detail;
@@ -180,6 +195,8 @@
         <SingleActionDataGrid
           {columnDefs}
           hasEdit={true}
+          {hasEditPermission}
+          {hasDeletePermission}
           itemDisplayText="Sequence"
           items={filteredSequences}
           {user}

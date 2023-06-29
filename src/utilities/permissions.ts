@@ -256,6 +256,9 @@ const queryPermissions = {
   SUB_EXPANSION_SETS: (user: User | null): boolean => {
     return getPermission(['expansion_set'], user);
   },
+  SUB_USER_SEQUENCES: (user: User | null): boolean => {
+    return getPermission(['user_sequence'], user);
+  },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['update_activity_directive_by_pk'], user);
   },
@@ -335,6 +338,7 @@ interface FeaturePermissions {
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner>;
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
+  sequences: CRUDPermission<AssetWithOwner>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -399,6 +403,14 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, plan) => isUserAdmin(user) || (isPlanOwner(user, plan) && queryPermissions.DELETE_PLAN(user)),
     canRead: user => isUserAdmin(user) || queryPermissions.GET_PLAN(user),
     canUpdate: () => false, // no feature to update plans exists
+  },
+  sequences: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_USER_SEQUENCE(user),
+    canDelete: (user, sequence) =>
+      isUserAdmin(user) || (isUserOwner(user, sequence) && queryPermissions.DELETE_USER_SEQUENCE(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_USER_SEQUENCES(user),
+    canUpdate: (user, sequence) =>
+      isUserAdmin(user) || (isUserOwner(user, sequence) && queryPermissions.UPDATE_USER_SEQUENCE(user)),
   },
 };
 
