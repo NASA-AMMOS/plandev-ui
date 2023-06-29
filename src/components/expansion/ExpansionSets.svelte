@@ -3,12 +3,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { ICellRendererParams, RedrawRowsParams } from 'ag-grid-community';
   import { expansionSets, expansionSetsColumns } from '../../stores/expansion';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule, ExpansionSet } from '../../types/expansion';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -24,8 +25,11 @@
     deleteSet: (sequence: ExpansionSet) => void;
   };
   type ExpansionSetCellRendererParams = ICellRendererParams<ExpansionSet> & CellRendererParams;
+  type ExpansionRuleCellRendererParams = ICellRendererParams<ExpansionRule> & {
+    editRule: (expansionRule: ExpansionRule) => void;
+  };
 
-  const columnDefs: DataGridColumnDef[] = [
+  const baseExpansionSetColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'number',
@@ -48,43 +52,100 @@
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
     { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
+  ];
+  const baseExpansionRuleColumnDefs: DataGridColumnDef[] = [
     {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: ExpansionSetCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deleteSet,
-            deleteTooltip: {
-              content: 'Delete Expansion Set',
-              placement: 'bottom',
-            },
-            rowData: params.data,
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        deleteSet,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
+      field: 'id',
+      filter: 'number',
+      headerName: 'ID',
+      resizable: true,
+      sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 25,
+      width: 60,
     },
+    { field: 'activity_type', filter: 'text', headerName: 'Activity Type', sortable: true },
   ];
 
+  let expansionSetColumnDefs = baseExpansionSetColumnDefs;
+  let expansionRuleColumnDefs = baseExpansionRuleColumnDefs;
+  let redrawRows: ((params?: RedrawRowsParams<ExpansionRule> | undefined) => void) | undefined = undefined;
   let selectedExpansionRule: ExpansionRule | null = null;
   let selectedExpansionRuleIds: number[] = [];
   let selectedExpansionSet: ExpansionSet | null = null;
 
   $: selectedExpansionRuleIds = selectedExpansionRule ? [selectedExpansionRule.id] : [];
+  $: {
+    expansionSetColumnDefs = [
+      ...baseExpansionSetColumnDefs,
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: ExpansionSetCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              deleteCallback: params.deleteSet,
+              deleteTooltip: {
+                content: 'Delete Expansion Set',
+                placement: 'bottom',
+              },
+              hasDeletePermission: params.data ? hasDeleteExpansionSetPermission(user, params.data) : false,
+              rowData: params.data,
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          deleteSet,
+        } as CellRendererParams,
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 25,
+      },
+    ];
+    expansionRuleColumnDefs = [
+      ...baseExpansionRuleColumnDefs,
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: ExpansionRuleCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              editCallback: params.editRule,
+              editTooltip: {
+                content: 'Edit Rule',
+                placement: 'bottom',
+              },
+              hasEditPermission: params.data ? hasEditExpansionRulePermission(user, params.data) : false,
+              rowData: params.data,
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          editRule,
+        },
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 55,
+      },
+    ];
+    redrawRows?.();
+  }
 
   async function deleteSet({ id }: Pick<ExpansionSet, 'id'>) {
     const success = await effects.deleteExpansionSet(id, user);
@@ -105,6 +166,14 @@
 
   function editRule({ id }: Pick<ExpansionRule, 'id'>) {
     goto(`${base}/expansion/rules/edit/${id}`);
+  }
+
+  function hasDeleteExpansionSetPermission(user: User | null, expansionSet: ExpansionSet) {
+    return featurePermissions.expansionSets.canDelete(user, expansionSet);
+  }
+
+  function hasEditExpansionRulePermission(user: User | null, expansionRule: ExpansionRule) {
+    return featurePermissions.expansionRules.canUpdate(user, expansionRule);
   }
 
   function toggleRule(event: CustomEvent<DataGridRowSelection<ExpansionRule>>) {
@@ -150,7 +219,8 @@
       <svelte:fragment slot="body">
         {#if $expansionSets.length}
           <SingleActionDataGrid
-            {columnDefs}
+            columnDefs={expansionSetColumnDefs}
+            hasDeletePermission={hasDeleteExpansionSetPermission}
             itemDisplayText="Expansion Set"
             items={$expansionSets}
             {user}
@@ -173,54 +243,8 @@
       <svelte:fragment slot="body">
         {#if selectedExpansionSet}
           <DataGrid
-            columnDefs={[
-              {
-                field: 'id',
-                filter: 'number',
-                headerName: 'ID',
-                resizable: true,
-                sortable: true,
-                suppressAutoSize: true,
-                suppressSizeToFit: true,
-                width: 60,
-              },
-              { field: 'activity_type', filter: 'text', headerName: 'Activity Type', sortable: true },
-              {
-                cellClass: 'action-cell-container',
-                cellRenderer: params => {
-                  const actionsDiv = document.createElement('div');
-                  actionsDiv.className = 'actions-cell';
-                  new DataGridActions({
-                    props: {
-                      deleteCallback: params.deleteRule,
-                      deleteTooltip: {
-                        content: 'Delete Rule',
-                        placement: 'bottom',
-                      },
-                      editCallback: params.editRule,
-                      editTooltip: {
-                        content: 'Edit Rule',
-                        placement: 'bottom',
-                      },
-                      rowData: params.data,
-                    },
-                    target: actionsDiv,
-                  });
-
-                  return actionsDiv;
-                },
-                cellRendererParams: {
-                  editRule,
-                },
-                field: 'actions',
-                headerName: '',
-                resizable: false,
-                sortable: false,
-                suppressAutoSize: true,
-                suppressSizeToFit: true,
-                width: 55,
-              },
-            ]}
+            bind:redrawRows
+            columnDefs={expansionRuleColumnDefs}
             rowData={selectedExpansionSet?.expansion_rules}
             rowSelection="single"
             selectedRowIds={selectedExpansionRuleIds}

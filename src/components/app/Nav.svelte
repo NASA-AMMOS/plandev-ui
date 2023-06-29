@@ -78,5 +78,6 @@
   .right {
     align-items: center;
     display: inline-flex;
+    gap: 10px;
   }
 </style>

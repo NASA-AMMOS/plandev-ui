@@ -12,6 +12,8 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -30,10 +32,12 @@
 
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
   let dataGrid: DataGrid<ActivityTypeExpansionRules>;
+  let hasPermission: boolean = false;
   let lastSelectedExpansionRule: ExpansionRule | null = null;
   let logicEditorActivityType: string | null = null;
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
   let logicEditorTitle: string = 'Expansion Rule - Logic Editor (Read-only)';
+  let permissionError = 'You do not have permission to edit this expansion set.';
   let saveButtonEnabled: boolean = false;
   let selectedExpansionRules: Record<string, number> = {};
   let setExpansionRuleIds: number[] = [];
@@ -52,6 +56,11 @@
     : 'Expansion Rule - Logic Editor (Read-only)';
   $: setExpansionRuleIds = Object.values(selectedExpansionRules) ?? [];
   $: saveButtonEnabled = setDictionaryId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
+  $: {
+    hasPermission =
+      mode === 'edit' ? featurePermissions.expansionSets.canUpdate() : featurePermissions.expansionSets.canCreate(user);
+    permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create an'} expansion set.`;
+  }
 
   async function saveSet() {
     if (mode === 'create' && setDictionaryId && setModelId) {
@@ -127,7 +136,15 @@
         <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/sets`)}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        <button class="st-button secondary ellipsis" disabled={!saveButtonEnabled} on:click={saveSet}>
+        <button
+          class="st-button secondary ellipsis"
+          disabled={!saveButtonEnabled}
+          on:click={saveSet}
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
+        >
           {$savingExpansionSet ? 'Saving...' : 'Save'}
         </button>
       </div>
@@ -136,7 +153,15 @@
     <svelte:fragment slot="body">
       <fieldset>
         <label for="commandDictionary">Command Dictionary</label>
-        <select bind:value={setDictionaryId} class="st-select w-100" name="commandDictionary">
+        <select
+          bind:value={setDictionaryId}
+          class="st-select w-100"
+          name="commandDictionary"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each $commandDictionaries as commandDictionary}
             <option value={commandDictionary.id}>
@@ -154,6 +179,10 @@
           class="st-select w-100"
           name="modelId"
           on:change={() => (selectedExpansionRules = {})}
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         >
           <option value={null} />
           {#each $models as model}
@@ -172,6 +201,10 @@
           class="st-input w-100"
           name="description"
           placeholder="Enter Expansion Set Description (optional)"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
 

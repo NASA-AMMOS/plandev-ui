@@ -2,8 +2,8 @@ import { base } from '$app/paths';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserId, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
-import type { Constraint } from '../types/constraint';
 import type {
+  AssetWithOwner,
   CreatePermissionCheck,
   PermissionCheck,
   PlanAssetCreatePermissionCheck,
@@ -23,13 +23,13 @@ export const EXPIRED_JWT = 'JWTExpired';
 function getPermission(queries: string[], user: User | null): boolean {
   if (user && user.permissibleQueries) {
     return queries.reduce((prevValue: boolean, queryName) => {
-      return prevValue && !!user.permissibleQueries[queryName];
+      return prevValue && !!user.permissibleQueries?.[queryName];
     }, true);
   }
   return false;
 }
 
-function isUserAdmin(user: User | null) {
+export function isUserAdmin(user: User | null) {
   return user?.activeRole === ADMIN_ROLE;
 }
 
@@ -43,8 +43,7 @@ function isUserOwner(user: User | null, thingWithOwner?: { owner: UserId } | nul
 }
 
 function isPlanOwner(user: User | null, plan: PlanWithOwners): boolean {
-  const currentPlan = plan;
-  return isUserOwner(user, currentPlan);
+  return isUserOwner(user, plan);
 }
 
 function isPlanCollaborator(user: User | null, plan: PlanWithOwners): boolean {
@@ -206,6 +205,9 @@ const queryPermissions = {
   EXPAND: (user: User | null): boolean => {
     return getPermission(['expandAllActivities'], user);
   },
+  GET_EXPANSION_RUNS: (user: User | null): boolean => {
+    return getPermission(['expansion_run'], user);
+  },
   GET_PLAN: (user: User | null): boolean => {
     return getPermission(['plan_by_pk'], user);
   },
@@ -247,6 +249,12 @@ const queryPermissions = {
   },
   SUB_CONSTRAINTS_ALL: (user: User | null): boolean => {
     return getPermission(['constraint'], user);
+  },
+  SUB_EXPANSION_RULES: (user: User | null): boolean => {
+    return getPermission(['expansion_rule'], user);
+  },
+  SUB_EXPANSION_SETS: (user: User | null): boolean => {
+    return getPermission(['expansion_set'], user);
   },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['update_activity_directive_by_pk'], user);
@@ -310,6 +318,10 @@ interface PlanAssetCRUDPermission<T = null> {
   canUpdate: PlanAssetUpdatePermissionCheck<T>;
 }
 
+interface ExpansionSetsCRUDPermission<T = null> extends CRUDPermission<T> {
+  canUpdate: () => boolean;
+}
+
 interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canAssign: (user: User | null, plan: PlanWithOwners, asset?: T) => boolean;
 }
@@ -317,7 +329,9 @@ interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermi
 interface FeaturePermissions {
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: AssignablePlanAssetCRUDPermission<ActivityPreset>;
-  constraints: PlanAssetCRUDPermission<Constraint>;
+  constraints: PlanAssetCRUDPermission<AssetWithOwner>;
+  expansionRules: CRUDPermission<AssetWithOwner>;
+  expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner>;
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
 }
@@ -351,6 +365,21 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, plan) =>
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_CONSTRAINT(user)),
+  },
+  expansionRules: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_EXPANSION_RULE(user),
+    canDelete: (user, expansionRule) =>
+      isUserAdmin(user) || (isUserOwner(user, expansionRule) && queryPermissions.DELETE_EXPANSION_RULE(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_EXPANSION_RULES(user),
+    canUpdate: (user, expansionRule) =>
+      isUserAdmin(user) || (isUserOwner(user, expansionRule) && queryPermissions.UPDATE_EXPANSION_RULE(user)),
+  },
+  expansionSets: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_EXPANSION_SET(user),
+    canDelete: (user, expansionRule) =>
+      isUserAdmin(user) || (isUserOwner(user, expansionRule) && queryPermissions.DELETE_EXPANSION_SET(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_EXPANSION_SETS(user),
+    canUpdate: () => false, // no feature to update expansion sets exists
   },
   model: {
     canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_MODEL(user),

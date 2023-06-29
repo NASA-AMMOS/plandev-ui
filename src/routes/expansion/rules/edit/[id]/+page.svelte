@@ -16,6 +16,7 @@
   initialRuleLogic={data.initialRule.expansion_logic}
   initialRuleModelId={data.initialRule.authoring_mission_model_id}
   initialRuleName={data.initialRule.name}
+  initialRuleOwner={data.initialRule.owner}
   initialRuleUpdatedAt={data.initialRule.updated_at}
   mode="edit"
   user={data.user}

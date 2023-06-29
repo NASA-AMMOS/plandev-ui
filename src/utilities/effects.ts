@@ -373,7 +373,7 @@ const effects = {
     name: string,
     plan_id: number | null,
     user: User | null,
-    description?: string,
+    description: string,
   ): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_CONSTRAINT(user)) {
@@ -382,10 +382,10 @@ const effects = {
 
       const constraintInsertInput: ConstraintInsertInput = {
         definition,
+        description,
         model_id: plan_id !== null ? null : model_id,
         name,
         plan_id,
-        ...(description && { description }),
       };
       const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput }, user);
       const { createConstraint } = data;
@@ -1680,7 +1680,7 @@ const effects = {
           return parsed_json;
         }
       } catch (e) {
-        catchError(e);
+        catchError(e as Error);
         return null;
       }
     } else {
@@ -2616,9 +2616,9 @@ const effects = {
   async updateConstraint(
     id: number,
     definition: string,
-    model_id: number,
+    model_id: number | null,
     name: string,
-    plan_id: number,
+    plan_id: number | null,
     user: User | null,
     description?: string,
   ): Promise<void> {

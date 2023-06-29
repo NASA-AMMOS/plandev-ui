@@ -9,6 +9,7 @@
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -26,7 +27,7 @@
   };
   type ExpansionRuleCellRendererParams = ICellRendererParams<ExpansionRule> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'number',
@@ -64,6 +65,15 @@
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
     { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
+  ];
+
+  let columnDefs = baseColumnDefs;
+  let filteredRules: ExpansionRule[] = [];
+  let filterText: string = '';
+  let selectedExpansionRule: ExpansionRule | null = null;
+
+  $: columnDefs = [
+    ...baseColumnDefs,
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ExpansionRuleCellRendererParams) => {
@@ -81,6 +91,8 @@
               content: 'Edit Rule',
               placement: 'bottom',
             },
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
+            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
             rowData: params.data,
           },
           target: actionsDiv,
@@ -101,11 +113,6 @@
       width: 55,
     },
   ];
-
-  let filteredRules: ExpansionRule[] = [];
-  let filterText: string = '';
-  let selectedExpansionRule: ExpansionRule | null = null;
-
   $: filteredRules = $expansionRules.filter(rule => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesActivityType = rule.activity_type.toLocaleLowerCase().includes(filterTextLowerCase);
@@ -127,6 +134,14 @@
 
   function deleteRuleContext(event: CustomEvent<RowId[]>) {
     deleteRule({ id: event.detail[0] as number });
+  }
+
+  function hasDeletePermission(user: User | null, expansionRule: ExpansionRule) {
+    return featurePermissions.expansionRules.canDelete(user, expansionRule);
+  }
+
+  function hasEditPermission(user: User | null, expansionRule: ExpansionRule) {
+    return featurePermissions.expansionRules.canUpdate(user, expansionRule);
   }
 
   function editRule({ id }: Pick<ExpansionRule, 'id'>) {
@@ -169,6 +184,8 @@
         <SingleActionDataGrid
           {columnDefs}
           hasEdit={true}
+          {hasDeletePermission}
+          {hasEditPermission}
           itemDisplayText="Rule"
           items={filteredRules}
           {user}

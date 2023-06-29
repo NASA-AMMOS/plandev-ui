@@ -84,10 +84,10 @@
     }
   }
 
-  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user): boolean {
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User | null): boolean {
     const model = initialModelMap[modelId];
-    if (model) {
-      return model.plans.reduce((prevPermission: boolean, { id }) => {
+    if (user && model) {
+      return model.plans.reduce((prevPermission: boolean, { id }: { id: number }) => {
         const plan = initialPlanMap[id];
         if (plan) {
           return (
@@ -97,16 +97,20 @@
               : featurePermissions.constraints.canUpdate(user, plan))
           );
         }
+        return prevPermission;
       }, false);
     }
 
     return true;
   }
 
-  function hasPlanPermission(plan: PlanSlim, mode: 'create' | 'edit', user): boolean {
-    return mode === 'create'
-      ? featurePermissions.constraints.canCreate(user, plan)
-      : featurePermissions.constraints.canUpdate(user, plan);
+  function hasPlanPermission(plan: PlanSlim, mode: 'create' | 'edit', user: User | null): boolean {
+    if (user) {
+      return mode === 'create'
+        ? featurePermissions.constraints.canCreate(user, plan)
+        : featurePermissions.constraints.canUpdate(user, plan);
+    }
+    return false;
   }
 
   function diffConstraints(constraintA: Partial<Constraint>, constraintB: Partial<Constraint>) {
@@ -153,7 +157,7 @@
         if (newConstraintId !== null) {
           goto(`${base}/constraints/edit/${newConstraintId}`);
         }
-      } else if (mode === 'edit') {
+      } else if (mode === 'edit' && constraintId !== null) {
         await effects.updateConstraint(
           constraintId,
           constraintDefinition,

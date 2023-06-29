@@ -1289,6 +1289,7 @@ const gql = {
           authoring_mission_model_id
           expansion_logic
           id
+          owner
         }
         id
         mission_model_id

@@ -287,7 +287,7 @@
     return null;
   }
 
-  function hasDeletePermission(_user: User, constraint: Constraint) {
+  function hasDeletePermission(_user: User | null, constraint: Constraint) {
     const { model_id, plan_id } = constraint;
     if (plan_id !== null) {
       return constraintsDeletePermissionsMap.plans[plan_id] ?? false;
@@ -298,7 +298,7 @@
     return false;
   }
 
-  function hasEditPermission(_user: User, constraint: Constraint) {
+  function hasEditPermission(_user: User | null, constraint: Constraint) {
     const { model_id, plan_id } = constraint;
     if (plan_id !== null) {
       return constraintsEditPermissionsMap.plans[plan_id] ?? false;
@@ -309,7 +309,7 @@
     return false;
   }
 
-  function hasPlanPermission(plan: PlanSlim, user): boolean {
+  function hasPlanPermission(plan: PlanSlim, user: User | null): boolean {
     return featurePermissions.constraints.canCreate(user, plan);
   }
 

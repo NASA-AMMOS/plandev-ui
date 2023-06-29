@@ -20,8 +20,6 @@
     sortChanged: CustomEvent<SortChangedEvent<RowData>>;
   }
 
-  import { filterEmpty } from '../../../utilities/generic';
-
   import {
     Grid,
     type CellContextMenuEvent,
@@ -45,8 +43,9 @@
   import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/columns/columnModel';
   import type { RedrawRowsParams } from 'ag-grid-community/dist/lib/rendering/rowRenderer';
   import { debounce } from 'lodash-es';
-  import { SvelteComponent, createEventDispatcher, onMount, type ComponentEvents } from 'svelte';
+  import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
+  import { filterEmpty } from '../../../utilities/generic';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
@@ -173,6 +172,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     });
     previousSelectedRowId = currentSelectedRowId;
   }
+
+  onDestroy(() => {
+    resizeObserver?.disconnect();
+  });
 
   function getRowClass(params: RowClassParams<RowData>) {
     const rowClass: string[] = [];
