@@ -102,8 +102,6 @@
       },
     },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
-    { field: 'start_time_doy', filter: 'text', headerName: 'Start Time', resizable: true, sortable: true },
-    { field: 'end_time_doy', filter: 'text', headerName: 'End Time', resizable: true, sortable: true },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
 
