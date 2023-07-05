@@ -311,6 +311,7 @@ const effects = {
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_ACTIVITY_DIRECTIVE_TAGS, { tags }, user);
       const { insert_activity_directive_tags } = data;
       const { affected_rows } = insert_activity_directive_tags;
+      showSuccessToast('Activity Directive Updated Successfully');
       return affected_rows;
     } catch (e) {
       catchError('Create Activity Directive Tags Failed', e as Error);
@@ -927,6 +928,21 @@ const effects = {
     }
 
     return false;
+  },
+
+  async deleteActivityDirectiveTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.DELETE_ACTIVITY_DIRECTIVE_TAGS(user)) {
+        throwPermissionError('delete activity directive tags');
+      }
+
+      await reqHasura<{ affected_rows: number }>(gql.DELETE_ACTIVITY_DIRECTIVE_TAGS, { ids }, user);
+      showSuccessToast('Activity Directive Updated Successfully');
+    } catch (e) {
+      catchError('Create Activity Directive Tags Failed', e as Error);
+      showFailureToast('Create Activity Directive Tags Failed');
+      return null;
+    }
   },
 
   async deleteActivityDirectives(plan_id: number, ids: ActivityDirectiveId[], user: User | null): Promise<boolean> {

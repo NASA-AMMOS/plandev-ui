@@ -309,6 +309,14 @@ const gql = {
     }
   `,
 
+  DELETE_ACTIVITY_DIRECTIVE_TAGS: `#graphql
+    mutation DeleteActivityDirectivesTags($ids: [Int!]!) {
+        delete_activity_directive_tags(where: { tag_id: { _in: $ids } }) {
+          affected_rows
+      }
+    }
+  `,
+
   DELETE_ACTIVITY_PRESET: `#graphql
     mutation DeleteActivityPreset($id: Int!) {
       deleteActivityPreset: delete_activity_presets_by_pk(id: $id) {
@@ -766,7 +774,9 @@ const gql = {
         activity_id,
         change_type,
         source,
-        target
+        source_tags,
+        target,
+        target_tags
       }
     }
   `,
@@ -1335,7 +1345,9 @@ const gql = {
         merge_base,
         resolution
         source,
+        source_tags,
         target,
+        target_tags,
       }
     }
   `,
@@ -1581,6 +1593,18 @@ const gql = {
       }
     }
   `,
+
+  SUB_TAGS: `#graphql
+    subscription SubTags {
+      tags(order_by: { id: desc })  {
+        color
+        created_at
+        id
+        name
+        owner
+      }
+    }
+`,
 
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {

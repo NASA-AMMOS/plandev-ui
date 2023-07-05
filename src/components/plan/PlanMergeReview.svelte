@@ -188,15 +188,18 @@
     selectedConflictingActivityResolution = null;
     selectedActivityId = selectedNonConflictingActivity.activity_id;
     selectedMergeType = selectedNonConflictingActivity.change_type;
+    const sourceTags = selectedNonConflictingActivity.source_tags.map(tag => ({ tag }));
+    const targetTags = selectedNonConflictingActivity.target_tags.map(tag => ({ tag }));
+
     if (selectedNonConflictingActivity.change_type === 'delete') {
-      computedTargetActivity = selectedNonConflictingActivity.target;
+      computedTargetActivity = { ...selectedNonConflictingActivity.target, tags: targetTags };
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
-      computedSourceActivity = selectedNonConflictingActivity.source;
+      computedSourceActivity = { ...selectedNonConflictingActivity.source, tags: sourceTags };
       computedTargetActivity = null;
     } else {
-      computedSourceActivity = selectedNonConflictingActivity.source;
-      computedTargetActivity = selectedNonConflictingActivity.target;
+      computedTargetActivity = { ...selectedNonConflictingActivity.target, tags: targetTags };
+      computedSourceActivity = { ...selectedNonConflictingActivity.source, tags: sourceTags };
     }
 
     // Reset comparison scroll positions
@@ -208,12 +211,18 @@
     selectedMergeType = 'conflict';
     // Derive source and target activities
     if (selectedConflictingActivity.source) {
-      computedSourceActivity = selectedConflictingActivity.source;
+      computedSourceActivity = {
+        ...selectedConflictingActivity.source,
+        tags: selectedConflictingActivity.source_tags.map(tag => ({ tag })),
+      };
     } else {
       computedSourceActivity = null;
     }
     if (selectedConflictingActivity.target) {
-      computedTargetActivity = selectedConflictingActivity.target;
+      computedTargetActivity = {
+        ...selectedConflictingActivity.target,
+        tags: selectedConflictingActivity.target_tags.map(tag => ({ tag })),
+      };
     } else {
       computedTargetActivity = null;
     }
@@ -834,7 +843,7 @@
   }
 
   .merge-review-comparison-body :global(.activity-form input.st-input),
-  .merge-review-comparison-body :global(.input .svelte-tags-input-layout) {
+  .merge-review-comparison-body :global(.tags) {
     background: var(--st-white) !important;
     opacity: 1;
   }

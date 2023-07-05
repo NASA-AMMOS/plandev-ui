@@ -148,6 +148,9 @@ const queryPermissions = {
   DELETE_ACTIVITY_DIRECTIVES_SUBTREE: (user: User | null): boolean => {
     return getPermission(['delete_activity_by_pk_delete_subtree_bulk'], user);
   },
+  DELETE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
+    return getPermission(['delete_activity_directive_tags'], user);
+  },
   DELETE_ACTIVITY_PRESET: (user: User | null): boolean => {
     return getPermission(['delete_activity_presets_by_pk'], user);
   },

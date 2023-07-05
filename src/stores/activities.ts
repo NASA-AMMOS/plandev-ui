@@ -97,17 +97,6 @@ export const activityDirectivesByView: Readable<ActivityDirectivesByView> = deri
   },
 );
 
-export const allActivityDirectiveTags: Readable<string[]> = derived(activityDirectivesList, $activityDirectivesList => {
-  const tagMap = $activityDirectivesList.reduce(
-    (map: Record<string, boolean>, activityDirective: ActivityDirective) => {
-      activityDirective.tags.forEach(({ tag }) => (map[tag.name] = true));
-      return map;
-    },
-    {},
-  );
-  return Object.keys(tagMap).sort();
-});
-
 export const selectedActivityDirective = derived(
   [activityDirectivesMap, selectedActivityDirectiveId],
   ([$activityDirectivesMap, $selectedActivityDirectiveId]) =>

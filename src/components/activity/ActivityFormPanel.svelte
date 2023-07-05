@@ -7,13 +7,13 @@
   import {
     activityDirectivesMap,
     activityMetadataDefinitions,
-    allActivityDirectiveTags,
     selectActivity,
     selectedActivityDirective,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import { activityEditingLocked, activityTypes, modelId, plan, setActivityEditingLocked } from '../../stores/plan';
   import { selectedSpan, simulationDatasetId, spanUtilityMaps, spansMap } from '../../stores/simulation';
+  import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
   import type { SpanId } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
@@ -75,7 +75,7 @@
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$activityTypes}
-        allActivityDirectiveTags={$allActivityDirectiveTags}
+        tags={$tags}
         editable={!$activityEditingLocked}
         modelId={$modelId}
         planStartTimeYmd={$plan.start_time}

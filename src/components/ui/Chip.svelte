@@ -1,23 +1,38 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { shadeColor } from '../../utilities/color';
   import { classNames } from '../../utilities/generic';
 
+  export let color: string = '#f8f8f8';
+  export let disabled: boolean = false;
   export let label: string = '';
+  export let className: string = '';
   export let removable: boolean = true;
+  export let ariaRole: string = 'button';
 
   const dispatch = createEventDispatcher();
 
   $: rootClasses = classNames('st-chip st-typography-body', {
     'chip-removable': removable,
     'chip-with-label': !!label,
+    [className]: !!className,
   });
+
+  $: chipStyle = `background:${color};color:${shadeColor(color, 5)}`;
+  $: removeStyle = `background:${shadeColor(color, 1.1)};color:${shadeColor(color || '', 5.5)}`;
 </script>
 
-<button class={rootClasses} on:click|preventDefault={() => dispatch('click')}>
+<button
+  style={chipStyle}
+  class={rootClasses}
+  role={ariaRole}
+  {disabled}
+  on:click|preventDefault={() => dispatch('click')}
+>
   <div class="chip-label">{label}</div>
   {#if removable}
-    <div class="chip-remove-button">
+    <div style={removeStyle} class="chip-remove-button">
       <CloseIcon />
     </div>
   {/if}
@@ -43,11 +58,15 @@
     width: min-content;
   }
 
-  .st-chip:hover {
+  .st-chip:disabled {
+    cursor: not-allowed;
+  }
+
+  .st-chip.chip-removable:hover {
     background-color: var(--st-gray-20);
   }
 
-  .st-chip:hover .chip-label {
+  .st-chip.chip-removable:hover .chip-label {
     width: calc(100% - 20px);
   }
 

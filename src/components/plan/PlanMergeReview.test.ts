@@ -127,6 +127,7 @@ describe('PlanMergeReview component', () => {
         },
         resolution: 'none',
         source: null,
+        source_tags: [],
         target: {
           anchor_id: null,
           anchored_to_start: true,
@@ -145,6 +146,7 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'A_Activity',
         },
+        target_tags: [],
       },
     ];
     const initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
@@ -202,7 +204,9 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'A_Activity',
         },
+        source_tags: [],
         target: null,
+        target_tags: [],
       },
     ];
     const initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
@@ -241,12 +245,15 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'B_Activity',
         },
+        source_tags: [],
         target: null,
+        target_tags: [],
       },
       {
         activity_id: 7,
         change_type: 'delete',
         source: null,
+        source_tags: [],
         target: {
           anchor_id: null,
           anchored_to_start: true,
@@ -265,6 +272,7 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'C_Activity',
         },
+        target_tags: [],
       },
       {
         activity_id: 5,
@@ -286,6 +294,7 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'A_Activity',
         },
+        source_tags: [],
         target: {
           anchor_id: null,
           anchored_to_start: true,
@@ -304,6 +313,7 @@ describe('PlanMergeReview component', () => {
           tags: [],
           type: 'A_Activity',
         },
+        target_tags: [],
       },
     ];
 

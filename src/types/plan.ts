@@ -2,6 +2,7 @@ import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
 import type { Model } from './model';
 import type { SchedulingSpec } from './scheduling';
+import type { Tag } from './tags';
 
 export type Plan = PlanSchema & { end_time_doy: string; start_time_doy: string };
 
@@ -28,14 +29,18 @@ export type PlanMergeConflictingActivity = {
   merge_base: PlanMergeActivityDirective;
   resolution: PlanMergeResolution;
   source: PlanMergeActivityDirectiveSource | null;
+  source_tags: Tag[];
   target: PlanMergeActivityDirectiveTarget | null;
+  target_tags: Tag[];
 };
 
 export type PlanMergeNonConflictingActivity = {
   activity_id: number;
   change_type: PlanMergeActivityOutcome;
   source: PlanMergeActivityDirectiveSource | null;
+  source_tags: Tag[];
   target: PlanMergeActivityDirectiveTarget | null;
+  target_tags: Tag[];
 };
 
 export type PlanMergeRequestType = 'incoming' | 'outgoing';

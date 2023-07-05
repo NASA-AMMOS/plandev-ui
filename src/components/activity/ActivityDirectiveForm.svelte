@@ -17,8 +17,9 @@
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { ActivityDirectiveTagsInsertInput, TagsInsertInput } from '../../types/tags';
+  import type { ActivityDirectiveTagsInsertInput, Tag } from '../../types/tags';
   import { getActivityMetadata } from '../../utilities/activities';
+  import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
   import { classNames, keyByBoolean } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
@@ -32,7 +33,7 @@
   import Input from '../form/Input.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Highlight from '../ui/Highlight.svelte';
-  import Tags from '../ui/Tags.svelte';
+  import TagsInput from '../ui/Tags/Tags.svelte';
   import ActivityAnchorForm from './ActivityAnchorForm.svelte';
   import ActivityPresetInput from './ActivityPresetInput.svelte';
 
@@ -40,7 +41,7 @@
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityMetadataDefinitions: ActivityMetadataDefinition[] = [];
   export let activityTypes: ActivityType[] = [];
-  export let allActivityDirectiveTags: string[] = [];
+  export let tags: Tag[] = [];
   export let editable: boolean = true;
   export let highlightKeys: string[] = [];
   export let modelId: number;
@@ -231,18 +232,21 @@
     }
   }
 
-  async function onUpdateTags(event: CustomEvent<{ tags: string[] }>) {
-    const { detail } = event;
-    const { tags: tagNames } = detail;
-    const { id, plan_id } = activityDirective;
-    const tagsToInsert: TagsInsertInput[] = tagNames.map(name => ({ color: '#e0e8f9', name }));
-    const newTags = await effects.createTags(tagsToInsert, user);
-    const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = newTags.map(({ id: tag_id }) => ({
-      directive_id: id,
-      plan_id,
-      tag_id,
-    }));
-    await effects.createActivityDirectiveTags(activityDirectiveTags, user);
+  async function onTagsInputChange({ detail: tag }: CustomEvent<Tag>) {
+    const newTags = await effects.createTags([{ color: tag.color, name: tag.name }], user);
+    if (newTags) {
+      const { id: directive_id, plan_id } = activityDirective;
+      const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = (newTags || []).map(({ id: tag_id }) => ({
+        directive_id,
+        plan_id,
+        tag_id,
+      }));
+      await effects.createActivityDirectiveTags(activityDirectiveTags, user);
+    }
+  }
+
+  async function onTagsInputRemove({ detail: tag }: CustomEvent<Tag>) {
+    await effects.deleteActivityDirectiveTags([tag.id], user);
   }
 
   function resetActivityName() {
@@ -250,6 +254,10 @@
     activityNameField.reset(initialValue);
     const { id, plan_id } = activityDirective;
     effects.updateActivityDirective(plan_id, id, { name: initialValue }, user);
+  }
+
+  function createPlaceholderTagObject(name: string): Tag {
+    return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   }
 
   async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
@@ -394,15 +402,14 @@
       <Highlight highlight={highlightKeysMap.tags}>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
-          {#key activityDirective.id}
-            <Tags
-              autocompleteValues={allActivityDirectiveTags}
-              disabled={!editable}
-              name="activityDirectiveTags"
-              tags={activityDirective.tags.map(({ tag }) => tag.name)}
-              on:change={onUpdateTags}
-            />
-          {/key}
+          <TagsInput
+            options={tags}
+            disabled={!editable}
+            selected={activityDirective.tags.map(({ tag }) => tag)}
+            createTagObject={createPlaceholderTagObject}
+            on:add={onTagsInputChange}
+            on:remove={onTagsInputRemove}
+          />
         </Input>
       </Highlight>
     </Collapse>
