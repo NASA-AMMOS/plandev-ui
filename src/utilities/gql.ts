@@ -158,6 +158,17 @@ const gql = {
     }
   `,
 
+  CREATE_PLAN_TAGS: `#graphql
+    mutation CreatePlanTags($tags: [plan_tags_insert_input!]!) {
+      insert_plan_tags(objects: $tags, on_conflict: {
+        constraint: plan_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+    }
+`,
+
   CREATE_SCHEDULING_CONDITION: `#graphql
     mutation CreateSchedulingCondition($condition: scheduling_condition_insert_input!) {
       createSchedulingCondition: insert_scheduling_condition_one(object: $condition) {
@@ -393,6 +404,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_PLAN_TAGS: `#graphql
+    mutation DeletePlanTags($ids: [Int!]!) {
+        delete_plan_tags(where: { tag_id: { _in: $ids } }) {
+          affected_rows
       }
     }
   `,
@@ -709,6 +728,13 @@ const gql = {
         start_time
         updated_at
         updated_by
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
       }
     }
   `,
@@ -738,6 +764,13 @@ const gql = {
         start_time
         updated_at
         updated_by
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
       }
     }
   `,
@@ -1423,6 +1456,20 @@ const gql = {
     subscription SubPlanRevision($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
         revision
+      }
+    }
+  `,
+
+  SUB_PLAN_TAGS: `#graphql
+    subscription SubPlanTags($planId: Int!) {
+      plan: plan_by_pk(id: $planId) {
+        tags {
+          tag {
+            color
+          	id
+            name
+          }
+        }
       }
     }
   `,

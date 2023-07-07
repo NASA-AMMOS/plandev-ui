@@ -15,6 +15,7 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
+  import { tagsCellRenderer } from '../../components/ui/DataGrid/DataGridTagsCellRenderer';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
@@ -52,7 +53,7 @@
       width: 60,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 120 },
+    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 130 },
     {
       field: 'start_time_doy',
       filter: 'text',
@@ -64,6 +65,7 @@
           return params.data?.start_time_doy.split('T')[0];
         }
       },
+      width: 150,
     },
     {
       field: 'end_time_doy',
@@ -76,6 +78,7 @@
           return params.data?.end_time_doy.split('T')[0];
         }
       },
+      width: 140,
     },
     {
       field: 'created_at',
@@ -88,6 +91,7 @@
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
+      width: 200,
     },
     {
       field: 'updated_at',
@@ -102,6 +106,17 @@
       },
     },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
+    {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      field: 'tags',
+      filter: 'text',
+      headerName: 'Tags',
+      resizable: true,
+      sortable: false,
+      width: 220,
+      wrapText: true,
+    },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
 

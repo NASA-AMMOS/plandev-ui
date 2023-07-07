@@ -4,6 +4,11 @@ export type ActivityDirectiveTagsInsertInput = {
   tag_id: number;
 };
 
+export type PlanTagsInsertInput = {
+  plan_id: number;
+  tag_id: number;
+};
+
 export type Tag = {
   color: string;
   created_at: string;

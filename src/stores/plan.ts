@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../types/activity';
 import type { ModelSlim } from '../types/model';
 import type { Plan, PlanMergeRequest, PlanMergeRequestSchema } from '../types/plan';
+import type { Tag } from '../types/tags';
 import type { TimeRange } from '../types/timeline';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -37,6 +38,10 @@ export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id
 /* Subscriptions. */
 
 export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TYPES, { modelId }, [], null);
+
+export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, [], null, ({ tags }) =>
+  tags.map((tag: { tag: Tag }) => tag.tag),
+);
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
 

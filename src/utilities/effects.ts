@@ -97,7 +97,7 @@ import type {
   SimulationTemplateSetInput,
   Span,
 } from '../types/simulation';
-import type { ActivityDirectiveTagsInsertInput, Tag, TagsInsertInput } from '../types/tags';
+import type { ActivityDirectiveTagsInsertInput, PlanTagsInsertInput, Tag, TagsInsertInput } from '../types/tags';
 import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { convertToQuery, parseFloatOrNull, setQueryParam, sleep } from './generic';
@@ -703,6 +703,24 @@ const effects = {
     }
   },
 
+  async createPlanTags(tags: PlanTagsInsertInput[], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_PLAN_TAGS(user)) {
+        throwPermissionError('create plan tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_TAGS, { tags }, user);
+      const { insert_plan_tags } = data;
+      const { affected_rows } = insert_plan_tags;
+      showSuccessToast('Plan Updated Successfully');
+      return affected_rows;
+    } catch (e) {
+      catchError('Create Plan Tags Failed', e as Error);
+      showFailureToast('Create Plan Tags Failed');
+      return null;
+    }
+  },
+
   async createSchedulingCondition(
     definition: string,
     name: string,
@@ -936,8 +954,11 @@ const effects = {
         throwPermissionError('delete activity directive tags');
       }
 
-      await reqHasura<{ affected_rows: number }>(gql.DELETE_ACTIVITY_DIRECTIVE_TAGS, { ids }, user);
+      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_ACTIVITY_DIRECTIVE_TAGS, { ids }, user);
+      const { delete_activity_directive_tags } = data;
+      const { affected_rows } = delete_activity_directive_tags;
       showSuccessToast('Activity Directive Updated Successfully');
+      return affected_rows;
     } catch (e) {
       catchError('Create Activity Directive Tags Failed', e as Error);
       showFailureToast('Create Activity Directive Tags Failed');
@@ -1285,6 +1306,24 @@ const effects = {
       catchError('Plan Delete Failed', e as Error);
       showFailureToast('Plan Delete Failed');
       return false;
+    }
+  },
+
+  async deletePlanTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.DELETE_PLAN_TAGS(user)) {
+        throwPermissionError('delete plan tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_PLAN_TAGS, { ids }, user);
+      const { delete_plan_tags } = data;
+      const { affected_rows } = delete_plan_tags;
+      showSuccessToast('Plan Updated Successfully');
+      return affected_rows;
+    } catch (e) {
+      catchError('Create Plan Tags Failed', e as Error);
+      showFailureToast('Create Plan Tags Failed');
+      return null;
     }
   },
 
@@ -1784,6 +1823,17 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async getPlanTags(planId: number, user: User | null): Promise<Tag[]> {
+    try {
+      const data = await reqHasura(convertToQuery(gql.SUB_PLAN_TAGS), { planId }, user);
+      const { tags } = data;
+      return tags;
+    } catch (e) {
+      catchError(e as Error);
+      return [];
     }
   },
 

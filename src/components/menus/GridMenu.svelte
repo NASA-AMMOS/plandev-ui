@@ -6,6 +6,7 @@
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
   import ChecklistOnPageIcon from '@nasa-jpl/stellar/icons/checklist_on_page.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TableWithHeaderIcon from '@nasa-jpl/stellar/icons/table_with_header.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
   import CodeSquareIcon from 'bootstrap-icons/icons/code-square.svg?component';
@@ -68,6 +69,10 @@
     <MenuItem on:click={() => onClickMenuItem('IFramePanel')}>
       <WindowFullscreenIcon />
       External Application
+    </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('PlanManagementPanel')}>
+      <PlanIcon />
+      Plan Management
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SchedulingGoalsPanel')}>
       <CalendarIcon />

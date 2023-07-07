@@ -67,6 +67,12 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelExpansion).toBeVisible();
   });
 
+  test(`Clicking on 'Plan Management' in the grid menu should show the plan management panel`, async () => {
+    await expect(plan.panelPlanManagement).not.toBeVisible();
+    await plan.showPanel('Plan Management');
+    await expect(plan.panelPlanManagement).toBeVisible();
+  });
+
   test(`Clicking on 'Scheduling Goals' in the grid menu should show the scheduling goals panel`, async () => {
     await expect(plan.panelSchedulingGoals).not.toBeVisible();
     await plan.showPanel('Scheduling Goals');

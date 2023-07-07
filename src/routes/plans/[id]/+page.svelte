@@ -45,6 +45,7 @@
     planId,
     planLocked,
     planStartTimeMs,
+    planTags,
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
@@ -114,6 +115,7 @@
 
     $viewTimeRange = $maxTimeRange;
     activityTypes.updateValue(() => data.initialActivityTypes);
+    planTags.updateValue(() => data.initialPlanTags);
 
     // Asynchronously fetch resource types
     effects

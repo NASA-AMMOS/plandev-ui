@@ -47,6 +47,7 @@
     color: var(--st-gray-90);
     cursor: pointer;
     display: inline-grid;
+    flex-shrink: 0;
     grid-template-columns: min-content;
     height: 24px;
     line-height: 24px;

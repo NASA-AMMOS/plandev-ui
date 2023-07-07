@@ -45,11 +45,13 @@ export const load: PageLoad = async ({ parent, params, url }) => {
 
       const initialActivityTypes = await effects.getActivityTypes(initialPlan.model_id, user);
       const initialResourceTypes = await effects.getResourceTypes(initialPlan.model_id, user, 20);
+      const initialPlanTags = await effects.getPlanTags(initialPlan.id, user);
       const initialView = await effects.getView(url.searchParams, user, initialActivityTypes, initialResourceTypes);
 
       return {
         initialActivityTypes,
         initialPlan,
+        initialPlanTags,
         initialView,
         user,
       };

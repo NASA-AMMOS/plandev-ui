@@ -87,6 +87,7 @@ export type PlanSchema = {
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
   simulations: [{ simulation_datasets: [{ id: number }] }];
   start_time: string;
+  tags: { tag: Tag }[];
   updated_at: string;
   updated_by: string;
 };
