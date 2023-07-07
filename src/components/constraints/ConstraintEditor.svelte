@@ -18,9 +18,11 @@
   let constraintsTsFiles: TypeScriptFile[];
   let monaco: Monaco;
 
-  $: effects
-    .getTsFilesConstraints(constraintModelId, constraintPlanId, user)
-    .then(tsFiles => (constraintsTsFiles = tsFiles));
+  $: if (constraintModelId !== null && constraintPlanId !== null) {
+    effects
+      .getTsFilesConstraints(constraintModelId, constraintPlanId, user)
+      .then(tsFiles => (constraintsTsFiles = tsFiles));
+  }
 
   $: if (monaco !== undefined && constraintsTsFiles !== undefined) {
     const { languages } = monaco;

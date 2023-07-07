@@ -1,33 +1,33 @@
-const isValidHex = hex => /^#([A-Fa-f0-9]{3,4}){1,2}$/.test(hex);
+const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3,4}){1,2}$/.test(hex);
 
-const getChunksFromString = (st, chunkSize) => st.match(new RegExp(`.{${chunkSize}}`, 'g'));
+const getChunksFromString = (st: string, chunkSize: number) => st.match(new RegExp(`.{${chunkSize}}`, 'g'));
 
-const convertHexUnitTo256 = hexStr => parseInt(hexStr.repeat(2 / hexStr.length), 16);
+const convertHexUnitTo256 = (hexStr: string) => parseInt(hexStr.repeat(2 / hexStr.length), 16);
 
-const getAlphafloat = (a, alpha) => {
+const getAlphafloat = (a: number, alpha: number) => {
   if (typeof a !== 'undefined') {
     return a / 255;
   }
-  if (typeof alpha != 'number' || alpha < 0 || alpha > 1) {
+  if (typeof alpha !== 'number' || alpha < 0 || alpha > 1) {
     return 1;
   }
   return alpha;
 };
 
-export const hexToRgba = (hex, alpha) => {
+export const hexToRgba = (hex: string, alpha: number) => {
   if (!isValidHex(hex)) {
     return 'rgba(0,0,0,1)';
   }
   const chunkSize = Math.floor((hex.length - 1) / 3);
   const hexArr = getChunksFromString(hex.slice(1), chunkSize);
-  const [r, g, b, a] = hexArr.map(convertHexUnitTo256);
+  const [r, g, b, a] = (hexArr ?? []).map(convertHexUnitTo256);
   return `rgba(${r}, ${g}, ${b}, ${getAlphafloat(a, alpha)})`;
 };
 
-export function hslToHex(h, s, l) {
+export function hslToHex(h: number, s: number, l: number) {
   l /= 100;
   const a = (s * Math.min(l, 1 - l)) / 100;
-  const f = n => {
+  const f = (n: number) => {
     const k = (n + h / 30) % 12;
     const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
     return Math.round(255 * color)

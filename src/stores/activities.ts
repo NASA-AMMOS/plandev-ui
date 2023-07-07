@@ -53,38 +53,40 @@ export const activityDirectivesList: Readable<ActivityDirective[]> = derived(
 export const activityDirectivesByView: Readable<ActivityDirectivesByView> = derived(
   [activityDirectivesList, view],
   ([$activityDirectivesList, $view]) => {
-    const { definition } = $view;
-    const { plan } = definition;
-    const { timelines } = plan;
     const byLayerId: Record<number, ActivityDirective[]> = {};
     const byTimelineId: Record<number, ActivityDirective[]> = {};
 
-    for (const activityDirective of $activityDirectivesList) {
-      for (const timeline of timelines) {
-        const { rows } = timeline;
+    if ($view) {
+      const { definition } = $view;
+      const { plan } = definition;
+      const { timelines } = plan;
+      for (const activityDirective of $activityDirectivesList) {
+        for (const timeline of timelines) {
+          const { rows } = timeline;
 
-        for (const row of rows) {
-          const { layers } = row;
+          for (const row of rows) {
+            const { layers } = row;
 
-          for (const layer of layers) {
-            const { filter } = layer;
+            for (const layer of layers) {
+              const { filter } = layer;
 
-            if (filter.activity !== undefined) {
-              const { activity: activityFilter } = filter;
-              const { types } = activityFilter;
-              const includeActivity = types.indexOf(activityDirective.type) > -1;
+              if (filter.activity !== undefined) {
+                const { activity: activityFilter } = filter;
+                const { types } = activityFilter;
+                const includeActivity = types.indexOf(activityDirective.type) > -1;
 
-              if (includeActivity) {
-                if (byLayerId[layer.id] === undefined) {
-                  byLayerId[layer.id] = [activityDirective];
-                } else {
-                  byLayerId[layer.id].push(activityDirective);
-                }
+                if (includeActivity) {
+                  if (byLayerId[layer.id] === undefined) {
+                    byLayerId[layer.id] = [activityDirective];
+                  } else {
+                    byLayerId[layer.id].push(activityDirective);
+                  }
 
-                if (byTimelineId[timeline.id] === undefined) {
-                  byTimelineId[timeline.id] = [activityDirective];
-                } else {
-                  byTimelineId[timeline.id].push(activityDirective);
+                  if (byTimelineId[timeline.id] === undefined) {
+                    byTimelineId[timeline.id] = [activityDirective];
+                  } else {
+                    byTimelineId[timeline.id].push(activityDirective);
+                  }
                 }
               }
             }
@@ -99,8 +101,12 @@ export const activityDirectivesByView: Readable<ActivityDirectivesByView> = deri
 
 export const selectedActivityDirective = derived(
   [activityDirectivesMap, selectedActivityDirectiveId],
-  ([$activityDirectivesMap, $selectedActivityDirectiveId]) =>
-    $activityDirectivesMap[$selectedActivityDirectiveId] || null,
+  ([$activityDirectivesMap, $selectedActivityDirectiveId]) => {
+    if ($selectedActivityDirectiveId !== null) {
+      return $activityDirectivesMap[$selectedActivityDirectiveId] || null;
+    }
+    return null;
+  },
 );
 
 /* Helper Functions. */
