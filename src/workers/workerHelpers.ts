@@ -1,4 +1,10 @@
-import type { EnumMap, FswCommandArgumentMap, FswCommandArgumentNumeric, NumericRange } from '@nasa-jpl/aerie-ampcs';
+import type {
+  EnumMap,
+  FswCommandArgumentMap,
+  FswCommandArgumentNumeric,
+  FswCommandArgumentRepeat,
+  NumericRange,
+} from '@nasa-jpl/aerie-ampcs';
 import tsc, { SyntaxKind } from 'typescript';
 import type { Diagnostic as ResponseDiagnostic } from '../types/monaco-internal';
 import type { ErrorCode } from './customCodes';
@@ -323,6 +329,53 @@ function validateEnum(value: string, options: string[] | null): ValidationReturn
 }
 
 /**
+ * Convert a repeat argument to a valid json and calculate the size of a repeated argument.
+ *
+ * @param {string} str - The string representation of the repeated argument.
+ * @returns {number} The size of the repeated argument.
+ */
+function repeatSize(str: string): number {
+  // Remove whitespace and newlines
+  str = str.replace(/\s/g, '');
+
+  // Add quotes to property names
+  str = str.replace(/(\w+)(?=:)/g, '"$1"');
+
+  // add quotes to values
+  str = str.replace(/(?<=:)\b(\w+)\b/g, '"$1"');
+
+  // Assign default values to properties with missing values
+  str = str.replace(/:\s*(?=[\]}])/g, ': ""');
+
+  // Remove trailing commas
+  str = str.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+
+  return (JSON.parse(str) as any[]).length;
+}
+
+/**
+ * Validates the repeat count of a value based on the expected argument configuration.
+ *
+ * @param {string} value - The value to validate.
+ * @param {FswCommandArgumentRepeat} expected_argument - The expected argument configuration defining the repeat count constraints.
+ * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid repeat count.
+ */
+function validateRepeat(value: string, expected_argument: FswCommandArgumentRepeat): ValidationReturn {
+  // no range info, ignore check
+  if (expected_argument.repeat.min === undefined && expected_argument.repeat.max === undefined) {
+    return false;
+  }
+
+  const numberOfRepeats = repeatSize(value);
+  const min = expected_argument.repeat.min ? expected_argument.repeat.min : 0;
+  const max = expected_argument.repeat.max ? expected_argument.repeat.max : Infinity;
+
+  return numberOfRepeats < min || numberOfRepeats > max
+    ? CustomErrorCodes.InvalidArgumentCount(numberOfRepeats, min, max)
+    : false;
+}
+
+/**
  * Validates discovered arguments against the expected argument map and enum map.
  *
  * @param {tsc.PropertyAssignment[]} discoveredArgs - The discovered arguments.
@@ -390,7 +443,9 @@ export function validateArguments(
         break;
       }
       case 'repeat':
-        expected_argument.repeat;
+        if ((validation_resp = validateRepeat(arg_val, expected_argument)) !== false) {
+          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
+        }
         break;
       case 'time':
         expected_argument.units;
