@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaVariant } from '../../types/schema';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
 
@@ -14,6 +15,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -29,6 +31,7 @@
       class="st-select w-100"
       class:error={formParameter.errors !== null}
       {disabled}
+      use:useActions={use}
       on:change={() => dispatch('change', formParameter)}
     >
       {#each variants as variant}
@@ -41,6 +44,7 @@
       hidden={hideRightAdornments}
       {formParameter}
       {parameterType}
+      {use}
       on:reset={() => dispatch('reset', formParameter)}
     />
   </div>

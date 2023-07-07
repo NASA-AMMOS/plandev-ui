@@ -13,6 +13,7 @@
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
   import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
@@ -27,8 +28,10 @@
 
   export let disabled: boolean = false;
   export let error: string | undefined = undefined;
+  export let hasUpdatePermission: boolean = true;
   export let options: DropdownOptions = [];
   export let maxListHeight: string = '300px';
+  export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string = '';
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
@@ -43,7 +46,7 @@
     }
   }
   export function openMenu() {
-    if (!disabled && presetMenu) {
+    if (!disabled && hasUpdatePermission && presetMenu) {
       dispatch('openMenu');
       presetMenu.show();
     }
@@ -105,11 +108,19 @@
     on:click|stopPropagation={openMenu}
     role="textbox"
     aria-label={selectedOption?.display ?? placeholder}
+    use:permissionHandler={{
+      hasPermission: hasUpdatePermission,
+      permissionError: updatePermissionError,
+    }}
     use:tooltip={{ content: error, placement: 'top' }}
   >
     <span class="selected-display-value" class:error>{selectedOption?.display ?? placeholder}</span>
     <button
-      use:tooltip={{ content: settingsIconTooltip, placement: settingsIconTooltipPlacement }}
+      use:tooltip={{
+        content: settingsIconTooltip,
+        disabled: !hasUpdatePermission,
+        placement: settingsIconTooltipPlacement,
+      }}
       class="icon st-button settings-icon"
       on:click|stopPropagation={openMenu}
     >
@@ -139,6 +150,15 @@
           <MenuItem
             selected={(selectedOption?.value ?? null) === displayedOption.value}
             disabled={(selectedOption?.value ?? null) === displayedOption.value}
+            use={[
+              [
+                permissionHandler,
+                {
+                  hasPermission: displayedOption.hasSelectPermission ?? true,
+                  permissionError: 'You do not have permission to select this',
+                },
+              ],
+            ]}
             on:click={event => {
               onSelectOption(displayedOption, event.detail);
             }}

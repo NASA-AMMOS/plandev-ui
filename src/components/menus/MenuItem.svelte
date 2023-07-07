@@ -2,6 +2,9 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
+
+  export let use: ActionArray = [];
 
   export let disabled: boolean = false;
   export let selected: boolean = false;
@@ -19,7 +22,7 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-<div class="menu-item" class:disabled class:selected role="menuitem" on:click={onClick}>
+<div class="menu-item" class:disabled class:selected role="menuitem" on:click={onClick} use:useActions={use}>
   <slot />
 </div>
 

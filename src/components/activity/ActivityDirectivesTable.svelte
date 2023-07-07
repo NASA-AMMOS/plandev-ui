@@ -5,7 +5,9 @@
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
+  import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -14,7 +16,7 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
-  export let planId: number;
+  export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let user: User | null;
 
@@ -23,39 +25,47 @@
   };
   type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
 
-  const activityActionColumnDef: DataGridColumnDef = {
-    cellClass: 'action-cell-container',
-    cellRenderer: (params: ActivityCellRendererParams) => {
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'actions-cell';
-      new DataGridActions({
-        props: {
-          deleteCallback: params.deleteActivityDirective,
-          deleteTooltip: {
-            content: 'Delete Activity Directive',
-            placement: 'bottom',
-          },
-          rowData: params.data,
-        },
-        target: actionsDiv,
-      });
-
-      return actionsDiv;
-    },
-    cellRendererParams: {
-      deleteActivityDirective,
-    } as CellRendererParams,
-    field: 'actions',
-    headerName: '',
-    resizable: false,
-    sortable: false,
-    suppressAutoSize: true,
-    suppressMovable: true,
-    suppressSizeToFit: true,
-    width: 25,
-  };
-
+  let activityActionColumnDef: DataGridColumnDef | null = null;
+  let completeColumnDefs: ColDef[] = columnDefs;
+  let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
+
+  $: hasDeletePermission = plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) : false;
+  $: {
+    activityActionColumnDef = {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ActivityCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteActivityDirective,
+            deleteTooltip: {
+              content: 'Delete Activity Directive',
+              placement: 'bottom',
+            },
+            hasDeletePermission,
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteActivityDirective,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressMovable: true,
+      suppressSizeToFit: true,
+      width: 25,
+    };
+    completeColumnDefs = [...(columnDefs ?? []), activityActionColumnDef];
+  }
 
   async function deleteActivityDirective({ id, plan_id }: ActivityDirective) {
     if (!isDeletingDirective) {
@@ -66,10 +76,10 @@
   }
 
   async function deleteActivityDirectives({ detail: activities }: CustomEvent<ActivityDirective[]>) {
-    if (!isDeletingDirective) {
+    if (!isDeletingDirective && plan !== null) {
       isDeletingDirective = true;
       const ids = activities.map(({ id }) => id);
-      await effects.deleteActivityDirectives(planId, ids, user);
+      await effects.deleteActivityDirectives(plan.id, ids, user);
       isDeletingDirective = false;
     }
   }
@@ -83,9 +93,10 @@
   bind:dataGrid
   bind:selectedItemId={selectedActivityDirectiveId}
   autoSizeColumnsToFit={false}
-  columnDefs={[...(columnDefs ?? []), activityActionColumnDef]}
+  columnDefs={completeColumnDefs}
   {columnStates}
   {getRowId}
+  {hasDeletePermission}
   items={activityDirectives}
   pluralItemDisplayText="Activity Directives"
   scrollToSelection={true}

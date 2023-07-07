@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -13,6 +14,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -20,11 +22,13 @@
 
   function onChange(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (input.files.length) {
+    if (input.files?.length) {
       const file = input.files.item(0);
-      formParameter.file = file;
-      formParameter.value = file.name;
-      dispatch('change', formParameter);
+      if (file !== null) {
+        formParameter.file = file;
+        formParameter.value = file.name;
+        dispatch('change', formParameter);
+      }
     }
   }
 </script>
@@ -38,6 +42,7 @@
         class="st-input w-100"
         class:error={formParameter.errors !== null}
         disabled
+        use:useActions={use}
         type="text"
       />
       <ParameterBaseRightAdornments
@@ -45,6 +50,7 @@
         slot="right"
         {formParameter}
         {parameterType}
+        {use}
         on:reset={() => dispatch('reset', formParameter)}
       />
     </Input>

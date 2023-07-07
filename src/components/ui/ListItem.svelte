@@ -1,9 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { permissionHandler } from '../../utilities/permissionHandler';
 
   export { className as class };
   export { styleName as style };
   export let draggable: boolean = false;
+  export let hasPermission: boolean | undefined = undefined;
+  export let permissionError: string | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -19,6 +22,10 @@
   on:click={e => dispatch('click', e)}
   on:dragend={e => dispatch('dragend', e)}
   on:dragstart={e => dispatch('dragstart', e)}
+  use:permissionHandler={{
+    hasPermission: hasPermission ?? true,
+    permissionError,
+  }}
 >
   <div class="list-item-content">
     <slot />

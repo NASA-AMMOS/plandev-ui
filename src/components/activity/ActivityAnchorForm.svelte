@@ -5,6 +5,7 @@
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { convertDurationStringToInterval, convertUsToDurationString, getIntervalInMs } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
@@ -16,12 +17,14 @@
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let anchorId: ActivityDirectiveId | null = null;
   export let disabled: boolean = false;
+  export let hasUpdatePermission: boolean = false;
   export let highlightKeysMap: Record<string, boolean> = {};
   export let isAnchoredToStart: boolean = true;
   export let startOffset: string | null = null;
 
   const dispatch = createEventDispatcher();
   const anchorTextDelimiter = ' - ';
+  const updatePermissionError: string = 'You do not have permission to update this anchor';
 
   let anchorableActivityDirectives: ActivityDirective[] = [];
   let anchoredActivity: ActivityDirective | null = null;
@@ -147,11 +150,13 @@
         </label>
         <SearchableDropdown
           {disabled}
+          {hasUpdatePermission}
           options={searchableOptions}
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
           settingsIconTooltip="Set Anchor"
           selectedOptionValue={anchorId}
+          updatePermissionError="You do not have permission to update this anchor"
           on:selectOption={onSelectAnchor}
         />
       </Input>
@@ -171,6 +176,10 @@
             class:selected={isAnchoredToStart}
             class:disabled
             role="none"
+            use:permissionHandler={{
+              hasPermission: hasUpdatePermission,
+              permissionError: updatePermissionError,
+            }}
             on:click={onAnchorToStart}
           >
             Start
@@ -180,6 +189,10 @@
             class="secondary anchor-boundary"
             class:selected={!isAnchoredToStart}
             class:disabled
+            use:permissionHandler={{
+              hasPermission: hasUpdatePermission,
+              permissionError: updatePermissionError,
+            }}
             on:click={onAnchorToEnd}
             role="none"
           >
@@ -198,6 +211,10 @@
           class:error={!!startOffsetError}
           {disabled}
           name="start-offset"
+          use:permissionHandler={{
+            hasPermission: hasUpdatePermission,
+            permissionError: updatePermissionError,
+          }}
           bind:value={startOffsetString}
           on:change={onUpdateStartOffset}
           use:tooltip={{ content: startOffsetError, placement: 'top' }}

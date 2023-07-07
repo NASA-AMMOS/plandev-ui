@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -14,6 +15,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -28,6 +30,7 @@
       {disabled}
       type="checkbox"
       on:change={() => dispatch('change', formParameter)}
+      use:useActions={use}
     />
     <ParameterBaseRightAdornments
       hidden={hideRightAdornments}
@@ -35,6 +38,7 @@
       {formParameter}
       {parameterType}
       on:reset={() => dispatch('reset', formParameter)}
+      {use}
     />
   </Input>
 </div>

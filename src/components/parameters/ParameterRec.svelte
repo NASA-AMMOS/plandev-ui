@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import type { ActionArray } from '../../utilities/useActions';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
@@ -12,6 +13,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
+  export let use: ActionArray = [];
 
   let component: any;
 
@@ -37,6 +39,7 @@
   {levelPadding}
   {parameterType}
   {showName}
+  {use}
   on:change
   on:reset
 />

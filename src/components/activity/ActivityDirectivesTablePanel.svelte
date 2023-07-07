@@ -10,7 +10,7 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../stores/activities';
-  import { plan, planId } from '../../stores/plan';
+  import { plan } from '../../stores/plan';
   import { spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
@@ -292,7 +292,7 @@
       activityDirectives={$activityDirectivesList}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
-      planId={$planId}
+      plan={$plan}
       {user}
       on:columnStateChange={onColumnStateChange}
       on:selectionChanged={onSelectionChanged}

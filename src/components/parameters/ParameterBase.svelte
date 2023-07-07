@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import type { ActionArray } from '../../utilities/useActions';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
   import ParameterBaseNumber from './ParameterBaseNumber.svelte';
@@ -16,6 +17,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 </script>
 
 {#if formParameter.schema.type === 'boolean'}
@@ -27,6 +29,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -39,6 +42,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -51,6 +55,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -62,6 +67,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -74,6 +80,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -86,6 +93,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />
@@ -98,6 +106,7 @@
     {levelPadding}
     {formParameter}
     {parameterType}
+    {use}
     on:change
     on:reset
   />

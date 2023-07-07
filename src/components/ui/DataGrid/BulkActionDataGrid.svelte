@@ -13,7 +13,9 @@
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { User } from '../../../types/app';
   import type { RowId, TRowData } from '../../../types/data-grid';
+  import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
@@ -22,6 +24,7 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let pluralItemDisplayText: string = '';
@@ -40,8 +43,20 @@
   const dispatch = createEventDispatcher();
 
   let isFiltered: boolean = false;
+  let deletePermission: boolean = true;
   let selectedItemIds: RowId[] = [];
 
+  $: if (typeof hasDeletePermission === 'function' && user) {
+    const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+    if (selectedItem) {
+      if (typeof hasDeletePermission === 'function') {
+        deletePermission = hasDeletePermission(user, selectedItem);
+      }
+    }
+  }
+  $: if (typeof hasDeletePermission === 'boolean') {
+    deletePermission = hasDeletePermission;
+  }
   $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
   } else if (selectedItemId === null) {
@@ -54,17 +69,19 @@
   onDestroy(() => onBlur());
 
   function bulkDeleteItems() {
-    const selectedItemIdsMap = keyBy(selectedItemIds);
-    const selectedRows: RowData[] = items.reduce((selectedRows: RowData[], row: RowData) => {
-      const id = getRowId(row);
-      if (selectedItemIdsMap[id] !== undefined) {
-        selectedRows.push(row);
-      }
-      return selectedRows;
-    }, []);
+    if (deletePermission) {
+      const selectedItemIdsMap = keyBy(selectedItemIds);
+      const selectedRows: RowData[] = items.reduce((selectedRows: RowData[], row: RowData) => {
+        const id = getRowId(row);
+        if (selectedItemIdsMap[id] !== undefined) {
+          selectedRows.push(row);
+        }
+        return selectedRows;
+      }, []);
 
-    if (selectedRows.length) {
-      dispatch('bulkDeleteItems', selectedRows);
+      if (selectedRows.length) {
+        dispatch('bulkDeleteItems', selectedRows);
+      }
     }
   }
 
@@ -133,7 +150,18 @@
         Select All {isFiltered ? 'Visible ' : ''}{pluralItemDisplayText}
       </ContextMenuItem>
       {#if selectedItemIds.length}
-        <ContextMenuItem on:click={bulkDeleteItems}>
+        <ContextMenuItem
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: deletePermission,
+                permissionError: 'You do not have permission to delete.',
+              },
+            ],
+          ]}
+          on:click={bulkDeleteItems}
+        >
           Delete {selectedItemIds.length}
           {selectedItemIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
         </ContextMenuItem>

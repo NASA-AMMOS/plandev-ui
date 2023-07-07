@@ -8,11 +8,16 @@
   import { createEventDispatcher } from 'svelte';
   import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import SearchableDropdown from './SearchableDropdown.svelte';
 
   export let canSaveOver: boolean = false;
   export let disabled: boolean = false;
+
+  export let hasCreatePermission: boolean = true;
+  export let hasUpdatePermission: ((option: DropdownOption) => boolean) | boolean = true;
+  export let hasDeletePermission: ((option: DropdownOption) => boolean) | boolean = true;
   export let error: string | undefined = undefined;
   export let options: DropdownOptions = [];
   export let optionLabel: string = 'Option';
@@ -25,20 +30,40 @@
 
   const dispatch = createEventDispatcher();
 
+  let deletePermission: boolean = true;
   let isOptionNameChanged: boolean = false;
   let isOptionNameDuped: boolean = false;
   let optionName: string = '';
   let requireUniqueDisplayNames: boolean = true;
   let searchableDropdown: SearchableDropdown;
   let selectedOption: DropdownOption | undefined;
+  let updatePermission: boolean = true;
 
-  $: selectedOption = options.find(option => option.value === selectedOptionValue);
+  $: if (typeof hasDeletePermission === 'function') {
+    if (selectedOption) {
+      if (typeof hasDeletePermission === 'function') {
+        deletePermission = hasDeletePermission(selectedOption);
+      }
+    }
+  } else {
+    deletePermission = hasDeletePermission;
+  }
+  $: if (typeof hasUpdatePermission === 'function') {
+    if (selectedOption) {
+      if (typeof hasUpdatePermission === 'function') {
+        updatePermission = hasUpdatePermission(selectedOption);
+      }
+    }
+  } else {
+    updatePermission = hasUpdatePermission;
+  }
   $: isOptionNameChanged = !!optionName && optionName !== selectedOption?.display;
   $: isOptionNameDuped = !isOptionNameChanged
     ? false
     : options.reduce((previousValue: boolean, dropdownOption: DropdownOption) => {
         return previousValue || dropdownOption.display === optionName;
       }, false);
+  $: selectedOption = options.find(option => option.value === selectedOptionValue);
 
   function getSaveNewTooltip(inputText: string) {
     if (requireUniqueDisplayNames) {
@@ -123,27 +148,40 @@
       <button
         use:tooltip={{
           content: getSaveNewTooltip(optionName),
+          disabled: !hasCreatePermission,
           placement: 'top',
         }}
         class="icon st-button"
         class:disabled={!optionName || !isOptionNameChanged || isOptionNameDuped}
+        use:permissionHandler={{
+          hasPermission: hasCreatePermission,
+          permissionError: `You do not have permission to save a new ${upperFirst(optionLabel)}`,
+        }}
         on:click|stopPropagation={onSaveNewOption}
       >
         <PlusIcon />
       </button>
       <button
-        use:tooltip={{ content: getSaveTooltip(optionName), placement: 'top' }}
+        use:tooltip={{ content: getSaveTooltip(optionName), disabled: !updatePermission, placement: 'top' }}
         class="icon st-button"
         class:disabled={isOptionNameDuped}
         disabled={!(!!selectedOption && (isOptionNameChanged || canSaveOver))}
+        use:permissionHandler={{
+          hasPermission: updatePermission,
+          permissionError: `You do not have permission to save this ${upperFirst(optionLabel)}`,
+        }}
         on:click|stopPropagation={onSaveOption}
       >
         <SaveIcon />
       </button>
       <button
-        use:tooltip={{ content: `Delete ${optionLabel.toLowerCase()}`, placement: 'top' }}
+        use:tooltip={{ content: `Delete ${optionLabel.toLowerCase()}`, disabled: !updatePermission, placement: 'top' }}
         class="icon st-button"
         disabled={!selectedOption || isOptionNameChanged}
+        use:permissionHandler={{
+          hasPermission: deletePermission,
+          permissionError: `You do not have permission to delete this ${upperFirst(optionLabel)}`,
+        }}
         on:click|stopPropagation={onDeleteOption}
       >
         <TrashIcon />

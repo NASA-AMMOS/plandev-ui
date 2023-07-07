@@ -33,7 +33,7 @@ export function isUserAdmin(user: User | null) {
   return user?.activeRole === ADMIN_ROLE;
 }
 
-function isUserOwner(user: User | null, thingWithOwner?: { owner: UserId } | null): boolean {
+export function isUserOwner(user: User | null, thingWithOwner?: { owner: UserId } | null): boolean {
   if (thingWithOwner !== null) {
     if (thingWithOwner && user) {
       return thingWithOwner.owner === user.id;
@@ -42,11 +42,11 @@ function isUserOwner(user: User | null, thingWithOwner?: { owner: UserId } | nul
   return false;
 }
 
-function isPlanOwner(user: User | null, plan: PlanWithOwners): boolean {
+export function isPlanOwner(user: User | null, plan: PlanWithOwners): boolean {
   return isUserOwner(user, plan);
 }
 
-function isPlanCollaborator(user: User | null, plan: PlanWithOwners): boolean {
+export function isPlanCollaborator(user: User | null, plan: PlanWithOwners): boolean {
   if (plan && user) {
     return !!plan.collaborators.find(({ collaborator }) => collaborator === user.id);
   }
@@ -356,20 +356,27 @@ interface FeaturePermissions {
 const featurePermissions: FeaturePermissions = {
   activityDirective: {
     canCreate: (user, plan) =>
-      (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user),
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user)),
     canDelete: (user, plan) =>
-      (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.DELETE_ACTIVITY_DIRECTIVES(user),
-    canRead: user => queryPermissions.GET_PLAN(user),
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) &&
+        queryPermissions.DELETE_ACTIVITY_DIRECTIVES(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.GET_PLAN(user),
     canUpdate: (user, plan) =>
-      (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_ACTIVITY_DIRECTIVE(user),
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_ACTIVITY_DIRECTIVE(user)),
   },
   activityPresets: {
     canAssign: (user, plan) =>
-      (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.APPLY_PRESET_TO_ACTIVITY(user),
-    canCreate: user => queryPermissions.CREATE_ACTIVITY_PRESET(user),
-    canDelete: (user, preset) => isUserOwner(user, preset) && queryPermissions.DELETE_ACTIVITY_PRESET(user),
-    canRead: user => queryPermissions.SUB_ACTIVITY_PRESETS(user),
-    canUpdate: (user, preset) => isUserOwner(user, preset) && queryPermissions.UPDATE_ACTIVITY_PRESET(user),
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.APPLY_PRESET_TO_ACTIVITY(user)),
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_ACTIVITY_PRESET(user),
+    canDelete: (user, _plan, preset) =>
+      isUserAdmin(user) || (isUserOwner(user, preset) && queryPermissions.DELETE_ACTIVITY_PRESET(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_ACTIVITY_PRESETS(user),
+    canUpdate: (user, _plan, preset) =>
+      isUserAdmin(user) || (isUserOwner(user, preset) && queryPermissions.UPDATE_ACTIVITY_PRESET(user)),
   },
   commandDictionary: {
     canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_COMMAND_DICTIONARY(user),

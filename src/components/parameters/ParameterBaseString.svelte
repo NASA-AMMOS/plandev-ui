@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -14,6 +15,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -29,6 +31,7 @@
       class:error={formParameter.errors !== null}
       {disabled}
       type="text"
+      use:useActions={use}
       on:change={() => dispatch('change', formParameter)}
     />
     <ParameterBaseRightAdornments
@@ -36,6 +39,7 @@
       slot="right"
       {formParameter}
       {parameterType}
+      {use}
       on:reset={() => dispatch('reset', formParameter)}
     />
   </Input>

@@ -7,6 +7,7 @@
   import type { User } from '../../types/app';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import ListItem from '../ui/ListItem.svelte';
@@ -15,19 +16,27 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  let filterText: string = '';
+  const permissionError = 'You do not have permission to add an activity.';
 
+  let filterText: string = '';
+  let hasPermission: boolean = false;
+
+  $: if ($plan !== null) {
+    hasPermission = featurePermissions.activityDirective.canCreate(user, $plan);
+  }
   $: filteredActivityTypes = ($activityTypes ?? []).filter(({ name }) =>
     name.toLowerCase().includes(filterText.toLowerCase()),
   );
 
   async function createActivityDirectiveAtPlanStart(activityType: ActivityType) {
-    const { start_time_doy } = $plan;
-    effects.createActivityDirective({}, start_time_doy, activityType.name, activityType.name, {}, user);
+    if ($plan !== null) {
+      const { start_time_doy } = $plan;
+      effects.createActivityDirective({}, start_time_doy, activityType.name, activityType.name, {}, user);
+    }
   }
 
   function onDragEnd(): void {
-    document.getElementById('list-item-drag-image').remove();
+    document.getElementById('list-item-drag-image')?.remove();
   }
 
   function onDragStart(event: DragEvent, activityType: ActivityType): void {
@@ -38,8 +47,8 @@
     dragImage.style.padding = '10px';
     dragImage.style.color = 'rgba(0, 0, 0, 0.8)';
     document.body.appendChild(dragImage);
-    event.dataTransfer.setDragImage(dragImage, 0, 0);
-    event.dataTransfer.setData('activityTypeName', activityType.name);
+    event.dataTransfer?.setDragImage(dragImage, 0, 0);
+    event.dataTransfer?.setData('activityTypeName', activityType.name);
   }
 </script>
 
@@ -58,6 +67,8 @@
         <ListItem
           draggable
           style="cursor: move;"
+          {hasPermission}
+          {permissionError}
           on:dragend={onDragEnd}
           on:dragstart={e => onDragStart(e.detail, activityType)}
         >
@@ -67,6 +78,7 @@
               aria-label="CreateActivity-{activityType.name}"
               class="st-button icon"
               on:click={() => createActivityDirectiveAtPlanStart(activityType)}
+              disabled={!hasPermission}
               use:tooltip={{ content: 'Create Activity', placement: 'left' }}
             >
               <PlusIcon />

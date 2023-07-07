@@ -6,9 +6,11 @@
   import { classNames, isMacOs } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { tooltip } from '../../utilities/tooltip';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
 
   export let source: ValueSource;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -54,6 +56,7 @@
     role="none"
     use:tooltip={{ allowHTML: true, content: tooltipContent, placement: 'top' }}
     on:click={onClick}
+    use:useActions={use}
   >
     <div class={dotClasses} />
   </div>

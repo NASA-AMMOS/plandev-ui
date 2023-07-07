@@ -8,6 +8,7 @@
   import type { ValueSchemaSeries } from '../../types/schema';
   import { getArgument } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
+  import type { ActionArray } from '../../utilities/useActions';
   import Collapse from '../Collapse.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import ParameterBase from './ParameterBase.svelte';
@@ -24,6 +25,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -102,6 +104,7 @@
             hidden={hideRightAdornments}
             {formParameter}
             {parameterType}
+            {use}
             on:reset={onResetSeries}
           />
         </CssGrid>
@@ -120,6 +123,7 @@
                   level={++level}
                   {levelPadding}
                   {parameterType}
+                  {use}
                   on:change={onChange}
                 />
               {:else}
@@ -131,6 +135,7 @@
                   level={++level}
                   {levelPadding}
                   {parameterType}
+                  {use}
                   on:change={onChange}
                 />
               {/if}

@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import { convertDurationStringToUs, convertUsToDurationString } from '../../utilities/time';
+  import { useActions, type ActionArray } from '../../utilities/useActions';
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
@@ -15,6 +16,7 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   let durationStringFormatError: string | null = null;
 
@@ -23,6 +25,15 @@
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 
   $: durationString = convertUsToDurationString(formParameter.value, true);
+
+  function onChange() {
+    try {
+      dispatch('change', { ...formParameter, value: convertDurationStringToUs(durationString) });
+      durationStringFormatError = null;
+    } catch (error) {
+      durationStringFormatError = (error as Error).message;
+    }
+  }
 </script>
 
 <div class="parameter-base-duration" style="grid-template-columns: {columns}">
@@ -34,14 +45,8 @@
       class:error={formParameter.errors !== null || durationStringFormatError !== null}
       {disabled}
       type="text"
-      on:change={() => {
-        try {
-          dispatch('change', { ...formParameter, value: convertDurationStringToUs(durationString) });
-          durationStringFormatError = null;
-        } catch (error) {
-          durationStringFormatError = error.message;
-        }
-      }}
+      use:useActions={use}
+      on:change={onChange}
     />
 
     <ParameterBaseRightAdornments
@@ -50,6 +55,7 @@
       additionalErrors={durationStringFormatError ? [durationStringFormatError] : []}
       {hideValueSource}
       {parameterType}
+      {use}
       on:reset={() => dispatch('reset', formParameter)}
     />
   </Input>

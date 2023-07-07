@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import type { ActionArray } from '../../utilities/useActions';
   import InputErrorBadge from './InputErrorBadge.svelte';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 
@@ -11,6 +12,7 @@
   export let hideValueSource: boolean = false;
   export let hideError: boolean = false;
   export let parameterType: ParameterType = 'activity';
+  export let use: ActionArray = [];
 
   let errors: string[] = [];
 
@@ -23,7 +25,7 @@
 
 <div class="parameter-base-right-adornment" {hidden}>
   {#if !hideValueSource}
-    <ValueSourceBadge source={formParameter.valueSource} {parameterType} on:reset />
+    <ValueSourceBadge source={formParameter.valueSource} {parameterType} {use} on:reset />
   {/if}
   {#if errors.length > 0 && !hideError}
     <InputErrorBadge {errors} />

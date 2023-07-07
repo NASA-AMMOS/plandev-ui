@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
+  import type { ActionArray } from '../../utilities/useActions';
   import Collapse from '../Collapse.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
@@ -19,6 +20,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
+  export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
 
@@ -71,6 +73,7 @@
           hidden={hideRightAdornments}
           {formParameter}
           {parameterType}
+          {use}
           on:reset={onResetStruct}
         />
       </div>
@@ -86,6 +89,7 @@
                 level={++level}
                 {levelPadding}
                 {parameterType}
+                {use}
                 on:change={onChange}
               />
             {:else}
@@ -97,6 +101,7 @@
                 level={++level}
                 {levelPadding}
                 {parameterType}
+                {use}
                 on:change={onChange}
               />
             {/if}

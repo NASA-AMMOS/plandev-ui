@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import { compare } from '../../utilities/generic';
+  import type { ActionArray } from '../../utilities/useActions';
   import Highlight from '../ui/Highlight.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterRec from './ParameterRec.svelte';
@@ -15,6 +16,7 @@
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
   export let showName: boolean = true;
+  export let use: ActionArray = [];
 
   let clientWidth: number;
   let level: number = 0;
@@ -39,6 +41,7 @@
           {showName}
           on:change
           on:reset
+          {use}
         />
       {:else}
         <ParameterBase
@@ -51,6 +54,7 @@
           {parameterType}
           on:change
           on:reset
+          {use}
         />
       {/if}
     </div>
