@@ -35,7 +35,7 @@
   let saveViewDisabled: boolean = true;
 
   $: saveViewDisabled = $view?.name === '' || $view?.owner !== user?.id || !$viewIsModified;
-  $: if ($view.definition.plan.grid) {
+  $: if ($view?.definition.plan.grid) {
     leftPanelIsOn = !$view.definition.plan.grid.leftHidden && !$view.definition.plan.grid.leftSplit;
     leftSplitPanelIsOn = !$view.definition.plan.grid.leftHidden && $view.definition.plan.grid.leftSplit;
     bottomPanelIsOn = $view.definition.plan.grid.middleSplit;
@@ -44,13 +44,13 @@
   }
 
   function editView() {
-    if ($view) {
+    if ($view && user) {
       dispatch('editView', { definition: $view.definition, owner: user.id });
     }
   }
 
   function saveAsView() {
-    if ($view) {
+    if ($view && user) {
       dispatch('createView', { definition: $view.definition, owner: user.id });
     }
   }
@@ -62,7 +62,7 @@
   }
 
   function saveView() {
-    if ($view && $view.owner === user.id && !saveViewDisabled) {
+    if ($view && user && $view.owner === user.id && !saveViewDisabled) {
       dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name });
     }
   }
@@ -72,7 +72,7 @@
   }
 
   function uploadView() {
-    dispatch('uploadView', { owner: user.id });
+    dispatch('uploadView');
   }
 </script>
 

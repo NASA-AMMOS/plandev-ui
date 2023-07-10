@@ -98,7 +98,7 @@ import type {
   Span,
 } from '../types/simulation';
 import type { ActivityDirectiveTagsInsertInput, PlanTagsInsertInput, Tag, TagsInsertInput } from '../types/tags';
-import type { View, ViewDefinition, ViewInsertInput } from '../types/view';
+import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { convertToQuery, parseFloatOrNull, setQueryParam, sleep } from './generic';
 import gql, { convertToGQLArray } from './gql';
@@ -900,7 +900,7 @@ const effects = {
     }
   },
 
-  async createView(owner: string, definition: ViewDefinition, user: User | null): Promise<boolean> {
+  async createView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.CREATE_VIEW(user)) {
         throwPermissionError('create a view');
@@ -910,7 +910,7 @@ const effects = {
 
       if (confirm && value) {
         const { name } = value;
-        const viewInsertInput: ViewInsertInput = { definition, name, owner };
+        const viewInsertInput: ViewInsertInput = { definition, name };
         const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput }, user);
         const { newView } = data;
 
@@ -1487,7 +1487,7 @@ const effects = {
     return false;
   },
 
-  async editView(owner: string, definition: ViewDefinition, user: User | null): Promise<boolean> {
+  async editView(definition: ViewDefinition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_VIEW(user)) {
         throwPermissionError('edit this view');
@@ -1496,7 +1496,7 @@ const effects = {
       const { confirm, value = null } = await showEditViewModal();
       if (confirm && value) {
         const { id, name } = value;
-        const viewUpdateInput: ViewInsertInput = { definition, name, owner };
+        const viewUpdateInput: ViewUpdateInput = { definition, name };
         const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view: viewUpdateInput }, user);
         const {
           updatedView: { name: updatedName, updated_at },
@@ -2977,7 +2977,7 @@ const effects = {
     }
   },
 
-  async uploadView(owner: string, user: User | null): Promise<boolean> {
+  async uploadView(user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.CREATE_VIEW(user)) {
         throwPermissionError('upload a new view');
@@ -2987,7 +2987,7 @@ const effects = {
       if (confirm && value) {
         const { name, definition } = value;
 
-        const viewInsertInput: ViewInsertInput = { definition, name, owner };
+        const viewInsertInput: ViewInsertInput = { definition, name };
         const data = await reqHasura<View>(gql.CREATE_VIEW, { view: viewInsertInput }, user);
         const { newView } = data;
 

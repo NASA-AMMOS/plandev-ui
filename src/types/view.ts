@@ -23,8 +23,8 @@ export type ViewIFrame = {
 export type ViewInsertInput = {
   definition: ViewDefinition;
   name: string;
-  owner: string;
 };
+export type ViewUpdateInput = ViewInsertInput;
 
 export type ViewGridComponent =
   | 'ActivityDirectivesTablePanel'

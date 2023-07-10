@@ -196,7 +196,7 @@
     const { detail } = event;
     const { owner, definition } = detail;
     if (owner != null && definition) {
-      const success = await effects.createView(owner, definition, data.user);
+      const success = await effects.createView(definition, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -207,7 +207,7 @@
     const { detail } = event;
     const { owner, definition } = detail;
     if (owner != null && definition) {
-      const success = await effects.editView(owner, definition, data.user);
+      const success = await effects.editView(definition, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -234,11 +234,8 @@
     resetView();
   }
 
-  async function onUploadView(event: CustomEvent<{ owner: string }>) {
-    const { detail } = event;
-    const { owner } = detail;
-
-    const success = await effects.uploadView(owner, data.user);
+  async function onUploadView() {
+    const success = await effects.uploadView(data.user);
     if (success) {
       resetOriginalView();
     }
