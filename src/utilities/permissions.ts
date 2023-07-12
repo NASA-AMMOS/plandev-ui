@@ -337,6 +337,10 @@ interface ExpansionSetsCRUDPermission<T = null> extends CRUDPermission<T> {
   canUpdate: () => boolean;
 }
 
+interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
+  canExpand: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
 interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canAssign: (user: User | null, plan: PlanWithOwners, asset?: T) => boolean;
 }
@@ -347,6 +351,7 @@ interface FeaturePermissions {
   commandDictionary: CRUDPermission<void>;
   constraints: PlanAssetCRUDPermission<AssetWithOwner>;
   expansionRules: CRUDPermission<AssetWithOwner>;
+  expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner>;
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
@@ -403,6 +408,15 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => isUserAdmin(user) || queryPermissions.SUB_EXPANSION_RULES(user),
     canUpdate: (user, expansionRule) =>
       isUserAdmin(user) || (isUserOwner(user, expansionRule) && queryPermissions.UPDATE_EXPANSION_RULE(user)),
+  },
+  expansionSequences: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_EXPANSION_SEQUENCE(user),
+    canDelete: user => isUserAdmin(user) || queryPermissions.DELETE_EXPANSION_SEQUENCE(user),
+    canExpand: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.EXPAND(user)),
+    canRead: user => isUserAdmin(user),
+    canUpdate: () => false, // this is not a feature,
   },
   expansionSets: {
     canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_EXPANSION_SET(user),

@@ -10,6 +10,7 @@
     planExpansionStatus,
     selectedExpansionSetId,
   } from '../../stores/expansion';
+  import { plan } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
@@ -17,6 +18,8 @@
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { showExpansionSequenceModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { getShortISOForDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
@@ -37,7 +40,7 @@
   };
   type ExpansionSequenceCellRendererParams = ICellRendererParams<ExpansionSequence> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'seq_id',
       filter: 'text',
@@ -55,50 +58,65 @@
       sortable: true,
     },
     { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: ExpansionSequenceCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deleteExpansionSequence,
-            deleteTooltip: {
-              content: 'Delete Sequence',
-              placement: 'bottom',
-            },
-            rowData: params.data,
-            viewCallback: data => params.openExpansionSequence(data, user),
-            viewTooltip: {
-              content: 'Open Sequence',
-              placement: 'bottom',
-            },
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        deleteExpansionSequence,
-        openExpansionSequence: showExpansionSequenceModal,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 55,
-    },
   ];
 
+  let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createButtonEnabled: boolean = false;
+  let hasCreatePermission: boolean = false;
+  let hasDeletePermission: boolean = false;
+  let hasExpandPermission: boolean = false;
   let seqIdInput: string = '';
   let selectedExpansionSet: ExpansionSet | null;
 
+  $: if (user !== null && $plan !== null) {
+    hasCreatePermission = featurePermissions.expansionSequences.canCreate(user);
+    hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan);
+    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan);
+  }
+  $: {
+    columnDefs = [
+      ...baseColumnDefs,
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: ExpansionSequenceCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              deleteCallback: params.deleteExpansionSequence,
+              deleteTooltip: {
+                content: 'Delete Sequence',
+                placement: 'bottom',
+              },
+              hasDeletePermission,
+              rowData: params.data,
+              viewCallback: data => user && params.openExpansionSequence(data, user),
+              viewTooltip: {
+                content: 'Open Sequence',
+                placement: 'bottom',
+              },
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          deleteExpansionSequence,
+          openExpansionSequence: showExpansionSequenceModal,
+        } as CellRendererParams,
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 55,
+      },
+    ];
+  }
   $: createButtonEnabled = seqIdInput !== '';
-  $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId);
+  $: selectedExpansionSet = $expansionSets.find(s => s.id === $selectedExpansionSetId) ?? null;
 
   function deleteExpansionSequence(sequence: ExpansionSequence) {
     effects.deleteExpansionSequence(sequence, user);
@@ -125,6 +143,15 @@
         title="Expand"
         showLabel
         disabled={$selectedExpansionSetId === null}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasExpandPermission,
+              permissionError: 'You do not have permission to expand sequences',
+            },
+          ],
+        ]}
         on:click={() => {
           if ($selectedExpansionSetId) {
             effects.expand($selectedExpansionSetId, $simulationDatasetId, user);
@@ -215,10 +242,21 @@
             <div class="expansion-form-container">
               <CssGrid class="expansion-form" rows="min-content auto">
                 <CssGrid columns="3fr 1fr" gap="10px">
-                  <input bind:value={seqIdInput} class="st-input" />
+                  <input
+                    bind:value={seqIdInput}
+                    class="st-input"
+                    use:permissionHandler={{
+                      hasPermission: hasCreatePermission,
+                      permissionError: 'You do not have permission to create an expansion',
+                    }}
+                  />
                   <button
                     class="st-button secondary"
                     disabled={!createButtonEnabled}
+                    use:permissionHandler={{
+                      hasPermission: hasCreatePermission,
+                      permissionError: 'You do not have permission to create an expansion',
+                    }}
                     on:click|stopPropagation={() =>
                       effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}
                   >
@@ -230,6 +268,7 @@
                     <SingleActionDataGrid
                       getRowId={rowData => rowData.seq_id}
                       {columnDefs}
+                      {hasDeletePermission}
                       itemDisplayText="Sequence"
                       items={$filteredExpansionSequences}
                       {user}
