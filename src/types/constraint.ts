@@ -1,3 +1,4 @@
+import type { Tag } from './tags';
 import type { TimeRange } from './timeline';
 
 export type Constraint = {
@@ -9,11 +10,15 @@ export type Constraint = {
   name: string;
   owner: string;
   plan_id: number | null;
+  tags: { tag: Tag }[];
   updated_at: string;
   updated_by: string;
 };
 
-export type ConstraintInsertInput = Omit<Constraint, 'id' | 'created_at' | 'updated_at' | 'owner' | 'updated_by'>;
+export type ConstraintInsertInput = Omit<
+  Constraint,
+  'id' | 'created_at' | 'updated_at' | 'owner' | 'updated_by' | 'tags'
+>;
 
 export type ConstraintType = 'model' | 'plan';
 

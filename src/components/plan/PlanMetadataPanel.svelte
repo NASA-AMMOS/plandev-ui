@@ -15,7 +15,7 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <GridMenu {gridSection} title="Plan Management" />
+    <GridMenu {gridSection} title="Plan Metadata" />
   </svelte:fragment>
   <svelte:fragment slot="body">
     <PlanForm plan={$plan} planTags={$planTags} tags={$tags} {user} />

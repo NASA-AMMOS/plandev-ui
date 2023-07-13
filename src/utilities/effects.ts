@@ -97,7 +97,14 @@ import type {
   SimulationTemplateSetInput,
   Span,
 } from '../types/simulation';
-import type { ActivityDirectiveTagsInsertInput, PlanTagsInsertInput, Tag, TagsInsertInput } from '../types/tags';
+import type {
+  ActivityDirectiveTagsInsertInput,
+  ConstraintTagsInsertInput,
+  ExpansionRuleTagsInsertInput,
+  PlanTagsInsertInput,
+  Tag,
+  TagsInsertInput,
+} from '../types/tags';
 import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { convertToQuery, parseFloatOrNull, setQueryParam, sleep } from './generic';
@@ -401,6 +408,23 @@ const effects = {
     }
   },
 
+  async createConstraintTags(tags: ConstraintTagsInsertInput[], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_CONSTRAINT_TAGS(user)) {
+        throwPermissionError('create constraint tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_CONSTRAINT_TAGS, { tags }, user);
+      const { insert_constraint_tags } = data;
+      const { affected_rows } = insert_constraint_tags;
+      return affected_rows;
+    } catch (e) {
+      catchError('Create Constraint Tags Failed', e as Error);
+      showFailureToast('Create Constraint Tags Failed');
+      return null;
+    }
+  },
+
   async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
     try {
       createExpansionRuleError.set(null);
@@ -421,6 +445,23 @@ const effects = {
       showFailureToast('Expansion Rule Create Failed');
       savingExpansionRule.set(false);
       createExpansionRuleError.set((e as Error).message);
+      return null;
+    }
+  },
+
+  async createExpansionRuleTags(tags: ExpansionRuleTagsInsertInput[], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_EXPANSION_RULE_TAGS(user)) {
+        throwPermissionError('create expansion rule tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_EXPANSION_RULE_TAGS, { tags }, user);
+      const { insert_expansion_rule_tags } = data;
+      const { affected_rows } = insert_expansion_rule_tags;
+      return affected_rows;
+    } catch (e) {
+      catchError('Create ExpansionRule Tags Failed', e as Error);
+      showFailureToast('Create ExpansionRule Tags Failed');
       return null;
     }
   },
@@ -603,6 +644,7 @@ const effects = {
         revision,
         start_time,
         start_time_doy,
+        tags: [],
         updated_at,
         updated_by,
       };
@@ -703,7 +745,7 @@ const effects = {
     }
   },
 
-  async createPlanTags(tags: PlanTagsInsertInput[], user: User | null): Promise<number | null> {
+  async createPlanTags(tags: PlanTagsInsertInput[], user: User | null, notify: boolean = true): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_PLAN_TAGS(user)) {
         throwPermissionError('create plan tags');
@@ -712,7 +754,9 @@ const effects = {
       const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_TAGS, { tags }, user);
       const { insert_plan_tags } = data;
       const { affected_rows } = insert_plan_tags;
-      showSuccessToast('Plan Updated Successfully');
+      if (notify) {
+        showSuccessToast('Plan Updated Successfully');
+      }
       return affected_rows;
     } catch (e) {
       catchError('Create Plan Tags Failed', e as Error);
@@ -960,8 +1004,8 @@ const effects = {
       showSuccessToast('Activity Directive Updated Successfully');
       return affected_rows;
     } catch (e) {
-      catchError('Create Activity Directive Tags Failed', e as Error);
-      showFailureToast('Create Activity Directive Tags Failed');
+      catchError('Delete Activity Directive Tags Failed', e as Error);
+      showFailureToast('Delete Activity Directive Tags Failed');
       return null;
     }
   },
@@ -1151,6 +1195,21 @@ const effects = {
     return false;
   },
 
+  async deleteConstraintTags(ids: Tag['id'][], user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_CONSTRAINT_TAGS(user)) {
+        throwPermissionError('delete constraint tags');
+      }
+
+      await reqHasura<{ affected_rows: number }>(gql.DELETE_CONSTRAINT_TAGS, { ids }, user);
+      return true;
+    } catch (e) {
+      catchError('Delete Constraint Tags Failed', e as Error);
+      showFailureToast('Delete Constraint Tags Failed');
+      return false;
+    }
+  },
+
   async deleteExpansionRule(id: number, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_EXPANSION_RULE(user)) {
@@ -1174,6 +1233,24 @@ const effects = {
     }
 
     return false;
+  },
+
+  async deleteExpansionRuleTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.DELETE_EXPANSION_RULE_TAGS(user)) {
+        throwPermissionError('delete expansion rule tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_EXPANSION_RULE_TAGS, { ids }, user);
+      const { delete_expansion_rule_tags } = data;
+      const { affected_rows } = delete_expansion_rule_tags;
+      showSuccessToast('Expansion Rule Updated Successfully');
+      return affected_rows;
+    } catch (e) {
+      catchError('Delete Expansion Rule Tags Failed', e as Error);
+      showFailureToast('Delete Expansion Rule Tags Failed');
+      return null;
+    }
   },
 
   async deleteExpansionSequence(sequence: ExpansionSequence, user: User | null): Promise<void> {
@@ -1321,8 +1398,8 @@ const effects = {
       showSuccessToast('Plan Updated Successfully');
       return affected_rows;
     } catch (e) {
-      catchError('Create Plan Tags Failed', e as Error);
-      showFailureToast('Create Plan Tags Failed');
+      catchError('Delete Plan Tags Failed', e as Error);
+      showFailureToast('Delete Plan Tags Failed');
       return null;
     }
   },
@@ -1628,6 +1705,17 @@ const effects = {
       const data = await reqHasura(gql.GET_EXPANSION_RULE, { id }, user);
       const { expansionRule } = data;
       return expansionRule;
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
+  async getExpansionRuleTags(user: User | null): Promise<Tag[] | null> {
+    try {
+      const data = await reqHasura(convertToQuery(gql.SUB_EXPANSION_RULE_TAGS), {}, user);
+      const { expansionRuleTags } = data;
+      return expansionRuleTags;
     } catch (e) {
       catchError(e as Error);
       return null;

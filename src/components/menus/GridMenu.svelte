@@ -70,9 +70,9 @@
       <WindowFullscreenIcon />
       External Application
     </MenuItem>
-    <MenuItem on:click={() => onClickMenuItem('PlanManagementPanel')}>
+    <MenuItem on:click={() => onClickMenuItem('PlanMetadataPanel')}>
       <PlanIcon />
-      Plan Management
+      Plan Metadata
     </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('SchedulingGoalsPanel')}>
       <CalendarIcon />

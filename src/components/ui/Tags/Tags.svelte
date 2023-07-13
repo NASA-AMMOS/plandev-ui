@@ -13,6 +13,7 @@
     return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   };
   export let disabled: boolean = false;
+  export let editable: boolean = true;
   export let id: string = '';
   export let inputRef: HTMLInputElement | null = null;
   export let name: string = '';
@@ -90,21 +91,21 @@
     activeTag = activeIndex > -1 ? filteredOptions.at(activeIndex) || null : null;
   }
 
-  function add(tag: Tag) {
+  function addTag(tag: Tag, changeType: string = 'select') {
     selectedTags = selectedTags.concat(tag);
     searchText = '';
-    dispatch('add', tag);
+    dispatch('change', { tag, type: changeType });
     updatePopperPosition();
     closeSuggestions();
   }
 
   function removeTag(tag: Tag) {
-    dispatch('remove', tag);
+    dispatch('change', { tag, type: 'remove' });
     updatePopperPosition();
   }
 
   function openSuggestions() {
-    if (disabled) {
+    if (disabled || !editable) {
       return;
     }
     suggestionsVisible = true;
@@ -127,6 +128,11 @@
   function onKeydown(event: KeyboardEvent) {
     const { key } = event;
 
+    // Prevent submission of any parent forms on enter
+    if (key === 'Enter') {
+      event.preventDefault();
+    }
+
     // on escape or tab out of input close options dropdown and reset input value
     if (event.key === `Escape` || event.key === `Tab`) {
       closeSuggestions();
@@ -137,7 +143,9 @@
       }
 
       // Use active tag or create a placeholder tag if needed
-      add(activeTag || findTag(searchText || '', filteredOptions) || createTagObject(searchText || ''));
+      const existingTag = activeTag || findTag(searchText || '', filteredOptions);
+      const changeEvent = existingTag ? 'select' : 'create';
+      addTag(existingTag || createTagObject(searchText || ''), changeEvent);
     } else if (key === 'Backspace' && searchText === '' && selectedTags.length) {
       const lastTag = selectedTags.at(-1);
       selectedTags = selectedTags.slice(0, -1);
@@ -192,10 +200,10 @@
 
 <svelte:window on:click={onClickOutside} on:touchstart={onClickOutside} />
 
-<div class="tags" class:disabled use:popperRef bind:this={tagsRef} bind:clientWidth={tagsWidth}>
+<div class="tags" class:disabled={disabled || !editable} use:popperRef bind:this={tagsRef} bind:clientWidth={tagsWidth}>
   <div class="tags-selected-items">
     {#each selectedTags as tag}
-      <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
+      <TagChip {tag} removable={!disabled && editable} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
     {#if !disabled || (disabled && !selectedTags.length)}
       <input
@@ -206,7 +214,7 @@
         class="st-input tags-input"
         on:mouseup={openSuggestions}
         on:focus={openSuggestions}
-        on:keydown={onKeydown}
+        on:keydown|stopPropagation={onKeydown}
         bind:value={searchText}
         bind:this={inputRef}
         use:useActions={use}
@@ -223,7 +231,7 @@
               role="option"
               class="tags-option"
               on:mousedown|stopPropagation
-              on:mouseup|stopPropagation={() => add(tag)}
+              on:mouseup|stopPropagation={() => addTag(tag, 'select')}
               aria-selected={activeTag?.id === tag.id}
               class:active={activeTag?.id === tag.id}
             >
@@ -234,7 +242,7 @@
         {#if !exactMatchFound && searchText}
           <div
             on:mousedown|stopPropagation
-            on:mouseup|stopPropagation={() => add(createTagObject(searchText || ''))}
+            on:mouseup|stopPropagation={() => addTag(createTagObject(searchText || ''), 'create')}
             class="tags-option"
             role="button"
             tabindex={0}
@@ -268,6 +276,10 @@
   .tags.disabled {
     cursor: not-allowed;
     opacity: 0.5;
+  }
+
+  .tags.disabled input {
+    opacity: 1;
   }
 
   .tags-selected-items {

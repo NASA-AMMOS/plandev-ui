@@ -17,7 +17,7 @@
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
-  import type { ActivityDirectiveTagsInsertInput, Tag } from '../../types/tags';
+  import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { getActivityMetadata } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { classNames, keyByBoolean } from '../../utilities/generic';
@@ -246,21 +246,24 @@
     }
   }
 
-  async function onTagsInputChange({ detail: tag }: CustomEvent<Tag>) {
-    const newTags = await effects.createTags([{ color: tag.color, name: tag.name }], user);
-    if (newTags) {
-      const { id: directive_id, plan_id } = activityDirective;
-      const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = (newTags || []).map(({ id: tag_id }) => ({
-        directive_id,
-        plan_id,
+  async function onTagsInputChange(event: TagsChangeEvent) {
+    const {
+      detail: { tag, type },
+    } = event;
+    if (type === 'remove') {
+      await effects.deleteActivityDirectiveTags([tag.id], user);
+    } else if (type === 'create' || type === 'select') {
+      let tagsToAdd: Tag[] = [tag];
+      if (type === 'create') {
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+      }
+      const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
+        directive_id: activityDirective.id,
+        plan_id: activityDirective.plan_id,
         tag_id,
       }));
       await effects.createActivityDirectiveTags(activityDirectiveTags, user);
     }
-  }
-
-  async function onTagsInputRemove({ detail: tag }: CustomEvent<Tag>) {
-    await effects.deleteActivityDirectiveTags([tag.id], user);
   }
 
   function resetActivityName() {
@@ -424,6 +427,7 @@
           <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
           <TagsInput
             options={tags}
+            editable={hasUpdatePermission}
             disabled={!editable}
             selected={activityDirective.tags.map(({ tag }) => tag)}
             use={[
@@ -435,8 +439,7 @@
                 },
               ],
             ]}
-            on:add={onTagsInputChange}
-            on:remove={onTagsInputRemove}
+            on:change={onTagsInputChange}
           />
         </Input>
       </Highlight>

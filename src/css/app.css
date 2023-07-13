@@ -44,6 +44,8 @@ span.error {
 fieldset {
   border: 0;
   color: var(--st-typography-body-color);
+  display: flex;
+  flex-direction: column;
   font-family: var(--st-typography-body-font-family);
   font-size: var(--st-typography-body-font-size);
   font-weight: var(--st-typography-body-font-weight);

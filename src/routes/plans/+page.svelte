@@ -19,13 +19,16 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
+  import TagsInput from '../../components/ui/Tags/Tags.svelte';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
+  import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import type { Plan, PlanSlim } from '../../types/plan';
+  import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { removeQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -126,6 +129,7 @@
   let filterText: string = '';
   let models: ModelSlim[];
   let nameInputField: HTMLInputElement;
+  let planTags: Tag[] = [];
   let plans: PlanSlim[];
   let user: User | null = null;
 
@@ -215,6 +219,13 @@
     );
 
     if (newPlan) {
+      // Associate new tags with plan
+      const newPlanTags: PlanTagsInsertInput[] = (planTags || []).map(({ id: tag_id }) => ({
+        plan_id: newPlan.id,
+        tag_id,
+      }));
+      await effects.createPlanTags(newPlanTags, user, false);
+      newPlan.tags = planTags.map(tag => ({ tag }));
       plans = [...plans, newPlan];
     }
   }
@@ -224,6 +235,21 @@
 
     if (success) {
       plans = plans.filter(plan => plan.id !== id);
+    }
+  }
+
+  async function onTagsInputChange(event: TagsChangeEvent) {
+    const {
+      detail: { tag, type },
+    } = event;
+    if (type === 'remove') {
+      planTags = planTags.filter(t => t.name !== tag.name);
+    } else if (type === 'create' || type === 'select') {
+      let tagsToAdd: Tag[] = [tag];
+      if (type === 'create') {
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+      }
+      planTags = planTags.concat(tagsToAdd);
     }
   }
 
@@ -381,6 +407,25 @@
               {/if}
             </select>
           </Field>
+
+          <fieldset>
+            <label for="plan-duration">Tags</label>
+            <TagsInput
+              use={[
+                [
+                  permissionHandler,
+                  {
+                    hasPermission: canCreate,
+                    permissionError,
+                  },
+                ],
+              ]}
+              options={$tags}
+              editable={!canCreate}
+              selected={planTags}
+              on:change={onTagsInputChange}
+            />
+          </fieldset>
 
           <fieldset>
             <button class="st-button w-100" disabled={!createButtonEnabled} type="submit">

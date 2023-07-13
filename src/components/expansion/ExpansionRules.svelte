@@ -5,15 +5,18 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRules, expansionRulesColumns } from '../../stores/expansion';
+  import { tagsMap } from '../../stores/tags';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { ExpansionRule } from '../../types/expansion';
+  import type { Tag } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
+  import { tagsCellRenderer } from '../ui/DataGrid/DataGridTagsCellRenderer';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -65,6 +68,17 @@
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
     { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
     { field: 'description', filter: 'text', headerName: 'Description', resizable: true, sortable: true },
+    {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      field: 'tags',
+      filter: 'text',
+      headerName: 'Tags',
+      resizable: true,
+      sortable: false,
+      width: 220,
+      wrapText: true,
+    },
   ];
 
   let columnDefs = baseColumnDefs;
@@ -113,12 +127,28 @@
       width: 55,
     },
   ];
-  $: filteredRules = $expansionRules.filter(rule => {
-    const filterTextLowerCase = filterText.toLowerCase();
-    const includesActivityType = rule.activity_type.toLocaleLowerCase().includes(filterTextLowerCase);
-    const includesId = `${rule.id}`.includes(filterTextLowerCase);
-    return includesActivityType || includesId;
-  });
+
+  $: if (filteredRules && $expansionRules && $tagsMap) {
+    filteredRules = $expansionRules
+      .filter(rule => {
+        const filterTextLowerCase = filterText.toLowerCase();
+        const includesActivityType = rule.activity_type.toLocaleLowerCase().includes(filterTextLowerCase);
+        const includesId = `${rule.id}`.includes(filterTextLowerCase);
+        return includesActivityType || includesId;
+      })
+      .map(rule => {
+        const matchingTags: { tag: Tag }[] = [];
+        rule.tags.forEach(({ tag_id }) => {
+          // TODO derived store vs derived tagMap? Needs further discussion.
+          const matchingTag = $tagsMap[tag_id];
+          if (matchingTag) {
+            matchingTags.push({ tag: matchingTag });
+          }
+        });
+        const ruleWithTags: ExpansionRule = { ...rule, tags: matchingTags };
+        return ruleWithTags;
+      });
+  }
 
   async function deleteRule({ id }: Pick<ExpansionRule, 'id'>) {
     const success = await effects.deleteExpansionRule(id, user);

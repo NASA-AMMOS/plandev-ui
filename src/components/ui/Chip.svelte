@@ -28,7 +28,12 @@
   class={rootClasses}
   role={ariaRole}
   {disabled}
-  on:click|preventDefault={() => dispatch('click')}
+  tabindex={removable ? 0 : -1}
+  on:click|preventDefault={() => {
+    if (removable) {
+      dispatch('click');
+    }
+  }}
 >
   <div class="chip-label">{label}</div>
   {#if removable}

@@ -10,7 +10,7 @@
   import type { ActivityTypeExpansionRules } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ExpansionRule } from '../../types/expansion';
+  import type { ExpansionRuleSlim } from '../../types/expansion';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -26,14 +26,14 @@
   export let user: User | null;
 
   type CellRendererParams = {
-    selectExpansionRule: (name: string, rule: ExpansionRule) => void;
+    selectExpansionRule: (name: string, rule: ExpansionRuleSlim) => void;
   };
   type ExpansionSetRuleSelectionRendererParams = ICellRendererParams<ActivityTypeExpansionRules> & CellRendererParams;
 
   let activityTypesExpansionRules: ActivityTypeExpansionRules[] = [];
   let dataGrid: DataGrid<ActivityTypeExpansionRules>;
   let hasPermission: boolean = false;
-  let lastSelectedExpansionRule: ExpansionRule | null = null;
+  let lastSelectedExpansionRule: ExpansionRuleSlim | null = null;
   let logicEditorActivityType: string | null = null;
   let logicEditorRuleLogic: string = 'No Expansion Rule Selected';
   let logicEditorTitle: string = 'Expansion Rule - Logic Editor (Read-only)';
@@ -78,7 +78,7 @@
     }
   }
 
-  function selectExpansionRule(activityTypeName: string, rule: ExpansionRule) {
+  function selectExpansionRule(activityTypeName: string, rule: ExpansionRuleSlim) {
     const currentRuleId = selectedExpansionRules[activityTypeName];
 
     if (currentRuleId === rule.id) {

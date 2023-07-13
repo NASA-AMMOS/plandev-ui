@@ -105,6 +105,7 @@ export type PlanSlim = Pick<
   | 'revision'
   | 'start_time'
   | 'start_time_doy'
+  | 'tags'
   | 'updated_at'
   | 'updated_by'
 >;

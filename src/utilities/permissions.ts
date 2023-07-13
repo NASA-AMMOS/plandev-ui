@@ -91,8 +91,14 @@ const queryPermissions = {
   CREATE_CONSTRAINT: (user: User | null): boolean => {
     return getPermission(['insert_constraint_one'], user);
   },
+  CREATE_CONSTRAINT_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_constraint_tags'], user);
+  },
   CREATE_EXPANSION_RULE: (user: User | null): boolean => {
     return getPermission(['insert_expansion_rule_one'], user);
+  },
+  CREATE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_expansion_rule_tags'], user);
   },
   CREATE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
     return getPermission(['insert_sequence_one'], user);
@@ -163,8 +169,14 @@ const queryPermissions = {
   DELETE_CONSTRAINT: (user: User | null): boolean => {
     return getPermission(['delete_constraint_by_pk'], user);
   },
+  DELETE_CONSTRAINT_TAGS: (user: User | null): boolean => {
+    return getPermission(['delete_constraint_tags'], user);
+  },
   DELETE_EXPANSION_RULE: (user: User | null): boolean => {
     return getPermission(['delete_expansion_rule_by_pk'], user);
+  },
+  DELETE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
+    return getPermission(['delete_expansion_rule_tags'], user);
   },
   DELETE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
     return getPermission(['delete_sequence_by_pk'], user);

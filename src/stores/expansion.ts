@@ -1,5 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
+import type { ExpansionRuleSlim, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { simulationDatasetId } from './simulation';
@@ -7,7 +7,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const expansionRules = gqlSubscribable<ExpansionRule[]>(gql.SUB_EXPANSION_RULES, {}, [], null);
+export const expansionRules = gqlSubscribable<ExpansionRuleSlim[]>(gql.SUB_EXPANSION_RULES, {}, [], null);
 
 export const expansionSequences = gqlSubscribable<ExpansionSequence[]>(gql.SUB_EXPANSION_SEQUENCES, {}, [], null);
 

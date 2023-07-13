@@ -1,5 +1,6 @@
 import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
+import type { Tag } from './tags';
 
 export type ExpansionRule = {
   activity_type: string;
@@ -11,11 +12,17 @@ export type ExpansionRule = {
   id: number;
   name: string;
   owner: string;
+  tags: { tag: Tag }[];
   updated_at: string;
   updated_by: string;
 };
 
-export type ExpansionRuleInsertInput = Omit<ExpansionRule, 'created_at' | 'id' | 'updated_at' | 'updated_by' | 'owner'>;
+export type ExpansionRuleSlim = Omit<ExpansionRule, 'tags'> & { tags: { tag_id: number }[] };
+
+export type ExpansionRuleInsertInput = Omit<
+  ExpansionRuleSlim,
+  'created_at' | 'id' | 'updated_at' | 'updated_by' | 'owner' | 'tags'
+>;
 
 export type ExpansionSequenceToActivityInsertInput = {
   seq_id: string;
@@ -36,7 +43,7 @@ export type ExpansionSet = {
   command_dict_id: number;
   created_at: string;
   description: string;
-  expansion_rules: ExpansionRule[];
+  expansion_rules: ExpansionRuleSlim[];
   id: number;
   mission_model_id: number;
   name: string;

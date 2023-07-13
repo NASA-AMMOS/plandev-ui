@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
-  import type { PlanTagsInsertInput, Tag } from '../../types/tags';
+  import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -29,19 +29,23 @@
     }
   }
 
-  async function onTagsInputChange({ detail: tag }: CustomEvent<Tag>) {
-    const newTags = await effects.createTags([{ color: tag.color, name: tag.name }], user);
-    if (newTags) {
-      const newPlanTags: PlanTagsInsertInput[] = (newTags || []).map(({ id: tag_id }) => ({
+  async function onTagsInputChange(event: TagsChangeEvent) {
+    const {
+      detail: { tag, type },
+    } = event;
+    if (type === 'remove') {
+      await effects.deletePlanTags([tag.id], user);
+    } else if (type === 'create' || type === 'select') {
+      let tagsToAdd: Tag[] = [tag];
+      if (type === 'create') {
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+      }
+      const newPlanTags: PlanTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
         plan_id: plan?.id || -1,
         tag_id,
       }));
       await effects.createPlanTags(newPlanTags, user);
     }
-  }
-
-  async function onTagsInputRemove({ detail: tag }: CustomEvent<Tag>) {
-    await effects.deletePlanTags([tag.id], user);
   }
 </script>
 
@@ -129,10 +133,9 @@
               ],
             ]}
             options={tags}
-            disabled={!hasPermission}
+            editable={hasPermission}
             selected={planTags}
-            on:add={onTagsInputChange}
-            on:remove={onTagsInputRemove}
+            on:change={onTagsInputChange}
           />
         </Input>
       </Collapse>
