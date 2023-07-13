@@ -47,6 +47,18 @@ Expected: ${expectedValue}`,
   },
 
   /**
+   * InvalidEpochTime error code and message.
+   */
+  InvalidEpochTime: (): ErrorCode => {
+    return {
+      id: -2,
+      message: `Time Error: Incorrectly formatted duration string.
+Received: A malformed duration.
+Expected: [+/-]hh:mm:ss[.sss] or [+/-]DDDThh:mm:ss[.sss]`,
+    };
+  },
+
+  /**
    * InvalidInteger error code and message.
    */
   InvalidInteger: (argValue: string): ErrorCode => {

@@ -1,11 +1,12 @@
 import tsc from 'typescript';
 import type { Diagnostic as ResponseDiagnostic } from '../../types/monaco-internal';
+import type { ErrorCode } from '../customCodes';
 import { CustomErrorCodes } from '../customCodes';
 import { getDescendants, makeDiagnostic } from '../workerHelpers';
 
 const DOY_REGEX = /^(\d{4})-(\d{3})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
-const HMS_REGEX = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
-
+const HMS_RELATIVE_REGEX = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
+const HMS_EPOCH_REGEX = /^([-+])?(\d{3}T)?(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 /**
  * Generates sequencing diagnostics for a given file using the provided language service.
  * @param {string} fileName - The name of the file to generate diagnostics for.
@@ -48,30 +49,48 @@ function generateRelativeTimeStringDiagnostics(
     return [];
   }
 
-  const relativeTimeNodes = getDescendants(
-    sourceFileSymbol,
-    node =>
-      tsc.isIdentifier(node) &&
-      (node.escapedText === 'E' || node.escapedText === 'R') &&
-      (tsc.isTaggedTemplateExpression(node.parent) || tsc.isCallExpression(node.parent)),
-  ).map(node => node.parent);
-
-  for (const relativeTimeNode of relativeTimeNodes) {
-    if (tsc.isTaggedTemplateExpression(relativeTimeNode)) {
-      if (tsc.isNoSubstitutionTemplateLiteral(relativeTimeNode.template)) {
-        if (!HMS_REGEX.test(relativeTimeNode.template.text)) {
-          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidRelativeTime(), sourceFile, relativeTimeNode));
+  const processTimeNodes = (timeNodes: tsc.Node[], regex: RegExp, errorCode: ErrorCode) => {
+    for (const timeNode of timeNodes) {
+      if (tsc.isTaggedTemplateExpression(timeNode)) {
+        if (tsc.isNoSubstitutionTemplateLiteral(timeNode.template)) {
+          if (!regex.test(timeNode.template.text)) {
+            diagnostics.push(makeDiagnostic(errorCode, sourceFile, timeNode));
+          }
         }
-      }
-    } else if (tsc.isCallExpression(relativeTimeNode)) {
-      const firstArg = relativeTimeNode.arguments[0];
-      if (tsc.isStringLiteral(firstArg) || tsc.isNoSubstitutionTemplateLiteral(firstArg)) {
-        if (!HMS_REGEX.test(firstArg.text)) {
-          diagnostics.push(makeDiagnostic(CustomErrorCodes.InvalidRelativeTime(), sourceFile, relativeTimeNode));
+      } else if (tsc.isCallExpression(timeNode)) {
+        const firstArg = timeNode.arguments[0];
+        if (tsc.isStringLiteral(firstArg) || tsc.isNoSubstitutionTemplateLiteral(firstArg)) {
+          if (!regex.test(firstArg.text)) {
+            diagnostics.push(makeDiagnostic(errorCode, sourceFile, timeNode));
+          }
         }
       }
     }
-  }
+  };
+
+  processTimeNodes(
+    getDescendants(
+      sourceFileSymbol,
+      node =>
+        tsc.isIdentifier(node) &&
+        node.escapedText === 'R' &&
+        (tsc.isTaggedTemplateExpression(node.parent) || tsc.isCallExpression(node.parent)),
+    ).map(node => node.parent),
+    HMS_RELATIVE_REGEX,
+    CustomErrorCodes.InvalidRelativeTime(),
+  );
+
+  processTimeNodes(
+    getDescendants(
+      sourceFileSymbol,
+      node =>
+        tsc.isIdentifier(node) &&
+        node.escapedText === 'E' &&
+        (tsc.isTaggedTemplateExpression(node.parent) || tsc.isCallExpression(node.parent)),
+    ).map(node => node.parent),
+    HMS_EPOCH_REGEX,
+    CustomErrorCodes.InvalidEpochTime(),
+  );
 
   return diagnostics;
 }
