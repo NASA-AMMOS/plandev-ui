@@ -98,7 +98,6 @@ test.describe.serial('Plan', () => {
   });
 
   test(`Hovering on 'Constraints' in the top navigation bar should show the constraints menu`, async () => {
-    await page.pause();
     await expect(plan.navButtonConstraintsMenu).not.toBeVisible();
     plan.navButtonConstraints.hover();
     await expect(plan.navButtonConstraintsMenu).toBeVisible();

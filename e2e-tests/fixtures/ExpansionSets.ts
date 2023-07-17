@@ -65,7 +65,7 @@ export class ExpansionSets {
 
   async selectRule() {
     await this.page.waitForSelector(this.inputRuleSelector, { state: 'attached' });
-    await this.inputRule.click();
+    await this.inputRule.first().click();
   }
 
   updatePage(page: Page): void {

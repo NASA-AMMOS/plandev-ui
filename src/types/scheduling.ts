@@ -36,12 +36,12 @@ export type SchedulingGoalAnalysis = {
 
 export type SchedulingConditionInsertInput = Omit<
   SchedulingCondition,
-  'created_date' | 'id' | 'modified_date' | 'revision'
+  'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision'
 >;
 
 export type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
-  'analyses' | 'created_date' | 'id' | 'modified_date' | 'revision'
+  'analyses' | 'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision'
 >;
 
 export type SchedulingResponse = {

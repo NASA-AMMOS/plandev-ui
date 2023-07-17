@@ -32,8 +32,6 @@ test.beforeAll(async ({ browser }) => {
   await plans.createPlan();
   await plan.goto();
 
-  await page.pause();
-
   await plan.showPanel('Simulation', true);
 
   await page.getByRole('button', { name: 'CreateActivity-child' }).click();

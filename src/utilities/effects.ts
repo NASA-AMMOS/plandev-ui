@@ -778,9 +778,7 @@ const effects = {
       }
 
       const conditionInsertInput: SchedulingConditionInsertInput = {
-        author: user?.id ?? 'unknown',
         definition,
-        last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
         ...(description && { description }),
@@ -814,9 +812,7 @@ const effects = {
       }
 
       const goalInsertInput: SchedulingGoalInsertInput = {
-        author: user?.id ?? 'unknown',
         definition,
-        last_modified_by: user?.id ?? 'unknown',
         model_id: modelId,
         name,
         ...(description && { description }),

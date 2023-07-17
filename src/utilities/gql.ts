@@ -194,12 +194,10 @@ const gql = {
   CREATE_SCHEDULING_CONDITION: `#graphql
     mutation CreateSchedulingCondition($condition: scheduling_condition_insert_input!) {
       createSchedulingCondition: insert_scheduling_condition_one(object: $condition) {
-        author
         created_date
         definition
         description
         id
-        last_modified_by
         model_id
         modified_date
         name
@@ -211,12 +209,10 @@ const gql = {
   CREATE_SCHEDULING_GOAL: `#graphql
     mutation CreateSchedulingGoal($goal: scheduling_goal_insert_input!) {
       createSchedulingGoal: insert_scheduling_goal_one(object: $goal) {
-        author
         created_date
         definition
         description
         id
-        last_modified_by
         model_id
         modified_date
         name
@@ -855,7 +851,7 @@ const gql = {
 
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: `#graphql
     query GetPlanMergeNonConflictingActivities($merge_request_id: Int!) {
-      nonConflictingActivities: get_non_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {
+      nonConflictingActivities: get_non_conflicting_activities(args: { _merge_request_id: $merge_request_id } ) {
         activity_id,
         change_type,
         source,
@@ -1118,7 +1114,7 @@ const gql = {
 
   PLAN_MERGE_BEGIN: `#graphql
     mutation PlanMergeBegin($merge_request_id: Int!) {
-      begin_merge(args: { merge_request_id: $merge_request_id } ) {
+      begin_merge(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1126,7 +1122,7 @@ const gql = {
 
   PLAN_MERGE_CANCEL: `#graphql
     mutation PlanMergeCancel($merge_request_id: Int!) {
-      cancel_merge(args: { merge_request_id: $merge_request_id } ) {
+      cancel_merge(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1134,7 +1130,7 @@ const gql = {
 
   PLAN_MERGE_COMMIT: `#graphql
     mutation PlanMergeCommit($merge_request_id: Int) {
-      commit_merge(args: { merge_request_id: $merge_request_id } ) {
+      commit_merge(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1150,7 +1146,7 @@ const gql = {
 
   PLAN_MERGE_REQUEST_WITHDRAW: `#graphql
     mutation PlanMergeRequestWithdraw($merge_request_id: Int!) {
-      withdraw_merge_request(args: { merge_request_id: $merge_request_id } ) {
+      withdraw_merge_request(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1449,7 +1445,7 @@ const gql = {
 
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: `#graphql
     subscription SubPlanMergeConflictingActivities($merge_request_id: Int!) {
-      conflictingActivities: get_conflicting_activities(args: { merge_request_id: $merge_request_id } ) {
+      conflictingActivities: get_conflicting_activities(args: { _merge_request_id: $merge_request_id } ) {
         activity_id,
         change_type_source,
         change_type_target,
