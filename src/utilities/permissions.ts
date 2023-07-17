@@ -13,6 +13,7 @@ import type {
   ReadPermissionCheck,
   UpdatePermissionCheck,
 } from '../types/permissions';
+import type { SimulationTemplate } from '../types/simulation';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'admin';
@@ -277,6 +278,12 @@ const queryPermissions = {
   SUB_EXPANSION_SETS: (user: User | null): boolean => {
     return getPermission(['expansion_set'], user);
   },
+  SUB_SIMULATION: (user: User | null): boolean => {
+    return getPermission(['simulation'], user);
+  },
+  SUB_SIMULATION_TEMPLATES: (user: User | null): boolean => {
+    return getPermission(['simulation_template'], user);
+  },
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
     return getPermission(['user_sequence'], user);
   },
@@ -353,6 +360,10 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
   canExpand: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
+interface SimulationCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
+  canRun: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
 interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canAssign: (user: User | null, plan: PlanWithOwners, asset?: T) => boolean;
 }
@@ -368,6 +379,8 @@ interface FeaturePermissions {
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
   sequences: CRUDPermission<AssetWithOwner>;
+  simulation: SimulationCRUDPermission<AssetWithOwner>;
+  simulationTemplates: AssignablePlanAssetCRUDPermission<SimulationTemplate>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -456,6 +469,28 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => isUserAdmin(user) || queryPermissions.SUB_USER_SEQUENCES(user),
     canUpdate: (user, sequence) =>
       isUserAdmin(user) || (isUserOwner(user, sequence) && queryPermissions.UPDATE_USER_SEQUENCE(user)),
+  },
+  simulation: {
+    canCreate: () => false, // no feature to create a simulation exists
+    canDelete: () => false, // no feature to delete a simulation exists
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_SIMULATION(user),
+    canRun: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.SIMULATE(user)),
+    canUpdate: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_SIMULATION(user)),
+  },
+  simulationTemplates: {
+    canAssign: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_SIMULATION(user)),
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_SIMULATION_TEMPLATE(user),
+    canDelete: (user, _plan, template) =>
+      isUserAdmin(user) || (isUserOwner(user, template) && queryPermissions.DELETE_SIMULATION_TEMPLATE(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_SIMULATION_TEMPLATES(user),
+    canUpdate: (user, plan) =>
+      isUserAdmin(user) || (isUserOwner(user, plan) && queryPermissions.UPDATE_SIMULATION_TEMPLATE(user)),
   },
 };
 

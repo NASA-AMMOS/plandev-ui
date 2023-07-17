@@ -1,4 +1,5 @@
 import type { ActivityDirectiveId } from './activity';
+import type { UserId } from './app';
 import type { BaseError, SimulationDatasetError } from './errors';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
@@ -87,6 +88,7 @@ export type SimulationTemplate = {
   arguments: ArgumentsMap;
   description: string;
   id: number;
+  owner: UserId;
 };
 
 export type SimulationTemplateInsertInput = {

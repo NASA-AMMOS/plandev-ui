@@ -21,6 +21,8 @@
   import effects from '../../utilities/effects';
   import gql from '../../utilities/gql';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
   import { required, timestamp } from '../../utilities/validators';
@@ -38,34 +40,46 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
+  const updatePermissionError = 'You do not have permission to update this simulation';
+
   let endTimeDoy: string;
   let endTimeDoyField: FieldStore<string>;
   let formParameters: FormParameter[] = [];
+  let hasRunPermission: boolean = false;
+  let hasUpdatePermission: boolean = false;
   let numOfUserChanges: number = 0;
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let simulationDatasets: GqlSubscribable<SimulationDataset[]>;
 
-  $: startTimeDoy =
-    $simulation && $simulation.simulation_start_time
-      ? getDoyTime(new Date($simulation.simulation_start_time))
-      : $plan.start_time_doy;
+  $: if (user !== null && $plan !== null) {
+    hasRunPermission = featurePermissions.simulation.canRun(user, $plan);
+    hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan);
+  }
+  $: if ($plan) {
+    startTimeDoy =
+      $simulation && $simulation.simulation_start_time
+        ? getDoyTime(new Date($simulation.simulation_start_time))
+        : $plan.start_time_doy;
+  }
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
-  $: endTimeDoy =
-    $simulation && $simulation.simulation_end_time
-      ? getDoyTime(new Date($simulation.simulation_end_time))
-      : $plan.end_time_doy;
+  $: if ($plan) {
+    endTimeDoy =
+      $simulation && $simulation.simulation_end_time
+        ? getDoyTime(new Date($simulation.simulation_end_time))
+        : $plan.end_time_doy;
+  }
   $: endTimeDoyField = field<string>(endTimeDoy, [required, timestamp]);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
 
   $: modelParametersMap = $plan?.model?.parameters?.parameters ?? {};
-  $: if ($simulation) {
-    effects
-      .getEffectiveModelArguments($plan.model.id, $simulation.arguments, user)
-      .then(({ arguments: defaultArguments }) => {
+  $: if ($simulation && $plan) {
+    effects.getEffectiveModelArguments($plan.model.id, $simulation.arguments, user).then(response => {
+      if ($simulation !== null && response !== null) {
+        const { arguments: defaultArguments } = response;
         // Displayed simulation arguments are either user input arguments,
         // simulation template arguments, or default arguments.
         // User input arguments take precedence over simulation template arguments,
@@ -81,7 +95,8 @@
           $simulation?.template?.arguments,
           defaultArgumentsMap,
         );
-      });
+      }
+    });
   }
 
   $: if ($plan) {
@@ -95,44 +110,50 @@
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
-    const { detail: formParameter } = event;
-    const newArgumentsMap = getArguments($simulation?.arguments, formParameter);
-    const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
-    const newSimulation: Simulation = {
-      ...$simulation,
-      arguments: newArgumentsMap,
-    };
+    if ($simulation !== null) {
+      const { detail: formParameter } = event;
+      const newArgumentsMap = getArguments($simulation?.arguments, formParameter);
+      const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
+      const newSimulation: Simulation = {
+        ...$simulation,
+        arguments: newArgumentsMap,
+      };
 
-    effects.updateSimulation(newSimulation, user, newFiles);
+      effects.updateSimulation(newSimulation, user, newFiles);
+    }
   }
 
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
-    const { detail: formParameter } = event;
-    const { arguments: argumentsMap } = $simulation;
-    const newArguments = getArguments(argumentsMap, {
-      ...formParameter,
-      value: $simulation.template ? $simulation.template.arguments[formParameter.name] : null,
-    });
-    const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
-    const newSimulation: Simulation = {
-      ...$simulation,
-      arguments: newArguments,
-    };
+    if ($simulation !== null) {
+      const { detail: formParameter } = event;
+      const { arguments: argumentsMap } = $simulation;
+      const newArguments = getArguments(argumentsMap, {
+        ...formParameter,
+        value: $simulation.template ? $simulation.template.arguments[formParameter.name] : null,
+      });
+      const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
+      const newSimulation: Simulation = {
+        ...$simulation,
+        arguments: newArguments,
+      };
 
-    effects.updateSimulation(newSimulation, user, newFiles);
+      effects.updateSimulation(newSimulation, user, newFiles);
+    }
   }
 
   async function applyTemplateToSimulation(simulationTemplate: SimulationTemplate | null, numOfUserChanges: number) {
-    if (simulationTemplate === null) {
-      effects.updateSimulation(
-        {
-          ...$simulation,
-          template: null,
-        },
-        user,
-      );
-    } else {
-      effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges, user);
+    if ($simulation !== null) {
+      if (simulationTemplate === null) {
+        effects.updateSimulation(
+          {
+            ...$simulation,
+            template: null,
+          },
+          user,
+        );
+      } else {
+        effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges, user);
+      }
     }
   }
 
@@ -142,48 +163,58 @@
   }
 
   async function onDeleteSimulationTemplate(event: CustomEvent<number>) {
-    const { detail: id } = event;
-    await effects.deleteSimulationTemplate(id, $plan.model.name, user);
+    if ($plan) {
+      const { detail: id } = event;
+      await effects.deleteSimulationTemplate(id, $plan.model.name, user);
+    }
   }
 
   async function onSaveNewSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
-    const {
-      detail: { description: templateName },
-    } = event;
-    const newSimulationTemplate = await effects.createSimulationTemplate(
-      $simulation.arguments,
-      templateName,
-      $plan.model.id,
-      user,
-    );
+    if ($plan && $simulation !== null) {
+      const {
+        detail: { description: templateName },
+      } = event;
+      const newSimulationTemplate = await effects.createSimulationTemplate(
+        $simulation.arguments,
+        templateName,
+        $plan.model.id,
+        user,
+      );
 
-    if (newSimulationTemplate !== null) {
-      await applyTemplateToSimulation(newSimulationTemplate, 0);
+      if (newSimulationTemplate !== null) {
+        await applyTemplateToSimulation(newSimulationTemplate, 0);
+      }
     }
   }
 
   async function onSaveSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
-    const {
-      detail: { description: templateName },
-    } = event;
-    effects.updateSimulationTemplate(
-      $simulation.template.id,
-      {
-        arguments: $simulation.arguments,
-        description: templateName,
-      },
-      user,
-    );
+    if ($simulation?.template) {
+      const {
+        detail: { description: templateName },
+      } = event;
+      effects.updateSimulationTemplate(
+        $simulation.template.id,
+        {
+          arguments: $simulation.arguments,
+          description: templateName,
+        },
+        user,
+      );
+    }
   }
 
   function updateStartTime(doyString: string) {
-    const newSimulation: Simulation = { ...$simulation, simulation_start_time: doyString };
-    effects.updateSimulation(newSimulation, user);
+    if ($simulation !== null) {
+      const newSimulation: Simulation = { ...$simulation, simulation_start_time: doyString };
+      effects.updateSimulation(newSimulation, user);
+    }
   }
 
   function updateEndTime(doyString: string) {
-    const newSimulation: Simulation = { ...$simulation, simulation_end_time: doyString };
-    effects.updateSimulation(newSimulation, user);
+    if ($simulation !== null) {
+      const newSimulation: Simulation = { ...$simulation, simulation_end_time: doyString };
+      effects.updateSimulation(newSimulation, user);
+    }
   }
 
   function onUpdateStartTime() {
@@ -199,13 +230,17 @@
   }
 
   async function onPlanStartTimeClick() {
-    await startTimeDoyField.validateAndSet($plan.start_time_doy);
-    updateStartTime($startTimeDoyField.value);
+    if ($plan) {
+      await startTimeDoyField.validateAndSet($plan.start_time_doy);
+      updateStartTime($startTimeDoyField.value);
+    }
   }
 
   async function onPlanEndTimeClick() {
-    await endTimeDoyField.validateAndSet($plan.end_time_doy);
-    updateEndTime($endTimeDoyField.value);
+    if ($plan) {
+      await endTimeDoyField.validateAndSet($plan.end_time_doy);
+      updateEndTime($endTimeDoyField.value);
+    }
   }
 </script>
 
@@ -220,6 +255,15 @@
           : ''}
         title="Simulate"
         showLabel
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasRunPermission,
+              permissionError: 'You do not have permission to run a simulation',
+            },
+          ],
+        ]}
         on:click={() => effects.simulate(user)}
       />
     </PanelHeaderActions>
@@ -233,6 +277,15 @@
           label="Start Time"
           layout="inline"
           name="start-time"
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasUpdatePermission,
+                permissionError: updatePermissionError,
+              },
+            ],
+          ]}
           on:change={onUpdateStartTime}
           on:keydown={onUpdateStartTime}
         >
@@ -245,6 +298,15 @@
           label="End Time"
           layout="inline"
           name="end-time"
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasUpdatePermission,
+                permissionError: updatePermissionError,
+              },
+            ],
+          ]}
           on:change={onUpdateEndTime}
           on:keydown={onUpdateEndTime}
         >
@@ -261,6 +323,8 @@
           <SimulationTemplateInput
             hasChanges={numOfUserChanges > 0}
             selectedSimulationTemplate={$simulation?.template}
+            plan={$plan}
+            {user}
             on:applyTemplate={onApplySimulationTemplate}
             on:deleteTemplate={onDeleteSimulationTemplate}
             on:saveNewTemplate={onSaveNewSimulationTemplate}
@@ -271,6 +335,15 @@
           <Parameters
             {formParameters}
             parameterType="simulation"
+            use={[
+              [
+                permissionHandler,
+                {
+                  hasPermission: hasUpdatePermission,
+                  permissionError: updatePermissionError,
+                },
+              ],
+            ]}
             on:change={onChangeFormParameters}
             on:reset={onResetFormParameters}
           />

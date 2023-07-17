@@ -27,11 +27,6 @@
   export let plan: Plan | null;
   export let user: User | null;
 
-  let hasAssignPermission: boolean = false;
-  let hasCreatePermission: boolean = false;
-  let hasDeletePermission: boolean = false;
-  let hasUpdatePermission: boolean = false;
-
   const dispatch = createEventDispatcher();
 
   let activityPresets: GqlSubscribable<ActivityPreset[]> = gqlSubscribable<ActivityPreset[]>(
@@ -40,6 +35,10 @@
     [],
     user,
   );
+  let hasAssignPermission: boolean = false;
+  let hasCreatePermission: boolean = false;
+  let hasDeletePermission: boolean = false;
+  let hasUpdatePermission: boolean = false;
   let options: DropdownOptions = [];
 
   $: if (activityDirective != null) {

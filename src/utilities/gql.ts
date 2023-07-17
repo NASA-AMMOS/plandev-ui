@@ -1663,6 +1663,7 @@ const gql = {
           arguments
           description
           id
+          owner
         }
       }
     }
@@ -1715,6 +1716,7 @@ const gql = {
         arguments
         description
         id
+        owner
       }
     }
   `,
