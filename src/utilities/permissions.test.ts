@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { hasNoAuthorization, isPlanCollaborator, isPlanOwner, isUserAdmin, isUserOwner } from './permissions';
+import {
+  ADMIN_ROLE,
+  hasNoAuthorization,
+  isAdminRole,
+  isPlanCollaborator,
+  isPlanOwner,
+  isUserAdmin,
+  isUserOwner,
+} from './permissions';
 
 describe('hasNoAuthorization', () => {
   test('Should return whether or not the user has authorization', () => {
@@ -7,7 +15,7 @@ describe('hasNoAuthorization', () => {
     expect(
       hasNoAuthorization({
         activeRole: 'user',
-        allowedRoles: ['admin', 'user'],
+        allowedRoles: [ADMIN_ROLE, 'user'],
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {},
@@ -18,7 +26,7 @@ describe('hasNoAuthorization', () => {
     expect(
       hasNoAuthorization({
         activeRole: 'user',
-        allowedRoles: ['admin', 'user'],
+        allowedRoles: [ADMIN_ROLE, 'user'],
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {
@@ -31,11 +39,20 @@ describe('hasNoAuthorization', () => {
 });
 
 describe('Check roles', () => {
+  test('Should return whether or not the provided role an "admin" role', () => {
+    expect(isAdminRole('user')).toEqual(false);
+    expect(isAdminRole('viewer')).toEqual(false);
+    expect(isAdminRole('foo')).toEqual(false);
+    expect(isAdminRole('admin')).toEqual(false);
+
+    expect(isAdminRole(ADMIN_ROLE)).toEqual(true);
+  });
+
   test('Should return whether or not the current role of the user is "admin"', () => {
     expect(
       isUserAdmin({
         activeRole: 'user',
-        allowedRoles: ['admin', 'user'],
+        allowedRoles: [ADMIN_ROLE, 'user'],
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {
@@ -47,8 +64,8 @@ describe('Check roles', () => {
 
     expect(
       isUserAdmin({
-        activeRole: 'admin',
-        allowedRoles: ['admin', 'user'],
+        activeRole: ADMIN_ROLE,
+        allowedRoles: [ADMIN_ROLE, 'user'],
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {},
@@ -62,7 +79,7 @@ describe('Check roles', () => {
       isUserOwner(
         {
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {
@@ -79,8 +96,8 @@ describe('Check roles', () => {
     expect(
       isUserOwner(
         {
-          activeRole: 'admin',
-          allowedRoles: ['admin', 'user'],
+          activeRole: ADMIN_ROLE,
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
@@ -98,7 +115,7 @@ describe('Check roles', () => {
       isPlanOwner(
         {
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {
@@ -117,8 +134,8 @@ describe('Check roles', () => {
     expect(
       isPlanOwner(
         {
-          activeRole: 'admin',
-          allowedRoles: ['admin', 'user'],
+          activeRole: ADMIN_ROLE,
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
@@ -138,7 +155,7 @@ describe('Check roles', () => {
       isPlanCollaborator(
         {
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'baz',
           permissibleQueries: {
@@ -157,8 +174,8 @@ describe('Check roles', () => {
     expect(
       isPlanCollaborator(
         {
-          activeRole: 'admin',
-          allowedRoles: ['admin', 'user'],
+          activeRole: ADMIN_ROLE,
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},

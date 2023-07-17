@@ -9,6 +9,7 @@ import type {
   PlanMergeNonConflictingActivity,
   PlanMergeRequestSchema,
 } from '../../types/plan';
+import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
 vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://github.com/sveltejs/kit/issues/8180
@@ -67,9 +68,9 @@ const mockInitialPlan: Plan = {
 };
 
 const user: User = {
-  activeRole: 'admin',
-  allowedRoles: ['admin'],
-  defaultRole: 'admin',
+  activeRole: ADMIN_ROLE,
+  allowedRoles: [ADMIN_ROLE],
+  defaultRole: ADMIN_ROLE,
   id: 'foo',
   permissibleQueries: {},
   token: '',

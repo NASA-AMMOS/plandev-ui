@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/public';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { isLoginEnabled, shouldRedirectToLogin } from './login';
+import { ADMIN_ROLE } from './permissions';
 
 vi.mock('$env/dynamic/public', () => ({
   env: {
@@ -34,7 +35,7 @@ describe('login util functions', () => {
       expect(
         shouldRedirectToLogin({
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
@@ -45,7 +46,7 @@ describe('login util functions', () => {
       expect(
         shouldRedirectToLogin({
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {
@@ -63,7 +64,7 @@ describe('login util functions', () => {
       expect(
         shouldRedirectToLogin({
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
@@ -74,7 +75,7 @@ describe('login util functions', () => {
       expect(
         shouldRedirectToLogin({
           activeRole: 'user',
-          allowedRoles: ['admin', 'user'],
+          allowedRoles: [ADMIN_ROLE, 'user'],
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {

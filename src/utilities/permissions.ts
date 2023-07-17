@@ -16,7 +16,7 @@ import type {
 import type { SimulationTemplate } from '../types/simulation';
 import { showFailureToast } from './toast';
 
-export const ADMIN_ROLE = 'admin';
+export const ADMIN_ROLE = 'aerie_admin';
 
 export const INVALID_JWT = 'invalid-jwt';
 export const EXPIRED_JWT = 'JWTExpired';
@@ -30,8 +30,12 @@ function getPermission(queries: string[], user: User | null): boolean {
   return false;
 }
 
+export function isAdminRole(userRole?: UserRole) {
+  return userRole === ADMIN_ROLE;
+}
+
 export function isUserAdmin(user: User | null) {
-  return user?.activeRole === ADMIN_ROLE;
+  return isAdminRole(user?.activeRole);
 }
 
 export function isUserOwner(user: User | null, thingWithOwner?: { owner: UserId } | null): boolean {
