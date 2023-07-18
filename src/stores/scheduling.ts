@@ -2,8 +2,8 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { plan } from '../stores/plan';
 import type {
   SchedulingCondition,
-  SchedulingGoal,
   SchedulingGoalAnalysis,
+  SchedulingGoalSlim,
   SchedulingSpecCondition,
   SchedulingSpecGoal,
 } from '../types/scheduling';
@@ -27,7 +27,7 @@ export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specifica
 
 export const schedulingConditions = gqlSubscribable<SchedulingCondition[]>(gql.SUB_SCHEDULING_CONDITIONS, {}, [], null);
 
-export const schedulingGoals = gqlSubscribable<SchedulingGoal[]>(gql.SUB_SCHEDULING_GOALS, {}, [], null);
+export const schedulingGoals = gqlSubscribable<SchedulingGoalSlim[]>(gql.SUB_SCHEDULING_GOALS, {}, [], null);
 
 export const schedulingSpecConditions = gqlSubscribable<SchedulingSpecCondition[]>(
   gql.SUB_SCHEDULING_SPEC_CONDITIONS,

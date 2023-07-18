@@ -19,6 +19,7 @@
   initialGoalName={data.initialGoal.name}
   initialGoalModelId={data.initialGoal.model_id}
   initialGoalModifiedDate={data.initialGoal.modified_date}
+  initialGoalTags={data.initialGoal.tags.map(({ tag }) => tag)}
   initialSpecId={data.initialSpecId}
   models={data.models}
   plans={data.plans}

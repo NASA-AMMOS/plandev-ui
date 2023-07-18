@@ -129,6 +129,9 @@ const queryPermissions = {
   CREATE_SCHEDULING_GOAL: (user: User | null): boolean => {
     return getPermission(['insert_scheduling_goal_one'], user);
   },
+  CREATE_SCHEDULING_GOAL_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_scheduling_goal_tags'], user);
+  },
   CREATE_SCHEDULING_SPEC: (user: User | null): boolean => {
     return getPermission(['insert_scheduling_specification_one'], user);
   },
@@ -209,6 +212,9 @@ const queryPermissions = {
   },
   DELETE_SCHEDULING_GOAL: (user: User | null): boolean => {
     return getPermission(['delete_scheduling_goal_by_pk'], user);
+  },
+  DELETE_SCHEDULING_GOAL_TAGS: (user: User | null): boolean => {
+    return getPermission(['delete_scheduling_goal_tags'], user);
   },
   DELETE_SCHEDULING_SPEC_GOAL: (user: User | null): boolean => {
     return getPermission(['delete_scheduling_specification_goals_by_pk'], user);

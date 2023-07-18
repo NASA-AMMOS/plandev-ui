@@ -102,6 +102,7 @@ import type {
   ConstraintTagsInsertInput,
   ExpansionRuleTagsInsertInput,
   PlanTagsInsertInput,
+  SchedulingGoalTagsInsertInput,
   Tag,
   TagsInsertInput,
 } from '../types/tags';
@@ -460,8 +461,8 @@ const effects = {
       const { affected_rows } = insert_expansion_rule_tags;
       return affected_rows;
     } catch (e) {
-      catchError('Create ExpansionRule Tags Failed', e as Error);
-      showFailureToast('Create ExpansionRule Tags Failed');
+      catchError('Create Expansion Rule Tags Failed', e as Error);
+      showFailureToast('Create Expansion Rule Tags Failed');
       return null;
     }
   },
@@ -829,6 +830,23 @@ const effects = {
     }
   },
 
+  async createSchedulingGoalTags(tags: SchedulingGoalTagsInsertInput[], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_SCHEDULING_GOAL_TAGS(user)) {
+        throwPermissionError('create scheduling goal tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_SCHEDULING_GOAL_TAGS, { tags }, user);
+      const { insert_scheduling_goal_tags } = data;
+      const { affected_rows } = insert_scheduling_goal_tags;
+      return affected_rows;
+    } catch (e) {
+      catchError('Create Scheduling Goal Tags Failed', e as Error);
+      showFailureToast('Create Scheduling Goal Tags Failed');
+      return null;
+    }
+  },
+
   async createSchedulingSpec(
     spec: SchedulingSpecInsertInput,
     user: User | null,
@@ -862,15 +880,19 @@ const effects = {
     }
   },
 
-  async createSchedulingSpecGoal(spec_goal: SchedulingSpecGoalInsertInput, user: User | null): Promise<void> {
+  async createSchedulingSpecGoal(spec_goal: SchedulingSpecGoalInsertInput, user: User | null): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_SCHEDULING_SPEC_GOAL(user)) {
         throwPermissionError('create a scheduling spec goal');
       }
 
-      await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal }, user);
+      const data = await reqHasura(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal }, user);
+      const { createSchedulingGoal } = data;
+      const { specification_id } = createSchedulingGoal;
+      return specification_id;
     } catch (e) {
       catchError(e as Error);
+      return null;
     }
   },
 
@@ -1240,7 +1262,6 @@ const effects = {
       const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_EXPANSION_RULE_TAGS, { ids }, user);
       const { delete_expansion_rule_tags } = data;
       const { affected_rows } = delete_expansion_rule_tags;
-      showSuccessToast('Expansion Rule Updated Successfully');
       return affected_rows;
     } catch (e) {
       catchError('Delete Expansion Rule Tags Failed', e as Error);
@@ -1449,6 +1470,23 @@ const effects = {
       catchError('Scheduling Goal Delete Failed', e as Error);
       showFailureToast('Scheduling Goal Delete Failed');
       return false;
+    }
+  },
+
+  async deleteSchedulingGoalTags(ids: Tag['id'][], user: User | null): Promise<number | null> {
+    try {
+      if (!queryPermissions.DELETE_SCHEDULING_GOAL_TAGS(user)) {
+        throwPermissionError('delete scheduling goal tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_SCHEDULING_GOAL_TAGS, { ids }, user);
+      const { delete_scheduling_goal_tags } = data;
+      const { affected_rows } = delete_scheduling_goal_tags;
+      return affected_rows;
+    } catch (e) {
+      catchError('Delete Scheduling Goal Tags Failed', e as Error);
+      showFailureToast('Delete Scheduling Goal Tags Failed');
+      return null;
     }
   },
 

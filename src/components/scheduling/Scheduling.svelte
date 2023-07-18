@@ -20,14 +20,14 @@
   let editorTitle: string = 'Scheduling';
 
   $: if (selectedCondition !== null) {
-    const found = $schedulingConditions.findIndex(condition => condition.id === selectedCondition.id);
+    const found = $schedulingConditions.findIndex(condition => condition.id === selectedCondition?.id);
     if (found === -1) {
       selectedCondition = null;
     }
   }
 
   $: if (selectedGoal !== null) {
-    const found = $schedulingGoals.findIndex(goal => goal.id === selectedGoal.id);
+    const found = $schedulingGoals.findIndex(goal => goal.id === selectedGoal?.id);
     if (found === -1) {
       selectedGoal = null;
     }

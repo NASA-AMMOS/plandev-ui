@@ -211,7 +211,7 @@
 <PageTitle title={pageTitle} />
 
 <CssGrid bind:columns={$expansionRulesFormColumns}>
-  <Panel overflowYBody="hidden" padBody={false}>
+  <Panel padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Expansion Rule' : 'Edit Expansion Rule'}</SectionTitle>
 

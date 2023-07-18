@@ -5,7 +5,7 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import type { User } from '../../../types/app';
-  import type { SchedulingGoal } from '../../../types/scheduling';
+  import type { SchedulingGoalSlim } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
@@ -16,7 +16,7 @@
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
   export let enabled: boolean;
-  export let goal: SchedulingGoal;
+  export let goal: SchedulingGoalSlim;
   export let priority: number;
   export let specificationId: number;
   export let simulateAfter: boolean = true;

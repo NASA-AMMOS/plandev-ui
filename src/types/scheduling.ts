@@ -1,5 +1,6 @@
 import type { SchedulingError } from './errors';
 import type { ArgumentsMap } from './parameter';
+import type { Tag } from './tags';
 
 export type SchedulingGoal = {
   analyses: SchedulingGoalAnalysis[];
@@ -13,7 +14,10 @@ export type SchedulingGoal = {
   modified_date: string;
   name: string;
   revision: number;
+  tags: { tag: Tag }[];
 };
+
+export type SchedulingGoalSlim = Omit<SchedulingGoal, 'tags'> & { tags: { tag_id: number }[] };
 
 export type SchedulingCondition = {
   author: string | null;
@@ -41,7 +45,7 @@ export type SchedulingConditionInsertInput = Omit<
 
 export type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
-  'analyses' | 'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision'
+  'analyses' | 'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision' | 'tags'
 >;
 
 export type SchedulingResponse = {
@@ -71,7 +75,7 @@ export type SchedulingSpecCondition = {
 
 export type SchedulingSpecGoal = {
   enabled: boolean;
-  goal: SchedulingGoal;
+  goal: SchedulingGoalSlim;
   priority: number;
   simulate_after: boolean;
   specification_id: number;

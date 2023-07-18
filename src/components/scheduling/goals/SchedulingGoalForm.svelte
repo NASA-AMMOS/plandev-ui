@@ -4,18 +4,22 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { schedulingGoalsColumns } from '../../../stores/scheduling';
+  import { tags } from '../../../stores/tags';
   import type { User } from '../../../types/app';
   import type { ModelSlim } from '../../../types/model';
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingGoal, SchedulingSpecGoalInsertInput } from '../../../types/scheduling';
+  import type { SchedulingGoalTagsInsertInput, Tag, TagsChangeEvent } from '../../../types/tags';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
+  import { diffTags } from '../../../utilities/tags';
   import PageTitle from '../../app/PageTitle.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
+  import TagsInput from '../../ui/Tags/Tags.svelte';
   import SchedulingEditor from '../SchedulingEditor.svelte';
 
   export let initialGoalAuthor: string | null = null;
@@ -26,6 +30,7 @@
   export let initialGoalModelId: number | null = null;
   export let initialGoalModifiedDate: string | null = null;
   export let initialGoalName: string = '';
+  export let initialGoalTags: Tag[] = [];
   export let initialSpecId: number | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let plans: PlanSchedulingSpec[] = [];
@@ -40,14 +45,16 @@
   let goalModelId: number | null = initialGoalModelId;
   let goalModifiedDate: string | null = initialGoalModifiedDate;
   let goalName: string = initialGoalName;
+  let goalTags: Tag[] = initialGoalTags;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
   let savedGoal: Partial<SchedulingGoal> = {
     definition: goalDefinition,
     description: goalDescription,
-    model_id: goalModelId,
     name: goalName,
+    tags: goalTags.map(tag => ({ tag })),
+    ...(goalModelId !== null ? { model_id: goalModelId } : {}),
   };
 
   $: planOptions = plans
@@ -64,8 +71,9 @@
     diffGoals(savedGoal, {
       definition: goalDefinition,
       description: goalDescription,
-      model_id: goalModelId,
       name: goalName,
+      tags: goalTags.map(tag => ({ tag })),
+      ...(goalModelId !== null ? { model_id: goalModelId } : {}),
     }) || specId !== savedSpecId;
   $: saveButtonText = mode === 'edit' && !goalModified ? 'Saved' : 'Save';
   $: saveButtonClass = goalModified && saveButtonEnabled ? 'primary' : 'secondary';
@@ -74,7 +82,14 @@
 
   function diffGoals(goalA: Partial<SchedulingGoal>, goalB: Partial<SchedulingGoal>) {
     return Object.entries(goalA).some(([key, value]) => {
-      return goalB[key] !== value;
+      if (key === 'tags') {
+        return diffTags(
+          (goalA.tags || []).map(({ tag }) => tag),
+          (goalB.tags || []).map(({ tag }) => tag),
+        );
+      } else {
+        return goalB[key as keyof SchedulingGoal] !== value;
+      }
     });
   }
 
@@ -91,8 +106,23 @@
     }
   }
 
+  async function onTagsInputChange(event: TagsChangeEvent) {
+    const {
+      detail: { tag, type },
+    } = event;
+    if (type === 'remove') {
+      goalTags = goalTags.filter(t => t.name !== tag.name);
+    } else if (type === 'create' || type === 'select') {
+      let tagsToAdd: Tag[] = [tag];
+      if (type === 'create') {
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+      }
+      goalTags = goalTags.concat(tagsToAdd);
+    }
+  }
+
   async function saveGoal() {
-    if (saveButtonEnabled) {
+    if (saveButtonEnabled && goalModelId !== null) {
       if (mode === 'create') {
         const newGoal = await effects.createSchedulingGoal(
           goalDefinition,
@@ -102,7 +132,7 @@
           goalDescription,
         );
 
-        if (newGoal !== null) {
+        if (newGoal !== null && specId !== null) {
           const { id: newGoalId } = newGoal;
 
           const specGoalInsertInput: SchedulingSpecGoalInsertInput = {
@@ -110,11 +140,22 @@
             goal_id: newGoalId,
             specification_id: specId,
           };
+
           await effects.createSchedulingSpecGoal(specGoalInsertInput, user);
+
+          // Associate new tags with expansion rule
+          const newSchedulingGoalRuleTags: SchedulingGoalTagsInsertInput[] = goalTags.map(({ id: tag_id }) => ({
+            goal_id: newGoalId,
+            tag_id,
+          }));
+          await effects.createSchedulingGoalTags(newSchedulingGoalRuleTags, user);
 
           goto(`${base}/scheduling/goals/edit/${newGoalId}`);
         }
       } else if (mode === 'edit') {
+        if (goalId === null) {
+          return;
+        }
         if (specId !== savedSpecId) {
           const { confirm } = await showConfirmModal(
             'Confirm',
@@ -136,7 +177,7 @@
         };
         const updatedGoal = await effects.updateSchedulingGoal(goalId, goal, user);
         if (updatedGoal) {
-          if (specId !== savedSpecId) {
+          if (specId !== savedSpecId && savedSpecId !== null && specId !== null) {
             // If changing plans/specId, first delete existing scheduling_spec_goal record and re-insert a new one
             // this is to allow the insert triggers to keep priorities in sync.
             const deletedSchedulingSpecGoal = await effects.deleteSchedulingSpecGoal(goalId, savedSpecId, user);
@@ -149,8 +190,19 @@
             }
           }
 
+          // Associate new tags with expansion rule
+          const newSchedulingGoalTags: SchedulingGoalTagsInsertInput[] = goalTags.map(({ id: tag_id }) => ({
+            goal_id: goalId as number,
+            tag_id,
+          }));
+          await effects.createSchedulingGoalTags(newSchedulingGoalTags, user);
+
+          // Disassociate old tags from constraint
+          const unusedTags = initialGoalTags.filter(tag => !goalTags.find(t => tag.id === t.id)).map(tag => tag.id);
+          await effects.deleteSchedulingGoalTags(unusedTags, user);
+
           goalModifiedDate = updatedGoal.modified_date;
-          savedGoal = { ...goal };
+          savedGoal = { ...goal, tags: goalTags.map(tag => ({ tag })) };
         }
       }
     }
@@ -162,7 +214,7 @@
 <PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
 <CssGrid bind:columns={$schedulingGoalsColumns}>
-  <Panel overflowYBody="hidden" padBody={false}>
+  <Panel padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>{mode === 'create' ? 'New Scheduling Goal' : 'Edit Scheduling Goal'}</SectionTitle>
 
@@ -248,6 +300,11 @@
           name="goal-description"
           placeholder="Enter Goal Description (optional)"
         />
+      </fieldset>
+
+      <fieldset>
+        <label for="tags">Tags</label>
+        <TagsInput options={$tags} editable selected={goalTags} on:change={onTagsInputChange} />
       </fieldset>
     </svelte:fragment>
   </Panel>

@@ -5,16 +5,19 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
+  import { tagsMap } from '../../../stores/tags';
   import type { User } from '../../../types/app';
   import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
-  import type { SchedulingGoal } from '../../../types/scheduling';
+  import type { SchedulingGoal, SchedulingGoalSlim } from '../../../types/scheduling';
+  import type { Tag } from '../../../types/tags';
   import Input from '../../form/Input.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
+  import { tagsCellRenderer } from '../../ui/DataGrid/DataGridTagsCellRenderer';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
 
-  export let schedulingGoals: SchedulingGoal[] = [];
+  export let schedulingGoals: SchedulingGoalSlim[] = [];
   export let selectedGoal: SchedulingGoal | null | undefined = null;
   export let user: User | null;
 
@@ -40,6 +43,17 @@
     { field: 'author', filter: 'string', headerName: 'Author', sortable: true, width: 100 },
     { field: 'last_modified_by', filter: 'string', headerName: 'Last Modified By', sortable: true, width: 100 },
     { field: 'description', filter: 'string', headerName: 'Description', sortable: true, width: 120 },
+    {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      field: 'tags',
+      filter: 'text',
+      headerName: 'Tags',
+      resizable: true,
+      sortable: false,
+      width: 220,
+      wrapText: true,
+    },
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: SchedulingGoalsCellRendererParams) => {
@@ -83,12 +97,26 @@
   let filteredGoals: SchedulingGoal[] = [];
   let filterText: string = '';
 
-  $: filteredGoals = schedulingGoals.filter(goal => {
-    const filterTextLowerCase = filterText.toLowerCase();
-    const includesId = `${goal.id}`.includes(filterTextLowerCase);
-    const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
-    return includesId || includesName;
-  });
+  $: if (schedulingGoals && $tagsMap) {
+    filteredGoals = schedulingGoals
+      .filter(goal => {
+        const filterTextLowerCase = filterText.toLowerCase();
+        const includesId = `${goal.id}`.includes(filterTextLowerCase);
+        const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
+        return includesId || includesName;
+      })
+      .map(goal => {
+        const matchingTags: { tag: Tag }[] = [];
+        goal.tags.forEach(({ tag_id }) => {
+          const matchingTag = $tagsMap[tag_id];
+          if (matchingTag) {
+            matchingTags.push({ tag: matchingTag });
+          }
+        });
+        const goalWithTags: SchedulingGoal = { ...goal, tags: matchingTags };
+        return goalWithTags;
+      });
+  }
   $: if (selectedGoal !== null) {
     const found = schedulingGoals.findIndex(goal => goal.id === selectedGoal?.id);
     if (found === -1) {

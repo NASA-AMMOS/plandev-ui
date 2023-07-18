@@ -221,6 +221,17 @@ const gql = {
     }
   `,
 
+  CREATE_SCHEDULING_GOAL_TAGS: `#graphql
+    mutation CreateSchedulingGoalTags($tags: [scheduling_goal_tags_insert_input!]!) {
+      insert_scheduling_goal_tags(objects: $tags, on_conflict: {
+        constraint: scheduling_goal_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+    }
+  `,
+
   CREATE_SCHEDULING_SPEC: `#graphql
     mutation CreateSchedulingSpec($spec: scheduling_specification_insert_input!) {
       createSchedulingSpec: insert_scheduling_specification_one(object: $spec) {
@@ -470,6 +481,14 @@ const gql = {
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
         id
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_GOAL_TAGS: `#graphql
+    mutation DeleteSchedulingGoalTags($ids: [Int!]!) {
+        delete_scheduling_goal_tags(where: { tag_id: { _in: $ids } }) {
+          affected_rows
       }
     }
   `,
@@ -947,6 +966,13 @@ const gql = {
         modified_date
         name
         revision
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
       }
     }
   `,
@@ -1581,6 +1607,9 @@ const gql = {
         modified_date
         name
         revision
+        tags {
+          tag_id
+        }
       }
     }
   `,

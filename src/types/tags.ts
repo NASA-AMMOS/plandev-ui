@@ -14,6 +14,11 @@ export type ExpansionRuleTagsInsertInput = {
   tag_id: number;
 };
 
+export type SchedulingGoalTagsInsertInput = {
+  goal_id: number;
+  tag_id: number;
+};
+
 export type PlanTagsInsertInput = {
   plan_id: number;
   tag_id: number;
