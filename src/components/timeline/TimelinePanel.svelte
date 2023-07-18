@@ -23,6 +23,7 @@
   import type { User } from '../../types/app';
   import type { DirectiveVisibilityToggleMap, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
   import effects from '../../utilities/effects';
+  import { featurePermissions } from '../../utilities/permissions';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import Timeline from './Timeline.svelte';
@@ -31,9 +32,13 @@
 
   export let user: User | null;
 
+  let hasUpdatePlanPermission: boolean = false;
   let timelineId: number = 0;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
 
+  $: if (user !== null && $plan !== null) {
+    hasUpdatePlanPermission = featurePermissions.plan.canUpdate(user, $plan);
+  }
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: timelineDirectiveVisibilityToggles = timeline
     ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles)
@@ -126,6 +131,7 @@
           }}
         />
         <TimelineLockControl
+          hasUpdatePermission={hasUpdatePlanPermission}
           timelineLockStatus={$timelineLockStatus}
           on:lock={({ detail: lock }) => {
             $timelineLockStatus = lock;
@@ -146,10 +152,11 @@
       activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
       constraintViolations={$visibleConstraintViolations}
+      {hasUpdatePlanPermission}
       maxTimeRange={$maxTimeRange}
-      planEndTimeDoy={$plan.end_time_doy}
+      planEndTimeDoy={$plan?.end_time_doy ?? ''}
       planId={$planId}
-      planStartTimeYmd={$plan.start_time}
+      planStartTimeYmd={$plan?.start_time ?? ''}
       {timeline}
       {timelineDirectiveVisibilityToggles}
       resourcesByViewLayerId={$resourcesByViewLayerId}

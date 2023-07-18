@@ -51,6 +51,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let expanded: boolean = true;
+  export let hasUpdatePlanPermission: boolean = false;
   export let horizontalGuides: HorizontalGuide[] = [];
   export let id: number;
   export let layers: Layer[] = [];
@@ -140,13 +141,15 @@
   }
 
   function onDrop(e: DragEvent | undefined): void {
-    if (hasActivityLayer && e && overlaySvgSelection) {
+    if (hasActivityLayer && e && overlaySvgSelection && xScaleView !== null) {
       const { offsetX } = e;
       overlaySvgSelection.select('.activity-drag-guide').remove();
-      const unixEpochTime = xScaleView.invert(offsetX).getTime();
-      const start_time = getDoyTime(new Date(unixEpochTime));
-      const activityTypeName = e.dataTransfer.getData('activityTypeName');
-      effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, user);
+      if (e.dataTransfer !== null) {
+        const unixEpochTime = xScaleView.invert(offsetX).getTime();
+        const start_time = getDoyTime(new Date(unixEpochTime));
+        const activityTypeName = e.dataTransfer.getData('activityTypeName');
+        effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, user);
+      }
     }
   }
 
@@ -283,6 +286,7 @@
             {...layer}
             activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
             {activityDirectivesMap}
+            {hasUpdatePlanPermission}
             {showDirectives}
             {blur}
             {contextmenu}

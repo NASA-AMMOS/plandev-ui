@@ -50,6 +50,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
+  export let hasUpdatePlanPermission: boolean = false;
   export let id: number;
   export let focus: FocusEvent | undefined;
   export let mousedown: MouseEvent | undefined;
@@ -81,20 +82,22 @@
   let dragActivityDirectiveActive: ActivityDirective | null = null;
   let dragStartX: number | null = null;
   let maxActivityWidth: number;
+  let planStartTimeMs: number;
   let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
   let quadtreeSpans: Quadtree<QuadtreeRect>;
   let spanTimeBoundCache: Record<SpanId, SpanTimeBounds> = {};
   let visibleActivityDirectivesById: Record<ActivityDirectiveId, ActivityDirective> = {};
   let visibleSpansById: Record<SpanId, Span> = {};
+  let xScaleViewRangeMax: number;
 
   // Asset cache
   const assets: {
-    anchorIcon: HTMLImageElement;
-    directiveIcon: HTMLImageElement;
-    directiveIconShape: Path2D;
-    directiveIconShapeStroke: Path2D;
-    hashMarks: HTMLImageElement;
-    pattern: HTMLCanvasElement;
+    anchorIcon: HTMLImageElement | null;
+    directiveIcon: HTMLImageElement | null;
+    directiveIconShape: Path2D | null;
+    directiveIconShapeStroke: Path2D | null;
+    hashMarks: HTMLImageElement | null;
+    pattern: HTMLCanvasElement | null;
   } = {
     anchorIcon: null,
     directiveIcon: null,
@@ -125,7 +128,9 @@
   $: spanLabelLeftMargin = 6;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
   $: planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
-  $: xScaleViewRangeMax = xScaleView.range()[1];
+  $: if (xScaleView !== null) {
+    xScaleViewRangeMax = xScaleView.range()[1];
+  }
 
   $: if (
     activityDirectives &&
@@ -156,7 +161,7 @@
 
   function preloadStaticAssets() {
     if (canvas) {
-      ctx = canvas.getContext('2d');
+      ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     }
     assets.directiveIcon = loadSVG(ActivityDirectiveIconSVG);
     assets.anchorIcon = loadSVG(ActivityAnchorIconSVG);
@@ -168,7 +173,7 @@
       'M0.5 15.5V0.5H8C12.1421 0.5 15.5 3.85786 15.5 8C15.5 12.1421 12.1421 15.5 8 15.5H0.5Z',
     );
   }
-  function loadSVG(svgString) {
+  function loadSVG(svgString: string) {
     var svg64 = window.btoa(svgString);
     var b64Start = 'data:image/svg+xml;base64,';
     // prepend a "header"
@@ -183,7 +188,9 @@
       const [activityDirective] = activityDirectives; // Select just the first one for now.
 
       const x = getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
-      dragOffsetX = offsetX - xScaleView(x);
+      if (xScaleView !== null) {
+        dragOffsetX = offsetX - xScaleView(x);
+      }
       dragActivityDirectiveActive = activityDirective; // Pointer of the active drag activity.
       dragStartX = x;
       dragCurrentX = x;
@@ -192,7 +199,7 @@
   }
 
   function dragActivityDirective(offsetX: number): void {
-    if (!timelineLocked && dragActivityDirectiveActive) {
+    if (!timelineLocked && dragActivityDirectiveActive && dragOffsetX !== null && xScaleView !== null) {
       const x = offsetX - dragOffsetX;
       const xMs = xScaleView.invert(x).getTime();
       dragCurrentX = typeof dragActivityDirectiveActive.anchor_id === 'number' ? xMs : Math.max(xMs, planStartTimeMs);
@@ -233,7 +240,7 @@
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (isDeleteEvent(event) && !!selectedActivityDirectiveId) {
+    if (isDeleteEvent(event) && !!selectedActivityDirectiveId && hasUpdatePlanPermission) {
       dispatch('deleteActivityDirective', selectedActivityDirectiveId);
     }
   }
@@ -352,7 +359,7 @@
   function getDirectiveBounds(activityDirective: ActivityDirective): PointBounds {
     const { textWidth } = setLabelContext(activityDirective.name);
     const x = getXForDirective(activityDirective);
-    const xCanvas = xScaleView(x);
+    const xCanvas = xScaleView?.(x) ?? 0;
     let xEndCanvas = xCanvas + textWidth + directiveIconWidth + directiveIconMarginRight;
     if (activityDirective.anchor_id !== null) {
       xEndCanvas += anchorIconWidth + anchorIconMarginLeft;
@@ -366,7 +373,7 @@
     };
   }
 
-  function getSpanBounds(span: Span): BoundingBox {
+  function getSpanBounds(span: Span): BoundingBox | null {
     return drawSpans([span], 0, false);
   }
 
@@ -379,7 +386,7 @@
   function placeActivityDirective(
     maxXPerY: Record<number, number>,
     directiveBounds: PointBounds,
-    initialSpanBounds: BoundingBox,
+    initialSpanBounds: BoundingBox | null,
     showDirectives: boolean = true,
   ) {
     // Place the elements where they will fit in packed waterfall
@@ -496,7 +503,9 @@
         let initialSpanBounds = null;
         if (span) {
           initialSpanBounds = getSpanBounds(span);
-          spanInView = initialSpanBounds.minX <= xScaleViewRangeMax && initialSpanBounds.maxX >= 0;
+          if (initialSpanBounds !== null) {
+            spanInView = initialSpanBounds.minX <= xScaleViewRangeMax && initialSpanBounds.maxX >= 0;
+          }
         }
 
         if (directiveInView || spanInView) {
@@ -628,7 +637,7 @@
     }
     if (selectedSpanId) {
       const rootSelectedSpan = getSpanRootParent(spansMap, selectedSpanId);
-      if (rootSelectedSpan && rootSelectedSpan.id === rootSpan.id) {
+      if (rootSelectedSpan && rootSelectedSpan.id === rootSpan?.id) {
         secondaryHighlight = true;
       }
     }
@@ -680,10 +689,15 @@
       const patternCanvas = document.createElement('canvas');
       patternCanvas.width = 20;
       patternCanvas.height = 16;
-      patternCanvas.getContext('2d').drawImage(assets.hashMarks, 0, 0);
+      if (assets.hashMarks !== null) {
+        patternCanvas?.getContext('2d')?.drawImage(assets.hashMarks, 0, 0);
+      }
       ctx.save();
       ctx.translate(x, y);
-      ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
+      const pattern = ctx.createPattern(patternCanvas, 'repeat');
+      if (pattern !== null) {
+        ctx.fillStyle = pattern;
+      }
       ctx.fillRect(0, 0, activityWidth, activityHeight);
       ctx.restore();
     }
@@ -735,7 +749,7 @@
   }
 
   function drawSpans(spans: Span[], parentY: number, draw = true, ghosted = false): BoundingBox | null {
-    if (spans) {
+    if (spans && xScaleView !== null) {
       const boundingBoxes: BoundingBox[] = [];
 
       let maxX = Number.MIN_SAFE_INTEGER;
@@ -784,7 +798,7 @@
 
         const spanChildren = spanUtilityMaps.spanIdToChildIdsMap[span.id].map(id => spansMap[id]);
         if (spanChildren) {
-          const childrenBoundingBox: BoundingBox = drawSpans(spanChildren, y, draw, ghosted);
+          const childrenBoundingBox: BoundingBox | null = drawSpans(spanChildren, y, draw, ghosted);
 
           if (childrenBoundingBox) {
             if (childrenBoundingBox.minX < minX) {
@@ -846,19 +860,27 @@
     ctx.save();
     ctx.setTransform(dpr, 0, 0, dpr, x * dpr, y * dpr);
     ctx.scale(scaleFactor, scaleFactor);
-    ctx.fill(assets.directiveIconShape);
-    ctx.stroke(assets.directiveIconShapeStroke);
+    if (assets.directiveIconShape) {
+      ctx.fill(assets.directiveIconShape);
+    }
+    if (assets.directiveIconShapeStroke) {
+      ctx.stroke(assets.directiveIconShapeStroke);
+    }
     ctx.restore();
 
     // Draw the icon
     ctx.globalAlpha = svgOpacity;
-    ctx.drawImage(assets.directiveIcon, x + 1, y, activityHeight, activityHeight);
+    if (assets.directiveIcon) {
+      ctx.drawImage(assets.directiveIcon, x + 1, y, activityHeight, activityHeight);
+    }
     ctx.globalAlpha = 1;
   }
 
   function drawAnchorIcon(x: number, y: number, svgOpacity: number) {
     ctx.globalAlpha = svgOpacity;
-    ctx.drawImage(assets.anchorIcon, x, y);
+    if (assets.anchorIcon) {
+      ctx.drawImage(assets.anchorIcon, x, y);
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -910,7 +932,7 @@
   function drawDebugInfo(maxXPerY: Record<number, number>, height: number) {
     ctx.save();
     Object.keys(maxXPerY).forEach(key => {
-      const x = parseFloat(maxXPerY[key]);
+      const x = parseFloat(`${maxXPerY[parseInt(key)]}`);
       const rect = new Path2D();
       rect.rect(x, parseInt(key), 2, rowHeight - 4);
       ctx.fillStyle = 'red';

@@ -2268,20 +2268,24 @@ const effects = {
 
   async getUserQueries(user: User | null): Promise<PermissibleQueriesMap | null> {
     try {
-      const data = await reqHasura<PermissibleQueryResponse>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);
-      const {
-        queries: {
-          mutationType: { fields: mutationQueries },
-          queryType: { fields: viewQueries },
-        },
-      } = data;
+      const data = await reqHasura<PermissibleQueryResponse | null>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);
+      if (data != null) {
+        const { queries } = data;
 
-      return [...viewQueries, ...mutationQueries].reduce((queriesMap, permissibleQuery) => {
-        return {
-          ...queriesMap,
-          [permissibleQuery.name]: true,
-        };
-      }, {});
+        if (queries !== null) {
+          const mutationQueries = queries.mutationType?.fields ?? [];
+          const viewQueries = queries.queryType?.fields ?? [];
+
+          return [...viewQueries, ...mutationQueries].reduce((queriesMap, permissibleQuery) => {
+            return {
+              ...queriesMap,
+              [permissibleQuery.name]: true,
+            };
+          }, {});
+        }
+      }
+
+      return {};
     } catch (e) {
       catchError(e as Error);
       return null;
