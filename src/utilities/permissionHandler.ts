@@ -3,8 +3,16 @@ import type { Plugin, Props } from 'tippy.js';
 import tippy from 'tippy.js';
 
 interface PermissionHandlerProps extends Partial<Omit<Props, 'content'>> {
+  disabledClassName?: string;
   hasPermission?: boolean;
   permissionError?: string;
+}
+
+function removeDisabledClass(classList: string, disabledClassName: string) {
+  return classList
+    .split(' ')
+    .filter(className => className !== disabledClassName)
+    .join(' ');
 }
 
 /**
@@ -12,7 +20,7 @@ interface PermissionHandlerProps extends Partial<Omit<Props, 'content'>> {
  */
 export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
   node: Element,
-  { permissionError, ...params }: PermissionHandlerProps = {},
+  { permissionError, disabledClassName = 'permission-disabled', ...params }: PermissionHandlerProps = {},
 ): ActionReturn<any, any> => {
   // Determine the title to show. We want to prefer
   // the permissionError content passed in first, then the
@@ -20,7 +28,6 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
   // in that order.
   const existingError = node.getAttribute('aria-errormessage');
   const tabIndex = node.getAttribute('tabindex');
-  const classList = node.className;
   const { hasPermission } = params;
 
   // Clear out the HTML title attribute since
@@ -52,10 +59,11 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
   };
 
   const handlePermission = (hasPermission: boolean = true, permissionError?: string) => {
+    const classList = removeDisabledClass(node.className, disabledClassName);
     if (hasPermission === false) {
       node.setAttribute('tabindex', '-1');
       node.setAttribute('readonly', 'readonly');
-      node.setAttribute('class', `${classList} permission-disabled`);
+      node.setAttribute('class', `${classList} ${disabledClassName}`);
       // Let's make sure the "aria-errormessage" attribute
       // is set so our element is accessible:
       // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage
