@@ -23,6 +23,8 @@
   import type { FieldStore } from '../../types/form';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
@@ -172,7 +174,19 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Constraints" />
     <PanelHeaderActions status={$checkConstraintsStatus}>
-      <PanelHeaderActionButton title="Check Constraints" on:click={() => effects.checkConstraints(user)}>
+      <PanelHeaderActionButton
+        title="Check Constraints"
+        on:click={() => effects.checkConstraints(user)}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: featurePermissions.constraints.canCheck(user, $plan),
+              permissionError: 'You do not have permission to run constraint checks',
+            },
+          ],
+        ]}
+      >
         <ChecklistIcon />
       </PanelHeaderActionButton>
     </PanelHeaderActions>
@@ -193,6 +207,10 @@
           name="new-constraint"
           class="st-button secondary"
           on:click={() => window.open(`${base}/constraints/new`, '_blank')}
+          use:permissionHandler={{
+            hasPermission: featurePermissions.constraints.canCreate(user, $plan),
+            permissionError: 'You do not have permission to create constraints',
+          }}
         >
           New
         </button>
@@ -266,6 +284,8 @@
         {#each filteredConstraints as constraint}
           <ConstraintListItem
             {constraint}
+            hasDeletePermission={featurePermissions.constraints.canDelete(user, $plan)}
+            hasEditPermission={featurePermissions.constraints.canUpdate(user, $plan)}
             visible={$constraintVisibilityMap[constraint.id]}
             violation={filteredConstraintViolationMap[constraint.id]}
             totalViolationCount={constraintViolationMap[constraint.id]?.windows?.length}

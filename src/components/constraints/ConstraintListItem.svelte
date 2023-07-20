@@ -10,6 +10,7 @@
   import type { User } from '../../types/app';
   import type { Constraint, ConstraintViolation } from '../../types/constraint';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
@@ -17,8 +18,10 @@
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: Constraint;
-  export let violation: ConstraintViolation;
+  export let hasDeletePermission: boolean = false;
+  export let hasEditPermission: boolean = false;
   export let totalViolationCount: number = 0;
+  export let violation: ConstraintViolation;
   export let visible: boolean = true;
   export let user: User | null;
 
@@ -85,11 +88,33 @@
 
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuHeader>Actions</ContextMenuHeader>
-      <ContextMenuItem on:click={() => window.open(`${base}/constraints/edit/${constraint.id}`, '_blank')}>
+      <ContextMenuItem
+        on:click={() => window.open(`${base}/constraints/edit/${constraint.id}`, '_blank')}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError: 'You do not have permission to edit this constraint',
+            },
+          ],
+        ]}
+      >
         Edit Constraint
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteConstraint(constraint.id, user)}>
+      <ContextMenuItem
+        on:click={() => effects.deleteConstraint(constraint.id, user)}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasDeletePermission,
+              permissionError: 'You do not have permission to delete this constraint',
+            },
+          ],
+        ]}
+      >
         Delete Constraint
       </ContextMenuItem>
     </svelte:fragment>

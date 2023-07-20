@@ -362,6 +362,10 @@ interface PlanAssetCRUDPermission<T = null> {
   canUpdate: PlanAssetUpdatePermissionCheck<T>;
 }
 
+interface ConstraintCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
+  canCheck: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
 interface ExpansionSetsCRUDPermission<T = null> extends CRUDPermission<T> {
   canUpdate: () => boolean;
 }
@@ -388,7 +392,7 @@ interface FeaturePermissions {
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: AssignablePlanAssetCRUDPermission<ActivityPreset>;
   commandDictionary: CRUDPermission<void>;
-  constraints: PlanAssetCRUDPermission<AssetWithOwner>;
+  constraints: ConstraintCRUDPermission<AssetWithOwner>;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner>;
@@ -433,6 +437,9 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: () => false, // Not implemented
   },
   constraints: {
+    canCheck: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_CONSTRAINT(user)),
     canCreate: (user, plan) =>
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_CONSTRAINT(user)),
