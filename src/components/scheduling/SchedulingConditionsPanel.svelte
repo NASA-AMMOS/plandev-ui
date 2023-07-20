@@ -8,6 +8,8 @@
   import type { User } from '../../types/app';
   import type { SchedulingSpecCondition } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -19,6 +21,10 @@
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
   let filteredSchedulingSpecConditions: SchedulingSpecCondition[] = [];
+
+  $: hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan);
+  $: hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan);
+  $: hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan);
 
   $: filteredSchedulingSpecConditions = $schedulingSpecConditions.filter(spec => {
     const filterTextLowerCase = conditionsFilterText.toLowerCase();
@@ -59,6 +65,10 @@
             `${base}/scheduling/conditions/new?modelId=${$plan?.model.id}&&specId=${$selectedSpecId}`,
             '_blank',
           )}
+        use:permissionHandler={{
+          hasPermission: hasCreatePermission,
+          permissionError: 'You do not have permission to create scheduling conditions for this plan.',
+        }}
       >
         New
       </button>
@@ -71,6 +81,8 @@
           <SchedulingCondition
             enabled={specCondition.enabled}
             condition={specCondition.condition}
+            {hasDeletePermission}
+            {hasEditPermission}
             specificationId={specCondition.specification_id}
             {user}
           />

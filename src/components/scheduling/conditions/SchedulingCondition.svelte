@@ -5,6 +5,7 @@
   import type { User } from '../../../types/app';
   import type { SchedulingCondition } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
   import Collapse from '../../Collapse.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
@@ -12,8 +13,12 @@
 
   export let enabled: boolean;
   export let condition: SchedulingCondition;
+  export let hasDeletePermission: boolean = false;
+  export let hasEditPermission: boolean = false;
   export let specificationId: number;
   export let user: User | null;
+
+  const permissionError = 'You do not have permission to edit scheduling conditions for this plan.';
 </script>
 
 <div class="scheduling-condition" class:disabled={!enabled}>
@@ -26,17 +31,43 @@
             style:cursor="pointer"
             type="checkbox"
             on:change={() => effects.updateSchedulingSpecCondition(condition.id, specificationId, { enabled }, user)}
+            use:permissionHandler={{
+              hasPermission: hasEditPermission,
+              permissionError,
+            }}
           />
         </Input>
       </div>
     </svelte:fragment>
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuHeader>Actions</ContextMenuHeader>
-      <ContextMenuItem on:click={() => window.open(`${base}/scheduling/conditions/edit/${condition.id}`, '_blank')}>
+      <ContextMenuItem
+        on:click={() => window.open(`${base}/scheduling/conditions/edit/${condition.id}`, '_blank')}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
         Edit Condition
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteSchedulingCondition(condition.id, user)}>
+      <ContextMenuItem
+        on:click={() => effects.deleteSchedulingCondition(condition.id, user)}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasDeletePermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
         Delete Condition
       </ContextMenuItem>
     </svelte:fragment>

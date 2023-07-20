@@ -10,6 +10,8 @@
   import type { SchedulingSpecGoal } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -29,6 +31,13 @@
     const includesName = spec.goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
   });
+
+  $: hasAnalyzePermission = featurePermissions.schedulingGoals.canAnalyze(user);
+  $: hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user, $plan);
+  $: hasDeletePermission = featurePermissions.schedulingGoals.canDelete(user, $plan);
+  $: hasGoalEditPermission = featurePermissions.schedulingGoals.canUpdate(user, $plan);
+  $: hasSpecEditPermission = featurePermissions.schedulingGoals.canUpdateSpecification(user, $plan);
+  $: hasRunPermission = featurePermissions.schedulingGoals.canRun(user, $plan);
 
   // Manually keep focus as scheduling goal elements are re-ordered.
   // Svelte currently does not retain focus as elements are moved, even when keyed.
@@ -52,6 +61,15 @@
         title="Analyze"
         on:click={() => effects.schedule(true, user)}
         disabled={!$enableScheduling}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasAnalyzePermission,
+              permissionError: 'You do not have permission to run a scheduling analysis',
+            },
+          ],
+        ]}
       >
         <ChecklistIcon />
       </PanelHeaderActionButton>
@@ -59,6 +77,15 @@
         title="Schedule"
         on:click={() => effects.schedule(false, user)}
         disabled={!$enableScheduling}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasRunPermission,
+              permissionError: 'You do not have permission to run scheduling',
+            },
+          ],
+        ]}
       />
     </PanelHeaderActions>
   </svelte:fragment>
@@ -72,6 +99,10 @@
         slot="right"
         name="new-scheduling-goal"
         class="st-button secondary"
+        use:permissionHandler={{
+          hasPermission: hasCreatePermission,
+          permissionError: 'You do not have permission to create scheduling goals for this plan.',
+        }}
         on:click={() =>
           window.open(`${base}/scheduling/goals/new?modelId=${$plan?.model.id}&&specId=${$selectedSpecId}`, '_blank')}
       >
@@ -85,6 +116,9 @@
         {#each filteredSchedulingSpecGoals as specGoal (specGoal.goal.id)}
           <SchedulingGoal
             enabled={specGoal.enabled}
+            {hasDeletePermission}
+            {hasGoalEditPermission}
+            {hasSpecEditPermission}
             goal={specGoal.goal}
             priority={specGoal.priority}
             simulateAfter={specGoal.simulate_after}

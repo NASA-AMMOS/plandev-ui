@@ -7,6 +7,7 @@
   import type { User } from '../../../types/app';
   import type { SchedulingGoalSlim } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
   import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
@@ -21,11 +22,16 @@
   export let specificationId: number;
   export let simulateAfter: boolean = true;
   export let user: User | null;
+  export let hasGoalEditPermission: boolean = false;
+  export let hasSpecEditPermission: boolean = false;
+  export let hasDeletePermission: boolean = false;
 
   $: upButtonHidden = priority <= 0;
   $: simulateGoal = simulateAfter; // Copied to local var to reflect changed values immediately in the UI
 
   let schedulingGoalInput: HTMLInputElement;
+
+  const permissionError = 'You do not have permission to edit scheduling goals for this plan.';
 
   function focusInput() {
     if (document.activeElement !== schedulingGoalInput) {
@@ -70,31 +76,41 @@
             type="number"
             on:change={() => updatePriority(priority)}
             on:keydown={onKeyDown}
+            use:permissionHandler={{
+              hasPermission: hasSpecEditPermission,
+              permissionError,
+            }}
           />
-          <div class="priority-buttons">
-            <button
-              use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
-              class="st-button tertiary up-button"
-              class:hidden={upButtonHidden}
-              tabindex={upButtonHidden ? -1 : 0}
-              on:click={() => focusInput() && updatePriority(priority - 1)}
-            >
-              <CaretUpFillIcon />
-            </button>
-            <button
-              use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
-              class="st-button tertiary down-button"
-              on:click={() => focusInput() && updatePriority(priority + 1)}
-            >
-              <CaretDownFillIcon />
-            </button>
-          </div>
+          {#if hasSpecEditPermission}
+            <div class="priority-buttons">
+              <button
+                use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
+                class="st-button tertiary up-button"
+                class:hidden={upButtonHidden}
+                tabindex={upButtonHidden ? -1 : 0}
+                on:click={() => focusInput() && updatePriority(priority - 1)}
+              >
+                <CaretUpFillIcon />
+              </button>
+              <button
+                use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
+                class="st-button tertiary down-button"
+                on:click={() => focusInput() && updatePriority(priority + 1)}
+              >
+                <CaretDownFillIcon />
+              </button>
+            </div>
+          {/if}
           <input
             use:tooltip={{ content: enabled ? 'Disable Scheduling Goal' : 'Enable Scheduling Goal', placement: 'top' }}
             bind:checked={enabled}
             style:cursor="pointer"
             type="checkbox"
             on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled }, user)}
+            use:permissionHandler={{
+              hasPermission: hasSpecEditPermission,
+              permissionError,
+            }}
           />
         </Input>
       </div>
@@ -104,12 +120,46 @@
 
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuHeader>Actions</ContextMenuHeader>
-      <ContextMenuItem on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}>
+      <ContextMenuItem
+        on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasGoalEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
         Edit Goal
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem on:click={() => effects.deleteSchedulingGoal(goal.id, user)}>Delete Goal</ContextMenuItem>
-      <ContextMenuItem>
+      <ContextMenuItem
+        on:click={() => effects.deleteSchedulingGoal(goal.id, user)}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasDeletePermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
+        Delete Goal
+      </ContextMenuItem>
+      <ContextMenuItem
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasSpecEditPermission,
+              permissionError,
+            },
+          ],
+        ]}
+      >
         <div
           class="scheduling-goal-simulate-toggle"
           role="none"

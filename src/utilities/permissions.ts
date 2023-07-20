@@ -370,6 +370,12 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
   canExpand: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
+interface SchedulingCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
+  canAnalyze: (user: User | null) => boolean;
+  canRun: (user: User | null, plan: PlanWithOwners) => boolean;
+  canUpdateSpecification: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
 interface SimulationCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canRun: (user: User | null, plan: PlanWithOwners) => boolean;
 }
@@ -389,7 +395,7 @@ interface FeaturePermissions {
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
   schedulingConditions: PlanAssetCRUDPermission<AssetWithOwner>;
-  schedulingGoals: PlanAssetCRUDPermission<AssetWithOwner>;
+  schedulingGoals: SchedulingCRUDPermission<AssetWithOwner>;
   sequences: CRUDPermission<AssetWithOwner>;
   simulation: SimulationCRUDPermission<AssetWithOwner>;
   simulationTemplates: AssignablePlanAssetCRUDPermission<SimulationTemplate>;
@@ -490,6 +496,7 @@ const featurePermissions: FeaturePermissions = {
         queryPermissions.UPDATE_SCHEDULING_CONDITION(user)),
   },
   schedulingGoals: {
+    canAnalyze: user => isUserAdmin(user) || queryPermissions.UPDATE_SCHEDULING_SPEC(user),
     canCreate: (user, plan) =>
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_SCHEDULING_GOAL(user)),
@@ -497,9 +504,16 @@ const featurePermissions: FeaturePermissions = {
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.DELETE_SCHEDULING_GOAL(user)),
     canRead: () => false,
+    canRun: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_SCHEDULING_SPEC(user)),
     canUpdate: (user, plan) =>
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_SCHEDULING_GOAL(user)),
+    canUpdateSpecification: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) &&
+        queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL(user)),
   },
   sequences: {
     canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_USER_SEQUENCE(user),
