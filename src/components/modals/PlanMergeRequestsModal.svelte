@@ -9,6 +9,8 @@
   import type { PlanMergeRequest, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import PlanMergeRequestStatusBadge from '../plan/PlanMergeRequestStatusBadge.svelte';
   import UserBadge from '../ui/UserBadge.svelte';
@@ -100,6 +102,16 @@
       return activeRequestTypes[request.status];
     }).length;
   }
+
+  function hasPermission(planMergeRequest: PlanMergeRequest) {
+    if (planMergeRequest.type === 'outgoing') {
+      return featurePermissions.planBranch.canDeleteRequest(
+        user,
+        planMergeRequest.plan_snapshot_supplying_changes.plan,
+      );
+    }
+    return featurePermissions.planBranch.canReviewRequest(user, planMergeRequest.plan_receiving_changes);
+  }
 </script>
 
 <Modal {height} {width}>
@@ -173,7 +185,16 @@
                 </div>
 
                 {#if planMergeRequest.status === 'pending'}
-                  <button on:click={() => onReviewOrWithdraw(planMergeRequest)} class="st-button secondary">
+                  <button
+                    on:click={() => onReviewOrWithdraw(planMergeRequest)}
+                    class="st-button secondary"
+                    use:permissionHandler={{
+                      hasPermission: hasPermission(planMergeRequest),
+                      permissionError: `You do not have permission to ${
+                        planMergeRequest.type === 'outgoing' ? 'withdraw' : 'review'
+                      } this request`,
+                    }}
+                  >
                     {#if planMergeRequest.pending}
                       {planMergeRequest.type === 'outgoing' ? 'Withdrawing...' : 'Reviewing...'}
                     {:else}

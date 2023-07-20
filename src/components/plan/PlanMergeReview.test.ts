@@ -19,10 +19,14 @@ const mockMergeRequest: PlanMergeRequestSchema = {
   plan_receiving_changes: {
     id: 1,
     name: 'Demo Plan',
+    owner: 'unknown',
   },
   plan_snapshot_supplying_changes: {
     duration: '168:00:00',
     name: 'Branch 1',
+    plan: {
+      owner: 'unknown',
+    },
     plan_id: 2,
     snapshot_id: 2,
     start_time: '2023-02-16T00:00:00',

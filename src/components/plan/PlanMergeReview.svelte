@@ -14,6 +14,7 @@
   import type { User } from '../../types/app';
   import type {
     Plan,
+    PlanMergeActivityDirective,
     PlanMergeActivityDirectiveSource,
     PlanMergeActivityDirectiveTarget,
     PlanMergeConflictingActivity,
@@ -26,6 +27,8 @@
   import { changedKeys, getTarget } from '../../utilities/generic';
   import gql from '../../utilities/gql';
   import { showMergeReviewEndedModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ActivityDirectiveForm from '../activity/ActivityDirectiveForm.svelte';
@@ -36,23 +39,23 @@
   import PlanMergeReviewUserInfo from './PlanMergeReviewUserInfo.svelte';
 
   export let initialConflictingActivities: PlanMergeConflictingActivity[] = [];
-  export let initialMergeRequest: PlanMergeRequestSchema;
+  export let initialMergeRequest: PlanMergeRequestSchema | null;
   export let initialNonConflictingActivities: PlanMergeNonConflictingActivity[] = [];
   export let initialPlan: Plan;
   export let user: User | null;
 
   const conflictingMergeActivities = gqlSubscribable<PlanMergeConflictingActivity[]>(
     gql.SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES,
-    { merge_request_id: initialMergeRequest.id },
+    { merge_request_id: initialMergeRequest?.id },
     initialConflictingActivities,
     user,
   );
   const mergeRequestStatus = gqlSubscribable<PlanMergeRequestStatus>(
     gql.SUB_PLAN_MERGE_REQUEST_STATUS,
     {
-      mergeRequestId: initialMergeRequest.id,
+      mergeRequestId: initialMergeRequest?.id,
     },
-    initialMergeRequest.status,
+    initialMergeRequest?.status,
     user,
     ({ status }) => status,
   );
@@ -62,6 +65,7 @@
   let computedTargetActivity: PlanMergeActivityDirectiveTarget | null;
   let conflicts: PlanMergeConflictingActivity[] = [];
   let deletions: PlanMergeNonConflictingActivity[] = [];
+  let hasReviewPermission: boolean = false;
   let keysWithChanges: string[] = [];
   let mergeComparisonSourceDiv: HTMLElement | null = null;
   let mergeComparisonTargetDiv: HTMLElement | null = null;
@@ -76,6 +80,7 @@
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
 
+  $: hasReviewPermission = featurePermissions.planBranch.canReviewRequest(user, initialPlan);
   $: if (initialPlan && initialMergeRequest) {
     const {
       plan_snapshot_supplying_changes: { plan_id: supplyingPlanId },
@@ -83,16 +88,22 @@
 
     // build up the complete array of snapshotted receiving and supplying directives
     let { receivingPlanDirectives, supplyingPlanDirectives } = initialConflictingActivities.reduce(
-      (previous, conflictingActivity: PlanMergeConflictingActivity) => {
+      (
+        previous: {
+          receivingPlanDirectives: PlanMergeActivityDirective[];
+          supplyingPlanDirectives: PlanMergeActivityDirective[];
+        },
+        conflictingActivity: PlanMergeConflictingActivity,
+      ) => {
         const { source, target, change_type_source, change_type_target } = conflictingActivity;
 
         const receivingPlanDirectives =
-          change_type_target === 'delete'
+          change_type_target === 'delete' || target === null
             ? [...previous.receivingPlanDirectives]
             : [...previous.receivingPlanDirectives, target];
 
         const supplyingPlanDirectives =
-          change_type_source === 'delete'
+          change_type_source === 'delete' || source === null
             ? [...previous.supplyingPlanDirectives]
             : [...previous.supplyingPlanDirectives, { ...source, plan_id: supplyingPlanId }];
 
@@ -164,9 +175,10 @@
 
     // Updated selectedConflictingActivity with the refreshed version if needed
     if (selectedConflictingActivity) {
-      selectedConflictingActivity = $conflictingMergeActivities.find(
-        activity => activity.activity_id === selectedConflictingActivity.activity_id,
-      );
+      selectedConflictingActivity =
+        $conflictingMergeActivities.find(
+          activity => activity.activity_id === selectedConflictingActivity?.activity_id,
+        ) ?? null;
       if (selectedConflictingActivity) {
         selectedConflictingActivityResolution = selectedConflictingActivity.resolution;
       } else {
@@ -192,14 +204,26 @@
     const targetTags = selectedNonConflictingActivity.target_tags.map(tag => ({ tag }));
 
     if (selectedNonConflictingActivity.change_type === 'delete') {
-      computedTargetActivity = { ...selectedNonConflictingActivity.target, tags: targetTags };
+      computedTargetActivity =
+        selectedNonConflictingActivity.target !== null
+          ? { ...selectedNonConflictingActivity.target, tags: targetTags }
+          : null;
       computedSourceActivity = null;
     } else if (selectedNonConflictingActivity.change_type === 'add') {
-      computedSourceActivity = { ...selectedNonConflictingActivity.source, tags: sourceTags };
+      computedSourceActivity =
+        selectedNonConflictingActivity.source !== null
+          ? { ...selectedNonConflictingActivity.source, tags: sourceTags }
+          : null;
       computedTargetActivity = null;
     } else {
-      computedTargetActivity = { ...selectedNonConflictingActivity.target, tags: targetTags };
-      computedSourceActivity = { ...selectedNonConflictingActivity.source, tags: sourceTags };
+      computedTargetActivity =
+        selectedNonConflictingActivity.target !== null
+          ? { ...selectedNonConflictingActivity.target, tags: targetTags }
+          : null;
+      computedSourceActivity =
+        selectedNonConflictingActivity.source !== null
+          ? { ...selectedNonConflictingActivity.source, tags: sourceTags }
+          : null;
     }
 
     // Reset comparison scroll positions
@@ -236,19 +260,21 @@
       selectedConflictingActivity.change_type_source === 'modify') ||
     (selectedNonConflictingActivity && selectedMergeType === 'modify')
   ) {
-    keysWithChanges = changedKeys(computedSourceActivity, computedTargetActivity, [
-      'arguments',
-      'metadata',
-      'created_at',
-      'id',
-      'snapshot_id',
-      'last_modified_arguments_at',
-      'last_modified_at',
-      'source_scheduling_goal_id',
-      'type',
-    ])
-      .concat(changedKeys(computedSourceActivity.arguments, computedTargetActivity.arguments))
-      .concat(changedKeys(computedSourceActivity.metadata, computedTargetActivity.metadata));
+    if (computedSourceActivity && computedTargetActivity) {
+      keysWithChanges = changedKeys(computedSourceActivity, computedTargetActivity, [
+        'arguments',
+        'metadata',
+        'created_at',
+        'id',
+        'snapshot_id',
+        'last_modified_arguments_at',
+        'last_modified_at',
+        'source_scheduling_goal_id',
+        'type',
+      ])
+        .concat(changedKeys(computedSourceActivity.arguments, computedTargetActivity.arguments))
+        .concat(changedKeys(computedSourceActivity.metadata, computedTargetActivity.metadata));
+    }
   } else {
     keysWithChanges = [];
   }
@@ -258,63 +284,71 @@
   }
 
   async function onApproveChanges() {
-    const success = await effects.planMergeCommit(initialMergeRequest.id, user);
-    if (success) {
-      userInitiatedMergeRequestResolution = true;
-      goto(`${base}/plans/${initialPlan.id}`);
+    if (initialMergeRequest !== null) {
+      const success = await effects.planMergeCommit(initialMergeRequest.id, user);
+      if (success) {
+        userInitiatedMergeRequestResolution = true;
+        goto(`${base}/plans/${initialPlan.id}`);
+      }
     }
   }
 
   async function onDenyChanges() {
-    const success = await effects.planMergeDeny(initialMergeRequest.id, user);
-    if (success) {
-      userInitiatedMergeRequestResolution = true;
-      goto(`${base}/plans/${initialPlan.id}`);
+    if (initialMergeRequest !== null) {
+      const success = await effects.planMergeDeny(initialMergeRequest.id, user);
+      if (success) {
+        userInitiatedMergeRequestResolution = true;
+        goto(`${base}/plans/${initialPlan.id}`);
+      }
     }
   }
 
   async function onCancel() {
-    const success = await effects.planMergeCancel(initialMergeRequest.id, user);
-    if (success) {
-      userInitiatedMergeRequestResolution = true;
-      goto(`${base}/plans/${initialPlan.id}`);
+    if (initialMergeRequest !== null) {
+      const success = await effects.planMergeCancel(initialMergeRequest.id, user);
+      if (success) {
+        userInitiatedMergeRequestResolution = true;
+        goto(`${base}/plans/${initialPlan.id}`);
+      }
     }
   }
 
   function onResolveAll(e: Event) {
     const { value } = getTarget(e);
     const resolution = value as PlanMergeResolution;
-    effects.planMergeResolveAllConflicts(initialMergeRequest.id, resolution, user);
+    if (initialMergeRequest !== null) {
+      effects.planMergeResolveAllConflicts(initialMergeRequest.id, resolution, user);
 
-    // Set resolutions for all conflicts
-    if ($conflictingMergeActivities && $conflictingMergeActivities.length) {
-      const conflictActivityIdMap = conflicts.reduce((map, conflict) => {
-        map[conflict.activity_id] = true;
-        return map;
-      }, {});
+      // Set resolutions for all conflicts
+      if ($conflictingMergeActivities && $conflictingMergeActivities.length) {
+        const conflictActivityIdMap = conflicts.reduce((map: Record<number, true>, conflict) => {
+          map[conflict.activity_id] = true;
+          return map;
+        }, {});
 
-      // Optimistically update our store with the new resolution values
-      conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
-        return activities.map(activity => {
-          if (conflictActivityIdMap[activity.activity_id]) {
-            activity.resolution = resolution;
-          }
-          return activity;
+        // Optimistically update our store with the new resolution values
+        conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
+          return activities.map(activity => {
+            if (conflictActivityIdMap[activity.activity_id]) {
+              activity.resolution = resolution;
+            }
+            return activity;
+          });
         });
-      });
+      }
     }
 
     // Set select value back to Resolve All default
-    this.value = 'resolve_all';
+    (e.target as HTMLSelectElement).value = 'resolve_all';
   }
 
   async function onMergeReviewComparisonScroll(event: Event, origin: 'source' | 'target') {
     if (mergeComparisonScrollOrigin === origin) {
       const target = event.target as HTMLDivElement;
       const scrollTop = target.scrollTop;
-      if (origin === 'source') {
+      if (origin === 'source' && mergeComparisonTargetDiv !== null) {
         mergeComparisonTargetDiv.scrollTop = scrollTop;
-      } else {
+      } else if (mergeComparisonSourceDiv !== null) {
         mergeComparisonSourceDiv.scrollTop = scrollTop;
       }
     }
@@ -329,16 +363,18 @@
   }
 
   async function resolveConflict(activityId: number, resolution: PlanMergeResolution) {
-    await effects.planMergeResolveConflict(initialMergeRequest.id, activityId, resolution, user);
+    if (initialMergeRequest !== null) {
+      await effects.planMergeResolveConflict(initialMergeRequest.id, activityId, resolution, user);
 
-    conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
-      return activities.map(activity => {
-        if (activity.activity_id === activityId) {
-          activity.resolution = resolution;
-        }
-        return activity;
+      conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
+        return activities.map(activity => {
+          if (activity.activity_id === activityId) {
+            activity.resolution = resolution;
+          }
+          return activity;
+        });
       });
-    });
+    }
   }
 </script>
 
@@ -352,25 +388,25 @@
         <PlanMergeReviewUserInfo
           label="Requested Merge"
           title="Created By"
-          username={initialMergeRequest.requester_username}
+          username={initialMergeRequest?.requester_username}
         />
         <PlanMergeReviewUserInfo
           label="Plan Owner"
           title="Reviewed By"
-          username={initialMergeRequest.reviewer_username}
+          username={initialMergeRequest?.reviewer_username}
         />
         <div class="merge-review-branch-metadata">
           <div class="st-typography-medium">Current Branch (Target)</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
             <MergeIcon />
-            {initialMergeRequest.plan_receiving_changes.name}
+            {initialMergeRequest?.plan_receiving_changes.name}
           </div>
         </div>
         <div class="merge-review-branch-metadata">
           <div class="st-typography-medium">Source Branch</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
             <PlanWithUpArrow />
-            {initialMergeRequest.plan_snapshot_supplying_changes.name}
+            {initialMergeRequest?.plan_snapshot_supplying_changes.name}
           </div>
         </div>
         <div class="merge-review-stats">
@@ -407,7 +443,15 @@
               <span class="merge-review-no-conflicts-badge"><CheckIcon />None</span>
             {/if}
           </span>
-          <select class="st-select" value="resolve_all" on:change={onResolveAll}>
+          <select
+            class="st-select"
+            value="resolve_all"
+            on:change={onResolveAll}
+            use:permissionHandler={{
+              hasPermission: hasReviewPermission,
+              permissionError: 'You do not have permission to resolve conflicts on this request',
+            }}
+          >
             <option value="resolve_all">Resolve All</option>
             <option value="source">Resolve All Using Source</option>
             <option value="target">Resolve All Using Target</option>
@@ -453,7 +497,7 @@
                       selectedConflictingActivity = null;
                     }}
                     class="st-button tertiary merge-review-activity-item"
-                    class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
+                    class:active={selectedActivityId === merge.activity_id}>{merge?.source?.name}</button
                   >
                 {/each}
               </Collapse>
@@ -469,7 +513,7 @@
                       selectedConflictingActivity = null;
                     }}
                     class="st-button tertiary merge-review-activity-item"
-                    class:active={selectedActivityId === merge.activity_id}>{merge.source.name}</button
+                    class:active={selectedActivityId === merge.activity_id}>{merge?.source?.name}</button
                   >
                 {/each}
               </Collapse>
@@ -487,7 +531,7 @@
                     class="st-button tertiary merge-review-activity-item"
                     class:active={selectedActivityId === merge.activity_id}
                   >
-                    {merge.target.name}
+                    {merge?.target?.name}
                   </button>
                 {/each}
               </Collapse>
@@ -500,7 +544,7 @@
         <div class="merge-review-subheader">
           <span style="gap: 8px">
             <PlanWithUpArrow />
-            <span class="st-typography-medium">{initialMergeRequest.plan_snapshot_supplying_changes.name}</span>
+            <span class="st-typography-medium">{initialMergeRequest?.plan_snapshot_supplying_changes.name}</span>
           </span>
           <span class="section-title st-typography-medium">Source</span>
         </div>
@@ -511,11 +555,17 @@
               class:selected={selectedConflictingActivityResolution === 'source'}
               on:click={() => {
                 const activityId =
-                  selectedConflictingActivity.change_type_source === 'delete'
+                  selectedConflictingActivity?.change_type_source === 'delete'
                     ? selectedConflictingActivity.merge_base.id
-                    : selectedConflictingActivity.source.id;
+                    : selectedConflictingActivity?.source?.id;
                 const resolution = selectedConflictingActivity?.resolution === 'source' ? 'none' : 'source';
-                resolveConflict(activityId, resolution);
+                if (activityId !== undefined) {
+                  resolveConflict(activityId, resolution);
+                }
+              }}
+              use:permissionHandler={{
+                hasPermission: hasReviewPermission,
+                permissionError: 'You do not have permission to resolve this conflict',
               }}
             >
               {#if selectedConflictingActivity?.resolution === 'source'}
@@ -534,7 +584,7 @@
           on:scroll={event => onMergeReviewComparisonScroll(event, 'source')}
         >
           {#if selectedConflictingActivity || selectedNonConflictingActivity}
-            {#if selectedMergeType === 'add' || selectedMergeType === 'modify' || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_source !== 'delete')}
+            {#if selectedMergeType === 'add' || selectedMergeType === 'modify' || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_source !== 'delete')}
               <ActivityDirectiveSourceForm
                 {computedSourceActivity}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
@@ -545,7 +595,7 @@
                 planStartTimeYmd={initialPlan.start_time}
                 {user}
               />
-            {:else if (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_source === 'delete')}
+            {:else if (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_source === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>
             {:else}
               <div class="st-typography-label merge-review-comparison-empty-state">No Target Activity</div>
@@ -560,7 +610,7 @@
         <div class="merge-review-subheader">
           <span style="gap: 8px">
             <MergeIcon />
-            <span class="st-typography-medium">{initialMergeRequest.plan_receiving_changes.name}</span>
+            <span class="st-typography-medium">{initialMergeRequest?.plan_receiving_changes.name}</span>
           </span>
           <span class="section-title st-typography-medium">Current Branch (Target)</span>
         </div>
@@ -571,11 +621,17 @@
               class:selected={selectedConflictingActivityResolution === 'target'}
               on:click={() => {
                 const activityId =
-                  selectedConflictingActivity.change_type_target === 'delete'
-                    ? selectedConflictingActivity.merge_base.id
-                    : selectedConflictingActivity.target.id;
+                  selectedConflictingActivity?.change_type_target === 'delete'
+                    ? selectedConflictingActivity?.merge_base.id
+                    : selectedConflictingActivity?.target?.id;
                 const resolution = selectedConflictingActivity?.resolution === 'target' ? 'none' : 'target';
-                resolveConflict(activityId, resolution);
+                if (activityId !== undefined) {
+                  resolveConflict(activityId, resolution);
+                }
+              }}
+              use:permissionHandler={{
+                hasPermission: hasReviewPermission,
+                permissionError: 'You do not have permission to resolve this conflict',
               }}
             >
               {#if selectedConflictingActivity?.resolution === 'target'}
@@ -594,21 +650,21 @@
           on:scroll={event => onMergeReviewComparisonScroll(event, 'target')}
         >
           {#if selectedConflictingActivity || selectedNonConflictingActivity}
-            {#if selectedMergeType === 'modify' || (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_target !== 'delete')}
+            {#if (selectedMergeType === 'modify' || (selectedMergeType === 'delete' && !computedSourceActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_target !== 'delete')) && computedTargetActivity !== null}
               <ActivityDirectiveForm
                 activityDirective={computedTargetActivity}
                 activityDirectivesMap={receivingPlanActivitiesMap}
                 activityMetadataDefinitions={$activityMetadataDefinitions}
                 activityTypes={$activityTypes}
                 editable={false}
-                highlightKeys={!!selectedConflictingActivity && keysWithChanges}
+                highlightKeys={selectedConflictingActivity !== null ? keysWithChanges : []}
                 modelId={initialPlan.model_id}
                 planStartTimeYmd={initialPlan.start_time}
                 showActivityName
                 showHeader={false}
                 {user}
               />
-            {:else if (selectedMergeType === 'delete' && !computedTargetActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity.change_type_target === 'delete')}
+            {:else if (selectedMergeType === 'delete' && !computedTargetActivity) || (selectedMergeType === 'conflict' && selectedConflictingActivity?.change_type_target === 'delete')}
               <div class="st-typography-label merge-review-comparison-empty-state">Activity Deleted</div>
             {:else}
               <div class="st-typography-label merge-review-comparison-empty-state">No Target Activity</div>
@@ -621,14 +677,51 @@
     </CssGrid>
   </div>
   <div class="merge-review-bottom-actions">
-    <button class="st-button secondary" on:click={onCancel}>Cancel</button>
-    <button class="st-button red" on:click={onDenyChanges}>Deny Changes</button>
+    <button
+      class="st-button secondary"
+      on:click={onCancel}
+      use:permissionHandler={{
+        hasPermission: hasReviewPermission,
+        permissionError: 'You do not have permission to cancel this request',
+      }}
+    >
+      Cancel
+    </button>
+    <button
+      class="st-button red"
+      on:click={onDenyChanges}
+      use:permissionHandler={{
+        hasPermission: hasReviewPermission,
+        permissionError: 'You do not have permission to deny this request',
+      }}
+    >
+      Deny Changes
+    </button>
     {#if unresolvedConflictsCount > 0}
       <span use:tooltip={{ content: 'Resolve all conflicts before approving', placement: 'top' }}>
-        <button disabled class="st-button" on:click={onApproveChanges}>Approve Changes</button>
+        <button
+          disabled
+          class="st-button"
+          on:click={onApproveChanges}
+          use:permissionHandler={{
+            hasPermission: hasReviewPermission,
+            permissionError: 'You do not have permission to approve this request',
+          }}
+        >
+          Approve Changes
+        </button>
       </span>
     {:else}
-      <button class="st-button" on:click={onApproveChanges}>Approve Changes</button>
+      <button
+        class="st-button"
+        on:click={onApproveChanges}
+        use:permissionHandler={{
+          hasPermission: hasReviewPermission,
+          permissionError: 'You do not have permission to approve this request',
+        }}
+      >
+        Approve Changes
+      </button>
     {/if}
   </div>
 </div>

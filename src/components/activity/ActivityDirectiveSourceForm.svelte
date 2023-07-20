@@ -10,7 +10,7 @@
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let activityMetadataDefinitions: ActivityMetadataDefinition[] = [];
   export let activityTypes: ActivityType[] = [];
-  export let computedSourceActivity: PlanMergeActivityDirectiveSource;
+  export let computedSourceActivity: PlanMergeActivityDirectiveSource | null;
   export let highlightKeys: string[] = [];
   export let modelId: number;
   export let planId: number;
@@ -19,10 +19,12 @@
 
   let activityDirective: ActivityDirective;
 
-  $: activityDirective = {
-    ...computedSourceActivity,
-    plan_id: planId,
-  };
+  $: if (computedSourceActivity) {
+    activityDirective = {
+      ...computedSourceActivity,
+      plan_id: planId,
+    };
+  }
 </script>
 
 {#if activityDirective}

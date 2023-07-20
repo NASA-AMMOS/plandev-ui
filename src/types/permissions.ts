@@ -1,7 +1,7 @@
 import type { User, UserId } from './app';
 import type { Plan } from './plan';
 
-export type AssetWithOwner = {
+export type AssetWithOwner<T = any> = Partial<T> & {
   owner: UserId;
 };
 

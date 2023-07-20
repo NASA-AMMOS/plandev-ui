@@ -9,13 +9,18 @@
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
 
   export let plan: Plan;
   export let user: User | null;
 
+  let hasCreatePermission: boolean = false;
   let planMenu: Menu;
+
+  $: hasCreatePermission = featurePermissions.planBranch.canCreateRequest(user, plan);
 
   function createMergePlanBranchRequest() {
     effects.createPlanBranchRequest(plan, 'merge', user);
@@ -53,7 +58,18 @@
       </MenuItem>
       {#if plan.parent_plan !== null}
         <hr class="menu-divider" />
-        <MenuItem on:click={createMergePlanBranchRequest}>
+        <MenuItem
+          on:click={createMergePlanBranchRequest}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasCreatePermission,
+                permissionError: 'You do not have permission to create a merge request',
+              },
+            ],
+          ]}
+        >
           <div class="column-name">Create merge request</div>
         </MenuItem>
         <MenuItem on:click={() => goto(`${base}/plans/${plan.parent_plan.id}`)}>
