@@ -14,6 +14,9 @@ export type SchedulingGoal = {
   modified_date: string;
   name: string;
   revision: number;
+  scheduling_specification_goal: {
+    specification_id: number;
+  };
   tags: { tag: Tag }[];
 };
 
@@ -30,6 +33,9 @@ export type SchedulingCondition = {
   modified_date: string;
   name: string;
   revision: number;
+  scheduling_specification_conditions: {
+    specification_id: number;
+  }[];
 };
 
 export type SchedulingGoalAnalysis = {
@@ -40,12 +46,26 @@ export type SchedulingGoalAnalysis = {
 
 export type SchedulingConditionInsertInput = Omit<
   SchedulingCondition,
-  'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision'
+  | 'author'
+  | 'created_date'
+  | 'id'
+  | 'last_modified_by'
+  | 'modified_date'
+  | 'revision'
+  | 'scheduling_specification_conditions'
 >;
 
 export type SchedulingGoalInsertInput = Omit<
   SchedulingGoal,
-  'analyses' | 'author' | 'created_date' | 'id' | 'last_modified_by' | 'modified_date' | 'revision' | 'tags'
+  | 'analyses'
+  | 'author'
+  | 'created_date'
+  | 'id'
+  | 'last_modified_by'
+  | 'modified_date'
+  | 'revision'
+  | 'scheduling_specification_goal'
+  | 'tags'
 >;
 
 export type SchedulingResponse = {

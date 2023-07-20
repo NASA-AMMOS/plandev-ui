@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ parent }) => {
     throw redirect(302, `${base}/login`);
   }
 
-  const { models = [], plans = [] } = await effects.getPlansAndModels(user);
+  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling(user);
 
   return {
     models,

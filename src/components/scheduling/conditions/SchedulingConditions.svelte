@@ -7,7 +7,10 @@
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../../types/app';
   import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
+  import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingCondition } from '../../../types/scheduling';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { featurePermissions } from '../../../utilities/permissions';
   import Input from '../../form/Input.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -17,6 +20,7 @@
   export let schedulingConditions: SchedulingCondition[] = [];
   export let selectedCondition: SchedulingCondition | null | undefined = null;
   export let user: User | null;
+  export let plans: PlanSchedulingSpec[] | null;
 
   type CellRendererParams = {
     deleteCondition: (condition: SchedulingCondition) => void;
@@ -24,59 +28,63 @@
   };
   type SchedulingConditionsCellRendererParams = ICellRendererParams<SchedulingCondition> & CellRendererParams;
 
-  const columnDefs: DataGridColumnDef[] = [
-    {
-      field: 'id',
-      filter: 'number',
-      headerName: 'ID',
-      resizable: true,
-      sortable: true,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 60,
-    },
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
-    { field: 'author', filter: 'string', headerName: 'Author', sortable: true, width: 100 },
-    { field: 'last_modified_by', filter: 'string', headerName: 'Last Modified By', sortable: true, width: 100 },
-    { field: 'description', filter: 'string', headerName: 'Description', sortable: true, width: 120 },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: SchedulingConditionsCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deleteCondition,
-            deleteTooltip: {
-              content: 'Delete Condition',
-              placement: 'bottom',
-            },
-            editCallback: params.editCondition,
-            editTooltip: {
-              content: 'Edit Condition',
-              placement: 'bottom',
-            },
-            rowData: params.data,
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
+  let columnDefs: DataGridColumnDef[] = [];
+  $: columnDefs = user &&
+    plans && [
+      {
+        field: 'id',
+        filter: 'number',
+        headerName: 'ID',
+        resizable: true,
+        sortable: true,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 60,
       },
-      cellRendererParams: {
-        deleteCondition,
-        editCondition,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 55,
-    },
-  ];
+      { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+      { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
+      { field: 'author', filter: 'string', headerName: 'Author', sortable: true, width: 100 },
+      { field: 'last_modified_by', filter: 'string', headerName: 'Last Modified By', sortable: true, width: 100 },
+      { field: 'description', filter: 'string', headerName: 'Description', sortable: true, width: 120 },
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: SchedulingConditionsCellRendererParams) => {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions-cell';
+          new DataGridActions({
+            props: {
+              deleteCallback: params.deleteCondition,
+              deleteTooltip: {
+                content: 'Delete Condition',
+                placement: 'bottom',
+              },
+              editCallback: params.editCondition,
+              editTooltip: {
+                content: 'Edit Condition',
+                placement: 'bottom',
+              },
+              hasDeletePermission: hasDeletePermission(params.data),
+              hasEditPermission: hasEditPermission(params.data),
+              rowData: params.data,
+            },
+            target: actionsDiv,
+          });
+
+          return actionsDiv;
+        },
+        cellRendererParams: {
+          deleteCondition,
+          editCondition,
+        } as CellRendererParams,
+        field: 'actions',
+        headerName: '',
+        resizable: false,
+        sortable: false,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 55,
+      },
+    ];
 
   const dispatch = createEventDispatcher();
 
@@ -111,6 +119,24 @@
   function editConditionContext(event: CustomEvent<RowId[]>) {
     editCondition({ id: event.detail[0] as number });
   }
+
+  function hasDeletePermission(condition: SchedulingCondition) {
+    const { scheduling_specification_conditions } = condition;
+    const specification_id = scheduling_specification_conditions[0].specification_id;
+    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    return featurePermissions.schedulingConditions.canDelete(user, plan);
+  }
+
+  function hasEditPermission(condition: SchedulingCondition) {
+    const { scheduling_specification_conditions } = condition;
+    const specification_id = scheduling_specification_conditions[0].specification_id;
+    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    return featurePermissions.schedulingConditions.canUpdate(user, plan);
+  }
+
+  function hasCreatePermission(user: User): boolean {
+    return plans.some(plan => featurePermissions.schedulingConditions.canCreate(user, plan));
+  }
 </script>
 
 <Panel>
@@ -122,7 +148,14 @@
     </Input>
 
     <div class="right">
-      <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/scheduling/conditions/new`)}>
+      <button
+        class="st-button secondary ellipsis"
+        on:click={() => goto(`${base}/scheduling/conditions/new`)}
+        use:permissionHandler={{
+          hasPermission: hasCreatePermission(user),
+          permissionError: 'You do not have permission to create Scheduling Conditions',
+        }}
+      >
         New
       </button>
     </div>

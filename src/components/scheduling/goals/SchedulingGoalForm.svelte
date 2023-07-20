@@ -13,6 +13,8 @@
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { featurePermissions, isUserAdmin } from '../../../utilities/permissions';
   import { diffTags } from '../../../utilities/tags';
   import PageTitle from '../../app/PageTitle.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
@@ -37,6 +39,8 @@
   export let models: ModelSlim[] = [];
   export let user: User | null;
 
+  const permissionError = 'You do not have permission to edit this scheduling goal.';
+
   let goalAuthor: string | null = initialGoalAuthor;
   let goalCreatedDate: string | null = initialGoalCreatedDate;
   let goalDefinition: string = initialGoalDefinition;
@@ -46,6 +50,7 @@
   let goalModifiedDate: string | null = initialGoalModifiedDate;
   let goalName: string = initialGoalName;
   let goalTags: Tag[] = initialGoalTags;
+  let hasAuthoringPermission: boolean = false;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
@@ -75,10 +80,41 @@
       tags: goalTags.map(tag => ({ tag })),
       ...(goalModelId !== null ? { model_id: goalModelId } : {}),
     }) || specId !== savedSpecId;
+  $: hasPermission = specId
+    ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
+    : goalModelId
+    ? hasModelPermission(goalModelId, mode, user)
+    : hasAnyPlanPermission(mode, user);
+  $: hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
   $: saveButtonText = mode === 'edit' && !goalModified ? 'Saved' : 'Save';
   $: saveButtonClass = goalModified && saveButtonEnabled ? 'primary' : 'secondary';
   $: pageTitle = mode === 'edit' ? 'Scheduling Goals' : 'New Scheduling Goal';
   $: pageSubtitle = mode === 'edit' ? savedGoal.name : '';
+
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User): boolean {
+    const plansFromModel = plans.filter(plan => plan.model_id === modelId);
+    return plansFromModel.some(plan => {
+      return (
+        (mode === 'create' && featurePermissions.schedulingGoals.canCreate(user, plan)) ||
+        featurePermissions.schedulingGoals.canUpdate(user, plan)
+      );
+    });
+  }
+
+  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User): boolean {
+    return plans.some(plan => {
+      return mode === 'create'
+        ? featurePermissions.schedulingGoals.canCreate(user, plan)
+        : featurePermissions.schedulingGoals.canUpdate(user, plan);
+    });
+  }
+
+  function hasPlanPermission(planId: number, mode: 'create' | 'edit', user: User): boolean {
+    const plan = plans.find(plan => plan.id === planId);
+    return mode === 'create'
+      ? featurePermissions.schedulingGoals.canCreate(user, plan)
+      : featurePermissions.schedulingGoals.canUpdate(user, plan);
+  }
 
   function diffGoals(goalA: Partial<SchedulingGoal>, goalB: Partial<SchedulingGoal>) {
     return Object.entries(goalA).some(([key, value]) => {
@@ -172,7 +208,7 @@
         const goal: Partial<SchedulingGoal> = {
           definition: goalDefinition,
           description: goalDescription,
-          model_id: goalModelId,
+          ...(hasAuthoringPermission && goalModelId !== null ? { model_id: goalModelId } : {}),
           name: goalName,
         };
         const updatedGoal = await effects.updateSchedulingGoal(goalId, goal, user);
@@ -190,7 +226,7 @@
             }
           }
 
-          // Associate new tags with expansion rule
+          // Associate new tags with scheduling goal
           const newSchedulingGoalTags: SchedulingGoalTagsInsertInput[] = goalTags.map(({ id: tag_id }) => ({
             goal_id: goalId as number,
             tag_id,
@@ -226,6 +262,10 @@
           class="st-button {saveButtonClass} ellipsis"
           disabled={!saveButtonEnabled}
           on:click|stopPropagation={saveGoal}
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         >
           {saveButtonText}
         </button>
@@ -257,10 +297,18 @@
 
       <fieldset>
         <label for="model">Model</label>
-        <select bind:value={goalModelId} class="st-select w-100" name="model">
+        <select
+          bind:value={goalModelId}
+          class="st-select w-100"
+          name="model"
+          use:permissionHandler={{
+            hasPermission: hasAnyPlanPermission(mode, user) && hasAuthoringPermission,
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each models as model}
-            <option value={model.id}>
+            <option value={model.id} disabled={!hasModelPermission(model.id, mode, user)}>
               {model.name} ({model.id})
             </option>
           {/each}
@@ -269,10 +317,18 @@
 
       <fieldset>
         <label for="plan">Plan</label>
-        <select bind:value={specId} class="st-select w-100" name="plan">
+        <select
+          bind:value={specId}
+          class="st-select w-100"
+          name="plan"
+          use:permissionHandler={{
+            hasPermission: hasAnyPlanPermission(mode, user),
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each planOptions as plan}
-            <option value={plan.specId} disabled={plan.specId === null}>
+            <option value={plan.specId} disabled={plan.specId === null || !hasPlanPermission(plan.id, mode, user)}>
               {plan.name} ({plan.id}) {#if plan.specId === null} (Missing Scheduling Specification) {/if}
             </option>
           {/each}
@@ -288,6 +344,10 @@
           name="goal-name"
           placeholder="Enter Goal Name (required)"
           required
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
 
@@ -299,12 +359,30 @@
           class="st-input w-100"
           name="goal-description"
           placeholder="Enter Goal Description (optional)"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
 
       <fieldset>
         <label for="tags">Tags</label>
-        <TagsInput options={$tags} editable selected={goalTags} on:change={onTagsInputChange} />
+        <TagsInput
+          options={$tags}
+          editable
+          selected={goalTags}
+          on:change={onTagsInputChange}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission,
+                permissionError,
+              },
+            ],
+          ]}
+        />
       </fieldset>
     </svelte:fragment>
   </Panel>
@@ -316,6 +394,7 @@
     scheduleItemModelId={goalModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Scheduling Goal - Definition Editor"
     {user}
+    readOnly={!hasPermission}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

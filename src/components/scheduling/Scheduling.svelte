@@ -4,14 +4,16 @@
   import { schedulingColumns, schedulingConditions, schedulingGoals } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { DataGridRowSelection } from '../../types/data-grid';
+  import type { PlanSchedulingSpec } from '../../types/plan';
   import type { SchedulingCondition, SchedulingGoal } from '../../types/scheduling';
   import effects from '../../utilities/effects';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
+  import SchedulingEditor from './SchedulingEditor.svelte';
   import SchedulingConditions from './conditions/SchedulingConditions.svelte';
   import SchedulingGoals from './goals/SchedulingGoals.svelte';
-  import SchedulingEditor from './SchedulingEditor.svelte';
 
+  export let plans: PlanSchedulingSpec[] | null;
   export let user: User | null;
 
   let selectedCondition: SchedulingCondition | null = null;
@@ -105,6 +107,7 @@
 <CssGrid bind:columns={$schedulingColumns}>
   <CssGrid rows="1fr 3px 1fr">
     <SchedulingGoals
+      {plans}
       {selectedGoal}
       schedulingGoals={$schedulingGoals}
       {user}
@@ -113,6 +116,7 @@
     />
     <CssGridGutter track={1} type="row" />
     <SchedulingConditions
+      {plans}
       {selectedCondition}
       schedulingConditions={$schedulingConditions}
       {user}

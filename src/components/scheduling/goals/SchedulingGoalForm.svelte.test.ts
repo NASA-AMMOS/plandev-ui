@@ -9,9 +9,11 @@ vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://githu
 
 const plans: PlanSchedulingSpec[] = [
   {
+    collaborators: [],
     id: 1,
     model_id: 1,
     name: 'Plan With Scheduling Spec',
+    owner: 'foo',
     scheduling_specifications: [
       {
         id: 1,
@@ -19,9 +21,11 @@ const plans: PlanSchedulingSpec[] = [
     ],
   },
   {
+    collaborators: [],
     id: 2,
     model_id: 1,
     name: 'Plan Without Scheduling Spec',
+    owner: 'foo',
     scheduling_specifications: [],
   },
 ];

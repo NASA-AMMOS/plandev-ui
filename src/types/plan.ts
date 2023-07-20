@@ -112,4 +112,7 @@ export type PlanSlim = Pick<
 
 export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;
 
-export type PlanSchedulingSpec = Pick<Plan, 'id' | 'name' | 'scheduling_specifications' | 'model_id'>;
+export type PlanSchedulingSpec = Pick<
+  Plan,
+  'id' | 'name' | 'scheduling_specifications' | 'model_id' | 'owner' | 'collaborators'
+>;

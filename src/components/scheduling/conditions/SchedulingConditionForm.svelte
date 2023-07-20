@@ -10,6 +10,8 @@
   import type { SchedulingCondition, SchedulingSpecConditionInsertInput } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
+  import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { featurePermissions, isUserAdmin } from '../../../utilities/permissions';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
@@ -30,6 +32,8 @@
   export let plans: PlanSchedulingSpec[] = [];
   export let user: User | null;
 
+  const permissionError = 'You do not have permission to edit this scheduling condition.';
+
   let conditionAuthor: string | null = initialConditionAuthor;
   let conditionCreatedDate: string | null = initialConditionCreatedDate;
   let conditionDefinition: string = initialConditionDefinition;
@@ -38,6 +42,7 @@
   let conditionModelId: number | null = initialConditionModelId;
   let conditionModifiedDate: string | null = initialConditionModifiedDate;
   let conditionName: string = initialConditionName;
+  let hasAuthoringPermission: boolean = false;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
@@ -57,6 +62,12 @@
     }));
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
 
+  $: hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
+  $: hasPermission = specId
+    ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
+    : conditionModelId
+    ? hasModelPermission(conditionModelId, mode, user)
+    : hasAnyPlanPermission(mode, user);
   $: saveButtonEnabled =
     conditionDefinition !== '' && conditionModelId !== null && conditionName !== '' && specId !== null;
   $: conditionModified =
@@ -68,6 +79,35 @@
     }) || specId !== savedSpecId;
   $: saveButtonText = mode === 'edit' && !conditionModified ? 'Saved' : 'Save';
   $: saveButtonClass = conditionModified && saveButtonEnabled ? 'primary' : 'secondary';
+
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User): boolean {
+    const plansFromModel = plans.filter(plan => plan.model_id === modelId);
+    return plansFromModel.some(plan => {
+      return (
+        (mode === 'create' && featurePermissions.schedulingConditions.canCreate(user, plan)) ||
+        featurePermissions.schedulingConditions.canUpdate(user, plan)
+      );
+    });
+  }
+
+  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User): boolean {
+    return plans.some(plan => {
+      return mode === 'create'
+        ? featurePermissions.schedulingConditions.canCreate(user, plan)
+        : featurePermissions.schedulingConditions.canUpdate(user, plan);
+    });
+  }
+
+  function hasPlanPermission(planId: number, mode: 'create' | 'edit', user: User): boolean {
+    if (!planId) {
+      return true;
+    }
+
+    const plan = plans.find(plan => plan.id === planId);
+    return mode === 'create'
+      ? featurePermissions.schedulingConditions.canCreate(user, plan)
+      : featurePermissions.schedulingConditions.canUpdate(user, plan);
+  }
 
   function diffConditions(conditionA: Partial<SchedulingCondition>, conditionB: Partial<SchedulingCondition>) {
     return Object.entries(conditionA).some(([key, value]) => {
@@ -115,7 +155,7 @@
         const condition: Partial<SchedulingCondition> = {
           definition: conditionDefinition,
           description: conditionDescription,
-          model_id: conditionModelId,
+          ...(hasAuthoringPermission && conditionModelId !== null ? { model_id: conditionModelId } : {}),
           name: conditionName,
         };
         const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, user);
@@ -148,6 +188,10 @@
           class="st-button {saveButtonClass} ellipsis"
           disabled={!saveButtonEnabled}
           on:click|stopPropagation={saveCondition}
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         >
           {saveButtonText}
         </button>
@@ -179,10 +223,18 @@
 
       <fieldset>
         <label for="model">Model</label>
-        <select bind:value={conditionModelId} class="st-select w-100" name="model">
+        <select
+          bind:value={conditionModelId}
+          class="st-select w-100"
+          name="model"
+          use:permissionHandler={{
+            hasPermission: hasAnyPlanPermission(mode, user) && hasAuthoringPermission,
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each models as model}
-            <option value={model.id}>
+            <option value={model.id} disabled={!hasModelPermission(model.id, mode, user)}>
               {model.name} ({model.id})
             </option>
           {/each}
@@ -191,10 +243,18 @@
 
       <fieldset>
         <label for="plan">Plan</label>
-        <select bind:value={specId} class="st-select w-100" name="plan">
+        <select
+          bind:value={specId}
+          class="st-select w-100"
+          name="plan"
+          use:permissionHandler={{
+            hasPermission: hasAnyPlanPermission(mode, user),
+            permissionError,
+          }}
+        >
           <option value={null} />
           {#each planOptions as plan}
-            <option value={plan.specId} disabled={!plan.specId}>
+            <option value={plan.specId} disabled={plan.specId === null || !hasPlanPermission(plan.id, mode, user)}>
               {plan.name} ({plan.id}) {#if plan.specId === null} (Missing Scheduling Specification) {/if}
             </option>
           {/each}
@@ -210,6 +270,10 @@
           name="condition-name"
           placeholder="Enter Condition Name (required)"
           required
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
 
@@ -221,6 +285,10 @@
           class="st-input w-100"
           name="condition-description"
           placeholder="Enter Condition Description (optional)"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
         />
       </fieldset>
     </svelte:fragment>
@@ -233,6 +301,7 @@
     scheduleItemModelId={conditionModelId}
     title="{mode === 'create' ? 'New' : 'Edit'} Scheduling Condition - Definition Editor"
     {user}
+    readOnly={!hasPermission}
     on:didChangeModelContent={onDidChangeModelContent}
   />
 </CssGrid>

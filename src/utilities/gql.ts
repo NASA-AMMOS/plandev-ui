@@ -1586,6 +1586,9 @@ const gql = {
         model_id
         modified_date
         name
+        scheduling_specification_conditions {
+          specification_id
+        }
         revision
       }
     }
@@ -1606,6 +1609,9 @@ const gql = {
         model_id
         modified_date
         name
+        scheduling_specification_goal {
+          specification_id
+        }
         revision
         tags {
           tag_id
