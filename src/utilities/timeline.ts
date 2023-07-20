@@ -1,5 +1,5 @@
 import { bisector, tickStep } from 'd3-array';
-import type { Quadtree, QuadtreeLeaf } from 'd3-quadtree';
+import type { Quadtree, QuadtreeInternalNode, QuadtreeLeaf } from 'd3-quadtree';
 import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
 import {
   timeHour,
@@ -27,6 +27,7 @@ import type {
   VerticalGuide,
   XRangeLayer,
 } from '../types/timeline';
+import { filterEmpty } from './generic';
 
 export enum TimelineLockStatus {
   Locked = 'Locked',
@@ -79,7 +80,7 @@ export const customD3TickIntervals: [CountableTimeInterval, number, number][] = 
 ];
 
 // Based on https://github.com/d3/d3-time/blob/main/src/ticks.js
-export function customD3TickInterval(start: Date, stop: Date, count: number): TimeInterval {
+export function customD3TickInterval(start: Date, stop: Date, count: number): TimeInterval | null {
   // Note: Coerce dates to numbers for arithmetic to make TS happy
   const target: number = Math.abs(+stop - +start) / count;
   const i = bisector(([, , step]) => step).right(customD3TickIntervals, target);
@@ -122,12 +123,18 @@ export function getXScale(domain: Date[], width: number): ScaleTime<number, numb
     .range([CANVAS_PADDING_X, width - CANVAS_PADDING_X]);
 }
 
-export function getYScale(domain: number[], height: number): ScaleLinear<number, number> {
+export function getYScale(domain: (number | null)[], height: number): ScaleLinear<number, number> {
   return scaleLinear()
-    .domain(domain)
+    .domain(domain.filter(filterEmpty))
     .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
 }
 
+function isQuadtreeLeaf<T>(node?: QuadtreeInternalNode<T> | QuadtreeLeaf<T>): node is QuadtreeLeaf<T> {
+  if (node && node.length === undefined) {
+    return true;
+  }
+  return false;
+}
 /**
  * Search a quadtree of 2D points for overlap with a rectangle specified by
  * xMin, yMin, xMax, yMax.
@@ -146,17 +153,19 @@ export function searchQuadtreePoint<T>(
     const yMin = y - extent;
     const xMax = x + extent;
     const yMax = y + extent;
-    quadtree.visit((node: QuadtreeLeaf<QuadtreePoint>, x0, y0, x1, y1) => {
-      if (!node.length) {
-        do {
-          const { data: p } = node;
-          if (p.x >= xMin && p.x < xMax && p.y >= yMin && p.y < yMax) {
-            points.push(map[p.id]);
-          }
-        } while ((node = node.next));
-      }
-      return x0 >= xMax || y0 >= yMax || x1 < xMin || y1 < yMin;
-    });
+    quadtree.visit(
+      (node: QuadtreeInternalNode<QuadtreePoint> | QuadtreeLeaf<QuadtreePoint> | undefined, x0, y0, x1, y1) => {
+        if (isQuadtreeLeaf(node)) {
+          do {
+            const { data: p } = node;
+            if (p.x >= xMin && p.x < xMax && p.y >= yMin && p.y < yMax) {
+              points.push(map[p.id]);
+            }
+          } while ((node = node.next));
+        }
+        return x0 >= xMax || y0 >= yMax || x1 < xMin || y1 < yMin;
+      },
+    );
   }
   return points;
 }
@@ -176,17 +185,19 @@ export function searchQuadtreeRect<T>(
   const points: T[] = [];
 
   if (quadtree) {
-    quadtree.visit((node: QuadtreeLeaf<QuadtreeRect>, x0, y0, x1, y1) => {
-      if (!node.length) {
-        do {
-          const { data: p } = node;
-          if (p.x + p.width >= x && p.x < x && p.y + p.height >= y && p.y < y) {
-            points.push(map[p.id]);
-          }
-        } while ((node = node.next));
-      }
-      return x0 - maxW >= x || y0 - maxH >= y || x1 + maxW < x || y1 + maxH < y;
-    });
+    quadtree.visit(
+      (node: QuadtreeInternalNode<QuadtreeRect> | QuadtreeLeaf<QuadtreeRect> | undefined, x0, y0, x1, y1) => {
+        if (isQuadtreeLeaf(node)) {
+          do {
+            const { data: p } = node;
+            if (p.x + p.width >= x && p.x < x && p.y + p.height >= y && p.y < y) {
+              points.push(map[p.id as number]);
+            }
+          } while ((node = node.next));
+        }
+        return x0 - maxW >= x || y0 - maxH >= y || x1 + maxW < x || y1 + maxH < y;
+      },
+    );
   }
 
   return points;
@@ -323,8 +334,10 @@ export function createHorizontalGuide(
   if (firstAxis) {
     yAxisId = firstAxis.id;
     if (firstAxis.scaleDomain.length === 2) {
-      // Default y value to the middle of the domain
-      y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+      if (firstAxis.scaleDomain[0] !== null && firstAxis.scaleDomain[1] !== null) {
+        // Default y value to the middle of the domain
+        y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+      }
     }
   }
 
@@ -477,8 +490,8 @@ export function getYAxisBounds(
   const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
 
   // Find min and max of associated layers
-  let minY = undefined;
-  let maxY = undefined;
+  let minY: number | undefined = undefined;
+  let maxY: number | undefined = undefined;
   yAxisLayers.forEach(layer => {
     if (resourcesByViewLayerId[layer.id]) {
       resourcesByViewLayerId[layer.id].forEach(resource => {
@@ -504,5 +517,5 @@ export function getYAxisBounds(
     scaleDomain[1] = maxY;
   }
 
-  return scaleDomain;
+  return scaleDomain as number[];
 }

@@ -19,7 +19,7 @@
   let filterString: string = '';
   let filteredValues: string[] = [];
   let menuTitle: string = '';
-  let selectedValuesMap = {};
+  let selectedValuesMap: Record<string, boolean> = {};
 
   $: if (layer) {
     selectedValuesMap = listToMap(values);
@@ -40,7 +40,7 @@
   }
 
   function listToMap(list: string[]): Record<string, boolean> {
-    return list.reduce((map, item) => {
+    return list.reduce((map: Record<string, true>, item) => {
       if (!map[item]) {
         map[item] = true;
       }
@@ -54,7 +54,7 @@
   }
 
   function unselectFilteredValues() {
-    const newValues = [];
+    const newValues: string[] = [];
     dispatch('change', { values: newValues });
   }
 

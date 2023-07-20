@@ -36,7 +36,7 @@
   const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D;
+  let ctx: CanvasRenderingContext2D | null;
   let domain: string[] = [];
   let maxXWidth: number;
   let mounted: boolean = false;
@@ -73,7 +73,7 @@
   });
 
   async function draw(): Promise<void> {
-    if (ctx) {
+    if (ctx && xScaleView) {
       await tick();
 
       ctx.resetTransform();
@@ -191,10 +191,13 @@
   }
 
   function measureText(text: string) {
-    const textMetrics = ctx.measureText(text);
-    const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
-    const textWidth = textMetrics.width;
-    return { textHeight, textWidth };
+    if (ctx) {
+      const textMetrics = ctx.measureText(text);
+      const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+      const textWidth = textMetrics.width;
+      return { textHeight, textWidth };
+    }
+    return { textHeight: 0, textWidth: 0 };
   }
 
   function onMousemove(e: MouseEvent | undefined): void {
@@ -275,8 +278,10 @@
   } {
     const fontSize = point.label?.fontSize || 10;
     const fontFace = point.label?.fontFace || 'Helvetica Neue';
-    ctx.fillStyle = point.label?.color || '#000000';
-    ctx.font = `${fontSize}px ${fontFace}`;
+    if (ctx) {
+      ctx.fillStyle = point.label?.color || '#000000';
+      ctx.font = `${fontSize}px ${fontFace}`;
+    }
     const labelText = point.label.text;
     const { textHeight, textWidth } = measureText(labelText);
     return { labelText, textHeight, textWidth };

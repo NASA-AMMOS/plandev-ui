@@ -8,7 +8,7 @@
   import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
 
-  export let mouseOver: MouseOver;
+  export let mouseOver: MouseOver | null;
 
   let activityDirectives: ActivityDirective[] = [];
   let constraintViolations: ConstraintViolation[] = [];
@@ -16,7 +16,9 @@
   let gaps: Point[] = [];
   let spans: Span[] = [];
 
-  $: onMouseOver(mouseOver);
+  $: if (mouseOver) {
+    onMouseOver(mouseOver);
+  }
 
   function onMouseOver(event: MouseOver | undefined) {
     if (event) {
@@ -52,11 +54,10 @@
 
       let xPosition = pageX + pointerOffset;
       let yPosition = pageY + pointerOffset;
-      tooltipDiv
-        .style('opacity', 1.0)
-        .style('left', `${xPosition}px`)
-        .style('top', `${yPosition}px`)
-        .style('z-index', 5);
+      tooltipDiv.style('opacity', 1.0);
+      tooltipDiv.style('left', `${xPosition}px`);
+      tooltipDiv.style('top', `${yPosition}px`);
+      tooltipDiv.style('z-index', 5);
 
       const node = tooltipDiv.node() as HTMLElement;
       const { height, width, x, y } = node.getBoundingClientRect();
@@ -68,7 +69,8 @@
         yPosition -= height;
       }
 
-      tooltipDiv.style('left', `${xPosition}px`).style('top', `${yPosition}px`);
+      tooltipDiv.style('left', `${xPosition}px`);
+      tooltipDiv.style('top', `${yPosition}px`);
     } else {
       hide();
     }

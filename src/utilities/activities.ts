@@ -1,7 +1,7 @@
 import { omitBy } from 'lodash-es';
 import type { ActivityDirective } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
-import type { Span, SpanId, SpansMap, SpanUtilityMaps } from '../types/simulation';
+import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { compare, isEmpty } from './generic';
 import { getIntervalInMs } from './time';
 
@@ -20,7 +20,10 @@ export function getActivityMetadata(
 /**
  * Returns the root span for a given span id.
  */
-export function getSpanRootParent(spansMap: SpansMap, spanId: SpanId): Span | null {
+export function getSpanRootParent(spansMap: SpansMap, spanId: SpanId | null): Span | null {
+  if (spanId === null) {
+    return null;
+  }
   const span = spansMap[spanId];
   if (!span) {
     return null;

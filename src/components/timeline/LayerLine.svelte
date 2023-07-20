@@ -29,7 +29,7 @@
   const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D;
+  let ctx: CanvasRenderingContext2D | null;
   let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreePoint>;
   let visiblePointsById: Record<number, LinePoint> = {};
@@ -68,7 +68,7 @@
   });
 
   async function draw(): Promise<void> {
-    if (ctx) {
+    if (ctx && xScaleView) {
       await tick();
 
       ctx.resetTransform();
@@ -94,7 +94,7 @@
       ctx.strokeStyle = fill;
 
       const line = d3Line<LinePoint>()
-        .x(d => xScaleView(d.x))
+        .x(d => (xScaleView as ScaleTime<number, number, never>)(d.x))
         .y(d => yScale(d.y))
         .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
         .curve(curveLinear);
@@ -107,7 +107,7 @@
         const { id, radius } = point;
 
         if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
-          const x = xScaleView(point.x);
+          const x = (xScaleView as ScaleTime<number, number, never>)(point.x);
           const y = yScale(point.y);
           quadtree.add({ id, x, y });
           visiblePointsById[id] = point;

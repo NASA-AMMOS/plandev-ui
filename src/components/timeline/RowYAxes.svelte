@@ -24,7 +24,7 @@
     width: number,
   ) {
     textSelection.text(text);
-    let textLength = textSelection.node().getComputedTextLength();
+    let textLength = textSelection?.node()?.getComputedTextLength() ?? 0;
 
     // If text is longer than total allowed width,
     // split the string in half and reduce the character length of each half by the ratio
@@ -44,7 +44,7 @@
         start = start.substring(0, start.length * (1 - reduction));
         end = end.substring(Math.ceil(end.length * reduction));
         textSelection.text(start + '...' + end);
-        textLength = textSelection.node().getComputedTextLength();
+        textLength = textSelection?.node()?.getComputedTextLength() ?? 0;
       }
     }
   }
@@ -81,24 +81,26 @@
           axisG.call(axisLeft);
         }
 
-        const axisGElement: SVGGElement = axisG.node();
-        const axisWidth = axisGElement.getBoundingClientRect().width;
-        const axisLabelMargin = 20;
-        const y = -(axisWidth + axisLabelMargin);
+        const axisGElement: SVGGElement | null = axisG.node();
+        if (axisGElement !== null) {
+          const axisWidth = axisGElement.getBoundingClientRect().width;
+          const axisLabelMargin = 20;
+          const y = -(axisWidth + axisLabelMargin);
 
-        const text = axisG
-          .append('text')
-          .attr('transform', 'rotate(-90)')
-          .attr('y', y)
-          .attr('x', 0 - drawHeight / 2)
-          .attr('dy', '1em')
-          .attr('fill', labelColor)
-          .attr('font-family', labelFontFace)
-          .attr('font-size', `${labelFontSize}px`)
-          .style('text-anchor', 'middle');
+          const text = axisG
+            .append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('y', y)
+            .attr('x', 0 - drawHeight / 2)
+            .attr('dy', '1em')
+            .attr('fill', labelColor)
+            .attr('font-family', labelFontFace)
+            .attr('font-size', `${labelFontSize}px`)
+            .style('text-anchor', 'middle');
 
-        fitTextToWidth(text, labelText, drawHeight);
-        totalWidth += axisGElement.getBoundingClientRect().width;
+          fitTextToWidth(text, labelText, drawHeight);
+          totalWidth += axisGElement.getBoundingClientRect().width;
+        }
       }
     }
   }

@@ -24,13 +24,13 @@
   const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D;
+  let ctx: CanvasRenderingContext2D | null;
   let maxXWidth: number;
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, XRangePoint> = {};
-  let gapPattern: CanvasPattern;
+  let gapPattern: CanvasPattern | null;
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -73,27 +73,29 @@
     patternCanvas.height = 10;
     const patternContext = patternCanvas.getContext('2d');
 
-    patternContext.beginPath();
-    patternContext.strokeStyle = '#00000033';
+    if (patternContext !== null) {
+      patternContext.beginPath();
+      patternContext.strokeStyle = '#00000033';
 
-    // Draw main diagonal line
-    patternContext.moveTo(0, 10);
-    patternContext.lineTo(10, 0);
+      // Draw main diagonal line
+      patternContext.moveTo(0, 10);
+      patternContext.lineTo(10, 0);
 
-    // Draw two extra lines across the top left and bottom right corners to fill gaps in pattern
-    patternContext.moveTo(-1, 1);
-    patternContext.lineTo(1, -1);
+      // Draw two extra lines across the top left and bottom right corners to fill gaps in pattern
+      patternContext.moveTo(-1, 1);
+      patternContext.lineTo(1, -1);
 
-    patternContext.moveTo(9, 11);
-    patternContext.lineTo(11, 9);
+      patternContext.moveTo(9, 11);
+      patternContext.lineTo(11, 9);
 
-    patternContext.stroke();
+      patternContext.stroke();
+    }
     gapPattern = context.createPattern(patternCanvas, 'repeat');
     return gapPattern;
   }
 
   async function draw(): Promise<void> {
-    if (ctx) {
+    if (ctx && xScaleView) {
       await tick();
 
       ctx.resetTransform();
@@ -126,7 +128,10 @@
           const { id } = point;
           visiblePointsById[id] = point;
 
-          ctx.fillStyle = getGapPattern(ctx);
+          const gapPattern = getGapPattern(ctx);
+          if (gapPattern !== null) {
+            ctx.fillStyle = gapPattern;
+          }
           const rect = new Path2D();
           rect.rect(xStart, y, xWidth, drawHeight);
           ctx.fill(rect);

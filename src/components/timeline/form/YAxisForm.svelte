@@ -22,10 +22,10 @@
   function updateId(event: Event) {
     const { value } = getTarget(event);
 
-    if (!isNaN(value as number)) {
-      if (value === $selectedYAxis.id) {
+    if (!isNaN(value as number) && value !== null) {
+      if ($selectedYAxis !== null && value === $selectedYAxis.id) {
         idError = null;
-      } else if (value === axesIdsMap[value]) {
+      } else if (value === axesIdsMap[value as number]) {
         idError = `Y-Axis with id=${value} already exists`;
       } else {
         viewUpdateYAxis('id', value);
@@ -37,16 +37,18 @@
   }
 
   function updateLabel(event: Event) {
-    const { name, value } = getTarget(event);
-    const label: Label = { ...$selectedYAxis.label, [name]: value };
-    viewUpdateYAxis('label', label);
+    if ($selectedYAxis !== null) {
+      const { name, value } = getTarget(event);
+      const label: Label = { ...$selectedYAxis.label, [name]: value };
+      viewUpdateYAxis('label', label);
+    }
   }
 
   function updateScaleDomain(event: Event) {
     const { name, value: v } = getTarget(event);
     const numberValue = v as number;
     const value = isNaN(numberValue) ? null : numberValue;
-    const scaleDomain = [...$selectedYAxis.scaleDomain];
+    const scaleDomain = $selectedYAxis !== null ? [...$selectedYAxis.scaleDomain] : [null, null];
 
     if (name === 'domainMin') {
       scaleDomain[0] = value;

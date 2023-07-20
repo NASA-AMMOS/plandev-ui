@@ -29,10 +29,10 @@
         {#if drawWidth > 0}
           {#each xTicksView as tick}
             {#if !tick.hideLabel}
-              <g class="tick st-typography-label" transform="translate({xScaleView(tick.date)}, 0)">
+              <g class="tick st-typography-label" transform="translate({xScaleView?.(tick.date)}, 0)">
                 <text fill="currentColor" dy="0.5em">{tick.coarseTime}</text>
               </g>
-              <g class="tick st-typography-body" transform="translate({xScaleView(tick.date)}, 20)">
+              <g class="tick st-typography-body" transform="translate({xScaleView?.(tick.date)}, 20)">
                 <text fill="currentColor" dy="0.5em">{tick.fineTime}</text>
               </g>
             {/if}

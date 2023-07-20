@@ -66,11 +66,13 @@
 
   export let gridSection: ViewGridSection;
 
+  let horizontalGuides: HorizontalGuide[] = [];
   let rows: Row[] = [];
   let timelines: Timeline[] = [];
+  let verticalGuides: VerticalGuide[] = [];
 
   $: rows = $selectedTimeline?.rows || [];
-  $: timelines = $view.definition.plan.timelines;
+  $: timelines = $view?.definition.plan.timelines || [];
   $: verticalGuides = $selectedTimeline?.verticalGuides || [];
   $: horizontalGuides = $selectedRow?.horizontalGuides || [];
   $: yAxes = $selectedRow?.yAxes || [];
@@ -117,14 +119,16 @@
   }
 
   function handleAutoFitYAxisScaleDomain(yAxis: Axis) {
-    const scaleDomain = getYAxisBounds(yAxis, $selectedRow.layers, $resourcesByViewLayerId);
-    const newRowYAxes = yAxes.map(axis => {
-      if (axis.id === yAxis.id) {
-        axis.scaleDomain = scaleDomain;
-      }
-      return axis;
-    });
-    viewUpdateRow('yAxes', newRowYAxes);
+    if ($selectedRow) {
+      const scaleDomain = getYAxisBounds(yAxis, $selectedRow.layers, $resourcesByViewLayerId);
+      const newRowYAxes = yAxes.map(axis => {
+        if (axis.id === yAxis.id) {
+          axis.scaleDomain = scaleDomain;
+        }
+        return axis;
+      });
+      viewUpdateRow('yAxes', newRowYAxes);
+    }
   }
 
   function updateYAxisTickCount(event: Event, yAxis: Axis) {
@@ -253,7 +257,13 @@
     const { name, value } = getTarget(event);
     const newVerticalGuides = verticalGuides.map(guide => {
       if (guide.id === verticalGuide.id) {
-        guide.label[name] = value;
+        return {
+          ...guide,
+          label: {
+            ...guide.label,
+            [name]: value,
+          },
+        };
       }
       return guide;
     });
@@ -264,7 +274,13 @@
     const { name, value } = getTarget(event);
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id === horizontalGuide.id) {
-        guide.label[name] = value;
+        return {
+          ...guide,
+          label: {
+            ...guide.label,
+            [name]: value,
+          },
+        };
       }
       return guide;
     });
@@ -278,7 +294,10 @@
     }
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id === horizontalGuide.id) {
-        guide[name] = value;
+        return {
+          ...guide,
+          [name]: value,
+        };
       }
       return guide;
     });
@@ -289,9 +308,31 @@
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
         if (l.chartType === 'activity') {
-          l.filter.activity.types = values;
+          return {
+            ...l,
+            filter: {
+              ...l.filter,
+              ...(l.filter.activity
+                ? {
+                    ...l.filter.activity,
+                    types: values,
+                  }
+                : {}),
+            },
+          };
         } else if (l.chartType === 'line' || l.chartType === 'x-range') {
-          l.filter.resource.names = values;
+          return {
+            ...l,
+            filter: {
+              ...l.filter,
+              ...(l.filter.resource
+                ? {
+                    ...l.filter.resource,
+                    names: values,
+                  }
+                : {}),
+            },
+          };
         }
       }
       return l;
@@ -303,7 +344,10 @@
     const { name, value } = event.detail;
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
-        layer[name] = value;
+        return {
+          ...layer,
+          [name]: value,
+        };
       }
       return l;
     });
@@ -315,7 +359,7 @@
 
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
-        let newLayer: ActivityLayer | LineLayer | XRangeLayer;
+        let newLayer: ActivityLayer | LineLayer | XRangeLayer | undefined;
         if (value === 'activity') {
           newLayer = { ...createTimelineActivityLayer(timelines), id: l.id };
         } else if (value === 'line' || value === 'x-range') {
@@ -335,7 +379,9 @@
             newLayer.yAxisId = yAxes[0].id;
           }
         }
-        return newLayer;
+        if (newLayer !== undefined) {
+          return newLayer;
+        }
       }
       return l;
     });
@@ -397,8 +443,8 @@
   }
 
   // This is the JS way to style the dragged element, notice it is being passed into the dnd-zone
-  function transformDraggedElement(draggedEl: Element) {
-    const el = draggedEl.querySelector('.timeline-element') as HTMLElement;
+  function transformDraggedElement(draggedEl?: Element) {
+    const el = draggedEl?.querySelector('.timeline-element') as HTMLElement;
     if (!el) {
       return;
     }
@@ -439,7 +485,7 @@
 
   onMount(() => {
     if ($selectedTimelineId === null) {
-      const firstTimeline = $view.definition.plan.timelines[0];
+      const firstTimeline = $view?.definition.plan.timelines[0];
       if (firstTimeline) {
         viewSetSelectedTimeline(firstTimeline.id);
       }
@@ -466,7 +512,7 @@
             viewSetSelectedTimeline(id);
           }}
         >
-          {#each $view.definition.plan.timelines as timeline}
+          {#each $view?.definition.plan.timelines ?? [] as timeline}
             <option value={timeline.id}>
               Timeline {timeline.id}
             </option>
@@ -536,7 +582,7 @@
                             const { value } = getTarget(event);
                             const newVerticalGuides = verticalGuides.map(guide => {
                               if (guide.id === verticalGuide.id) {
-                                guide.label.text = value.toString();
+                                guide.label.text = value?.toString() ?? '';
                               }
                               return guide;
                             });
@@ -848,7 +894,7 @@
                               const { value } = getTarget(event);
                               const newRowYAxes = yAxes.map(axis => {
                                 if (axis.id === yAxis.id) {
-                                  axis.label.text = value.toString();
+                                  axis.label.text = value?.toString() ?? '';
                                 }
                                 return axis;
                               });

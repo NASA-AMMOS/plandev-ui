@@ -10,7 +10,7 @@
   export let chartType: ChartType;
   export let initialItemLimit: number = 10;
 
-  let filtersToRender = [];
+  let filtersToRender: string[] = [];
   let showAll = false;
   let verb = '';
 

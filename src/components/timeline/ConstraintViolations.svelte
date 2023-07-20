@@ -32,13 +32,17 @@
 
   function clampWindow(window: TimeRange) {
     const { end, start } = window;
-    const xStart = xScaleView(start);
-    const xEnd = xScaleView(end);
-    const clampedStart = xStart < 0 ? 0 : xStart;
-    const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
-    const width = clampedEnd - clampedStart;
-    const clampedWidth = width <= 0 ? 5 : width;
-    return { start: clampedStart, width: clampedWidth };
+    if (xScaleView !== null) {
+      const xStart = xScaleView(start);
+      const xEnd = xScaleView(end);
+      const clampedStart = xStart < 0 ? 0 : xStart;
+      const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
+      const width = clampedEnd - clampedStart;
+      const clampedWidth = width <= 0 ? 5 : width;
+      return { start: clampedStart, width: clampedWidth };
+    }
+
+    return { end, start, width: end - start };
   }
 
   function draw(): void {

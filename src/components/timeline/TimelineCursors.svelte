@@ -4,7 +4,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
   import { view } from '../../stores/views';
-  import type { Label, MouseOver, VerticalGuide } from '../../types/timeline';
+  import type { Label, MouseOver, Timeline, VerticalGuide } from '../../types/timeline';
   import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { createVerticalGuide } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
@@ -13,7 +13,7 @@
   export let cursorHeaderHeight: number = 20;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
-  export let mouseOver: MouseOver;
+  export let mouseOver: MouseOver | null;
   export let histogramCursorTime: Date | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let verticalGuides: VerticalGuide[] = [];
@@ -21,10 +21,16 @@
   const dispatch = createEventDispatcher();
 
   $: onCursorEnableChange(cursorEnabled);
-  $: onMouseOver(mouseOver);
-  $: onHistogramCursorTime(histogramCursorTime);
+  $: if (mouseOver !== null) {
+    onMouseOver(mouseOver);
+  }
+  $: if (histogramCursorTime !== null) {
+    onHistogramCursorTime(histogramCursorTime);
+  }
   $: onVerticalGuidesChange(verticalGuides, xScaleView, drawWidth);
-  $: timelines = $view.definition.plan.timelines;
+  $: if ($view !== null) {
+    timelines = $view.definition.plan.timelines;
+  }
 
   let offsetX: number = -1;
   let cursorX: number = 0;
@@ -32,6 +38,7 @@
   let cursorDOY: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
   let cursorWithinView = true;
+  let timelines: Timeline[] = [];
 
   /**
    * Sort vertical guides in time order descending.
@@ -53,28 +60,30 @@
     let tempComputedVerticalGuides: ComputedVerticalGuide[] = [];
 
     sortedVerticalGuides.forEach((verticalGuide, i) => {
-      let unixEpochTime = getUnixEpochTime(verticalGuide.timestamp);
-      let x = xScaleView(unixEpochTime);
-      let maxWidth = 0;
+      if (xScaleView) {
+        let unixEpochTime = getUnixEpochTime(verticalGuide.timestamp);
+        let x = xScaleView(unixEpochTime);
+        let maxWidth = 0;
 
-      if (x < 0 || x > drawWidth) {
-        return;
+        if (x < 0 || x > drawWidth) {
+          return;
+        }
+
+        // The maxWidth of the last vertical guide is its x position to edge of the drawWidth
+        // otherwise the maxWidth is the difference from x position of the previous vertical guide
+        if (!tempComputedVerticalGuides[i - 1]) {
+          maxWidth = drawWidth - x;
+        } else {
+          maxWidth = tempComputedVerticalGuides[i - 1].x - x - 20 - marginLeft;
+        }
+
+        tempComputedVerticalGuides.push({
+          id: verticalGuide.id,
+          label: verticalGuide.label,
+          maxWidth,
+          x: x + marginLeft,
+        });
       }
-
-      // The maxWidth of the last vertical guide is its x position to edge of the drawWidth
-      // otherwise the maxWidth is the difference from x position of the previous vertical guide
-      if (!tempComputedVerticalGuides[i - 1]) {
-        maxWidth = drawWidth - x;
-      } else {
-        maxWidth = tempComputedVerticalGuides[i - 1].x - x - 20 - marginLeft;
-      }
-
-      tempComputedVerticalGuides.push({
-        id: verticalGuide.id,
-        label: verticalGuide.label,
-        maxWidth,
-        x: x + marginLeft,
-      });
     });
 
     computedVerticalGuides = tempComputedVerticalGuides;
@@ -104,15 +113,17 @@
     }
 
     let dateWithinView = true;
-    if (!xScaleView) {
+    if (xScaleView === null) {
       dateWithinView = false;
     }
 
-    const viewStart = xScaleView.domain()[0];
-    const viewEnd = xScaleView.domain()[1];
+    if (xScaleView !== null) {
+      const viewStart = xScaleView.domain()[0];
+      const viewEnd = xScaleView.domain()[1];
 
-    if (date < viewStart || date > viewEnd) {
-      dateWithinView = false;
+      if (date < viewStart || date > viewEnd) {
+        dateWithinView = false;
+      }
     }
 
     if (dateWithinView) {
@@ -131,14 +142,16 @@
   function updateCursor() {
     if ((cursorEnabled && offsetX >= 0 && offsetX <= drawWidth) || histogramCursorTime) {
       let unixEpochTime = 0;
-      if (histogramCursorTime) {
-        unixEpochTime = histogramCursorTime.getTime();
-        cursorDOY = getDoyTime(new Date(unixEpochTime));
-        cursorX = xScaleView(unixEpochTime);
-      } else {
-        unixEpochTime = xScaleView.invert(offsetX).getTime();
-        cursorDOY = getDoyTime(new Date(unixEpochTime));
-        cursorX = offsetX;
+      if (xScaleView !== null) {
+        if (histogramCursorTime) {
+          unixEpochTime = histogramCursorTime.getTime();
+          cursorDOY = getDoyTime(new Date(unixEpochTime));
+          cursorX = xScaleView(unixEpochTime);
+        } else {
+          unixEpochTime = xScaleView.invert(offsetX).getTime();
+          cursorDOY = getDoyTime(new Date(unixEpochTime));
+          cursorX = offsetX;
+        }
       }
       cursorMaxWidth = drawWidth - cursorX;
       cursorX = cursorX + marginLeft;

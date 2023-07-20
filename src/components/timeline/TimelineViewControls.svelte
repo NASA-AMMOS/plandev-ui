@@ -34,10 +34,10 @@
     }
   }
 
-  function onKeydown(e: KeyboardEvent & { currentTarget: EventTarget & Window; target: HTMLElement }) {
+  function onKeydown(e: KeyboardEvent) {
     // If user holds shift while not focused on an input then activate the temporary unlock.
     // If an input is focused, we assume they're holding shift to capitalize instead.
-    if (e.target.tagName !== 'INPUT') {
+    if ((e.target as HTMLElement)?.tagName !== 'INPUT') {
       if (e.key === '=') {
         onZoomIn();
       } else if (e.key === '-') {

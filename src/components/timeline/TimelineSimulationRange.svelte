@@ -11,7 +11,9 @@
   export let simulationDataset: SimulationDataset | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
 
-  $: onSimulationDatasetChange(simulationDataset, xScaleView);
+  $: if (simulationDataset !== null) {
+    onSimulationDatasetChange(simulationDataset, xScaleView);
+  }
 
   let simRangeWidth: number = 0;
   let simCursorStartX: number = -1;
@@ -23,16 +25,23 @@
     simulationDataset: SimulationDataset,
     xScaleView: ScaleTime<number, number> | null,
   ) {
-    const simStartUnixEpochTime = new Date(simulationDataset?.simulation_start_time).getTime();
-    const simEndUnixEpochTime = new Date(simulationDataset?.simulation_end_time).getTime();
-    const simStartX = xScaleView(simStartUnixEpochTime);
-    const simEndX = xScaleView(simEndUnixEpochTime);
+    if (
+      simulationDataset !== null &&
+      simulationDataset.simulation_start_time !== null &&
+      simulationDataset.simulation_end_time !== null &&
+      xScaleView !== null
+    ) {
+      const simStartUnixEpochTime = new Date(simulationDataset.simulation_start_time).getTime();
+      const simEndUnixEpochTime = new Date(simulationDataset.simulation_end_time).getTime();
+      const simStartX = xScaleView(simStartUnixEpochTime);
+      const simEndX = xScaleView(simEndUnixEpochTime);
 
-    simCursorStartX = simStartX < 0 || simStartX > drawWidth ? -1 : simStartX + marginLeft;
-    simCursorEndX = simEndX < 0 || simEndX > drawWidth ? -1 : simEndX + marginLeft;
-    simRangeStartX = Math.max(0, simStartX);
-    simRangeEndX = Math.min(xScaleView(xScaleView.domain()[1].getTime()), simEndX);
-    simRangeWidth = simRangeEndX - simRangeStartX;
+      simCursorStartX = simStartX < 0 || simStartX > drawWidth ? -1 : simStartX + marginLeft;
+      simCursorEndX = simEndX < 0 || simEndX > drawWidth ? -1 : simEndX + marginLeft;
+      simRangeStartX = Math.max(0, simStartX);
+      simRangeEndX = Math.min(xScaleView(xScaleView.domain()[1].getTime()), simEndX);
+      simRangeWidth = simRangeEndX - simRangeStartX;
+    }
   }
 </script>
 

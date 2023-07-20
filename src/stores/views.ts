@@ -82,19 +82,29 @@ export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selected
 /* Helper Functions. */
 
 export function applyViewUpdate(updatedView: Partial<View>) {
-  view.update(currentView => ({
-    ...currentView,
-    ...(updatedView.definition ? { definition: updatedView.definition } : {}),
-    ...(updatedView.name ? { name: updatedView.name } : {}),
-    ...(updatedView.updated_at ? { updated_at: updatedView.updated_at } : {}),
-  }));
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        ...(updatedView.definition ? { definition: updatedView.definition } : {}),
+        ...(updatedView.name ? { name: updatedView.name } : {}),
+        ...(updatedView.updated_at ? { updated_at: updatedView.updated_at } : {}),
+      };
+    }
+    return currentView;
+  });
 
-  originalView.update(view => ({
-    ...view,
-    ...(updatedView.definition ? { definition: updatedView.definition } : {}),
-    ...(updatedView.name ? { name: updatedView.name } : {}),
-    ...(updatedView.updated_at ? { updated_at: updatedView.updated_at } : {}),
-  }));
+  originalView.update(view => {
+    if (view !== null) {
+      return {
+        ...view,
+        ...(updatedView.definition ? { definition: updatedView.definition } : {}),
+        ...(updatedView.name ? { name: updatedView.name } : {}),
+        ...(updatedView.updated_at ? { updated_at: updatedView.updated_at } : {}),
+      };
+    }
+    return view;
+  });
 }
 
 export function initializeView(newView: View) {
@@ -110,16 +120,16 @@ export function resetView() {
   view.set(get(originalView));
 }
 
-export function viewSetSelectedRow(rowId: number | null): void {
+export function viewSetSelectedRow(rowId?: number | null): void {
   // If no timeline is selected, select the first timeline
   if (get(selectedTimelineId) === null) {
-    const firstTimeline = get(view).definition.plan.timelines[0];
+    const firstTimeline = get(view)?.definition.plan.timelines[0];
     if (firstTimeline) {
       viewSetSelectedTimeline(firstTimeline.id);
     }
   }
 
-  selectedRowId.set(rowId);
+  selectedRowId.set(rowId ?? null);
   const currentRow = get(selectedRow);
 
   if (currentRow) {
@@ -141,8 +151,8 @@ export function viewSetSelectedRow(rowId: number | null): void {
   }
 }
 
-export function viewSetSelectedTimeline(timelineId: number | null): void {
-  selectedTimelineId.set(timelineId);
+export function viewSetSelectedTimeline(timelineId?: number | null): void {
+  selectedTimelineId.set(timelineId ?? null);
 }
 
 export function viewTogglePanel(event: ViewToggleEvent) {
@@ -155,111 +165,129 @@ export function viewTogglePanel(event: ViewToggleEvent) {
   };
   const { columnSizes, leftHidden, rightHidden } = grid;
 
-  const { col1, col2, col3 } = parseColumnSizes(columnSizes, leftHidden, rightHidden);
-  switch (type) {
-    case 'left': {
-      viewUpdateGrid({
-        columnSizes: createColumnSizes({ col1, col2, col3 }, !state, rightHidden),
-        leftHidden: !state,
-        leftRowSizes: createRowSizes({}, false),
-        leftSplit: false,
-        ...update,
-      });
-      break;
-    }
-    case 'left-split': {
-      viewUpdateGrid({
-        columnSizes: createColumnSizes({ col1, col2, col3 }, !state, rightHidden),
-        leftHidden: !state,
-        leftRowSizes: createRowSizes({}, state),
-        leftSplit: state,
-        ...update,
-      });
-      break;
-    }
-    case 'bottom': {
-      viewUpdateGrid({
-        middleRowSizes: createRowSizes({ row1: '2fr', row2: '1fr' }, state),
-        middleSplit: state,
-        ...update,
-      });
-      break;
-    }
-    case 'right': {
-      viewUpdateGrid({
-        columnSizes: createColumnSizes({ col1, col2, col3 }, leftHidden, !state),
-        rightHidden: !state,
-        rightRowSizes: createRowSizes({}, false),
-        rightSplit: false,
-        ...update,
-      });
-      break;
-    }
-    case 'right-split': {
-      viewUpdateGrid({
-        columnSizes: createColumnSizes({ col1, col2, col3 }, leftHidden, !state),
-        rightHidden: !state,
-        rightRowSizes: createRowSizes({}, state),
-        rightSplit: state,
-        ...update,
-      });
-      break;
+  const parsedColumnSizes = parseColumnSizes(columnSizes, leftHidden, rightHidden);
+  if (parsedColumnSizes !== null) {
+    const { col1, col2, col3 } = parsedColumnSizes;
+    switch (type) {
+      case 'left': {
+        viewUpdateGrid({
+          columnSizes: createColumnSizes({ col1, col2, col3 }, !state, rightHidden),
+          leftHidden: !state,
+          leftRowSizes: createRowSizes({}, false),
+          leftSplit: false,
+          ...update,
+        });
+        break;
+      }
+      case 'left-split': {
+        viewUpdateGrid({
+          columnSizes: createColumnSizes({ col1, col2, col3 }, !state, rightHidden),
+          leftHidden: !state,
+          leftRowSizes: createRowSizes({}, state),
+          leftSplit: state,
+          ...update,
+        });
+        break;
+      }
+      case 'bottom': {
+        viewUpdateGrid({
+          middleRowSizes: createRowSizes({ row1: '2fr', row2: '1fr' }, state),
+          middleSplit: state,
+          ...update,
+        });
+        break;
+      }
+      case 'right': {
+        viewUpdateGrid({
+          columnSizes: createColumnSizes({ col1, col2, col3 }, leftHidden, !state),
+          rightHidden: !state,
+          rightRowSizes: createRowSizes({}, false),
+          rightSplit: false,
+          ...update,
+        });
+        break;
+      }
+      case 'right-split': {
+        viewUpdateGrid({
+          columnSizes: createColumnSizes({ col1, col2, col3 }, leftHidden, !state),
+          rightHidden: !state,
+          rightRowSizes: createRowSizes({}, state),
+          rightSplit: state,
+          ...update,
+        });
+        break;
+      }
     }
   }
 }
 
 export function viewUpdateActivityDirectivesTable(update: Partial<ViewTable>): void {
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        activityDirectivesTable: {
-          ...currentView.definition.plan.activityDirectivesTable,
-          ...update,
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            activityDirectivesTable: {
+              ...currentView.definition.plan.activityDirectivesTable,
+              ...update,
+            },
+          },
         },
-      },
-    },
-  }));
+      };
+    }
+    return currentView;
+  });
 }
 
 export function viewUpdateActivitySpansTable(update: Partial<ViewTable>): void {
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        activitySpansTable: {
-          ...currentView.definition.plan.activitySpansTable,
-          ...update,
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            activitySpansTable: {
+              ...currentView.definition.plan.activitySpansTable,
+              ...update,
+            },
+          },
         },
-      },
-    },
-  }));
+      };
+    }
+    return currentView;
+  });
 }
 
 export function viewUpdateIFrame(prop: string, value: any, iFrameId?: number) {
   if (iFrameId !== undefined) {
-    view.update(currentView => ({
-      ...currentView,
-      definition: {
-        ...currentView.definition,
-        plan: {
-          ...currentView.definition.plan,
-          iFrames: currentView.definition.plan.iFrames.map(iFrame => {
-            if (iFrame && iFrame.id === iFrameId) {
-              return {
-                ...iFrame,
-                [prop]: value,
-              };
-            }
-            return iFrame;
-          }),
-        },
-      },
-    }));
+    view.update(currentView => {
+      if (currentView !== null) {
+        return {
+          ...currentView,
+          definition: {
+            ...currentView.definition,
+            plan: {
+              ...currentView.definition.plan,
+              iFrames: currentView.definition.plan.iFrames.map(iFrame => {
+                if (iFrame && iFrame.id === iFrameId) {
+                  return {
+                    ...iFrame,
+                    [prop]: value,
+                  };
+                }
+                return iFrame;
+              }),
+            },
+          },
+        };
+      }
+      return currentView;
+    });
   }
 }
 
@@ -271,146 +299,171 @@ export function viewUpdateLayer(event: Event) {
   const rowId = get<number | null>(selectedRowId);
   const layerId = get<number | null>(selectedLayerId);
 
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        timelines: currentView.definition.plan.timelines.map(timeline => {
-          if (timeline && timeline.id === timelineId) {
-            return {
-              ...timeline,
-              rows: timeline.rows.map(row => {
-                if (row.id === rowId) {
-                  return {
-                    ...row,
-                    layers: row.layers.map(layer => {
-                      if (layer.id === layerId) {
-                        return {
-                          ...layer,
-                          [prop]: value,
-                        };
-                      }
-                      return layer;
-                    }),
-                  };
-                }
-                return row;
-              }),
-            };
-          }
-          return timeline;
-        }),
-      },
-    },
-  }));
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(timeline => {
+              if (timeline && timeline.id === timelineId) {
+                return {
+                  ...timeline,
+                  rows: timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        layers: row.layers.map(layer => {
+                          if (layer.id === layerId) {
+                            return {
+                              ...layer,
+                              [prop]: value,
+                            };
+                          }
+                          return layer;
+                        }),
+                      };
+                    }
+                    return row;
+                  }),
+                };
+              }
+              return timeline;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
 }
 
 export function viewUpdateGrid(update: Partial<ViewGrid>) {
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        grid: {
-          ...currentView.definition.plan.grid,
-          ...update,
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            grid: {
+              ...currentView.definition.plan.grid,
+              ...update,
+            },
+          },
         },
-      },
-    },
-  }));
+      };
+    }
+    return currentView;
+  });
 }
 
 export function viewUpdateRow(
   prop: string,
   value: any,
-  timelineId?: number,
-  rowId?: number,
-  shouldSyncChange?: boolean,
+  timelineId?: number | null,
+  rowId?: number | null,
+  shouldSyncChange?: boolean | null,
 ) {
   timelineId = timelineId ?? get<number | null>(selectedTimelineId);
   rowId = rowId ?? get<number | null>(selectedRowId);
 
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        timelines: currentView.definition.plan.timelines.map(timeline => {
-          if (timeline && timeline.id === timelineId) {
-            return {
-              ...timeline,
-              rows: timeline.rows.map(row => {
-                if (row.id === rowId) {
-                  return {
-                    ...row,
-                    [prop]: value,
-                  };
-                }
-                return row;
-              }),
-            };
-          }
-          return timeline;
-        }),
-      },
-    },
-  }));
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(timeline => {
+              if (timeline && timeline.id === timelineId) {
+                return {
+                  ...timeline,
+                  rows: timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        [prop]: value,
+                      };
+                    }
+                    return row;
+                  }),
+                };
+              }
+              return timeline;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
 
   if (shouldSyncChange) {
-    originalView.update(currentView => ({
-      ...currentView,
-      definition: {
-        ...currentView.definition,
-        plan: {
-          ...currentView.definition.plan,
-          timelines: currentView.definition.plan.timelines.map(timeline => {
-            if (timeline && timeline.id === timelineId) {
-              return {
-                ...timeline,
-                rows: timeline.rows.map(row => {
-                  if (row.id === rowId) {
-                    return {
-                      ...row,
-                      [prop]: value,
-                    };
-                  }
-                  return row;
-                }),
-              };
-            }
-            return timeline;
-          }),
-        },
-      },
-    }));
+    originalView.update(currentView => {
+      if (currentView !== null) {
+        return {
+          ...currentView,
+          definition: {
+            ...currentView.definition,
+            plan: {
+              ...currentView.definition.plan,
+              timelines: currentView.definition.plan.timelines.map(timeline => {
+                if (timeline && timeline.id === timelineId) {
+                  return {
+                    ...timeline,
+                    rows: timeline.rows.map(row => {
+                      if (row.id === rowId) {
+                        return {
+                          ...row,
+                          [prop]: value,
+                        };
+                      }
+                      return row;
+                    }),
+                  };
+                }
+                return timeline;
+              }),
+            },
+          },
+        };
+      }
+      return currentView;
+    });
   }
 }
 
-export function viewUpdateTimeline(prop: string, value: any, timelineId?: number) {
+export function viewUpdateTimeline(prop: string, value: any, timelineId?: number | null) {
   timelineId = timelineId ?? get<number | null>(selectedTimelineId);
 
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        timelines: currentView.definition.plan.timelines.map(timeline => {
-          if (timeline && timeline.id === timelineId) {
-            return {
-              ...timeline,
-              [prop]: value,
-            };
-          }
-          return timeline;
-        }),
-      },
-    },
-  }));
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(timeline => {
+              if (timeline && timeline.id === timelineId) {
+                return {
+                  ...timeline,
+                  [prop]: value,
+                };
+              }
+              return timeline;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
 }
 
 export function viewUpdateYAxis(prop: string, value: any) {
@@ -418,41 +471,46 @@ export function viewUpdateYAxis(prop: string, value: any) {
   const rowId = get<number | null>(selectedRowId);
   const yAxisId = get<number | null>(selectedYAxisId);
 
-  view.update(currentView => ({
-    ...currentView,
-    definition: {
-      ...currentView.definition,
-      plan: {
-        ...currentView.definition.plan,
-        timelines: currentView.definition.plan.timelines.map(timeline => {
-          if (timeline && timeline.id === timelineId) {
-            return {
-              ...timeline,
-              rows: timeline.rows.map(row => {
-                if (row.id === rowId) {
-                  return {
-                    ...row,
-                    yAxes: row.yAxes.map(yAxis => {
-                      if (yAxis.id === yAxisId) {
-                        if (prop === 'id') {
-                          selectedYAxisId.set(value);
-                        }
-                        return {
-                          ...yAxis,
-                          [prop]: value,
-                        };
-                      }
-                      return yAxis;
-                    }),
-                  };
-                }
-                return row;
-              }),
-            };
-          }
-          return timeline;
-        }),
-      },
-    },
-  }));
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(timeline => {
+              if (timeline && timeline.id === timelineId) {
+                return {
+                  ...timeline,
+                  rows: timeline.rows.map(row => {
+                    if (row.id === rowId) {
+                      return {
+                        ...row,
+                        yAxes: row.yAxes.map(yAxis => {
+                          if (yAxis.id === yAxisId) {
+                            if (prop === 'id') {
+                              selectedYAxisId.set(value);
+                            }
+                            return {
+                              ...yAxis,
+                              [prop]: value,
+                            };
+                          }
+                          return yAxis;
+                        }),
+                      };
+                    }
+                    return row;
+                  }),
+                };
+              }
+              return timeline;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
 }
