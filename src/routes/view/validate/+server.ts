@@ -12,6 +12,6 @@ export const POST: RequestHandler = async event => {
       return json({ valid });
     }
   } catch (e) {
-    return json({ errors: [e.message], valid: false });
+    return json({ errors: [(e as Error).message], valid: false });
   }
 };

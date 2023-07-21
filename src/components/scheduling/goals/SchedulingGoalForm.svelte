@@ -51,6 +51,7 @@
   let goalName: string = initialGoalName;
   let goalTags: Tag[] = initialGoalTags;
   let hasAuthoringPermission: boolean = false;
+  let hasPermission: boolean = false;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
@@ -80,18 +81,20 @@
       tags: goalTags.map(tag => ({ tag })),
       ...(goalModelId !== null ? { model_id: goalModelId } : {}),
     }) || specId !== savedSpecId;
-  $: hasPermission = specId
-    ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
-    : goalModelId
-    ? hasModelPermission(goalModelId, mode, user)
-    : hasAnyPlanPermission(mode, user);
+  $: if (user) {
+    hasPermission = specId
+      ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
+      : goalModelId
+      ? hasModelPermission(goalModelId, mode, user)
+      : hasAnyPlanPermission(mode, user);
+  }
   $: hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
   $: saveButtonText = mode === 'edit' && !goalModified ? 'Saved' : 'Save';
   $: saveButtonClass = goalModified && saveButtonEnabled ? 'primary' : 'secondary';
   $: pageTitle = mode === 'edit' ? 'Scheduling Goals' : 'New Scheduling Goal';
   $: pageSubtitle = mode === 'edit' ? savedGoal.name : '';
 
-  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User): boolean {
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User | null): boolean {
     const plansFromModel = plans.filter(plan => plan.model_id === modelId);
     return plansFromModel.some(plan => {
       return (
@@ -101,7 +104,7 @@
     });
   }
 
-  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User): boolean {
+  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User | null): boolean {
     return plans.some(plan => {
       return mode === 'create'
         ? featurePermissions.schedulingGoals.canCreate(user, plan)
@@ -109,11 +112,14 @@
     });
   }
 
-  function hasPlanPermission(planId: number, mode: 'create' | 'edit', user: User): boolean {
+  function hasPlanPermission(planId: number | undefined, mode: 'create' | 'edit', user: User | null): boolean {
     const plan = plans.find(plan => plan.id === planId);
-    return mode === 'create'
-      ? featurePermissions.schedulingGoals.canCreate(user, plan)
-      : featurePermissions.schedulingGoals.canUpdate(user, plan);
+    if (plan) {
+      return mode === 'create'
+        ? featurePermissions.schedulingGoals.canCreate(user, plan)
+        : featurePermissions.schedulingGoals.canUpdate(user, plan);
+    }
+    return false;
   }
 
   function diffGoals(goalA: Partial<SchedulingGoal>, goalB: Partial<SchedulingGoal>) {

@@ -3159,7 +3159,13 @@ const effects = {
     try {
       const { errors, valid } = validateViewJSONAgainstSchema(unValidatedView);
       return {
-        errors: errors?.map(({ message }) => message) ?? [],
+        errors:
+          errors?.map(error => {
+            if (typeof error === 'string') {
+              return error;
+            }
+            return JSON.stringify(error);
+          }) ?? [],
         valid,
       };
     } catch (e) {

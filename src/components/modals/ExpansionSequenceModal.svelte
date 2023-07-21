@@ -20,7 +20,7 @@
 
   $: effects
     .getExpansionSequenceSeqJson(expansionSequence.seq_id, expansionSequence.simulation_dataset_id, user)
-    .then((result: string) => (seqJsonStr = result));
+    .then((result: string | null) => (seqJsonStr = result));
 </script>
 
 <Modal height={400} width={600}>

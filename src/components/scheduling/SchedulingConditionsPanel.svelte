@@ -20,11 +20,16 @@
 
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
+  let hasCreatePermission: boolean = false;
+  let hasDeletePermission: boolean = false;
+  let hasEditPermission: boolean = false;
   let filteredSchedulingSpecConditions: SchedulingSpecCondition[] = [];
 
-  $: hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan);
-  $: hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan);
-  $: hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan);
+  $: if ($plan) {
+    hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan);
+    hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan);
+    hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan);
+  }
 
   $: filteredSchedulingSpecConditions = $schedulingSpecConditions.filter(spec => {
     const filterTextLowerCase = conditionsFilterText.toLowerCase();

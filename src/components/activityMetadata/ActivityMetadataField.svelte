@@ -18,27 +18,28 @@
   export let value: ActivityMetadataValue | null = null;
 
   let clientWidth: number;
+  let key: string | undefined;
   let enumerates: (number | string)[];
 
   $: labelColumnWidth = clientWidth * 0.65;
-  $: key = definition.key;
-  $: if (definition.schema.type === 'enum' || definition.schema.type === 'enum_multiselect') {
+  $: key = definition?.key;
+  $: if (definition?.schema.type === 'enum' || definition?.schema.type === 'enum_multiselect') {
     enumerates = (definition.schema as ActivityMetadataSchemaEnum).enumerates;
   }
 </script>
 
 <div bind:clientWidth>
-  {#if definition.schema.type === 'boolean'}
+  {#if definition?.schema.type === 'boolean'}
     <ActivityMetadataBaseBoolean {key} {value} {disabled} {labelColumnWidth} on:change />
-  {:else if definition.schema.type === 'number'}
+  {:else if definition?.schema.type === 'number'}
     <ActivityMetadataBaseNumber {key} {value} {disabled} {labelColumnWidth} on:change />
-  {:else if definition.schema.type === 'string'}
+  {:else if definition?.schema.type === 'string'}
     <ActivityMetadataBaseString {key} {value} {disabled} {labelColumnWidth} on:change />
-  {:else if definition.schema.type === 'long_string'}
+  {:else if definition?.schema.type === 'long_string'}
     <ActivityMetadataBaseLongString {key} {value} {disabled} {labelColumnWidth} on:change />
-  {:else if definition.schema.type === 'enum'}
+  {:else if definition?.schema.type === 'enum'}
     <ActivityMetadataBaseEnum {key} {value} {enumerates} {disabled} {labelColumnWidth} on:change />
-  {:else if definition.schema.type === 'enum_multiselect'}
+  {:else if definition?.schema.type === 'enum_multiselect'}
     <ActivityMetadataBaseEnumMultiselect {key} {value} {enumerates} {disabled} {labelColumnWidth} on:change />
   {/if}
 </div>

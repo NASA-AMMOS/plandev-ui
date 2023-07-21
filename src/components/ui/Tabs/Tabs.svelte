@@ -14,7 +14,7 @@
   import TabList from './TabList.svelte';
 
   export { className as class };
-  export let tabListClassName: string = undefined;
+  export let tabListClassName: string | undefined = undefined;
 
   let className: string = '';
 
@@ -22,8 +22,8 @@
 
   const tabs: TabId[] = [];
   const panels: PanelId[] = [];
-  const selectedTab = writable<TabId>(null);
-  const selectedPanel = writable<PanelId>(null);
+  const selectedTab = writable<TabId>();
+  const selectedPanel = writable<PanelId>();
 
   function unregisterPanel(panelId: PanelId) {
     const i = panels.indexOf(panelId);

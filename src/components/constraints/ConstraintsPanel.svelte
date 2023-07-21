@@ -181,7 +181,7 @@
           [
             permissionHandler,
             {
-              hasPermission: featurePermissions.constraints.canCheck(user, $plan),
+              hasPermission: $plan ? featurePermissions.constraints.canCheck(user, $plan) : false,
               permissionError: 'You do not have permission to run constraint checks',
             },
           ],
@@ -208,7 +208,7 @@
           class="st-button secondary"
           on:click={() => window.open(`${base}/constraints/new`, '_blank')}
           use:permissionHandler={{
-            hasPermission: featurePermissions.constraints.canCreate(user, $plan),
+            hasPermission: $plan ? featurePermissions.constraints.canCreate(user, $plan) : false,
             permissionError: 'You do not have permission to create constraints',
           }}
         >
@@ -219,9 +219,9 @@
       <fieldset class="filter-row" class:hidden={!showFilters}>
         <div class="checkbox-container">
           <input id="showConstraintsWithNoViolations" bind:checked={showConstraintsWithNoViolations} type="checkbox" />
-          <label class="st-typography-label" for="showConstraintsWithNoViolations"
-            >Show Constraints with no Violations</label
-          >
+          <label class="st-typography-label" for="showConstraintsWithNoViolations">
+            Show Constraints with no Violations
+          </label>
         </div>
         <div>
           <DatePickerField
@@ -284,8 +284,8 @@
         {#each filteredConstraints as constraint}
           <ConstraintListItem
             {constraint}
-            hasDeletePermission={featurePermissions.constraints.canDelete(user, $plan)}
-            hasEditPermission={featurePermissions.constraints.canUpdate(user, $plan)}
+            hasDeletePermission={$plan ? featurePermissions.constraints.canDelete(user, $plan) : false}
+            hasEditPermission={$plan ? featurePermissions.constraints.canUpdate(user, $plan) : false}
             visible={$constraintVisibilityMap[constraint.id]}
             violation={filteredConstraintViolationMap[constraint.id]}
             totalViolationCount={constraintViolationMap[constraint.id]?.windows?.length}

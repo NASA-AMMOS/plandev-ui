@@ -10,10 +10,10 @@
 
   const dispatch = createEventDispatcher();
 
-  let container: HTMLFieldSetElement | null;
-  let input: HTMLInputElement | null;
-  let label: HTMLLabelElement | null;
-  let select: HTMLSelectElement | null;
+  let container: HTMLFieldSetElement | null = null;
+  let input: HTMLInputElement | null = null;
+  let label: HTMLLabelElement | null = null;
+  let select: HTMLSelectElement | null = null;
 
   $: if (container && field && input) {
     if (input.value !== $field.value) {
@@ -48,19 +48,21 @@
   }
 
   onMount(() => {
-    input = container.querySelector('input');
-    label = container.querySelector('label');
-    select = container.querySelector('select');
+    if (container) {
+      input = container.querySelector('input');
+      label = container.querySelector('label');
+      select = container.querySelector('select');
 
-    if (input && field) {
-      input.addEventListener('input', onInput);
-      input.addEventListener('change', onChange);
-      input.value = $field.value;
-    }
+      if (input && field) {
+        input.addEventListener('input', onInput);
+        input.addEventListener('change', onChange);
+        input.value = $field.value;
+      }
 
-    if (select && field) {
-      select.addEventListener('change', onChange);
-      select.value = $field.value;
+      if (select && field) {
+        select.addEventListener('change', onChange);
+        select.value = $field.value;
+      }
     }
   });
 
@@ -75,12 +77,12 @@
     }
   });
 
-  function onInput(event: InputEvent) {
+  function onInput(event: Event) {
     const { value } = getTarget(event);
     $field.value = value;
   }
 
-  async function onChange(event: InputEvent) {
+  async function onChange(event: Event) {
     const { value } = getTarget(event);
     $field.value = value;
     const valid = await field.validateAndSet(value);

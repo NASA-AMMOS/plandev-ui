@@ -22,7 +22,7 @@
   export let scrollBeyondLastLine: boolean | undefined = undefined;
   export let tabSize: number | undefined = undefined;
   export let theme: string | undefined = undefined;
-  export let value: string | undefined = undefined;
+  export let value: string | null | undefined = undefined;
 
   type TypeScriptWorker = languages.typescript.TypeScriptWorker;
 
@@ -32,7 +32,7 @@
   }>();
 
   let className: string = '';
-  let div: HTMLDivElement | undefined = undefined;
+  let div: HTMLDivElement;
   let editor: Editor.IStandaloneCodeEditor | undefined = undefined;
   let editor_load_event: IDisposable | undefined = undefined;
   let styleName: string = '';
@@ -41,7 +41,7 @@
     const currentValue = editor.getValue();
     if (value !== currentValue) {
       const scrollTop = editor.getScrollTop(); // setValue can nuke scroll position.
-      editor.getModel().setValue(value ?? ''); // Make sure value is not null or Monaco throws.
+      editor?.getModel()?.setValue(value ?? ''); // Make sure value is not null or Monaco throws.
       editor.setScrollPosition({ scrollTop });
     }
   }
@@ -75,7 +75,7 @@
       scrollBeyondLastLine,
       tabSize,
       theme,
-      value,
+      ...(value !== null && { value }),
     };
     monaco = await import('monaco-editor');
     monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
@@ -84,8 +84,10 @@
     editor = monaco.editor.create(div, options, override);
 
     editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {
-      const newValue = editor.getModel().getValue();
-      dispatch('didChangeModelContent', { e, value: newValue });
+      const newValue = editor?.getModel()?.getValue();
+      if (newValue !== undefined) {
+        dispatch('didChangeModelContent', { e, value: newValue });
+      }
     });
 
     // So.. there is no way to check when the model is initialized apparently!
@@ -95,21 +97,25 @@
     // Just use retry with exponential back-off to get it!
     promiseRetry(
       async () => {
-        let getWorker: (...uris: Uri[]) => Promise<TypeScriptWorker>;
-        let tsWorker: TypeScriptWorker;
+        let tsWorker: TypeScriptWorker | null = null;
 
         // Errors in this block indicate failure to find a loaded worker
         // so transform to the specific error type we care about.
         try {
-          getWorker = await monaco.languages.typescript.getTypeScriptWorker();
-          tsWorker = await getWorker();
+          const getWorker: ((...uris: Uri[]) => Promise<TypeScriptWorker>) | undefined =
+            await monaco?.languages.typescript.getTypeScriptWorker();
+          if (getWorker) {
+            tsWorker = await getWorker();
+          }
         } catch (e) {
           throw new ShouldRetryError();
         }
 
         // Errors in the dispatch won't trigger the retry and will just fail.
-        model = editor.getModel(); // Set here so parents can bind to the model easily.
-        dispatch('fullyLoaded', { model, worker: tsWorker });
+        model = editor?.getModel(); // Set here so parents can bind to the model easily.
+        if (model != null && tsWorker !== null) {
+          dispatch('fullyLoaded', { model, worker: tsWorker });
+        }
       },
       5,
       10,

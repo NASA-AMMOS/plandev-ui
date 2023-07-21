@@ -29,12 +29,12 @@
   function onDragEnd(): void {
     if (div) {
       if (columns !== 'none') {
-        const newSizes: string = div.style['grid-template-columns'];
+        const newSizes = div.style['grid-template-columns' as keyof CSSStyleDeclaration];
         dispatch('changeColumnSizes', newSizes);
-        columns = newSizes;
+        columns = `${newSizes}`;
       } else if (rows !== 'none') {
-        const newSizes: string = div.style['grid-template-rows'];
-        rows = newSizes;
+        const newSizes = div.style['grid-template-rows' as keyof CSSStyleDeclaration];
+        rows = `${newSizes}`;
         dispatch('changeRowSizes', newSizes);
       }
     }
@@ -54,14 +54,18 @@
 
       for (const columnGutter of Array.from(columnGutters)) {
         const track = columnGutter.getAttribute('data-track');
-        const trackAsNumber = parseFloat(track);
-        split.addColumnGutter(columnGutter, trackAsNumber);
+        if (track !== null) {
+          const trackAsNumber = parseFloat(track);
+          split.addColumnGutter(columnGutter, trackAsNumber);
+        }
       }
 
       for (const rowGutter of Array.from(rowGutters)) {
         const track = rowGutter.getAttribute('data-track');
-        const trackAsNumber = parseFloat(track);
-        split.addRowGutter(rowGutter, trackAsNumber);
+        if (track !== null) {
+          const trackAsNumber = parseFloat(track);
+          split.addRowGutter(rowGutter, trackAsNumber);
+        }
       }
     }
   }

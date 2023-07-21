@@ -6,7 +6,7 @@
 
   export let iFrameId: number;
 
-  let iFrame: ViewIFrame;
+  let iFrame: ViewIFrame | undefined;
 
   $: iFrame = $view?.definition.plan.iFrames.find(iFrame => iFrame.id === iFrameId);
 </script>

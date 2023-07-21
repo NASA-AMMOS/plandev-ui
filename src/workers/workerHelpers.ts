@@ -362,7 +362,7 @@ function repeatSize(str: string): number {
  */
 function validateRepeat(value: string, expected_argument: FswCommandArgumentRepeat): ValidationReturn {
   // no range info, ignore check
-  if (expected_argument.repeat.min === undefined && expected_argument.repeat.max === undefined) {
+  if (expected_argument?.repeat?.min === undefined && expected_argument?.repeat?.max === undefined) {
     return false;
   }
 

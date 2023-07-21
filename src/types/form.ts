@@ -4,7 +4,7 @@ export type Field<T> = {
   dirty: boolean;
   dirtyAndValid: boolean;
   errors: string[];
-  firstError: string;
+  firstError: string | null;
   initialValue: T;
   invalid: boolean;
   pending: boolean;

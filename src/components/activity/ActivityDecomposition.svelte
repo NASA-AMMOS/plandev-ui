@@ -20,10 +20,10 @@
   let childIds: SpanId[] = [];
   let span: Span | null = null;
 
-  $: span = spansMap[rootSpanId] ?? null;
+  $: span = rootSpanId !== null ? spansMap[rootSpanId] : null;
   $: isRoot = span ? !span.parent_id : true;
   $: type = span?.type || '';
-  $: childIds = spanUtilityMaps?.spanIdToChildIdsMap[span?.id] ?? [];
+  $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.id] : [];
   $: hasChildren = childIds ? childIds.length > 0 : false;
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =

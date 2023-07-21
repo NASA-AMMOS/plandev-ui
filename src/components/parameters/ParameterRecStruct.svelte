@@ -52,7 +52,7 @@
     const { detail: subFormParameter } = event;
     const value = {
       ...formParameter.value,
-      [subFormParameter.key]: subFormParameter.value,
+      [subFormParameter.key as keyof FormParameter]: subFormParameter.value,
     };
     dispatch('change', { ...formParameter, value });
   }

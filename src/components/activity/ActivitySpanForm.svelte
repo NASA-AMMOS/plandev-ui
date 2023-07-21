@@ -35,12 +35,12 @@
   let parameterErrorMap: Record<string, string[]> = {};
   let rootSpan: Span | null;
   let rootSpanHasChildren: boolean;
-  let seqId: string;
+  let seqId: string | null;
   let startTimeDoy: string;
 
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
   $: rootSpan = getSpanRootParent(spansMap, span.id);
-  $: rootSpanHasChildren = spanUtilityMaps.spanIdToChildIdsMap[rootSpan.id]?.length > 0 ?? false;
+  $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.id]?.length > 0) ?? false;
   $: startTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, span.start_offset);
 
   $: if (span.duration) {
@@ -53,13 +53,15 @@
   $: if (activityType && span.attributes.arguments) {
     effects
       .getEffectiveActivityArguments(modelId, activityType.name, span.attributes.arguments, user)
-      .then(({ arguments: defaultArgumentsMap }) => {
-        formParameters = getFormParameters(
-          activityType.parameters,
-          span.attributes.arguments,
-          activityType.required_parameters,
-          defaultArgumentsMap,
-        );
+      .then(activityArguments => {
+        if (activityArguments !== null && activityType !== null) {
+          formParameters = getFormParameters(
+            activityType.parameters,
+            span.attributes.arguments,
+            activityType.required_parameters,
+            activityArguments.arguments,
+          );
+        }
       });
   }
 
@@ -204,7 +206,7 @@
     <Collapse title="Decomposition" defaultExpanded={rootSpanHasChildren}>
       {#if rootSpanHasChildren}
         <ActivityDecomposition
-          rootSpanId={rootSpan.id}
+          rootSpanId={rootSpan?.id}
           selectedSpanId={span.id}
           {spanUtilityMaps}
           {spansMap}

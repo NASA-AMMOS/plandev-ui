@@ -436,7 +436,13 @@
     }
 
     // Construct actual span bounds for this final Y
-    const adjustedSpanBounds = { ...initialSpanBounds };
+    const adjustedSpanBounds = initialSpanBounds
+      ? { ...initialSpanBounds }
+      : {
+          maxX: 0,
+          maxY: 0,
+          minX: 0,
+        };
     adjustedSpanBounds.maxY = directiveStartY + rowHeight + adjustedSpanBounds.maxY;
     let childrenYIterator = 0;
     let spanStartY = 0;

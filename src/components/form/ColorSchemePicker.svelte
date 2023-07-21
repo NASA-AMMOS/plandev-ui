@@ -43,7 +43,7 @@
   const schemes: XRangeLayerColorScheme[] = Object.keys(schemeMap) as XRangeLayerColorScheme[];
 
   $: if (value) {
-    colors = schemeMap[value] || schemeAccent;
+    colors = schemeMap[value as XRangeLayerColorScheme] || schemeAccent;
   }
 
   function onInput(scheme: XRangeLayerColorScheme) {

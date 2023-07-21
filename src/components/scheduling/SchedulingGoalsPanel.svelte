@@ -25,6 +25,11 @@
   let activeElement: HTMLElement;
   let filterText: string = '';
   let filteredSchedulingSpecGoals: SchedulingSpecGoal[] = [];
+  let hasCreatePermission: boolean = false;
+  let hasDeletePermission: boolean = false;
+  let hasGoalEditPermission: boolean = false;
+  let hasSpecEditPermission: boolean = false;
+  let hasRunPermission: boolean = false;
 
   $: filteredSchedulingSpecGoals = $schedulingSpecGoals.filter(spec => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -33,11 +38,13 @@
   });
 
   $: hasAnalyzePermission = featurePermissions.schedulingGoals.canAnalyze(user);
-  $: hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user, $plan);
-  $: hasDeletePermission = featurePermissions.schedulingGoals.canDelete(user, $plan);
-  $: hasGoalEditPermission = featurePermissions.schedulingGoals.canUpdate(user, $plan);
-  $: hasSpecEditPermission = featurePermissions.schedulingGoals.canUpdateSpecification(user, $plan);
-  $: hasRunPermission = featurePermissions.schedulingGoals.canRun(user, $plan);
+  $: if ($plan) {
+    hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user, $plan);
+    hasDeletePermission = featurePermissions.schedulingGoals.canDelete(user, $plan);
+    hasGoalEditPermission = featurePermissions.schedulingGoals.canUpdate(user, $plan);
+    hasSpecEditPermission = featurePermissions.schedulingGoals.canUpdateSpecification(user, $plan);
+    hasRunPermission = featurePermissions.schedulingGoals.canRun(user, $plan);
+  }
 
   // Manually keep focus as scheduling goal elements are re-ordered.
   // Svelte currently does not retain focus as elements are moved, even when keyed.

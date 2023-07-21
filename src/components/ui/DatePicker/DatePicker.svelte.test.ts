@@ -100,7 +100,10 @@ describe('DatePicker DatePicker Component', () => {
 
     await fireEvent.click(getByRole('textbox'));
 
-    await fireEvent.click(getAllByRole('button').at(0));
+    const previousButton = getAllByRole('button').at(0);
+    expect(previousButton).toBeDefined();
+
+    await fireEvent.click(previousButton as HTMLElement);
 
     expect(getAllByText('December')).toHaveLength(2);
   });
@@ -112,7 +115,9 @@ describe('DatePicker DatePicker Component', () => {
 
     await fireEvent.click(getByRole('textbox'));
 
-    await fireEvent.click(getAllByRole('button').at(1));
+    const nextButton = getAllByRole('button').at(1);
+    expect(nextButton).toBeDefined();
+    await fireEvent.click(nextButton as HTMLElement);
 
     expect(getAllByText('January')).toHaveLength(2);
   });

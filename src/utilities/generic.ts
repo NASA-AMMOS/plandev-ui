@@ -240,9 +240,12 @@ export async function promiseRetry<T>(
 
         throw e;
       }
-      setTimeout(() => {
-        __promiseRetry(promise, remaining_retry_count - 1);
-      }, retry_delay ** (1 + 0.1 * (initial_retry_count - remaining_retry_count + 1)));
+
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(__promiseRetry(promise, remaining_retry_count - 1));
+        }, retry_delay ** (1 + 0.1 * (initial_retry_count - remaining_retry_count + 1)));
+      });
     }
   }
 

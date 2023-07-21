@@ -486,7 +486,7 @@ export function validateViewJSONAgainstSchema(json: any) {
     const errors = valid ? [] : validate.errors;
     return { errors, valid };
   } catch (e) {
-    const { message } = e;
+    const { message } = e as Error;
     return { errors: [message], valid: false };
   }
 }

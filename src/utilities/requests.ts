@@ -19,16 +19,12 @@ export async function reqGateway<T = any>(
 
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
-    'Content-Type': 'application/json',
+    ...(excludeContentType ? {} : { 'Content-Type': 'application/json' }),
   };
   const options: RequestInit = {
     headers,
     method,
   };
-
-  if (excludeContentType === true) {
-    delete options.headers['Content-Type'];
-  }
 
   if (body !== null) {
     options.body = body;
@@ -52,7 +48,7 @@ export async function reqHasura<T = any>(
   query: string,
   variables: QueryVariables = {},
   user: BaseUser | User | null,
-  signal: AbortSignal = undefined,
+  signal?: AbortSignal,
 ): Promise<Record<string, T>> {
   const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
 

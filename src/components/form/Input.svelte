@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { classNames } from '../../utilities/generic';
+  import { classNames, filterEmpty } from '../../utilities/generic';
 
   export let layout: 'inline' | 'stacked' | null = 'stacked';
   export { className as class };
@@ -53,23 +53,31 @@
   function padLeftSlot() {
     const padLeft = 5;
     const padRight = 3;
-    left.style.left = `${padLeft}px`;
-    input.style.paddingLeft = `${padLeft + left.clientWidth + padRight}px`;
-    setChildrenStyles([left]);
+    if (left !== null) {
+      left.style.left = `${padLeft}px`;
+      if (input !== null) {
+        input.style.paddingLeft = `${padLeft + left.clientWidth + padRight}px`;
+      }
+      setChildrenStyles([left]);
+    }
   }
 
   function padRightSlot() {
     const padLeft = 3;
     const padRight = 5;
-    right.style.right = `${padRight}px`;
-    input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
-    setChildrenStyles([right]);
+    if (right !== null) {
+      right.style.right = `${padRight}px`;
+      if (input !== null) {
+        input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
+      }
+      setChildrenStyles([right]);
+    }
   }
 
   function inputObserverCallback(mutations: MutationRecord[]) {
     for (const { attributeName } of mutations) {
       if (attributeName === 'class' || attributeName === 'disabled') {
-        setChildrenStyles([left, right]);
+        setChildrenStyles([left, right].filter(filterEmpty));
       }
     }
   }
@@ -93,12 +101,12 @@
             i.style.color = 'var(--st-input-icon-color)';
             i.style.cursor = 'auto';
 
-            if (input.disabled) {
+            if (input?.disabled) {
               i.style.color = 'var(--st-gray-30)';
               i.style.cursor = 'not-allowed';
             }
 
-            if (input.classList.contains('error')) {
+            if (input?.classList.contains('error')) {
               i.style.color = 'var(--st-red)';
               i.style.cursor = 'auto';
             }

@@ -21,7 +21,7 @@ export const constraintVisibilityMapWritable: Writable<Record<Constraint['id'], 
 export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>> = derived(
   [constraintsMap, constraintVisibilityMapWritable],
   ([$constraintsMap, $constraintVisibilityMapWritable]) => {
-    return Object.values($constraintsMap).reduce((map, constraint) => {
+    return Object.values($constraintsMap).reduce((map: Record<number, boolean>, constraint) => {
       if (constraint.id in $constraintVisibilityMapWritable) {
         map[constraint.id] = $constraintVisibilityMapWritable[constraint.id];
       } else {
@@ -44,7 +44,7 @@ export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 export const constraintViolations: Readable<ConstraintViolation[]> = derived(
   [constraintViolationsResponse, planStartTimeMs],
   ([$constraintViolationsResponse, $planStartTimeMs]) =>
-    $constraintViolationsResponse.reduce((list, violation) => {
+    $constraintViolationsResponse.reduce((list: ConstraintViolation[], violation) => {
       list.push({
         ...violation,
         windows: violation.windows.map(({ end, start }) => ({
@@ -71,7 +71,7 @@ export function setConstraintVisibility(constraintId: Constraint['id'], visible:
 
 export function setAllConstraintsVisible(visible: boolean) {
   constraintVisibilityMapWritable.set(
-    Object.values(get(constraintsMap)).reduce((map, constraint) => {
+    Object.values(get(constraintsMap)).reduce((map: Record<number, boolean>, constraint) => {
       map[constraint.id] = visible;
       return map;
     }, {}),

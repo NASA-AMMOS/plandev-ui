@@ -6,7 +6,7 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../../types/app';
-  import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../../types/data-grid';
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingCondition } from '../../../types/scheduling';
   import { permissionHandler } from '../../../utilities/permissionHandler';
@@ -29,8 +29,8 @@
   type SchedulingConditionsCellRendererParams = ICellRendererParams<SchedulingCondition> & CellRendererParams;
 
   let columnDefs: DataGridColumnDef[] = [];
-  $: columnDefs = user &&
-    plans && [
+  $: if (user && plans) {
+    columnDefs = [
       {
         field: 'id',
         filter: 'number',
@@ -63,8 +63,8 @@
                 content: 'Edit Condition',
                 placement: 'bottom',
               },
-              hasDeletePermission: hasDeletePermission(params.data),
-              hasEditPermission: hasEditPermission(params.data),
+              hasDeletePermission: params.data ? hasDeletePermission(params.data) : false,
+              hasEditPermission: params.data ? hasEditPermission(params.data) : false,
               rowData: params.data,
             },
             target: actionsDiv,
@@ -85,6 +85,7 @@
         width: 55,
       },
     ];
+  }
 
   const dispatch = createEventDispatcher();
 
@@ -123,19 +124,29 @@
   function hasDeletePermission(condition: SchedulingCondition) {
     const { scheduling_specification_conditions } = condition;
     const specification_id = scheduling_specification_conditions[0].specification_id;
-    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    return featurePermissions.schedulingConditions.canDelete(user, plan);
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    if (plan) {
+      return featurePermissions.schedulingConditions.canDelete(user, plan);
+    }
+    return false;
   }
 
   function hasEditPermission(condition: SchedulingCondition) {
     const { scheduling_specification_conditions } = condition;
     const specification_id = scheduling_specification_conditions[0].specification_id;
-    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    return featurePermissions.schedulingConditions.canUpdate(user, plan);
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    if (plan) {
+      return featurePermissions.schedulingConditions.canUpdate(user, plan);
+    }
+    return false;
   }
 
   function hasCreatePermission(user: User): boolean {
-    return plans.some(plan => featurePermissions.schedulingConditions.canCreate(user, plan));
+    return plans?.some(plan => featurePermissions.schedulingConditions.canCreate(user, plan)) ?? false;
+  }
+
+  function rowSelected(event: CustomEvent<DataGridRowSelection<SchedulingCondition>>) {
+    dispatch('rowSelected', event.detail);
   }
 </script>
 
@@ -152,7 +163,7 @@
         class="st-button secondary ellipsis"
         on:click={() => goto(`${base}/scheduling/conditions/new`)}
         use:permissionHandler={{
-          hasPermission: hasCreatePermission(user),
+          hasPermission: user ? hasCreatePermission(user) : false,
           permissionError: 'You do not have permission to create Scheduling Conditions',
         }}
       >
@@ -172,7 +183,7 @@
         {user}
         on:deleteItem={deleteConditionContext}
         on:editItem={editConditionContext}
-        on:rowSelected
+        on:rowSelected={rowSelected}
       />
     {:else}
       No Scheduling Conditions Found

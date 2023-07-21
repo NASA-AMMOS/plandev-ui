@@ -22,6 +22,6 @@ export const POST: RequestHandler = async event => {
     }
   } catch (e) {
     console.log(e);
-    return json({ message: e.message, success: false });
+    return json({ message: (e as Error).message, success: false });
   }
 };

@@ -44,7 +44,7 @@ export type ActivityDirective = {
   metadata: ActivityMetadata;
   name: string;
   plan_id: number;
-  source_scheduling_goal_id: number;
+  source_scheduling_goal_id: number | null;
   start_offset: string;
   tags: { tag: Tag }[];
   type: string;

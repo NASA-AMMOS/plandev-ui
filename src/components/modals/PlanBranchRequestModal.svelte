@@ -22,11 +22,11 @@
   let createButtonDisabled: boolean = true;
   let modalHeader: string = '';
   let planList: Pick<PlanSchema, 'id' | 'name'>[] = [];
-  let selectedPlanId: number = null;
+  let selectedPlanId: number | null = null;
 
   $: createButtonDisabled = selectedPlanId === null;
-  $: selectedPlanId = plan.parent_plan.id;
-  $: planList = [plan.parent_plan];
+  $: selectedPlanId = plan?.parent_plan?.id ?? null;
+  $: planList = plan.parent_plan ? [plan.parent_plan] : [];
   $: if (action === 'merge') {
     modalHeader = 'Merge Request';
     actionHeader = 'Merge to';

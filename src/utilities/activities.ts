@@ -9,12 +9,12 @@ import { getIntervalInMs } from './time';
  * Updates activity metadata with a new key/value and removes any empty values.
  */
 export function getActivityMetadata(
-  activityMetadata: ActivityMetadata,
+  activityMetadata: ActivityMetadata | Record<ActivityMetadataKey, null>,
   key: ActivityMetadataKey,
   value: ActivityMetadataValue,
 ): ActivityMetadata {
   const newActivityMetadataEntry = { [key]: value };
-  return omitBy({ ...activityMetadata, ...newActivityMetadataEntry }, isEmpty);
+  return omitBy({ ...activityMetadata, ...newActivityMetadataEntry }, isEmpty) as ActivityMetadata;
 }
 
 /**

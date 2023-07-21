@@ -10,7 +10,7 @@
   export let gridSection: ViewGridSection;
 
   let iFrameId: number = 0;
-  let iFrame: ViewIFrame;
+  let iFrame: ViewIFrame | undefined;
   let iFrameSrc: string = '';
 
   $: iFrame = $view?.definition.plan.iFrames.find(frame => frame.id === iFrameId);

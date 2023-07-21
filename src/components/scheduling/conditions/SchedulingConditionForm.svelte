@@ -43,13 +43,14 @@
   let conditionModifiedDate: string | null = initialConditionModifiedDate;
   let conditionName: string = initialConditionName;
   let hasAuthoringPermission: boolean = false;
+  let hasPermission: boolean = false;
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
   let savedCondition: Partial<SchedulingCondition> = {
     definition: conditionDefinition,
     description: conditionDescription,
-    model_id: conditionModelId,
+    model_id: conditionModelId !== null ? conditionModelId : undefined,
     name: conditionName,
   };
 
@@ -63,24 +64,26 @@
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
 
   $: hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
-  $: hasPermission = specId
-    ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
-    : conditionModelId
-    ? hasModelPermission(conditionModelId, mode, user)
-    : hasAnyPlanPermission(mode, user);
+  $: if (user) {
+    hasPermission = specId
+      ? hasPlanPermission(planOptions.find(plan => plan.specId === specId)?.id, mode, user)
+      : conditionModelId
+      ? hasModelPermission(conditionModelId, mode, user)
+      : hasAnyPlanPermission(mode, user);
+  }
   $: saveButtonEnabled =
     conditionDefinition !== '' && conditionModelId !== null && conditionName !== '' && specId !== null;
   $: conditionModified =
     diffConditions(savedCondition, {
       definition: conditionDefinition,
       description: conditionDescription,
-      model_id: conditionModelId,
+      ...(conditionModelId !== null ? { model_id: conditionModelId } : {}),
       name: conditionName,
     }) || specId !== savedSpecId;
   $: saveButtonText = mode === 'edit' && !conditionModified ? 'Saved' : 'Save';
   $: saveButtonClass = conditionModified && saveButtonEnabled ? 'primary' : 'secondary';
 
-  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User): boolean {
+  function hasModelPermission(modelId: number, mode: 'create' | 'edit', user: User | null): boolean {
     const plansFromModel = plans.filter(plan => plan.model_id === modelId);
     return plansFromModel.some(plan => {
       return (
@@ -90,7 +93,7 @@
     });
   }
 
-  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User): boolean {
+  function hasAnyPlanPermission(mode: 'create' | 'edit', user: User | null): boolean {
     return plans.some(plan => {
       return mode === 'create'
         ? featurePermissions.schedulingConditions.canCreate(user, plan)
@@ -98,20 +101,19 @@
     });
   }
 
-  function hasPlanPermission(planId: number, mode: 'create' | 'edit', user: User): boolean {
-    if (!planId) {
-      return true;
-    }
-
+  function hasPlanPermission(planId: number | undefined, mode: 'create' | 'edit', user: User | null): boolean {
     const plan = plans.find(plan => plan.id === planId);
-    return mode === 'create'
-      ? featurePermissions.schedulingConditions.canCreate(user, plan)
-      : featurePermissions.schedulingConditions.canUpdate(user, plan);
+    if (plan) {
+      return mode === 'create'
+        ? featurePermissions.schedulingConditions.canCreate(user, plan)
+        : featurePermissions.schedulingConditions.canUpdate(user, plan);
+    }
+    return false;
   }
 
   function diffConditions(conditionA: Partial<SchedulingCondition>, conditionB: Partial<SchedulingCondition>) {
     return Object.entries(conditionA).some(([key, value]) => {
-      return conditionB[key] !== value;
+      return conditionB[key as keyof SchedulingCondition] !== value;
     });
   }
 
@@ -131,15 +133,18 @@
   async function saveCondition() {
     if (saveButtonEnabled) {
       if (mode === 'create') {
-        const newCondition = await effects.createSchedulingCondition(
-          conditionDefinition,
-          conditionName,
-          conditionModelId,
-          user,
-          conditionDescription,
-        );
+        let newCondition: SchedulingCondition | null = null;
+        if (conditionModelId !== null) {
+          newCondition = await effects.createSchedulingCondition(
+            conditionDefinition,
+            conditionName,
+            conditionModelId,
+            user,
+            conditionDescription,
+          );
+        }
 
-        if (newCondition !== null) {
+        if (newCondition !== null && specId !== null) {
           const { id: newConditionId } = newCondition;
 
           const specConditionInsertInput: SchedulingSpecConditionInsertInput = {
@@ -158,15 +163,17 @@
           ...(hasAuthoringPermission && conditionModelId !== null ? { model_id: conditionModelId } : {}),
           name: conditionName,
         };
-        const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, user);
-        if (updatedCondition) {
-          if (specId !== savedSpecId) {
-            await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId, user);
-            savedSpecId = specId;
-          }
+        if (conditionId !== null) {
+          const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, user);
+          if (updatedCondition) {
+            if (savedSpecId !== null && specId !== null && specId !== savedSpecId) {
+              await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId, user);
+              savedSpecId = specId;
+            }
 
-          conditionModifiedDate = updatedCondition.modified_date;
-          savedCondition = { ...condition };
+            conditionModifiedDate = updatedCondition.modified_date;
+            savedCondition = { ...condition };
+          }
         }
       }
     }

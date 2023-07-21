@@ -43,15 +43,25 @@ export function gqlSubscribable<T>(
             if ('reason' in error && error.reason.includes(EXPIRED_JWT)) {
               await logout(EXPIRED_JWT);
             } else {
-              subscribers.forEach(({ next }) => next(initialValue));
+              subscribers.forEach(({ next }) => {
+                if (initialValue !== null) {
+                  next(initialValue);
+                }
+              });
             }
           },
           next: ({ data }) => {
-            const [key] = Object.keys(data);
-            const { [key]: newValue } = data;
-            if (!isEqual(value, newValue)) {
-              value = transformer(newValue);
-              subscribers.forEach(({ next }) => next(value));
+            if (data != null) {
+              const [key] = Object.keys(data);
+              const { [key]: newValue } = data;
+              if (!isEqual(value, newValue)) {
+                value = transformer(newValue);
+                subscribers.forEach(({ next }) => {
+                  if (value !== null) {
+                    next(value);
+                  }
+                });
+              }
             }
           },
         },
@@ -114,18 +124,20 @@ export function gqlSubscribable<T>(
     }
   }
 
-  function subscribeToVariables(initialVariables: QueryVariables): void {
+  function subscribeToVariables(initialVariables: QueryVariables | null): void {
     variableUnsubscribers.forEach(unsubscribe => unsubscribe());
     variableUnsubscribers = [];
 
-    for (const [name, variable] of Object.entries(initialVariables)) {
-      if (typeof variable === 'object' && variable?.subscribe !== undefined) {
-        const store = variable as Readable<any>;
-        const unsubscriber = store.subscribe(value => {
-          variables = { ...variables, [name]: value };
-          resubscribe();
-        });
-        variableUnsubscribers.push(unsubscriber);
+    if (initialVariables !== null) {
+      for (const [name, variable] of Object.entries(initialVariables)) {
+        if (typeof variable === 'object' && variable?.subscribe !== undefined) {
+          const store = variable as Readable<any>;
+          const unsubscriber = store.subscribe(value => {
+            variables = { ...variables, [name]: value };
+            resubscribe();
+          });
+          variableUnsubscribers.push(unsubscriber);
+        }
       }
     }
   }
@@ -149,7 +161,9 @@ export function gqlSubscribable<T>(
     const unsubscribe = clientSubscribe();
     const subscriber: Subscription<T> = { next, unsubscribe };
     subscribers.add(subscriber);
-    next(value);
+    if (value !== null) {
+      next(value);
+    }
 
     return () => {
       subscriber.unsubscribe();
@@ -165,8 +179,14 @@ export function gqlSubscribable<T>(
   }
 
   function updateValue(fn: Updater<T>): void {
-    value = fn(value);
-    subscribers.forEach(({ next }) => next(value));
+    if (value !== null) {
+      value = fn(value);
+    }
+    subscribers.forEach(({ next }) => {
+      if (value !== null) {
+        next(value);
+      }
+    });
   }
 
   return {

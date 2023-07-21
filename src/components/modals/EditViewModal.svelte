@@ -17,11 +17,11 @@
   let saveButtonDisabled: boolean = true;
 
   $: saveButtonDisabled = viewName === '';
-  $: viewName = $view.name;
+  $: viewName = $view?.name ?? '';
 
   function save() {
     if (!saveButtonDisabled) {
-      dispatch('save', { id: $view.id, name: viewName });
+      dispatch('save', { id: $view?.id, name: viewName });
     }
   }
 

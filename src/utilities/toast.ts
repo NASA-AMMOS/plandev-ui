@@ -29,12 +29,14 @@ function removeToast(toastText: string) {
 }
 
 function toastCallback(this: Element) {
-  removeToast(this.textContent);
+  if (this.textContent) {
+    removeToast(this.textContent);
+  }
 }
 
 function showToast(toast: Toast) {
   const toastText = toast.options.text;
-  const existingToastIndex = findToast(toastText, true);
+  const existingToastIndex = toastText !== undefined ? findToast(toastText, true) : -1;
 
   if (existingToastIndex > -1) {
     hideToast(currentToasts[existingToastIndex]);

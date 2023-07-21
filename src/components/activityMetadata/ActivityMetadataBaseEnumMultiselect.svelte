@@ -37,9 +37,10 @@
       // If only the empty value was selected
       // the new value should be set to null
       if (newValue.length < 1) {
-        newValue = null;
+        dispatch('change', { key, value: null });
+      } else {
+        dispatch('change', { key, value: newValue });
       }
-      dispatch('change', { key, value: newValue });
     }}
   >
     {#if !enumerates.length}

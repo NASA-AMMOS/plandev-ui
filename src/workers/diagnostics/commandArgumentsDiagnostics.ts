@@ -68,38 +68,39 @@ function findAndValidateArguments(sourceFile: tsc.SourceFile, commandDict: Comma
   }
 
   // find only commands that have arguments
-  const commandsWithArguments = tsc.forEachChild(sourceFile, node => {
-    const nodes: {
-      argumentsNode: tsc.NodeArray<tsc.Expression>;
-      commandDictEntry: FswCommand;
-      name: string;
-      tsNode: tsc.ObjectLiteralExpression;
-    }[] = [];
+  const commandsWithArguments =
+    tsc.forEachChild(sourceFile, node => {
+      const nodes: {
+        argumentsNode: tsc.NodeArray<tsc.Expression>;
+        commandDictEntry: FswCommand;
+        name: string;
+        tsNode: tsc.ObjectLiteralExpression;
+      }[] = [];
 
-    function visitNode(node: tsc.Node) {
-      const parent = node.parent;
-      if (tsc.isCallExpression(parent) && tsc.isObjectLiteralExpression(node)) {
-        const expression = parent.expression;
-        const command_name = tsc.isPropertyAccessExpression(expression)
-          ? expression.name.getText()
-          : expression.getText();
-        if (commandDict.fswCommandMap[command_name]) {
-          nodes.push({
-            argumentsNode: parent.arguments,
-            commandDictEntry: commandDict.fswCommandMap[command_name],
-            name: command_name,
-            tsNode: node,
-          });
+      function visitNode(node: tsc.Node) {
+        const parent = node.parent;
+        if (tsc.isCallExpression(parent) && tsc.isObjectLiteralExpression(node)) {
+          const expression = parent.expression;
+          const command_name = tsc.isPropertyAccessExpression(expression)
+            ? expression.name.getText()
+            : expression.getText();
+          if (commandDict.fswCommandMap[command_name]) {
+            nodes.push({
+              argumentsNode: parent.arguments,
+              commandDictEntry: commandDict.fswCommandMap[command_name],
+              name: command_name,
+              tsNode: node,
+            });
+          }
         }
+        tsc.forEachChild(node, visitNode);
       }
       tsc.forEachChild(node, visitNode);
-    }
-    tsc.forEachChild(node, visitNode);
 
-    return nodes;
-  });
+      return nodes;
+    }) ?? [];
 
-  let diagnostics = [];
+  let diagnostics: ResponseDiagnostic[] = [];
 
   for (const command of commandsWithArguments) {
     const commandName = command.name;

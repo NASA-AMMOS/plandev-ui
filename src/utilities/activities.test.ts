@@ -1,7 +1,7 @@
 import { keyBy, reverse } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import type { ActivityDirective } from '../types/activity';
-import type { Span, SpansMap, SpanUtilityMaps } from '../types/simulation';
+import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import {
   createSpanUtilityMaps,
   getActivityMetadata,
@@ -92,7 +92,7 @@ describe('getSpanRootParent', () => {
   });
 
   test('Should return the parent node when given a child n', () => {
-    expect(getSpanRootParent(testSpansMap, 2).id).toEqual(1);
+    expect(getSpanRootParent(testSpansMap, 2)?.id).toEqual(1);
   });
 });
 

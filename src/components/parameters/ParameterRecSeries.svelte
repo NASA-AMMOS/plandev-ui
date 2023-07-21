@@ -54,7 +54,9 @@
   function onChange(event: CustomEvent<FormParameter>) {
     const { detail: subFormParameter } = event;
     const value = [...formParameter.value];
-    value[subFormParameter.index] = subFormParameter.value;
+    if (subFormParameter.index !== undefined) {
+      value[subFormParameter.index] = subFormParameter.value;
+    }
     dispatch('change', { ...formParameter, value });
   }
 

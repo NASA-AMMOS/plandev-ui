@@ -72,7 +72,7 @@
         >
           <div class="column-name">Create merge request</div>
         </MenuItem>
-        <MenuItem on:click={() => goto(`${base}/plans/${plan.parent_plan.id}`)}>
+        <MenuItem on:click={() => goto(`${base}/plans/${plan?.parent_plan?.id}`)}>
           <div class="column-name">Open parent plan</div>
         </MenuItem>
       {/if}

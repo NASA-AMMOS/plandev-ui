@@ -7,7 +7,7 @@
   import { createEventDispatcher } from 'svelte';
   import { tagsMap } from '../../../stores/tags';
   import type { User } from '../../../types/app';
-  import type { DataGridColumnDef, RowId } from '../../../types/data-grid';
+  import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../../types/data-grid';
   import type { PlanSchedulingSpec } from '../../../types/plan';
   import type { SchedulingGoal, SchedulingGoalSlim } from '../../../types/scheduling';
   import type { Tag } from '../../../types/tags';
@@ -32,8 +32,8 @@
   type SchedulingGoalsCellRendererParams = ICellRendererParams<SchedulingGoal> & CellRendererParams;
 
   let columnDefs: DataGridColumnDef[] = [];
-  $: columnDefs = user &&
-    plans && [
+  $: if (user && plans) {
+    columnDefs = [
       {
         field: 'id',
         filter: 'number',
@@ -77,8 +77,8 @@
                 content: 'Edit Goal',
                 placement: 'bottom',
               },
-              hasDeletePermission: hasDeletePermission(params.data),
-              hasEditPermission: hasEditPermission(params.data),
+              hasDeletePermission: params.data ? hasDeletePermission(params.data) : false,
+              hasEditPermission: params.data ? hasEditPermission(params.data) : false,
               rowData: params.data,
             },
             target: actionsDiv,
@@ -99,6 +99,7 @@
         width: 55,
       },
     ];
+  }
 
   const dispatch = createEventDispatcher();
 
@@ -152,20 +153,30 @@
     const {
       scheduling_specification_goal: { specification_id },
     } = goal;
-    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    return featurePermissions.schedulingGoals.canDelete(user, plan);
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    if (plan) {
+      return featurePermissions.schedulingGoals.canDelete(user, plan);
+    }
+    return false;
   }
 
   function hasEditPermission(goal: SchedulingGoal) {
     const {
       scheduling_specification_goal: { specification_id },
     } = goal;
-    const plan = plans.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    return featurePermissions.schedulingGoals.canUpdate(user, plan);
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    if (plan) {
+      return featurePermissions.schedulingGoals.canUpdate(user, plan);
+    }
+    return false;
   }
 
   function hasCreatePermission(user: User): boolean {
-    return plans.some(plan => featurePermissions.schedulingGoals.canCreate(user, plan));
+    return plans?.some(plan => featurePermissions.schedulingGoals.canCreate(user, plan)) ?? false;
+  }
+
+  function rowSelected(event: CustomEvent<DataGridRowSelection<SchedulingGoal>>) {
+    dispatch('rowSelected', event.detail);
   }
 </script>
 
@@ -182,7 +193,7 @@
         class="st-button secondary ellipsis"
         on:click={() => goto(`${base}/scheduling/goals/new`)}
         use:permissionHandler={{
-          hasPermission: hasCreatePermission(user),
+          hasPermission: user ? hasCreatePermission(user) : false,
           permissionError: 'You do not have permission to create Scheduling Goals',
         }}
       >
@@ -202,7 +213,7 @@
         {user}
         on:deleteItem={deleteGoalContext}
         on:editItem={editGoalContext}
-        on:rowSelected
+        on:rowSelected={rowSelected}
       />
     {:else}
       No Scheduling Goals Found

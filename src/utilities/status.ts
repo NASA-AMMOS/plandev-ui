@@ -18,7 +18,7 @@ export const statusColors: Record<string, string> = {
 /**
  * Helper function that maps a status to a color.
  */
-export function getColorForStatus(status: Status): string {
+export function getColorForStatus(status: Status | null): string {
   if (status === Status.Complete) {
     return statusColors.green;
   } else if (status === Status.Failed) {

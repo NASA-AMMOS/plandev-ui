@@ -4,11 +4,11 @@
   import ContextMenuItem from './ContextMenuItem.svelte';
 
   export let text: string = '';
-  export let parentMenu: ContextMenu = null;
+  export let parentMenu: ContextMenu | null = null;
 
   let contextMenu: ContextMenu;
   let div: HTMLDivElement;
-  let rAFReq;
+  let rAFReq: number;
 
   function show() {
     if (div && contextMenu) {
