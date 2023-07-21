@@ -18,6 +18,7 @@ import type {
 import type { SchedulingCondition, SchedulingGoal } from '../types/scheduling';
 import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
+import type { View } from '../types/view';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
@@ -84,6 +85,9 @@ async function changeUserRole(role: UserRole): Promise<void> {
 const queryPermissions = {
   APPLY_PRESET_TO_ACTIVITY: (user: User | null): boolean => {
     return getPermission(['apply_preset_to_activity'], user);
+  },
+  CHECK_CONSTRAINTS: (user: User | null): boolean => {
+    return getPermission(['constraintViolations'], user);
   },
   CREATE_ACTIVITY_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['insert_activity_directive_one'], user);
@@ -301,6 +305,9 @@ const queryPermissions = {
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
     return getPermission(['user_sequence'], user);
   },
+  SUB_VIEWS: (user: User | null): boolean => {
+    return getPermission(['view'], user);
+  },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null): boolean => {
     return getPermission(['update_activity_directive_by_pk'], user);
   },
@@ -385,14 +392,18 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
   canExpand: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
-interface SchedulingCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
-  canAnalyze: (user: User | null) => boolean;
+interface RunnableCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canRun: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
+interface SchedulingCRUDPermission<T = null> extends RunnableCRUDPermission<T> {
+  canAnalyze: (user: User | null) => boolean;
   canUpdateSpecification: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
-interface SimulationCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
-  canRun: (user: User | null, plan: PlanWithOwners) => boolean;
+interface SchedulingCRUDPermission<T = null> extends RunnableCRUDPermission<T> {
+  canAnalyze: (user: User | null) => boolean;
+  canUpdateSpecification: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
 interface AssignablePlanAssetCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
@@ -413,8 +424,9 @@ interface FeaturePermissions {
   schedulingConditions: PlanAssetCRUDPermission<AssetWithOwner<SchedulingCondition>>;
   schedulingGoals: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoal>>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
-  simulation: SimulationCRUDPermission<AssetWithOwner<Simulation>>;
+  simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: AssignablePlanAssetCRUDPermission<SimulationTemplate>;
+  view: CRUDPermission<View>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -451,7 +463,7 @@ const featurePermissions: FeaturePermissions = {
   constraints: {
     canCheck: (user, plan) =>
       isUserAdmin(user) ||
-      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.UPDATE_CONSTRAINT(user)),
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CHECK_CONSTRAINTS(user)),
     canCreate: (user, plan) =>
       isUserAdmin(user) ||
       ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_CONSTRAINT(user)),
@@ -579,6 +591,14 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => isUserAdmin(user) || queryPermissions.SUB_SIMULATION_TEMPLATES(user),
     canUpdate: (user, plan) =>
       isUserAdmin(user) || (isUserOwner(user, plan) && queryPermissions.UPDATE_SIMULATION_TEMPLATE(user)),
+  },
+  view: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_VIEW(user),
+    canDelete: (user, view) =>
+      isUserAdmin(user) ||
+      (isUserOwner(user, view) && queryPermissions.DELETE_VIEW(user) && queryPermissions.DELETE_VIEWS(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_VIEWS(user),
+    canUpdate: (user, view) => isUserAdmin(user) || (isUserOwner(user, view) && queryPermissions.UPDATE_VIEW(user)),
   },
 };
 

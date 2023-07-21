@@ -23,13 +23,13 @@
 
   let userViews: View[] = [];
 
-  $: userViews = $views.filter((view: View) => view.owner === user.id);
+  $: userViews = $views.filter((view: View) => view.owner === user?.id);
 
   async function deleteView({ detail: viewId }: CustomEvent<number>) {
     const success = await effects.deleteView(viewId, user);
 
     if (success) {
-      if ($view.id === viewId) {
+      if ($view?.id === viewId) {
         goToNextView();
       }
     }
@@ -39,7 +39,7 @@
     const success = await effects.deleteViews(viewIds, user);
 
     if (success) {
-      if (viewIds.includes($view.id)) {
+      if ($view && viewIds.includes($view.id)) {
         goToNextView();
       }
     }
@@ -47,15 +47,17 @@
 
   async function goToNextView() {
     const nextView = await effects.getView(null, user);
-    initializeView({ ...nextView });
-    setQueryParam('viewId', `${nextView.id}`);
+    if (nextView !== null) {
+      initializeView({ ...nextView });
+      setQueryParam('viewId', `${nextView.id}`);
+    }
   }
 
   async function openView({ detail: viewId }: CustomEvent<number>) {
     const query = new URLSearchParams(`?viewId=${viewId}`);
     const newView = await effects.getView(query, user);
 
-    if (view) {
+    if (view !== null && newView !== null) {
       initializeView({ ...newView });
       setQueryParam('viewId', `${newView.id}`);
       dispatch('close');

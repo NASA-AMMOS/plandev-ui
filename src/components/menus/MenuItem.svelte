@@ -48,8 +48,8 @@
   }
 
   .menu-item.disabled {
-    color: var(--st-gray-40);
     cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .menu-item.selected {

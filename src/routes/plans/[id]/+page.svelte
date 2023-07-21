@@ -82,6 +82,7 @@
   import { removeQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
+  import { featurePermissions } from '../../../utilities/permissions';
   import { Status } from '../../../utilities/status';
   import { getUnixEpochTime } from '../../../utilities/time';
   import type { PageData } from './$types';
@@ -89,10 +90,24 @@
   export let data: PageData;
 
   let compactNavMode = false;
+  let hasCreateViewPermission: boolean = false;
+  let hasUpdateViewPermission: boolean = false;
+  let hasExpandPermission: boolean = false;
+  let hasScheduleAnalysisPermission: boolean = false;
+  let hasSimulatePermission: boolean = false;
+  let hasCheckConstraintsPermission: boolean = false;
   let planHasBeenLocked = false;
   let schedulingAnalysisStatus: Status | null;
   let windowWidth = 0;
 
+  $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
+  $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
+  $: if ($plan) {
+    hasCheckConstraintsPermission = featurePermissions.constraints.canCheck(data.user, $plan);
+    hasExpandPermission = featurePermissions.expansionSequences.canExpand(data.user, $plan);
+    hasScheduleAnalysisPermission = featurePermissions.schedulingGoals.canAnalyze(data.user);
+    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan);
+  }
   $: if (data.initialPlan) {
     $plan = data.initialPlan;
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
@@ -194,8 +209,8 @@
 
   async function onCreateView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
-    const { owner, definition } = detail;
-    if (owner != null && definition) {
+    const { definition } = detail;
+    if (definition && hasCreateViewPermission) {
       const success = await effects.createView(definition, data.user);
       if (success) {
         resetOriginalView();
@@ -205,8 +220,8 @@
 
   async function onEditView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
-    const { owner, definition } = detail;
-    if (owner != null && definition) {
+    const { definition } = detail;
+    if (definition && hasUpdateViewPermission) {
       const success = await effects.editView(definition, data.user);
       if (success) {
         resetOriginalView();
@@ -217,7 +232,7 @@
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition, id, name } = detail;
-    if (id != null) {
+    if (id != null && hasUpdateViewPermission) {
       const success = await effects.updateView(id, { definition, name }, data.user);
       if (success) {
         resetOriginalView();
@@ -235,9 +250,11 @@
   }
 
   async function onUploadView() {
-    const success = await effects.uploadView(data.user);
-    if (success) {
-      resetOriginalView();
+    if (hasCreateViewPermission) {
+      const success = await effects.uploadView(data.user);
+      if (success) {
+        resetOriginalView();
+      }
     }
   }
 
@@ -274,6 +291,8 @@
       <PlanNavButton
         title={!compactNavMode ? 'Expansion' : ''}
         buttonText="Expand Activities"
+        hasPermission={hasExpandPermission}
+        permissionError="You do not have permission to expand activities"
         menuTitle="Expansion Status"
         disabled={$selectedExpansionSetId === null}
         status={$planExpansionStatus}
@@ -295,6 +314,8 @@
         buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
           ? 'Simulation up-to-date'
           : ''}
+        hasPermission={hasSimulatePermission}
+        permissionError="You do not have permission to run a simulation"
         status={$simulationStatus}
         disabled={!$enableSimulation}
         on:click={() => effects.simulate(data.user)}
@@ -308,6 +329,8 @@
         title={!compactNavMode ? 'Constraints' : ''}
         menuTitle="Constraint Status"
         buttonText="Check Constraints"
+        hasPermission={hasCheckConstraintsPermission}
+        permissionError="You do not have permission to run a constraint check"
         status={$checkConstraintsStatus}
         on:click={() => effects.checkConstraints(data.user)}
       >
@@ -321,6 +344,8 @@
         menuTitle="Scheduling Analysis Status"
         buttonText="Analyze Goal Satisfaction"
         disabled={!$enableScheduling}
+        hasPermission={hasScheduleAnalysisPermission}
+        permissionError="You do not have permission to run a scheduling analysis"
         status={schedulingAnalysisStatus}
         statusText={schedulingAnalysisStatus === Status.PartialSuccess || schedulingAnalysisStatus === Status.Complete
           ? `${$satisfiedSchedulingGoalCount} satisfied, ${
@@ -332,6 +357,8 @@
         <CalendarIcon />
       </PlanNavButton>
       <ViewMenu
+        hasCreatePermission={hasCreateViewPermission}
+        hasUpdatePermission={hasUpdateViewPermission}
         user={data.user}
         on:createView={onCreateView}
         on:editView={onEditView}

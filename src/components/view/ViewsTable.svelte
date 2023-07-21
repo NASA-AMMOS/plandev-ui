@@ -6,6 +6,7 @@
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { View } from '../../types/view';
+  import { featurePermissions } from '../../utilities/permissions';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
@@ -20,7 +21,7 @@
   type ViewCellRendererParams = ICellRendererParams<View> & CellRendererParams;
 
   const dispatch = createEventDispatcher();
-  const columnDefs: DataGridColumnDef[] = [
+  const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
       filter: 'number',
@@ -46,6 +47,12 @@
         return updatedAtDate.toISOString().replace(/.\d+Z$/g, 'Z');
       },
     },
+  ];
+
+  let columnDefs = baseColumnDefs;
+
+  $: columnDefs = [
+    ...baseColumnDefs,
     {
       cellClass: 'action-cell-container',
       cellRenderer: (params: ViewCellRendererParams) => {
@@ -68,6 +75,7 @@
               content: 'Download View',
               placement: 'bottom',
             },
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
             rowData: params.data,
             viewCallback: params.openView,
             viewTooltip: {
@@ -109,6 +117,10 @@
     a.href = URL.createObjectURL(new Blob([JSON.stringify(view.definition, null, 2)], { type: 'application/json' }));
     a.download = view.name;
     a.click();
+  }
+
+  function hasDeletePermission(user: User | null, view: View) {
+    return featurePermissions.view.canDelete(user, view);
   }
 
   function openView({ id: viewId }: Partial<View>) {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import type { Status } from '../../utilities/status';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -9,7 +10,9 @@
   export let buttonText: string = '';
   export let buttonTooltipContent: string = '';
   export let disabled: boolean = false;
+  export let hasPermission: boolean = true;
   export let menuTitle: string = '';
+  export let permissionError: string | undefined = undefined;
   export let status: Status | null = null;
   export let statusText: string = '';
   export let title: string;
@@ -53,7 +56,18 @@
 
       {#if buttonText}
         <div use:tooltip={{ content: buttonTooltipContent, placement: 'bottom' }}>
-          <button class="st-button secondary" {disabled} on:click><PlayIcon /> {buttonText}</button>
+          <button
+            class="st-button secondary"
+            {disabled}
+            on:click
+            use:permissionHandler={{
+              hasPermission,
+              permissionError,
+            }}
+          >
+            <PlayIcon />
+            {buttonText}
+          </button>
         </div>
       {/if}
     </div>

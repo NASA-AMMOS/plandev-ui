@@ -428,7 +428,15 @@
           </fieldset>
 
           <fieldset>
-            <button class="st-button w-100" disabled={!createButtonEnabled} type="submit">
+            <button
+              class="st-button w-100"
+              disabled={!createButtonEnabled}
+              type="submit"
+              use:permissionHandler={{
+                hasPermission: canCreate,
+                permissionError,
+              }}
+            >
               {$creatingPlan ? 'Creating...' : 'Create'}
             </button>
           </fieldset>

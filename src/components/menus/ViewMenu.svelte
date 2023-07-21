@@ -17,11 +17,14 @@
   import type { User } from '../../types/app';
   import type { ViewToggleType } from '../../types/view';
   import { showSavedViewsModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { Status } from '../../utilities/status';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ToggleableIcon from '../ui/ToggleableIcon.svelte';
   import MenuItem from './MenuItem.svelte';
 
+  export let hasCreatePermission: boolean = false;
+  export let hasUpdatePermission: boolean = false;
   export let user: User | null;
 
   const defaultViewName = 'Default View';
@@ -114,16 +117,69 @@
           </ToggleableIcon>
         </MenuItem>
       </div>
-      <MenuItem disabled={saveViewDisabled} on:click={saveView}>Save</MenuItem>
-      <MenuItem on:click={saveAsView}>Save as</MenuItem>
+      <MenuItem
+        disabled={saveViewDisabled}
+        on:click={saveView}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasUpdatePermission,
+              permissionError: 'You do not have permission to update this view',
+            },
+          ],
+        ]}
+      >
+        Save
+      </MenuItem>
+      <MenuItem
+        on:click={saveAsView}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasCreatePermission,
+              permissionError: 'You do not have permission to create a new view',
+            },
+          ],
+        ]}
+      >
+        Save as
+      </MenuItem>
       <MenuItem disabled={!$viewIsModified} on:click={resetView}>
         Reset to {$view?.name && $view.name !== defaultViewName ? 'last saved' : 'default'}
       </MenuItem>
-      <MenuItem on:click={uploadView}>Upload view file</MenuItem>
+      <MenuItem
+        on:click={uploadView}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasCreatePermission,
+              permissionError: 'You do not have permission to create a new view',
+            },
+          ],
+        ]}
+      >
+        Upload view file
+      </MenuItem>
       <MenuItem on:click={() => showSavedViewsModal(user)}>Browse saved views</MenuItem>
       {#if $view?.name && $view.name !== defaultViewName}
         <hr />
-        <MenuItem on:click={editView}>Rename view</MenuItem>
+        <MenuItem
+          on:click={editView}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasUpdatePermission,
+                permissionError: 'You do not have permission to update this view',
+              },
+            ],
+          ]}
+        >
+          Rename view
+        </MenuItem>
       {/if}
     </div>
   </PlanNavButton>

@@ -11,6 +11,7 @@
   import type { ExpansionRule } from '../../types/expansion';
   import type { Tag } from '../../types/tags';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -84,6 +85,7 @@
   let columnDefs = baseColumnDefs;
   let filteredRules: ExpansionRule[] = [];
   let filterText: string = '';
+  let hasCreatePermission: boolean = false;
   let selectedExpansionRule: ExpansionRule | null = null;
 
   $: columnDefs = [
@@ -127,6 +129,7 @@
       width: 55,
     },
   ];
+  $: hasCreatePermission = featurePermissions.expansionRules.canCreate(user);
 
   $: if (filteredRules && $expansionRules && $tagsMap) {
     filteredRules = $expansionRules
@@ -205,7 +208,16 @@
       </Input>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/expansion/rules/new`)}> New </button>
+        <button
+          class="st-button secondary ellipsis"
+          on:click={() => goto(`${base}/expansion/rules/new`)}
+          use:permissionHandler={{
+            hasPermission: hasCreatePermission,
+            permissionError: 'You do not have permission to create expansion rules',
+          }}
+        >
+          New
+        </button>
       </div>
     </svelte:fragment>
 

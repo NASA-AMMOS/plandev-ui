@@ -4,7 +4,7 @@ export type ModalElementValue<T = any> = {
 };
 
 export type ModalElementResolve = {
-  resolve: (value: ModalElementValue | PromiseLike<ModalElementValue>) => void;
+  resolve: ((value: ModalElementValue | PromiseLike<ModalElementValue>) => void) | null;
 };
 
 export type ModalElement = HTMLDivElement & ModalElementResolve;

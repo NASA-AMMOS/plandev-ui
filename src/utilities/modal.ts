@@ -23,7 +23,7 @@ import type { ViewDefinition } from '../types/view';
  * Listens for clicks on the document body and removes the modal children.
  */
 export function modalBodyClickListener(): void {
-  const target: ModalElement = document.querySelector('#svelte-modal');
+  const target: ModalElement | null = document.querySelector('#svelte-modal');
   if (target && target.resolve && target.getAttribute('data-dismissible') !== 'false') {
     target.replaceChildren();
     target.resolve({ confirm: false });
@@ -35,7 +35,7 @@ export function modalBodyClickListener(): void {
  * Listens for escape key presses on the document body and removes the modal children.
  */
 export function modalBodyKeyListener(event: KeyboardEvent): void {
-  const target: ModalElement = document.querySelector('#svelte-modal');
+  const target: ModalElement | null = document.querySelector('#svelte-modal');
   if (target && target.resolve && event.key == 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
     target.replaceChildren();
     target.resolve({ confirm: false });
@@ -47,7 +47,7 @@ export function modalBodyKeyListener(event: KeyboardEvent): void {
  * Closes the active modal if found and resolve nothing
  */
 export function closeActiveModal(): void {
-  const target: ModalElement = document.querySelector('#svelte-modal');
+  const target: ModalElement | null = document.querySelector('#svelte-modal');
   if (target && target.resolve) {
     target.removeAttribute('data-dismissible');
     target.replaceChildren();
@@ -60,7 +60,7 @@ export function closeActiveModal(): void {
  */
 export async function showAboutModal(): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const aboutModal = new AboutModal({ target });
@@ -85,7 +85,7 @@ export async function showConfirmModal(
   actionCanBeUndone?: boolean,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const confirmModal = new ConfirmModal({
@@ -114,7 +114,7 @@ export async function showConfirmModal(
  */
 export async function showPlanLockedModal(planId: number): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const planLockedModal = new PlanLockedModal({
@@ -143,7 +143,7 @@ export async function showMergeReviewEndedModal(
   status: PlanMergeRequestStatus,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const mergeReviewEndedModal = new MergeReviewEndedModal({
@@ -169,7 +169,7 @@ export async function showMergeReviewEndedModal(
  */
 export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElementValue<{ name: string; plan: Plan }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const createPlanBranchModal = new CreatePlanBranchModal({ props: { plan }, target });
@@ -195,7 +195,7 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
  */
 export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const createViewModal = new CreateViewModal({ target });
@@ -223,7 +223,7 @@ export async function showDeleteActivitiesModal(
   ids: ActivityDirectiveId[],
 ): Promise<ModalElementValue<ActivityDirectiveDeletionMap>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const deleteActivitiesModal = new DeleteActivitiesModal({
@@ -252,7 +252,7 @@ export async function showDeleteActivitiesModal(
  */
 export async function showEditViewModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const editViewModal = new EditViewModal({ target });
@@ -281,7 +281,7 @@ export async function showExpansionSequenceModal(
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence, user }, target });
@@ -304,7 +304,7 @@ export async function showPlanBranchRequestModal(
   action: PlanBranchRequestAction,
 ): Promise<ModalElementValue<{ source_plan_id: number; target_plan_id: number }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const planModal = new PlanBranchRequestModal({ props: { action, plan }, target });
@@ -330,7 +330,7 @@ export async function showPlanBranchRequestModal(
  */
 export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const planBranchesModal = new PlanBranchesModal({ props: { plan }, target });
@@ -353,7 +353,7 @@ export async function showPlanMergeRequestsModal(
   selectedFilter?: PlanMergeRequestTypeFilter,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
@@ -375,7 +375,7 @@ export async function showSavedViewsModal(
   user: User | null,
 ): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const savedViewsModal = new SavedViewsModal({ props: { height: 400, user, width: '50%' }, target });
@@ -395,7 +395,7 @@ export async function showSavedViewsModal(
  */
 export async function showUploadViewModal(): Promise<ModalElementValue<{ definition: ViewDefinition; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement = document.querySelector('#svelte-modal');
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
 
     if (target) {
       const uploadViewModal = new UploadViewModal({ target });
