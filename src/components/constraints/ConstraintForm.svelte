@@ -347,7 +347,6 @@
             ],
           ]}
           options={initialTags}
-          editable={hasPermission}
           selected={constraintTags}
           on:change={onTagsInputChange}
         />

@@ -427,8 +427,6 @@
           <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
           <TagsInput
             options={tags}
-            editable={hasUpdatePermission}
-            disabled={!editable}
             selected={activityDirective.tags.map(({ tag }) => tag)}
             use={[
               [

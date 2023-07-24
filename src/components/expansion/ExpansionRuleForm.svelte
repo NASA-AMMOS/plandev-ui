@@ -360,7 +360,6 @@
             ],
           ]}
           options={$tags}
-          editable={hasPermission}
           selected={ruleTags || []}
           on:change={onTagsInputChange}
         />

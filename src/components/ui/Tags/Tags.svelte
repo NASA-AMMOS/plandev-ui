@@ -13,7 +13,6 @@
     return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   };
   export let disabled: boolean = false;
-  export let editable: boolean = true;
   export let id: string = '';
   export let inputRef: HTMLInputElement | null = null;
   export let name: string = '';
@@ -105,7 +104,7 @@
   }
 
   function openSuggestions() {
-    if (disabled || !editable) {
+    if (disabled) {
       return;
     }
     suggestionsVisible = true;
@@ -200,10 +199,10 @@
 
 <svelte:window on:click={onClickOutside} on:touchstart={onClickOutside} />
 
-<div class="tags" class:disabled={disabled || !editable} use:popperRef bind:this={tagsRef} bind:clientWidth={tagsWidth}>
+<div class="tags" class:disabled use:useActions={use} use:popperRef bind:this={tagsRef} bind:clientWidth={tagsWidth}>
   <div class="tags-selected-items">
     {#each selectedTags as tag}
-      <TagChip {tag} removable={!disabled && editable} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
+      <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
     {#if !disabled || (disabled && !selectedTags.length)}
       <input
@@ -217,7 +216,6 @@
         on:keydown|stopPropagation={onKeydown}
         bind:value={searchText}
         bind:this={inputRef}
-        use:useActions={use}
       />
     {/if}
   </div>
@@ -273,12 +271,15 @@
     padding: 2px;
   }
 
-  .tags.disabled {
+  .tags.disabled,
+  :global(.tags.permission-disabled) {
     cursor: not-allowed;
     opacity: 0.5;
   }
 
-  .tags.disabled input {
+  .tags.disabled input,
+  :global(.tags.permission-disabled) input {
+    cursor: not-allowed;
     opacity: 1;
   }
 
