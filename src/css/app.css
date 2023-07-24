@@ -70,6 +70,10 @@ fieldset {
   cursor: not-allowed;
 }
 
+.permission-disabled * {
+  pointer-events: none;
+}
+
 .st-button.permission-disabled {
   opacity: var(--st-button-disabled-opacity);
 }
