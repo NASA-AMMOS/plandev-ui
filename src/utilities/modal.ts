@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
@@ -23,11 +24,13 @@ import type { ViewDefinition } from '../types/view';
  * Listens for clicks on the document body and removes the modal children.
  */
 export function modalBodyClickListener(): void {
-  const target: ModalElement | null = document.querySelector('#svelte-modal');
-  if (target && target.resolve && target.getAttribute('data-dismissible') !== 'false') {
-    target.replaceChildren();
-    target.resolve({ confirm: false });
-    target.resolve = null;
+  if (browser) {
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (target && target.resolve && target.getAttribute('data-dismissible') !== 'false') {
+      target.replaceChildren();
+      target.resolve({ confirm: false });
+      target.resolve = null;
+    }
   }
 }
 
@@ -35,11 +38,13 @@ export function modalBodyClickListener(): void {
  * Listens for escape key presses on the document body and removes the modal children.
  */
 export function modalBodyKeyListener(event: KeyboardEvent): void {
-  const target: ModalElement | null = document.querySelector('#svelte-modal');
-  if (target && target.resolve && event.key == 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
-    target.replaceChildren();
-    target.resolve({ confirm: false });
-    target.resolve = null;
+  if (browser) {
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (target && target.resolve && event.key == 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
+      target.replaceChildren();
+      target.resolve({ confirm: false });
+      target.resolve = null;
+    }
   }
 }
 
@@ -47,11 +52,13 @@ export function modalBodyKeyListener(event: KeyboardEvent): void {
  * Closes the active modal if found and resolve nothing
  */
 export function closeActiveModal(): void {
-  const target: ModalElement | null = document.querySelector('#svelte-modal');
-  if (target && target.resolve) {
-    target.removeAttribute('data-dismissible');
-    target.replaceChildren();
-    target.resolve = null;
+  if (browser) {
+    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (target && target.resolve) {
+      target.removeAttribute('data-dismissible');
+      target.replaceChildren();
+      target.resolve = null;
+    }
   }
 }
 
@@ -60,17 +67,21 @@ export function closeActiveModal(): void {
  */
 export async function showAboutModal(): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const aboutModal = new AboutModal({ target });
-      target.resolve = resolve;
+      if (target) {
+        const aboutModal = new AboutModal({ target });
+        target.resolve = resolve;
 
-      aboutModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true });
-      });
+        aboutModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -85,26 +96,30 @@ export async function showConfirmModal(
   actionCanBeUndone?: boolean,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const confirmModal = new ConfirmModal({
-        props: { actionCanBeUndone, confirmText, message, title },
-        target,
-      });
-      target.resolve = resolve;
+      if (target) {
+        const confirmModal = new ConfirmModal({
+          props: { actionCanBeUndone, confirmText, message, title },
+          target,
+        });
+        target.resolve = resolve;
 
-      confirmModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        confirmModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      confirmModal.$on('confirm', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true });
-      });
+        confirmModal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -114,23 +129,27 @@ export async function showConfirmModal(
  */
 export async function showPlanLockedModal(planId: number): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const planLockedModal = new PlanLockedModal({
-        props: { planId },
-        target,
-      });
-      target.resolve = resolve;
+      if (target) {
+        const planLockedModal = new PlanLockedModal({
+          props: { planId },
+          target,
+        });
+        target.resolve = resolve;
 
-      // Do not allow users to dismiss this modal
-      target.setAttribute('data-dismissible', 'false');
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
 
-      planLockedModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        target.removeAttribute('data-dismissible');
-      });
+        planLockedModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -143,23 +162,27 @@ export async function showMergeReviewEndedModal(
   status: PlanMergeRequestStatus,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const mergeReviewEndedModal = new MergeReviewEndedModal({
-        props: { planId, status },
-        target,
-      });
-      target.resolve = resolve;
+      if (target) {
+        const mergeReviewEndedModal = new MergeReviewEndedModal({
+          props: { planId, status },
+          target,
+        });
+        target.resolve = resolve;
 
-      // Do not allow users to dismiss this modal
-      target.setAttribute('data-dismissible', 'false');
+        // Do not allow users to dismiss this modal
+        target.setAttribute('data-dismissible', 'false');
 
-      mergeReviewEndedModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        target.removeAttribute('data-dismissible');
-      });
+        mergeReviewEndedModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -169,23 +192,27 @@ export async function showMergeReviewEndedModal(
  */
 export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElementValue<{ name: string; plan: Plan }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const createPlanBranchModal = new CreatePlanBranchModal({ props: { plan }, target });
-      target.resolve = resolve;
+      if (target) {
+        const createPlanBranchModal = new CreatePlanBranchModal({ props: { plan }, target });
+        target.resolve = resolve;
 
-      createPlanBranchModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        createPlanBranchModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      createPlanBranchModal.$on('create', (e: CustomEvent<{ name: string; plan: Plan }>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        createPlanBranchModal.$on('create', (e: CustomEvent<{ name: string; plan: Plan }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -195,23 +222,27 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
  */
 export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const createViewModal = new CreateViewModal({ target });
-      target.resolve = resolve;
+      if (target) {
+        const createViewModal = new CreateViewModal({ target });
+        target.resolve = resolve;
 
-      createViewModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        createViewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -223,26 +254,30 @@ export async function showDeleteActivitiesModal(
   ids: ActivityDirectiveId[],
 ): Promise<ModalElementValue<ActivityDirectiveDeletionMap>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const deleteActivitiesModal = new DeleteActivitiesModal({
-        props: { activityIds: ids },
-        target,
-      });
-      target.resolve = resolve;
+      if (target) {
+        const deleteActivitiesModal = new DeleteActivitiesModal({
+          props: { activityIds: ids },
+          target,
+        });
+        target.resolve = resolve;
 
-      deleteActivitiesModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        deleteActivitiesModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      deleteActivitiesModal.$on('delete', (e: CustomEvent<ActivityDirectiveDeletionMap>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        deleteActivitiesModal.$on('delete', (e: CustomEvent<ActivityDirectiveDeletionMap>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -252,23 +287,27 @@ export async function showDeleteActivitiesModal(
  */
 export async function showEditViewModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const editViewModal = new EditViewModal({ target });
-      target.resolve = resolve;
+      if (target) {
+        const editViewModal = new EditViewModal({ target });
+        target.resolve = resolve;
 
-      editViewModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        editViewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      editViewModal.$on('save', (e: CustomEvent<{ id: number; modelId: number; name: string }>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        editViewModal.$on('save', (e: CustomEvent<{ id: number; modelId: number; name: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -281,17 +320,21 @@ export async function showExpansionSequenceModal(
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence, user }, target });
-      target.resolve = resolve;
+      if (target) {
+        const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence, user }, target });
+        target.resolve = resolve;
 
-      sequenceModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true });
-      });
+        sequenceModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -304,23 +347,27 @@ export async function showPlanBranchRequestModal(
   action: PlanBranchRequestAction,
 ): Promise<ModalElementValue<{ source_plan_id: number; target_plan_id: number }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const planModal = new PlanBranchRequestModal({ props: { action, plan }, target });
-      target.resolve = resolve;
+      if (target) {
+        const planModal = new PlanBranchRequestModal({ props: { action, plan }, target });
+        target.resolve = resolve;
 
-      planModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        planModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      planModal.$on('create', (e: CustomEvent<{ source_plan_id: number; target_plan_id: number }>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        planModal.$on('create', (e: CustomEvent<{ source_plan_id: number; target_plan_id: number }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -330,17 +377,21 @@ export async function showPlanBranchRequestModal(
  */
 export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const planBranchesModal = new PlanBranchesModal({ props: { plan }, target });
-      target.resolve = resolve;
+      if (target) {
+        const planBranchesModal = new PlanBranchesModal({ props: { plan }, target });
+        target.resolve = resolve;
 
-      planBranchesModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true });
-      });
+        planBranchesModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -353,17 +404,21 @@ export async function showPlanMergeRequestsModal(
   selectedFilter?: PlanMergeRequestTypeFilter,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
-      target.resolve = resolve;
+      if (target) {
+        const planMergeRequestsModal = new PlanMergeRequestsModal({ props: { selectedFilter, user }, target });
+        target.resolve = resolve;
 
-      planMergeRequestsModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        planMergeRequestsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -375,17 +430,21 @@ export async function showSavedViewsModal(
   user: User | null,
 ): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const savedViewsModal = new SavedViewsModal({ props: { height: 400, user, width: '50%' }, target });
-      target.resolve = resolve;
+      if (target) {
+        const savedViewsModal = new SavedViewsModal({ props: { height: 400, user, width: '50%' }, target });
+        target.resolve = resolve;
 
-      savedViewsModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        savedViewsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }
@@ -395,23 +454,27 @@ export async function showSavedViewsModal(
  */
 export async function showUploadViewModal(): Promise<ModalElementValue<{ definition: ViewDefinition; name: string }>> {
   return new Promise(resolve => {
-    const target: ModalElement | null = document.querySelector('#svelte-modal');
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
 
-    if (target) {
-      const uploadViewModal = new UploadViewModal({ target });
-      target.resolve = resolve;
+      if (target) {
+        const uploadViewModal = new UploadViewModal({ target });
+        target.resolve = resolve;
 
-      uploadViewModal.$on('close', () => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: false });
-      });
+        uploadViewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+        });
 
-      uploadViewModal.$on('upload', (e: CustomEvent<{ definition: ViewDefinition; name: string }>) => {
-        target.replaceChildren();
-        target.resolve = null;
-        resolve({ confirm: true, value: e.detail });
-      });
+        uploadViewModal.$on('upload', (e: CustomEvent<{ definition: ViewDefinition; name: string }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+        });
+      }
+    } else {
+      resolve({ confirm: false });
     }
   });
 }

@@ -190,6 +190,7 @@
     resetPlanStores();
     resetSchedulingStores();
     resetSimulationStores();
+    closeActiveModal();
   });
 
   function onClearAllErrors() {
