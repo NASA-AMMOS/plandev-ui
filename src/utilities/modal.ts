@@ -78,6 +78,7 @@ export async function showAboutModal(): Promise<ModalElementValue> {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true });
+          aboutModal.$destroy(); // destroy the component since it was manually invoked
         });
       }
     } else {
@@ -110,12 +111,14 @@ export async function showConfirmModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          confirmModal.$destroy();
         });
 
         confirmModal.$on('confirm', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true });
+          confirmModal.$destroy();
         });
       }
     } else {
@@ -146,6 +149,7 @@ export async function showPlanLockedModal(planId: number): Promise<ModalElementV
           target.replaceChildren();
           target.resolve = null;
           target.removeAttribute('data-dismissible');
+          planLockedModal.$destroy();
         });
       }
     } else {
@@ -179,6 +183,7 @@ export async function showMergeReviewEndedModal(
           target.replaceChildren();
           target.resolve = null;
           target.removeAttribute('data-dismissible');
+          mergeReviewEndedModal.$destroy();
         });
       }
     } else {
@@ -203,12 +208,14 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          createPlanBranchModal.$destroy();
         });
 
         createPlanBranchModal.$on('create', (e: CustomEvent<{ name: string; plan: Plan }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          createPlanBranchModal.$destroy();
         });
       }
     } else {
@@ -233,12 +240,14 @@ export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          createViewModal.$destroy();
         });
 
         createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          createViewModal.$destroy();
         });
       }
     } else {
@@ -268,12 +277,14 @@ export async function showDeleteActivitiesModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          deleteActivitiesModal.$destroy();
         });
 
         deleteActivitiesModal.$on('delete', (e: CustomEvent<ActivityDirectiveDeletionMap>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          deleteActivitiesModal.$destroy();
         });
       }
     } else {
@@ -298,12 +309,14 @@ export async function showEditViewModal(): Promise<ModalElementValue<{ id: numbe
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          editViewModal.$destroy();
         });
 
         editViewModal.$on('save', (e: CustomEvent<{ id: number; modelId: number; name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          editViewModal.$destroy();
         });
       }
     } else {
@@ -331,6 +344,7 @@ export async function showExpansionSequenceModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true });
+          sequenceModal.$destroy();
         });
       }
     } else {
@@ -358,12 +372,14 @@ export async function showPlanBranchRequestModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          planModal.$destroy();
         });
 
         planModal.$on('create', (e: CustomEvent<{ source_plan_id: number; target_plan_id: number }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          planModal.$destroy();
         });
       }
     } else {
@@ -388,6 +404,7 @@ export async function showPlanBranchesModal(plan: Plan): Promise<ModalElementVal
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true });
+          planBranchesModal.$destroy();
         });
       }
     } else {
@@ -415,6 +432,7 @@ export async function showPlanMergeRequestsModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          planMergeRequestsModal.$destroy();
         });
       }
     } else {
@@ -441,6 +459,7 @@ export async function showSavedViewsModal(
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          savedViewsModal.$destroy();
         });
       }
     } else {
@@ -465,12 +484,14 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          uploadViewModal.$destroy();
         });
 
         uploadViewModal.$on('upload', (e: CustomEvent<{ definition: ViewDefinition; name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
+          uploadViewModal.$destroy();
         });
       }
     } else {
