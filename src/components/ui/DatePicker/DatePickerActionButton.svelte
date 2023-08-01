@@ -2,7 +2,7 @@
   export let text: string = '';
 </script>
 
-<button class="date-picker-action-button st-button tertiary" on:click>
+<button type="button" class="date-picker-action-button st-button tertiary" on:click>
   <div class="action-icon">
     <slot />
   </div>
