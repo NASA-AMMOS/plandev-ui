@@ -25,10 +25,10 @@ Expected: YYYY-DOYThh:mm:ss[.sss]`,
   /**
    * InvalidArgumentCount error code and message.
    */
-  InvalidArgumentCount: (repeatArgCount: number, min: number, max: number): ErrorCode => {
+  InvalidArgumentCount: (argName: string, repeatArgCount: number, min: number, max: number): ErrorCode => {
     return {
       id: -8,
-      message: `Argument Count Error: The provided arguments for repetition is outside the valid range.
+      message: `Argument Count Error: The provided arguments for '${argName}' is outside the valid range.
 Received: ${repeatArgCount} repeating arguments.
 Expected: Repetition within the range of [${min}, ${max}]]`,
     };
@@ -37,10 +37,10 @@ Expected: Repetition within the range of [${min}, ${max}]]`,
   /**
    * InvalidEnum error code and message.
    */
-  InvalidEnum: (argValue: string, expectedValue: string): ErrorCode => {
+  InvalidEnum: (argName: string, argValue: string, expectedValue: string): ErrorCode => {
     return {
       id: -6,
-      message: `ENUM Error: Unexpected ENUM argument.
+      message: `ENUM Error: '${argName}' Unexpected ENUM argument.
 Received: ${argValue}
 Expected: ${expectedValue}`,
     };
@@ -61,10 +61,10 @@ Expected: [+/-]hh:mm:ss[.sss] or [+/-]DDDThh:mm:ss[.sss]`,
   /**
    * InvalidInteger error code and message.
    */
-  InvalidInteger: (argValue: string): ErrorCode => {
+  InvalidInteger: (argName: string, argValue: string): ErrorCode => {
     return {
       id: -4,
-      message: `Number Error: Argument is not a integer.
+      message: `Number Error: '${argName}' is not a integer.
 Received: ${argValue}
 Expected: An integer.`,
     };
@@ -73,10 +73,10 @@ Expected: An integer.`,
   /**
    * InvalidNumber error code and message.
    */
-  InvalidNumber: (argValue: string): ErrorCode => {
+  InvalidNumber: (argName: string, argValue: string): ErrorCode => {
     return {
       id: -4,
-      message: `Number Error: Invalid Argument Type
+      message: `Number Error: '${argName}' Invalid Argument Type
 Received: ${argValue}
 Expected: A valid number.`,
     };
@@ -85,10 +85,10 @@ Expected: A valid number.`,
   /**
    * InvalidRange error code and message.
    */
-  InvalidRange: (argValue: number, min: number, max: number): ErrorCode => {
+  InvalidRange: (argName: string, argValue: number, min: number, max: number): ErrorCode => {
     return {
       id: -7,
-      message: `Range Error: Argument Out of Bounds.
+      message: `Range Error: '${argName}' Out of Bounds.
 Received: ${argValue}
 Expected: A number within the range of [${min}, ${max}]].`,
     };
@@ -109,10 +109,10 @@ Expected: hh:mm:ss[.sss]`,
   /**
    * InvalidUnsignedInteger error code and message.
    */
-  InvalidUnsignedInteger: (argValue: string): ErrorCode => {
+  InvalidUnsignedInteger: (argName: string, argValue: string): ErrorCode => {
     return {
       id: -5,
-      message: `Number Error: Argument is not unsigned.
+      message: `Number Error: '${argName}' is not unsigned.
 Received: ${argValue}
 Expected: A signed value`,
     };

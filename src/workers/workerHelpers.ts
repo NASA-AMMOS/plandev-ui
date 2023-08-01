@@ -1,6 +1,6 @@
 import type {
   EnumMap,
-  FswCommandArgumentMap,
+  FswCommandArgument,
   FswCommandArgumentNumeric,
   FswCommandArgumentRepeat,
   NumericRange,
@@ -122,6 +122,22 @@ export function childNodeKinds(node: tsc.Node): [string, string][] {
   return [[SyntaxKind[node.kind], node.getText()], ...children.flatMap(child_node => childNodeKinds(child_node))];
 }
 
+export function findNodeByValue(node: tsc.Node, arg_val: any): tsc.Node | undefined {
+  let foundNode: tsc.Node | undefined;
+
+  function traverseNode(childNode: tsc.Node) {
+    if (childNode.getText() === arg_val) {
+      foundNode = childNode;
+      return;
+    }
+
+    tsc.forEachChild(childNode, traverseNode);
+  }
+
+  traverseNode(node);
+  return foundNode;
+}
+
 /**
  * Finds the closest ancestor node of a specific kind for the given node.
  *
@@ -215,24 +231,25 @@ export function makeDiagnostic(errorCode: ErrorCode, sourceFile: tsc.SourceFile,
  * Checks if a string represents a valid numeric value (not NAN or anything weird)
  *
  * @param {string} str - The string to validate.
+ * @param {string} name - Command arg name
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid numeric value.
  */
-function isNumeric(str: string): ValidationReturn {
+function isNumeric(name: string, str: string): ValidationReturn {
   // Both are needed: https://stackoverflow.com/a/175787
-  return isNaN(Number(str)) || isNaN(parseFloat(str)) ? CustomErrorCodes.InvalidNumber(str) : false;
+  return isNaN(Number(str)) || isNaN(parseFloat(str)) ? CustomErrorCodes.InvalidNumber(name, str) : false;
 }
 
 /**
  * Performs range validation on a numeric value.
- *
+ * @param {string} name - Command arg name
  * @param {number} value - The value to validate.
  * @param {NumericRange | null} range - The range to validate against. If null, the validation is ignored.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid value within the range.
  */
-function rangeValidation(value: number, range: NumericRange | null): ValidationReturn {
+function rangeValidation(name: string, value: number, range: NumericRange | null): ValidationReturn {
   // If range is null, ignore
   return range !== null && (value > range.max || value < range.min)
-    ? CustomErrorCodes.InvalidRange(value, range.min, range.max)
+    ? CustomErrorCodes.InvalidRange(name, value, range.min, range.max)
     : false;
 }
 
@@ -240,16 +257,17 @@ function rangeValidation(value: number, range: NumericRange | null): ValidationR
  * Validates a float value against a numeric range.
  *
  * @param {string} value - The float value to validate.
+ * @param {string} name - Command arg name
  * @param {NumericRange | null} range - The range to validate against. If null, the range validation is ignored.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid float value within the range.
  */
-function validateFloat(value: string, range: NumericRange | null): ValidationReturn {
+function validateFloat(value: string, name: string, range: NumericRange | null): ValidationReturn {
   let error_string: ValidationReturn;
 
-  if ((error_string = isNumeric(value)) !== false) {
+  if ((error_string = isNumeric(name, value)) !== false) {
     return error_string;
   }
-  if ((error_string = rangeValidation(Number(value), range)) !== false) {
+  if ((error_string = rangeValidation(name, Number(value), range)) !== false) {
     return error_string;
   }
 
@@ -260,18 +278,19 @@ function validateFloat(value: string, range: NumericRange | null): ValidationRet
  * Validates an integer value against a numeric range.
  *
  * @param {string} value - The integer value to validate.
+ * @param {string} name - Command arg name
  * @param {NumericRange | null} range - The range to validate against. If null, the range validation is ignored.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid integer value within the range.
  */
-function validateInteger(value: string, range: NumericRange | null): ValidationReturn {
+function validateInteger(value: string, name: string, range: NumericRange | null): ValidationReturn {
   // The mod 1 thing asserts an integer
   let error_string: ValidationReturn;
 
-  if ((error_string = validateFloat(value, range)) !== false) {
+  if ((error_string = validateFloat(value, name, range)) !== false) {
     return error_string;
   }
   if (Number(value) % 1 != 0) {
-    return CustomErrorCodes.InvalidInteger(value);
+    return CustomErrorCodes.InvalidInteger(name, value);
   }
 
   return false;
@@ -281,18 +300,19 @@ function validateInteger(value: string, range: NumericRange | null): ValidationR
  * Validates an unsigned integer value against a numeric range.
  *
  * @param {string} value - The unsigned integer value to validate.
+ * @param {string} name - command arg name
  * @param {NumericRange | null} range - The range to validate against. If null, the range validation is ignored.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid unsigned integer value within the range.
  */
-function validateUnsigned(value: string, range: NumericRange | null): ValidationReturn {
+function validateUnsigned(value: string, name: string, range: NumericRange | null): ValidationReturn {
   // The mod 1 thing asserts an integer
   let error_string: ValidationReturn;
 
-  if ((error_string = validateInteger(value, range)) !== false) {
+  if ((error_string = validateInteger(value, name, range)) !== false) {
     return error_string;
   }
   if (Number(value) < 0) {
-    return CustomErrorCodes.InvalidUnsignedInteger(value);
+    return CustomErrorCodes.InvalidUnsignedInteger(name, value);
   }
   return false;
 }
@@ -301,17 +321,18 @@ function validateUnsigned(value: string, range: NumericRange | null): Validation
  * Validates a numeric value based on the expectation type.
  *
  * @param {string} value - The numeric value to validate.
+ * @param {string} name - command arg name
  * @param {FswCommandArgumentNumeric} expectation - The expectation object defining the type and range.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid numeric value based on the expectation type.
  */
-function validateNumeric(value: string, expectation: FswCommandArgumentNumeric): ValidationReturn {
+function validateNumeric(value: string, name: string, expectation: FswCommandArgumentNumeric): ValidationReturn {
   switch (expectation.type) {
     case 'float':
-      return validateFloat(value, expectation.range);
+      return validateFloat(value, name, expectation.range);
     case 'integer':
-      return validateInteger(value, expectation.range);
+      return validateInteger(value, name, expectation.range);
     case 'unsigned':
-      return validateUnsigned(value, expectation.range);
+      return validateUnsigned(value, name, expectation.range);
   }
 }
 
@@ -319,38 +340,14 @@ function validateNumeric(value: string, expectation: FswCommandArgumentNumeric):
  * Validates a value against an enumeration of options.
  *
  * @param {string} value - The value to validate.
+ * @param {string} name - command arg name
  * @param {string[] | null} options - The array of options to validate against. If null, the validation is ignored.
  * @returns {ValidationReturn} Either a custom error code or `false` indicating a valid value within the enumeration.
  */
-function validateEnum(value: string, options: string[] | null): ValidationReturn {
+function validateEnum(value: string, name: string, options: string[] | null): ValidationReturn {
   return options !== null && !options.includes(value)
-    ? CustomErrorCodes.InvalidEnum(value, JSON.stringify(options))
+    ? CustomErrorCodes.InvalidEnum(name, value, JSON.stringify(options))
     : false;
-}
-
-/**
- * Convert a repeat argument to a valid json and calculate the size of a repeated argument.
- *
- * @param {string} str - The string representation of the repeated argument.
- * @returns {number} The size of the repeated argument.
- */
-function repeatSize(str: string): number {
-  // Remove whitespace and newlines
-  str = str.replace(/\s/g, '');
-
-  // Add quotes to property names
-  str = str.replace(/(\w+)(?=:)/g, '"$1"');
-
-  // add quotes to values
-  str = str.replace(/(?<=:)\b(\w+)\b/g, '"$1"');
-
-  // Assign default values to properties with missing values
-  str = str.replace(/:\s*(?=[\]}])/g, ': ""');
-
-  // Remove trailing commas
-  str = str.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
-
-  return (JSON.parse(str) as any[]).length;
 }
 
 /**
@@ -366,100 +363,90 @@ function validateRepeat(value: string, expected_argument: FswCommandArgumentRepe
     return false;
   }
 
-  const numberOfRepeats = repeatSize(value);
+  const numberOfRepeats = (JSON.parse(value) as any[]).length;
   const min = expected_argument.repeat.min ? expected_argument.repeat.min : 0;
   const max = expected_argument.repeat.max ? expected_argument.repeat.max : Infinity;
 
   return numberOfRepeats < min || numberOfRepeats > max
-    ? CustomErrorCodes.InvalidArgumentCount(numberOfRepeats, min, max)
+    ? CustomErrorCodes.InvalidArgumentCount(expected_argument.name, numberOfRepeats, min, max)
     : false;
 }
 
 /**
  * Validates discovered arguments against the expected argument map and enum map.
  *
- * @param {tsc.PropertyAssignment[]} discoveredArgs - The discovered arguments.
- * @param {FswCommandArgumentMap} expectedArgMap - The map of expected arguments.
+ * @param {tsc.Node} argumentNode - The TS arguments node.
+ * @param {string} arg_val - The argument value contained n the TS Node.
+ * @param {FswCommandArgument} expected_argument - The FSW Command to check against.
  * @param {EnumMap} enumMap - The map of enums.
  * @param {tsc.SourceFile} sourceFile - The source file where the arguments are discovered.
- * @returns {ResponseDiagnostic[]} An array of response diagnostics representing any validation errors.
+ * @returns {ResponseDiagnostic | false} A response diagnostics representing any validation errors or false if no errors are found.
  */
 // NOTE: Does not check bit length, only range right now!
 export function validateArguments(
-  discoverdArgs: tsc.PropertyAssignment[],
-  expectedArgMap: FswCommandArgumentMap,
+  argumentNode: tsc.Node,
+  arg_val: string,
+  expected_argument: FswCommandArgument,
   enumMap: EnumMap,
   sourceFile: tsc.SourceFile,
-): ResponseDiagnostic[] {
-  const diagnostics = [];
-  for (const argument of discoverdArgs) {
-    const clean_arg_name = stripQuotes(argument.name.getText());
-    const expected_argument = expectedArgMap[clean_arg_name];
-
-    if (expected_argument === undefined) {
-      continue;
-    }
-
-    const arg_val = stripQuotes(argument.initializer.getText());
-
-    // ignore specific eDSL local and parameter values
-    if (arg_val.startsWith('locals.') || arg_val.startsWith('parameters.')) {
-      continue;
-    }
-
-    let validation_resp: ValidationReturn;
-
-    switch (expected_argument.arg_type) {
-      case 'integer':
-        if ((validation_resp = validateInteger(arg_val, expected_argument.range)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      case 'unsigned':
-        if ((validation_resp = validateUnsigned(arg_val, expected_argument.range)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      case 'float':
-        if ((validation_resp = validateFloat(arg_val, expected_argument.range)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      case 'numeric':
-        if ((validation_resp = validateNumeric(arg_val, expected_argument)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      case 'boolean':
-        // No check required, the type system will assert this for us
-        break;
-      case 'enum': {
-        // Defined flexibly because some things need to pull from the top level of the command dict
-        const enum_options =
-          expected_argument.range ?? enumMap[expected_argument.enum_name].values.map(value => value.symbol);
-        if ((validation_resp = validateEnum(arg_val, enum_options)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      }
-      case 'repeat':
-        if ((validation_resp = validateRepeat(arg_val, expected_argument)) !== false) {
-          diagnostics.push(makeDiagnostic(validation_resp, sourceFile, argument));
-        }
-        break;
-      case 'time':
-        expected_argument.units;
-        break;
-      case 'var_string':
-        expected_argument.valid_regex;
-        break;
-      case 'fill':
-        expected_argument.arg_type;
-        break;
-      case 'fixed_string':
-        expected_argument.arg_type;
-    }
+): ResponseDiagnostic | false {
+  // ignore specific eDSL local and parameter values
+  if (arg_val.startsWith('locals.') || arg_val.startsWith('parameters.')) {
+    return false;
   }
 
-  return diagnostics;
+  let validation_resp: ValidationReturn;
+
+  switch (expected_argument.arg_type) {
+    case 'integer':
+      if ((validation_resp = validateInteger(arg_val, expected_argument.name, expected_argument.range)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    case 'unsigned':
+      if ((validation_resp = validateUnsigned(arg_val, expected_argument.name, expected_argument.range)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    case 'float':
+      if ((validation_resp = validateFloat(arg_val, expected_argument.name, expected_argument.range)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    case 'numeric':
+      if ((validation_resp = validateNumeric(arg_val, expected_argument.name, expected_argument)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    case 'boolean':
+      // No check required, the type system will assert this for us
+      break;
+    case 'enum': {
+      // Defined flexibly because some things need to pull from the top level of the command dict
+      const enum_options =
+        expected_argument.range ?? enumMap[expected_argument.enum_name].values.map(value => value.symbol);
+      if ((validation_resp = validateEnum(arg_val, expected_argument.name, enum_options)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    }
+    case 'repeat':
+      if ((validation_resp = validateRepeat(arg_val, expected_argument)) !== false) {
+        return makeDiagnostic(validation_resp, sourceFile, argumentNode);
+      }
+      break;
+    case 'time':
+      expected_argument.units;
+      break;
+    case 'var_string':
+      expected_argument.valid_regex;
+      break;
+    case 'fill':
+      expected_argument.arg_type;
+      break;
+    case 'fixed_string':
+      expected_argument.arg_type;
+  }
+
+  return false;
 }
