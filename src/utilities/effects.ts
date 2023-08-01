@@ -1069,8 +1069,15 @@ const effects = {
         const subtreeDeletions = sortedActions[ActivityDeletionAction.DELETE_CHAIN] ?? [];
         const normalDeletions = sortedActions[ActivityDeletionAction.NORMAL] ?? [];
 
+        // The following deletion queries must occur in a specific order to avoid errors from deleting
+        // directives that still have other activities dependent on them
         if (reanchorRootDeletions.length) {
-          await reqHasura(
+          const response = await reqHasura<
+            {
+              affected_row: ActivityDirective;
+              change_type: string;
+            }[]
+          >(
             gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR,
             {
               activity_ids: convertToGQLArray(reanchorRootDeletions),
@@ -1078,14 +1085,38 @@ const effects = {
             },
             user,
           );
-          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-            reanchorRootDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
-            return { ...currentActivityDirectivesMap };
-          });
+
+          if (response.delete_activity_by_pk_reanchor_to_anchor_bulk != null) {
+            const deletedActivityIds = response.delete_activity_by_pk_reanchor_to_anchor_bulk
+              .filter(({ change_type }) => {
+                return change_type === 'deleted';
+              })
+              .map(({ affected_row: { id } }) => id);
+
+            activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+              deletedActivityIds.forEach(id => delete currentActivityDirectivesMap[id]);
+              return { ...currentActivityDirectivesMap };
+            });
+
+            // If there are activities that did not get deleted
+            const leftoverActivities = reanchorRootDeletions.filter(id => !deletedActivityIds.includes(id));
+            if (leftoverActivities.length > 0) {
+              throw new Error(`Some activities were not successfully deleted: ${leftoverActivities.join(', ')}`);
+            }
+          } else {
+            throw new Error(
+              'Something went wrong when attempting to delete and reanchor directives to their closest ancestor',
+            );
+          }
         }
 
         if (reanchorPlanDeletions.length) {
-          await reqHasura(
+          const response = await reqHasura<
+            {
+              affected_row: ActivityDirective;
+              change_type: string;
+            }[]
+          >(
             gql.DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START,
             {
               activity_ids: convertToGQLArray(reanchorPlanDeletions),
@@ -1093,14 +1124,36 @@ const effects = {
             },
             user,
           );
-          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-            reanchorPlanDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
-            return { ...currentActivityDirectivesMap };
-          });
+
+          if (response.delete_activity_by_pk_reanchor_plan_start_bulk != null) {
+            const deletedActivityIds = response.delete_activity_by_pk_reanchor_plan_start_bulk
+              .filter(({ change_type }) => {
+                return change_type === 'deleted';
+              })
+              .map(({ affected_row: { id } }) => id);
+
+            activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+              deletedActivityIds.forEach(id => delete currentActivityDirectivesMap[id]);
+              return { ...currentActivityDirectivesMap };
+            });
+
+            // If there are activities that did not get deleted
+            const leftoverActivities = reanchorPlanDeletions.filter(id => !deletedActivityIds.includes(id));
+            if (leftoverActivities.length > 0) {
+              throw new Error(`Some activities were not successfully deleted: ${leftoverActivities.join(', ')}`);
+            }
+          } else {
+            throw new Error('Something went wrong when attempting to delete and reanchor directives to the plan start');
+          }
         }
 
         if (subtreeDeletions.length) {
-          await reqHasura(
+          const response = await reqHasura<
+            {
+              affected_row: ActivityDirective;
+              change_type: string;
+            }[]
+          >(
             gql.DELETE_ACTIVITY_DIRECTIVES_SUBTREE,
             {
               activity_ids: convertToGQLArray(subtreeDeletions),
@@ -1108,14 +1161,30 @@ const effects = {
             },
             user,
           );
-          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-            subtreeDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
-            return { ...currentActivityDirectivesMap };
-          });
+
+          if (response.delete_activity_by_pk_delete_subtree_bulk) {
+            const deletedActivityIds = response.delete_activity_by_pk_delete_subtree_bulk
+              .filter(({ change_type }) => {
+                return change_type === 'deleted';
+              })
+              .map(({ affected_row: { id } }) => id);
+
+            activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+              deletedActivityIds.forEach(id => delete currentActivityDirectivesMap[id]);
+              return { ...currentActivityDirectivesMap };
+            });
+            // If there are activities that did not get deleted
+            const leftoverActivities = subtreeDeletions.filter(id => !deletedActivityIds.includes(id));
+            if (leftoverActivities.length > 0) {
+              throw new Error(`Some activities were not successfully deleted: ${leftoverActivities.join(', ')}`);
+            }
+          } else {
+            throw new Error('Something went wrong when attempting to delete directives and their children');
+          }
         }
 
         if (normalDeletions.length) {
-          await reqHasura(
+          const response = await reqHasura<{ returning: { id: number }[] }>(
             gql.DELETE_ACTIVITY_DIRECTIVES,
             {
               activity_ids: normalDeletions,
@@ -1123,10 +1192,21 @@ const effects = {
             },
             user,
           );
-          activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
-            normalDeletions.forEach(id => delete currentActivityDirectivesMap[id]);
-            return { ...currentActivityDirectivesMap };
-          });
+
+          if (response.deleteActivityDirectives) {
+            const deletedActivityIds = response.deleteActivityDirectives.returning.map(({ id }) => id);
+            activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => {
+              deletedActivityIds.forEach(id => delete currentActivityDirectivesMap[id]);
+              return { ...currentActivityDirectivesMap };
+            });
+            // If there are activities that did not get deleted
+            const leftoverActivities = normalDeletions.filter(id => !deletedActivityIds.includes(id));
+            if (leftoverActivities.length > 0) {
+              throw new Error(`Some activities were not successfully deleted: ${leftoverActivities.join(', ')}`);
+            }
+          } else {
+            throw new Error('Something went wrong when attempting to delete directives');
+          }
         }
 
         showSuccessToast('Activity Directives Deleted Successfully');
