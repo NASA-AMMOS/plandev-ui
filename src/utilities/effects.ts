@@ -494,6 +494,7 @@ const effects = {
     modelId: number,
     expansionRuleIds: number[],
     user: User | null,
+    name?: string,
     description?: string,
   ): Promise<number | null> {
     try {
@@ -508,6 +509,7 @@ const effects = {
           dictionaryId,
           expansionRuleIds,
           modelId,
+          ...(name && { name }),
           ...(description && { description }),
         },
         user,

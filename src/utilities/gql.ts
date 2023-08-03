@@ -132,11 +132,12 @@ const gql = {
   `,
 
   CREATE_EXPANSION_SET: `#graphql
-    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $description: String) {
+    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
       createExpansionSet(
         commandDictionaryId: $dictionaryId,
         missionModelId: $modelId,
         expansionIds: $expansionRuleIds,
+        name: $name,
         description: $description
       ) {
         id

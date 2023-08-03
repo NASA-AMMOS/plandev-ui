@@ -43,6 +43,7 @@
   let setExpansionRuleIds: number[] = [];
   let setDictionaryId: number | null = null;
   let setModelId: number | null = null;
+  let setName: string = '';
   let setDescription: string = '';
 
   $: effects
@@ -69,6 +70,7 @@
         setModelId,
         setExpansionRuleIds,
         user,
+        setName,
         setDescription,
       );
 
@@ -128,7 +130,7 @@
 </script>
 
 <CssGrid bind:columns={$expansionSetsFormColumns}>
-  <Panel>
+  <Panel padBody={false}>
     <svelte:fragment slot="header">
       <SectionTitle>New Expansion Set</SectionTitle>
 
@@ -194,6 +196,21 @@
       </fieldset>
 
       <fieldset>
+        <label for="name">Name</label>
+        <input
+          bind:value={setName}
+          autocomplete="off"
+          class="st-input w-100"
+          name="name"
+          placeholder="Enter Expansion Set Name (optional)"
+          use:permissionHandler={{
+            hasPermission,
+            permissionError,
+          }}
+        />
+      </fieldset>
+
+      <fieldset>
         <label for="description">Description</label>
         <textarea
           bind:value={setDescription}
@@ -208,25 +225,27 @@
         />
       </fieldset>
 
-      <fieldset class="expansion-rules-table">
-        <label for="expansionRules" class="mb-2 mt-2" style:display="block"> Expansion Rules </label>
+      <div class="expansion-rules-table-container">
+        <fieldset class="expansion-rules-table">
+          <label for="expansionRules" class="mb-2 mt-2" style:display="block"> Expansion Rules </label>
 
-        {#if !activityTypesExpansionRules.length}
-          No Expansion Rules Found
-        {:else}
-          <DataGrid
-            bind:this={dataGrid}
-            columnDefs={[
-              { field: 'name', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
-              expansionSetRuleSelectionColumnDef,
-            ]}
-            useCustomContextMenu
-            rowData={activityTypesExpansionRules.filter(activityType => activityType.expansion_rules.length > 0)}
-            shouldAutoGenerateId={true}
-            suppressRowClickSelection={true}
-          />
-        {/if}
-      </fieldset>
+          {#if !activityTypesExpansionRules.length}
+            No Expansion Rules Found
+          {:else}
+            <DataGrid
+              bind:this={dataGrid}
+              columnDefs={[
+                { field: 'name', filter: 'text', headerName: 'Activity Type', resizable: true, sortable: true },
+                expansionSetRuleSelectionColumnDef,
+              ]}
+              useCustomContextMenu
+              rowData={activityTypesExpansionRules.filter(activityType => activityType.expansion_rules.length > 0)}
+              shouldAutoGenerateId={true}
+              suppressRowClickSelection={true}
+            />
+          {/if}
+        </fieldset>
+      </div>
     </svelte:fragment>
   </Panel>
 
@@ -254,5 +273,12 @@
 
   .expansion-rules-table :global(.ag-theme-stellar .ag-row.ag-selectable-row input) {
     cursor: pointer;
+  }
+
+  .expansion-rules-table-container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 0px 16px 8px;
   }
 </style>
