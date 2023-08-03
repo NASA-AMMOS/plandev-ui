@@ -22,7 +22,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import TagsInput from '../ui/Tags/Tags.svelte';
+  import TagsInput from '../ui/Tags/TagsInput.svelte';
   import ExpansionLogicEditor from './ExpansionLogicEditor.svelte';
 
   export let initialRuleActivityType: string | null = null;

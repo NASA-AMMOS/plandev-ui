@@ -21,7 +21,7 @@
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
-  import TagsInput from '../../ui/Tags/Tags.svelte';
+  import TagsInput from '../../ui/Tags/TagsInput.svelte';
   import SchedulingEditor from '../SchedulingEditor.svelte';
 
   export let initialGoalAuthor: string | null = null;

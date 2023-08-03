@@ -1,7 +1,7 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { shadeColor } from '../../utilities/color';
+  import { pickTextColorBasedOnBgColor, shadeColor } from '../../utilities/color';
   import { classNames } from '../../utilities/generic';
 
   export let color: string = '#f8f8f8';
@@ -11,6 +11,9 @@
   export let removable: boolean = true;
   export let ariaRole: string = 'button';
 
+  let chipStyle: string = '';
+  let removeStyle: string = '';
+
   const dispatch = createEventDispatcher();
 
   $: rootClasses = classNames('st-chip st-typography-body', {
@@ -19,11 +22,27 @@
     [className]: !!className,
   });
 
-  $: chipStyle = `background:${color};color:${shadeColor(color, 5)}`;
-  $: removeStyle = `background:${shadeColor(color, 1.1)};color:${shadeColor(color || '', 5.5)}`;
+  $: {
+    const mode = pickTextColorBasedOnBgColor(color);
+    let textColor = '';
+    let removeColor = '';
+    let removeBgColor = '';
+    if (mode === 'dark') {
+      textColor = shadeColor(color, 5);
+      removeColor = shadeColor(color || '', 5.5);
+      removeBgColor = shadeColor(color, 1.1);
+    } else {
+      textColor = 'rgb(255,255,255)';
+      removeColor = 'rgba(255,255,255, 0.9)';
+      removeBgColor = shadeColor(color, 0.7);
+    }
+    chipStyle = `background:${color};color:${textColor}`;
+    removeStyle = `background:${removeBgColor};color:${removeColor}`;
+  }
 </script>
 
 <button
+  type="button"
   style={chipStyle}
   class={rootClasses}
   role={ariaRole}

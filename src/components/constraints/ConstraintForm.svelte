@@ -19,7 +19,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import TagsInput from '../ui/Tags/Tags.svelte';
+  import TagsInput from '../ui/Tags/TagsInput.svelte';
   import ConstraintEditor from './ConstraintEditor.svelte';
 
   export let initialConstraintDefinition: string = 'export default (): Constraint => {\n\n}\n';

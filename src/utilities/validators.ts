@@ -1,4 +1,5 @@
 import type { Field, ValidationResult } from '../types/form';
+import { isValidHex } from './color';
 import { getDaysInYear } from './time';
 
 export function min(min: number, errorMessage?: string): (value: number) => Promise<ValidationResult> {
@@ -23,6 +24,17 @@ export function required(value: number | string): Promise<ValidationResult> {
   });
 }
 
+export function unique(existingValues: string[]): (value: string) => Promise<ValidationResult> {
+  return (value: string): Promise<ValidationResult> =>
+    new Promise(resolve => {
+      if (existingValues.indexOf(value) > -1) {
+        return resolve('Value already exists');
+      } else {
+        return resolve(null);
+      }
+    });
+}
+
 export function timestamp(value: string): Promise<ValidationResult> {
   return new Promise(resolve => {
     const re = /^(\d{4})-((?=\d*[1-9])\d{3})T(\d{2}):(\d{2}):(\d{2})(\.(\d{1,6}))?$/;
@@ -40,6 +52,18 @@ export function timestamp(value: string): Promise<ValidationResult> {
       } else {
         return resolve(`Day-of-year must be between 0 and ${daysInYear}`);
       }
+    } else {
+      return resolve(error);
+    }
+  });
+}
+
+export function hex(value: string): Promise<ValidationResult> {
+  return new Promise(resolve => {
+    const error = 'Hex format required: #rrggbb';
+
+    if (isValidHex(value)) {
+      resolve(null);
     } else {
       return resolve(error);
     }

@@ -272,6 +272,18 @@ const gql = {
     }
   `,
 
+  CREATE_TAG: `#graphql
+    mutation CreateTag($tag: tags_insert_input!) {
+      insert_tags_one(object: $tag) {
+        color
+        created_at
+        id
+        name
+        owner
+      }
+    }
+  `,
+
   CREATE_TAGS: `#graphql
     mutation CreateTags($tags: [tags_insert_input!]!) {
       insert_tags(objects: $tags, on_conflict: {
@@ -507,6 +519,14 @@ const gql = {
     mutation DeleteSimulationTemplate($id: Int!) {
       deleteSimulationTemplate: delete_simulation_template_by_pk(id: $id) {
         id
+      }
+    }
+  `,
+
+  DELETE_TAG: `#graphql
+    mutation DeleteTags($id: Int!) {
+      delete_tags_by_pk(id: $id) {
+          id
       }
     }
   `,
@@ -1972,6 +1992,18 @@ const gql = {
         id
         description
         arguments
+      }
+    }
+  `,
+
+  UPDATE_TAG: `#graphql
+    mutation UpdateTag($id: Int!, $tagSetInput: tags_set_input!) {
+      update_tags_by_pk(pk_columns: {id: $id}, _set: $tagSetInput) {
+        color
+        created_at
+        id
+        name
+        owner
       }
     }
   `,

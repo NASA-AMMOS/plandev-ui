@@ -16,6 +16,7 @@ import { createModelError, createPlanError, creatingModel, creatingPlan, models,
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { selectedSpanId, simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
+import { createTagError } from '../stores/tags';
 import { applyViewUpdate, view } from '../stores/views';
 import type {
   ActivityDirective,
@@ -105,6 +106,7 @@ import type {
   SchedulingGoalTagsInsertInput,
   Tag,
   TagsInsertInput,
+  TagsSetInput,
 } from '../types/tags';
 import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
@@ -929,7 +931,30 @@ const effects = {
     }
   },
 
-  async createTags(tags: TagsInsertInput[], user: User | null): Promise<Tag[] | null> {
+  async createTag(tag: TagsInsertInput, user: User | null, notify: boolean = true): Promise<Tag | null> {
+    try {
+      createTagError.set(null);
+      if (!queryPermissions.CREATE_TAGS(user)) {
+        throwPermissionError('create tags');
+      }
+
+      const data = await reqHasura<{ affected_row: number; tag: Tag }>(gql.CREATE_TAG, { tag }, user);
+      const { insert_tags_one } = data;
+      const { tag: insertedTag } = insert_tags_one;
+      if (notify) {
+        showSuccessToast('Tag Created Successfully');
+      }
+      createTagError.set(null);
+      return insertedTag;
+    } catch (e) {
+      createTagError.set((e as Error).message);
+      catchError('Create Tags Failed', e as Error);
+      showFailureToast('Create Tags Failed');
+      return null;
+    }
+  },
+
+  async createTags(tags: TagsInsertInput[], user: User | null, notify: boolean = true): Promise<Tag[] | null> {
     try {
       if (!queryPermissions.CREATE_TAGS(user)) {
         throwPermissionError('create tags');
@@ -938,6 +963,9 @@ const effects = {
       const data = await reqHasura<{ affected_rows: number; returning: Tag[] }>(gql.CREATE_TAGS, { tags }, user);
       const { insert_tags } = data;
       const { returning } = insert_tags;
+      if (notify) {
+        showSuccessToast('Tags Created Successfully');
+      }
       return returning;
     } catch (e) {
       catchError('Create Tags Failed', e as Error);
@@ -1612,6 +1640,22 @@ const effects = {
     return false;
   },
 
+  async deleteTag(tag: Tag, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_TAGS(user)) {
+        throwPermissionError('delete tags');
+      }
+
+      await reqHasura<{ id: number }>(gql.DELETE_TAG, { id: tag.id }, user);
+      showSuccessToast('Tag Deleted Successfully');
+      return true;
+    } catch (e) {
+      catchError('Delete Tag Failed', e as Error);
+      showFailureToast('Delete Tag Failed');
+      return false;
+    }
+  },
+
   async deleteUserSequence(id: number, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_USER_SEQUENCE(user)) {
@@ -2232,6 +2276,18 @@ const effects = {
       const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId }, user);
       const { span: spans } = data;
       return spans;
+    } catch (e) {
+      catchError(e as Error);
+      return [];
+    }
+  },
+
+  async getTags(user: User | null): Promise<Tag[]> {
+    try {
+      const query = convertToQuery(gql.SUB_TAGS);
+      const data = await reqHasura<Tag[]>(query, {}, user);
+      const { tags } = data;
+      return tags;
     } catch (e) {
       catchError(e as Error);
       return [];
@@ -3119,6 +3175,32 @@ const effects = {
     } catch (e) {
       catchError('Simulation Template Update Failed', e as Error);
       showFailureToast('Simulation Template Update Failed');
+    }
+  },
+
+  async updateTag(
+    id: number,
+    tagSetInput: TagsSetInput,
+    user: User | null,
+    notify: boolean = true,
+  ): Promise<Tag | null> {
+    try {
+      createTagError.set(null);
+      if (!queryPermissions.UPDATE_TAG(user)) {
+        throwPermissionError('update tag');
+      }
+      const data = await reqHasura<Tag>(gql.UPDATE_TAG, { id, tagSetInput }, user);
+      const { update_tags_by_pk: updatedTag } = data;
+      if (notify) {
+        showSuccessToast('Tag Updated Successfully');
+      }
+      createTagError.set(null);
+      return updatedTag;
+    } catch (e) {
+      createTagError.set((e as Error).message);
+      catchError('Update Tags Failed', e as Error);
+      showFailureToast('Update Tags Failed');
+      return null;
     }
   },
 

@@ -21,6 +21,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import { tagsCellRenderer } from '../ui/DataGrid/DataGridTagsCellRenderer';
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
@@ -154,12 +155,15 @@
       sortable: true,
     },
     tags: {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
       field: 'tags',
       filter: 'text',
       headerName: 'Tags',
-      hide: true,
       resizable: true,
-      sortable: true,
+      sortable: false,
+      width: 220,
+      wrapText: true,
     },
     type: {
       field: 'type',

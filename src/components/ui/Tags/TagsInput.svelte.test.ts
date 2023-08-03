@@ -1,18 +1,18 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Tag } from '../../../types/tags';
-import Tags from './Tags.svelte';
+import TagsInput from './TagsInput.svelte';
 
-describe('Tags component', () => {
+describe('TagsInput component', () => {
   afterEach(() => {
     cleanup();
   });
 
-  it('Should render the Tags component', async () => {
+  it('Should render the TagsInput component', async () => {
     const makeTag = (name: string): Tag => ({ color: '#FFFFFF', created_at: '', id: -1, name, owner: '' });
     const selected: Tag[] = ['Orange', 'Yellow'].map(makeTag);
     const options: Tag[] = ['Red', 'Green', 'Blue'].map(makeTag);
-    const { getByRole, queryByText, getByText, getAllByRole, queryByRole } = render(Tags, {
+    const { getByRole, queryByText, getByText, getAllByRole, queryByRole } = render(TagsInput, {
       createTagObject: makeTag,
       name: 'Test Name',
       options,

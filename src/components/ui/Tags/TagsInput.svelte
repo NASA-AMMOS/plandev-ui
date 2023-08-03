@@ -199,8 +199,15 @@
 
 <svelte:window on:click={onClickOutside} on:touchstart={onClickOutside} />
 
-<div class="tags" class:disabled use:useActions={use} use:popperRef bind:this={tagsRef} bind:clientWidth={tagsWidth}>
-  <div class="tags-selected-items">
+<div
+  class="tags-input"
+  class:disabled
+  use:useActions={use}
+  use:popperRef
+  bind:this={tagsRef}
+  bind:clientWidth={tagsWidth}
+>
+  <div class="tags-input-selected-items">
     {#each selectedTags as tag}
       <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
@@ -210,7 +217,7 @@
         {name}
         {disabled}
         placeholder={disabled ? '' : placeholder}
-        class="st-input tags-input"
+        class="st-input"
         on:mouseup={openSuggestions}
         on:focus={openSuggestions}
         on:keydown|stopPropagation={onKeydown}
@@ -220,14 +227,14 @@
     {/if}
   </div>
   {#if suggestionsVisible}
-    <div class="tags-portal" use:popperContent={extraOpts}>
-      <ul class="tags-options" role="listbox">
+    <div class="tags-input-portal" use:popperContent={extraOpts}>
+      <ul class="tags-input-options" role="listbox">
         {#if filteredOptions.length}
-          <div class="tags-option tag-header st-typography-label">Suggestions</div>
+          <div class="tags-input-option tag-header st-typography-label">Suggestions</div>
           {#each filteredOptions as tag}
             <li
               role="option"
-              class="tags-option"
+              class="tags-input-option"
               on:mousedown|stopPropagation
               on:mouseup|stopPropagation={() => addTag(tag, 'select')}
               aria-selected={activeTag?.id === tag.id}
@@ -241,7 +248,7 @@
           <div
             on:mousedown|stopPropagation
             on:mouseup|stopPropagation={() => addTag(createTagObject(searchText || ''), 'create')}
-            class="tags-option"
+            class="tags-input-option"
             role="button"
             tabindex={0}
           >
@@ -249,10 +256,10 @@
           </div>
         {/if}
         {#if !filteredOptions.length && exactMatchFound && searchText}
-          <div class="tags-option tags-option-message">{searchText} already added</div>
+          <div class="tags-input-option tags-input-option-message">{searchText} already added</div>
         {/if}
         {#if !filteredOptions.length && !exactMatchFound && !searchText}
-          <div class="tags-option tags-option-message">No other tags found</div>
+          <div class="tags-input-option tags-input-option-message">No other tags found</div>
         {/if}
       </ul>
     </div>
@@ -260,7 +267,7 @@
 </div>
 
 <style>
-  .tags {
+  .tags-input {
     background-color: var(--st-input-background-color);
     border: var(--st-input-border);
     border-radius: 4px;
@@ -271,19 +278,19 @@
     padding: 2px;
   }
 
-  .tags.disabled,
-  :global(.tags.permission-disabled) {
+  .tags-input.disabled,
+  :global(.tags-input.permission-disabled) {
     cursor: not-allowed;
     opacity: 0.5;
   }
 
-  .tags.disabled input,
-  :global(.tags.permission-disabled) input {
+  .tags-input.disabled input,
+  :global(.tags-input.permission-disabled) input {
     cursor: not-allowed;
     opacity: 1;
   }
 
-  .tags-selected-items {
+  .tags-input-selected-items {
     display: flex;
     flex: 1;
     flex-wrap: wrap;
@@ -292,7 +299,7 @@
     padding: 0;
   }
 
-  .tags-input {
+  .tags-input input {
     background: none;
     border: none;
     flex: 1;
@@ -302,7 +309,7 @@
     width: 100%;
   }
 
-  .tags-portal {
+  .tags-input-portal {
     background: #ffffff;
     border: 1px solid var(--st-gray-20);
     border-radius: 10px;
@@ -313,20 +320,20 @@
     z-index: 99999;
   }
 
-  .tags-options {
+  .tags-input-options {
     margin: 0;
     padding: 0;
   }
 
-  .tags-option {
+  .tags-input-option {
     border-bottom: 1px solid var(--st-gray-20);
     cursor: pointer;
     display: flex;
     padding: 8px;
   }
 
-  .tags-option.active,
-  .tags-option:hover {
+  .tags-input-option.active,
+  .tags-input-option:hover {
     background: var(--st-gray-10);
   }
 
@@ -335,11 +342,11 @@
     cursor: default;
   }
 
-  .tags-option-message {
+  .tags-input-option-message {
     cursor: default;
   }
 
-  .tags-option-message:hover {
+  .tags-input-option-message:hover {
     background: inherit;
   }
 </style>

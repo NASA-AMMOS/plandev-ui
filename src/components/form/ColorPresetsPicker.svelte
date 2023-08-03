@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { Placement } from 'tippy.js';
   import { getTarget } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
@@ -9,6 +10,7 @@
 
   export let value: string = '';
   export let tooltipText: string = 'Color';
+  export let placement: Placement = 'bottom-end';
   export let presetColors: string[] = ['#ef8b8c', '#febd85'];
 
   let pickerMenu: Menu;
@@ -28,15 +30,17 @@
 </script>
 
 <button
+  type="button"
   class="st-button color-preset-picker color"
   use:tooltip={{ content: tooltipText, placement: 'top' }}
   style={`position: relative; background: ${value}`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
-  <Menu bind:this={pickerMenu} hideAfterClick={false} placement="bottom-end">
+  <Menu bind:this={pickerMenu} hideAfterClick={false} {placement}>
     <div class="colors">
       {#each presetColors as color}
         <button
+          type="button"
           class="st-button tertiary color"
           on:click={() => onInput(color)}
           style="background:{color}"

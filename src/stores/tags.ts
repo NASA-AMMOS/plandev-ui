@@ -1,8 +1,12 @@
 import type { Readable } from 'svelte/motion';
-import { derived } from 'svelte/store';
+import { derived, writable, type Writable } from 'svelte/store';
 import type { Tag, TagsMap } from '../types/tags';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
+
+/* Writeable. */
+
+export const createTagError: Writable<string | null> = writable(null);
 
 /* Subscriptions. */
 

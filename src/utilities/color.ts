@@ -1,5 +1,3 @@
-const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3,4}){1,2}$/.test(hex);
-
 const getChunksFromString = (st: string, chunkSize: number) => st.match(new RegExp(`.{${chunkSize}}`, 'g'));
 
 const convertHexUnitTo256 = (hexStr: string) => parseInt(hexStr.repeat(2 / hexStr.length), 16);
@@ -13,6 +11,8 @@ const getAlphafloat = (a: number, alpha: number) => {
   }
   return alpha;
 };
+
+export const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3,4}){1,2}$/.test(hex);
 
 export const hexToRgba = (hex: string, alpha: number) => {
   if (!isValidHex(hex)) {
@@ -68,4 +68,28 @@ export function shadeColor(color: string, decimal: number): string {
  */
 export function generateRandomPastelColor(): string {
   return hslToHex(360 * Math.random(), 25 + 70 * Math.random(), 82 + 10 * Math.random());
+}
+
+/**
+ * Returns dark if the bgColor hex has an acceptable WCAG 2.0 contrast ratio
+ * and otherwise returns light.
+ *
+ * From https://stackoverflow.com/a/41491220
+ * See https://www.w3.org/WAI/WCAG21/Techniques/general/G18.html for further explanation
+ * of the formula and magic numbers.
+ */
+export function pickTextColorBasedOnBgColor(bgColor: string): 'dark' | 'light' {
+  const color = bgColor.charAt(0) === '#' ? bgColor.substring(1, 7) : bgColor;
+  const r = parseInt(color.substring(0, 2), 16); // hexToR
+  const g = parseInt(color.substring(2, 4), 16); // hexToG
+  const b = parseInt(color.substring(4, 6), 16); // hexToB
+  const uicolors = [r / 255, g / 255, b / 255];
+  const c = uicolors.map(col => {
+    if (col <= 0.03928) {
+      return col / 12.92;
+    }
+    return Math.pow((col + 0.055) / 1.055, 2.4);
+  });
+  const L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return L > 0.179 ? 'dark' : 'light';
 }

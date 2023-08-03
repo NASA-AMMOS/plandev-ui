@@ -8,6 +8,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
+  import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import BoxArrowRightIcon from 'bootstrap-icons/icons/box-arrow-right.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
@@ -62,6 +63,10 @@
     <MenuItem on:click={() => goto(`${base}/sequencing`)} on:pointerenter={() => preloadData(`${base}/sequencing`)}>
       <JournalCodeIcon />
       Sequencing
+    </MenuItem>
+    <MenuItem on:click={() => goto(`${base}/tags`)} on:pointerenter={() => preloadData(`${base}/tags`)}>
+      <TagIcon />
+      Tags
     </MenuItem>
     <MenuItem on:click={() => window.open(env.PUBLIC_GATEWAY_CLIENT_URL, '_newtab')}>
       <DiagramIcon />

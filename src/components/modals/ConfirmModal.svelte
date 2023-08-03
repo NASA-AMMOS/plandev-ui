@@ -33,9 +33,9 @@
     {title}
   </ModalHeader>
   <ModalContent>
-    <div>{message}</div>
+    <span>{message}</span>
     {#if !actionCanBeUndone}
-      <div>This action cannot be undone.</div>
+      <i>This action cannot be undone.</i>
     {/if}
   </ModalContent>
   <ModalFooter>

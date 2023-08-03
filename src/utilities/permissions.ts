@@ -18,6 +18,7 @@ import type {
 import type { SchedulingCondition, SchedulingGoal } from '../types/scheduling';
 import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
+import type { Tag } from '../types/tags';
 import type { View } from '../types/view';
 import { showFailureToast } from './toast';
 
@@ -230,6 +231,9 @@ const queryPermissions = {
   DELETE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return getPermission(['delete_simulation_template_by_pk'], user);
   },
+  DELETE_TAGS: (user: User | null): boolean => {
+    return getPermission(['delete_tags_by_pk'], user);
+  },
   DELETE_USER_SEQUENCE: (user: User | null): boolean => {
     return getPermission(['delete_user_sequence_by_pk'], user);
   },
@@ -302,6 +306,9 @@ const queryPermissions = {
   SUB_SIMULATION_TEMPLATES: (user: User | null): boolean => {
     return getPermission(['simulation_template'], user);
   },
+  SUB_TAGS: (user: User | null): boolean => {
+    return getPermission(['tag'], user);
+  },
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
     return getPermission(['user_sequence'], user);
   },
@@ -343,6 +350,9 @@ const queryPermissions = {
   },
   UPDATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return getPermission(['update_simulation_template_by_pk'], user);
+  },
+  UPDATE_TAG: (user: User | null): boolean => {
+    return getPermission(['update_tags_by_pk'], user);
   },
   UPDATE_USER_SEQUENCE: (user: User | null): boolean => {
     return getPermission(['update_user_sequence_by_pk'], user);
@@ -426,6 +436,7 @@ interface FeaturePermissions {
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: AssignablePlanAssetCRUDPermission<SimulationTemplate>;
+  tags: CRUDPermission<Tag>;
   view: CRUDPermission<View>;
 }
 
@@ -591,6 +602,12 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => isUserAdmin(user) || queryPermissions.SUB_SIMULATION_TEMPLATES(user),
     canUpdate: (user, plan) =>
       isUserAdmin(user) || (isUserOwner(user, plan) && queryPermissions.UPDATE_SIMULATION_TEMPLATE(user)),
+  },
+  tags: {
+    canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_TAGS(user),
+    canDelete: (user, tag) => isUserAdmin(user) || (isUserOwner(user, tag) && queryPermissions.DELETE_TAGS(user)),
+    canRead: user => isUserAdmin(user) || queryPermissions.SUB_TAGS(user),
+    canUpdate: (user, tag) => isUserAdmin(user) || (isUserOwner(user, tag) && queryPermissions.UPDATE_TAG(user)),
   },
   view: {
     canCreate: user => isUserAdmin(user) || queryPermissions.CREATE_VIEW(user),

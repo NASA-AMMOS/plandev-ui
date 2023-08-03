@@ -11,7 +11,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
-  import TagsInput from '../ui/Tags/Tags.svelte';
+  import TagsInput from '../ui/Tags/TagsInput.svelte';
 
   export let plan: Plan | null;
   export let planTags: Tag[];
@@ -44,7 +44,7 @@
         plan_id: plan?.id || -1,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, user);
+      await effects.createPlanTags(newPlanTags, user, false);
     }
   }
 </script>

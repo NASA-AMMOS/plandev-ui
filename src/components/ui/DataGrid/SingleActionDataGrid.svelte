@@ -1,4 +1,4 @@
-<svelte:options immutable={true} />
+<svelte:options immutable={true} accessors={true} />
 
 <script lang="ts">
   type RowData = $$Generic<TRowData>;

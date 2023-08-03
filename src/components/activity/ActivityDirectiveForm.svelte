@@ -34,7 +34,7 @@
   import Input from '../form/Input.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Highlight from '../ui/Highlight.svelte';
-  import TagsInput from '../ui/Tags/Tags.svelte';
+  import TagsInput from '../ui/Tags/TagsInput.svelte';
   import ActivityAnchorForm from './ActivityAnchorForm.svelte';
   import ActivityPresetInput from './ActivityPresetInput.svelte';
 

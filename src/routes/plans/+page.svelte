@@ -19,7 +19,7 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import TagsInput from '../../components/ui/Tags/Tags.svelte';
+  import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
@@ -224,7 +224,7 @@
         plan_id: newPlan.id,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, user, false);
+      await effects.createPlanTags(newPlanTags, user);
       newPlan.tags = planTags.map(tag => ({ tag }));
       plans = [...plans, newPlan];
     }
