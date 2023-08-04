@@ -109,13 +109,13 @@
     },
   ];
 
-  async function deleteSequence({ id }: Pick<UserSequence, 'id'>) {
-    const success = await effects.deleteUserSequence(id, user);
+  async function deleteSequence(sequence: UserSequence) {
+    const success = await effects.deleteUserSequence(sequence, user);
 
     if (success) {
-      userSequences.filterValueById(id);
+      userSequences.filterValueById(sequence.id);
 
-      if (id === selectedSequence?.id) {
+      if (sequence.id === selectedSequence?.id) {
         selectedSequence = null;
         selectedSequenceSeqJson = 'No Sequence Selected';
       }
@@ -123,7 +123,11 @@
   }
 
   function deleteSequenceContext(event: CustomEvent<RowId[]>) {
-    deleteSequence({ id: event.detail[0] as number });
+    const id = event.detail[0] as number;
+    const sequence = $userSequences.find(s => s.id === id);
+    if (sequence) {
+      deleteSequence(sequence);
+    }
   }
 
   function editSequence({ id }: Pick<UserSequence, 'id'>) {

@@ -147,13 +147,13 @@
     redrawRows?.();
   }
 
-  async function deleteSet({ id }: Pick<ExpansionSet, 'id'>) {
-    const success = await effects.deleteExpansionSet(id, user);
+  async function deleteSet(set: ExpansionSet) {
+    const success = await effects.deleteExpansionSet(set, user);
 
     if (success) {
-      expansionSets.filterValueById(id);
+      expansionSets.filterValueById(set.id);
 
-      if (id === selectedExpansionSet?.id) {
+      if (set.id === selectedExpansionSet?.id) {
         selectedExpansionRule = null;
         selectedExpansionSet = null;
       }
@@ -161,7 +161,11 @@
   }
 
   function deleteSetContext(event: CustomEvent<RowId[]>) {
-    deleteSet({ id: event.detail[0] as number });
+    const id = event.detail[0] as number;
+    const set = $expansionSets.find(s => s.id === id);
+    if (set) {
+      deleteSet(set);
+    }
   }
 
   function editRule({ id }: Pick<ExpansionRuleSlim, 'id'>) {

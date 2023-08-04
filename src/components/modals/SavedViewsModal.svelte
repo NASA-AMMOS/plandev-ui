@@ -26,11 +26,14 @@
   $: userViews = $views.filter((view: View) => view.owner === user?.id);
 
   async function deleteView({ detail: viewId }: CustomEvent<number>) {
-    const success = await effects.deleteView(viewId, user);
+    const matchingView = userViews.find(v => v.id === viewId);
+    if (matchingView) {
+      const success = await effects.deleteView(matchingView, user);
 
-    if (success) {
-      if ($view?.id === viewId) {
-        goToNextView();
+      if (success) {
+        if ($view?.id === viewId) {
+          goToNextView();
+        }
       }
     }
   }

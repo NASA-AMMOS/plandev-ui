@@ -8,7 +8,7 @@
   import { tagsMap } from '../../stores/tags';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { ExpansionRule } from '../../types/expansion';
+  import type { ExpansionRule, ExpansionRuleSlim } from '../../types/expansion';
   import type { Tag } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -139,34 +139,40 @@
         const includesId = `${rule.id}`.includes(filterTextLowerCase);
         return includesActivityType || includesId;
       })
-      .map(rule => {
-        const matchingTags: { tag: Tag }[] = [];
-        rule.tags.forEach(({ tag_id }) => {
-          // TODO derived store vs derived tagMap? Needs further discussion.
-          const matchingTag = $tagsMap[tag_id];
-          if (matchingTag) {
-            matchingTags.push({ tag: matchingTag });
-          }
-        });
-        const ruleWithTags: ExpansionRule = { ...rule, tags: matchingTags };
-        return ruleWithTags;
-      });
+      .map(rule => expandRuleTags(rule));
   }
 
-  async function deleteRule({ id }: Pick<ExpansionRule, 'id'>) {
-    const success = await effects.deleteExpansionRule(id, user);
+  function expandRuleTags(rule: ExpansionRuleSlim): ExpansionRule {
+    const matchingTags: { tag: Tag }[] = [];
+    rule.tags.forEach(({ tag_id }) => {
+      // TODO derived store vs derived tagMap? Needs further discussion.
+      const matchingTag = $tagsMap[tag_id];
+      if (matchingTag) {
+        matchingTags.push({ tag: matchingTag });
+      }
+    });
+    const ruleWithTags: ExpansionRule = { ...rule, tags: matchingTags };
+    return ruleWithTags;
+  }
+
+  async function deleteRule(rule: ExpansionRule) {
+    const success = await effects.deleteExpansionRule(rule, user);
 
     if (success) {
-      expansionRules.filterValueById(id);
+      expansionRules.filterValueById(rule.id);
 
-      if (id === selectedExpansionRule?.id) {
+      if (rule.id === selectedExpansionRule?.id) {
         selectedExpansionRule = null;
       }
     }
   }
 
   function deleteRuleContext(event: CustomEvent<RowId[]>) {
-    deleteRule({ id: event.detail[0] as number });
+    const id = event.detail[0] as number;
+    const rule = $expansionRules.find(r => r.id === id);
+    if (rule) {
+      deleteRule(expandRuleTags(rule));
+    }
   }
 
   function hasDeletePermission(user: User | null, expansionRule: ExpansionRule) {

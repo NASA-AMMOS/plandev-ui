@@ -42,6 +42,7 @@ import type {
   ExpansionSequence,
   ExpansionSequenceInsertInput,
   ExpansionSequenceToActivityInsertInput,
+  ExpansionSet,
   SeqId,
 } from '../types/expansion';
 import type { ModelInsertInput, ModelSlim } from '../types/model';
@@ -70,6 +71,7 @@ import type {
   SchedulingConditionInsertInput,
   SchedulingGoal,
   SchedulingGoalInsertInput,
+  SchedulingGoalSlim,
   SchedulingResponse,
   SchedulingSpec,
   SchedulingSpecCondition,
@@ -1283,7 +1285,7 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this dictionary?',
+        `Are you sure you want to delete the dictionary with ID: "${id}"?`,
         'Delete Command Dictionary',
       );
 
@@ -1298,7 +1300,7 @@ const effects = {
     }
   },
 
-  async deleteConstraint(id: number, user: User | null): Promise<boolean> {
+  async deleteConstraint(constraint: Constraint, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_CONSTRAINT(user)) {
         throwPermissionError('delete this constraint');
@@ -1306,12 +1308,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this constraint?',
+        `Are you sure you want to delete "${constraint.name}"?`,
         'Delete Constraint',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_CONSTRAINT, { id }, user);
+        await reqHasura(gql.DELETE_CONSTRAINT, { id: constraint.id }, user);
         showSuccessToast('Constraint Deleted Successfully');
         return true;
       }
@@ -1338,7 +1340,7 @@ const effects = {
     }
   },
 
-  async deleteExpansionRule(id: number, user: User | null): Promise<boolean> {
+  async deleteExpansionRule(rule: ExpansionRule, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_EXPANSION_RULE(user)) {
         throwPermissionError('delete an expansion rule');
@@ -1346,12 +1348,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this expansion rule?',
+        `Are you sure you want to delete "${rule.name}"?`,
         'Delete Expansion Rule',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_EXPANSION_RULE, { id }, user);
+        await reqHasura(gql.DELETE_EXPANSION_RULE, { id: rule.id }, user);
         showSuccessToast('Expansion Rule Deleted Successfully');
         return true;
       }
@@ -1388,7 +1390,7 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this expansion sequence?',
+        `Are you sure you want to delete expansion sequence with sequence ID: "${sequence.seq_id}"?`,
         'Delete Expansion Sequence',
       );
 
@@ -1430,7 +1432,7 @@ const effects = {
     }
   },
 
-  async deleteExpansionSet(id: number, user: User | null): Promise<boolean> {
+  async deleteExpansionSet(set: ExpansionSet, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_EXPANSION_SET(user)) {
         throwPermissionError('delete an expansion set');
@@ -1438,12 +1440,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this expansion set?',
+        `Are you sure you want to delete "${set.name}"?`,
         'Delete Expansion Set',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_EXPANSION_SET, { id }, user);
+        await reqHasura(gql.DELETE_EXPANSION_SET, { id: set.name }, user);
         showSuccessToast('Expansion Set Deleted Successfully');
         return true;
       }
@@ -1474,7 +1476,7 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this model?',
+        `Are you sure you want to delete "${model.name}" version ${model.version}?`,
         'Delete Model',
       );
 
@@ -1491,16 +1493,20 @@ const effects = {
     }
   },
 
-  async deletePlan(id: number, user: User | null): Promise<boolean> {
+  async deletePlan(plan: PlanSlim, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_PLAN(user)) {
         throwPermissionError('delete this plan');
       }
 
-      const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this plan?', 'Delete Plan');
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete "${plan.name}"?`,
+        'Delete Plan',
+      );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_PLAN, { id }, user);
+        await reqHasura(gql.DELETE_PLAN, { id: plan.id }, user);
         showSuccessToast('Plan Deleted Successfully');
         return true;
       }
@@ -1531,7 +1537,7 @@ const effects = {
     }
   },
 
-  async deleteSchedulingCondition(id: number, user: User | null): Promise<boolean> {
+  async deleteSchedulingCondition(condition: SchedulingCondition, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_SCHEDULING_CONDITION(user)) {
         throwPermissionError('delete this scheduling condition');
@@ -1539,12 +1545,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this scheduling condition?',
+        `Are you sure you want to delete "${condition.name}"?`,
         'Delete Scheduling Condition',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_SCHEDULING_CONDITION, { id }, user);
+        await reqHasura(gql.DELETE_SCHEDULING_CONDITION, { id: condition.id }, user);
         showSuccessToast('Scheduling Condition Deleted Successfully');
         return true;
       } else {
@@ -1557,7 +1563,7 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoal(id: number, user: User | null): Promise<boolean> {
+  async deleteSchedulingGoal(goal: SchedulingGoalSlim, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_SCHEDULING_GOAL(user)) {
         throwPermissionError('delete this scheduling goal');
@@ -1565,12 +1571,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this scheduling goal?',
+        `Are you sure you want to delete "${goal.name}"?`,
         'Delete Scheduling Goal',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id }, user);
+        await reqHasura(gql.DELETE_SCHEDULING_GOAL, { id: goal.id }, user);
         showSuccessToast('Scheduling Goal Deleted Successfully');
         return true;
       } else {
@@ -1656,7 +1662,7 @@ const effects = {
     }
   },
 
-  async deleteUserSequence(id: number, user: User | null): Promise<boolean> {
+  async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_USER_SEQUENCE(user)) {
         throwPermissionError('delete this user sequence');
@@ -1664,12 +1670,12 @@ const effects = {
 
       const { confirm } = await showConfirmModal(
         'Delete',
-        'Are you sure you want to delete this user sequence?',
+        `Are you sure you want to delete "${sequence.name}"?`,
         'Delete User Sequence',
       );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_USER_SEQUENCE, { id }, user);
+        await reqHasura(gql.DELETE_USER_SEQUENCE, { id: sequence.id }, user);
         showSuccessToast('User Sequence Deleted Successfully');
         return true;
       }
@@ -1682,16 +1688,20 @@ const effects = {
     }
   },
 
-  async deleteView(id: number, user: User | null): Promise<boolean> {
+  async deleteView(view: View, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_VIEW(user)) {
         throwPermissionError('delete this view');
       }
 
-      const { confirm } = await showConfirmModal('Delete', 'Are you sure you want to delete this view?', 'Delete View');
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete "${view.name}"?`,
+        'Delete View',
+      );
 
       if (confirm) {
-        await reqHasura(gql.DELETE_VIEW, { id }, user);
+        await reqHasura(gql.DELETE_VIEW, { id: view.id }, user);
         return true;
       }
     } catch (e) {

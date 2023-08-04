@@ -57,7 +57,7 @@
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => effects.deleteSchedulingCondition(condition.id, user)}
+        on:click={() => effects.deleteSchedulingCondition(condition, user)}
         use={[
           [
             permissionHandler,

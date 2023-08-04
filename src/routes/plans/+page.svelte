@@ -230,11 +230,11 @@
     }
   }
 
-  async function deletePlan({ id }: Pick<Plan, 'id'>): Promise<void> {
-    const success = await effects.deletePlan(id, user);
+  async function deletePlan(plan: PlanSlim): Promise<void> {
+    const success = await effects.deletePlan(plan, user);
 
     if (success) {
-      plans = plans.filter(plan => plan.id !== id);
+      plans = plans.filter(p => plan.id !== p.id);
     }
   }
 
@@ -254,7 +254,11 @@
   }
 
   function deletePlanContext(event: CustomEvent<RowId[]>) {
-    deletePlan({ id: event.detail[0] as number });
+    const id = event.detail[0] as number;
+    const plan = plans.find(t => t.id === id);
+    if (plan) {
+      deletePlan(plan);
+    }
   }
 
   function prefetchPlan(plan?: Pick<Plan, 'id'>) {

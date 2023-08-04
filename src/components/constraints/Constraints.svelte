@@ -258,20 +258,24 @@
     ];
   }
 
-  async function deleteConstraint({ id }: Pick<Constraint, 'id'>) {
-    const success = await effects.deleteConstraint(id, user);
+  async function deleteConstraint(constraint: Constraint) {
+    const success = await effects.deleteConstraint(constraint, user);
 
     if (success) {
-      filteredConstraints = filteredConstraints.filter(constraint => constraint.id !== id);
+      filteredConstraints = filteredConstraints.filter(c => constraint.id !== c.id);
 
-      if (id === selectedConstraint?.id) {
+      if (constraint.id === selectedConstraint?.id) {
         selectedConstraint = null;
       }
     }
   }
 
   function deleteConstraintContext(event: CustomEvent<RowId[]>) {
-    deleteConstraint({ id: event.detail[0] as number });
+    const id = event.detail[0] as number;
+    const constraint = $constraintsAll.find(c => c.id === id);
+    if (constraint) {
+      deleteConstraint(constraint);
+    }
   }
 
   function editConstraint({ id }: Pick<Constraint, 'id'>) {

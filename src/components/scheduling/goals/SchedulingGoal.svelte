@@ -136,7 +136,7 @@
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => effects.deleteSchedulingGoal(goal.id, user)}
+        on:click={() => effects.deleteSchedulingGoal(goal, user)}
         use={[
           [
             permissionHandler,

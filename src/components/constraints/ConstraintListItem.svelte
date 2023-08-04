@@ -104,7 +104,7 @@
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => effects.deleteConstraint(constraint.id, user)}
+        on:click={() => effects.deleteConstraint(constraint, user)}
         use={[
           [
             permissionHandler,
