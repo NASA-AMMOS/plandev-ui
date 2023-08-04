@@ -1,4 +1,5 @@
 import type { ColDef, ColumnState } from 'ag-grid-community';
+import type { UserId } from './app';
 import type { Timeline } from './timeline';
 
 export type ViewTable = {
@@ -85,6 +86,6 @@ export type View = {
   definition: ViewDefinition;
   id: number;
   name: string;
-  owner: string;
+  owner: UserId;
   updated_at: string;
 };

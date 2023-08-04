@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { commandDictionaries, userSequenceFormColumns } from '../../stores/sequencing';
-  import type { User } from '../../types/app';
+  import type { User, UserId } from '../../types/app';
   import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
@@ -23,7 +23,7 @@
   export let initialSequenceDefinition: string = `export default () =>\n  Sequence.new({\n    seqId: '',\n    metadata: {},\n    steps: []\n  });\n`;
   export let initialSequenceId: number | null = null;
   export let initialSequenceName: string = '';
-  export let initialSequenceOwner: string = '';
+  export let initialSequenceOwner: UserId = '';
   export let initialSequenceUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
@@ -41,7 +41,7 @@
   let sequenceId: number | null = initialSequenceId;
   let sequenceModified: boolean = false;
   let sequenceName: string = initialSequenceName;
-  let sequenceOwner: string = initialSequenceOwner;
+  let sequenceOwner: UserId = initialSequenceOwner;
   let savedSequenceName: string = sequenceName;
   let sequenceSeqJson: string = 'Seq JSON has not been generated yet';
   let sequenceUpdatedAt: string | null = initialSequenceUpdatedAt;

@@ -1,3 +1,4 @@
+import type { UserId } from './app';
 import type { ParametersMap } from './parameter';
 
 export type Model = ModelSchema;
@@ -11,7 +12,7 @@ export type ModelSchema = {
   jar_id: number;
   mission: string;
   name: string;
-  owner: string;
+  owner: UserId;
   parameters: { parameters: ParametersMap };
   plans: { id: number }[];
   version: string;

@@ -1,10 +1,10 @@
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { pickTextColorBasedOnBgColor, shadeColor } from '../../utilities/color';
+  import { isValidHex, pickTextColorBasedOnBgColor, shadeColor } from '../../utilities/color';
   import { classNames } from '../../utilities/generic';
 
-  export let color: string = '#f8f8f8';
+  export let color: string | null | undefined = '#f8f8f8';
   export let disabled: boolean = false;
   export let label: string = '';
   export let className: string = '';
@@ -23,20 +23,21 @@
   });
 
   $: {
-    const mode = pickTextColorBasedOnBgColor(color);
+    let finalColor = typeof color === 'string' && isValidHex(color) ? color : '#f8f8f8';
+    const mode = pickTextColorBasedOnBgColor(finalColor);
     let textColor = '';
     let removeColor = '';
     let removeBgColor = '';
     if (mode === 'dark') {
-      textColor = shadeColor(color, 5);
-      removeColor = shadeColor(color || '', 5.5);
-      removeBgColor = shadeColor(color, 1.1);
+      textColor = shadeColor(finalColor, 5);
+      removeColor = shadeColor(finalColor || '', 5.5);
+      removeBgColor = shadeColor(finalColor, 1.1);
     } else {
       textColor = 'rgb(255,255,255)';
       removeColor = 'rgba(255,255,255, 0.9)';
-      removeBgColor = shadeColor(color, 0.7);
+      removeBgColor = shadeColor(finalColor, 0.7);
     }
-    chipStyle = `background:${color};color:${textColor}`;
+    chipStyle = `background:${finalColor};color:${textColor}`;
     removeStyle = `background:${removeBgColor};color:${removeColor}`;
   }
 </script>

@@ -163,7 +163,7 @@
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${tag.id}`.includes(filterTextLowerCase);
     const includesName = tag.name.toLocaleLowerCase().includes(filterTextLowerCase);
-    const includesOwner = tag.owner.toLocaleLowerCase().includes(filterTextLowerCase);
+    const includesOwner = (tag.owner ?? '').toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName || includesOwner;
   });
 
@@ -246,6 +246,10 @@
       if (constraintTagDeletionSuccess && expansionRuleTagDeletionSuccess && tagDeletionSuccess) {
         tags = tags.filter(t => t.id !== tag.id);
       }
+      // Stop editing if the selected tag is the one being deleted
+      if (selectedTag?.id === tag.id) {
+        exitEditing(false);
+      }
     }
   }
 
@@ -257,11 +261,11 @@
     }
   }
 
-  function exitEditing() {
+  function exitEditing(deselect: boolean = true) {
     resetTagFields();
     $createTagError = null;
     selectedTag = null;
-    if (dataGrid) {
+    if (deselect && dataGrid) {
       dataGrid.selectedItemId = null;
     }
   }
@@ -277,7 +281,7 @@
   function showTag(tag: Tag) {
     selectedTag = tag;
     nameField.validateAndSet(tag.name);
-    colorField.validateAndSet(tag.color);
+    colorField.validateAndSet(tag.color ?? '');
   }
 </script>
 
@@ -402,7 +406,12 @@
               </button>
             {:else}
               <div class="tags-save-buttons">
-                <button on:click={exitEditing} disabled={updatingTag} class="st-button secondary w-100" type="button">
+                <button
+                  on:click={() => exitEditing()}
+                  disabled={updatingTag}
+                  class="st-button secondary w-100"
+                  type="button"
+                >
                   Cancel
                 </button>
                 <button

@@ -1,3 +1,5 @@
+import type { UserId } from './app';
+
 export type CommandDictionary = {
   command_types_typescript_path: string;
   created_at: string;
@@ -29,7 +31,7 @@ export type UserSequence = {
   definition: string;
   id: number;
   name: string;
-  owner: string;
+  owner: UserId;
   updated_at: string;
 };
 

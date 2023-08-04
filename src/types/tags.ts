@@ -1,3 +1,5 @@
+import type { UserId } from './app';
+
 export type ActivityDirectiveTagsInsertInput = {
   directive_id: number;
   plan_id: number;
@@ -25,11 +27,11 @@ export type PlanTagsInsertInput = {
 };
 
 export type Tag = {
-  color: string;
+  color: string | null;
   created_at: string;
   id: number;
   name: string;
-  owner: string;
+  owner: UserId;
 };
 
 export type TagsMap = Record<Tag['id'], Tag>;

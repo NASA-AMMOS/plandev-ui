@@ -34,7 +34,7 @@
     'export default function MyExpansion(props: {\n  activityInstance: ActivityType\n}): ExpansionReturn {\n  const { activityInstance } = props;\n  return [];\n}\n';
   export let initialRuleModelId: number | null = null;
   export let initialRuleName: string = '';
-  export let initialRuleOwner: string | null = null;
+  export let initialRuleOwner: UserId = null;
   export let initialRuleTags: Tag[] = [];
   export let initialRuleUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
@@ -54,7 +54,7 @@
   let ruleLogic: string = initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
   let ruleName: string = initialRuleName;
-  let ruleOwner: string | null = initialRuleOwner;
+  let ruleOwner: UserId = initialRuleOwner;
   let ruleTags: Tag[] | null = initialRuleTags;
   let ruleUpdatedAt: string | null = initialRuleUpdatedAt;
   let saveButtonClass: 'primary' | 'secondary' = 'primary';

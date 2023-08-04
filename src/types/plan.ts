@@ -93,7 +93,7 @@ export type PlanSchema = {
   start_time: string;
   tags: { tag: Tag }[];
   updated_at: string;
-  updated_by: string;
+  updated_by: UserId;
 };
 
 export type PlanSlim = Pick<

@@ -1,3 +1,4 @@
+import type { UserId } from './app';
 import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 import type { Tag } from './tags';
@@ -11,10 +12,10 @@ export type ExpansionRule = {
   expansion_logic: string;
   id: number;
   name: string;
-  owner: string;
+  owner: UserId;
   tags: { tag: Tag }[];
   updated_at: string;
-  updated_by: string;
+  updated_by: UserId;
 };
 
 export type ExpansionRuleSlim = Omit<ExpansionRule, 'tags'> & { tags: { tag_id: number }[] };
@@ -47,9 +48,9 @@ export type ExpansionSet = {
   id: number;
   mission_model_id: number;
   name: string;
-  owner: string;
+  owner: UserId;
   updated_at: string;
-  updated_by: string;
+  updated_by: UserId;
 };
 
 export type SeqId = Pick<ExpansionSequence, 'seq_id'>;

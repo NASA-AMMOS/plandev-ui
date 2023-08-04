@@ -1,3 +1,4 @@
+import type { UserId } from './app';
 import type { Tag } from './tags';
 import type { TimeRange } from './timeline';
 
@@ -8,11 +9,11 @@ export type Constraint = {
   id: number;
   model_id: number | null;
   name: string;
-  owner: string;
+  owner: UserId;
   plan_id: number | null;
   tags: { tag: Tag }[];
   updated_at: string;
-  updated_by: string;
+  updated_by: UserId;
 };
 
 export type ConstraintInsertInput = Omit<

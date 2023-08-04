@@ -1,6 +1,6 @@
 import type { PermissibleQueriesMap } from './permissions';
 
-export type UserId = string;
+export type UserId = string | null;
 
 export type BaseUser = {
   id: UserId;
