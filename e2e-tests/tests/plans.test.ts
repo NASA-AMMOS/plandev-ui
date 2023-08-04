@@ -42,7 +42,7 @@ test.describe.serial('Plans', () => {
     await models.tableRow.click();
     await expect(page).toHaveURL(`${baseURL}/plans`);
     const { text } = await plans.selectedModel();
-    expect(text).toEqual(models.modelName);
+    expect(text).toEqual(`${models.modelName} (Version: ${models.modelVersion})`);
   });
 
   test('Create plan button should be disabled after only entering a name', async () => {

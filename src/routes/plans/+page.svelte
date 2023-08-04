@@ -321,6 +321,7 @@
               {#each models as model}
                 <option value={model.id}>
                   {model.name}
+                  (Version: {model.version})
                 </option>
               {/each}
             </select>
