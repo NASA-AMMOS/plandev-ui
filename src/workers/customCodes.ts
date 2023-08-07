@@ -119,6 +119,51 @@ Expected: A signed value`,
   },
 
   /**
+   * MaxAbsolutTime error code and message.
+   */
+  MaxAbsoluteTime: (balancedTime: string): ErrorCode => {
+    return {
+      id: -1,
+      message: `Time Error: Maximum time reached
+  Received: Balanced time - ${balancedTime}.
+  Expected: ${balancedTime} <= 9999-365T23:59:59.999`,
+    };
+  },
+
+  /**
+   * MaxEpochTime error code and message.
+   */
+  MaxEpochTime: (balancedTime: string): ErrorCode => {
+    return {
+      id: -2,
+      message: `Time Error: Maximum time reached.
+Received: Balanced time - ${balancedTime}.
+Expected: ${balancedTime} <= 365T23:59:59.999`,
+    };
+  },
+
+  /**
+   * MaxRelativeTime error code and message.
+   */
+  MaxRelativeTime: (balancedTime: string): ErrorCode => {
+    return {
+      id: -2,
+      message: `Time Error: Maximum time reached.
+  Received: Balanced time - ${balancedTime}.
+  Expected: ${balancedTime} <= 23:59:59.999`,
+    };
+  },
+  /**
+   * UnbalancedTime error code and message.
+   */
+  UnbalancedTime: (balancedTime: string): ErrorCode => {
+    return {
+      id: -9,
+      message: `Time Warning: Unbalanced time used.
+Suggestion: Change time to ${balancedTime}`,
+    };
+  },
+  /**
    * UncaughtArgumentType error code and message.
    */
   UncaughtArgumentType: (): ErrorCode => {

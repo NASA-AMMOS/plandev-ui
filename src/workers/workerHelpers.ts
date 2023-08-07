@@ -214,11 +214,17 @@ export function zip<A, B>(arr1: Array<A>, arr2: B[]): [A, B][] {
  * @param {ErrorCode} errorCode - The error code for the diagnostic.
  * @param {tsc.SourceFile} sourceFile - The source file where the error occurred.
  * @param {tsc.Node} arg - The node associated with the error.
+ * @param {tsc.DiagnosticCategory} errorCategory - The DiagnosticCategory that should be used
  * @returns {ResponseDiagnostic} A diagnostic object representing the error.
  */
-export function makeDiagnostic(errorCode: ErrorCode, sourceFile: tsc.SourceFile, arg: tsc.Node): ResponseDiagnostic {
+export function makeDiagnostic(
+  errorCode: ErrorCode,
+  sourceFile: tsc.SourceFile,
+  arg: tsc.Node,
+  errorCategory: tsc.DiagnosticCategory = tsc.DiagnosticCategory.Error,
+): ResponseDiagnostic {
   return {
-    category: tsc.DiagnosticCategory.Error,
+    category: errorCategory,
     code: errorCode.id,
     file: { fileName: sourceFile.fileName },
     length: arg.getEnd() - arg.getStart(sourceFile),
