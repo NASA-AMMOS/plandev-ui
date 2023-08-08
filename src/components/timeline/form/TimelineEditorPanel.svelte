@@ -305,38 +305,35 @@
   }
 
   function handleUpdateLayerFilter(values: string[], layer: Layer) {
-    const newLayers = layers.map(l => {
-      if (layer.id === l.id) {
-        if (l.chartType === 'activity') {
-          return {
-            ...l,
+    const newLayers = layers.map(currentLayer => {
+      if (layer.id === currentLayer.id) {
+        if (currentLayer.chartType === 'activity') {
+          const newLayer: Layer = {
+            ...currentLayer,
             filter: {
-              ...l.filter,
-              ...(l.filter.activity
-                ? {
-                    ...l.filter.activity,
-                    types: values,
-                  }
-                : {}),
+              ...currentLayer.filter,
+              activity: {
+                types: values,
+              },
             },
           };
-        } else if (l.chartType === 'line' || l.chartType === 'x-range') {
-          return {
-            ...l,
+          return newLayer;
+        } else if (currentLayer.chartType === 'line' || currentLayer.chartType === 'x-range') {
+          const newLayer: Layer = {
+            ...currentLayer,
             filter: {
-              ...l.filter,
-              ...(l.filter.resource
-                ? {
-                    ...l.filter.resource,
-                    names: values,
-                  }
-                : {}),
+              ...currentLayer.filter,
+              resource: {
+                names: values,
+              },
             },
           };
+          return newLayer;
         }
       }
-      return l;
+      return currentLayer;
     });
+
     viewUpdateRow('layers', newLayers);
   }
 
@@ -464,9 +461,13 @@
 
   function getFilterValuesForLayer(layer: Layer) {
     if (layer.chartType === 'activity') {
-      return (layer as ActivityLayer).filter.activity?.types || [];
+      const activityLayer = layer as ActivityLayer;
+      const activityTypes = activityLayer.filter?.activity?.types ?? [];
+      return [...activityTypes];
     } else if (layer.chartType === 'line' || layer.chartType === 'x-range') {
-      return (layer as LineLayer).filter.resource?.names || [];
+      const resourceLayer = layer as LineLayer | XRangeLayer;
+      const resourceNames = resourceLayer.filter?.resource?.names ?? [];
+      return [...resourceNames];
     }
     return [];
   }
