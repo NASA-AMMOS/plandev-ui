@@ -49,7 +49,7 @@ export async function reqHasura<T = any>(
   variables: QueryVariables = {},
   user: BaseUser | User | null,
   signal?: AbortSignal,
-): Promise<Record<string, T>> {
+): Promise<Record<string, T | null>> {
   const HASURA_URL = browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL;
 
   const headers: HeadersInit = {
