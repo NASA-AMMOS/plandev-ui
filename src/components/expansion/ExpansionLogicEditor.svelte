@@ -34,13 +34,18 @@
     .getParsedAmpcsCommandDictionary(ruleDictionaryId, user)
     .then(parsedDictionary => (commandDictionaryJson = parsedDictionary));
 
-  $: if (monaco !== undefined && (commandDictionaryTsFiles !== undefined || activityTypeTsFiles !== undefined)) {
+  $: if (monaco !== undefined) {
     const { languages } = monaco;
     const { typescript } = languages;
     const { typescriptDefaults } = typescript;
     const options = typescriptDefaults.getCompilerOptions();
-
     typescriptDefaults.setCompilerOptions({ ...options, lib: ['esnext'], strictNullChecks: true });
+  }
+
+  $: if (monaco && commandDictionaryTsFiles && activityTypeTsFiles) {
+    const { languages } = monaco;
+    const { typescript } = languages;
+    const { typescriptDefaults } = typescript;
     typescriptDefaults.setExtraLibs([...commandDictionaryTsFiles, ...activityTypeTsFiles]);
   }
 
