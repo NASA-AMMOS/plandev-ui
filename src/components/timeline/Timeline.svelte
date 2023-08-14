@@ -47,7 +47,8 @@
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let constraintViolations: ConstraintViolation[] = [];
-  export let hasUpdatePlanPermission: boolean = false;
+  export let hasUpdateDirectivePermission: boolean = false;
+  export let hasUpdateSimulationPermission: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let planEndTimeDoy: string;
   export let planId: number;
@@ -322,7 +323,7 @@
         drawHeight={row.height}
         {drawWidth}
         expanded={row.expanded}
-        {hasUpdatePlanPermission}
+        {hasUpdateDirectivePermission}
         horizontalGuides={row.horizontalGuides}
         id={row.id}
         layers={row.layers}
@@ -369,7 +370,8 @@
     {activityDirectivesMap}
     bind:this={contextMenuComponent}
     {contextMenu}
-    {hasUpdatePlanPermission}
+    {hasUpdateDirectivePermission}
+    {hasUpdateSimulationPermission}
     on:deleteActivityDirective
     on:jumpToActivityDirective
     on:jumpToSpan

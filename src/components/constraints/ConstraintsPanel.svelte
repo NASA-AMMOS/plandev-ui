@@ -206,11 +206,11 @@
         <button
           name="new-constraint"
           class="st-button secondary"
-          on:click={() => window.open(`${base}/constraints/new`, '_blank')}
           use:permissionHandler={{
             hasPermission: $plan ? featurePermissions.constraints.canCreate(user, $plan) : false,
             permissionError: 'You do not have permission to create constraints',
           }}
+          on:click={() => window.open(`${base}/constraints/new`, '_blank')}
         >
           New
         </button>

@@ -32,12 +32,14 @@
 
   export let user: User | null;
 
-  let hasUpdatePlanPermission: boolean = false;
+  let hasUpdateDirectivePermission: boolean = false;
+  let hasUpdateSimulationPermission: boolean = false;
   let timelineId: number = 0;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
 
   $: if (user !== null && $plan !== null) {
-    hasUpdatePlanPermission = featurePermissions.plan.canUpdate(user, $plan);
+    hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan);
+    hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan);
   }
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: timelineDirectiveVisibilityToggles = timeline
@@ -131,7 +133,7 @@
           }}
         />
         <TimelineLockControl
-          hasUpdatePermission={hasUpdatePlanPermission}
+          hasUpdatePermission={hasUpdateDirectivePermission}
           timelineLockStatus={$timelineLockStatus}
           on:lock={({ detail: lock }) => {
             $timelineLockStatus = lock;
@@ -152,7 +154,8 @@
       activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
       constraintViolations={$visibleConstraintViolations}
-      {hasUpdatePlanPermission}
+      {hasUpdateDirectivePermission}
+      {hasUpdateSimulationPermission}
       maxTimeRange={$maxTimeRange}
       planEndTimeDoy={$plan?.end_time_doy ?? ''}
       planId={$planId}

@@ -51,7 +51,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let expanded: boolean = true;
-  export let hasUpdatePlanPermission: boolean = false;
+  export let hasUpdateDirectivePermission: boolean = false;
   export let horizontalGuides: HorizontalGuide[] = [];
   export let id: number;
   export let layers: Layer[] = [];
@@ -286,7 +286,7 @@
             {...layer}
             activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
             {activityDirectivesMap}
-            {hasUpdatePlanPermission}
+            {hasUpdateDirectivePermission}
             {showDirectives}
             {blur}
             {contextmenu}

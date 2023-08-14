@@ -10,10 +10,10 @@
 <div
   class="context-menu-item st-typography-body"
   role="none"
-  on:click|preventDefault={() => dispatch('click')}
   on:mouseenter
   on:mouseleave
   use:useActions={use}
+  on:click|preventDefault={() => dispatch('click')}
 >
   <slot />
 </div>

@@ -141,11 +141,11 @@
         <button
           class="st-button secondary ellipsis"
           disabled={!saveButtonEnabled}
-          on:click={saveSet}
           use:permissionHandler={{
             hasPermission,
             permissionError,
           }}
+          on:click={saveSet}
         >
           {$savingExpansionSet ? 'Saving...' : 'Save'}
         </button>

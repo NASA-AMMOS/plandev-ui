@@ -216,11 +216,11 @@
       <div class="right">
         <button
           class="st-button secondary ellipsis"
-          on:click={() => goto(`${base}/expansion/rules/new`)}
           use:permissionHandler={{
             hasPermission: hasCreatePermission,
             permissionError: 'You do not have permission to create expansion rules',
           }}
+          on:click={() => goto(`${base}/expansion/rules/new`)}
         >
           New
         </button>

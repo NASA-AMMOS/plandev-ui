@@ -55,8 +55,8 @@
     class="value-source-badge-dot-root"
     role="none"
     use:tooltip={{ allowHTML: true, content: tooltipContent, placement: 'top' }}
-    on:click={onClick}
     use:useActions={use}
+    on:click={onClick}
   >
     <div class={dotClasses} />
   </div>

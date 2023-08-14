@@ -19,7 +19,8 @@
   import ContextSubMenuItem from '../context-menu/ContextSubMenuItem.svelte';
 
   export let activityDirectivesMap: ActivityDirectivesMap;
-  export let hasUpdatePlanPermission: boolean = false;
+  export let hasUpdateDirectivePermission: boolean = false;
+  export let hasUpdateSimulationPermission: boolean = false;
   export let simulation: Simulation | null;
   export let simulationDataset: SimulationDataset | null = null;
   export let spansMap: SpansMap;
@@ -147,8 +148,8 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdatePlanPermission,
-            permissionError: 'You do not have permission to update this plan',
+            hasPermission: hasUpdateSimulationPermission,
+            permissionError: 'You do not have permission to update this simulation',
           },
         ],
       ]}
@@ -161,8 +162,8 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdatePlanPermission,
-            permissionError: 'You do not have permission to update this plan',
+            hasPermission: hasUpdateSimulationPermission,
+            permissionError: 'You do not have permission to update this simulation',
           },
         ],
       ]}
@@ -180,8 +181,8 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdatePlanPermission,
-            permissionError: 'You do not have permission to update this plan',
+            hasPermission: hasUpdateDirectivePermission,
+            permissionError: 'You do not have permission to delete this activity',
           },
         ],
       ]}
@@ -224,30 +225,30 @@
     </ContextMenuItem>
     <ContextMenuSeparator />
     <ContextMenuItem
-      on:click={() => xScaleView && contextMenu && updateSimulationStartTime(xScaleView.invert(contextMenu.e.offsetX))}
       use={[
         [
           permissionHandler,
           {
-            hasPermission: hasUpdatePlanPermission,
+            hasPermission: hasUpdateSimulationPermission,
             permissionError: 'You do not have permission to update the simulation',
           },
         ],
       ]}
+      on:click={() => xScaleView && contextMenu && updateSimulationStartTime(xScaleView.invert(contextMenu.e.offsetX))}
     >
       Set Simulation Start
     </ContextMenuItem>
     <ContextMenuItem
-      on:click={() => xScaleView && contextMenu && updateSimulationEndTime(xScaleView.invert(contextMenu.e.offsetX))}
       use={[
         [
           permissionHandler,
           {
-            hasPermission: hasUpdatePlanPermission,
+            hasPermission: hasUpdateSimulationPermission,
             permissionError: 'You do not have permission to update the simulation',
           },
         ],
       ]}
+      on:click={() => xScaleView && contextMenu && updateSimulationEndTime(xScaleView.invert(contextMenu.e.offsetX))}
     >
       Set Simulation End
     </ContextMenuItem>

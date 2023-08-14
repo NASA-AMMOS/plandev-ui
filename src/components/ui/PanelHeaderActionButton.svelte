@@ -27,9 +27,9 @@
     <button
       class="st-button icon"
       {disabled}
-      on:click={() => dispatch('click')}
       use:tooltip={{ content: title, placement: 'top' }}
       use:useActions={use}
+      on:click={() => dispatch('click')}
     >
       <slot>
         <PlayIcon />

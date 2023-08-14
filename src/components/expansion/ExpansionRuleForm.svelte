@@ -222,11 +222,11 @@
         <button
           class="st-button {saveButtonClass} ellipsis"
           disabled={!saveButtonEnabled}
-          on:click={saveRule}
           use:permissionHandler={{
             hasPermission,
             permissionError,
           }}
+          on:click={saveRule}
         >
           {$savingExpansionRule ? 'Saving...' : saveButtonText}
         </button>

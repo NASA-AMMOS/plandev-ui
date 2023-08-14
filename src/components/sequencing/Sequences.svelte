@@ -9,6 +9,7 @@
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -190,7 +191,16 @@
       </Input>
 
       <div class="right">
-        <button class="st-button secondary ellipsis" on:click={() => goto(`${base}/sequencing/new`)}> New </button>
+        <button
+          class="st-button secondary ellipsis"
+          use:permissionHandler={{
+            hasPermission: featurePermissions.sequences.canCreate(user),
+            permissionError: 'You do not have permission to create a new sequence',
+          }}
+          on:click={() => goto(`${base}/sequencing/new`)}
+        >
+          New
+        </button>
       </div>
     </svelte:fragment>
 

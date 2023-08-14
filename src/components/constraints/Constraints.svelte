@@ -354,11 +354,11 @@
       <div class="right">
         <button
           class="st-button secondary ellipsis"
-          on:click={() => goto(`${base}/constraints/new`)}
           use:permissionHandler={{
             hasPermission,
             permissionError,
           }}
+          on:click={() => goto(`${base}/constraints/new`)}
         >
           New
         </button>

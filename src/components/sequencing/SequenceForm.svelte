@@ -148,11 +148,11 @@
         <button
           class="st-button {saveButtonClass} ellipsis"
           disabled={!saveButtonEnabled}
-          on:click={saveSequence}
           use:permissionHandler={{
             hasPermission,
             permissionError,
           }}
+          on:click={saveSequence}
         >
           {savingSequence ? 'Saving...' : saveButtonText}
         </button>

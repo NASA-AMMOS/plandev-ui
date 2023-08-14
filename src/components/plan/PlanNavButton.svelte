@@ -59,11 +59,11 @@
           <button
             class="st-button secondary"
             {disabled}
-            on:click
             use:permissionHandler={{
               hasPermission,
               permissionError,
             }}
+            on:click
           >
             <PlayIcon />
             {buttonText}

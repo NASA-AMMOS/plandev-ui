@@ -161,11 +161,11 @@
     <div class="right">
       <button
         class="st-button secondary ellipsis"
-        on:click={() => goto(`${base}/scheduling/conditions/new`)}
         use:permissionHandler={{
           hasPermission: user ? hasCreatePermission(user) : false,
           permissionError: 'You do not have permission to create Scheduling Conditions',
         }}
+        on:click={() => goto(`${base}/scheduling/conditions/new`)}
       >
         New
       </button>

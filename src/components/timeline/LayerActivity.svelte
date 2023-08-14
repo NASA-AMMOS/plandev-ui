@@ -50,7 +50,7 @@
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let filter: ActivityLayerFilter | undefined;
-  export let hasUpdatePlanPermission: boolean = false;
+  export let hasUpdateDirectivePermission: boolean = false;
   export let id: number;
   export let focus: FocusEvent | undefined;
   export let mousedown: MouseEvent | undefined;
@@ -240,7 +240,7 @@
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (isDeleteEvent(event) && !!selectedActivityDirectiveId && hasUpdatePlanPermission) {
+    if (isDeleteEvent(event) && !!selectedActivityDirectiveId && hasUpdateDirectivePermission) {
       dispatch('deleteActivityDirective', selectedActivityDirectiveId);
     }
   }

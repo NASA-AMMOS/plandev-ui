@@ -679,21 +679,21 @@
   <div class="merge-review-bottom-actions">
     <button
       class="st-button secondary"
-      on:click={onCancel}
       use:permissionHandler={{
         hasPermission: hasReviewPermission,
         permissionError: 'You do not have permission to cancel this request',
       }}
+      on:click={onCancel}
     >
       Cancel
     </button>
     <button
       class="st-button red"
-      on:click={onDenyChanges}
       use:permissionHandler={{
         hasPermission: hasReviewPermission,
         permissionError: 'You do not have permission to deny this request',
       }}
+      on:click={onDenyChanges}
     >
       Deny Changes
     </button>
@@ -702,11 +702,11 @@
         <button
           disabled
           class="st-button"
-          on:click={onApproveChanges}
           use:permissionHandler={{
             hasPermission: hasReviewPermission,
             permissionError: 'You do not have permission to approve this request',
           }}
+          on:click={onApproveChanges}
         >
           Approve Changes
         </button>
@@ -714,11 +714,11 @@
     {:else}
       <button
         class="st-button"
-        on:click={onApproveChanges}
         use:permissionHandler={{
           hasPermission: hasReviewPermission,
           permissionError: 'You do not have permission to approve this request',
         }}
+        on:click={onApproveChanges}
       >
         Approve Changes
       </button>

@@ -191,11 +191,11 @@
     <div class="right">
       <button
         class="st-button secondary ellipsis"
-        on:click={() => goto(`${base}/scheduling/goals/new`)}
         use:permissionHandler={{
           hasPermission: user ? hasCreatePermission(user) : false,
           permissionError: 'You do not have permission to create Scheduling Goals',
         }}
+        on:click={() => goto(`${base}/scheduling/goals/new`)}
       >
         New
       </button>

@@ -16,6 +16,13 @@ function removeDisabledClass(classList: string, disabledClassName: string) {
 }
 
 /**
+ * Action for disabling/enabling an element based on permission and adding a tooltip
+ * to allow for an explanation/description.
+ *
+ * NOTE: this MUST be added before any 'click' event handlers in order to correctly disable any following 'click'
+ * events added to this element
+ *
+ * Tippy:
  * @see https://dev.to/danawoodman/svelte-quick-tip-using-actions-to-integrate-with-javascript-libraries-tippy-tooltips-2m94
  */
 export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (

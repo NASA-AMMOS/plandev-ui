@@ -364,11 +364,11 @@
               <button
                 type="button"
                 class="st-button icon"
-                on:click={() => colorField.validateAndSet(generateRandomPastelColor())}
                 use:permissionHandler={{
                   hasPermission: canCreate,
                   permissionError,
                 }}
+                on:click={() => colorField.validateAndSet(generateRandomPastelColor())}
               >
                 <RefreshIcon />
               </button>
