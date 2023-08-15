@@ -191,13 +191,7 @@
       {#if !hasComputedAttributes}
         <div class="st-typography-label">No Computed Attributes Found</div>
       {:else}
-        <Parameters
-          disabled
-          expanded
-          formParameters={formParametersComputedAttributes}
-          levelPadding={0}
-          showName={false}
-        />
+        <Parameters disabled expanded formParameters={formParametersComputedAttributes} />
       {/if}
     </Collapse>
   </fieldset>

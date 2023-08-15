@@ -15,7 +15,6 @@
   export let highlightKeysMap: Record<string, boolean> = {};
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
-  export let showName: boolean = true;
   export let use: ActionArray = [];
 
   let clientWidth: number;
@@ -38,7 +37,6 @@
           {level}
           {levelPadding}
           {parameterType}
-          {showName}
           on:change
           on:reset
           {use}

@@ -24,7 +24,6 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
-  export let showName: boolean = true;
   export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
@@ -78,80 +77,76 @@
   }
 </script>
 
-{#if showName}
-  <div class="parameter-rec-series">
-    <Collapse defaultExpanded={expanded}>
-      <div slot="left">
-        <ParameterName {formParameter} />
-      </div>
-      <div class="series-right" slot="right">
-        <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
-          <button
-            class="st-button icon"
-            disabled={subFormParameters?.length === 0 || disabled}
-            on:click|stopPropagation={valueRemove}
-            use:tooltip={{ content: 'Remove Value', placement: 'left' }}
-          >
-            <DashIcon />
-          </button>
-          <button
-            {disabled}
-            class="st-button icon"
-            on:click|stopPropagation={valueAdd}
-            use:tooltip={{ content: 'Add Value', placement: 'left' }}
-          >
-            <PlusIcon />
-          </button>
-          <ParameterBaseRightAdornments
-            hidden={hideRightAdornments}
-            {formParameter}
-            {parameterType}
-            {use}
-            on:reset={onResetSeries}
-          />
-        </CssGrid>
-      </div>
-      <ul style="padding-inline-start: {levelPadding}px">
-        {#if subFormParameters?.length}
-          {#each subFormParameters as subFormParameter (subFormParameter.name)}
-            <li>
-              {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
-                <ParameterRec
-                  {disabled}
-                  hideRightAdornments
-                  expanded
-                  formParameter={subFormParameter}
-                  {labelColumnWidth}
-                  level={++level}
-                  {levelPadding}
-                  {parameterType}
-                  {use}
-                  on:change={onChange}
-                />
-              {:else}
-                <ParameterBase
-                  {disabled}
-                  formParameter={subFormParameter}
-                  hideRightAdornments
-                  {labelColumnWidth}
-                  level={++level}
-                  {levelPadding}
-                  {parameterType}
-                  {use}
-                  on:change={onChange}
-                />
-              {/if}
-            </li>
-          {/each}
-        {:else}
-          <div class="p-1">This series has no values</div>
-        {/if}
-      </ul>
-    </Collapse>
-  </div>
-{:else}
-  <div class="parameter-rec-series" />
-{/if}
+<div class="parameter-rec-series">
+  <Collapse defaultExpanded={expanded}>
+    <div slot="left">
+      <ParameterName {formParameter} />
+    </div>
+    <div class="series-right" slot="right">
+      <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
+        <button
+          class="st-button icon"
+          disabled={subFormParameters?.length === 0 || disabled}
+          on:click|stopPropagation={valueRemove}
+          use:tooltip={{ content: 'Remove Value', placement: 'left' }}
+        >
+          <DashIcon />
+        </button>
+        <button
+          {disabled}
+          class="st-button icon"
+          on:click|stopPropagation={valueAdd}
+          use:tooltip={{ content: 'Add Value', placement: 'left' }}
+        >
+          <PlusIcon />
+        </button>
+        <ParameterBaseRightAdornments
+          hidden={hideRightAdornments}
+          {formParameter}
+          {parameterType}
+          {use}
+          on:reset={onResetSeries}
+        />
+      </CssGrid>
+    </div>
+    <ul style="padding-inline-start: {levelPadding}px">
+      {#if subFormParameters?.length}
+        {#each subFormParameters as subFormParameter (subFormParameter.name)}
+          <li>
+            {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
+              <ParameterRec
+                {disabled}
+                hideRightAdornments
+                expanded
+                formParameter={subFormParameter}
+                {labelColumnWidth}
+                level={++level}
+                {levelPadding}
+                {parameterType}
+                {use}
+                on:change={onChange}
+              />
+            {:else}
+              <ParameterBase
+                {disabled}
+                formParameter={subFormParameter}
+                hideRightAdornments
+                {labelColumnWidth}
+                level={++level}
+                {levelPadding}
+                {parameterType}
+                {use}
+                on:change={onChange}
+              />
+            {/if}
+          </li>
+        {/each}
+      {:else}
+        <div class="p-1">This series has no values</div>
+      {/if}
+    </ul>
+  </Collapse>
+</div>
 
 <style>
   ul {

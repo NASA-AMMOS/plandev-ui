@@ -19,7 +19,6 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
-  export let showName: boolean = true;
   export let use: ActionArray = [];
 
   const dispatch = createEventDispatcher();
@@ -62,57 +61,53 @@
   }
 </script>
 
-{#if showName}
-  <div class="parameter-rec-struct">
-    <Collapse defaultExpanded={expanded}>
-      <div slot="left">
-        <ParameterName {formParameter} />
-      </div>
-      <div class="right" slot="right">
-        <ParameterBaseRightAdornments
-          hidden={hideRightAdornments}
-          {formParameter}
-          {parameterType}
-          {use}
-          on:reset={onResetStruct}
-        />
-      </div>
-      <ul style="padding-inline-start: {levelPadding}px">
-        {#each subFormParameters as subFormParameter (subFormParameter.name)}
-          <li>
-            {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
-              <ParameterRec
-                {disabled}
-                {hideRightAdornments}
-                formParameter={subFormParameter}
-                {labelColumnWidth}
-                level={++level}
-                {levelPadding}
-                {parameterType}
-                {use}
-                on:change={onChange}
-              />
-            {:else}
-              <ParameterBase
-                {disabled}
-                {hideRightAdornments}
-                formParameter={subFormParameter}
-                {labelColumnWidth}
-                level={++level}
-                {levelPadding}
-                {parameterType}
-                {use}
-                on:change={onChange}
-              />
-            {/if}
-          </li>
-        {/each}
-      </ul>
-    </Collapse>
-  </div>
-{:else}
-  <div class="parameter-rec-struct p-0" />
-{/if}
+<div class="parameter-rec-struct">
+  <Collapse defaultExpanded={expanded}>
+    <div slot="left">
+      <ParameterName {formParameter} />
+    </div>
+    <div class="right" slot="right">
+      <ParameterBaseRightAdornments
+        hidden={hideRightAdornments}
+        {formParameter}
+        {parameterType}
+        {use}
+        on:reset={onResetStruct}
+      />
+    </div>
+    <ul style="padding-inline-start: {levelPadding}px">
+      {#each subFormParameters as subFormParameter (subFormParameter.name)}
+        <li>
+          {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
+            <ParameterRec
+              {disabled}
+              {hideRightAdornments}
+              formParameter={subFormParameter}
+              {labelColumnWidth}
+              level={++level}
+              {levelPadding}
+              {parameterType}
+              {use}
+              on:change={onChange}
+            />
+          {:else}
+            <ParameterBase
+              {disabled}
+              {hideRightAdornments}
+              formParameter={subFormParameter}
+              {labelColumnWidth}
+              level={++level}
+              {levelPadding}
+              {parameterType}
+              {use}
+              on:change={onChange}
+            />
+          {/if}
+        </li>
+      {/each}
+    </ul>
+  </Collapse>
+</div>
 
 <style>
   ul {

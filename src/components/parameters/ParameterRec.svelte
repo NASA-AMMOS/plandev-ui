@@ -12,7 +12,6 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'activity';
-  export let showName: boolean = true;
   export let use: ActionArray = [];
 
   let component: any;
@@ -38,7 +37,6 @@
   {level}
   {levelPadding}
   {parameterType}
-  {showName}
   {use}
   on:change
   on:reset
