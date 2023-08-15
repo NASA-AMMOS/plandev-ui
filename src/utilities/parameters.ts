@@ -86,3 +86,36 @@ export function getFormParameters(
 
   return formParameters;
 }
+
+/**
+ * Returns a default value for a given value schema.
+ */
+export function getValueSchemaDefaultValue(schema: ValueSchema): any {
+  if (schema.type === 'boolean') {
+    return false;
+  } else if (schema.type === 'duration') {
+    return 0;
+  } else if (schema.type === 'int') {
+    return 0;
+  } else if (schema.type === 'path') {
+    return '';
+  } else if (schema.type === 'real') {
+    return 0;
+  } else if (schema.type === 'series') {
+    const seriesValue = getValueSchemaDefaultValue(schema.items);
+    return [seriesValue];
+  } else if (schema.type === 'struct') {
+    const struct = Object.entries(schema.items).reduce((struct, [key, subSchema]) => {
+      const value = getValueSchemaDefaultValue(subSchema);
+      return { ...struct, [key]: value };
+    }, {});
+    return struct;
+  } else if (schema.type === 'string') {
+    return '';
+  } else if (schema.type === 'variant') {
+    const variant = schema.variants.length ? schema.variants[0].key : '';
+    return variant;
+  } else {
+    throw new Error('Cannot get a default value for given value schema');
+  }
+}

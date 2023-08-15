@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaSeries } from '../../types/schema';
-  import { getArgument } from '../../utilities/parameters';
+  import { getArgument, getValueSchemaDefaultValue } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
   import type { ActionArray } from '../../utilities/useActions';
   import Collapse from '../Collapse.svelte';
@@ -32,7 +32,8 @@
 
   function getSubFormParameters(formParameter: FormParameter<ValueSchemaSeries>): FormParameter[] {
     const subFormParameters = [];
-    const { schema, value = [] } = formParameter;
+    const { schema } = formParameter;
+    const value = formParameter.value ?? [];
 
     for (let i = 0; i < value.length; ++i) {
       const subFormParameter: FormParameter = {
@@ -65,8 +66,8 @@
 
   function valueAdd() {
     const { schema } = formParameter;
-    const { value: newValue } = getArgument(null, schema.items);
-    const value = [...formParameter.value, newValue];
+    const newValue = getValueSchemaDefaultValue(schema.items);
+    const value = [...(formParameter?.value ?? []), newValue];
     dispatch('change', { ...formParameter, value });
   }
 
