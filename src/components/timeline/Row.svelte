@@ -148,7 +148,11 @@
         const unixEpochTime = xScaleView.invert(offsetX).getTime();
         const start_time = getDoyTime(new Date(unixEpochTime));
         const activityTypeName = e.dataTransfer.getData('activityTypeName');
-        effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, user);
+
+        // Only allow creating an activity if we have an actual activity in the drag data.
+        if (activityTypeName) {
+          effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, user);
+        }
       }
     }
   }
