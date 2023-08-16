@@ -195,6 +195,8 @@
       <div>
         Id: ${id}
         <br>
+        Resource Name: ${point.name}
+        <br>
         Time: ${getDoyTime(new Date(x))}
         <br>
         Value: ${y}
@@ -224,6 +226,8 @@
     return `
       <div>
         Id: ${id}
+        <br>
+        Resource Name: ${point.name}
         <br>
         Start: ${getDoyTime(new Date(x))}
         <br>
