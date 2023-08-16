@@ -102,6 +102,7 @@
           <PlusIcon />
         </button>
         <ParameterBaseRightAdornments
+          {disabled}
           hidden={hideRightAdornments}
           {formParameter}
           {parameterType}

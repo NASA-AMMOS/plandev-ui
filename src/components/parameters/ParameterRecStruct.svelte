@@ -68,6 +68,7 @@
     </div>
     <div class="right" slot="right">
       <ParameterBaseRightAdornments
+        {disabled}
         hidden={hideRightAdornments}
         {formParameter}
         {parameterType}

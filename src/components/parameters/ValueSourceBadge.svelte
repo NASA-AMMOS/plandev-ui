@@ -8,6 +8,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import { useActions, type ActionArray } from '../../utilities/useActions';
 
+  export let disabled: boolean = false;
   export let source: ValueSource;
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
@@ -15,6 +16,7 @@
   const dispatch = createEventDispatcher();
 
   let tooltipContent: string = '';
+  let tooltipContentModifiedReset: string = '';
 
   $: dotClasses = classNames('value-source-badge-dot st-typography-body', {
     'value-source-badge-dot--mission': source === 'mission',
@@ -26,13 +28,14 @@
     switch (source) {
       case 'user on model':
       case 'user on preset':
+        tooltipContentModifiedReset = `<div class="value-source-tooltip-modified-reset">
+                                          <span>Reset to ${source === 'user on preset' ? presetText : 'Model'}</span>
+                                          <div>${isMacOs() ? '⌘' : 'CTRL'} Click</div>
+                                       </div>`;
         tooltipContent = `<div class="value-source-tooltip-modified">
-                          <span>Modified</span>
-                          <div class="value-source-tooltip-modified-reset">
-                            <span>Reset to ${source === 'user on preset' ? presetText : 'Model'}</span>
-                            <div>${isMacOs() ? '⌘' : 'CTRL'} Click</div>
-                          </div>
-                        </div>`;
+                            <span>Modified</span>
+                            ${disabled ? '' : tooltipContentModifiedReset}
+                          </div>`;
         break;
       case 'preset':
         tooltipContent = `${presetText} Value`;
@@ -44,7 +47,7 @@
   }
 
   function onClick(event: MouseEvent) {
-    if (isMetaOrCtrlPressed(event)) {
+    if (isMetaOrCtrlPressed(event) && !disabled) {
       dispatch('reset');
     }
   }
@@ -93,18 +96,16 @@
   :global(.value-source-tooltip-modified) {
     align-items: center;
     color: var(--st-gray-10);
-    column-gap: 2rem;
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: space-between;
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
   }
 
   :global(.value-source-tooltip-modified .value-source-tooltip-modified-reset) {
     align-items: center;
-    column-gap: 0.3rem;
-    display: grid;
+    display: flex;
     font-weight: 200;
-    grid-template-columns: auto auto;
+    gap: 0.3rem;
   }
 
   :global(.value-source-tooltip-modified .value-source-tooltip-modified-reset > div) {

@@ -33,6 +33,7 @@
       use:useActions={use}
     />
     <ParameterBaseRightAdornments
+      {disabled}
       hidden={hideRightAdornments}
       slot="right"
       {formParameter}

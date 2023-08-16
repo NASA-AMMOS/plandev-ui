@@ -8,6 +8,7 @@
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
 
+  export let disabled: boolean = false;
   export let formParameter: FormParameter;
   export let hideRightAdornments: boolean = false;
   export let labelColumnWidth: number = 200;
@@ -46,6 +47,7 @@
         type="text"
       />
       <ParameterBaseRightAdornments
+        {disabled}
         hidden={hideRightAdornments}
         slot="right"
         {formParameter}

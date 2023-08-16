@@ -50,6 +50,7 @@
     />
 
     <ParameterBaseRightAdornments
+      {disabled}
       slot="right"
       {formParameter}
       additionalErrors={durationStringFormatError ? [durationStringFormatError] : []}

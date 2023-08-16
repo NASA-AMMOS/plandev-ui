@@ -41,6 +41,7 @@
       {/each}
     </select>
     <ParameterBaseRightAdornments
+      {disabled}
       hidden={hideRightAdornments}
       {formParameter}
       {parameterType}

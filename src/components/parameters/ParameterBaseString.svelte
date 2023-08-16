@@ -35,6 +35,7 @@
       on:change={() => dispatch('change', formParameter)}
     />
     <ParameterBaseRightAdornments
+      {disabled}
       hidden={hideRightAdornments}
       slot="right"
       {formParameter}
