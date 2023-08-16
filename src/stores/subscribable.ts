@@ -87,11 +87,12 @@ export function gqlSubscribable<T>(
    */
   function getTokenFromUserCookie(): string {
     if (browser && document?.cookie) {
-      const userCookie = document.cookie.split('user=')[1];
-
+      const cookies = document.cookie.split(/\s*;\s*/);
+      const userCookie = cookies.find(entry => entry.startsWith('user='));
       if (userCookie) {
         try {
-          const decodedUserCookie = atob(userCookie);
+          const splitCookie = userCookie.split('user=')[1];
+          const decodedUserCookie = atob(splitCookie);
           const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
           return parsedUserCookie.token;
         } catch (e) {
