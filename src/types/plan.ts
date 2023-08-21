@@ -59,14 +59,12 @@ export type PlanMergeRequestSchema = {
     owner: UserId;
   };
   plan_snapshot_supplying_changes: {
-    duration: string;
-    name: string;
     plan: {
+      id: number;
+      name: string;
       owner: UserId;
     };
-    plan_id: number;
     snapshot_id: number;
-    start_time: string;
   };
   requester_username: string;
   reviewer_username: string;

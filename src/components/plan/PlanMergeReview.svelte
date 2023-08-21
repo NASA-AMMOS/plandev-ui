@@ -83,7 +83,9 @@
   $: hasReviewPermission = featurePermissions.planBranch.canReviewRequest(user, initialPlan);
   $: if (initialPlan && initialMergeRequest) {
     const {
-      plan_snapshot_supplying_changes: { plan_id: supplyingPlanId },
+      plan_snapshot_supplying_changes: {
+        plan: { id: supplyingPlanId },
+      },
     } = initialMergeRequest;
 
     // build up the complete array of snapshotted receiving and supplying directives
@@ -406,7 +408,7 @@
           <div class="st-typography-medium">Source Branch</div>
           <div class="merge-review-branch-metadata-content st-typography-body">
             <PlanWithUpArrow />
-            {initialMergeRequest?.plan_snapshot_supplying_changes.name}
+            {initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}
           </div>
         </div>
         <div class="merge-review-stats">
@@ -544,7 +546,7 @@
         <div class="merge-review-subheader">
           <span style="gap: 8px">
             <PlanWithUpArrow />
-            <span class="st-typography-medium">{initialMergeRequest?.plan_snapshot_supplying_changes.name}</span>
+            <span class="st-typography-medium">{initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}</span>
           </span>
           <span class="section-title st-typography-medium">Source</span>
         </div>

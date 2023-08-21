@@ -170,13 +170,13 @@
                     use:tooltip={{
                       content:
                         planMergeRequest.type === 'incoming'
-                          ? planMergeRequest.plan_snapshot_supplying_changes.name
+                          ? planMergeRequest.plan_snapshot_supplying_changes.plan.name
                           : planMergeRequest.plan_receiving_changes.name,
                       placement: 'top',
                     }}
                   >
                     {#if planMergeRequest.type === 'incoming'}
-                      {planMergeRequest.plan_snapshot_supplying_changes.name}
+                      {planMergeRequest.plan_snapshot_supplying_changes.plan.name}
                     {:else if planMergeRequest.type === 'outgoing'}
                       {planMergeRequest.plan_receiving_changes.name}
                     {/if}

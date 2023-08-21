@@ -1516,11 +1516,12 @@ const gql = {
           owner
         }
         plan_snapshot_supplying_changes {
-          name
-          snapshot_id
           plan {
+            id
+            name
             owner
           }
+          snapshot_id
         }
         requester_username
         reviewer_username
@@ -1539,11 +1540,12 @@ const gql = {
           owner
         }
         plan_snapshot_supplying_changes {
-          name
-          snapshot_id
           plan {
+            id
+            name
             owner
           }
+          snapshot_id
         }
         requester_username
         status
@@ -1561,14 +1563,12 @@ const gql = {
           owner
         }
         plan_snapshot_supplying_changes {
-          name
-          duration
           plan {
+            id
+            name
             owner
           }
-          plan_id
           snapshot_id
-          start_time
         }
         requester_username
         reviewer_username
