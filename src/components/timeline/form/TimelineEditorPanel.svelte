@@ -267,7 +267,7 @@
       }
       return guide;
     });
-    viewUpdateRow('verticalGuides', newVerticalGuides);
+    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
   }
 
   function handleUpdateHorizontalGuideLabel(event: Event, horizontalGuide: HorizontalGuide) {
