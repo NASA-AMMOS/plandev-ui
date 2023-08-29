@@ -3382,7 +3382,7 @@ const effects = {
         ...(description && { description }),
       };
       const data = await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id }, user);
-      if (data.update_activity_directive_by_pk != null) {
+      if (data.updateConstraint != null) {
         showSuccessToast('Constraint Updated Successfully');
       } else {
         throw Error(`Unable to update constraint with ID: "${id}"`);
