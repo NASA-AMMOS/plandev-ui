@@ -270,10 +270,20 @@
         maxActivityWidth,
         visibleSpansById,
       );
-      dispatch('mouseDown', { activityDirectives, e, layerId: id, spans });
-      if (!isRightClick(e)) {
-        dragActivityDirectiveStart(activityDirectives, offsetX);
-      }
+
+      /**
+       * The setTimeout is needed to prevent a race condition with mousedown events and change events.
+       * Without the setTimeout, mousedown events happen before change events in the activity directive form.
+       * This caused invalid updates to activity parameters.
+       * Make sure you understand the linked issue before changing this code!
+       * @see https://github.com/NASA-AMMOS/aerie-ui/issues/590
+       */
+      setTimeout(() => {
+        dispatch('mouseDown', { activityDirectives, e, layerId: id, spans });
+        if (!isRightClick(e)) {
+          dragActivityDirectiveStart(activityDirectives, offsetX);
+        }
+      });
     }
   }
 
