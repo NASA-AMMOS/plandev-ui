@@ -1,8 +1,12 @@
-import type { ICellRendererParams } from 'ag-grid-community';
+import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
 import type { Tag } from '../../../types/tags';
 import TagChip from '../Tags/Tag.svelte';
 
-export function tagsCellRenderer(params?: ICellRendererParams<{ tags: { tag: Tag }[] }>) {
+type AssetWithTags<T = any> = T & {
+  tags: { tag: Tag }[];
+};
+
+export function tagsCellRenderer<T>(params?: ICellRendererParams<AssetWithTags<T>>) {
   if (params && params.data && params.data.tags) {
     const tagsDiv = document.createElement('div');
     tagsDiv.className = 'tags-cell';
@@ -17,4 +21,8 @@ export function tagsCellRenderer(params?: ICellRendererParams<{ tags: { tag: Tag
     });
     return tagsDiv;
   }
+}
+
+export function tagsFilterValueGetter<T>(params: ValueGetterParams<AssetWithTags<T>>) {
+  return params.data?.tags.map(({ tag }) => tag.name).join(', ') ?? '';
 }

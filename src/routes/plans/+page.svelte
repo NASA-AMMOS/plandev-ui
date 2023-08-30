@@ -15,7 +15,7 @@
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
-  import { tagsCellRenderer } from '../../components/ui/DataGrid/DataGridTagsCellRenderer';
+  import { tagsCellRenderer, tagsFilterValueGetter } from '../../components/ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
@@ -114,6 +114,7 @@
       cellRenderer: tagsCellRenderer,
       field: 'tags',
       filter: 'text',
+      filterValueGetter: tagsFilterValueGetter,
       headerName: 'Tags',
       resizable: true,
       sortable: false,

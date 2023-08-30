@@ -17,7 +17,7 @@
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
-  import { tagsCellRenderer } from '../ui/DataGrid/DataGridTagsCellRenderer';
+  import { tagsCellRenderer, tagsFilterValueGetter } from '../ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -74,6 +74,7 @@
       cellRenderer: tagsCellRenderer,
       field: 'tags',
       filter: 'text',
+      filterValueGetter: tagsFilterValueGetter,
       headerName: 'Tags',
       resizable: true,
       sortable: false,
