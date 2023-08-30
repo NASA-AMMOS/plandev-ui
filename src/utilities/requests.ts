@@ -86,12 +86,16 @@ export async function reqHasura<T = any>(
       // This is often thrown when a Postgres exception is raised for a Hasura query.
       // @see https://github.com/hasura/graphql-engine/issues/3658
       throw new Error(error?.extensions?.internal?.error?.message ?? error?.message ?? defaultError);
+    } else if (code === 'parse-failed') {
+      if (error?.extensions?.internal?.response?.body?.errors?.length) {
+        const errorMessage = error?.extensions?.internal?.response?.body?.errors[0];
+        throw new Error(errorMessage ?? defaultError);
+      }
     } else if (code === INVALID_JWT) {
       await logout(error?.message);
-      throw new Error(error?.message ?? defaultError);
-    } else {
-      throw new Error(error?.message ?? defaultError);
     }
+
+    throw new Error(error?.message ?? defaultError);
   }
 
   const { data } = json;
