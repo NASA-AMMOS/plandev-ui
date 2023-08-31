@@ -5,7 +5,7 @@
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { ConstraintViolation } from '../../types/constraint';
+  import type { ConstraintResult } from '../../types/constraint';
   import type {
     Resource,
     Simulation,
@@ -46,7 +46,7 @@
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
-  export let constraintViolations: ConstraintViolation[] = [];
+  export let constraintResults: ConstraintResult[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
@@ -260,7 +260,7 @@
       activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]
         ? activityDirectivesByView.byTimelineId[timeline.id]
         : []}
-      {constraintViolations}
+      {constraintResults}
       {cursorEnabled}
       drawHeight={timelineHistogramDrawHeight}
       {drawWidth}
@@ -278,7 +278,7 @@
   </div>
   <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
     <TimelineXAxis
-      {constraintViolations}
+      {constraintResults}
       drawHeight={xAxisDrawHeight}
       {drawWidth}
       marginLeft={timeline?.marginLeft}
@@ -318,7 +318,7 @@
         {activityDirectivesByView}
         {activityDirectivesMap}
         autoAdjustHeight={row.autoAdjustHeight}
-        {constraintViolations}
+        {constraintResults}
         {dpr}
         drawHeight={row.height}
         {drawWidth}

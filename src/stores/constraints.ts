@@ -1,6 +1,6 @@
 import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import type { Constraint, ConstraintViolation } from '../types/constraint';
+import type { Constraint, ConstraintResult } from '../types/constraint';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { modelId, planId, planStartTimeMs } from './plan';
@@ -34,22 +34,25 @@ export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>
 
 export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
-export const constraintViolationsResponse: Writable<ConstraintViolation[]> = writable([]);
+export const constraintResultsResponse: Writable<ConstraintResult[]> = writable([]);
 
 export const constraintsColumns: Writable<string> = writable('2fr 3px 1fr');
 export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 
 /* Derived. */
 
-export const constraintViolations: Readable<ConstraintViolation[]> = derived(
-  [constraintViolationsResponse, planStartTimeMs],
-  ([$constraintViolationsResponse, $planStartTimeMs]) =>
-    $constraintViolationsResponse.reduce((list: ConstraintViolation[], violation) => {
+export const constraintResults: Readable<ConstraintResult[]> = derived(
+  [constraintResultsResponse, planStartTimeMs],
+  ([$constraintResultsResponse, $planStartTimeMs]) =>
+    $constraintResultsResponse.reduce((list: ConstraintResult[], constraintResult) => {
       list.push({
-        ...violation,
-        windows: violation.windows.map(({ end, start }) => ({
-          end: $planStartTimeMs + end / 1000,
-          start: $planStartTimeMs + start / 1000,
+        ...constraintResult,
+        violations: constraintResult.violations.map(violation => ({
+          ...violation,
+          windows: violation.windows.map(({ end, start }) => ({
+            end: $planStartTimeMs + end / 1000,
+            start: $planStartTimeMs + start / 1000,
+          })),
         })),
       });
 
@@ -57,10 +60,15 @@ export const constraintViolations: Readable<ConstraintViolation[]> = derived(
     }, []),
 );
 
-export const visibleConstraintViolations: Readable<ConstraintViolation[]> = derived(
-  [constraintViolations, constraintVisibilityMap],
-  ([$constraintViolations, $constraintVisibilityMap]) =>
-    $constraintViolations.filter(violation => $constraintVisibilityMap[violation.constraintId]),
+export const visibleConstraintResults: Readable<ConstraintResult[]> = derived(
+  [constraintResults, constraintVisibilityMap],
+  ([$constraintResults, $constraintVisibilityMap]) =>
+    $constraintResults.filter(constraintResult => $constraintVisibilityMap[constraintResult.constraintId]),
+);
+
+export const constraintResultMap: Readable<Record<Constraint['id'], ConstraintResult>> = derived(
+  [constraintResults],
+  ([$constraintResults]) => keyBy($constraintResults, 'constraintId'),
 );
 
 /* Helper Functions. */
@@ -80,5 +88,5 @@ export function setAllConstraintsVisible(visible: boolean) {
 
 export function resetConstraintStores(): void {
   checkConstraintsStatus.set(null);
-  constraintViolationsResponse.set([]);
+  constraintResultsResponse.set([]);
 }

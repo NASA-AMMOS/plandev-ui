@@ -7,7 +7,7 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../stores/activities';
-  import { visibleConstraintViolations } from '../../stores/constraints';
+  import { visibleConstraintResults } from '../../stores/constraints';
   import { maxTimeRange, plan, planId, viewTimeRange } from '../../stores/plan';
   import {
     resourcesByViewLayerId,
@@ -153,7 +153,7 @@
     <Timeline
       activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
-      constraintViolations={$visibleConstraintViolations}
+      constraintResults={$visibleConstraintResults}
       {hasUpdateDirectivePermission}
       {hasUpdateSimulationPermission}
       maxTimeRange={$maxTimeRange}

@@ -2,12 +2,12 @@
 
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
-  import type { ConstraintViolation } from '../../types/constraint';
+  import type { ConstraintResult } from '../../types/constraint';
   import type { TimeRange, XAxisTick } from '../../types/timeline';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
 
-  export let constraintViolations: ConstraintViolation[] = [];
+  export let constraintResults: ConstraintResult[] = [];
   export let drawHeight: number = 70;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;
@@ -42,7 +42,7 @@
     </g>
     <g transform="translate(0, {violationsOffset})">
       <ConstraintViolations
-        {constraintViolations}
+        {constraintResults}
         mousemove={undefined}
         mouseout={undefined}
         {drawHeight}

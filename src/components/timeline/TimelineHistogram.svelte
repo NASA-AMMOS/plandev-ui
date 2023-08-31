@@ -6,7 +6,7 @@
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective } from '../../types/activity';
-  import type { ConstraintViolation } from '../../types/constraint';
+  import type { ConstraintResult } from '../../types/constraint';
   import type { SimulationDataset, Span } from '../../types/simulation';
   import type { MouseOver, TimeRange } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
@@ -14,7 +14,7 @@
   import { tooltip } from '../../utilities/tooltip';
 
   export let activityDirectives: ActivityDirective[] = [];
-  export let constraintViolations: ConstraintViolation[] = [];
+  export let constraintResults: ConstraintResult[] = [];
   export let cursorEnabled: boolean = true;
   export let drawHeight: number = 40;
   export let drawWidth: number = 0;
@@ -169,7 +169,7 @@
   // Update histograms if xScaleMax, activities, or constraint violation changes
   $: if (
     xScaleMax &&
-    (activityDirectives || constraintViolations) &&
+    (activityDirectives || constraintResults) &&
     windowMin !== undefined &&
     windowMax !== undefined &&
     windowMin - windowMax > 0
@@ -223,17 +223,19 @@
 
     // Compute constraint violations histogram
     constraintViolationsToRender = [];
-    constraintViolations.forEach(violation => {
-      violation.windows.forEach(w => {
-        if (xScaleMax !== null) {
-          const xStart = xScaleMax(w.start);
-          const xEnd = xScaleMax(w.end);
-          const clampedStart = xStart < 0 ? 0 : xStart;
-          const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
-          const width = clampedEnd - clampedStart;
-          const clampedWidth = width <= 0 ? 5 : width;
-          constraintViolationsToRender.push({ width: clampedWidth, x: clampedStart });
-        }
+    constraintResults.forEach(constraintResult => {
+      constraintResult.violations.forEach(violation => {
+        violation.windows.forEach(window => {
+          if (xScaleMax !== null) {
+            const xStart = xScaleMax(window.start);
+            const xEnd = xScaleMax(window.end);
+            const clampedStart = xStart < 0 ? 0 : xStart;
+            const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
+            const width = clampedEnd - clampedStart;
+            const clampedWidth = width <= 0 ? 5 : width;
+            constraintViolationsToRender.push({ width: clampedWidth, x: clampedStart });
+          }
+        });
       });
     });
   }

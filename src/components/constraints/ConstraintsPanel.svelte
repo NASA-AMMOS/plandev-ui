@@ -10,7 +10,8 @@
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import {
     checkConstraintsStatus,
-    constraintViolations,
+    constraintResultMap,
+    constraintResults,
     constraintVisibilityMap,
     constraints,
     setAllConstraintsVisible,
@@ -19,7 +20,7 @@
   import { field } from '../../stores/form';
   import { plan, viewTimeRange } from '../../stores/plan';
   import type { User } from '../../types/app';
-  import type { Constraint, ConstraintViolation } from '../../types/constraint';
+  import type { Constraint, ConstraintResult } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -49,8 +50,7 @@
   let startTimeDoyField: FieldStore<string>;
   let showFilters: boolean = false;
   let showConstraintsWithNoViolations: boolean = true;
-  let constraintViolationMap: Record<Constraint['name'], ConstraintViolation> = {}; // TODO ideally wouldn't not have to compute this here, store version maps name -> ConstraintViolation[], can you really have a list of these things? Model vs plan?
-  let filteredConstraintViolationMap: Record<Constraint['name'], ConstraintViolation> = {};
+  let filteredConstraintResultMap: Record<Constraint['id'], ConstraintResult> = {};
 
   $: startTimeDoy = $plan?.start_time_doy || '';
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
@@ -59,36 +59,33 @@
   $: startTimeMs = getUnixEpochTime(startTimeDoy);
   $: endTimeMs = getUnixEpochTime(endTimeDoy);
 
-  $: if ($constraints && $constraintViolations && startTimeMs && endTimeMs) {
-    constraintViolationMap = {};
-    filteredConstraintViolationMap = {};
+  $: if ($constraints && $constraintResults && startTimeMs && endTimeMs) {
+    filteredConstraintResultMap = {};
     $constraints.forEach(constraint => {
-      // TODO could have multiple ConstraintViolation's for a single constraint?
-      const violation = getViolationForConstraint(constraint, $constraintViolations);
-      if (violation) {
-        constraintViolationMap[constraint.id] = violation;
-
-        // Filter windows by time bounds
-        const filteredWindows = violation.windows.filter(
-          window => window.end >= startTimeMs && window.start <= endTimeMs,
-        );
-        filteredConstraintViolationMap[constraint.id] = { ...violation, windows: filteredWindows };
+      const constraintResult = $constraintResultMap[constraint.id];
+      if (constraintResult) {
+        // Filter violations/windows by time bounds
+        const filteredViolations = constraintResult.violations.map(violation => ({
+          ...violation,
+          windows: violation.windows.filter(window => window.end >= startTimeMs && window.start <= endTimeMs),
+        }));
+        filteredConstraintResultMap[constraint.id] = { ...constraintResult, violations: filteredViolations };
       }
     });
   }
 
   $: filteredConstraints = filterConstraints(
     $constraints,
-    filteredConstraintViolationMap,
+    filteredConstraintResultMap,
     filterText,
     showConstraintsWithNoViolations,
   );
-  $: totalViolationCount = getViolationCount($constraintViolations);
-  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintViolationMap));
+  $: totalViolationCount = getViolationCount($constraintResults);
+  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResultMap));
 
   function filterConstraints(
     constraints: Constraint[],
-    filteredConstraintViolationMap: Record<Constraint['id'], ConstraintViolation>,
+    filteredConstraintResultMap: Record<Constraint['id'], ConstraintResult>,
     filterText: string,
     showConstraintsWithNoViolations: boolean,
   ) {
@@ -99,30 +96,20 @@
         return false;
       }
 
-      const violation = filteredConstraintViolationMap[constraint.id];
+      const constraintResult = filteredConstraintResultMap[constraint.id];
       // Always show constraints with no violations
-      if (!violation) {
+      if (!constraintResult?.violations?.length) {
         return showConstraintsWithNoViolations;
       }
 
-      if (violation.windows.length < 1) {
-        return showConstraintsWithNoViolations;
-      }
       return true;
     });
   }
 
-  function getViolationCount(constraintViolations: ConstraintViolation[]) {
-    return constraintViolations.reduce((count, violation) => {
-      return count + violation.windows.length;
+  function getViolationCount(constraintResults: ConstraintResult[]) {
+    return constraintResults.reduce((count, constraintResult) => {
+      return count + constraintResult.violations.length;
     }, 0);
-  }
-
-  function getViolationForConstraint(
-    constraint: Constraint,
-    constraintViolations: ConstraintViolation[],
-  ): ConstraintViolation | undefined {
-    return constraintViolations.find(c => c.constraintId === constraint.id);
   }
 
   function onUpdateStartTime() {
@@ -287,8 +274,8 @@
             hasDeletePermission={$plan ? featurePermissions.constraints.canDelete(user, $plan) : false}
             hasEditPermission={$plan ? featurePermissions.constraints.canUpdate(user, $plan) : false}
             visible={$constraintVisibilityMap[constraint.id]}
-            violation={filteredConstraintViolationMap[constraint.id]}
-            totalViolationCount={constraintViolationMap[constraint.id]?.windows?.length}
+            constraintResult={filteredConstraintResultMap[constraint.id]}
+            totalViolationCount={$constraintResultMap[constraint.id]?.violations?.length || 0}
             {user}
             on:toggleVisibility={toggleVisibility}
           />

@@ -3,7 +3,7 @@
 <script lang="ts">
   import { select } from 'd3-selection';
   import type { ActivityDirective } from '../../types/activity';
-  import type { ConstraintViolation } from '../../types/constraint';
+  import type { ConstraintResult } from '../../types/constraint';
   import type { Span } from '../../types/simulation';
   import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
@@ -11,7 +11,7 @@
   export let mouseOver: MouseOver | null;
 
   let activityDirectives: ActivityDirective[] = [];
-  let constraintViolations: ConstraintViolation[] = [];
+  let constraintResults: ConstraintResult[] = [];
   let points: Point[] = [];
   let gaps: Point[] = [];
   let spans: Span[] = [];
@@ -23,7 +23,7 @@
   function onMouseOver(event: MouseOver | undefined) {
     if (event) {
       activityDirectives = event?.activityDirectives ?? [];
-      constraintViolations = event?.constraintViolations ?? [];
+      constraintResults = event?.constraintResults ?? [];
       gaps = event?.gaps ?? [];
       points = event?.points ?? [];
       spans = event?.spans ?? [];
@@ -39,7 +39,7 @@
   function show(event: MouseEvent): void {
     const showTooltip =
       activityDirectives.length > 0 ||
-      constraintViolations.length > 0 ||
+      constraintResults.length > 0 ||
       points.length > 0 ||
       spans.length > 0 ||
       gaps.length > 0;
@@ -92,7 +92,7 @@
     if (gaps.length) {
       // For now we render a single static "No Value" message for any number of gaps,
       // as long as there aren't other data points to render at the same location
-      if (!points.length && !constraintViolations.length && !activityDirectives.length && !spans.length) {
+      if (!points.length && !constraintResults.length && !activityDirectives.length && !spans.length) {
         return `
           <div>
             No Value
@@ -110,20 +110,20 @@
       }
     });
 
-    if (constraintViolations.length && activityDirectives.length) {
+    if (constraintResults.length && activityDirectives.length) {
       tooltipText = `${tooltipText}<hr>`;
     }
 
-    constraintViolations.forEach((constraintViolation: ConstraintViolation, i: number) => {
-      const text = textForConstraintViolation(constraintViolation);
+    constraintResults.forEach((constraintResult: ConstraintResult, i: number) => {
+      const text = textForConstraintViolation(constraintResult);
       tooltipText = `${tooltipText} ${text}`;
 
-      if (i !== constraintViolations.length - 1) {
+      if (i !== constraintResults.length - 1) {
         tooltipText = `${tooltipText}<hr>`;
       }
     });
 
-    if (points.length && (constraintViolations.length || activityDirectives.length)) {
+    if (points.length && (constraintResults.length || activityDirectives.length)) {
       tooltipText = `${tooltipText}<hr>`;
     }
 
@@ -143,7 +143,7 @@
       }
     });
 
-    if (spans.length && (points.length || constraintViolations.length || activityDirectives.length)) {
+    if (spans.length && (points.length || constraintResults.length || activityDirectives.length)) {
       tooltipText = `${tooltipText}<hr>`;
     }
 
@@ -178,7 +178,7 @@
     `;
   }
 
-  function textForConstraintViolation(constraintViolation: ConstraintViolation): string {
+  function textForConstraintViolation(constraintViolation: ConstraintResult): string {
     const { constraintName } = constraintViolation;
     return `
       <div>

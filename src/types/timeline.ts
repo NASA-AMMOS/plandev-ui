@@ -1,6 +1,6 @@
 import type { Selection } from 'd3-selection';
 import type { ActivityDirective } from './activity';
-import type { ConstraintViolation } from './constraint';
+import type { ConstraintResult } from './constraint';
 import type { Span } from './simulation';
 
 export interface ActivityLayer extends Layer {
@@ -91,7 +91,7 @@ export type MouseDown = {
 
 export type MouseOver = {
   activityDirectives?: ActivityDirective[];
-  constraintViolations?: ConstraintViolation[];
+  constraintResults?: ConstraintResult[];
   e: MouseEvent;
   gaps?: Point[];
   layerId: number;

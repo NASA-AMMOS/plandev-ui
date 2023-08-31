@@ -23,20 +23,16 @@ export type ConstraintInsertInput = Omit<
 
 export type ConstraintType = 'model' | 'plan';
 
-export type ConstraintViolationAssociations = {
-  activityInstanceIds: number[];
-  resourceIds: string[];
-};
-
 export type ConstraintViolation = {
-  associations: ConstraintViolationAssociations;
-  constraintId: Constraint['id'];
-  constraintName: Constraint['name'];
-  gaps: TimeRange[];
-  type: ConstraintType;
+  activityInstanceIds: number[];
   windows: TimeRange[];
 };
 
-export type ConstraintViolationsMap = Record<Constraint['id'], ConstraintViolation[]>;
-
-export type ConstraintVisibilityMap = Record<Constraint['id'], boolean>;
+export type ConstraintResult = {
+  constraintId: Constraint['id'];
+  constraintName: Constraint['name'];
+  gaps: TimeRange[];
+  resourceIds: string[];
+  type: ConstraintType;
+  violations: ConstraintViolation[];
+};

@@ -3,7 +3,7 @@ import { base } from '$app/paths';
 import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, constraintViolationsResponse } from '../stores/constraints';
+import { checkConstraintsStatus, constraintResultsResponse } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError,
@@ -34,7 +34,7 @@ import type {
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User, UserRole } from '../types/app';
 import type { ReqAuthResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
-import type { Constraint, ConstraintInsertInput, ConstraintViolation } from '../types/constraint';
+import type { Constraint, ConstraintInsertInput, ConstraintResult } from '../types/constraint';
 import type {
   ExpansionRule,
   ExpansionRuleInsertInput,
@@ -239,18 +239,17 @@ const effects = {
       const currentPlan = get(plan);
       if (currentPlan !== null) {
         const { id: planId } = currentPlan;
-        const data = await reqHasura<{ violations: ConstraintViolation[] }>(
+        const data = await reqHasura<ConstraintResult[]>(
           gql.CHECK_CONSTRAINTS,
           {
             planId,
           },
           user,
         );
-        const { checkConstraintsResponse } = data;
-        if (checkConstraintsResponse != null) {
-          const { violations } = checkConstraintsResponse;
 
-          constraintViolationsResponse.set(violations);
+        const { constraintResults } = data;
+        if (constraintResults != null) {
+          constraintResultsResponse.set(constraintResults);
           checkConstraintsStatus.set(Status.Complete);
           showSuccessToast('Check Constraints Complete');
         } else {

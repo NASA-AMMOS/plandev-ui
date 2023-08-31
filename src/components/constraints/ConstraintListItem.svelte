@@ -8,7 +8,7 @@
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
-  import type { Constraint, ConstraintViolation } from '../../types/constraint';
+  import type { Constraint, ConstraintResult } from '../../types/constraint';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
@@ -21,20 +21,20 @@
   export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
   export let totalViolationCount: number = 0;
-  export let violation: ConstraintViolation;
+  export let constraintResult: ConstraintResult;
   export let visible: boolean = true;
   export let user: User | null;
 
   const dispatch = createEventDispatcher();
 
-  $: violationCount = violation?.windows?.length;
+  $: violationCount = constraintResult?.violations?.length;
 </script>
 
 <div class="constraint-list-item">
   <Collapse title={constraint.name} tooltipContent={constraint.name} defaultExpanded={false}>
     <svelte:fragment slot="right">
       <div class="right-content">
-        {#if violation}
+        {#if violationCount}
           <div
             class="st-badge violation-badge"
             use:tooltip={{ content: `${violationCount} Violation${violationCount !== 1 ? 's' : ''}`, placement: 'top' }}
@@ -75,10 +75,12 @@
     </Collapse>
 
     <Collapse title="Violations" defaultExpanded={false}>
-      {#if violation}
+      {#if constraintResult?.violations?.length}
         <div class="violations">
-          {#each violation.windows as window}
-            <ConstraintViolationButton {window} />
+          {#each constraintResult.violations as violation}
+            {#each violation.windows as window}
+              <ConstraintViolationButton {window} />
+            {/each}
           {/each}
         </div>
       {:else}
