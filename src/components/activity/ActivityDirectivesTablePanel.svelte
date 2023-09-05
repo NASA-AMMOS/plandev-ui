@@ -17,7 +17,7 @@
   import type { User } from '../../types/app';
   import type { ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { getActivityDirectiveStartTimeMs, getDoyTime } from '../../utilities/time';
+  import { getActivityDirectiveStartTimeMs, getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -147,6 +147,15 @@
       sortable: true,
     },
     start_offset: {
+      comparator: (valueA: string, valueB: string) => {
+        if ($plan) {
+          return (
+            getUnixEpochTimeFromInterval($plan.start_time, valueA) -
+            getUnixEpochTimeFromInterval($plan.start_time, valueB)
+          );
+        }
+        return valueA.localeCompare(valueB);
+      },
       field: 'start_offset',
       filter: 'text',
       headerName: 'Start Offset',
