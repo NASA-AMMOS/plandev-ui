@@ -320,15 +320,21 @@ function balanceDuration(
 
   const balancedTime = `${DD}${HH}:${MM}:${SS}.${sss}`;
 
-  if (regex.source === HMS_EPOCH_REGEX.source && days > 365) {
-    return { error: CustomErrorCodes.MaxEpochTime(balancedTime) };
+  if (regex.source === HMS_EPOCH_REGEX.source) {
+    if (days > 365) {
+      return { error: CustomErrorCodes.MaxEpochTime(balancedTime) };
+    } else {
+      return { warning: CustomErrorCodes.UnbalancedTime(`E\`${balancedTime}\``) };
+    }
   }
 
-  if (regex.source === HMS_RELATIVE_REGEX.source && days !== 0) {
-    return { error: CustomErrorCodes.MaxRelativeTime(balancedTime) };
+  if (regex.source === HMS_RELATIVE_REGEX.source) {
+    if (days !== 0) {
+      return { error: CustomErrorCodes.MaxRelativeTime(balancedTime) };
+    }
+    return { warning: CustomErrorCodes.UnbalancedTime(`R\`${balancedTime}\``) };
   }
-
-  return { warning: CustomErrorCodes.UnbalancedTime(balancedTime) };
+  return { error: undefined, warning: undefined };
 }
 
 function balanceAbsolute(

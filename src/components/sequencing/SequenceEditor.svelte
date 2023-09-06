@@ -8,6 +8,7 @@
   import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
+  import { sequenceProvideCodeActions } from '../../utilities/monacoHelper';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
@@ -113,6 +114,7 @@
         bind:monaco
         bind:model={sequenceEditorModel}
         automaticLayout={true}
+        actionProvider={sequenceProvideCodeActions}
         fixedOverflowWidgets={true}
         language="typescript"
         lineNumbers="on"

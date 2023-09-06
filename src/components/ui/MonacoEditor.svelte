@@ -1,16 +1,35 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
-  import type { editor as Editor, IDisposable, Uri, languages } from 'monaco-editor/esm/vs/editor/editor.api';
+  import type {
+    CancellationToken,
+    editor as Editor,
+    IDisposable,
+    Range,
+    Uri,
+    languages,
+  } from 'monaco-editor/esm/vs/editor/editor.api';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
   import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { Monaco } from '../../types/monaco';
   import { ShouldRetryError, promiseRetry } from '../../utilities/generic';
-
   export { className as class };
   export { styleName as style };
   export let automaticLayout: boolean | undefined = undefined;
+  export let actionProvider: (
+    model: Editor.ITextModel,
+    range: Range,
+    context: languages.CodeActionContext,
+    token: CancellationToken,
+  ) => languages.ProviderResult<languages.CodeActionList> | undefined = () => {
+    return {
+      actions: [],
+      dispose: () => {
+        //dispose
+      },
+    };
+  };
   export let fixedOverflowWidgets: boolean | undefined = undefined;
   export let language: string | undefined = undefined;
   export let lineNumbers: Editor.LineNumbersType | undefined = undefined;
@@ -34,6 +53,7 @@
   let className: string = '';
   let div: HTMLDivElement;
   let editor: Editor.IStandaloneCodeEditor | undefined = undefined;
+  let codeActionProvider: IDisposable | undefined = undefined;
   let editor_load_event: IDisposable | undefined = undefined;
   let styleName: string = '';
 
@@ -68,6 +88,7 @@
       automaticLayout,
       fixedOverflowWidgets,
       language,
+      lightbulb: { enabled: true },
       lineNumbers,
       minimap,
       model,
@@ -78,53 +99,65 @@
       ...(value !== null && { value }),
     };
     monaco = await import('monaco-editor');
-    monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
-      customWorkerPath: '/customTS.worker.js',
-    });
     editor = monaco.editor.create(div, options, override);
 
-    editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {
-      const newValue = editor?.getModel()?.getValue();
-      if (newValue !== undefined) {
-        dispatch('didChangeModelContent', { e, value: newValue });
+    if (language && language === 'typescript') {
+      monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
+        customWorkerPath: '/customTS.worker.js',
+      });
+
+      if (actionProvider) {
+        codeActionProvider = monaco.languages.registerCodeActionProvider(language, {
+          provideCodeActions: actionProvider,
+        });
       }
-    });
 
-    // So.. there is no way to check when the model is initialized apparently!
-    // https://github.com/microsoft/monaco-editor/issues/115
+      editor.onDidChangeModelContent((e: Editor.IModelContentChangedEvent) => {
+        const newValue = editor?.getModel()?.getValue();
+        if (newValue !== undefined) {
+          dispatch('didChangeModelContent', { e, value: newValue });
+        }
+      });
 
-    // If we accidentally call the `getTypeScriptWorker()` function to early, it throws.
-    // Just use retry with exponential back-off to get it!
-    promiseRetry(
-      async () => {
-        let tsWorker: TypeScriptWorker | null = null;
+      // So.. there is no way to check when the model is initialized apparently!
+      // https://github.com/microsoft/monaco-editor/issues/115
 
-        // Errors in this block indicate failure to find a loaded worker
-        // so transform to the specific error type we care about.
-        try {
-          const getWorker: ((...uris: Uri[]) => Promise<TypeScriptWorker>) | undefined =
-            await monaco?.languages.typescript.getTypeScriptWorker();
-          if (getWorker) {
-            tsWorker = await getWorker();
+      // If we accidentally call the `getTypeScriptWorker()` function to early, it throws.
+      // Just use retry with exponential back-off to get it!
+      promiseRetry(
+        async () => {
+          let tsWorker: TypeScriptWorker | null = null;
+
+          // Errors in this block indicate failure to find a loaded worker
+          // so transform to the specific error type we care about.
+          try {
+            const getWorker: ((...uris: Uri[]) => Promise<TypeScriptWorker>) | undefined =
+              await monaco?.languages.typescript.getTypeScriptWorker();
+            if (getWorker) {
+              tsWorker = await getWorker();
+            }
+          } catch (e) {
+            throw new ShouldRetryError();
           }
-        } catch (e) {
-          throw new ShouldRetryError();
-        }
 
-        // Errors in the dispatch won't trigger the retry and will just fail.
-        model = editor?.getModel(); // Set here so parents can bind to the model easily.
-        if (model != null && tsWorker !== null) {
-          dispatch('fullyLoaded', { model, worker: tsWorker });
-        }
-      },
-      5,
-      10,
-    );
+          // Errors in the dispatch won't trigger the retry and will just fail.
+          model = editor?.getModel(); // Set here so parents can bind to the model easily.
+          if (model != null && tsWorker !== null) {
+            dispatch('fullyLoaded', { model, worker: tsWorker });
+          }
+        },
+        5,
+        10,
+      );
+    }
   });
 
   onDestroy(() => {
     if (editor) {
       editor.dispose();
+    }
+    if (codeActionProvider) {
+      codeActionProvider.dispose();
     }
     if (editor_load_event) {
       editor_load_event.dispose();

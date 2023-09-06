@@ -6,6 +6,7 @@
   import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
+  import { sequenceProvideCodeActions } from '../../utilities/monacoHelper';
   import MonacoEditor from '../ui/MonacoEditor.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -101,6 +102,7 @@
       bind:monaco
       bind:model={editorModel}
       automaticLayout={true}
+      actionProvider={sequenceProvideCodeActions}
       fixedOverflowWidgets={true}
       language="typescript"
       lineNumbers="on"
