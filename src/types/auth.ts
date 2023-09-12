@@ -23,26 +23,10 @@ export type LoginResponse = {
   status?: number;
 };
 
-export type LogoutResponseBody = {
-  message: string;
-  success: boolean;
-};
-
-export type LogoutResponse = {
-  body?: LogoutResponseBody;
-  headers?: Headers;
-  status?: number;
-};
-
 export type ReqAuthResponse = {
   message: string;
   success: boolean;
   token: JsonWebToken | null;
-};
-
-export type ReqLogoutResponse = {
-  message: string;
-  success: boolean;
 };
 
 export type ReqSessionResponse = {

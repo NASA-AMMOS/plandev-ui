@@ -33,7 +33,7 @@ import type {
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User, UserRole } from '../types/app';
-import type { ReqAuthResponse, ReqLogoutResponse, ReqSessionResponse } from '../types/auth';
+import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
 import type { Constraint, ConstraintInsertInput, ConstraintResult } from '../types/constraint';
 import type {
   ExpansionRule,
@@ -2969,16 +2969,6 @@ const effects = {
         success: false,
         token: null,
       };
-    }
-  },
-
-  async logout(user: User | null): Promise<ReqLogoutResponse> {
-    try {
-      const data = await reqGateway<ReqLogoutResponse>('/auth/logout', 'DELETE', null, user, false);
-      return data;
-    } catch (e) {
-      catchError(e as Error);
-      return { message: 'An unexpected error occurred', success: false };
     }
   },
 

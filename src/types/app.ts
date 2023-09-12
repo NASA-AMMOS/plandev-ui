@@ -18,7 +18,6 @@ export type User = BaseUser & {
 
 export type ParsedUserToken = {
   activeRole: UserRole;
-  camToken: string;
   exp: number;
   'https://hasura.io/jwt/claims': {
     'x-hasura-allowed-roles': UserRole[];
