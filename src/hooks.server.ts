@@ -20,7 +20,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   } else {
     const cookieHeader = event.request.headers.get('cookie') ?? '';
     const cookies = parse(cookieHeader);
-    const { user: userCookie = null } = cookies;
+    const { activeRole: activeRoleCookie = null, user: userCookie = null } = cookies;
 
     if (userCookie) {
       const userBuffer = Buffer.from(userCookie, 'base64');
@@ -30,14 +30,18 @@ export const handle: Handle = async ({ event, resolve }) => {
       const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
 
       if (success) {
+        const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
+        const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
+        const activeRole = activeRoleCookie ?? defaultRole;
         const user: User = {
           ...baseUser,
-          activeRole: decodedToken.activeRole,
-          allowedRoles: decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'],
-          defaultRole: decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'],
+          activeRole,
+          allowedRoles,
+          defaultRole,
           permissibleQueries: null,
         };
         const permissibleQueries = await effects.getUserQueries(user);
+
         event.locals.user = {
           ...user,
           permissibleQueries,

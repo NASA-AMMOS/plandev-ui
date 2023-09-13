@@ -1,7 +1,8 @@
 import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import type { BaseUser } from '../../../types/app';
+import jwtDecode from 'jwt-decode';
+import type { BaseUser, ParsedUserToken } from '../../../types/app';
 import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
@@ -17,8 +18,13 @@ export const POST: RequestHandler = async event => {
       const user: BaseUser = { id: username, token };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
+      const parsedUserToken: ParsedUserToken = jwtDecode(user.token);
+      const defaultRole = parsedUserToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
 
-      return json({ success: true, user }, { headers: { 'set-cookie': `user=${userCookie}; Path=${base}/` } });
+      return json(
+        { success: true, user },
+        { headers: { 'set-cookie': `activeRole=${defaultRole}; path=${base}/,user=${userCookie}; Path=${base}/` } },
+      );
     } else {
       return json({ message, success: false });
     }

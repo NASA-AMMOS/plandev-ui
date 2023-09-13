@@ -32,7 +32,7 @@ import type {
   ActivityTypeExpansionRules,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
-import type { BaseUser, User, UserRole } from '../types/app';
+import type { BaseUser, User } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
 import type { Constraint, ConstraintInsertInput, ConstraintResult } from '../types/constraint';
 import type {
@@ -216,20 +216,6 @@ const effects = {
     } catch (e) {
       catchError('Template Unable To Be Applied To Simulation', e as Error);
       showFailureToast('Template Application Failed');
-    }
-  },
-
-  async changeUserRole(role: UserRole, user: User | null): Promise<ReqAuthResponse> {
-    try {
-      const data = await reqGateway<ReqAuthResponse>('/auth/changeRole', 'POST', JSON.stringify({ role }), user, false);
-      return data;
-    } catch (e) {
-      catchError(e as Error);
-      return {
-        message: 'An unexpected error occurred',
-        success: false,
-        token: null,
-      };
     }
   },
 
