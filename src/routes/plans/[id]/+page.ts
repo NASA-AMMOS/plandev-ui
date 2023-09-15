@@ -1,6 +1,8 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
+import { SearchParameters } from '../../../enums/searchParameters';
 import effects from '../../../utilities/effects';
+import { getSearchParameterNumber } from '../../../utilities/generic';
 import { shouldRedirectToLogin } from '../../../utilities/login';
 import type { PageLoad } from './$types';
 
@@ -47,10 +49,12 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       const initialResourceTypes = await effects.getResourceTypes(initialPlan.model_id, user, 20);
       const initialPlanTags = await effects.getPlanTags(initialPlan.id, user);
       const initialView = await effects.getView(url.searchParams, user, initialActivityTypes, initialResourceTypes);
+      const initialPlanSnapshotId = getSearchParameterNumber(SearchParameters.SNAPSHOT_ID, url.searchParams);
 
       return {
         initialActivityTypes,
         initialPlan,
+        initialPlanSnapshotId,
         initialPlanTags,
         initialView,
         user,

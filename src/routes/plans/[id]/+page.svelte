@@ -22,6 +22,7 @@
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
+  import { SearchParameters } from '../../../enums/searchParameters';
   import {
     activityDirectives,
     activityDirectivesMap,
@@ -50,6 +51,7 @@
     resetPlanStores,
     viewTimeRange,
   } from '../../../stores/plan';
+  import { planSnapshot, planSnapshotId } from '../../../stores/planSnapshots';
   import {
     enableScheduling,
     latestAnalyses,
@@ -81,6 +83,7 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
+  import type { ActivityDirective } from '../../../types/activity';
   import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import effects from '../../../utilities/effects';
   import { removeQueryParam } from '../../../utilities/generic';
@@ -112,6 +115,7 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let planHasBeenLocked = false;
+  let planSnapshotActivityDirectives: ActivityDirective[] = [];
   let schedulingAnalysisStatus: Status | null;
   let simulationExtent: string | null;
   let selectedSimulationStatus: string | null;
@@ -131,18 +135,18 @@
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
 
-    const querySimulationDatasetId = $page.url.searchParams.get('simulationDatasetId');
+    const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
       $simulationDatasetId = parseInt(querySimulationDatasetId);
-      removeQueryParam('simulationDatasetId');
+      removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
     } else {
       $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     }
 
-    const queryActivityId = $page.url.searchParams.get('activityId');
+    const queryActivityId = $page.url.searchParams.get(SearchParameters.ACTIVITY_ID);
     if (queryActivityId) {
       $selectedSpanId = parseInt(queryActivityId);
-      removeQueryParam('activityId');
+      removeQueryParam(SearchParameters.ACTIVITY_ID);
     }
 
     $viewTimeRange = $maxTimeRange;
@@ -153,6 +157,16 @@
     effects
       .getResourceTypes($plan.model_id, data.user)
       .then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
+  }
+  $: if (data.initialPlanSnapshotId !== null) {
+    $planSnapshotId = data.initialPlanSnapshotId;
+  }
+  $: if ($planSnapshot !== null) {
+    effects.getPlanSnapshotActivityDirectives($planSnapshot, data.user).then(directives => {
+      if (directives !== null) {
+        planSnapshotActivityDirectives = directives;
+      }
+    });
   }
 
   $: if (data.initialView) {
@@ -182,7 +196,12 @@
     }
   }
 
-  $: $activityDirectivesMap = keyBy($activityDirectives, 'id');
+  $: {
+    $activityDirectivesMap =
+      $planSnapshotId !== null && planSnapshotActivityDirectives.length > 0
+        ? keyBy(planSnapshotActivityDirectives, 'id')
+        : keyBy($activityDirectives, 'id');
+  }
 
   $: if ($plan && $planLocked) {
     planHasBeenLocked = true;

@@ -20,6 +20,7 @@
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
+  import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
@@ -224,11 +225,11 @@
   $: simulationTemplates.setVariables({ modelId: $modelIdField.value });
 
   onMount(() => {
-    const queryModelId = $page.url.searchParams.get('modelId');
+    const queryModelId = $page.url.searchParams.get(SearchParameters.MODEL_ID);
     if (queryModelId) {
       $modelIdField.value = parseFloat(queryModelId);
       modelIdField.validateAndSet();
-      removeQueryParam('modelId');
+      removeQueryParam(SearchParameters.MODEL_ID);
       if (nameInputField) {
         nameInputField.focus();
       }

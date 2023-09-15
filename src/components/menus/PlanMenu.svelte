@@ -30,6 +30,14 @@
     effects.createPlanBranch(plan, user);
   }
 
+  function createPlanSnapshot() {
+    effects.createPlanSnapshot(plan, user);
+  }
+
+  function viewSnapshotHistory() {
+    // TODO: open snapshot panel
+  }
+
   function showPlanBranches() {
     showPlanBranchesModal(plan);
   }
@@ -54,7 +62,7 @@
         <div class="column-name">Create branch</div>
       </MenuItem>
       <MenuItem on:click={showPlanMergeRequests}>
-        <div class="column-name">See merge requests</div>
+        <div class="column-name">View merge requests</div>
       </MenuItem>
       {#if plan.parent_plan !== null}
         <hr class="menu-divider" />
@@ -76,6 +84,13 @@
           <div class="column-name">Open parent plan</div>
         </MenuItem>
       {/if}
+      <hr class="menu-divider" />
+      <MenuItem on:click={createPlanSnapshot}>
+        <div class="column-name">Take Snapshot</div>
+      </MenuItem>
+      <MenuItem on:click={viewSnapshotHistory}>
+        <div class="column-name">View Snapshot History</div>
+      </MenuItem>
     </Menu>
   </div>
   {#if plan.child_plans.length > 0}

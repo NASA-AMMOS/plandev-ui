@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { SearchParameters } from '../../enums/searchParameters';
   import { initializeView, view, views } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { View } from '../../types/view';
@@ -52,17 +53,17 @@
     const nextView = await effects.getView(null, user);
     if (nextView !== null) {
       initializeView({ ...nextView });
-      setQueryParam('viewId', `${nextView.id}`);
+      setQueryParam(SearchParameters.VIEW_ID, `${nextView.id}`);
     }
   }
 
   async function openView({ detail: viewId }: CustomEvent<number>) {
-    const query = new URLSearchParams(`?viewId=${viewId}`);
+    const query = new URLSearchParams(`?${SearchParameters.VIEW_ID}=${viewId}`);
     const newView = await effects.getView(query, user);
 
     if (view !== null && newView !== null) {
       initializeView({ ...newView });
-      setQueryParam('viewId', `${newView.id}`);
+      setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
       dispatch('close');
     } else {
       console.log(`No view found for ID: ${viewId}`);

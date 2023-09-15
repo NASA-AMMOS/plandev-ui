@@ -201,6 +201,14 @@ const gql = {
     }
   `,
 
+  CREATE_PLAN_SNAPSHOT: `#graphql
+    mutation CreatePlanSnapshot($plan_id: Int!, $snapshot_name: String!) {
+      createSnapshot: create_snapshot(args: { _plan_id: $plan_id, _snapshot_name: $snapshot_name } ) {
+        snapshot_id
+      }
+    }
+  `,
+
   CREATE_PLAN_TAGS: `#graphql
     mutation CreatePlanTags($tags: [plan_tags_insert_input!]!) {
       insert_plan_tags(objects: $tags, on_conflict: {
@@ -482,6 +490,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_PLAN_SNAPSHOT: `#graphql
+    mutation DeletePlanSnapshot($snapshot_id: Int!) {
+      deletePlanSnapshot: delete_plan_snapshot(snapshot_id: $snapshot_id) {
+        snapshot_id
       }
     }
   `,
@@ -922,6 +938,32 @@ const gql = {
     }
   `,
 
+  GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: `#graphql
+    query GetPlanSnapshotActivityDirectives($planSnapshotId: Int!) {
+      plan_snapshot_activity_directives: plan_snapshot_activities(where: { snapshot_id: { _eq: $planSnapshotId } }, order_by: { start_offset: asc }) {
+        anchor_id
+        anchored_to_start
+        arguments
+        created_at
+        id
+        last_modified_arguments_at
+        last_modified_at
+        metadata
+        name
+        source_scheduling_goal_id
+        start_offset
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
+        type
+      }
+    }
+  `,
+
   GET_PROFILES: `#graphql
     query GetProfiles($datasetId: Int!) {
       profile(where: { dataset_id: { _eq: $datasetId } }) {
@@ -1247,6 +1289,14 @@ const gql = {
         merge_base
         source
         target
+      }
+    }
+  `,
+
+  RESTORE_PLAN_SNAPSHOT: `#graphql
+    mutation RestorePlanSnapshot($plan_id: Int!, $snapshot_id: Int!) {
+      restore_from_snapshot(args: { _plan_id: $plan_id, _snapshot_id: $snapshot_id }) {
+        plan_id
       }
     }
   `,
@@ -1609,6 +1659,19 @@ const gql = {
     subscription SubPlanRevision($planId: Int!) {
       plan: plan_by_pk(id: $planId) {
         revision
+      }
+    }
+  `,
+
+  SUB_PLAN_SNAPSHOTS: `#graphql
+    subscription SubPlanSnapshot($planId: Int!) {
+      plan_snapshots: plan_snapshot(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: asc }) {
+        snapshot_id
+        plan_id
+        revision
+        snapshot_name
+        taken_by
+        taken_at
       }
     }
   `,

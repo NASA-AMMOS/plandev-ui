@@ -6,6 +6,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
+  import { SearchParameters } from '../../enums/searchParameters';
   import type { LoginResponseBody } from '../../types/auth';
   import { removeQueryParam } from '../../utilities/generic';
   import { EXPIRED_JWT, hasNoAuthorization } from '../../utilities/permissions';
@@ -17,7 +18,7 @@
   let fullError: string | null = null;
   let loginButtonText = 'Login';
   let password = '';
-  let reason = $page.url.searchParams.get('reason');
+  let reason = $page.url.searchParams.get(SearchParameters.REASON);
   let username = '';
   let usernameInput: HTMLInputElement | null = null;
 
@@ -36,7 +37,7 @@
       fullError = null;
     }
 
-    removeQueryParam('reason');
+    removeQueryParam(SearchParameters.REASON);
   }
 
   onMount(() => {

@@ -93,3 +93,7 @@ export type AnchorValidationStatus = {
   plan_id: number;
   reason_invalid: string;
 };
+
+export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
+  snapshot_id: number;
+};

@@ -2,7 +2,8 @@ import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
-import { activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
+import { SearchParameters } from '../enums/searchParameters';
+import { activityDirectives, activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
 import { checkConstraintsStatus, constraintResultsResponse } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
@@ -30,6 +31,7 @@ import type {
   ActivityPresetSetInput,
   ActivityType,
   ActivityTypeExpansionRules,
+  PlanSnapshotActivity,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User } from '../types/app';
@@ -66,6 +68,7 @@ import type {
   PlanSchema,
   PlanSlim,
 } from '../types/plan';
+import type { PlanSnapshot } from '../types/plan-snapshot';
 import type {
   SchedulingCondition,
   SchedulingConditionInsertInput,
@@ -112,15 +115,17 @@ import type {
 } from '../types/tags';
 import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
-import { convertToQuery, parseFloatOrNull, setQueryParam, sleep } from './generic';
+import { convertToQuery, getSearchParameterNumber, setQueryParam, sleep } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
   showCreatePlanBranchModal,
+  showCreatePlanSnapshotModal,
   showCreateViewModal,
   showDeleteActivitiesModal,
   showEditViewModal,
   showPlanBranchRequestModal,
+  showRestorePlanSnapshotModal,
   showUploadViewModal,
 } from './modal';
 import { queryPermissions } from './permissions';
@@ -839,6 +844,34 @@ const effects = {
     }
   },
 
+  async createPlanSnapshot(plan: Plan, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('create a snapshot');
+      }
+
+      const { confirm, value = null } = await showCreatePlanSnapshotModal(plan);
+
+      if (confirm && value) {
+        const { name, plan } = value;
+        const data = await reqHasura<{ snapshot_id: number }>(
+          gql.CREATE_PLAN_SNAPSHOT,
+          { plan_id: plan.id, snapshot_name: name },
+          user,
+        );
+        const { createSnapshot } = data;
+        if (createSnapshot != null) {
+          showSuccessToast('Snapshot Created Successfully');
+        } else {
+          throw Error('');
+        }
+      }
+    } catch (e) {
+      catchError('Snapshot Creation Failed', e as Error);
+      showFailureToast('Snapshot Creation Failed');
+    }
+  },
+
   async createPlanTags(tags: PlanTagsInsertInput[], user: User | null, notify: boolean = true): Promise<number | null> {
     try {
       if (!queryPermissions.CREATE_PLAN_TAGS(user)) {
@@ -1156,7 +1189,7 @@ const effects = {
 
         if (newView != null) {
           view.update(() => newView);
-          setQueryParam('viewId', `${newView.id}`);
+          setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           showSuccessToast('View Created Successfully');
           return true;
         } else {
@@ -1727,6 +1760,36 @@ const effects = {
     } catch (e) {
       catchError('Plan Delete Failed', e as Error);
       showFailureToast('Plan Delete Failed');
+      return false;
+    }
+  },
+
+  async deletePlanSnapshot(snapshot: PlanSnapshot, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('delete plan snapshot');
+      }
+
+      const { confirm } = await showConfirmModal(
+        'Delete',
+        `Are you sure you want to delete the plan snapshot "${snapshot.snapshot_name}"?`,
+        'Delete Plan Snapshot',
+      );
+
+      if (confirm) {
+        const data = await reqHasura(gql.DELETE_PLAN_SNAPSHOT, { snapshot_id: snapshot.snapshot_id }, user);
+        if (data.deletePlanSnapshot != null) {
+          showSuccessToast('Plan Snapshot Deleted Successfully');
+          return true;
+        } else {
+          throw Error('Unable to delete plan snapshot');
+        }
+      }
+
+      return false;
+    } catch (e) {
+      catchError('Delete Plan Snapshot Failed', e as Error);
+      showFailureToast('Delete Plan Snapshot Failed');
       return false;
     }
   },
@@ -2387,6 +2450,34 @@ const effects = {
     }
   },
 
+  async getPlanSnapshotActivityDirectives(
+    snapshot: PlanSnapshot,
+    user: User | null,
+  ): Promise<ActivityDirective[] | null> {
+    try {
+      const data = await reqHasura<PlanSnapshotActivity[]>(
+        gql.GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES,
+        { planSnapshotId: snapshot.snapshot_id },
+        user,
+      );
+      const { plan_snapshot_activity_directives: planSnapshotActivityDirectives } = data;
+
+      if (planSnapshotActivityDirectives) {
+        return planSnapshotActivityDirectives.map(({ snapshot_id: _snapshot_id, ...planSnapshotActivityDirective }) => {
+          return {
+            plan_id: snapshot.plan_id,
+            ...planSnapshotActivityDirective,
+          };
+        });
+      } else {
+        return null;
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
   async getPlanTags(planId: number, user: User | null): Promise<Tag[]> {
     try {
       const data = await reqHasura(convertToQuery(gql.SUB_PLAN_TAGS), { planId }, user);
@@ -2841,8 +2932,7 @@ const effects = {
   ): Promise<View | null> {
     try {
       if (query !== null) {
-        const viewId = query.has('viewId') ? query.get('viewId') : null;
-        const viewIdAsNumber = parseFloatOrNull(viewId);
+        const viewIdAsNumber = getSearchParameterNumber(SearchParameters.VIEW_ID, query);
 
         if (viewIdAsNumber !== null) {
           const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber }, user);
@@ -3157,6 +3247,30 @@ const effects = {
       catchError('Activity Preset Removal Failed', e as Error);
       showFailureToast('Activity Preset Removal Failed');
       return false;
+    }
+  },
+
+  async restorePlanSnapshot(snapshot: PlanSnapshot, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.RESTORE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('restore plan snapshot');
+      }
+
+      const { confirm } = await showRestorePlanSnapshotModal(snapshot, get(activityDirectives).length);
+
+      if (confirm) {
+        const data = await reqHasura(gql.DELETE_PLAN_SNAPSHOT, { snapshot_id: snapshot.snapshot_id }, user);
+        if (data.deletePlanSnapshot != null) {
+          showSuccessToast('Plan Snapshot Restored Successfully');
+
+          goto(`${base}/plans/${snapshot.plan_id}`);
+        } else {
+          throw Error('Unable to restore plan snapshot');
+        }
+      }
+    } catch (e) {
+      catchError('Restore Plan Snapshot Failed', e as Error);
+      showFailureToast('Restore Plan Snapshot Failed');
     }
   },
 
@@ -3748,7 +3862,7 @@ const effects = {
 
         if (newView != null) {
           view.update(() => newView);
-          setQueryParam('viewId', `${newView.id}`);
+          setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           return true;
         } else {
           throw Error('Unable to upload view');

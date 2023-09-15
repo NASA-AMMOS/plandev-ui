@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
+import CreatePlanSnapshotModal from '../components/modals/CreatePlanSnapshotModal.svelte';
 import CreateViewModal from '../components/modals/CreateViewModal.svelte';
 import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
@@ -11,6 +12,7 @@ import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
+import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
@@ -18,6 +20,7 @@ import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
+import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { ViewDefinition } from '../types/view';
 
 /**
@@ -217,6 +220,40 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           createPlanBranchModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a CreatePlanSnapshotModal with the supplied arguments.
+ */
+export async function showCreatePlanSnapshotModal(
+  plan: Plan,
+): Promise<ModalElementValue<{ name: string; plan: Plan }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const createPlanSnapshotModal = new CreatePlanSnapshotModal({ props: { plan }, target });
+        target.resolve = resolve;
+
+        createPlanSnapshotModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          createPlanSnapshotModal.$destroy();
+        });
+
+        createPlanSnapshotModal.$on('create', (e: CustomEvent<{ name: string; plan: Plan }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          createPlanSnapshotModal.$destroy();
         });
       }
     } else {
@@ -435,6 +472,47 @@ export async function showPlanMergeRequestsModal(
           resolve({ confirm: false });
           planMergeRequestsModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a RestorePlanSnapshotModal with the supplied arguments.
+ */
+export async function showRestorePlanSnapshotModal(
+  snapshot: PlanSnapshot,
+  numOfActivities: number,
+): Promise<ModalElementValue<{ name?: string; plan: Plan; snapshot: PlanSnapshot }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const restorePlanSnapshotModal = new RestorePlanSnapshotModal({
+          props: { numOfActivities, snapshot },
+          target,
+        });
+        target.resolve = resolve;
+
+        restorePlanSnapshotModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          restorePlanSnapshotModal.$destroy();
+        });
+
+        restorePlanSnapshotModal.$on(
+          'restore',
+          (e: CustomEvent<{ name?: string; plan: Plan; snapshot: PlanSnapshot }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            restorePlanSnapshotModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

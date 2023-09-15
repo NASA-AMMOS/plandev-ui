@@ -33,11 +33,6 @@ export type CreatePermissionCheck = (user: User | null) => boolean;
 
 export type UpdatePermissionCheck<T = AssetWithOwner> = (user: User | null, asset: T) => boolean;
 
-export type PlanAssetPermissionCheck<T = AssetWithOwner> =
-  | PlanAssetReadPermissionCheck
-  | PlanAssetCreatePermissionCheck
-  | PlanAssetUpdatePermissionCheck<T>;
-
 export type PlanAssetReadPermissionCheck = (user: User | null) => boolean;
 
 export type PlanAssetCreatePermissionCheck = (user: User | null, plan: PlanWithOwners) => boolean;

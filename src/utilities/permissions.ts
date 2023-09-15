@@ -1,4 +1,5 @@
 import { base } from '$app/paths';
+import type { Snapshot } from '../routes/$types';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserId, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
@@ -15,6 +16,7 @@ import type {
   ReadPermissionCheck,
   UpdatePermissionCheck,
 } from '../types/permissions';
+import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { SchedulingCondition, SchedulingGoal } from '../types/scheduling';
 import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
@@ -129,6 +131,9 @@ const queryPermissions = {
   CREATE_PLAN_MERGE_REQUEST: (user: User | null): boolean => {
     return getPermission(['create_merge_request'], user);
   },
+  CREATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
+    return getPermission(['create_snapshot'], user);
+  },
   CREATE_PLAN_TAGS: (user: User | null): boolean => {
     return getPermission(['insert_plan_tags'], user);
   },
@@ -210,6 +215,9 @@ const queryPermissions = {
   DELETE_PLAN: (user: User | null): boolean => {
     return getPermission(['delete_plan_by_pk', 'delete_scheduling_specification'], user);
   },
+  DELETE_PLAN_SNAPSHOT: (user: User | null): boolean => {
+    return getPermission(['delete_plan_snapshot'], user);
+  },
   DELETE_PLAN_TAGS: (user: User | null): boolean => {
     return getPermission(['delete_plan_tags'], user);
   },
@@ -258,6 +266,9 @@ const queryPermissions = {
   GET_PLANS_AND_MODELS: (user: User | null): boolean => {
     return getPermission(['mission_model'], user);
   },
+  GET_PLAN_SNAPSHOT: (user: User | null): boolean => {
+    return getPermission(['plan_snapshot_by_pk'], user);
+  },
   INITIAL_SIMULATION_UPDATE: (user: User | null): boolean => {
     return getPermission(['update_simulation'], user);
   },
@@ -285,6 +296,9 @@ const queryPermissions = {
   PLAN_MERGE_RESOLVE_CONFLICT: (user: User | null): boolean => {
     return getPermission(['set_resolution'], user);
   },
+  RESTORE_PLAN_SNAPSHOT: (user: User | null): boolean => {
+    return getPermission(['restore_from_snapshot'], user);
+  },
   SIMULATE: (user: User | null): boolean => {
     return getPermission(['simulate'], user);
   },
@@ -299,6 +313,12 @@ const queryPermissions = {
   },
   SUB_EXPANSION_SETS: (user: User | null): boolean => {
     return getPermission(['expansion_set'], user);
+  },
+  SUB_PLAN_SNAPSHOTS: (user: User | null): boolean => {
+    return getPermission(['plan_snapshot'], user);
+  },
+  SUB_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: (user: User | null): boolean => {
+    return getPermission(['plan_snapshot_activities'], user);
   },
   SUB_SIMULATION: (user: User | null): boolean => {
     return getPermission(['simulation'], user);
@@ -393,6 +413,10 @@ interface PlanAssetCRUDPermission<T = null> {
   canUpdate: PlanAssetUpdatePermissionCheck<T>;
 }
 
+interface PlanSnapshotCRUDPermission extends PlanAssetCRUDPermission<PlanSnapshot> {
+  canRestore: PlanAssetUpdatePermissionCheck<Snapshot>;
+}
+
 interface ConstraintCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
   canCheck: (user: User | null, plan: PlanWithOwners) => boolean;
 }
@@ -434,6 +458,7 @@ interface FeaturePermissions {
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
   planBranch: PlanBranchCRUDPermission<AssetWithOwner<PlanWithOwners>>;
+  planSnapshot: PlanSnapshotCRUDPermission;
   schedulingConditions: PlanAssetCRUDPermission<AssetWithOwner<SchedulingCondition>>;
   schedulingGoals: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoal>>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
@@ -540,6 +565,20 @@ const featurePermissions: FeaturePermissions = {
         queryPermissions.PLAN_MERGE_DENY(user) &&
         queryPermissions.PLAN_MERGE_RESOLVE_CONFLICT(user) &&
         queryPermissions.PLAN_MERGE_RESOLVE_ALL_CONFLICTS(user)),
+  },
+  planSnapshot: {
+    canCreate: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.CREATE_PLAN_SNAPSHOT(user)),
+    canDelete: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.DELETE_PLAN_SNAPSHOT(user)),
+    canRead: user =>
+      isUserAdmin(user) || (queryPermissions.GET_PLAN_SNAPSHOT(user) && queryPermissions.SUB_PLAN_SNAPSHOTS(user)),
+    canRestore: (user, plan) =>
+      isUserAdmin(user) ||
+      ((isPlanOwner(user, plan) || isPlanCollaborator(user, plan)) && queryPermissions.RESTORE_PLAN_SNAPSHOT(user)),
+    canUpdate: () => false, // no feature to update snapshots exists,
   },
   schedulingConditions: {
     canCreate: (user, plan) =>
