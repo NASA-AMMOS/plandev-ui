@@ -81,7 +81,7 @@
 
   .temporary-unlock,
   .temporary-unlock:hover {
-    background-color: #2f80ed;
+    background-color: var(--st-utility-blue);
     border-color: transparent;
     color: #ffffff;
   }

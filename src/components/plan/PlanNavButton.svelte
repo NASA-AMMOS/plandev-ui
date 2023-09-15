@@ -15,6 +15,8 @@
   export let permissionError: string | undefined = undefined;
   export let status: Status | null = null;
   export let statusText: string = '';
+  export let showStatusInMenu: boolean = true;
+  export let progress: number = 0;
   export let title: string;
 
   let menu: Menu;
@@ -30,7 +32,7 @@
     <slot />
     <span class="nav-button-status">
       {#if status}
-        <StatusBadge {status} showTooltip={false} />
+        <StatusBadge {progress} {status} showTooltip={false} />
       {/if}
     </span>
   </div>
@@ -44,9 +46,9 @@
       <MenuHeader title={menuTitle} showBorder={false} />
     {/if}
     <div class="menu-body">
-      {#if status}
+      {#if status && showStatusInMenu}
         <div class="status-row st-typography-body">
-          <StatusBadge {status} showTooltip={false} />
+          <StatusBadge {status} {progress} showTooltip={false} />
           {statusText || status}
         </div>
       {/if}
@@ -87,7 +89,6 @@
     line-height: 14px;
     padding: 16px;
     position: relative;
-    user-select: none;
     white-space: nowrap;
   }
 
@@ -151,6 +152,6 @@
     color: var(--st-gray-50);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
 </style>

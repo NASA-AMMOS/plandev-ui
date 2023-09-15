@@ -14,6 +14,16 @@ const gql = {
     }
   `,
 
+  CANCEL_PENDING_SIMULATION: `#graphql
+    mutation CancelPendingSim($id: Int!) {
+      update_simulation_dataset_by_pk(pk_columns: {id: $id}, _set: {
+        canceled: true
+      }) {
+        id
+      }
+    }
+  `,
+
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!) {
       constraintResults: constraintViolations(planId: $planId) {
@@ -1747,6 +1757,7 @@ const gql = {
     subscription SubSimulationDataset($simulationDatasetId: Int!) {
       simulation_dataset_by_pk(id: $simulationDatasetId) {
         dataset_id
+        canceled
         id
         plan_revision
         reason
@@ -1756,6 +1767,10 @@ const gql = {
         simulation_revision
         simulation_start_time
         status
+        extent {
+          extent
+        }
+        reason
       }
     }
   `,
@@ -1764,21 +1779,61 @@ const gql = {
     subscription SubSimulationDatasetIds($planId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
         simulation_datasets(order_by: { id: desc }) {
+          canceled
           id
           requested_at
           requested_by
           simulation_end_time
           simulation_start_time
+          status
+          extent {
+            extent
+          }
+          reason
         }
       }
     }
-`,
+  `,
+
+  SUB_SIMULATION_DATASETS_ALL: `#graphql
+    subscription SubSimulationDatasetsAll {
+      simulation_dataset(order_by: { id: desc }) {
+        canceled
+        id
+        status
+      }
+    }
+  `,
 
   SUB_SIMULATION_DATASET_IDS: `#graphql
     subscription SubSimulationDatasetIds($planId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         simulation_dataset_ids: simulation_datasets(order_by: { id: desc }) {
           id
+        }
+      }
+    }
+  `,
+
+  SUB_SIMULATION_DATASET_LATEST: `#graphql
+    subscription SubSimulationDatasetLatest($planId: Int!) {
+      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+        simulation_datasets(order_by: { id: desc }, limit: 1) {
+          dataset_id
+          canceled
+          id
+          plan_revision
+          reason
+          requested_at
+          requested_by
+          simulation_end_time
+          simulation_revision
+          simulation_start_time
+          status
+          extent {
+            extent
+          }
+          reason
         }
       }
     }

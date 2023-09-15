@@ -5,7 +5,13 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
-  import { enableSimulation, simulation, simulationDatasetId, simulationStatus } from '../../stores/simulation';
+  import {
+    enableSimulation,
+    simulation,
+    simulationDatasetId,
+    simulationDatasetsAll,
+    simulationStatus,
+  } from '../../stores/simulation';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
@@ -23,6 +29,7 @@
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { getSimulationQueuePosition } from '../../utilities/simulation';
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
   import { required, timestamp } from '../../utilities/validators';
@@ -242,12 +249,16 @@
       updateEndTime($endTimeDoyField.value);
     }
   }
+
+  function onCancelSimulation(event: CustomEvent) {
+    effects.cancelPendingSimulation(event.detail.id, user);
+  }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Simulation" />
-    <PanelHeaderActions status={$simulationStatus}>
+    <PanelHeaderActions>
       <PanelHeaderActionButton
         disabled={!$enableSimulation}
         tooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
@@ -359,8 +370,9 @@
           {#if !$simulationDatasets || !$simulationDatasets.length}
             <div>No Simulation Datasets</div>
           {:else}
-            {#each $simulationDatasets as simDataset}
+            {#each $simulationDatasets as simDataset (simDataset.id)}
               <SimulationHistoryDataset
+                queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll)}
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
@@ -368,6 +380,7 @@
                 on:click={() => {
                   simulationDatasetId.set(simDataset.id);
                 }}
+                on:cancel={onCancelSimulation}
               />
             {/each}
           {/if}

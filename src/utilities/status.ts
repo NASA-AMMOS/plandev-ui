@@ -1,4 +1,5 @@
 export enum Status {
+  Canceled = 'Canceled',
   Complete = 'Complete',
   Failed = 'Failed',
   Incomplete = 'Incomplete',
@@ -21,7 +22,7 @@ export const statusColors: Record<string, string> = {
 export function getColorForStatus(status: Status | null): string {
   if (status === Status.Complete) {
     return statusColors.green;
-  } else if (status === Status.Failed) {
+  } else if (status === Status.Failed || status === Status.Canceled) {
     return statusColors.red;
   } else if (status === Status.Incomplete) {
     return statusColors.gray;

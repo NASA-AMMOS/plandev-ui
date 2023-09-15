@@ -13,6 +13,7 @@ import type {
 } from '../types/simulation';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
+import { getSimulationProgress } from '../utilities/simulation';
 import { Status } from '../utilities/status';
 import { modelId, planId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
@@ -47,6 +48,19 @@ export const simulationDataset = gqlSubscribable<SimulationDataset | null>(
   null,
 );
 
+export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>(
+  gql.SUB_SIMULATION_DATASET_LATEST,
+  { planId },
+  null,
+  null,
+  (simulations: { simulation_datasets: SimulationDataset[] }[]): SimulationDataset | null => {
+    if (simulations.length && simulations[0].simulation_datasets.length) {
+      return simulations[0].simulation_datasets[0];
+    }
+    return null;
+  },
+);
+
 export const simulationDatasetIds = gqlSubscribable<number[]>(
   gql.SUB_SIMULATION_DATASET_IDS,
   { planId },
@@ -58,6 +72,13 @@ export const simulationDatasetIds = gqlSubscribable<number[]>(
     }
     return [];
   },
+);
+
+export const simulationDatasetsAll = gqlSubscribable<SimulationDataset[]>(
+  gql.SUB_SIMULATION_DATASETS_ALL,
+  null,
+  [],
+  null,
 );
 
 export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(
@@ -121,7 +142,7 @@ export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = deri
 );
 
 export const simulationStatus: Readable<Status | null> = derived(
-  [planRevision, simulationDataset, simulation],
+  [planRevision, simulationDatasetLatest, simulation],
   ([$planRevision, $simulationDataset, $simulation]) => {
     if ($simulationDataset && $simulation) {
       const { status } = $simulationDataset;
@@ -140,6 +161,9 @@ export const simulationStatus: Readable<Status | null> = derived(
       } else if (status === 'incomplete') {
         return Status.Incomplete;
       } else if (status === 'pending') {
+        if ($simulationDataset.canceled) {
+          return Status.Canceled;
+        }
         return Status.Pending;
       }
     }
@@ -147,6 +171,14 @@ export const simulationStatus: Readable<Status | null> = derived(
     return null;
   },
   null,
+);
+
+export const simulationProgress: Readable<number> = derived(
+  [simulationDatasetLatest, simulationStatus],
+  ([$simulationDataset]) => {
+    return getSimulationProgress($simulationDataset);
+  },
+  0,
 );
 
 export const enableSimulation: Readable<boolean> = derived(simulationStatus, $simulationStatus => {

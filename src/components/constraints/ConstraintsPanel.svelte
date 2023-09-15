@@ -298,7 +298,7 @@
   }
 
   .filter-button.active {
-    background: #2f80ed;
+    background: var(--st-utility-blue);
     border-color: transparent;
     color: white;
   }

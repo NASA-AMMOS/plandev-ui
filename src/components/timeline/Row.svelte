@@ -442,7 +442,7 @@
   }
 
   .active-row:after {
-    border: 1px solid #2f80ed;
+    border: 1px solid var(--st-utility-blue);
     content: ' ';
     height: 100%;
     left: 0;

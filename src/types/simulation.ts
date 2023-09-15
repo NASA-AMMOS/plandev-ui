@@ -65,7 +65,9 @@ export type Simulation = {
 };
 
 export type SimulationDataset = {
+  canceled: boolean;
   dataset_id: number;
+  extent: { extent: string | null } | null;
   id: number;
   plan_revision: number;
   reason: SimulationDatasetError | null;

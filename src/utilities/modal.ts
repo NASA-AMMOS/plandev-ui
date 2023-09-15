@@ -95,6 +95,7 @@ export async function showConfirmModal(
   message: string,
   title: string,
   actionCanBeUndone?: boolean,
+  cancelText?: string,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -102,7 +103,7 @@ export async function showConfirmModal(
 
       if (target) {
         const confirmModal = new ConfirmModal({
-          props: { actionCanBeUndone, confirmText, message, title },
+          props: { actionCanBeUndone, cancelText, confirmText, message, title },
           target,
         });
         target.resolve = resolve;

@@ -273,7 +273,7 @@
   }
 
   .anchor-help-toggle {
-    color: #2f80ed;
+    color: var(--st-utility-blue);
     cursor: pointer;
     margin-bottom: 1rem;
   }

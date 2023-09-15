@@ -82,7 +82,7 @@
     border: 1px solid rgb(0 0 0 / 80%);
   }
   .color.active:before {
-    border: 2px solid #2f80ed;
+    border: 2px solid var(--st-utility-blue);
     border-radius: 6px;
     content: ' ';
     height: 30px;

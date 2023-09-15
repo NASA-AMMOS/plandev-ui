@@ -33,7 +33,7 @@
 
   .user-badge-avatar {
     align-items: center;
-    background: #2f80ed;
+    background: var(--st-utility-blue);
     border-radius: 24px;
     color: var(--st-white);
     display: flex;

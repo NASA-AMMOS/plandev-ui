@@ -348,6 +348,9 @@ const queryPermissions = {
   UPDATE_SIMULATION: (user: User | null): boolean => {
     return getPermission(['update_simulation_by_pk'], user);
   },
+  UPDATE_SIMULATION_DATASET: (user: User | null): boolean => {
+    return getPermission(['update_simulation_dataset_by_pk'], user);
+  },
   UPDATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
     return getPermission(['update_simulation_template_by_pk'], user);
   },
