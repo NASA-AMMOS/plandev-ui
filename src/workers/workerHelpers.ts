@@ -188,6 +188,29 @@ export function findNextChildOfKind(
 }
 
 /**
+ * Checks if a TypeScript AST node is a literal (string, number, boolean).
+ *
+ * @param {ts.Node} node - The TypeScript AST node to check.
+ * @returns {boolean} `true` if the node is a literal (string, number, boolean), `false` otherwise.
+ *
+ * @example
+ * const node = ... // some TypeScript AST node
+ * const result = isLiteral(node);
+ * console.log(result);  // Outputs: true or false
+ */
+function isLiteral(node: tsc.Node): boolean {
+  switch (node.kind) {
+    case tsc.SyntaxKind.StringLiteral:
+    case tsc.SyntaxKind.NumericLiteral:
+    case tsc.SyntaxKind.TrueKeyword:
+    case tsc.SyntaxKind.FalseKeyword:
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
  * Removes quotation marks from the input string.
  *
  * @param {string} input - The string from which to remove quotation marks.
@@ -399,6 +422,16 @@ export function validateArguments(
   // ignore specific eDSL local and parameter values
   if (arg_val.startsWith('locals.') || arg_val.startsWith('parameters.')) {
     return false;
+  }
+
+  // ignore identifier as we need literals to do the checks
+  if (!isLiteral(argumentNode)) {
+    return makeDiagnostic(
+      CustomErrorCodes.UncheckableArgumentType(),
+      sourceFile,
+      argumentNode,
+      tsc.DiagnosticCategory.Warning,
+    );
   }
 
   let validation_resp: ValidationReturn;

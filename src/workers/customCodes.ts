@@ -26,6 +26,7 @@ export const CustomErrorCodes = {
     MAX_RELATIVE: -14,
     UNBALANCED: -9,
     UNCAUGHT_ARG: -3,
+    UNCHECK_ARG: -15,
   },
   /**
    * InvalidAbsoluteTime error code and message.
@@ -185,5 +186,15 @@ Suggestion: ${balancedTime}`,
    */
   UncaughtArgumentType: (): ErrorCode => {
     return { id: CustomErrorCodes.Type.UNCAUGHT_ARG, message: `Error: Command Argument Type Mismatch` };
+  },
+  /**
+   * uncheckable warning code and message.
+   */
+  UncheckableArgumentType: (): ErrorCode => {
+    return {
+      id: CustomErrorCodes.Type.UNCHECK_ARG,
+      message: `Warning: Not able to evaluate and validate identifier.
+Suggestion: Use literals when you can`,
+    };
   },
 };
