@@ -590,10 +590,6 @@
     font-style: normal;
   }
 
-  .activity-preset {
-    margin-left: -7px;
-  }
-
   .annotations {
     display: flex;
     flex-direction: column;
