@@ -57,6 +57,17 @@
       resizable: false,
       sortable: true,
     },
+    applied_preset: {
+      field: 'applied_preset',
+      filter: 'text',
+      headerName: 'Applied Preset',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        return params?.data?.applied_preset?.preset_applied.name;
+      },
+    },
     arguments: {
       field: 'arguments',
       filter: 'text',
