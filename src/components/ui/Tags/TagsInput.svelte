@@ -197,7 +197,7 @@
   }
 </script>
 
-<svelte:window on:click={onClickOutside} on:touchstart={onClickOutside} />
+<svelte:window on:click|capture={onClickOutside} on:touchstart|capture={onClickOutside} />
 
 <div
   class="tags-input"
@@ -313,7 +313,7 @@
     background: #ffffff;
     border: 1px solid var(--st-gray-20);
     border-radius: 10px;
-    box-shadow: 0px 8px 16px 0px var(--st-gray-20);
+    box-shadow: var(--st-shadow-popover);
     min-width: 150px;
     overflow: hidden;
     user-select: none;

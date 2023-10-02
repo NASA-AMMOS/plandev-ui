@@ -5,6 +5,7 @@
   import { base } from '$app/paths';
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
@@ -13,6 +14,7 @@
   import { featurePermissions } from '../../utilities/permissions';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import MenuDivider from './MenuDivider.svelte';
 
   export let plan: Plan;
   export let user: User | null;
@@ -35,7 +37,7 @@
   }
 
   function viewSnapshotHistory() {
-    // TODO: open snapshot panel
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
   }
 
   function showPlanBranches() {
@@ -65,7 +67,7 @@
         <div class="column-name">View merge requests</div>
       </MenuItem>
       {#if plan.parent_plan !== null}
-        <hr class="menu-divider" />
+        <MenuDivider />
         <MenuItem
           on:click={createMergePlanBranchRequest}
           use={[
@@ -84,7 +86,7 @@
           <div class="column-name">Open parent plan</div>
         </MenuItem>
       {/if}
-      <hr class="menu-divider" />
+      <MenuDivider />
       <MenuItem on:click={createPlanSnapshot}>
         <div class="column-name">Take Snapshot</div>
       </MenuItem>
@@ -101,11 +103,6 @@
 </div>
 
 <style>
-  hr.menu-divider {
-    opacity: 0.3;
-    width: 90%;
-  }
-
   .plan-menu-container {
     align-items: center;
     display: flex;

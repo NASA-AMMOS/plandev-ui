@@ -11,6 +11,7 @@
   export let collapsible: boolean = true;
   export let defaultExpanded: boolean = true;
   export let error: boolean = false;
+  export let padContent: boolean = true;
   export let title: string = '';
   export let titleClassName: string = '';
   export let tooltipContent: string = '';
@@ -57,7 +58,7 @@
       <slot name="right" />
     </div>
   </button>
-  <div class="content" class:expanded aria-hidden={collapsible ? !expanded : false}>
+  <div class="content" class:pad-content={padContent} class:expanded aria-hidden={collapsible ? !expanded : false}>
     <slot />
   </div>
 </div>
@@ -127,10 +128,13 @@
     flex-direction: column;
     gap: 4px;
     height: 0;
-    margin-left: 32px;
     overflow: hidden;
     visibility: hidden;
     width: 0;
+  }
+
+  .content.pad-content {
+    margin-left: 32px;
   }
 
   .expanded {

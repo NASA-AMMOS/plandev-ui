@@ -134,6 +134,9 @@ const queryPermissions = {
   CREATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission(['create_snapshot'], user);
   },
+  CREATE_PLAN_SNAPSHOT_TAGS: (user: User | null): boolean => {
+    return getPermission(['insert_plan_snapshot_tags'], user);
+  },
   CREATE_PLAN_TAGS: (user: User | null): boolean => {
     return getPermission(['insert_plan_tags'], user);
   },
@@ -216,7 +219,7 @@ const queryPermissions = {
     return getPermission(['delete_plan_by_pk', 'delete_scheduling_specification'], user);
   },
   DELETE_PLAN_SNAPSHOT: (user: User | null): boolean => {
-    return getPermission(['delete_plan_snapshot'], user);
+    return getPermission(['delete_plan_snapshot_by_pk'], user);
   },
   DELETE_PLAN_TAGS: (user: User | null): boolean => {
     return getPermission(['delete_plan_tags'], user);
@@ -349,6 +352,9 @@ const queryPermissions = {
   },
   UPDATE_PLAN: (user: User | null): boolean => {
     return getPermission(['update_plan_by_pk'], user);
+  },
+  UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
+    return getPermission(['update_plan_snapshot_by_pk'], user);
   },
   UPDATE_SCHEDULING_CONDITION: (user: User | null): boolean => {
     return getPermission(['update_scheduling_condition_by_pk'], user);

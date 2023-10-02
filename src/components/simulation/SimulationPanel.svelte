@@ -10,22 +10,15 @@
     simulation,
     simulationDatasetId,
     simulationDatasetsAll,
+    simulationDatasetsPlan,
     simulationStatus,
   } from '../../stores/simulation';
-  import { gqlSubscribable } from '../../stores/subscribable';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
-  import type {
-    Simulation,
-    SimulationDataset,
-    SimulationTemplate,
-    SimulationTemplateInsertInput,
-  } from '../../types/simulation';
-  import type { GqlSubscribable } from '../../types/subscribable';
+  import type { Simulation, SimulationTemplate, SimulationTemplateInsertInput } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import gql from '../../utilities/gql';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -58,7 +51,6 @@
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
-  let simulationDatasets: GqlSubscribable<SimulationDataset[]>;
 
   $: if (user !== null && $plan !== null) {
     hasRunPermission = featurePermissions.simulation.canRun(user, $plan);
@@ -104,16 +96,6 @@
         );
       }
     });
-  }
-
-  $: if ($plan) {
-    simulationDatasets = gqlSubscribable<SimulationDataset[]>(
-      gql.SUB_SIMULATION_DATASETS,
-      { planId: $plan.id },
-      null,
-      user,
-      v => v[0]?.simulation_datasets,
-    );
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
@@ -365,18 +347,18 @@
     </fieldset>
 
     <fieldset>
-      <Collapse title="Simulation History">
+      <Collapse title="Simulation History" padContent={false}>
         <div class="simulation-history">
-          {#if !$simulationDatasets || !$simulationDatasets.length}
+          {#if !$simulationDatasetsPlan || !$simulationDatasetsPlan.length}
             <div>No Simulation Datasets</div>
           {:else}
-            {#each $simulationDatasets as simDataset (simDataset.id)}
+            {#each $simulationDatasetsPlan as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll)}
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
-                checked={simDataset.id === $simulationDatasetId}
+                selected={simDataset.id === $simulationDatasetId}
                 on:click={() => {
                   simulationDatasetId.set(simDataset.id);
                 }}
@@ -395,6 +377,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 8px;
   }
 
   .simulation-template {

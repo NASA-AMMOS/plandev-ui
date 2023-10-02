@@ -21,6 +21,7 @@ import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
 import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
+import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
 
 /**
@@ -233,13 +234,14 @@ export async function showCreatePlanBranchModal(plan: Plan): Promise<ModalElemen
  */
 export async function showCreatePlanSnapshotModal(
   plan: Plan,
-): Promise<ModalElementValue<{ name: string; plan: Plan }>> {
+  user: User | null,
+): Promise<ModalElementValue<{ description: string; name: string; plan: Plan; tags: Tag[] }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const createPlanSnapshotModal = new CreatePlanSnapshotModal({ props: { plan }, target });
+        const createPlanSnapshotModal = new CreatePlanSnapshotModal({ props: { plan, user }, target });
         target.resolve = resolve;
 
         createPlanSnapshotModal.$on('close', () => {
@@ -249,12 +251,15 @@ export async function showCreatePlanSnapshotModal(
           createPlanSnapshotModal.$destroy();
         });
 
-        createPlanSnapshotModal.$on('create', (e: CustomEvent<{ name: string; plan: Plan }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          createPlanSnapshotModal.$destroy();
-        });
+        createPlanSnapshotModal.$on(
+          'create',
+          (e: CustomEvent<{ description: string; name: string; plan: Plan; tags: Tag[] }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            createPlanSnapshotModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

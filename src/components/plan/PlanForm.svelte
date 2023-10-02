@@ -1,17 +1,22 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { SearchParameters } from '../../enums/searchParameters';
+  import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
+  import { setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
+  import CardList from '../ui/CardList.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
+  import PlanSnapshot from './PlanSnapshot.svelte';
 
   export let plan: Plan | null;
   export let planTags: Tag[];
@@ -45,6 +50,13 @@
         tag_id,
       }));
       await effects.createPlanTags(newPlanTags, user, false);
+    }
+  }
+
+  function onCreatePlanSnapshot(event: MouseEvent) {
+    event.stopPropagation();
+    if (plan) {
+      effects.createPlanSnapshot(plan, user);
     }
   }
 </script>
@@ -137,6 +149,27 @@
             on:change={onTagsInputChange}
           />
         </Input>
+      </Collapse>
+    </fieldset>
+    <fieldset>
+      <Collapse title="Snapshots" padContent={false}>
+        <button class="st-button secondary" slot="right" on:click={onCreatePlanSnapshot}>Take Snapshot</button>
+        <div style="margin-top: 8px">
+          <CardList>
+            {#each $planSnapshotsWithSimulations as planSnapshot (planSnapshot.snapshot_id)}
+              <PlanSnapshot
+                activePlanSnapshotId={$planSnapshotId}
+                {planSnapshot}
+                on:click={() => setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH')}
+                on:restore={() => effects.restorePlanSnapshot(planSnapshot, user)}
+                on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
+              />
+            {/each}
+            {#if $planSnapshotsWithSimulations.length < 1}
+              <div class="st-typography-label">No Plan Snapshots Found</div>
+            {/if}
+          </CardList>
+        </div>
       </Collapse>
     </fieldset>
   {/if}

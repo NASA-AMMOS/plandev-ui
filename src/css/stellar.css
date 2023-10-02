@@ -17,6 +17,7 @@
   /* TODO add to stellar */
   --st-utility-blue: #2f80ed;
   --st-utility-red: #db5139;
+  --st-shadow-popover: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
 }
 
 .st-button.ellipsis {

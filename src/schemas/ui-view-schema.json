@@ -76,15 +76,16 @@
       "enum": [
         "ActivityDirectivesTablePanel",
         "ActivityFormPanel",
+        "ActivitySpansTablePanel",
         "ActivityTypesPanel",
         "ConstraintsPanel",
         "ExpansionPanel",
         "IFramePanel",
+        "PlanMetadataPanel",
         "SchedulingConditionsPanel",
         "SchedulingGoalsPanel",
         "SimulationPanel",
-        "TimelineEditorPanel",
-        "ViewEditorPanel"
+        "TimelineEditorPanel"
       ]
     },
     "yAxisId": {

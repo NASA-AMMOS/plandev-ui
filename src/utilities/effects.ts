@@ -16,7 +16,7 @@ import {
 import { createModelError, createPlanError, creatingModel, creatingPlan, models, plan } from '../stores/plan';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { selectedSpanId, simulationDatasetId, simulationDatasetIds } from '../stores/simulation';
+import { selectedSpanId, simulationDatasetId } from '../stores/simulation';
 import { createTagError } from '../stores/tags';
 import { applyViewUpdate, view } from '../stores/views';
 import type {
@@ -107,6 +107,7 @@ import type {
   ActivityDirectiveTagsInsertInput,
   ConstraintTagsInsertInput,
   ExpansionRuleTagsInsertInput,
+  PlanSnapshotTagsInsertInput,
   PlanTagsInsertInput,
   SchedulingGoalTagsInsertInput,
   Tag,
@@ -850,17 +851,29 @@ const effects = {
         throwPermissionError('create a snapshot');
       }
 
-      const { confirm, value = null } = await showCreatePlanSnapshotModal(plan);
+      const { confirm, value = null } = await showCreatePlanSnapshotModal(plan, user);
 
       if (confirm && value) {
-        const { name, plan } = value;
+        const { description, name, plan, tags } = value;
         const data = await reqHasura<{ snapshot_id: number }>(
           gql.CREATE_PLAN_SNAPSHOT,
-          { plan_id: plan.id, snapshot_name: name },
+          { plan_id: plan.id, /* snapshot_description: description, */ snapshot_name: name },
           user,
         );
         const { createSnapshot } = data;
         if (createSnapshot != null) {
+          const { snapshot_id } = createSnapshot;
+          // TODO this will soon be part of create plan snapshot
+          const updates = { description };
+          await reqHasura(gql.UPDATE_PLAN_SNAPSHOT, { planSnapshot: updates, snapshot_id }, user);
+
+          // Associate tags with the snapshot
+          const newPlanSnapshotTags: PlanSnapshotTagsInsertInput[] = tags.map(({ id: tag_id }) => ({
+            snapshot_id,
+            tag_id,
+          }));
+          await effects.createPlanSnapshotTags(newPlanSnapshotTags, user, false);
+
           showSuccessToast('Snapshot Created Successfully');
         } else {
           throw Error('');
@@ -869,6 +882,38 @@ const effects = {
     } catch (e) {
       catchError('Snapshot Creation Failed', e as Error);
       showFailureToast('Snapshot Creation Failed');
+    }
+  },
+
+  async createPlanSnapshotTags(
+    tags: PlanSnapshotTagsInsertInput[],
+    user: User | null,
+    notify: boolean = true,
+  ): Promise<number | null> {
+    try {
+      if (!queryPermissions.CREATE_PLAN_SNAPSHOT_TAGS(user)) {
+        throwPermissionError('create plan tags');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_PLAN_SNAPSHOT_TAGS, { tags }, user);
+      const { insert_plan_snapshot_tags } = data;
+      if (insert_plan_snapshot_tags != null) {
+        const { affected_rows } = insert_plan_snapshot_tags;
+
+        if (affected_rows !== tags.length) {
+          throw Error('Some plan snapshot tags were not successfully created');
+        }
+        if (notify) {
+          showSuccessToast('Plan Snapshot Updated Successfully');
+        }
+        return affected_rows;
+      } else {
+        throw Error('Unable to create plan snapshot tags');
+      }
+    } catch (e) {
+      catchError('Create Plan Snapshot Tags Failed', e as Error);
+      showFailureToast('Create Plan Snapshot Tags Failed');
+      return null;
     }
   },
 
@@ -3259,8 +3304,12 @@ const effects = {
       const { confirm } = await showRestorePlanSnapshotModal(snapshot, get(activityDirectives).length);
 
       if (confirm) {
-        const data = await reqHasura(gql.DELETE_PLAN_SNAPSHOT, { snapshot_id: snapshot.snapshot_id }, user);
-        if (data.deletePlanSnapshot != null) {
+        const data = await reqHasura(
+          gql.RESTORE_PLAN_SNAPSHOT,
+          { plan_id: snapshot.plan_id, snapshot_id: snapshot.snapshot_id },
+          user,
+        );
+        if (data.restore_from_snapshot != null) {
           showSuccessToast('Plan Snapshot Restored Successfully');
 
           goto(`${base}/plans/${snapshot.plan_id}`);
@@ -3350,12 +3399,6 @@ const effects = {
         if (simulate != null) {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetId.set(newSimulationDatasetId);
-          simulationDatasetIds.updateValue((ids: number[]) => {
-            if (!ids.includes(newSimulationDatasetId)) {
-              return [newSimulationDatasetId, ...ids];
-            }
-            return ids;
-          });
         } else {
           throw Error('Unable to simulate this plan');
         }
@@ -3530,6 +3573,28 @@ const effects = {
       savingExpansionRule.set(false);
       createExpansionRuleError.set((e as Error).message);
       return null;
+    }
+  },
+
+  async updatePlanSnapshot(id: number, snapshot: Partial<PlanSnapshot>, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_PLAN_SNAPSHOT(user)) {
+        throwPermissionError('update this plan snapshot');
+      }
+
+      const data = await reqHasura(gql.UPDATE_PLAN_SNAPSHOT, { id, snapshot }, user);
+      const { updatePlanSnapshot: updatedPlanSnapshotId } = data;
+
+      if (updatedPlanSnapshotId != null) {
+        showSuccessToast('Plan Snapshot Updated Successfully');
+        return;
+      } else {
+        throw Error(`Unable to update plan snapshot with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Plan Snapshot Update Failed', e as Error);
+      showFailureToast('Plan Snapshot Update Failed');
+      return;
     }
   },
 

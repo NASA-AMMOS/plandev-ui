@@ -79,6 +79,8 @@ export type SimulationDataset = {
   status: 'failed' | 'incomplete' | 'pending' | 'success';
 };
 
+export type SimulationDatasetSlim = Pick<SimulationDataset, 'canceled' | 'id' | 'status'>;
+
 export type SimulationInitialUpdateInput = {
   arguments: ArgumentsMap;
   simulation_end_time: string | null;

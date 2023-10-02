@@ -26,6 +26,11 @@ export type PlanTagsInsertInput = {
   tag_id: number;
 };
 
+export type PlanSnapshotTagsInsertInput = {
+  snapshot_id: number;
+  tag_id: number;
+};
+
 export type Tag = {
   color: string | null;
   created_at: string;

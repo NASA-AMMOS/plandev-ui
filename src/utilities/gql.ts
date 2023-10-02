@@ -209,6 +209,17 @@ const gql = {
     }
   `,
 
+  CREATE_PLAN_SNAPSHOT_TAGS: `#graphql
+    mutation CreatePlanSnapshotTags($tags: [plan_snapshot_tags_insert_input!]!) {
+      insert_plan_snapshot_tags(objects: $tags, on_conflict: {
+        constraint: plan_snapshot_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+    }
+  `,
+
   CREATE_PLAN_TAGS: `#graphql
     mutation CreatePlanTags($tags: [plan_tags_insert_input!]!) {
       insert_plan_tags(objects: $tags, on_conflict: {
@@ -496,7 +507,7 @@ const gql = {
 
   DELETE_PLAN_SNAPSHOT: `#graphql
     mutation DeletePlanSnapshot($snapshot_id: Int!) {
-      deletePlanSnapshot: delete_plan_snapshot(snapshot_id: $snapshot_id) {
+      deletePlanSnapshot: delete_plan_snapshot_by_pk(snapshot_id: $snapshot_id) {
         snapshot_id
       }
     }
@@ -845,8 +856,9 @@ const gql = {
           id
         }
         simulations(order_by: { id: desc }, limit: 1) {
-          simulation_datasets(order_by: { id: desc }, limit: 1) {
+          simulation_datasets(order_by: { id: desc }) {
             id
+            plan_revision
           }
         }
         start_time
@@ -1296,7 +1308,7 @@ const gql = {
   RESTORE_PLAN_SNAPSHOT: `#graphql
     mutation RestorePlanSnapshot($plan_id: Int!, $snapshot_id: Int!) {
       restore_from_snapshot(args: { _plan_id: $plan_id, _snapshot_id: $snapshot_id }) {
-        plan_id
+        snapshot_id
       }
     }
   `,
@@ -1665,13 +1677,21 @@ const gql = {
 
   SUB_PLAN_SNAPSHOTS: `#graphql
     subscription SubPlanSnapshot($planId: Int!) {
-      plan_snapshots: plan_snapshot(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: asc }) {
+      plan_snapshots: plan_snapshot(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: desc }) {
         snapshot_id
         plan_id
         revision
         snapshot_name
+        description
         taken_by
         taken_at
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
       }
     }
   `,
@@ -1839,11 +1859,12 @@ const gql = {
   `,
 
   SUB_SIMULATION_DATASETS: `#graphql
-    subscription SubSimulationDatasetIds($planId: Int!) {
+    subscription SubSimulationDatasets($planId: Int!) {
       simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
         simulation_datasets(order_by: { id: desc }) {
           canceled
           id
+          plan_revision
           requested_at
           requested_by
           simulation_end_time
@@ -1864,16 +1885,6 @@ const gql = {
         canceled
         id
         status
-      }
-    }
-  `,
-
-  SUB_SIMULATION_DATASET_IDS: `#graphql
-    subscription SubSimulationDatasetIds($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
-        simulation_dataset_ids: simulation_datasets(order_by: { id: desc }) {
-          id
-        }
       }
     }
   `,
@@ -2018,6 +2029,16 @@ const gql = {
         pk_columns: { id: $id }, _set: $rule
       ) {
         updated_at
+      }
+    }
+  `,
+
+  UPDATE_PLAN_SNAPSHOT: `#graphql
+    mutation UpdatePlanSnapshot($snapshot_id: Int!, $planSnapshot: plan_snapshot_set_input!) {
+      updatePlanSnapshot: update_plan_snapshot_by_pk(
+        pk_columns: { snapshot_id: $snapshot_id }, _set: $planSnapshot
+      ) {
+        snapshot_id
       }
     }
   `,

@@ -11,6 +11,7 @@
 
   export let status: Status | null = null;
   export let showTooltip: boolean = true;
+  export let prefix: string = '';
   export let progress: number = 0;
 
   let color: string = statusColors.gray;
@@ -23,7 +24,7 @@
     aria-label={status}
     class="status-badge {status.toLowerCase()}"
     style="background: {status === Status.Failed ? 'transparent' : color}"
-    use:tooltip={{ content: showTooltip ? status : '', placement: 'bottom' }}
+    use:tooltip={{ content: showTooltip ? `${prefix}${status}` : '', placement: 'top' }}
   >
     {#if status === Status.Complete}
       <CheckIcon />

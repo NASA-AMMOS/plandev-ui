@@ -15,12 +15,12 @@
     getSimulationTimestamp,
   } from '../../utilities/simulation';
   import { Status } from '../../utilities/status';
-  import { getDoyTime, getTimeAgo, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  import Input from '../form/Input.svelte';
+  import Card from '../ui/Card.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
 
-  export let checked: boolean = false;
+  export let selected: boolean = false;
   export let simulationDataset: SimulationDataset;
   export let planStartTimeMs: number;
   export let planEndTimeMs: number;
@@ -82,20 +82,6 @@
     }
   }
 
-  function onCheckboxClick(e: Event) {
-    (e.target as HTMLInputElement).checked = checked;
-  }
-
-  function formatRequestedAtTime(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      month: 'numeric',
-      year: 'numeric',
-    });
-  }
-
   function onCancelSimulation(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -103,15 +89,15 @@
   }
 </script>
 
-<button class="simulation-dataset st-typography-label" class:active={checked} on:click={() => dispatch('click')}>
-  <div class="simulation-dataset-top-row">
-    <div class="simulation-dataset-input-container">
-      <Input class="simulation-dataset-input">
-        <input {checked} type="checkbox" tabIndex={-1} on:click={onCheckboxClick} />
-      </Input>
-      Simulation ID: {simulationDataset.id}
-    </div>
-    <div class="simulation-dataset-status-container">
+<Card
+  title={`Simulation ID: ${simulationDataset.id}`}
+  date={simulationDataset.requested_at}
+  user={simulationDataset.requested_by}
+  {selected}
+  on:click={() => dispatch('click')}
+>
+  <div slot="right">
+    <div class="simulation-dataset-status-chip-container">
       {#if status === Status.Complete || status === Status.Failed}
         <StatusBadge status={getSimulationStatus(simulationDataset)} {progress} />
       {:else}
@@ -137,51 +123,40 @@
       {/if}
     </div>
   </div>
-
-  <div class="simulation-dataset-metadata">
-    <div class="st-typography-body">
-      {formatRequestedAtTime(simulationDataset.requested_at)}
+  <div class="simulation-range-container">
+    <div class="simulation-range-indicator st-typography-label">
+      <div class="simulation-range-label">{startTimeText}</div>
+      <div class="simulation-range-label">{endTimeText}</div>
     </div>
-    <div class="simulation-dataset-metadata-time-ago">
-      {getTimeAgo(new Date(simulationDataset.requested_at), new Date(), Number.MAX_SAFE_INTEGER)}
-    </div>
-    <div class="simulation-dataset-metadata-user">
-      @{simulationDataset.requested_by || 'Unknown User'}
-    </div>
-  </div>
 
-  <div class="simulation-range-indicator st-typography-">
-    <div class="simulation-range-label">{startTimeText}</div>
-    <div class="simulation-range-label">{endTimeText}</div>
-  </div>
-
-  <div class="simulation-range-visualization">
-    <div class="simulation-range-background">
-      <div
-        class="simulation-range-bounds"
-        style={`margin-left: ${simulationBoundsVizRangeLeft}%; width: ${simulationBoundsVizRangeWidthStyle}; background: ${hexToRgba(
-          getSimulationProgressColor(simulationDataset.status),
-          0.2,
-        )}`}
-      >
+    <div class="simulation-range-visualization">
+      <div class="simulation-range-background">
         <div
-          class="simulation-extent-fill"
-          style={`margin-left: 0%; width: ${simulationExtentVizRangeWidthStyle}; background: ${getSimulationProgressColor(
-            simulationDataset.status,
+          class="simulation-range-bounds"
+          style={`margin-left: ${simulationBoundsVizRangeLeft}%; width: ${simulationBoundsVizRangeWidthStyle}; background: ${hexToRgba(
+            getSimulationProgressColor(simulationDataset.status),
+            0.2,
           )}`}
-        />
+        >
+          <div
+            class="simulation-extent-fill"
+            style={`margin-left: 0%; width: ${simulationExtentVizRangeWidthStyle}; background: ${getSimulationProgressColor(
+              simulationDataset.status,
+            )}`}
+          />
+        </div>
+      </div>
+      <div>
+        {#if extent}
+          <span use:tooltip={{ content: 'Simulation Time', placement: 'top' }} class="simulation-dataset-extent"
+            >{getSimulationTimestamp(simulationDataset)}</span
+          >,
+        {/if}
+        {progress.toFixed()}%
       </div>
     </div>
-    <div>
-      {#if extent}
-        <span use:tooltip={{ content: 'Simulation Time', placement: 'top' }} class="simulation-dataset-extent"
-          >{getSimulationTimestamp(simulationDataset)}</span
-        >,
-      {/if}
-      {progress.toFixed()}%
-    </div>
   </div>
-</button>
+</Card>
 
 <style>
   .simulation-dataset {
@@ -193,14 +168,12 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    opacity: 0.8;
     padding: 8px;
   }
 
   .simulation-dataset.active {
     background: #0275ff05;
     border-color: #015cc836;
-    opacity: 1;
   }
 
   .simulation-dataset:hover:not(.active) {
@@ -269,10 +242,6 @@
     z-index: 0;
   }
 
-  .simulation-dataset.active .simulation-range-label :global(svg) {
-    color: var(--st-gray-60);
-  }
-
   .simulation-range-visualization {
     align-items: center;
     display: flex;
@@ -338,5 +307,19 @@
 
   .simulation-dataset-extent {
     color: var(--st-gray-50);
+  }
+
+  .simulation-range-container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .simulation-dataset-status-chip-container {
+    display: flex;
+    gap: 4px;
   }
 </style>

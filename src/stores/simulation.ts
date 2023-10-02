@@ -5,6 +5,7 @@ import type {
   ResourceType,
   Simulation,
   SimulationDataset,
+  SimulationDatasetSlim,
   SimulationTemplate,
   Span,
   SpanId,
@@ -61,20 +62,15 @@ export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>
   },
 );
 
-export const simulationDatasetIds = gqlSubscribable<number[]>(
-  gql.SUB_SIMULATION_DATASET_IDS,
+export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[]>(
+  gql.SUB_SIMULATION_DATASETS,
   { planId },
   [],
   null,
-  (simulations: { simulation_dataset_ids: { id: number }[] }[]): number[] => {
-    if (simulations.length) {
-      return simulations[0].simulation_dataset_ids.map(({ id }) => id);
-    }
-    return [];
-  },
+  v => v[0]?.simulation_datasets,
 );
 
-export const simulationDatasetsAll = gqlSubscribable<SimulationDataset[]>(
+export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[]>(
   gql.SUB_SIMULATION_DATASETS_ALL,
   null,
   [],

@@ -1,4 +1,4 @@
-import type { SimulationDataset } from '../types/simulation';
+import type { SimulationDataset, SimulationDatasetSlim } from '../types/simulation';
 import { compare, getNumberWithOrdinal } from './generic';
 import { Status, statusColors } from './status';
 import { getDoyTime, getUnixEpochTimeFromInterval } from './time';
@@ -82,7 +82,7 @@ export function getHumanReadableSimulationStatus(status: Status | null): string 
 /**
  * Returns a Status for a simulation dataset
  */
-export function getSimulationStatus(simulationDataset: SimulationDataset | null): Status | null {
+export function getSimulationStatus(simulationDataset: SimulationDatasetSlim | null): Status | null {
   if (!simulationDataset) {
     return null;
   }
@@ -125,8 +125,8 @@ export function getSimulationProgressColor(status: SimulationDataset['status'] |
  * Returns simulation position within simulation queue
  */
 export function getSimulationQueuePosition(
-  simDataset: SimulationDataset,
-  simulationDatasets: SimulationDataset[],
+  simDataset: SimulationDatasetSlim,
+  simulationDatasets: SimulationDatasetSlim[],
 ): number {
   // If simDataset is pending, returns the position the simDataset appears in the set of queued simulation datasets
   // Otherwise returns -1

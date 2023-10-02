@@ -4,17 +4,28 @@
   export let height: number | string = 350;
   export let width: number | string = 400;
 
+  let modal: HTMLDivElement | null = null;
+
   $: heightStyle = typeof height === 'number' ? `${height}px` : height;
   $: widthStyle = typeof width === 'number' ? `${width}px` : width;
+
+  function onClickOutside(event: MouseEvent | TouchEvent) {
+    // Stop propagation of events that originate from within the modal
+    // to prevent the modal from closing.
+    if (modal && modal.contains(event.target as Node)) {
+      event.stopPropagation();
+    }
+  }
 </script>
 
 <div class="modal-container">
   <div
+    bind:this={modal}
     class="modal st-typography-body"
     role="none"
     style:height={heightStyle}
     style:width={widthStyle}
-    on:click|stopPropagation
+    on:click={onClickOutside}
   >
     <slot />
   </div>

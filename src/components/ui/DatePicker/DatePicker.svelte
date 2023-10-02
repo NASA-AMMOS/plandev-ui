@@ -311,7 +311,7 @@
     background: #ffffff;
     border: 1px solid var(--st-gray-20);
     border-radius: 10px;
-    box-shadow: 0px 8px 16px 0px var(--st-gray-20);
+    box-shadow: var(--st-shadow-popover);
     min-height: 100px;
     min-width: 150px;
     user-select: none;
