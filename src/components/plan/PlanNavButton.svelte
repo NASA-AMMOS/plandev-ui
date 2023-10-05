@@ -105,6 +105,7 @@
   }
 
   .nav-button-icon-container {
+    height: 20px;
     position: relative;
   }
 
