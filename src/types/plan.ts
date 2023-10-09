@@ -87,7 +87,7 @@ export type PlanSchema = {
   parent_plan: Pick<PlanSchema, 'id' | 'name'> | null;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
-  simulations: [{ simulation_datasets: [{ id: number }] }];
+  simulations: [{ simulation_datasets: [{ id: number; plan_revision: number }] }];
   start_time: string;
   tags: { tag: Tag }[];
   updated_at: string;

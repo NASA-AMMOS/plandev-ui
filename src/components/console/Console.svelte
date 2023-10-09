@@ -3,20 +3,21 @@
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronUpIcon from '@nasa-jpl/stellar/icons/chevron_up.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
   import ConsoleDragHandle from './ConsoleDragHandle.svelte';
 
   const consoleHeaderHeight: number = 36;
+  const dispatch = createEventDispatcher();
 
   let consoleHeight: number = 0;
   let consoleHeightString: string;
-  let consolePositionString: string;
   let isOpen: boolean = false;
   let previousConsoleHeight: number = 300;
 
   $: {
     consoleHeightString = `${consoleHeight + consoleHeaderHeight}px`;
-    consolePositionString = `${-consoleHeight}px`;
+    dispatch('resize', consoleHeightString);
   }
 
   function onSelectTab() {
@@ -44,12 +45,7 @@
 </script>
 
 <div class="console-container">
-  <div
-    class="console-expand-container"
-    class:expanded={isOpen}
-    style:height={consoleHeightString}
-    style:top={consolePositionString}
-  >
+  <div class="console-expand-container" class:expanded={isOpen} style:height={consoleHeightString}>
     {#if isOpen}
       <ConsoleDragHandle maxHeight="75%" rowHeight={consoleHeight} on:updateRowHeight={onUpdateRowHeight} />
     {/if}

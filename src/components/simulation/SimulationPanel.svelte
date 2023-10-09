@@ -3,8 +3,10 @@
 <script lang="ts">
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
+  import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
+  import { planSnapshot } from '../../stores/planSnapshots';
   import {
     enableSimulation,
     simulation,
@@ -16,9 +18,15 @@
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
-  import type { Simulation, SimulationTemplate, SimulationTemplateInsertInput } from '../../types/simulation';
+  import type {
+    Simulation,
+    SimulationDataset,
+    SimulationTemplate,
+    SimulationTemplateInsertInput,
+  } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { setQueryParam } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -31,11 +39,13 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
+  import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SimulationHistoryDataset from './SimulationHistoryDataset.svelte';
   import SimulationTemplateInput from './SimulationTemplateInput.svelte';
+  import { viewTogglePanel } from '../../stores/views';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -47,10 +57,12 @@
   let formParameters: FormParameter[] = [];
   let hasRunPermission: boolean = false;
   let hasUpdatePermission: boolean = false;
+  let isFilteredBySnapshot: boolean = false;
   let numOfUserChanges: number = 0;
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
+  let filteredSimulationDatasets: SimulationDataset[] = [];
 
   $: if (user !== null && $plan !== null) {
     hasRunPermission = featurePermissions.simulation.canRun(user, $plan);
@@ -96,6 +108,16 @@
         );
       }
     });
+  }
+
+  $: isFilteredBySnapshot = $planSnapshot !== null;
+
+  $: if (isFilteredBySnapshot) {
+    filteredSimulationDatasets = $simulationDatasetsPlan.filter(
+      simulationDataset => $planSnapshot === null || simulationDataset.plan_revision === $planSnapshot?.revision,
+    );
+  } else {
+    filteredSimulationDatasets = $simulationDatasetsPlan;
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
@@ -190,6 +212,10 @@
         user,
       );
     }
+  }
+
+  function onToggleFilter() {
+    isFilteredBySnapshot = !isFilteredBySnapshot;
   }
 
   function updateStartTime(doyString: string) {
@@ -348,11 +374,22 @@
 
     <fieldset>
       <Collapse title="Simulation History" padContent={false}>
+        <svelte:fragment slot="right">
+          {#if $planSnapshot}
+            <FilterToggleButton
+              label="Simulation"
+              offTooltipContent="Filter simulations by selected snapshot"
+              onTooltipContent="Remove filter"
+              isOn={isFilteredBySnapshot}
+              on:toggle={onToggleFilter}
+            />
+          {/if}
+        </svelte:fragment>
         <div class="simulation-history">
-          {#if !$simulationDatasetsPlan || !$simulationDatasetsPlan.length}
+          {#if !filteredSimulationDatasets || !filteredSimulationDatasets.length}
             <div>No Simulation Datasets</div>
           {:else}
-            {#each $simulationDatasetsPlan as simDataset (simDataset.id)}
+            {#each filteredSimulationDatasets as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll)}
                 simulationDataset={simDataset}
@@ -361,6 +398,8 @@
                 selected={simDataset.id === $simulationDatasetId}
                 on:click={() => {
                   simulationDatasetId.set(simDataset.id);
+                  setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${$simulationDatasetId}`);
+                  viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
                 }}
                 on:cancel={onCancelSimulation}
               />

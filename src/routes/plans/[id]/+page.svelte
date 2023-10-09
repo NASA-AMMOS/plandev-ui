@@ -19,12 +19,14 @@
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
+  import PlanSnapshotBar from '../../../components/plan/PlanSnapshotBar.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import {
     activityDirectives,
+    activityDirectivesList,
     activityDirectivesMap,
     resetActivityStores,
     selectActivity,
@@ -84,9 +86,10 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirective } from '../../../types/activity';
+  import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import effects from '../../../utilities/effects';
-  import { removeQueryParam } from '../../../utilities/generic';
+  import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -108,6 +111,7 @@
   export let data: PageData;
 
   let compactNavMode = false;
+  let consoleHeightString = '36px';
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
   let hasExpandPermission: boolean = false;
@@ -138,8 +142,7 @@
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
       $simulationDatasetId = parseInt(querySimulationDatasetId);
-      removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
-    } else {
+    } else if (data.initialPlanSnapshotId === null) {
       $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     }
 
@@ -167,6 +170,18 @@
         planSnapshotActivityDirectives = directives;
       }
     });
+
+    const currentPlanSimulation = data.initialPlan.simulations[0]?.simulation_datasets.find(simulation => {
+      return simulation.id === getSearchParameterNumber(SearchParameters.SIMULATION_DATASET_ID);
+    });
+    const latestPlanSnapshotSimulation = data.initialPlan.simulations[0]?.simulation_datasets.find(simulation => {
+      return simulation.plan_revision === $planSnapshot?.revision;
+    });
+
+    if (!currentPlanSimulation && latestPlanSnapshotSimulation) {
+      $simulationDatasetId = latestPlanSnapshotSimulation.id;
+      setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${$simulationDatasetId}`);
+    }
   }
 
   $: if (data.initialView) {
@@ -185,7 +200,7 @@
   }
 
   $: if ($plan && $simulationDataset !== undefined) {
-    if ($simulationDataset !== null) {
+    if ($simulationDataset !== null && $simulationDatasetId !== -1) {
       const datasetId = $simulationDataset.dataset_id;
       const startTimeYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
       effects.getResources(datasetId, startTimeYmd, data.user).then(newResources => ($resources = newResources));
@@ -234,12 +249,28 @@
     closeActiveModal();
   });
 
+  function clearSnapshot() {
+    $planSnapshotId = null;
+    $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
+  }
+
   function onClearAllErrors() {
     clearAllErrors();
   }
 
   function onClearSchedulingErrors() {
     clearSchedulingErrors();
+  }
+
+  function onCloseSnapshotPreview() {
+    clearSnapshot();
+    removeQueryParam(SearchParameters.SNAPSHOT_ID);
+    removeQueryParam(SearchParameters.SIMULATION_DATASET_ID, 'PUSH');
+  }
+
+  function onConsoleResize(event: CustomEvent<string>) {
+    const { detail } = event;
+    consoleHeightString = detail;
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -269,6 +300,13 @@
         resetOriginalView();
       }
     }
+  }
+
+  async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
+    const { detail: planSnapshot } = event;
+    await effects.restorePlanSnapshot(planSnapshot, data.user);
+
+    clearSnapshot();
   }
 
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
@@ -321,7 +359,12 @@
 
 <PageTitle subTitle={data.initialPlan.name} title="Plans" />
 
-<CssGrid class="plan-container" rows="var(--nav-header-height) auto 36px">
+<CssGrid
+  class="plan-container"
+  rows={$planSnapshot
+    ? `var(--nav-header-height) min-content auto ${consoleHeightString}`
+    : `var(--nav-header-height) auto ${consoleHeightString}`}
+>
   <Nav user={data.user}>
     <div slot="title">
       <PlanMenu plan={data.initialPlan} user={data.user} />
@@ -449,7 +492,14 @@
       />
     </svelte:fragment>
   </Nav>
-
+  {#if $planSnapshot}
+    <PlanSnapshotBar
+      numOfDirectives={$activityDirectivesList.length}
+      snapshot={$planSnapshot}
+      on:close={onCloseSnapshotPreview}
+      on:restore={onRestoreSnapshot}
+    />
+  {/if}
   <PlanGrid
     {...$view?.definition.plan.grid}
     user={data.user}
@@ -459,7 +509,7 @@
     on:changeRightRowSizes={onChangeRightRowSizes}
   />
 
-  <Console>
+  <Console on:resize={onConsoleResize}>
     <svelte:fragment slot="console-tabs">
       <div class="console-tabs">
         <div>

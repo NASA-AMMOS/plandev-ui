@@ -74,6 +74,7 @@
 <style>
   .message {
     font-weight: 500;
+    padding: 0px 16px;
   }
 
   input[type='checkbox'],

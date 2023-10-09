@@ -188,7 +188,7 @@ export function convertToQuery(gql: string): string {
 /**
  * Removes a query param from the current URL.
  */
-export function removeQueryParam(key: SearchParameters): void {
+export function removeQueryParam(key: SearchParameters, mode: 'PUSH' | 'REPLACE' = 'REPLACE'): void {
   if (!browser) {
     return;
   }
@@ -210,7 +210,11 @@ export function removeQueryParam(key: SearchParameters): void {
     path = `${path}${hash}`;
   }
 
-  history.replaceState({ path }, '', path);
+  if (mode === 'REPLACE') {
+    history.replaceState({ path }, '', path);
+  } else {
+    history.pushState({ path }, '', path);
+  }
 }
 
 /**

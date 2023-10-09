@@ -101,6 +101,6 @@
 
 <style>
   .description {
-    padding: 0px 16px 0;
+    padding: 0px 16px;
   }
 </style>

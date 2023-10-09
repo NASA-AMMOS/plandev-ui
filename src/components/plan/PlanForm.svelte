@@ -3,11 +3,14 @@
 <script lang="ts">
   import { SearchParameters } from '../../enums/searchParameters';
   import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
+  import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
+  import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
+  import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
-  import { setQueryParam } from '../../utilities/generic';
+  import { removeQueryParam, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getShortISOForDate } from '../../utilities/time';
@@ -15,6 +18,7 @@
   import Collapse from '../Collapse.svelte';
   import Input from '../form/Input.svelte';
   import CardList from '../ui/CardList.svelte';
+  import FilterToggleButton from '../ui/FilterToggleButton.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
 
@@ -24,6 +28,8 @@
   export let user: User | null;
 
   let hasPermission: boolean = false;
+  let filteredPlanSnapshots: PlanSnapshotType[] = [];
+  let isFilteredBySimulation: boolean = false;
   let permissionError = 'You do not have permission to edit this plan.';
 
   $: {
@@ -32,6 +38,14 @@
     } else {
       hasPermission = false;
     }
+  }
+
+  $: if (isFilteredBySimulation && $simulationDataset != null) {
+    filteredPlanSnapshots = $planSnapshotsWithSimulations.filter(
+      planSnapshot => planSnapshot.revision === $simulationDataset?.plan_revision,
+    );
+  } else {
+    filteredPlanSnapshots = $planSnapshotsWithSimulations;
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
@@ -58,6 +72,10 @@
     if (plan) {
       effects.createPlanSnapshot(plan, user);
     }
+  }
+
+  function onToggleFilter() {
+    isFilteredBySimulation = !isFilteredBySimulation;
   }
 </script>
 
@@ -153,19 +171,43 @@
     </fieldset>
     <fieldset>
       <Collapse title="Snapshots" padContent={false}>
-        <button class="st-button secondary" slot="right" on:click={onCreatePlanSnapshot}>Take Snapshot</button>
+        <div class="buttons" slot="right">
+          {#if $simulationDatasetId >= 0}
+            <FilterToggleButton
+              label="Snapshot"
+              offTooltipContent="Filter snapshots by selected simulation"
+              onTooltipContent="Remove filter"
+              isOn={isFilteredBySimulation}
+              on:toggle={onToggleFilter}
+            />
+          {/if}
+          <button class="st-button secondary" on:click={onCreatePlanSnapshot}>Take Snapshot</button>
+        </div>
         <div style="margin-top: 8px">
           <CardList>
-            {#each $planSnapshotsWithSimulations as planSnapshot (planSnapshot.snapshot_id)}
+            {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
               <PlanSnapshot
                 activePlanSnapshotId={$planSnapshotId}
                 {planSnapshot}
-                on:click={() => setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH')}
+                on:click={() => {
+                  setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
+                  $planSnapshotId = planSnapshot.snapshot_id;
+
+                  if (planSnapshot.simulation?.id != null) {
+                    setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
+                    $simulationDatasetId = planSnapshot.simulation?.id;
+
+                    viewTogglePanel({ state: true, type: 'left', update: { leftComponentTop: 'SimulationPanel' } });
+                  } else {
+                    removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
+                    $simulationDatasetId = -1;
+                  }
+                }}
                 on:restore={() => effects.restorePlanSnapshot(planSnapshot, user)}
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
               />
             {/each}
-            {#if $planSnapshotsWithSimulations.length < 1}
+            {#if filteredPlanSnapshots.length < 1}
               <div class="st-typography-label">No Plan Snapshots Found</div>
             {/if}
           </CardList>
@@ -178,5 +220,10 @@
 <style>
   .plan-form fieldset:last-child {
     padding-bottom: 16px;
+  }
+
+  .buttons {
+    column-gap: 4px;
+    display: flex;
   }
 </style>
