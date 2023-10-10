@@ -165,6 +165,7 @@
   }
   $: if (data.initialPlanSnapshotId !== null) {
     $planSnapshotId = data.initialPlanSnapshotId;
+    $planReadOnly = true;
   }
   $: if ($planSnapshot !== null) {
     effects.getPlanSnapshotActivityDirectives($planSnapshot, data.user).then(directives => {
@@ -253,6 +254,7 @@
 
   function clearSnapshot() {
     $planSnapshotId = null;
+    $planReadOnly = false;
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
   }
 

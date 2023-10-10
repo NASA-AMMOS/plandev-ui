@@ -202,6 +202,7 @@
                 on:click={() => {
                   setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
                   $planSnapshotId = planSnapshot.snapshot_id;
+                  $planReadOnly = true;
 
                   if (planSnapshot.simulation?.id != null) {
                     setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
