@@ -19,6 +19,7 @@
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
 
   interface PlaceholderOption extends Omit<DropdownOption, 'value'> {
     value: null;
@@ -33,6 +34,7 @@
   export let maxListHeight: string = '300px';
   export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string = '';
+  export let planReadOnly: boolean = false;
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
@@ -109,8 +111,8 @@
     role="textbox"
     aria-label={selectedOption?.display ?? placeholder}
     use:permissionHandler={{
-      hasPermission: hasUpdatePermission,
-      permissionError: updatePermissionError,
+      hasPermission: hasUpdatePermission && !planReadOnly,
+      permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
     }}
     use:tooltip={{ content: error, placement: 'top' }}
   >
@@ -118,7 +120,7 @@
     <button
       use:tooltip={{
         content: settingsIconTooltip,
-        disabled: !hasUpdatePermission,
+        disabled: !hasUpdatePermission && planReadOnly,
         placement: settingsIconTooltipPlacement,
       }}
       class="icon st-button settings-icon"

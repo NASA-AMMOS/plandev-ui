@@ -10,6 +10,7 @@
   import SpanHashMarksSVG from '../../assets/span-hash-marks.svg?raw';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
+  import type { Plan } from '../../types/plan';
   import type { SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     ActivityLayerFilter,
@@ -58,7 +59,7 @@
   export let mouseout: MouseEvent | undefined;
   export let mouseup: MouseEvent | undefined;
   export let planEndTimeDoy: string;
-  export let planId: number;
+  export let plan: Plan | null = null;
   export let planStartTimeYmd: string;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
@@ -214,9 +215,9 @@
 
   function dragActivityEnd(): void {
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
-      if (dragStartX !== dragCurrentX) {
+      if (dragStartX !== dragCurrentX && plan) {
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
-        effects.updateActivityDirective(planId, dragActivityDirectiveActive.id, { start_offset }, user);
+        effects.updateActivityDirective(plan, dragActivityDirectiveActive.id, { start_offset }, user);
       }
 
       dragActivityDirectiveActive = null;

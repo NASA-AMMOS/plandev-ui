@@ -48,7 +48,7 @@
 
   function editView() {
     if ($view && user) {
-      dispatch('editView', { definition: $view.definition, owner: user.id });
+      dispatch('editView', $view);
     }
   }
 
@@ -66,7 +66,7 @@
 
   function saveView() {
     if ($view && user && $view.owner === user.id && !saveViewDisabled) {
-      dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name });
+      dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name, owner: $view.owner });
     }
   }
 

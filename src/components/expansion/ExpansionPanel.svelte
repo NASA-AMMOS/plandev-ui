@@ -72,7 +72,7 @@
   $: if (user !== null && $plan !== null) {
     hasCreatePermission = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
     hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan) && !$planReadOnly;
-    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan) && !$planReadOnly;
+    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan, $plan.model) && !$planReadOnly;
   }
   $: {
     columnDefs = [
@@ -156,8 +156,8 @@
           ],
         ]}
         on:click={() => {
-          if ($selectedExpansionSetId) {
-            effects.expand($selectedExpansionSetId, $simulationDatasetId, user);
+          if ($selectedExpansionSetId && $plan) {
+            effects.expand($selectedExpansionSetId, $simulationDatasetId, $plan, $plan.model, user);
           }
         }}
       />

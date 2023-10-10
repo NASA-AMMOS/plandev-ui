@@ -1,4 +1,4 @@
-import type { UserId } from './app';
+import type { PartialWith, UserId } from './app';
 import type { SeqJson } from './sequencing';
 import type { SpanId } from './simulation';
 import type { Tag } from './tags';
@@ -24,6 +24,7 @@ export type ExpansionRuleInsertInput = Omit<
   ExpansionRuleSlim,
   'created_at' | 'id' | 'updated_at' | 'updated_by' | 'owner' | 'tags'
 >;
+export type ExpansionRuleSetInput = PartialWith<ExpansionRule, 'owner'>;
 
 export type ExpansionSequenceToActivityInsertInput = {
   seq_id: string;

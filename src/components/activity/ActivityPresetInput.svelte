@@ -45,18 +45,20 @@
   $: if (activityDirective != null) {
     activityPresets.setVariables({ activityTypeName: activityDirective.type, modelId });
   }
-  $: options = $activityPresets.map((activityPreset: ActivityPreset) => ({
-    display: activityPreset.name,
-    hasSelectPermission: hasAssignPermission,
-    value: activityPreset.id,
-  }));
   $: if (plan !== null) {
-    hasAssignPermission = featurePermissions.activityPresets.canAssign(user, plan);
-    // because we also assign after preset creation, we must include both checks here as part of the creation permission check
-    hasCreatePermission =
-      featurePermissions.activityPresets.canCreate(user, plan) &&
-      featurePermissions.activityPresets.canAssign(user, plan) &&
-      !$planReadOnly;
+    options = $activityPresets.map((activityPreset: ActivityPreset) => ({
+      display: activityPreset.name,
+      hasSelectPermission: featurePermissions.activityPresets.canAssign(
+        user,
+        plan as Plan,
+        (plan as Plan).model,
+        activityPreset,
+      ),
+      value: activityPreset.id,
+    }));
+
+    hasAssignPermission = featurePermissions.activityPresets.canUnassign(user, plan) && !$planReadOnly;
+    hasCreatePermission = featurePermissions.activityPresets.canCreate(user, plan) && !$planReadOnly;
 
     const selectedPreset = $activityPresets.find(
       activityPreset => activityPreset.id === activityDirective?.applied_preset?.preset_id,
@@ -68,8 +70,10 @@
   }
 
   function onDeletePreset(event: CustomEvent<DropdownOptionValue>) {
-    const { detail: presetId } = event;
-    dispatch('deletePreset', presetId);
+    const { detail: activityPresetId } = event;
+    const deletedActivityPreset = $activityPresets.find(activityPreset => activityPreset.id === activityPresetId);
+
+    dispatch('deletePreset', deletedActivityPreset);
   }
 
   function onSaveNewPreset(event: CustomEvent<string>) {
@@ -84,7 +88,9 @@
 
   function onSelectPreset(event: CustomEvent<SelectedDropdownOptionValue>) {
     const { detail: activityPresetId } = event;
-    dispatch('applyPreset', activityPresetId);
+    const selectedActivityPreset = $activityPresets.find(activityPreset => activityPreset.id === activityPresetId);
+
+    dispatch('applyPreset', selectedActivityPreset ?? null);
   }
 </script>
 

@@ -66,7 +66,7 @@
   let filteredSimulationDatasets: SimulationDataset[] = [];
 
   $: if (user !== null && $plan !== null) {
-    hasRunPermission = featurePermissions.simulation.canRun(user, $plan) && !$planReadOnly;
+    hasRunPermission = featurePermissions.simulation.canRun(user, $plan, $plan.model) && !$planReadOnly;
     hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
   $: if ($plan) {
@@ -122,7 +122,7 @@
   }
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
-    if ($simulation !== null) {
+    if ($simulation !== null && $plan !== null) {
       const { detail: formParameter } = event;
       const newArgumentsMap = getArguments($simulation?.arguments, formParameter);
       const newFiles: File[] = formParameter.file ? [formParameter.file] : [];
@@ -131,12 +131,12 @@
         arguments: newArgumentsMap,
       };
 
-      effects.updateSimulation(newSimulation, user, newFiles);
+      effects.updateSimulation($plan, newSimulation, user, newFiles);
     }
   }
 
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
-    if ($simulation !== null) {
+    if ($simulation !== null && $plan !== null) {
       const { detail: formParameter } = event;
       const { arguments: argumentsMap } = $simulation;
       const newArguments = getArguments(argumentsMap, {
@@ -149,22 +149,23 @@
         arguments: newArguments,
       };
 
-      effects.updateSimulation(newSimulation, user, newFiles);
+      effects.updateSimulation($plan, newSimulation, user, newFiles);
     }
   }
 
   async function applyTemplateToSimulation(simulationTemplate: SimulationTemplate | null, numOfUserChanges: number) {
-    if ($simulation !== null) {
+    if ($simulation !== null && $plan !== null) {
       if (simulationTemplate === null) {
         effects.updateSimulation(
+          $plan,
           {
             ...$simulation,
             template: null,
           },
           user,
         );
-      } else {
-        effects.applyTemplateToSimulation(simulationTemplate, $simulation, numOfUserChanges, user);
+      } else if ($plan) {
+        effects.applyTemplateToSimulation(simulationTemplate, $simulation, $plan, numOfUserChanges, user);
       }
     }
   }
@@ -174,10 +175,10 @@
     applyTemplateToSimulation(simulationTemplate, numOfUserChanges);
   }
 
-  async function onDeleteSimulationTemplate(event: CustomEvent<number>) {
+  async function onDeleteSimulationTemplate(event: CustomEvent<SimulationTemplate>) {
     if ($plan) {
-      const { detail: id } = event;
-      await effects.deleteSimulationTemplate(id, $plan.model.name, user);
+      const { detail: simulationTemplate } = event;
+      await effects.deleteSimulationTemplate(simulationTemplate, $plan.model.name, user);
     }
   }
 
@@ -200,16 +201,18 @@
   }
 
   async function onSaveSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
-    if ($simulation?.template) {
+    if ($simulation?.template && $plan) {
       const {
         detail: { description: templateName },
       } = event;
       effects.updateSimulationTemplate(
         $simulation.template.id,
         {
+          ...$simulation,
           arguments: $simulation.arguments,
           description: templateName,
         },
+        $plan,
         user,
       );
     }
@@ -220,16 +223,16 @@
   }
 
   function updateStartTime(doyString: string) {
-    if ($simulation !== null) {
+    if ($simulation !== null && $plan !== null) {
       const newSimulation: Simulation = { ...$simulation, simulation_start_time: doyString };
-      effects.updateSimulation(newSimulation, user);
+      effects.updateSimulation($plan, newSimulation, user);
     }
   }
 
   function updateEndTime(doyString: string) {
-    if ($simulation !== null) {
+    if ($simulation !== null && $plan !== null) {
       const newSimulation: Simulation = { ...$simulation, simulation_end_time: doyString };
-      effects.updateSimulation(newSimulation, user);
+      effects.updateSimulation($plan, newSimulation, user);
     }
   }
 
@@ -286,7 +289,7 @@
             },
           ],
         ]}
-        on:click={() => effects.simulate(user)}
+        on:click={() => effects.simulate($plan, user)}
       />
     </PanelHeaderActions>
   </svelte:fragment>

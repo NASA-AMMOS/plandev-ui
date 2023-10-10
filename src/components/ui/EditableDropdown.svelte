@@ -131,6 +131,7 @@
   {error}
   {options}
   {placeholder}
+  {planReadOnly}
   {searchPlaceholder}
   {selectedOptionValue}
   {settingsIconTooltip}

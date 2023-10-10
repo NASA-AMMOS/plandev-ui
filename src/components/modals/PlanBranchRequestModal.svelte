@@ -4,7 +4,7 @@
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { Plan, PlanBranchRequestAction, PlanSchema } from '../../types/plan';
+  import type { Plan, PlanBranchRequestAction, PlanForMerging } from '../../types/plan';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -21,12 +21,22 @@
   let actionButtonText: string = '';
   let createButtonDisabled: boolean = true;
   let modalHeader: string = '';
-  let planList: Pick<PlanSchema, 'id' | 'name'>[] = [];
+  let planList: PlanForMerging[] = [];
+  let selectedPlan: PlanForMerging | null = null;
   let selectedPlanId: number | null = null;
 
   $: createButtonDisabled = selectedPlanId === null;
   $: selectedPlanId = plan?.parent_plan?.id ?? null;
-  $: planList = plan.parent_plan ? [plan.parent_plan] : [];
+  $: selectedPlan = planList.find(({ id }) => id === selectedPlanId) ?? null;
+  $: planList = plan.parent_plan
+    ? [
+        {
+          ...plan.parent_plan,
+          model: plan.model,
+          model_id: plan.model_id,
+        },
+      ]
+    : [];
   $: if (action === 'merge') {
     modalHeader = 'Merge Request';
     actionHeader = 'Merge to';
@@ -40,9 +50,9 @@
   function create() {
     if (!createButtonDisabled) {
       if (action === 'merge') {
-        dispatch('create', { source_plan_id: plan.id, target_plan_id: selectedPlanId });
+        dispatch('create', { source_plan: plan, target_plan: selectedPlan });
       } else {
-        dispatch('create', { source_plan_id: selectedPlanId, target_plan_id: plan.id });
+        dispatch('create', { source_plan: selectedPlan, target_plan: plan });
       }
     }
   }

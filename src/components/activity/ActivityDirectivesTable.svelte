@@ -70,10 +70,10 @@
     completeColumnDefs = [...(columnDefs ?? []), activityActionColumnDef];
   }
 
-  async function deleteActivityDirective({ id, plan_id }: ActivityDirective) {
-    if (!isDeletingDirective) {
+  async function deleteActivityDirective({ id }: ActivityDirective) {
+    if (!isDeletingDirective && plan !== null) {
       isDeletingDirective = true;
-      await effects.deleteActivityDirective(plan_id, id, user);
+      await effects.deleteActivityDirective(id, plan, user);
       isDeletingDirective = false;
     }
   }
@@ -82,7 +82,7 @@
     if (!isDeletingDirective && plan !== null) {
       isDeletingDirective = true;
       const ids = activities.map(({ id }) => id);
-      await effects.deleteActivityDirectives(plan.id, ids, user);
+      await effects.deleteActivityDirectives(ids, plan, user);
       isDeletingDirective = false;
     }
   }

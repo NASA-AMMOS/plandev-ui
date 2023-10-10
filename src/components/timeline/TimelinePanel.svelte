@@ -8,7 +8,7 @@
     selectedActivityDirectiveId,
   } from '../../stores/activities';
   import { visibleConstraintResults } from '../../stores/constraints';
-  import { maxTimeRange, plan, planId, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
     resourcesByViewLayerId,
     selectedSpanId,
@@ -48,7 +48,9 @@
 
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
-    effects.deleteActivityDirective($planId, activityDirectiveId, user);
+    if ($plan) {
+      effects.deleteActivityDirective(activityDirectiveId, $plan, user);
+    }
   }
 
   function openSelectedActivityPanel(event: CustomEvent) {
@@ -159,7 +161,7 @@
       {hasUpdateSimulationPermission}
       maxTimeRange={$maxTimeRange}
       planEndTimeDoy={$plan?.end_time_doy ?? ''}
-      planId={$planId}
+      plan={$plan}
       planStartTimeYmd={$plan?.start_time ?? ''}
       {timeline}
       {timelineDirectiveVisibilityToggles}

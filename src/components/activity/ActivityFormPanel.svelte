@@ -83,8 +83,8 @@
             permissionError: deletePermissionError,
           }}
           on:click|stopPropagation={() => {
-            if ($selectedActivityDirective !== null && hasDeletePermission) {
-              effects.deleteActivityDirective($selectedActivityDirective.plan_id, $selectedActivityDirective.id, user);
+            if ($selectedActivityDirective !== null && $plan !== null && hasDeletePermission) {
+              effects.deleteActivityDirective($selectedActivityDirective.id, $plan, user);
             }
           }}
           use:tooltip={{ content: 'Delete Activity', disabled: !hasDeletePermission, placement: 'top' }}

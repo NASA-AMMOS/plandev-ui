@@ -26,6 +26,7 @@
   let activeElement: HTMLElement;
   let filterText: string = '';
   let filteredSchedulingSpecGoals: SchedulingSpecGoal[] = [];
+  let hasAnalyzePermission: boolean = false;
   let hasCreatePermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasGoalEditPermission: boolean = false;
@@ -38,13 +39,13 @@
     return includesName;
   });
 
-  $: hasAnalyzePermission = featurePermissions.schedulingGoals.canAnalyze(user) && !$planReadOnly;
   $: if ($plan) {
+    hasAnalyzePermission = featurePermissions.schedulingGoals.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
     hasCreatePermission = featurePermissions.schedulingGoals.canCreate(user, $plan) && !$planReadOnly;
     hasDeletePermission = featurePermissions.schedulingGoals.canDelete(user, $plan) && !$planReadOnly;
     hasGoalEditPermission = featurePermissions.schedulingGoals.canUpdate(user, $plan) && !$planReadOnly;
     hasSpecEditPermission = featurePermissions.schedulingGoals.canUpdateSpecification(user, $plan) && !$planReadOnly;
-    hasRunPermission = featurePermissions.schedulingGoals.canRun(user, $plan) && !$planReadOnly;
+    hasRunPermission = featurePermissions.schedulingGoals.canRun(user, $plan, $plan.model) && !$planReadOnly;
   }
 
   // Manually keep focus as scheduling goal elements are re-ordered.
@@ -67,7 +68,7 @@
     <PanelHeaderActions status={$schedulingStatus}>
       <PanelHeaderActionButton
         title="Analyze"
-        on:click={() => effects.schedule(true, user)}
+        on:click={() => effects.schedule(true, $plan, user)}
         disabled={!$enableScheduling}
         use={[
           [
@@ -85,7 +86,7 @@
       </PanelHeaderActionButton>
       <PanelHeaderActionButton
         title="Schedule"
-        on:click={() => effects.schedule(false, user)}
+        on:click={() => effects.schedule(false, $plan, user)}
         disabled={!$enableScheduling}
         use={[
           [
@@ -135,6 +136,7 @@
             {hasSpecEditPermission}
             goal={specGoal.goal}
             priority={specGoal.priority}
+            plan={$plan}
             simulateAfter={specGoal.simulate_after}
             specificationId={specGoal.specification_id}
             {user}

@@ -15,6 +15,7 @@
   } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResult } from '../../types/constraint';
+  import type { Plan } from '../../types/plan';
   import type { Resource, SimulationDataset, Span, SpanId, SpanUtilityMaps, SpansMap } from '../../types/simulation';
   import type {
     Axis,
@@ -58,7 +59,7 @@
   export let name: string = '';
   export let marginLeft: number = 50;
   export let planEndTimeDoy: string;
-  export let planId: number;
+  export let plan: Plan | null = null;
   export let planStartTimeYmd: string;
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let rowDragMoveDisabled = true;
@@ -150,8 +151,8 @@
         const activityTypeName = e.dataTransfer.getData('activityTypeName');
 
         // Only allow creating an activity if we have an actual activity in the drag data.
-        if (activityTypeName) {
-          effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, user);
+        if (activityTypeName && plan) {
+          effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, plan, user);
         }
       }
     }
@@ -305,7 +306,7 @@
             {mouseout}
             {mouseup}
             {planEndTimeDoy}
-            {planId}
+            {plan}
             {planStartTimeYmd}
             {selectedActivityDirectiveId}
             {selectedSpanId}

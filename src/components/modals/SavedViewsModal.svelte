@@ -40,7 +40,8 @@
   }
 
   async function deleteViews({ detail: viewIds }: CustomEvent<number[]>) {
-    const success = await effects.deleteViews(viewIds, user);
+    const matchingViews = userViews.filter(v => viewIds.some(viewId => viewId === v.id));
+    const success = await effects.deleteViews(matchingViews, user);
 
     if (success) {
       if ($view && viewIds.includes($view.id)) {

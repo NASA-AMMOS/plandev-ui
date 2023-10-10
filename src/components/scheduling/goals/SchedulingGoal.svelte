@@ -5,6 +5,7 @@
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
   import type { User } from '../../../types/app';
+  import type { Plan } from '../../../types/plan';
   import type { SchedulingGoalSlim } from '../../../types/scheduling';
   import effects from '../../../utilities/effects';
   import { permissionHandler } from '../../../utilities/permissionHandler';
@@ -18,6 +19,7 @@
 
   export let enabled: boolean;
   export let goal: SchedulingGoalSlim;
+  export let plan: Plan | null;
   export let priority: number;
   export let specificationId: number;
   export let simulateAfter: boolean = true;
@@ -41,7 +43,9 @@
   }
 
   function updatePriority(priority: number) {
-    effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority }, user);
+    if (plan) {
+      effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority }, plan, user);
+    }
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -108,7 +112,8 @@
             bind:checked={enabled}
             style:cursor="pointer"
             type="checkbox"
-            on:change={() => effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled }, user)}
+            on:change={() =>
+              plan && effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled }, plan, user)}
             use:permissionHandler={{
               hasPermission: hasSpecEditPermission,
               permissionError,
@@ -138,7 +143,7 @@
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => effects.deleteSchedulingGoal(goal, user)}
+        on:click={() => plan && effects.deleteSchedulingGoal(goal, plan, user)}
         use={[
           [
             permissionHandler,
@@ -167,7 +172,9 @@
           role="none"
           on:click|stopPropagation={() => {
             simulateGoal = !simulateGoal;
-            effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal }, user);
+            if (plan) {
+              effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal }, plan, user);
+            }
           }}
         >
           <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After

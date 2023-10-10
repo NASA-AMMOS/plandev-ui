@@ -80,13 +80,20 @@
   let unresolvedConflictsCount: number = 0;
   let userInitiatedMergeRequestResolution: boolean = false;
 
-  $: hasReviewPermission = featurePermissions.planBranch.canReviewRequest(user, initialPlan);
   $: if (initialPlan && initialMergeRequest) {
     const {
-      plan_snapshot_supplying_changes: {
-        plan: { id: supplyingPlanId },
-      },
+      plan_snapshot_supplying_changes: { plan: sourcePlan },
+      plan_receiving_changes: targetPlan,
     } = initialMergeRequest;
+
+    const { id: supplyingPlanId } = sourcePlan;
+
+    hasReviewPermission = featurePermissions.planBranch.canReviewRequest(
+      user,
+      sourcePlan,
+      targetPlan,
+      initialPlan.model,
+    );
 
     // build up the complete array of snapshotted receiving and supplying directives
     let { receivingPlanDirectives, supplyingPlanDirectives } = initialConflictingActivities.reduce(
@@ -287,7 +294,12 @@
 
   async function onApproveChanges() {
     if (initialMergeRequest !== null) {
-      const success = await effects.planMergeCommit(initialMergeRequest.id, user);
+      const success = await effects.planMergeCommit(
+        initialMergeRequest.id,
+        initialMergeRequest.plan_snapshot_supplying_changes.plan,
+        initialMergeRequest.plan_receiving_changes,
+        user,
+      );
       if (success) {
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
@@ -297,7 +309,12 @@
 
   async function onDenyChanges() {
     if (initialMergeRequest !== null) {
-      const success = await effects.planMergeDeny(initialMergeRequest.id, user);
+      const success = await effects.planMergeDeny(
+        initialMergeRequest.id,
+        initialMergeRequest.plan_snapshot_supplying_changes.plan,
+        initialMergeRequest.plan_receiving_changes,
+        user,
+      );
       if (success) {
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
@@ -307,7 +324,12 @@
 
   async function onCancel() {
     if (initialMergeRequest !== null) {
-      const success = await effects.planMergeCancel(initialMergeRequest.id, user);
+      const success = await effects.planMergeCancel(
+        initialMergeRequest.id,
+        initialMergeRequest.plan_snapshot_supplying_changes.plan,
+        initialMergeRequest.plan_receiving_changes,
+        user,
+      );
       if (success) {
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
@@ -319,7 +341,13 @@
     const { value } = getTarget(e);
     const resolution = value as PlanMergeResolution;
     if (initialMergeRequest !== null) {
-      effects.planMergeResolveAllConflicts(initialMergeRequest.id, resolution, user);
+      effects.planMergeResolveAllConflicts(
+        initialMergeRequest.id,
+        resolution,
+        initialMergeRequest.plan_snapshot_supplying_changes.plan,
+        initialMergeRequest.plan_receiving_changes,
+        user,
+      );
 
       // Set resolutions for all conflicts
       if ($conflictingMergeActivities && $conflictingMergeActivities.length) {
@@ -366,7 +394,14 @@
 
   async function resolveConflict(activityId: number, resolution: PlanMergeResolution) {
     if (initialMergeRequest !== null) {
-      await effects.planMergeResolveConflict(initialMergeRequest.id, activityId, resolution, user);
+      await effects.planMergeResolveConflict(
+        initialMergeRequest.id,
+        activityId,
+        resolution,
+        initialMergeRequest.plan_snapshot_supplying_changes.plan,
+        initialMergeRequest.plan_receiving_changes,
+        user,
+      );
 
       conflictingMergeActivities.updateValue((activities: PlanMergeConflictingActivity[]) => {
         return activities.map(activity => {

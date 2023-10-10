@@ -58,6 +58,7 @@ describe('Scheduling Goal Form component', () => {
         defaultRole: ADMIN_ROLE,
         id: 'foo',
         permissibleQueries: {},
+        rolePermissions: {},
         token: '',
       },
     });

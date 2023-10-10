@@ -118,7 +118,7 @@
             definition: sequenceDefinition,
             name: sequenceName,
           };
-          const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence, user);
+          const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence, sequenceOwner, user);
           if (updated_at !== null) {
             sequenceUpdatedAt = updated_at;
           }

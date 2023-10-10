@@ -9,7 +9,7 @@
   import { commandDictionaries } from '../../stores/sequencing';
   import { tags } from '../../stores/tags';
   import type { User, UserId } from '../../types/app';
-  import type { ExpansionRule, ExpansionRuleInsertInput } from '../../types/expansion';
+  import type { ExpansionRule, ExpansionRuleInsertInput, ExpansionRuleSetInput } from '../../types/expansion';
   import type { ExpansionRuleTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
@@ -171,8 +171,8 @@
           }
         }
       } else if (mode === 'edit') {
-        if (ruleId !== null) {
-          const updatedRule: Partial<ExpansionRule> = {
+        if (ruleId !== null && ruleCreatedAt !== null && ruleTags !== null) {
+          const updatedRule: ExpansionRuleSetInput = {
             ...(hasAuthoringPermission && ruleActivityType !== null ? { activity_type: ruleActivityType } : {}),
             ...(hasAuthoringPermission && ruleDictionaryId !== null
               ? { authoring_command_dict_id: ruleDictionaryId }
@@ -181,6 +181,7 @@
             ...(ruleDescription !== null ? { description: ruleDescription } : {}),
             expansion_logic: ruleLogic,
             name: ruleName,
+            owner: ruleOwner,
           };
           const updated_at = await effects.updateExpansionRule(ruleId, updatedRule, user);
           if (updated_at !== null) {

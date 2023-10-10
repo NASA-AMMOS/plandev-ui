@@ -22,13 +22,24 @@
   export let user: User | null;
 
   let hasCreateMergeRequestPermission: boolean = false;
-  let hasCreatPlanBranchPermission: boolean = false;
+  let hasCreatePlanBranchPermission: boolean = false;
   let hasCreateSnapshotPermission: boolean = false;
   let planMenu: Menu;
 
-  $: hasCreateMergeRequestPermission = featurePermissions.planBranch.canCreateRequest(user, plan) && !$planReadOnly;
-  $: hasCreatPlanBranchPermission = featurePermissions.planBranch.canCreateBranch(user) && !$planReadOnly;
-  $: hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan) && !$planReadOnly;
+  $: hasCreateMergeRequestPermission = plan.parent_plan
+    ? featurePermissions.planBranch.canCreateRequest(
+        user,
+        plan,
+        {
+          ...plan.parent_plan,
+          model_id: plan.model_id,
+        },
+        plan.model,
+      ) && !$planReadOnly
+    : false;
+  $: hasCreatePlanBranchPermission =
+    featurePermissions.planBranch.canCreateBranch(user, plan, plan.model) && !$planReadOnly;
+  $: hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
 
   function createMergePlanBranchRequest() {
     effects.createPlanBranchRequest(plan, 'merge', user);
@@ -71,10 +82,10 @@
           [
             permissionHandler,
             {
-              hasPermission: hasCreateMergeRequestPermission,
+              hasPermission: hasCreatePlanBranchPermission,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to create a merge request',
+                : 'You do not have permission to create a plan branch',
             },
           ],
         ]}
@@ -93,10 +104,10 @@
             [
               permissionHandler,
               {
-                hasPermission: hasCreatPlanBranchPermission,
+                hasPermission: hasCreateMergeRequestPermission,
                 permissionError: $planReadOnly
                   ? PlanStatusMessages.READ_ONLY
-                  : 'You do not have permission to create a plan branch',
+                  : 'You do not have permission to create a merge request',
               },
             ],
           ]}

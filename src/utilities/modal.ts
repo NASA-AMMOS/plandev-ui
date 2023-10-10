@@ -19,7 +19,13 @@ import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types
 import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
 import type { ModalElement, ModalElementValue } from '../types/modal';
-import type { Plan, PlanBranchRequestAction, PlanMergeRequestStatus, PlanMergeRequestTypeFilter } from '../types/plan';
+import type {
+  Plan,
+  PlanBranchRequestAction,
+  PlanForMerging,
+  PlanMergeRequestStatus,
+  PlanMergeRequestTypeFilter,
+} from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ViewDefinition } from '../types/view';
@@ -402,7 +408,12 @@ export async function showExpansionSequenceModal(
 export async function showPlanBranchRequestModal(
   plan: Plan,
   action: PlanBranchRequestAction,
-): Promise<ModalElementValue<{ source_plan_id: number; target_plan_id: number }>> {
+): Promise<
+  ModalElementValue<{
+    source_plan: PlanForMerging;
+    target_plan: PlanForMerging;
+  }>
+> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -418,12 +429,20 @@ export async function showPlanBranchRequestModal(
           planModal.$destroy();
         });
 
-        planModal.$on('create', (e: CustomEvent<{ source_plan_id: number; target_plan_id: number }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          planModal.$destroy();
-        });
+        planModal.$on(
+          'create',
+          (
+            e: CustomEvent<{
+              source_plan: PlanForMerging;
+              target_plan: PlanForMerging;
+            }>,
+          ) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            planModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

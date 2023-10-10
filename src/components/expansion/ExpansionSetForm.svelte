@@ -11,6 +11,8 @@
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ExpansionRuleSlim } from '../../types/expansion';
+  import type { ModelSlim } from '../../types/model';
+  import type { PlanSlim } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -23,6 +25,7 @@
   import ExpansionSetRuleSelection from './ExpansionSetRuleSelection.svelte';
 
   export let mode: 'create' | 'edit' = 'create';
+  export let plans: PlanSlim[];
   export let user: User | null;
 
   type CellRendererParams = {
@@ -45,6 +48,7 @@
   let setModelId: number | null = null;
   let setName: string = '';
   let setDescription: string = '';
+  let selectedModel: ModelSlim | undefined;
 
   $: effects
     .getActivityTypesExpansionRules(setModelId, user)
@@ -56,20 +60,34 @@
     ? `Expansion Rule - Logic Editor - ${lastSelectedExpansionRule.activity_type} - Rule ${lastSelectedExpansionRule.id} (Read-only)`
     : 'Expansion Rule - Logic Editor (Read-only)';
   $: setExpansionRuleIds = Object.values(selectedExpansionRules) ?? [];
+  $: selectedModel = $models.find(model => model.id === setModelId);
   $: saveButtonEnabled = setDictionaryId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
   $: {
-    hasPermission =
-      mode === 'edit' ? featurePermissions.expansionSets.canUpdate() : featurePermissions.expansionSets.canCreate(user);
+    if (mode === 'edit') {
+      hasPermission = featurePermissions.expansionSets.canUpdate();
+    } else if (selectedModel !== undefined) {
+      hasPermission = featurePermissions.expansionSets.canCreate(user, plans, selectedModel);
+    }
     permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create an'} expansion set.`;
   }
 
+  function hasModelPermission(modelId: number): boolean {
+    const model = $models.find(model => model.id === modelId);
+    if (user && model) {
+      return featurePermissions.expansionSets.canCreate(user, plans, model);
+    }
+
+    return true;
+  }
+
   async function saveSet() {
-    if (mode === 'create' && setDictionaryId && setModelId) {
+    if (mode === 'create' && setDictionaryId && selectedModel) {
       const newSetId = await effects.createExpansionSet(
         setDictionaryId,
-        setModelId,
+        selectedModel,
         setExpansionRuleIds,
         user,
+        plans,
         setName,
         setDescription,
       );
@@ -188,7 +206,7 @@
         >
           <option value={null} />
           {#each $models as model}
-            <option value={model.id}>
+            <option value={model.id} disabled={!hasModelPermission(model.id)}>
               {model.name}
             </option>
           {/each}

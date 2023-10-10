@@ -6,6 +6,7 @@
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResult } from '../../types/constraint';
+  import type { Plan } from '../../types/plan';
   import type {
     Resource,
     Simulation,
@@ -51,7 +52,7 @@
   export let hasUpdateSimulationPermission: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let planEndTimeDoy: string;
-  export let planId: number;
+  export let plan: Plan | null = null;
   export let planStartTimeYmd: string;
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
@@ -330,7 +331,7 @@
         name={row.name}
         marginLeft={timeline?.marginLeft}
         {planEndTimeDoy}
-        {planId}
+        {plan}
         {planStartTimeYmd}
         {resourcesByViewLayerId}
         {rowDragMoveDisabled}
@@ -381,6 +382,7 @@
     {simulationDataset}
     {spansMap}
     {spanUtilityMaps}
+    {plan}
     {planStartTimeYmd}
     verticalGuides={timeline?.verticalGuides ?? []}
     {xScaleView}

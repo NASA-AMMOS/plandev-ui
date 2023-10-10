@@ -51,19 +51,15 @@ export type PlanMergeRequest = PlanMergeRequestSchema & { pending: boolean; type
 
 export type PlanMergeRequestStatus = 'accepted' | 'in-progress' | 'pending' | 'rejected' | 'withdrawn';
 
+export type PlanForMerging = Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'model_id'> & {
+  model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
+};
+
 export type PlanMergeRequestSchema = {
   id: number;
-  plan_receiving_changes: {
-    id: number;
-    name: string;
-    owner: UserId;
-  };
+  plan_receiving_changes: PlanForMerging;
   plan_snapshot_supplying_changes: {
-    plan: {
-      id: number;
-      name: string;
-      owner: UserId;
-    };
+    plan: PlanForMerging;
     snapshot_id: number;
   };
   requester_username: string;
@@ -84,7 +80,7 @@ export type PlanSchema = {
   model_id: number;
   name: string;
   owner: UserId;
-  parent_plan: Pick<PlanSchema, 'id' | 'name'> | null;
+  parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators'> | null;
   revision: number;
   scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
   simulations: [{ simulation_datasets: [{ id: number; plan_revision: number }] }];

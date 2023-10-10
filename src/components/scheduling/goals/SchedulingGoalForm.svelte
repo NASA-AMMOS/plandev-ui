@@ -65,12 +65,11 @@
 
   $: planOptions = plans
     .filter(plan => plan.model_id === goalModelId)
-    .map(({ id, name, scheduling_specifications }) => ({
-      id,
-      name,
+    .map(({ scheduling_specifications, ...plan }) => ({
+      ...plan,
       specId: (scheduling_specifications && scheduling_specifications[0]?.id) || null,
     }));
-
+  $: selectedPlan = planOptions.find(({ specId: planSpecId }) => planSpecId === specId);
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
   $: saveButtonEnabled = goalDefinition !== '' && goalModelId !== null && goalName !== '' && specId !== null;
   $: goalModified =
@@ -164,12 +163,13 @@
   }
 
   async function saveGoal() {
-    if (saveButtonEnabled && goalModelId !== null) {
+    if (saveButtonEnabled && goalModelId !== null && selectedPlan) {
       if (mode === 'create') {
         const newGoal = await effects.createSchedulingGoal(
           goalDefinition,
           goalName,
           goalModelId,
+          selectedPlan,
           user,
           goalDescription,
         );
@@ -217,7 +217,7 @@
           ...(hasAuthoringPermission && goalModelId !== null ? { model_id: goalModelId } : {}),
           name: goalName,
         };
-        const updatedGoal = await effects.updateSchedulingGoal(goalId, goal, user);
+        const updatedGoal = await effects.updateSchedulingGoal(goalId, goal, selectedPlan, user);
         if (updatedGoal) {
           if (specId !== savedSpecId && savedSpecId !== null && specId !== null) {
             // If changing plans/specId, first delete existing scheduling_spec_goal record and re-insert a new one

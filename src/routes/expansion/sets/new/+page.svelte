@@ -7,4 +7,4 @@
   export let data: PageData;
 </script>
 
-<ExpansionSetForm mode="create" user={data.user} />
+<ExpansionSetForm mode="create" user={data.user} plans={data.initialPlans} />

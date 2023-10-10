@@ -205,6 +205,7 @@
     const tag = {
       color: $colorField.value,
       name: $nameField.value,
+      owner: selectedTag.owner,
     };
     const updatedTag = await effects.updateTag(selectedTag.id, tag, user);
     if (updatedTag) {

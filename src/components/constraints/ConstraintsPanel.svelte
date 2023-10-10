@@ -164,12 +164,14 @@
     <PanelHeaderActions status={$checkConstraintsStatus}>
       <PanelHeaderActionButton
         title="Check Constraints"
-        on:click={() => effects.checkConstraints(user)}
+        on:click={() => $plan && effects.checkConstraints($plan, user)}
         use={[
           [
             permissionHandler,
             {
-              hasPermission: $plan ? featurePermissions.constraints.canCheck(user, $plan) && !$planReadOnly : false,
+              hasPermission: $plan
+                ? featurePermissions.constraints.canCheck(user, $plan, $plan.model) && !$planReadOnly
+                : false,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run constraint checks',
@@ -276,12 +278,13 @@
         {#each filteredConstraints as constraint}
           <ConstraintListItem
             {constraint}
+            constraintResult={filteredConstraintResultMap[constraint.id]}
             hasDeletePermission={$plan ? featurePermissions.constraints.canDelete(user, $plan) : false}
             hasEditPermission={$plan ? featurePermissions.constraints.canUpdate(user, $plan) : false}
-            visible={$constraintVisibilityMap[constraint.id]}
-            constraintResult={filteredConstraintResultMap[constraint.id]}
+            plan={$plan}
             totalViolationCount={$constraintResultMap[constraint.id]?.violations?.length || 0}
             {user}
+            visible={$constraintVisibilityMap[constraint.id]}
             on:toggleVisibility={toggleVisibility}
           />
         {/each}

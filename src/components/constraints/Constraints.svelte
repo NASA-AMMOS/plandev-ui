@@ -34,6 +34,7 @@
     models: Record<number, boolean>;
     plans: Record<number, boolean>;
   };
+  type ConstraintsPlanMap = Record<number, PlanSlim>;
 
   export let initialModelMap: Record<number, ModelSlim> = {};
   export let initialPlanMap: Record<number, PlanSlim> = {};
@@ -111,6 +112,7 @@
     models: {},
     plans: {},
   };
+  let constraintsPlanMap: ConstraintsPlanMap = {};
   let constraintModelId: number | null = null;
   let filterText: string = '';
   let filteredConstraints: Constraint[] = [];
@@ -212,6 +214,34 @@
       plans: {},
     },
   );
+  $: constraintsPlanMap = ($constraintsAll ?? []).reduce((prevMap: ConstraintsPlanMap, constraint: Constraint) => {
+    const { model_id, plan_id, id } = constraint;
+
+    if (plan_id !== null) {
+      const plan = initialPlanMap[plan_id];
+      return {
+        ...prevMap,
+        [id]: plan,
+      };
+    } else if (model_id !== null) {
+      const model = initialModelMap[model_id];
+      if (model) {
+        const modelPlan = model.plans.find(({ id }) => {
+          const plan = initialPlanMap[id];
+          return featurePermissions.constraints.canDelete(user, plan, constraint);
+        });
+
+        if (modelPlan) {
+          return {
+            ...prevMap,
+            [id]: initialPlanMap[modelPlan.id],
+          };
+        }
+      }
+    }
+
+    return prevMap;
+  }, {});
   $: {
     hasPermission = initialPlans.reduce((prevPermission: boolean, plan) => {
       return prevPermission || hasPlanPermission(plan, user);
@@ -260,7 +290,8 @@
   }
 
   async function deleteConstraint(constraint: Constraint) {
-    const success = await effects.deleteConstraint(constraint, user);
+    const constraintPlan = constraintsPlanMap[constraint.id];
+    const success = await effects.deleteConstraint(constraint, constraintPlan, user);
 
     if (success) {
       filteredConstraints = filteredConstraints.filter(c => constraint.id !== c.id);

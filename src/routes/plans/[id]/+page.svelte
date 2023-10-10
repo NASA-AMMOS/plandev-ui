@@ -89,7 +89,7 @@
   } from '../../../stores/views';
   import type { ActivityDirective } from '../../../types/activity';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
-  import type { ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
+  import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
@@ -130,10 +130,13 @@
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($plan) {
-    hasCheckConstraintsPermission = featurePermissions.constraints.canCheck(data.user, $plan) && !$planReadOnly;
-    hasExpandPermission = featurePermissions.expansionSequences.canExpand(data.user, $plan) && !$planReadOnly;
-    hasScheduleAnalysisPermission = featurePermissions.schedulingGoals.canAnalyze(data.user) && !$planReadOnly;
-    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan) && !$planReadOnly;
+    hasCheckConstraintsPermission =
+      featurePermissions.constraints.canCheck(data.user, $plan, $plan.model) && !$planReadOnly;
+    hasExpandPermission =
+      featurePermissions.expansionSequences.canExpand(data.user, $plan, $plan.model) && !$planReadOnly;
+    hasScheduleAnalysisPermission =
+      featurePermissions.schedulingGoals.canAnalyze(data.user, $plan, $plan.model) && !$planReadOnly;
+    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan, $plan.model) && !$planReadOnly;
   }
   $: if (data.initialPlan) {
     $plan = data.initialPlan;
@@ -280,7 +283,7 @@
   function onKeydown(event: KeyboardEvent): void {
     if (isSaveEvent(event)) {
       event.preventDefault();
-      effects.simulate(data.user);
+      effects.simulate($plan, data.user);
     }
   }
 
@@ -295,11 +298,10 @@
     }
   }
 
-  async function onEditView(event: CustomEvent<ViewSaveEvent>) {
-    const { detail } = event;
-    const { definition } = detail;
-    if (definition && hasUpdateViewPermission) {
-      const success = await effects.editView(definition, data.user);
+  async function onEditView(event: CustomEvent<View>) {
+    const { detail: view } = event;
+    if (view && hasUpdateViewPermission) {
+      const success = await effects.editView(view, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -308,16 +310,18 @@
 
   async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
     const { detail: planSnapshot } = event;
-    await effects.restorePlanSnapshot(planSnapshot, data.user);
+    if ($plan) {
+      await effects.restorePlanSnapshot(planSnapshot, $plan, data.user);
 
-    clearSnapshot();
+      clearSnapshot();
+    }
   }
 
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
-    const { definition, id, name } = detail;
+    const { definition, id, name, owner } = detail;
     if (id != null && hasUpdateViewPermission) {
-      const success = await effects.updateView(id, { definition, name }, data.user);
+      const success = await effects.updateView(id, { definition, name, owner }, data.user);
       if (success) {
         resetOriginalView();
       }
@@ -388,8 +392,8 @@
         disabled={$selectedExpansionSetId === null}
         status={$planExpansionStatus}
         on:click={() => {
-          if ($selectedExpansionSetId != null) {
-            effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, data.user);
+          if ($selectedExpansionSetId != null && $plan) {
+            effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $plan.model, data.user);
           }
         }}
       >
@@ -413,7 +417,7 @@
         progress={$simulationProgress}
         disabled={!$enableSimulation}
         showStatusInMenu={false}
-        on:click={() => effects.simulate(data.user)}
+        on:click={() => effects.simulate($plan, data.user)}
       >
         <PlayIcon />
         <svelte:fragment slot="metadata">
@@ -465,7 +469,7 @@
           ? PlanStatusMessages.READ_ONLY
           : 'You do not have permission to run a constraint check'}
         status={$checkConstraintsStatus}
-        on:click={() => effects.checkConstraints(data.user)}
+        on:click={() => $plan && effects.checkConstraints($plan, data.user)}
       >
         <VerticalCollapseIcon />
         <svelte:fragment slot="metadata">
@@ -487,7 +491,7 @@
               $schedulingGoalCount - $satisfiedSchedulingGoalCount
             } unsatisfied`
           : ''}
-        on:click={() => effects.schedule(true, data.user)}
+        on:click={() => effects.schedule(true, $plan, data.user)}
       >
         <CalendarIcon />
       </PlanNavButton>

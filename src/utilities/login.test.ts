@@ -39,6 +39,7 @@ describe('login util functions', () => {
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
+          rolePermissions: {},
           token: 'foo',
         }),
       ).toEqual(true);
@@ -52,6 +53,7 @@ describe('login util functions', () => {
           permissibleQueries: {
             constraints: true,
           },
+          rolePermissions: {},
           token: 'foo',
         }),
       ).toEqual(false);
@@ -68,6 +70,7 @@ describe('login util functions', () => {
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
+          rolePermissions: {},
           token: 'foo',
         }),
       ).toEqual(false);
@@ -81,6 +84,7 @@ describe('login util functions', () => {
           permissibleQueries: {
             constraints: true,
           },
+          rolePermissions: {},
           token: 'foo',
         }),
       ).toEqual(false);

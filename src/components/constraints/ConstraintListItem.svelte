@@ -9,6 +9,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
   import type { Constraint, ConstraintResult } from '../../types/constraint';
+  import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
@@ -18,12 +19,13 @@
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: Constraint;
+  export let constraintResult: ConstraintResult;
   export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
+  export let plan: Plan | null;
   export let totalViolationCount: number = 0;
-  export let constraintResult: ConstraintResult;
-  export let visible: boolean = true;
   export let user: User | null;
+  export let visible: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -106,7 +108,7 @@
       </ContextMenuItem>
       <ContextMenuHeader>Modify</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => effects.deleteConstraint(constraint, user)}
+        on:click={() => plan && effects.deleteConstraint(constraint, plan, user)}
         use={[
           [
             permissionHandler,

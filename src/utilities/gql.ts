@@ -839,6 +839,7 @@ const gql = {
           id
           jar_id
           name
+          owner
           parameters {
             parameters
           }
@@ -850,6 +851,10 @@ const gql = {
         parent_plan {
           id
           name
+          owner
+          collaborators {
+            collaborator
+          }
         }
         revision
         scheduling_specifications {
@@ -1024,6 +1029,16 @@ const gql = {
       resource_types: resource_type(where: { model_id: { _eq: $model_id } }, order_by: { name: asc }, limit: $limit) {
         name
         schema
+      }
+    }
+  `,
+
+  GET_ROLE_PERMISSIONS: `#graphql
+    query GetRolePermissions {
+      rolePermissions: user_role_permission {
+        role
+        action_permissions
+        function_permissions
       }
     }
   `,
@@ -1345,8 +1360,11 @@ const gql = {
         applied_preset {
           preset_id
           preset_applied {
-            name
             arguments
+            associated_activity_type
+            id
+            name
+            owner
           }
         }
         arguments
@@ -1594,14 +1612,32 @@ const gql = {
         id
         plan_receiving_changes {
           id
+          model: mission_model {
+            id
+            name
+            owner
+            version
+          }
           name
           owner
+          collaborators {
+            collaborator
+          }
         }
         plan_snapshot_supplying_changes {
           plan {
             id
+            model: mission_model {
+              id
+              name
+              owner
+              version
+            }
             name
             owner
+            collaborators {
+              collaborator
+            }
           }
           snapshot_id
         }
@@ -1618,14 +1654,32 @@ const gql = {
         id
         plan_receiving_changes {
           id
+          model: mission_model {
+            id
+            name
+            owner
+            version
+          }
           name
           owner
+          collaborators {
+            collaborator
+          }
         }
         plan_snapshot_supplying_changes {
           plan {
             id
+            model: mission_model {
+              id
+              name
+              owner
+              version
+            }
             name
             owner
+            collaborators {
+              collaborator
+            }
           }
           snapshot_id
         }
@@ -1641,14 +1695,32 @@ const gql = {
         id
         plan_receiving_changes {
           id
+          model: mission_model {
+            id
+            name
+            owner
+            version
+          }
           name
           owner
+          collaborators {
+            collaborator
+          }
         }
         plan_snapshot_supplying_changes {
           plan {
             id
+            model: mission_model {
+              id
+              name
+              owner
+              version
+            }
             name
             owner
+            collaborators {
+              collaborator
+            }
           }
           snapshot_id
         }

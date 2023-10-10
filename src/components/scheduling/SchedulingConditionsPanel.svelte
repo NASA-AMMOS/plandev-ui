@@ -87,10 +87,11 @@
       {:else}
         {#each filteredSchedulingSpecConditions as specCondition (specCondition.condition.id)}
           <SchedulingCondition
-            enabled={specCondition.enabled}
             condition={specCondition.condition}
+            enabled={specCondition.enabled}
             {hasDeletePermission}
             {hasEditPermission}
+            plan={$plan}
             specificationId={specCondition.specification_id}
             permissionError={$planReadOnly
               ? PlanStatusMessages.READ_ONLY

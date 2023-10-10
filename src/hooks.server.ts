@@ -9,12 +9,14 @@ import { ADMIN_ROLE } from './utilities/permissions';
 export const handle: Handle = async ({ event, resolve }) => {
   if (!isLoginEnabled()) {
     const permissibleQueries = await effects.getUserQueries(null);
+    const rolePermissions = await effects.getRolePermissions(null);
     event.locals.user = {
       activeRole: ADMIN_ROLE,
       allowedRoles: [ADMIN_ROLE],
       defaultRole: ADMIN_ROLE,
       id: 'unknown',
       permissibleQueries,
+      rolePermissions,
       token: '',
     };
   } else {
@@ -39,12 +41,15 @@ export const handle: Handle = async ({ event, resolve }) => {
           allowedRoles,
           defaultRole,
           permissibleQueries: null,
+          rolePermissions: null,
         };
         const permissibleQueries = await effects.getUserQueries(user);
 
+        const rolePermissions = await effects.getRolePermissions(user);
         event.locals.user = {
           ...user,
           permissibleQueries,
+          rolePermissions,
         };
       } else {
         event.locals.user = null;

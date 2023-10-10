@@ -1,6 +1,6 @@
 import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
-import type { UserId } from './app';
+import type { PartialWith, UserId } from './app';
 import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
@@ -79,14 +79,12 @@ export type ActivityPreset = {
   owner: UserId;
 };
 
-export type ActivityPresetInsertInput = {
-  arguments: ArgumentsMap;
-  associated_activity_type: string;
-  model_id: number;
-  name: string;
-};
+export type ActivityPresetInsertInput = Pick<
+  ActivityPreset,
+  'arguments' | 'associated_activity_type' | 'model_id' | 'name'
+>;
 
-export type ActivityPresetSetInput = Partial<ActivityPresetInsertInput>;
+export type ActivityPresetSetInput = PartialWith<ActivityPreset, 'owner'>;
 
 export type AnchorValidationStatus = {
   activity_id: ActivityDirectiveId;

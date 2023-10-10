@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Errors from '../stores/errors';
 import type { User } from '../types/app';
+import type { Model } from '../types/model';
 import type { Plan } from '../types/plan';
 import effects from './effects';
 import * as Modals from './modal';
@@ -116,6 +117,7 @@ const user: User = {
     view: true,
     withdraw_merge_request: true,
   },
+  rolePermissions: {},
   token: '',
 };
 
@@ -140,7 +142,32 @@ describe('Handle modal and requests in effects', () => {
       vi.spyOn(Modals, 'showConfirmModal').mockResolvedValueOnce({ confirm: true });
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.applyPresetToActivity(1, 2, 3, 4, user);
+      await effects.applyPresetToActivity(
+        {
+          arguments: {},
+          associated_activity_type: 'foo',
+          id: 1,
+          model_id: 1,
+          name: 'Foo preset',
+          owner: 'test',
+        },
+        2,
+        {
+          collaborators: [
+            {
+              collaborator: 'test',
+            },
+          ],
+          id: 3,
+          model: {
+            id: 1,
+            owner: 'test',
+          } as Model,
+          owner: 'test',
+        } as Plan,
+        4,
+        user,
+      );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
         'Preset Unable To Be Applied To Activity',
@@ -151,9 +178,6 @@ describe('Handle modal and requests in effects', () => {
 
   describe('applyTemplateToSimulation', () => {
     it('should correctly handle null responses', async () => {
-      mockPlanStore.plan.set({
-        id: 1,
-      } as Plan);
       vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
         updateSimulation: null,
       });
@@ -176,6 +200,10 @@ describe('Handle modal and requests in effects', () => {
           simulation_start_time: '',
           template: null,
         },
+        {
+          id: 1,
+          owner: 'test',
+        } as Plan,
         3,
         user,
       );
@@ -196,7 +224,13 @@ describe('Handle modal and requests in effects', () => {
       vi.spyOn(Modals, 'showConfirmModal').mockResolvedValueOnce({ confirm: true });
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.checkConstraints(user);
+      await effects.checkConstraints(
+        {
+          id: 1,
+          owner: 'test',
+        } as Plan,
+        user,
+      );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
         'Check Constraints Failed',
@@ -213,7 +247,18 @@ describe('Handle modal and requests in effects', () => {
 
       vi.spyOn(Errors, 'catchError').mockImplementationOnce(catchErrorSpy);
 
-      await effects.createActivityDirective({}, '2020-100T00:00:00', '', 'foo', {}, user);
+      await effects.createActivityDirective(
+        {},
+        '2020-100T00:00:00',
+        '',
+        'foo',
+        {},
+        {
+          id: 1,
+          owner: 'test',
+        } as Plan,
+        user,
+      );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
         'Activity Directive Create Failed',

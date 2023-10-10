@@ -57,7 +57,10 @@
 
   function onDeleteTemplate(event: CustomEvent<DropdownOptionValue>) {
     const { detail: templateId } = event;
-    dispatch('deleteTemplate', templateId);
+    const deletedSimulationTemplate = $simulationTemplates.find(
+      simulationTemplate => simulationTemplate.id === templateId,
+    );
+    dispatch('deleteTemplate', deletedSimulationTemplate);
   }
 
   function onSaveNewTemplate(event: CustomEvent<string>) {

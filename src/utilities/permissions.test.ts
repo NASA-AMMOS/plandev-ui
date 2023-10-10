@@ -19,6 +19,7 @@ describe('hasNoAuthorization', () => {
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {},
+        rolePermissions: {},
         token: '',
       }),
     ).toEqual(true);
@@ -32,6 +33,7 @@ describe('hasNoAuthorization', () => {
         permissibleQueries: {
           constraint: true,
         },
+        rolePermissions: {},
         token: '',
       }),
     ).toEqual(false);
@@ -58,6 +60,7 @@ describe('Check roles', () => {
         permissibleQueries: {
           constraint: true,
         },
+        rolePermissions: {},
         token: '',
       }),
     ).toEqual(false);
@@ -69,6 +72,7 @@ describe('Check roles', () => {
         defaultRole: 'user',
         id: 'foo',
         permissibleQueries: {},
+        rolePermissions: {},
         token: '',
       }),
     ).toEqual(true);
@@ -85,6 +89,7 @@ describe('Check roles', () => {
           permissibleQueries: {
             constraint: true,
           },
+          rolePermissions: {},
           token: '',
         },
         {
@@ -101,6 +106,7 @@ describe('Check roles', () => {
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
+          rolePermissions: {},
           token: '',
         },
         {
@@ -121,6 +127,7 @@ describe('Check roles', () => {
           permissibleQueries: {
             constraint: true,
           },
+          rolePermissions: {},
           token: '',
         },
         {
@@ -139,6 +146,7 @@ describe('Check roles', () => {
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
+          rolePermissions: {},
           token: '',
         },
         {
@@ -161,11 +169,13 @@ describe('Check roles', () => {
           permissibleQueries: {
             constraint: true,
           },
+          rolePermissions: {},
           token: '',
         },
         {
           collaborators: [{ collaborator: 'foo' }],
           id: 1,
+          model_id: 1,
           owner: 'bar',
         },
       ),
@@ -179,11 +189,13 @@ describe('Check roles', () => {
           defaultRole: 'user',
           id: 'foo',
           permissibleQueries: {},
+          rolePermissions: {},
           token: '',
         },
         {
           collaborators: [{ collaborator: 'foo' }],
           id: 1,
+          model_id: 1,
           owner: 'bar',
         },
       ),

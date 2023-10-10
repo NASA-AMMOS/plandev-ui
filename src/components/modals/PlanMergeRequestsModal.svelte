@@ -78,13 +78,23 @@
     if (planMergeRequest.type === 'incoming') {
       planMergeRequest.pending = true;
       filteredPlanMergeRequests = [...filteredPlanMergeRequests];
-      const success = await effects.planMergeBegin(planMergeRequest.id, user);
+      const success = await effects.planMergeBegin(
+        planMergeRequest.id,
+        planMergeRequest.plan_snapshot_supplying_changes.plan,
+        planMergeRequest.plan_receiving_changes,
+        user,
+      );
       if (success) {
         dispatch('close');
         goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`);
       }
     } else if (planMergeRequest.type === 'outgoing') {
-      await effects.planMergeRequestWithdraw(planMergeRequest.id, user);
+      await effects.planMergeRequestWithdraw(
+        planMergeRequest.id,
+        planMergeRequest.plan_snapshot_supplying_changes.plan,
+        planMergeRequest.plan_receiving_changes,
+        user,
+      );
     }
 
     planMergeRequest.pending = false;
@@ -109,9 +119,16 @@
       return featurePermissions.planBranch.canDeleteRequest(
         user,
         planMergeRequest.plan_snapshot_supplying_changes.plan,
+        planMergeRequest.plan_receiving_changes,
+        planMergeRequest.plan_snapshot_supplying_changes.plan.model,
       );
     }
-    return featurePermissions.planBranch.canReviewRequest(user, planMergeRequest.plan_receiving_changes);
+    return featurePermissions.planBranch.canReviewRequest(
+      user,
+      planMergeRequest.plan_snapshot_supplying_changes.plan,
+      planMergeRequest.plan_receiving_changes,
+      planMergeRequest.plan_snapshot_supplying_changes.plan.model,
+    );
   }
 </script>
 

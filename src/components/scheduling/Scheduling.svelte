@@ -36,25 +36,37 @@
   }
 
   async function deleteCondition(condition: SchedulingCondition) {
-    const success = await effects.deleteSchedulingCondition(condition, user);
+    const { scheduling_specification_conditions } = condition;
+    const specification_id = scheduling_specification_conditions[0].specification_id;
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
 
-    if (success) {
-      schedulingConditions.filterValueById(condition.id);
+    if (plan) {
+      const success = await effects.deleteSchedulingCondition(condition, plan, user);
 
-      if (condition.id === selectedCondition?.id) {
-        selectedCondition = null;
+      if (success) {
+        schedulingConditions.filterValueById(condition.id);
+
+        if (condition.id === selectedCondition?.id) {
+          selectedCondition = null;
+        }
       }
     }
   }
 
   async function deleteGoal(goal: SchedulingGoalSlim) {
-    const success = await effects.deleteSchedulingGoal(goal, user);
+    const { scheduling_specification_goal } = goal;
+    const specification_id = scheduling_specification_goal.specification_id;
+    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
 
-    if (success) {
-      schedulingGoals.filterValueById(goal.id);
+    if (plan) {
+      const success = await effects.deleteSchedulingGoal(goal, plan, user);
 
-      if (goal.id === selectedGoal?.id) {
-        selectedGoal = null;
+      if (success) {
+        schedulingGoals.filterValueById(goal.id);
+
+        if (goal.id === selectedGoal?.id) {
+          selectedGoal = null;
+        }
       }
     }
   }

@@ -214,7 +214,7 @@
                     $simulationDatasetId = -1;
                   }
                 }}
-                on:restore={() => effects.restorePlanSnapshot(planSnapshot, user)}
+                on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
                 on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
               />
             {/each}

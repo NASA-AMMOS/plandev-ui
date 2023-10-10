@@ -44,6 +44,7 @@
   let conditionName: string = initialConditionName;
   let hasAuthoringPermission: boolean = false;
   let hasPermission: boolean = false;
+  let planOptions: (PlanSchedulingSpec & { specId: number | null })[] = [];
   let saveButtonEnabled: boolean = false;
   let specId: number | null = initialSpecId;
   let savedSpecId: number | null = initialSpecId;
@@ -56,11 +57,12 @@
 
   $: planOptions = plans
     .filter(plan => plan.model_id === conditionModelId)
-    .map(({ id, name, scheduling_specifications }) => ({
-      id,
-      name,
-      specId: (scheduling_specifications && scheduling_specifications[0]?.id) || null,
+    .map(({ scheduling_specifications, ...plan }) => ({
+      ...plan,
+      scheduling_specifications,
+      specId: scheduling_specifications?.[0] ? scheduling_specifications[0].id : null,
     }));
+  $: selectedPlan = planOptions.find(({ specId: planSpecId }) => planSpecId === specId);
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec
 
   $: hasAuthoringPermission = mode === 'edit' ? isUserAdmin(user) : true;
@@ -134,11 +136,12 @@
     if (saveButtonEnabled) {
       if (mode === 'create') {
         let newCondition: SchedulingCondition | null = null;
-        if (conditionModelId !== null) {
+        if (conditionModelId !== null && selectedPlan) {
           newCondition = await effects.createSchedulingCondition(
             conditionDefinition,
             conditionName,
             conditionModelId,
+            selectedPlan,
             user,
             conditionDescription,
           );
@@ -163,8 +166,8 @@
           ...(hasAuthoringPermission && conditionModelId !== null ? { model_id: conditionModelId } : {}),
           name: conditionName,
         };
-        if (conditionId !== null) {
-          const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, user);
+        if (conditionId !== null && selectedPlan != null) {
+          const updatedCondition = await effects.updateSchedulingCondition(conditionId, condition, selectedPlan, user);
           if (updatedCondition) {
             if (savedSpecId !== null && specId !== null && specId !== savedSpecId) {
               await effects.updateSchedulingSpecConditionId(conditionId, savedSpecId, specId, user);

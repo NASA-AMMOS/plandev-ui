@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { activityMetadataDefinitions } from '../../stores/activities';
 import { activityTypes } from '../../stores/plan';
 import type { User } from '../../types/app';
+import type { Model } from '../../types/model';
 import type {
   Plan,
   PlanMergeConflictingActivity,
@@ -17,13 +18,23 @@ vi.mock('$env/dynamic/public', () => import.meta***REMOVED***); // https://githu
 const mockMergeRequest: PlanMergeRequestSchema = {
   id: 1,
   plan_receiving_changes: {
+    collaborators: [],
     id: 1,
+    model: {
+      owner: 'unknown',
+    } as Model,
+    model_id: 1,
     name: 'Demo Plan',
     owner: 'unknown',
   },
   plan_snapshot_supplying_changes: {
     plan: {
+      collaborators: [],
       id: 2,
+      model: {
+        owner: 'unknown',
+      } as Model,
+      model_id: 1,
       name: 'Branch 1',
       owner: 'unknown',
     },
@@ -75,6 +86,7 @@ const user: User = {
   defaultRole: ADMIN_ROLE,
   id: 'foo',
   permissibleQueries: {},
+  rolePermissions: {},
   token: '',
 };
 

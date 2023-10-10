@@ -37,7 +37,7 @@
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
 
-  const permissionError = 'You do not have permission to edit this constraint.';
+  const permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create a'} constraint.`;
 
   let constraintDefinition: string = initialConstraintDefinition;
   let constraintDescription: string = initialConstraintDescription;
@@ -174,11 +174,12 @@
       if (mode === 'create') {
         const newConstraintId = await effects.createConstraint(
           constraintDefinition,
-          constraintModelId,
+          constraintModelId ? initialModelMap[constraintModelId] : null,
           constraintName,
-          constraintPlanId,
+          constraintPlanId ? initialPlanMap[constraintPlanId] : null,
           user,
           constraintDescription,
+          initialPlans,
         );
 
         if (newConstraintId !== null) {
@@ -194,10 +195,11 @@
         await effects.updateConstraint(
           constraintId,
           constraintDefinition,
-          constraintModelId,
+          constraintModelId ? initialModelMap[constraintModelId] : null,
           constraintName,
-          constraintPlanId,
+          constraintPlanId ? initialPlanMap[constraintPlanId] : null,
           user,
+          initialPlans,
           constraintDescription,
         );
 

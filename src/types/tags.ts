@@ -43,6 +43,6 @@ export type TagsMap = Record<Tag['id'], Tag>;
 
 export type TagsInsertInput = Pick<Tag, 'color' | 'name'>;
 
-export type TagsSetInput = Pick<Tag, 'color' | 'name'>;
+export type TagsSetInput = Pick<Tag, 'color' | 'name' | 'owner'>;
 
 export type TagsChangeEvent = CustomEvent<{ tag: Tag; type: 'select' | 'create' | 'remove' }>;

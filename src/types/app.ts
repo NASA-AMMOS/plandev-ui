@@ -1,4 +1,4 @@
-import type { PermissibleQueriesMap } from './permissions';
+import type { PermissibleQueriesMap, RolePermissionsMap } from './permissions';
 
 export type UserId = string | null;
 
@@ -14,6 +14,7 @@ export type User = BaseUser & {
   allowedRoles: UserRole[];
   defaultRole: UserRole;
   permissibleQueries: PermissibleQueriesMap | null;
+  rolePermissions: RolePermissionsMap | null;
 };
 
 export type ParsedUserToken = {
@@ -34,3 +35,5 @@ export type Version = {
   date: string;
   name: string;
 };
+
+export type PartialWith<T, K extends keyof T> = Partial<T> & Pick<T, K>;
