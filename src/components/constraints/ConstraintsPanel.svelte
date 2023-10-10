@@ -8,6 +8,7 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     checkConstraintsStatus,
     constraintResultMap,
@@ -18,7 +19,7 @@
     setConstraintVisibility,
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
-  import { plan, viewTimeRange } from '../../stores/plan';
+  import { plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import type { User } from '../../types/app';
   import type { Constraint, ConstraintResult } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
@@ -168,8 +169,10 @@
           [
             permissionHandler,
             {
-              hasPermission: $plan ? featurePermissions.constraints.canCheck(user, $plan) : false,
-              permissionError: 'You do not have permission to run constraint checks',
+              hasPermission: $plan ? featurePermissions.constraints.canCheck(user, $plan) && !$planReadOnly : false,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run constraint checks',
             },
           ],
         ]}
@@ -194,8 +197,10 @@
           name="new-constraint"
           class="st-button secondary"
           use:permissionHandler={{
-            hasPermission: $plan ? featurePermissions.constraints.canCreate(user, $plan) : false,
-            permissionError: 'You do not have permission to create constraints',
+            hasPermission: $plan ? featurePermissions.constraints.canCreate(user, $plan) && !$planReadOnly : false,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to create constraints',
           }}
           on:click={() => window.open(`${base}/constraints/new`, '_blank')}
         >

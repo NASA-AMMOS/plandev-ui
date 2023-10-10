@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { planReadOnly } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type {
@@ -36,18 +37,21 @@
     value: simulationTemplate.id,
   }));
   $: if (plan !== null) {
-    hasAssignPermission = featurePermissions.simulationTemplates.canAssign(user, plan);
+    hasAssignPermission = featurePermissions.simulationTemplates.canAssign(user, plan) && !$planReadOnly;
     // because we also assign after template creation, we must include both checks here as part of the creation permission check
     hasCreatePermission =
       featurePermissions.simulationTemplates.canCreate(user, plan) &&
-      featurePermissions.simulationTemplates.canAssign(user, plan);
+      featurePermissions.simulationTemplates.canAssign(user, plan) &&
+      !$planReadOnly;
 
     const selectedTemplate = $simulationTemplates.find(
       simulationTemplate => simulationTemplate.id === selectedSimulationTemplate?.id,
     );
     if (selectedTemplate !== undefined) {
-      hasDeletePermission = featurePermissions.simulationTemplates.canDelete(user, plan, selectedTemplate);
-      hasUpdatePermission = featurePermissions.simulationTemplates.canUpdate(user, plan, selectedTemplate);
+      hasDeletePermission =
+        featurePermissions.simulationTemplates.canDelete(user, plan, selectedTemplate) && !$planReadOnly;
+      hasUpdatePermission =
+        featurePermissions.simulationTemplates.canUpdate(user, plan, selectedTemplate) && !$planReadOnly;
     }
   }
 
@@ -88,6 +92,7 @@
       {options}
       optionLabel="template"
       placeholder="None"
+      planReadOnly={$planReadOnly}
       selectedOptionValue={selectedSimulationTemplate?.id}
       showPlaceholderOption={hasAssignPermission}
       on:deleteOption={onDeleteTemplate}

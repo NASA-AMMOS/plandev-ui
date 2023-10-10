@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
@@ -21,10 +22,10 @@
   export let highlightKeysMap: Record<string, boolean> = {};
   export let isAnchoredToStart: boolean = true;
   export let startOffset: string | null = null;
+  export let planReadOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
   const anchorTextDelimiter = ' - ';
-  const updatePermissionError: string = 'You do not have permission to update this anchor';
 
   let anchorableActivityDirectives: ActivityDirective[] = [];
   let anchoredActivity: ActivityDirective | null = null;
@@ -43,6 +44,9 @@
     value: anchorableActivity.id,
   }));
   $: startOffsetError = validateStartOffset(startOffsetString, activityDirective);
+  $: updatePermissionError = planReadOnly
+    ? PlanStatusMessages.READ_ONLY
+    : 'You do not have permission to update this anchor';
 
   $: if (startOffset) {
     const offsetString = convertUsToDurationString(getIntervalInMs(startOffset) * 1000, true);
@@ -150,13 +154,13 @@
         </label>
         <SearchableDropdown
           {disabled}
-          {hasUpdatePermission}
+          hasUpdatePermission={hasUpdatePermission && !planReadOnly}
           options={searchableOptions}
           placeholder="To Plan"
           searchPlaceholder="Search Directives"
           settingsIconTooltip="Set Anchor"
           selectedOptionValue={anchorId}
-          updatePermissionError="You do not have permission to update this anchor"
+          {updatePermissionError}
           on:selectOption={onSelectAnchor}
         />
       </Input>
@@ -177,7 +181,7 @@
             class:disabled
             role="none"
             use:permissionHandler={{
-              hasPermission: hasUpdatePermission,
+              hasPermission: hasUpdatePermission && !planReadOnly,
               permissionError: updatePermissionError,
             }}
             on:click={onAnchorToStart}
@@ -190,7 +194,7 @@
             class:selected={!isAnchoredToStart}
             class:disabled
             use:permissionHandler={{
-              hasPermission: hasUpdatePermission,
+              hasPermission: hasUpdatePermission && !planReadOnly,
               permissionError: updatePermissionError,
             }}
             on:click={onAnchorToEnd}
@@ -212,7 +216,7 @@
           {disabled}
           name="start-offset"
           use:permissionHandler={{
-            hasPermission: hasUpdatePermission,
+            hasPermission: hasUpdatePermission && !planReadOnly,
             permissionError: updatePermissionError,
           }}
           bind:value={startOffsetString}

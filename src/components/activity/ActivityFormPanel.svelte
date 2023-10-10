@@ -4,6 +4,7 @@
   import LockIcon from '@nasa-jpl/stellar/icons/lock.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import UnlockIcon from '@nasa-jpl/stellar/icons/unlock.svg?component';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     activityDirectivesMap,
     activityMetadataDefinitions,
@@ -11,7 +12,14 @@
     selectedActivityDirective,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
-  import { activityEditingLocked, activityTypes, modelId, plan, setActivityEditingLocked } from '../../stores/plan';
+  import {
+    activityEditingLocked,
+    activityTypes,
+    modelId,
+    plan,
+    planReadOnly,
+    setActivityEditingLocked,
+  } from '../../stores/plan';
   import { selectedSpan, simulationDatasetId, spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
@@ -30,12 +38,14 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  const deletePermissionError = 'You do not have permission to delete this activity';
-
   let hasDeletePermission: boolean = false;
 
+  $: deletePermissionError = $planReadOnly
+    ? PlanStatusMessages.READ_ONLY
+    : 'You do not have permission to delete this activity';
   $: if (user !== null && $plan !== null && $selectedActivityDirective !== null) {
-    hasDeletePermission = featurePermissions.activityDirective.canDelete(user, $plan, $selectedActivityDirective);
+    hasDeletePermission =
+      featurePermissions.activityDirective.canDelete(user, $plan, $selectedActivityDirective) && !$planReadOnly;
   }
 
   function onSelectSpan(event: CustomEvent<SpanId>) {

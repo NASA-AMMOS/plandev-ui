@@ -11,6 +11,7 @@
   import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { keyBy } from 'lodash-es';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
+  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import type { User } from '../../../types/app';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import type { PermissionCheck } from '../../../types/permissions';
@@ -25,6 +26,7 @@
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
+  export let planReadOnly: boolean = false;
   export let idKey: keyof RowData = 'id';
   export let items: RowData[];
   export let pluralItemDisplayText: string = '';
@@ -50,12 +52,12 @@
     const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
     if (selectedItem) {
       if (typeof hasDeletePermission === 'function') {
-        deletePermission = hasDeletePermission(user, selectedItem);
+        deletePermission = hasDeletePermission(user, selectedItem) && !planReadOnly;
       }
     }
   }
   $: if (typeof hasDeletePermission === 'boolean') {
-    deletePermission = hasDeletePermission;
+    deletePermission = hasDeletePermission && !planReadOnly;
   }
   $: if (selectedItemId != null && !selectedItemIds.includes(selectedItemId)) {
     selectedItemIds = [selectedItemId];
@@ -156,7 +158,7 @@
               permissionHandler,
               {
                 hasPermission: deletePermission,
-                permissionError: 'You do not have permission to delete.',
+                permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to delete.',
               },
             ],
           ]}

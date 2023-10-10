@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { planReadOnly } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirective, ActivityPreset } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -54,14 +55,15 @@
     // because we also assign after preset creation, we must include both checks here as part of the creation permission check
     hasCreatePermission =
       featurePermissions.activityPresets.canCreate(user, plan) &&
-      featurePermissions.activityPresets.canAssign(user, plan);
+      featurePermissions.activityPresets.canAssign(user, plan) &&
+      !$planReadOnly;
 
     const selectedPreset = $activityPresets.find(
       activityPreset => activityPreset.id === activityDirective?.applied_preset?.preset_id,
     );
     if (selectedPreset !== undefined) {
-      hasDeletePermission = featurePermissions.activityPresets.canDelete(user, plan, selectedPreset);
-      hasUpdatePermission = featurePermissions.activityPresets.canUpdate(user, plan, selectedPreset);
+      hasDeletePermission = featurePermissions.activityPresets.canDelete(user, plan, selectedPreset) && !$planReadOnly;
+      hasUpdatePermission = featurePermissions.activityPresets.canUpdate(user, plan, selectedPreset) && !$planReadOnly;
     }
   }
 
@@ -100,6 +102,7 @@
         {options}
         optionLabel="preset"
         placeholder="None"
+        planReadOnly={$planReadOnly}
         selectedOptionValue={activityDirective?.applied_preset?.preset_id}
         showPlaceholderOption={hasAssignPermission}
         on:deleteOption={onDeletePreset}

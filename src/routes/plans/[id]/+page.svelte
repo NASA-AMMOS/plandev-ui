@@ -23,6 +23,7 @@
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
+  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
   import {
     activityDirectives,
@@ -48,6 +49,7 @@
     planEndTimeMs,
     planId,
     planLocked,
+    planReadOnly,
     planStartTimeMs,
     planTags,
     resetPlanStores,
@@ -128,10 +130,10 @@
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($plan) {
-    hasCheckConstraintsPermission = featurePermissions.constraints.canCheck(data.user, $plan);
-    hasExpandPermission = featurePermissions.expansionSequences.canExpand(data.user, $plan);
-    hasScheduleAnalysisPermission = featurePermissions.schedulingGoals.canAnalyze(data.user);
-    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan);
+    hasCheckConstraintsPermission = featurePermissions.constraints.canCheck(data.user, $plan) && !$planReadOnly;
+    hasExpandPermission = featurePermissions.expansionSequences.canExpand(data.user, $plan) && !$planReadOnly;
+    hasScheduleAnalysisPermission = featurePermissions.schedulingGoals.canAnalyze(data.user) && !$planReadOnly;
+    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan) && !$planReadOnly;
   }
   $: if (data.initialPlan) {
     $plan = data.initialPlan;
@@ -377,7 +379,9 @@
         title={!compactNavMode ? 'Expansion' : ''}
         buttonText="Expand Activities"
         hasPermission={hasExpandPermission}
-        permissionError="You do not have permission to expand activities"
+        permissionError={$planReadOnly
+          ? PlanStatusMessages.READ_ONLY
+          : 'You do not have permission to expand activities'}
         menuTitle="Expansion Status"
         disabled={$selectedExpansionSetId === null}
         status={$planExpansionStatus}
@@ -400,7 +404,9 @@
           ? 'Simulation up-to-date'
           : ''}
         hasPermission={hasSimulatePermission}
-        permissionError="You do not have permission to run a simulation"
+        permissionError={$planReadOnly
+          ? PlanStatusMessages.READ_ONLY
+          : 'You do not have permission to run a simulation'}
         status={$simulationStatus}
         progress={$simulationProgress}
         disabled={!$enableSimulation}
@@ -453,7 +459,9 @@
         menuTitle="Constraint Status"
         buttonText="Check Constraints"
         hasPermission={hasCheckConstraintsPermission}
-        permissionError="You do not have permission to run a constraint check"
+        permissionError={$planReadOnly
+          ? PlanStatusMessages.READ_ONLY
+          : 'You do not have permission to run a constraint check'}
         status={$checkConstraintsStatus}
         on:click={() => effects.checkConstraints(data.user)}
       >
@@ -468,7 +476,9 @@
         buttonText="Analyze Goal Satisfaction"
         disabled={!$enableScheduling}
         hasPermission={hasScheduleAnalysisPermission}
-        permissionError="You do not have permission to run a scheduling analysis"
+        permissionError={$planReadOnly
+          ? PlanStatusMessages.READ_ONLY
+          : 'You do not have permission to run a scheduling analysis'}
         status={schedulingAnalysisStatus}
         statusText={schedulingAnalysisStatus === Status.PartialSuccess || schedulingAnalysisStatus === Status.Complete
           ? `${$satisfiedSchedulingGoalCount} satisfied, ${

@@ -3,8 +3,9 @@
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { field } from '../../stores/form';
-  import { plan } from '../../stores/plan';
+  import { plan, planReadOnly } from '../../stores/plan';
   import type {
     ActivityDirective,
     ActivityDirectiveId,
@@ -51,8 +52,6 @@
   export let showHeader: boolean = true;
   export let user: User | null;
 
-  const updatePermissionError = 'You do not have permission to update this activity';
-
   let editingActivityName: boolean = false;
   let hasUpdatePermission: boolean = false;
   let numOfUserChanges: number = 0;
@@ -64,8 +63,12 @@
   let startTimeDoyField: FieldStore<string>;
 
   $: if (user !== null && $plan !== null) {
-    hasUpdatePermission = featurePermissions.activityDirective.canUpdate(user, $plan, activityDirective);
+    hasUpdatePermission =
+      featurePermissions.activityDirective.canUpdate(user, $plan, activityDirective) && !$planReadOnly;
   }
+  $: updatePermissionError = $planReadOnly
+    ? PlanStatusMessages.READ_ONLY
+    : 'You do not have permission to update this activity';
   $: highlightKeysMap = keyByBoolean(highlightKeys);
   $: activityType =
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
@@ -385,6 +388,7 @@
         anchorId={activityDirective.anchor_id}
         disabled={!editable}
         {highlightKeysMap}
+        planReadOnly={$planReadOnly}
         isAnchoredToStart={activityDirective.anchored_to_start}
         startOffset={activityDirective.start_offset}
         on:updateAnchor={updateAnchor}

@@ -3,6 +3,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     creatingExpansionSequence,
     expansionSets,
@@ -10,7 +11,7 @@
     planExpansionStatus,
     selectedExpansionSetId,
   } from '../../stores/expansion';
-  import { plan } from '../../stores/plan';
+  import { plan, planReadOnly } from '../../stores/plan';
   import { simulationDatasetId } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
@@ -69,9 +70,9 @@
   let selectedExpansionSet: ExpansionSet | null;
 
   $: if (user !== null && $plan !== null) {
-    hasCreatePermission = featurePermissions.expansionSequences.canCreate(user);
-    hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan);
-    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan);
+    hasCreatePermission = featurePermissions.expansionSequences.canCreate(user) && !$planReadOnly;
+    hasDeletePermission = featurePermissions.expansionSequences.canDelete(user, $plan) && !$planReadOnly;
+    hasExpandPermission = featurePermissions.expansionSequences.canExpand(user, $plan) && !$planReadOnly;
   }
   $: {
     columnDefs = [
@@ -148,7 +149,9 @@
             permissionHandler,
             {
               hasPermission: hasExpandPermission,
-              permissionError: 'You do not have permission to expand sequences',
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to expand sequences',
             },
           ],
         ]}
@@ -247,7 +250,9 @@
                     class="st-input"
                     use:permissionHandler={{
                       hasPermission: hasCreatePermission,
-                      permissionError: 'You do not have permission to create an expansion',
+                      permissionError: $planReadOnly
+                        ? PlanStatusMessages.READ_ONLY
+                        : 'You do not have permission to create an expansion',
                     }}
                   />
                   <button
@@ -255,7 +260,9 @@
                     disabled={!createButtonEnabled}
                     use:permissionHandler={{
                       hasPermission: hasCreatePermission,
-                      permissionError: 'You do not have permission to create an expansion',
+                      permissionError: $planReadOnly
+                        ? PlanStatusMessages.READ_ONLY
+                        : 'You do not have permission to create an expansion',
                     }}
                     on:click|stopPropagation={() =>
                       effects.createExpansionSequence(seqIdInput, $simulationDatasetId, user)}

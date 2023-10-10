@@ -6,6 +6,7 @@
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import { upperFirst } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -22,6 +23,7 @@
   export let options: DropdownOptions = [];
   export let optionLabel: string = 'Option';
   export let placeholder: string = '';
+  export let planReadOnly: boolean = false;
   export let selectedOptionValue: SelectedDropdownOptionValue | undefined = undefined;
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = `Search ${upperFirst(optionLabel)}s`;
@@ -155,7 +157,9 @@
         class:disabled={!optionName || !isOptionNameChanged || isOptionNameDuped}
         use:permissionHandler={{
           hasPermission: hasCreatePermission,
-          permissionError: `You do not have permission to save a new ${upperFirst(optionLabel)}`,
+          permissionError: planReadOnly
+            ? PlanStatusMessages.READ_ONLY
+            : `You do not have permission to save a new ${upperFirst(optionLabel)}`,
         }}
         on:click|stopPropagation={onSaveNewOption}
       >
@@ -168,7 +172,9 @@
         disabled={!(!!selectedOption && (isOptionNameChanged || canSaveOver))}
         use:permissionHandler={{
           hasPermission: updatePermission,
-          permissionError: `You do not have permission to save this ${upperFirst(optionLabel)}`,
+          permissionError: planReadOnly
+            ? PlanStatusMessages.READ_ONLY
+            : `You do not have permission to save this ${upperFirst(optionLabel)}`,
         }}
         on:click|stopPropagation={onSaveOption}
       >
@@ -180,7 +186,9 @@
         disabled={!selectedOption || isOptionNameChanged}
         use:permissionHandler={{
           hasPermission: deletePermission,
-          permissionError: `You do not have permission to delete this ${upperFirst(optionLabel)}`,
+          permissionError: planReadOnly
+            ? PlanStatusMessages.READ_ONLY
+            : `You do not have permission to delete this ${upperFirst(optionLabel)}`,
         }}
         on:click|stopPropagation={onDeleteOption}
       >

@@ -15,10 +15,9 @@
   export let condition: SchedulingCondition;
   export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
+  export let permissionError: string = '';
   export let specificationId: number;
   export let user: User | null;
-
-  const permissionError = 'You do not have permission to edit scheduling conditions for this plan.';
 </script>
 
 <div class="scheduling-condition" class:disabled={!enabled}>

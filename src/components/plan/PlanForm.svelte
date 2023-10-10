@@ -1,7 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
+  import { planReadOnly } from '../../stores/plan';
   import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
@@ -27,16 +29,17 @@
   export let tags: Tag[] = [];
   export let user: User | null;
 
-  let hasPermission: boolean = false;
   let filteredPlanSnapshots: PlanSnapshotType[] = [];
   let isFilteredBySimulation: boolean = false;
-  let permissionError = 'You do not have permission to edit this plan.';
+  let hasPlanUpdatePermission: boolean = false;
+
+  $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
 
   $: {
     if (plan && user) {
-      hasPermission = featurePermissions.plan.canUpdate(user, plan);
+      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
     } else {
-      hasPermission = false;
+      hasPlanUpdatePermission = false;
     }
   }
 
@@ -157,7 +160,7 @@
               [
                 permissionHandler,
                 {
-                  hasPermission,
+                  hasPermission: hasPlanUpdatePermission,
                   permissionError,
                 },
               ],
@@ -181,7 +184,14 @@
               on:toggle={onToggleFilter}
             />
           {/if}
-          <button class="st-button secondary" on:click={onCreatePlanSnapshot}>Take Snapshot</button>
+          <button
+            class="st-button secondary"
+            use:permissionHandler={{
+              hasPermission: !$planReadOnly,
+              permissionError: PlanStatusMessages.READ_ONLY,
+            }}
+            on:click={onCreatePlanSnapshot}>Take Snapshot</button
+          >
         </div>
         <div style="margin-top: 8px">
           <CardList>

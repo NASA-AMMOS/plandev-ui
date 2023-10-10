@@ -3,6 +3,8 @@
 <script lang="ts">
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { planReadOnly } from '../../stores/plan';
   import { view, viewUpdateGrid } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -148,8 +150,10 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdateSimulationPermission,
-            permissionError: 'You do not have permission to update this simulation',
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update this simulation',
           },
         ],
       ]}
@@ -162,8 +166,10 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdateSimulationPermission,
-            permissionError: 'You do not have permission to update this simulation',
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update this simulation',
           },
         ],
       ]}
@@ -181,8 +187,10 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdateDirectivePermission,
-            permissionError: 'You do not have permission to delete this activity',
+            hasPermission: hasUpdateDirectivePermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to delete this activity',
           },
         ],
       ]}
@@ -229,8 +237,10 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdateSimulationPermission,
-            permissionError: 'You do not have permission to update the simulation',
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update the simulation',
           },
         ],
       ]}
@@ -243,8 +253,10 @@
         [
           permissionHandler,
           {
-            hasPermission: hasUpdateSimulationPermission,
-            permissionError: 'You do not have permission to update the simulation',
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update the simulation',
           },
         ],
       ]}

@@ -3,7 +3,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { afterUpdate, beforeUpdate } from 'svelte';
-  import { plan } from '../../stores/plan';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { plan, planReadOnly } from '../../stores/plan';
   import { schedulingSpecConditions, selectedSpecId } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { SchedulingSpecCondition } from '../../types/scheduling';
@@ -26,9 +27,9 @@
   let filteredSchedulingSpecConditions: SchedulingSpecCondition[] = [];
 
   $: if ($plan) {
-    hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan);
-    hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan);
-    hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan);
+    hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan) && !$planReadOnly;
+    hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan) && !$planReadOnly;
+    hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan) && !$planReadOnly;
   }
 
   $: filteredSchedulingSpecConditions = $schedulingSpecConditions.filter(spec => {
@@ -72,7 +73,9 @@
           )}
         use:permissionHandler={{
           hasPermission: hasCreatePermission,
-          permissionError: 'You do not have permission to create scheduling conditions for this plan.',
+          permissionError: $planReadOnly
+            ? PlanStatusMessages.READ_ONLY
+            : 'You do not have permission to create scheduling conditions for this plan.',
         }}
       >
         New
@@ -89,6 +92,9 @@
             {hasDeletePermission}
             {hasEditPermission}
             specificationId={specCondition.specification_id}
+            permissionError={$planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to edit scheduling conditions for this plan.'}
             {user}
           />
         {/each}

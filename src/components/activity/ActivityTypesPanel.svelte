@@ -2,7 +2,8 @@
 
 <script lang="ts">
   import PlusIcon from 'bootstrap-icons/icons/plus.svg?component';
-  import { activityTypes, plan } from '../../stores/plan';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { activityTypes, plan, planReadOnly } from '../../stores/plan';
   import type { ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ViewGridSection } from '../../types/view';
@@ -16,13 +17,12 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  const permissionError = 'You do not have permission to add an activity.';
-
   let filterText: string = '';
   let hasPermission: boolean = false;
 
+  $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to add an activity.';
   $: if ($plan !== null) {
-    hasPermission = featurePermissions.activityDirective.canCreate(user, $plan);
+    hasPermission = featurePermissions.activityDirective.canCreate(user, $plan) && !$planReadOnly;
   }
   $: filteredActivityTypes = ($activityTypes ?? []).filter(({ name }) =>
     name.toLowerCase().includes(filterText.toLowerCase()),

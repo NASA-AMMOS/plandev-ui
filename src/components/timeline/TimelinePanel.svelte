@@ -8,7 +8,7 @@
     selectedActivityDirectiveId,
   } from '../../stores/activities';
   import { visibleConstraintResults } from '../../stores/constraints';
-  import { maxTimeRange, plan, planId, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planId, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
     resourcesByViewLayerId,
     selectedSpanId,
@@ -38,8 +38,8 @@
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
 
   $: if (user !== null && $plan !== null) {
-    hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan);
-    hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan);
+    hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan) && !$planReadOnly;
+    hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
   $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
   $: timelineDirectiveVisibilityToggles = timeline
@@ -134,6 +134,7 @@
         />
         <TimelineLockControl
           hasUpdatePermission={hasUpdateDirectivePermission}
+          planReadOnly={$planReadOnly}
           timelineLockStatus={$timelineLockStatus}
           on:lock={({ detail: lock }) => {
             $timelineLockStatus = lock;

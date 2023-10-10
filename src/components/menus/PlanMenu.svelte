@@ -5,6 +5,8 @@
   import { base } from '$app/paths';
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { planReadOnly } from '../../stores/plan';
   import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
@@ -19,10 +21,14 @@
   export let plan: Plan;
   export let user: User | null;
 
-  let hasCreatePermission: boolean = false;
+  let hasCreateMergeRequestPermission: boolean = false;
+  let hasCreatPlanBranchPermission: boolean = false;
+  let hasCreateSnapshotPermission: boolean = false;
   let planMenu: Menu;
 
-  $: hasCreatePermission = featurePermissions.planBranch.canCreateRequest(user, plan);
+  $: hasCreateMergeRequestPermission = featurePermissions.planBranch.canCreateRequest(user, plan) && !$planReadOnly;
+  $: hasCreatPlanBranchPermission = featurePermissions.planBranch.canCreateBranch(user) && !$planReadOnly;
+  $: hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan) && !$planReadOnly;
 
   function createMergePlanBranchRequest() {
     effects.createPlanBranchRequest(plan, 'merge', user);
@@ -60,7 +66,20 @@
   <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
     <div class="plan-title">{plan.name}<ChevronDownIcon /></div>
     <Menu bind:this={planMenu}>
-      <MenuItem on:click={createPlanBranch}>
+      <MenuItem
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasCreateMergeRequestPermission,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to create a merge request',
+            },
+          ],
+        ]}
+        on:click={createPlanBranch}
+      >
         <div class="column-name">Create branch</div>
       </MenuItem>
       <MenuItem on:click={showPlanMergeRequests}>
@@ -74,8 +93,10 @@
             [
               permissionHandler,
               {
-                hasPermission: hasCreatePermission,
-                permissionError: 'You do not have permission to create a merge request',
+                hasPermission: hasCreatPlanBranchPermission,
+                permissionError: $planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to create a plan branch',
               },
             ],
           ]}
@@ -87,7 +108,20 @@
         </MenuItem>
       {/if}
       <MenuDivider />
-      <MenuItem on:click={createPlanSnapshot}>
+      <MenuItem
+        on:click={createPlanSnapshot}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasCreateSnapshotPermission,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to create a plan snapshot',
+            },
+          ],
+        ]}
+      >
         <div class="column-name">Take Snapshot</div>
       </MenuItem>
       <MenuItem on:click={viewSnapshotHistory}>

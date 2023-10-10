@@ -18,6 +18,7 @@
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
   export let plan: Plan | null;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
+  export let planReadOnly: boolean = false;
   export let user: User | null;
 
   type CellRendererParams = {
@@ -30,7 +31,8 @@
   let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
 
-  $: hasDeletePermission = plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) : false;
+  $: hasDeletePermission =
+    plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) && !planReadOnly : false;
   $: {
     activityActionColumnDef = {
       cellClass: 'action-cell-container',
@@ -45,6 +47,7 @@
               placement: 'bottom',
             },
             hasDeletePermission,
+            planReadOnly,
             rowData: params.data,
           },
           target: actionsDiv,
@@ -96,6 +99,7 @@
   columnDefs={completeColumnDefs}
   {columnStates}
   {getRowId}
+  {planReadOnly}
   {hasDeletePermission}
   items={activityDirectives}
   pluralItemDisplayText="Activity Directives"

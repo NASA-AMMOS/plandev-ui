@@ -2,12 +2,14 @@
   import LockIcon from '@nasa-jpl/stellar/icons/lock.svg?component';
   import UnlockIcon from '@nasa-jpl/stellar/icons/unlock.svg?component';
   import { createEventDispatcher, onMount } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { TimelineLockStatus } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
 
   export let hasUpdatePermission: boolean = false;
   export let timelineLockStatus: TimelineLockStatus = TimelineLockStatus.Locked;
+  export let planReadOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
   const lockTooltipContent = 'Click to unlock timeline, or press and hold the Shift key to temporarily unlock';
@@ -63,7 +65,7 @@
   use:tooltip={{ content: lockTooltipContent, disabled: tooltipDisabled || !hasUpdatePermission, placement: 'bottom' }}
   use:permissionHandler={{
     hasPermission: hasUpdatePermission,
-    permissionError: 'You do not have permission to update this timeline',
+    permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to update this timeline',
   }}
 >
   {#if timelineLockStatus === TimelineLockStatus.Locked}

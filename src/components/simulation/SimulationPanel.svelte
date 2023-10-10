@@ -4,9 +4,10 @@
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { field } from '../../stores/form';
-  import { plan, planEndTimeMs, planStartTimeMs } from '../../stores/plan';
   import { planSnapshot } from '../../stores/planSnapshots';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { field } from '../../stores/form';
+  import { plan, planEndTimeMs, planReadOnly, planStartTimeMs } from '../../stores/plan';
   import {
     enableSimulation,
     simulation,
@@ -65,8 +66,8 @@
   let filteredSimulationDatasets: SimulationDataset[] = [];
 
   $: if (user !== null && $plan !== null) {
-    hasRunPermission = featurePermissions.simulation.canRun(user, $plan);
-    hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan);
+    hasRunPermission = featurePermissions.simulation.canRun(user, $plan) && !$planReadOnly;
+    hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
   $: if ($plan) {
     startTimeDoy =
@@ -279,7 +280,9 @@
             permissionHandler,
             {
               hasPermission: hasRunPermission,
-              permissionError: 'You do not have permission to run a simulation',
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to run a simulation',
             },
           ],
         ]}
@@ -301,7 +304,7 @@
               permissionHandler,
               {
                 hasPermission: hasUpdatePermission,
-                permissionError: updatePermissionError,
+                permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
               },
             ],
           ]}
@@ -322,7 +325,7 @@
               permissionHandler,
               {
                 hasPermission: hasUpdatePermission,
-                permissionError: updatePermissionError,
+                permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
               },
             ],
           ]}
@@ -359,7 +362,7 @@
                 permissionHandler,
                 {
                   hasPermission: hasUpdatePermission,
-                  permissionError: updatePermissionError,
+                  permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
                 },
               ],
             ]}
