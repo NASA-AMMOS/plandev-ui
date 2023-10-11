@@ -70,7 +70,6 @@
     resetSimulationStores,
     resourceTypes,
     resources,
-    selectedSpanId,
     simulationDataset,
     simulationDatasetId,
     simulationDatasetLatest,
@@ -151,13 +150,33 @@
       $simulationDatasetId = data.initialPlan.simulations[0]?.simulation_datasets[0]?.id ?? -1;
     }
 
-    const queryActivityId = $page.url.searchParams.get(SearchParameters.ACTIVITY_ID);
-    if (queryActivityId) {
-      $selectedSpanId = parseInt(queryActivityId);
+    const queryActivityId = getSearchParameterNumber(SearchParameters.ACTIVITY_ID, $page.url.searchParams);
+    const querySpanId = getSearchParameterNumber(SearchParameters.SPAN_ID, $page.url.searchParams);
+    if (queryActivityId !== null || querySpanId !== null) {
+      setTimeout(() => selectActivity(queryActivityId, querySpanId));
       removeQueryParam(SearchParameters.ACTIVITY_ID);
+      removeQueryParam(SearchParameters.SPAN_ID);
     }
 
-    $viewTimeRange = $maxTimeRange;
+    let start = NaN;
+    const startTimeStr = $page.url.searchParams.get(SearchParameters.START_TIME);
+    if (startTimeStr) {
+      start = new Date(startTimeStr).getTime();
+      removeQueryParam(SearchParameters.START_TIME);
+    }
+
+    let end = NaN;
+    const endTimeStr = $page.url.searchParams.get(SearchParameters.END_TIME);
+    if (endTimeStr) {
+      end = new Date(endTimeStr).getTime();
+      removeQueryParam(SearchParameters.END_TIME);
+    }
+
+    viewTimeRange.set({
+      end: !isNaN(end) ? end : $maxTimeRange.end,
+      start: !isNaN(start) ? start : $maxTimeRange.start,
+    });
+
     activityTypes.updateValue(() => data.initialActivityTypes);
     planTags.updateValue(() => data.initialPlanTags);
 

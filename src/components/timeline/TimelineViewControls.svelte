@@ -1,11 +1,17 @@
 <script lang="ts">
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import ArrowRightIcon from '@nasa-jpl/stellar/icons/arrow_right.svg?component';
+  import LinkIcon from '@nasa-jpl/stellar/icons/link.svg?component';
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { SearchParameters } from '../../enums/searchParameters';
+  import { selectedActivityDirective } from '../../stores/activities';
+  import { selectedSpan, simulationDatasetId } from '../../stores/simulation';
+  import { viewIsModified } from '../../stores/views';
   import type { DirectiveVisibilityToggleMap, TimeRange } from '../../types/timeline';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
@@ -106,6 +112,28 @@
   function onToggleDirectiveVisibility() {
     dispatch('toggleDirectiveVisibility', !allDirectivesVisible);
   }
+
+  async function onCopyViewportURL() {
+    const targetUrl = new URL(window.location.href);
+    targetUrl.searchParams.set(SearchParameters.START_TIME, new Date(viewTimeRange.start).toISOString());
+    targetUrl.searchParams.set(SearchParameters.END_TIME, new Date(viewTimeRange.end).toISOString());
+    if ($selectedActivityDirective) {
+      targetUrl.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
+    }
+    if ($selectedSpan) {
+      targetUrl.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.id.toFixed());
+    }
+    if ($simulationDatasetId) {
+      targetUrl.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());
+    }
+
+    try {
+      await navigator.clipboard.writeText(targetUrl.href);
+      showSuccessToast('URL of plan and view copied to clipboard');
+    } catch {
+      showFailureToast('Error copying URL to clipboard');
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -159,6 +187,19 @@
     on:toggleDirectiveVisibility={onToggleDirectiveVisibility}
   />
 {/if}
+
+<button
+  class="st-button icon"
+  on:click={onCopyViewportURL}
+  use:tooltip={{
+    content: `Copy URL including plan, visible time window, selection, and simulation dataset to clipboard.${
+      $viewIsModified ? ' View has unsaved changes.' : ''
+    }`,
+    placement: 'bottom',
+  }}
+>
+  <LinkIcon />
+</button>
 
 <style>
   .st-button {
