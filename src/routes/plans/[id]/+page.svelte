@@ -311,9 +311,11 @@
   async function onRestoreSnapshot(event: CustomEvent<PlanSnapshot>) {
     const { detail: planSnapshot } = event;
     if ($plan) {
-      await effects.restorePlanSnapshot(planSnapshot, $plan, data.user);
+      const success = await effects.restorePlanSnapshot(planSnapshot, $plan, data.user);
 
-      clearSnapshot();
+      if (success) {
+        clearSnapshot();
+      }
     }
   }
 

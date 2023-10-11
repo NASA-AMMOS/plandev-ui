@@ -881,33 +881,50 @@ const effects = {
 
       if (confirm && value) {
         const { description, name, plan, tags } = value;
-        const data = await reqHasura<{ snapshot_id: number }>(
-          gql.CREATE_PLAN_SNAPSHOT,
-          { plan_id: plan.id, /* snapshot_description: description, */ snapshot_name: name },
-          user,
-        );
-        const { createSnapshot } = data;
-        if (createSnapshot != null) {
-          const { snapshot_id } = createSnapshot;
-          // TODO this will soon be part of create plan snapshot
-          const updates = { description };
-          await reqHasura(gql.UPDATE_PLAN_SNAPSHOT, { planSnapshot: updates, snapshot_id }, user);
-
-          // Associate tags with the snapshot
-          const newPlanSnapshotTags: PlanSnapshotTagsInsertInput[] = tags.map(({ id: tag_id }) => ({
-            snapshot_id,
-            tag_id,
-          }));
-          await effects.createPlanSnapshotTags(newPlanSnapshotTags, user, false);
-
-          showSuccessToast('Snapshot Created Successfully');
-        } else {
-          throw Error('');
-        }
+        await effects.createPlanSnapshotHelper(plan.id, name, description, tags, user);
+        showSuccessToast('Snapshot Created Successfully');
       }
     } catch (e) {
       catchError('Snapshot Creation Failed', e as Error);
       showFailureToast('Snapshot Creation Failed');
+    }
+  },
+
+  /**
+   * This helper function is for handling the creation of a snapshot and associating tags in one go
+   *
+   * @param planId
+   * @param name
+   * @param description
+   * @param tags
+   * @param user
+   */
+  async createPlanSnapshotHelper(
+    planId: number,
+    name: string,
+    description: string,
+    tags: Tag[],
+    user: User | null,
+  ): Promise<void> {
+    const data = await reqHasura<{ snapshot_id: number }>(
+      gql.CREATE_PLAN_SNAPSHOT,
+      { plan_id: planId, /* snapshot_description: description, */ snapshot_name: name },
+      user,
+    );
+    const { createSnapshot } = data;
+    if (createSnapshot != null) {
+      const { snapshot_id } = createSnapshot;
+      // TODO this will soon be part of create plan snapshot
+      const updates = { description };
+      await reqHasura(gql.UPDATE_PLAN_SNAPSHOT, { planSnapshot: updates, snapshot_id }, user);
+
+      // Associate tags with the snapshot
+      const newPlanSnapshotTags: PlanSnapshotTagsInsertInput[] =
+        tags?.map(({ id: tag_id }) => ({
+          snapshot_id,
+          tag_id,
+        })) ?? [];
+      await effects.createPlanSnapshotTags(newPlanSnapshotTags, user, false);
     }
   },
 
@@ -3407,15 +3424,21 @@ const effects = {
     }
   },
 
-  async restorePlanSnapshot(snapshot: PlanSnapshot, plan: Plan, user: User | null): Promise<void> {
+  async restorePlanSnapshot(snapshot: PlanSnapshot, plan: Plan, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.RESTORE_PLAN_SNAPSHOT(user, plan, plan.model)) {
         throwPermissionError('restore plan snapshot');
       }
 
-      const { confirm } = await showRestorePlanSnapshotModal(snapshot, get(activityDirectives).length);
+      const { confirm, value } = await showRestorePlanSnapshotModal(snapshot, get(activityDirectives).length, user);
 
       if (confirm) {
+        if (value && value.shouldCreateSnapshot) {
+          const { description, name, snapshot, tags } = value;
+
+          await effects.createPlanSnapshotHelper(snapshot.plan_id, name, description, tags, user);
+        }
+
         const data = await reqHasura(
           gql.RESTORE_PLAN_SNAPSHOT,
           { plan_id: snapshot.plan_id, snapshot_id: snapshot.snapshot_id },
@@ -3425,6 +3448,7 @@ const effects = {
           showSuccessToast('Plan Snapshot Restored Successfully');
 
           goto(`${base}/plans/${snapshot.plan_id}`);
+          return true;
         } else {
           throw Error('Unable to restore plan snapshot');
         }
@@ -3432,7 +3456,9 @@ const effects = {
     } catch (e) {
       catchError('Restore Plan Snapshot Failed', e as Error);
       showFailureToast('Restore Plan Snapshot Failed');
+      return false;
     }
+    return false;
   },
 
   async schedule(analysis_only: boolean = false, plan: Plan | null, user: User | null): Promise<void> {

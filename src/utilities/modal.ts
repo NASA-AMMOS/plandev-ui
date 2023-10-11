@@ -509,14 +509,23 @@ export async function showPlanMergeRequestsModal(
 export async function showRestorePlanSnapshotModal(
   snapshot: PlanSnapshot,
   numOfActivities: number,
-): Promise<ModalElementValue<{ name?: string; plan: Plan; snapshot: PlanSnapshot }>> {
+  user: User | null,
+): Promise<
+  ModalElementValue<{
+    description: string;
+    name: string;
+    shouldCreateSnapshot: boolean;
+    snapshot: PlanSnapshot;
+    tags: Tag[];
+  }>
+> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
         const restorePlanSnapshotModal = new RestorePlanSnapshotModal({
-          props: { numOfActivities, snapshot },
+          props: { numOfActivities, snapshot, user },
           target,
         });
         target.resolve = resolve;
@@ -530,7 +539,15 @@ export async function showRestorePlanSnapshotModal(
 
         restorePlanSnapshotModal.$on(
           'restore',
-          (e: CustomEvent<{ name?: string; plan: Plan; snapshot: PlanSnapshot }>) => {
+          (
+            e: CustomEvent<{
+              description: string;
+              name: string;
+              shouldCreateSnapshot: boolean;
+              snapshot: PlanSnapshot;
+              tags: Tag[];
+            }>,
+          ) => {
             target.replaceChildren();
             target.resolve = null;
             resolve({ confirm: true, value: e.detail });
