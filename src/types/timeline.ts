@@ -12,11 +12,14 @@ export type ActivityLayerFilter = {
   types: string[];
 };
 
+export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
+
 export type Axis = {
   color: string;
+  domainFitMode: AxisDomainFitMode;
   id: number;
   label: Label;
-  scaleDomain: (number | null)[];
+  scaleDomain?: (number | null)[];
   tickCount: number | null;
 };
 

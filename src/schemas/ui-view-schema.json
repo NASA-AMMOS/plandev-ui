@@ -408,6 +408,11 @@
                       "items": {
                         "additionalProperties": false,
                         "properties": {
+                          "domainFitMode": {
+                            "description": "Describes the domain fitting behavior for the axis",
+                            "enum": ["fitPlan", "fitTimeWindow", "manual"],
+                            "type": "string"
+                          },
                           "color": {
                             "$ref": "#/definitions/color"
                           },
@@ -418,7 +423,7 @@
                             "$ref": "#/definitions/label"
                           },
                           "scaleDomain": {
-                            "description": "Min and max values of the axis domain: [min, max]",
+                            "description": "Min and max values of the axis domain: [min, max], only used if domainFitMode is set to manual",
                             "items": {
                               "type": "number"
                             },
@@ -430,7 +435,7 @@
                             "type": "number"
                           }
                         },
-                        "required": ["color", "id", "label", "scaleDomain", "tickCount"],
+                        "required": ["color", "id", "label", "tickCount"],
                         "type": "object"
                       },
                       "type": "array"

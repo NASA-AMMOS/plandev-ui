@@ -35,13 +35,17 @@
   let hasUpdateDirectivePermission: boolean = false;
   let hasUpdateSimulationPermission: boolean = false;
   let timelineId: number = 0;
+  let timeline: TimelineType | undefined;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
 
   $: if (user !== null && $plan !== null) {
     hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan) && !$planReadOnly;
     hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
-  $: timeline = $view?.definition.plan.timelines.find(timeline => timeline.id === timelineId);
+  $: timeline = $view?.definition.plan.timelines.find(timeline => {
+    return timeline.id === timelineId;
+  });
+
   $: timelineDirectiveVisibilityToggles = timeline
     ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles)
     : {};

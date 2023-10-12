@@ -167,8 +167,17 @@ test('getYAxisBounds', () => {
     values: [],
   };
   const resourcesByViewLayerId = { [layer1.id]: [resource], [layer2.id]: [] };
-  expect(getYAxisBounds(yAxis, [], {})).toEqual(yAxis.scaleDomain);
-  expect(getYAxisBounds(yAxis, layers, {})).toEqual(yAxis.scaleDomain);
+  expect(getYAxisBounds(yAxis, [], {})).toEqual([]);
+  expect(getYAxisBounds(yAxis, layers, {})).toEqual([]);
   expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId)).toEqual([10, 15]);
-  expect(getYAxisBounds(yAxis, layers, { [layer1.id]: [resourceWithNoValues] })).toEqual(yAxis.scaleDomain);
+  expect(getYAxisBounds(yAxis, layers, { [layer1.id]: [resourceWithNoValues] })).toEqual([]);
+  expect(
+    getYAxisBounds({ ...yAxis, domainFitMode: 'manual', scaleDomain: [0, 10] }, layers, {
+      [layer1.id]: [resourceWithNoValues],
+    }),
+  ).toEqual([0, 10]);
+  expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId, { end: 4, start: 3 })).toEqual([12, 13]);
+  expect(
+    getYAxisBounds({ ...yAxis, domainFitMode: 'fitPlan' }, layers, resourcesByViewLayerId, { end: 4, start: 3 }),
+  ).toEqual([10, 15]);
 });

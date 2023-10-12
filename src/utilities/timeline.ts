@@ -13,7 +13,7 @@ import {
   type CountableTimeInterval,
   type TimeInterval,
 } from 'd3-time';
-import type { Resource } from '../types/simulation';
+import type { Resource, ResourceValue } from '../types/simulation';
 import type {
   ActivityLayer,
   Axis,
@@ -23,6 +23,7 @@ import type {
   QuadtreePoint,
   QuadtreeRect,
   Row,
+  TimeRange,
   Timeline,
   VerticalGuide,
   XRangeLayer,
@@ -333,10 +334,14 @@ export function createHorizontalGuide(
   let y = 0;
   if (firstAxis) {
     yAxisId = firstAxis.id;
-    if (firstAxis.scaleDomain.length === 2) {
-      if (firstAxis.scaleDomain[0] !== null && firstAxis.scaleDomain[1] !== null) {
-        // Default y value to the middle of the domain
-        y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+    if (!firstAxis.scaleDomain) {
+      y = 0;
+    } else {
+      if (firstAxis.scaleDomain.length === 2) {
+        if (firstAxis.scaleDomain[0] !== null && firstAxis.scaleDomain[1] !== null) {
+          // Default y value to the middle of the domain
+          y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+        }
       }
     }
   }
@@ -377,12 +382,9 @@ export function createYAxis(timelines: Timeline[], args: Partial<Axis> = {}): Ax
 
   return {
     color: '#000000',
+    domainFitMode: 'fitTimeWindow',
     id,
     label: { text: 'Label' },
-
-    // TODO is there a sensible default for this since there are
-    // no associated layers for a new y axis?
-    scaleDomain: [0, 10],
     tickCount: 4,
     ...args,
   };
@@ -485,6 +487,7 @@ export function getYAxisBounds(
   yAxis: Axis,
   layers: Layer[],
   resourcesByViewLayerId: Record<number, Resource[]>,
+  viewTimeRange?: TimeRange,
 ): number[] {
   // Find all layers that are associated with this y axis
   const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
@@ -495,8 +498,46 @@ export function getYAxisBounds(
   yAxisLayers.forEach(layer => {
     if (resourcesByViewLayerId[layer.id]) {
       resourcesByViewLayerId[layer.id].forEach(resource => {
+        let leftValue: ResourceValue | undefined;
+        let rightValue: ResourceValue | undefined;
         resource.values.forEach(value => {
-          if (typeof value.y === 'number') {
+          const isNumber = typeof value.y === 'number';
+          // Identify the first value to the left of the viewTimeRange
+          if (viewTimeRange && value.x < viewTimeRange.start) {
+            if (value.is_gap) {
+              leftValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!leftValue) {
+                  leftValue = value;
+                } else if (value.x >= leftValue.x) {
+                  leftValue = value;
+                }
+              }
+            }
+          }
+          // Identify the first value to the right of the viewTimeRange
+          if (viewTimeRange && value.x > viewTimeRange.start) {
+            if (value.is_gap) {
+              rightValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!rightValue) {
+                  rightValue = value;
+                } else if (value.x < rightValue.x) {
+                  rightValue = value;
+                }
+              }
+            }
+          }
+          // Consider a value for min and max if it is a number and it falls within the time range or
+          // no time range is supplied or the domain fit mode is not fitTimeWindow
+          if (
+            typeof value.y === 'number' &&
+            (!viewTimeRange ||
+              yAxis.domainFitMode !== 'fitTimeWindow' ||
+              (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
+          ) {
             if (minY === undefined || value.y < minY) {
               minY = value.y;
             }
@@ -505,11 +546,22 @@ export function getYAxisBounds(
             }
           }
         });
+        // If viewTimeRange is supplied and the minY and maxY are still undefined,
+        // look for the first numerical value to the left and to the right of the time window
+        if (
+          viewTimeRange &&
+          (minY === undefined || maxY === undefined) &&
+          leftValue !== undefined &&
+          rightValue !== undefined
+        ) {
+          minY = Math.min(leftValue.y as number, rightValue.y as number);
+          maxY = Math.max(leftValue.y as number, rightValue.y as number);
+        }
       });
     }
   });
 
-  const scaleDomain = [...yAxis.scaleDomain];
+  const scaleDomain = [...(yAxis.scaleDomain || [])];
   if (minY !== undefined) {
     scaleDomain[0] = minY;
   }
@@ -518,4 +570,22 @@ export function getYAxisBounds(
   }
 
   return scaleDomain as number[];
+}
+
+/**
+ * Populates y-axes with scaleDomain
+ */
+export function getYAxesWithScaleDomains(
+  yAxes: Axis[],
+  layers: Layer[],
+  resourcesByViewLayerId: Record<number, Resource[]> = {},
+  viewTimeRange: TimeRange,
+): Axis[] {
+  return yAxes.map(yAxis => {
+    if (yAxis.domainFitMode !== 'manual') {
+      const scaleDomain = getYAxisBounds(yAxis, layers, resourcesByViewLayerId, viewTimeRange);
+      return { ...yAxis, scaleDomain };
+    }
+    return yAxis;
+  });
 }

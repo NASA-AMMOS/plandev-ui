@@ -59,26 +59,25 @@
 
       for (let i = 0; i < yAxes.length; ++i) {
         const axis = yAxes[i];
-
-        const axisG = gSelection.append('g').attr('class', axisClass);
-        axisG.selectAll('*').remove();
-        const domain = axis.scaleDomain;
-        const scale = getYScale(domain, drawHeight);
-
         const color = axis.color;
         const labelColor = axis.label?.color || 'black';
         const labelFontFace = axis.label?.fontFace || 'sans-serif';
         const labelFontSize = axis.label?.fontSize || 12;
         const labelText = axis.label.text;
         const tickCount = axis.tickCount;
-
-        const axisLeft = d3AxisLeft(scale).ticks(tickCount).tickSizeOuter(0);
-        const axisMargin = 20;
-        const startPosition = -(totalWidth + axisMargin * i);
-        axisG.attr('transform', `translate(${startPosition}, 0)`);
-        axisG.style('color', color);
-        if (domain.length === 2) {
-          axisG.call(axisLeft);
+        const axisG = gSelection.append('g').attr('class', axisClass);
+        axisG.selectAll('*').remove();
+        if (axis.scaleDomain) {
+          const domain = axis.scaleDomain;
+          const scale = getYScale(domain, drawHeight);
+          const axisLeft = d3AxisLeft(scale).ticks(tickCount).tickSizeOuter(0);
+          const axisMargin = 20;
+          const startPosition = -(totalWidth + axisMargin * i);
+          axisG.attr('transform', `translate(${startPosition}, 0)`);
+          axisG.style('color', color);
+          if (domain.length === 2 && domain[0] !== null && domain[1] !== null) {
+            axisG.call(axisLeft);
+          }
         }
 
         const axisGElement: SVGGElement | null = axisG.node();

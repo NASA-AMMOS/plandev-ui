@@ -38,6 +38,7 @@
   export let isMounted: boolean = false;
   export let placement: Placement = 'bottom-start';
   export let type: MenuType = 'dropdown';
+  export let width: number | null = null;
 
   // The shown state is intentionally private.
   // Use the accessor functions to change this state.
@@ -130,7 +131,11 @@
     on:click|stopPropagation={onClick}
     on:mouseenter={() => hideAllTooltips()}
   >
-    <div class="menu-slot st-typography-medium" use:popperContent={extraOpts}>
+    <div
+      class="menu-slot st-typography-medium"
+      style:width={typeof width === 'number' ? `${width}px` : null}
+      use:popperContent={extraOpts}
+    >
       <slot />
     </div>
   </div>

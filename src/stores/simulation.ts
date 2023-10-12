@@ -94,6 +94,11 @@ export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans 
   return createSpanUtilityMaps($spans);
 });
 
+export const allResources: Readable<Resource[]> = derived(
+  [externalResources, resources],
+  ([$externalResources, $resources]) => [...$externalResources, ...$resources],
+);
+
 export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(
   [externalResources, resources, view],
   ([$externalResources, $resources, $view]) => {

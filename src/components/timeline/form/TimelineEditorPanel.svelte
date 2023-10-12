@@ -49,7 +49,7 @@
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
-    getYAxisBounds,
+    getYAxesWithScaleDomains,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
@@ -63,6 +63,7 @@
   import TimelineEditorLayerFilter from './TimelineEditorLayerFilter.svelte';
   import TimelineEditorLayerSelectedFilters from './TimelineEditorLayerSelectedFilters.svelte';
   import TimelineEditorLayerSettings from './TimelineEditorLayerSettings.svelte';
+  import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
 
@@ -88,47 +89,6 @@
   function updateTimelineEvent(event: Event) {
     const { name, value } = getTarget(event);
     viewUpdateTimeline(name, value);
-  }
-
-  function updateYAxisScaleDomain(event: Event, yAxis: Axis) {
-    const { name, value: v } = getTarget(event);
-    const numberValue = v as number;
-    const value = isNaN(numberValue) ? null : numberValue;
-    let scaleDomain = [...yAxis.scaleDomain];
-
-    if (name === 'domainMin') {
-      scaleDomain[0] = value;
-      scaleDomain[1] = scaleDomain[1] ?? null;
-    } else if (name === 'domainMax') {
-      scaleDomain[0] = scaleDomain[0] ?? null;
-      scaleDomain[1] = value;
-    }
-
-    const [min, max] = scaleDomain;
-    if (min === null && max === null) {
-      scaleDomain = [];
-    }
-
-    const newRowYAxes = yAxes.map(axis => {
-      if (axis.id === yAxis.id) {
-        axis.scaleDomain = scaleDomain;
-      }
-      return axis;
-    });
-    viewUpdateRow('yAxes', newRowYAxes);
-  }
-
-  function handleAutoFitYAxisScaleDomain(yAxis: Axis) {
-    if ($selectedRow) {
-      const scaleDomain = getYAxisBounds(yAxis, $selectedRow.layers, $resourcesByViewLayerId);
-      const newRowYAxes = yAxes.map(axis => {
-        if (axis.id === yAxis.id) {
-          axis.scaleDomain = scaleDomain;
-        }
-        return axis;
-      });
-      viewUpdateRow('yAxes', newRowYAxes);
-    }
   }
 
   function updateYAxisTickCount(event: Event, yAxis: Axis) {
@@ -384,11 +344,6 @@
     });
 
     viewUpdateRow('layers', newLayers);
-
-    // Auto fix y axis if appropriate
-    if (value === 'line' && yAxes.length) {
-      handleAutoFitYAxisScaleDomain(yAxes[0]);
-    }
   }
 
   function handleUpdateLayerColor(event: CustomEvent, layer: Layer) {
@@ -421,8 +376,8 @@
     if (!$selectedRow) {
       return;
     }
-
-    const newHorizontalGuide = createHorizontalGuide(timelines, yAxes);
+    const yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, $resourcesByViewLayerId, $viewTimeRange);
+    const newHorizontalGuide = createHorizontalGuide(timelines, yAxesWithScaleDomains);
     viewUpdateRow('horizontalGuides', [...horizontalGuides, newHorizontalGuide]);
   }
 
@@ -855,16 +810,9 @@
           </div>
           {#if yAxes.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid
-                columns="1fr 1fr 1fr 1fr 34px 24px"
-                gap="8px"
-                class="editor-section-grid-labels"
-                padding="0px 16px"
-              >
+              <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid-labels" padding="0px 16px">
                 <div>Label</div>
                 <div>Ticks</div>
-                <div>Min</div>
-                <div>Max</div>
               </CssGrid>
               <div
                 class="timeline-rows timeline-elements"
@@ -878,7 +826,7 @@
               >
                 {#each yAxes as yAxis (yAxis.id)}
                   <div class="timeline-y-axis timeline-element">
-                    <CssGrid columns="1fr 1fr 1fr 1fr 34px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid">
                       <span class="drag-icon">
                         <GripVerticalIcon />
                       </span>
@@ -914,41 +862,12 @@
                           on:input={event => updateYAxisTickCount(event, yAxis)}
                         />
                       </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="domainMin">Min</label>
-                        <input
-                          class="st-input w-100"
-                          name="domainMin"
-                          type="number"
-                          value={yAxis.scaleDomain[0]}
-                          on:input={event => updateYAxisScaleDomain(event, yAxis)}
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="domainMax">Max</label>
-                        <input
-                          class="st-input w-100"
-                          name="domainMax"
-                          type="number"
-                          value={yAxis.scaleDomain[1]}
-                          on:input={event => updateYAxisScaleDomain(event, yAxis)}
-                        />
-                      </Input>
-                      <div
-                        use:tooltip={{
-                          content: simulationDataAvailable
-                            ? 'Fit axis bounds to domain of axis resources'
-                            : 'Axis bounds auto fit only available after simulation',
-                          placement: 'top',
-                        }}
-                      >
-                        <button
-                          style="white-space: nowrap;"
-                          disabled={!simulationDataAvailable}
-                          class="st-button secondary"
-                          on:click={() => handleAutoFitYAxisScaleDomain(yAxis)}>Fit</button
-                        >
-                      </div>
+                      <TimelineEditorYAxisSettings
+                        {yAxis}
+                        {yAxes}
+                        {simulationDataAvailable}
+                        on:delete={() => handleDeleteYAxisClick(yAxis)}
+                      />
                       <button
                         on:click={() => handleDeleteYAxisClick(yAxis)}
                         use:tooltip={{ content: 'Delete Y Axis', placement: 'top' }}
@@ -1118,7 +1037,8 @@
   .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
   .timeline-layer .st-button.icon,
-  :global(.timeline-editor-layer-settings.st-button.icon) {
+  :global(.timeline-editor-layer-settings.st-button.icon),
+  :global(.timeline-editor-axis-settings.st-button.icon) {
     color: var(--st-gray-50);
   }
 

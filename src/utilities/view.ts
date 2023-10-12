@@ -47,7 +47,6 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
 
     const yAxis = createYAxis(timelines, {
       label: { text: name },
-      scaleDomain: isNumericSchema ? [-6, 6] : [],
       tickCount: isNumericSchema ? 5 : 0,
     });
 

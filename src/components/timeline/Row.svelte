@@ -30,7 +30,7 @@
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
   import { getDoyTime } from '../../utilities/time';
-  import type { TimelineLockStatus } from '../../utilities/timeline';
+  import { getYAxesWithScaleDomains, type TimelineLockStatus } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
@@ -43,6 +43,7 @@
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
   import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
+  import { allResources } from '../../stores/simulation';
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -99,6 +100,7 @@
   let mouseOverSpansByLayer: Record<number, Span[]> = {};
   let mouseOverGapsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
+  let yAxesWithScaleDomains: Axis[];
 
   $: onDragenter(dragenter);
   $: onDragleave(dragleave);
@@ -112,6 +114,11 @@
   $: overlaySvgSelection = select(overlaySvg);
   $: rowClasses = classNames('row', { 'row-collapsed': !expanded });
   $: hasActivityLayer = !!layers.find(layer => layer.chartType === 'activity');
+
+  // Compute scale domains for axes since it is optionally defined in the view
+  $: if ($allResources && yAxes) {
+    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, resourcesByViewLayerId, viewTimeRange);
+  }
 
   function onDragenter(e: DragEvent | undefined): void {
     if (hasActivityLayer && e && overlaySvgSelection) {
@@ -277,8 +284,8 @@
             {xScaleView}
             on:mouseOver={onMouseOver}
           />
-          <RowYAxes {drawHeight} {yAxes} />
-          <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} {yAxes} />
+          <RowYAxes {drawHeight} yAxes={yAxesWithScaleDomains} />
+          <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} yAxes={yAxesWithScaleDomains} />
         {/if}
       </g>
     </svg>
@@ -351,7 +358,7 @@
             resources={resourcesByViewLayerId[layer.id] ?? []}
             {viewTimeRange}
             {xScaleView}
-            {yAxes}
+            yAxes={yAxesWithScaleDomains}
             on:mouseOver={onMouseOver}
           />
         {/if}
