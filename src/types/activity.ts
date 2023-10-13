@@ -41,6 +41,7 @@ export type ActivityDirective = {
   id: ActivityDirectiveId;
   last_modified_arguments_at: string;
   last_modified_at: string;
+  last_modified_by?: string | null;
   metadata: ActivityMetadata;
   name: string;
   plan_id: number;
@@ -62,6 +63,18 @@ export type ActivityDirectiveInsertInput = {
 };
 
 export type ActivityDirectiveSetInput = Partial<ActivityDirectiveInsertInput>;
+
+export type ActivityDirectiveRevision = {
+  anchor_id: number | null;
+  anchored_to_start: boolean;
+  arguments: ArgumentsMap;
+  changed_at: string;
+  changed_by: string;
+  metadata: ActivityMetadata;
+  name: string;
+  revision: number;
+  start_offset: string;
+};
 
 export type AppliedPreset = {
   activity_id: ActivityDirectiveId;

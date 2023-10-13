@@ -2,13 +2,17 @@
 
 <script lang="ts">
   import CheckIcon from '@nasa-jpl/stellar/icons/check.svg?component';
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
   import type {
     ActivityDirective,
     ActivityDirectiveId,
+    ActivityDirectiveRevision,
     ActivityDirectivesMap,
     ActivityPreset,
     ActivityPresetInsertInput,
@@ -51,6 +55,9 @@
   export let showActivityName: boolean = false;
   export let showHeader: boolean = true;
   export let user: User | null;
+  export let revision: ActivityDirectiveRevision | undefined = undefined;
+
+  const dispatch = createEventDispatcher();
 
   let editingActivityName: boolean = false;
   let hasUpdatePermission: boolean = false;
@@ -72,27 +79,35 @@
   $: highlightKeysMap = keyByBoolean(highlightKeys);
   $: activityType =
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
-  $: startTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
+  $: startTimeDoy = getDoyTimeFromInterval(
+    planStartTimeYmd,
+    revision ? revision.start_offset : activityDirective.start_offset,
+  );
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
   $: activityNameField = field<string>(activityDirective.name);
 
   $: if (activityType && activityDirective.arguments) {
     effects
-      .getEffectiveActivityArguments(modelId, activityType.name, activityDirective.arguments, user)
+      .getEffectiveActivityArguments(
+        modelId,
+        activityType.name,
+        revision ? revision.arguments : activityDirective.arguments,
+        user,
+      )
       .then(effectiveArguments => {
         if (effectiveArguments && activityType) {
           const { arguments: defaultArgumentsMap } = effectiveArguments;
           formParameters = getFormParameters(
             activityType.parameters,
-            activityDirective.arguments,
+            revision ? revision.arguments : activityDirective.arguments,
             activityType.required_parameters,
-            activityDirective.applied_preset?.preset_applied?.arguments,
+            revision ? undefined : activityDirective.applied_preset?.preset_applied?.arguments,
             defaultArgumentsMap,
           );
         }
       });
   }
-  $: validateArguments(activityDirective.arguments);
+  $: validateArguments(revision ? revision.arguments : activityDirective.arguments);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
@@ -128,6 +143,7 @@
   function editActivityName() {
     editingActivityName = true;
   }
+
   function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId>) {
     const { id } = activityDirective;
     if ($plan) {
@@ -309,12 +325,29 @@
       }
     }
   }
+
+  async function restoreRevision(revisionId: number) {
+    if (!$plan) {
+      return;
+    }
+
+    const { id: activityId } = activityDirective;
+    const restored = await effects.restoreActivityFromChangelog(activityId, $plan, revisionId, user);
+
+    if (restored) {
+      dispatch('closeRevisionPreview');
+    }
+  }
 </script>
 
 {#if showHeader}
   <div class="activity-header">
     <div class={classNames('activity-header-title', { 'activity-header-title--editing': editingActivityName })}>
-      {#if !editingActivityName}
+      {#if !editable}
+        <div class="activity-header-title-value st-typography-medium">
+          {revision ? revision.name : $activityNameField.value}
+        </div>
+      {:else if !editingActivityName}
         <button class="icon st-button activity-header-title-edit-button" on:click={editActivityName}>
           <div class="activity-header-title-value st-typography-medium">
             {$activityNameField.value}
@@ -340,6 +373,40 @@
         </button>
       {/if}
     </div>
+    <div>
+      <button
+        class="st-button icon activity-header-changelog"
+        on:click|stopPropagation={() => dispatch('viewChangelog')}
+        use:tooltip={{ content: 'View Activity Changelog', placement: 'top' }}
+      >
+        <HistoryIcon />
+      </button>
+    </div>
+  </div>
+{/if}
+
+{#if revision}
+  <div class="revision-preview-header">
+    <div>
+      <button
+        class="st-button primary"
+        use:permissionHandler={{
+          hasPermission: hasUpdatePermission,
+          permissionError: updatePermissionError,
+        }}
+        on:click|stopPropagation={() => revision && restoreRevision(revision.revision)}
+      >
+        Restore
+      </button>
+      <span class="st-typography-medium">{highlightKeys.length} Change{highlightKeys.length === 1 ? '' : 's'}</span>
+    </div>
+    <button
+      use:tooltip={{ content: 'Close Revision Preview', placement: 'top' }}
+      class="icon st-button"
+      on:click|stopPropagation={() => dispatch('closeRevisionPreview')}
+    >
+      <CloseIcon />
+    </button>
   </div>
 {/if}
 
@@ -398,12 +465,12 @@
         {activityDirective}
         {activityDirectivesMap}
         {hasUpdatePermission}
-        anchorId={activityDirective.anchor_id}
+        anchorId={revision ? revision.anchor_id : activityDirective.anchor_id}
         disabled={!editable}
         {highlightKeysMap}
         planReadOnly={$planReadOnly}
-        isAnchoredToStart={activityDirective.anchored_to_start}
-        startOffset={activityDirective.start_offset}
+        isAnchoredToStart={revision ? revision.anchored_to_start : activityDirective.anchored_to_start}
+        startOffset={revision ? revision.start_offset : activityDirective.start_offset}
         on:updateAnchor={updateAnchor}
         on:updateAnchorEdge={updateAnchorEdge}
         on:updateStartOffset={updateStartOffset}
@@ -411,7 +478,7 @@
 
       <Highlight highlight={highlightKeysMap.created_at}>
         <Input layout="inline">
-          <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime"> Creation Time </label>
+          <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime">Creation Time</label>
           <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
         </Input>
       </Highlight>
@@ -422,6 +489,15 @@
             Last Modified Time
           </label>
           <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
+        </Input>
+      </Highlight>
+
+      <Highlight highlight={highlightKeysMap.last_modified_by}>
+        <Input layout="inline">
+          <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
+            Last Modified By
+          </label>
+          <input class="st-input w-100" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
         </Input>
       </Highlight>
 
@@ -605,6 +681,38 @@
   .activity-header-title--editing .st-input {
     background-color: var(--st-white);
     font-style: normal;
+  }
+
+  .activity-header-changelog {
+    border: 1px solid transparent;
+    display: flex;
+    width: 24px;
+  }
+
+  .activity-header-changelog:hover {
+    color: #007bff;
+  }
+
+  .revision-preview-header {
+    align-items: center;
+    background-color: #e6e6ff;
+    border-bottom: 1px solid #c4c6ff;
+    border-top: 1px solid #c4c6ff;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    padding: 4px 8px;
+    padding-left: 8px;
+  }
+
+  .revision-preview-header span {
+    font-style: italic;
+    margin-left: 4px;
+  }
+
+  .revision-preview .icon {
+    align-content: flex-end;
+    display: flex;
   }
 
   .annotations {

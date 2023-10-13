@@ -57,10 +57,7 @@
   // only set this when the viewed activity is changed
   $: if (activityDirective.id !== previousActivityDirectiveId) {
     previousActivityDirectiveId = activityDirective.id;
-    isRelativeOffset =
-      activityDirective.anchor_id !== null ||
-      (activityDirective.anchor_id === null && !activityDirective.anchored_to_start) ||
-      !!startOffsetError;
+    isRelativeOffset = anchorId !== null || (anchorId === null && !isAnchoredToStart) || !!startOffsetError;
   }
 
   function formatActivityDirectiveAnchorText(activityDirective: ActivityDirective) {

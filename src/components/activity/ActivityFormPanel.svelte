@@ -10,6 +10,7 @@
     activityMetadataDefinitions,
     selectActivity,
     selectedActivityDirective,
+    selectedActivityDirectiveId,
   } from '../../stores/activities';
   import { filteredExpansionSequences } from '../../stores/expansion';
   import {
@@ -22,6 +23,7 @@
   } from '../../stores/plan';
   import { selectedSpan, simulationDatasetId, spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
+  import type { ActivityDirective, ActivityDirectiveRevision } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { SpanId } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
@@ -32,6 +34,7 @@
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
+  import ActivityDirectiveChangelog from './ActivityDirectiveChangelog.svelte';
   import ActivityDirectiveForm from './ActivityDirectiveForm.svelte';
   import ActivitySpanForm from './ActivitySpanForm.svelte';
 
@@ -39,6 +42,9 @@
   export let user: User | null;
 
   let hasDeletePermission: boolean = false;
+  let viewingActivityDirectiveChangelog: boolean = false;
+  let highlightKeys: string[] = [];
+  let previewRevision: ActivityDirectiveRevision | undefined;
 
   $: deletePermissionError = $planReadOnly
     ? PlanStatusMessages.READ_ONLY
@@ -48,9 +54,61 @@
       featurePermissions.activityDirective.canDelete(user, $plan, $selectedActivityDirective) && !$planReadOnly;
   }
 
+  // Auto close the changelog and clear revision preview state whenever the selected activity changes
+  $: if ($selectedActivityDirectiveId !== null) {
+    viewingActivityDirectiveChangelog = false;
+    highlightKeys = [];
+    previewRevision = undefined;
+  }
+
   function onSelectSpan(event: CustomEvent<SpanId>) {
     const { detail: spanId } = event;
     selectActivity(null, spanId);
+  }
+
+  function onToggleViewChangelog() {
+    highlightKeys = [];
+    previewRevision = undefined;
+    viewingActivityDirectiveChangelog = !viewingActivityDirectiveChangelog;
+  }
+
+  function onPreviewRevision(event: CustomEvent<ActivityDirectiveRevision>) {
+    if (!$selectedActivityDirective) {
+      return;
+    }
+
+    const revision: ActivityDirectiveRevision = event.detail;
+    const activityType = $activityTypes.find(type => type.name == $selectedActivityDirective?.type);
+    const changedKeys: string[] = [];
+
+    const potentialChanges: Array<keyof ActivityDirective & keyof ActivityDirectiveRevision> = [
+      'anchor_id',
+      'anchored_to_start',
+      'start_offset',
+    ];
+    potentialChanges.forEach(key => {
+      if ($selectedActivityDirective && $selectedActivityDirective[key] !== revision[key]) {
+        changedKeys.push(key);
+      }
+    });
+
+    if (activityType) {
+      Object.keys(activityType.parameters).forEach(key => {
+        if ($selectedActivityDirective?.arguments[key] !== revision.arguments[key]) {
+          changedKeys.push(key);
+        }
+      });
+    }
+
+    highlightKeys = changedKeys;
+    previewRevision = revision;
+    viewingActivityDirectiveChangelog = false;
+  }
+
+  function onCloseRevisionPreview() {
+    highlightKeys = [];
+    previewRevision = undefined;
+    viewingActivityDirectiveChangelog = false;
   }
 </script>
 
@@ -96,16 +154,31 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if $selectedActivityDirective && $plan !== null}
+    {#if $selectedActivityDirective && $plan !== null && viewingActivityDirectiveChangelog}
+      <ActivityDirectiveChangelog
+        activityDirective={$selectedActivityDirective}
+        activityDirectivesMap={$activityDirectivesMap}
+        activityTypes={$activityTypes}
+        modelId={$modelId}
+        planStartTimeYmd={$plan.start_time}
+        on:closeChangelog={onToggleViewChangelog}
+        on:previewRevision={onPreviewRevision}
+        {user}
+      />
+    {:else if $selectedActivityDirective && $plan !== null}
       <ActivityDirectiveForm
         activityDirectivesMap={$activityDirectivesMap}
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$activityTypes}
         tags={$tags}
-        editable={!$activityEditingLocked}
+        editable={!$activityEditingLocked && !previewRevision}
         modelId={$modelId}
         planStartTimeYmd={$plan.start_time}
+        revision={previewRevision}
+        on:viewChangelog={onToggleViewChangelog}
+        on:closeRevisionPreview={onCloseRevisionPreview}
+        {highlightKeys}
         {user}
       />
     {:else if $selectedSpan && $plan !== null}

@@ -38,7 +38,7 @@ test.beforeEach(async () => {
   await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
   await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-ThrowBanana' }).click();
   await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'PickBanana' }).first().click();
-  await plan.panelActivityForm.getByRole('group').filter({ hasText: 'Anchor' }).first().click();
+  await plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
 
   await plan.selectActivityAnchorByIndex(1);
 });
@@ -63,19 +63,17 @@ test.describe.serial('Plan Activities', () => {
     await page.locator('.modal-content select').nth(1).selectOption('anchor-plan');
     await page.getByRole('button', { name: 'Confirm' }).click();
     await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'PickBanana' }).nth(1).click();
-    await plan.panelActivityForm.getByRole('group').filter({ hasText: 'Anchor' }).first().click();
+    await plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
     await page.waitForFunction(
       () => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === 'To Plan',
     );
 
-    await plan.panelActivityForm.getByRole('group').filter({ hasText: 'Anchor' }).first().click();
+    await plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another Activity Directive' }).click();
     expect(plan.panelActivityForm.getByRole('textbox', { name: 'To Plan' })).toBeVisible();
   });
 
   test('Deleting multiple activity directives but only 1 has a remaining anchored dependent should prompt for just the one with a remaining dependent', async () => {
     await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'ThrowBanana' }).nth(1).click();
-    await page.getByRole('group').filter({ hasText: 'Anchor' }).first().click();
-
     await plan.selectActivityAnchorByIndex(2);
 
     await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).nth(1).click();

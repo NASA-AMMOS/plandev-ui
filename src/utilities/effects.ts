@@ -23,6 +23,7 @@ import type {
   ActivityDirective,
   ActivityDirectiveId,
   ActivityDirectiveInsertInput,
+  ActivityDirectiveRevision,
   ActivityDirectiveSetInput,
   ActivityDirectivesMap,
   ActivityPreset,
@@ -2228,6 +2229,29 @@ const effects = {
     }
   },
 
+  async getActivityDirectiveChangelog(
+    planId: number,
+    activityId: number,
+    user: User | null,
+  ): Promise<ActivityDirectiveRevision[]> {
+    try {
+      const data = await reqHasura<ActivityDirectiveRevision[]>(
+        gql.GET_ACTIVITY_DIRECTIVE_CHANGELOG,
+        { activityId, planId },
+        user,
+      );
+      const { activityDirectiveRevisions } = data;
+      if (activityDirectiveRevisions != null) {
+        return activityDirectiveRevisions;
+      } else {
+        throw Error('Unable to retrieve activity directive changelog');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return [];
+    }
+  },
+
   async getActivityTypes(modelId: number, user: User | null): Promise<ActivityType[]> {
     try {
       const query = convertToQuery(gql.SUB_ACTIVITY_TYPES);
@@ -3420,6 +3444,36 @@ const effects = {
     } catch (e) {
       catchError('Activity Preset Removal Failed', e as Error);
       showFailureToast('Activity Preset Removal Failed');
+      return false;
+    }
+  },
+
+  async restoreActivityFromChangelog(
+    activityId: number,
+    plan: Plan,
+    revision: number,
+    user: User | null,
+  ): Promise<boolean> {
+    try {
+      if (!queryPermissions.RESTORE_ACTIVITY_FROM_CHANGELOG(user, plan)) {
+        throwPermissionError('restore activity from changelog');
+      }
+
+      const data = await reqHasura(
+        gql.RESTORE_ACTIVITY_FROM_CHANGELOG,
+        { activity_id: activityId, plan_id: plan.id, revision },
+        user,
+      );
+
+      if (data.restoreActivityFromChangelog != null) {
+        showSuccessToast('Restored Activity from Changelog');
+        return true;
+      } else {
+        throw Error(`Unable to restore activity revision ${revision} from changelog`);
+      }
+    } catch (e) {
+      catchError('Restoring Activity From Changelog Failed', e as Error);
+      showFailureToast('Restoring Activity from Changelog Failed');
       return false;
     }
   },
