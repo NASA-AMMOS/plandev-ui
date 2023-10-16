@@ -21,6 +21,7 @@ export async function reqExtension(
 ): Promise<ExtensionResponse> {
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
+    'x-hasura-role': (user as User)?.activeRole ?? '',
     ...{ 'Content-Type': 'application/json' },
   };
   const options: RequestInit = {
