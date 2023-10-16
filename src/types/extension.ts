@@ -23,6 +23,5 @@ export type ExtensionResponse = {
 
 export type ExtensionRole = {
   extension_id: number;
-  id: number;
   role: string;
 };

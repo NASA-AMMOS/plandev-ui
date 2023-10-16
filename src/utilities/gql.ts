@@ -804,7 +804,6 @@ const gql = {
         description
         extension_roles {
           extension_id
-          id
           role
         }
         id
