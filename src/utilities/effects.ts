@@ -49,6 +49,7 @@ import type {
   ExpansionSet,
   SeqId,
 } from '../types/expansion';
+import type { Extension, ExtensionPayload } from '../types/extension';
 import type { Model, ModelInsertInput, ModelSchema, ModelSlim } from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
@@ -138,7 +139,7 @@ import {
   showUploadViewModal,
 } from './modal';
 import { queryPermissions } from './permissions';
-import { reqGateway, reqHasura } from './requests';
+import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
@@ -231,6 +232,28 @@ const effects = {
     } catch (e) {
       catchError('Template Unable To Be Applied To Simulation', e as Error);
       showFailureToast('Template Application Failed');
+    }
+  },
+
+  async callExtension(
+    extension: Extension,
+    payload: ExtensionPayload & Record<'url', string>,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const response = await reqExtension(`${base}/extensions`, payload, user);
+
+      if (response.success) {
+        showSuccessToast(response.message);
+        window.open(response.url, '_blank');
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (error: any) {
+      const failureMessage = `Extension: ${extension.label} was not executed successfully`;
+
+      catchError(failureMessage, error as Error);
+      showFailureToast(failureMessage);
     }
   },
 
@@ -2443,6 +2466,21 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async getExtensions(user: User | null): Promise<Extension[]> {
+    try {
+      const data = await reqHasura<Extension[]>(gql.GET_EXTENSIONS, {}, user);
+      const { extensions = [] } = data;
+      if (extensions != null) {
+        return extensions;
+      } else {
+        throw Error('Unable to retrieve extensions');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return [];
     }
   },
 

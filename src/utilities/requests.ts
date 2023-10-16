@@ -1,9 +1,49 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import type { BaseUser, User } from '../types/app';
+import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
 import { logout } from '../utilities/login';
 import { INVALID_JWT } from '../utilities/permissions';
+
+/**
+ * Used to make calls to application external to Aerie.
+ *
+ * @param url The external URL to call.
+ * @param payload The JSON payload that is serialized as the body of the request.
+ * @param user The user information serialized as a bearer token.
+ * @returns
+ */
+export async function reqExtension(
+  url: string,
+  payload: ExtensionPayload | (ExtensionPayload & Record<'url', string>),
+  user: BaseUser | User | null,
+): Promise<ExtensionResponse> {
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    ...{ 'Content-Type': 'application/json' },
+  };
+  const options: RequestInit = {
+    headers,
+    method: 'POST',
+  };
+
+  if (payload !== null) {
+    options.body = JSON.stringify({
+      ...payload,
+      gateway: browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL,
+      hasura: browser ? env.PUBLIC_HASURA_CLIENT_URL : env.PUBLIC_HASURA_SERVER_URL,
+    });
+  }
+
+  const response = await fetch(`${url}`, options);
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+
+  return await response.json();
+}
 
 /**
  * Function to make HTTP requests to the Aerie Gateway.

@@ -15,6 +15,7 @@
   import Console from '../../../components/console/Console.svelte';
   import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
+  import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
@@ -31,6 +32,7 @@
     activityDirectivesMap,
     resetActivityStores,
     selectActivity,
+    selectedActivityDirectiveId,
   } from '../../../stores/activities';
   import { checkConstraintsStatus, constraintResults, resetConstraintStores } from '../../../stores/constraints';
   import {
@@ -87,6 +89,7 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirective } from '../../../types/activity';
+  import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import effects from '../../../utilities/effects';
@@ -338,6 +341,17 @@
     }
   }
 
+  async function onCallExtension(event: CustomEvent<Extension>) {
+    const payload = {
+      planId: $planId,
+      selectedActivityDirectiveId: $selectedActivityDirectiveId,
+      simulationDatasetId: $simulationDatasetId,
+      url: event.detail.url,
+    };
+
+    effects.callExtension(event.detail, payload, data.user);
+  }
+
   async function onSaveView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition, id, name, owner } = detail;
@@ -516,6 +530,12 @@
       >
         <CalendarIcon />
       </PlanNavButton>
+      <ExtensionMenu
+        extensions={data.extensions}
+        title={!compactNavMode ? 'Extensions' : ''}
+        user={data.user}
+        on:callExtension={onCallExtension}
+      />
       <ViewMenu
         hasCreatePermission={hasCreateViewPermission}
         hasUpdatePermission={hasUpdateViewPermission}

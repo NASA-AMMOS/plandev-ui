@@ -798,6 +798,23 @@ const gql = {
     }
   `,
 
+  GET_EXTENSIONS: `#graphql
+    query GetExtensions {
+      extensions {
+        description
+        extension_roles {
+          extension_id
+          id
+          role
+        }
+        id
+        label
+        updated_at
+        url
+      }
+    }
+  `,
+
   GET_MODELS: `#graphql
     query GetModels {
       models: mission_model {

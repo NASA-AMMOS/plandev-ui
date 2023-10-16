@@ -50,8 +50,10 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       const initialPlanTags = await effects.getPlanTags(initialPlan.id, user);
       const initialView = await effects.getView(url.searchParams, user, initialActivityTypes, initialResourceTypes);
       const initialPlanSnapshotId = getSearchParameterNumber(SearchParameters.SNAPSHOT_ID, url.searchParams);
+      const extensions = await effects.getExtensions(user);
 
       return {
+        extensions,
         initialActivityTypes,
         initialPlan,
         initialPlanSnapshotId,
