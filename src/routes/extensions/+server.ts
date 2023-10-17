@@ -7,14 +7,22 @@ import { reqExtension } from '../../utilities/requests';
  * encounter by calling a tool that may or may not be external to Aerie.
  */
 export const POST: RequestHandler = async event => {
-  const { url, ...body } = await event.request.json();
-  const response = await reqExtension(url, body, event.locals.user);
+  try {
+    const { url, ...body } = await event.request.json();
+    const response = await reqExtension(url, body, event.locals.user);
 
-  if (isExtensionResponse(response)) {
-    return json(response);
+    if (isExtensionResponse(response)) {
+      return json(response);
+    }
+
+    return json({ message: response, success: false });
+  } catch (e) {
+    console.log(e);
+    return json({
+      message: `${(e as Error).message}\n${(e as Error).cause}`,
+      success: false,
+    });
   }
-
-  return json({ message: response, success: false });
 };
 
 function isExtensionResponse(result: any): result is ExtensionResponse {
