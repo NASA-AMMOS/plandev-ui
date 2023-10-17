@@ -1,6 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts">
+  import { base } from '$app/paths';
   import type {
     CancellationToken,
     editor as Editor,
@@ -78,7 +79,7 @@
         if (label === 'typescript' || label === 'javascript') {
           // Force the worker to be loaded in the classic style, served directly out of static
           // https://thethoughtfulkoala.com/posts/2021/07/10/vite-js-classic-web-worker.html
-          return new Worker(new URL('ts.worker.js', location.origin), { type: 'classic' });
+          return new Worker(`${base}/ts.worker.js`, { type: 'classic' });
         }
         return new editorWorker();
       },
