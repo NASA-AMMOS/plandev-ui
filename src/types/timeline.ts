@@ -19,6 +19,7 @@ export type Axis = {
   domainFitMode: AxisDomainFitMode;
   id: number;
   label: Label;
+  renderTickLines?: boolean;
   scaleDomain?: (number | null)[];
   tickCount: number | null;
 };

@@ -51,6 +51,7 @@
     height: 24px;
     padding: 0px 8px 0px 4px;
     position: relative;
+    z-index: 3;
   }
 
   .row-header-title {

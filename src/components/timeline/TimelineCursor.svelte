@@ -37,7 +37,6 @@
     height: 100%;
     left: 0;
     opacity: 1;
-    pointer-events: all;
     position: absolute;
     top: -10px;
     transform: translateX(0);

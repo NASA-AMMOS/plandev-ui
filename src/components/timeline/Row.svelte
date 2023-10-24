@@ -6,6 +6,7 @@
   import { select } from 'd3-selection';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import { allResources } from '../../stores/simulation';
   import { selectedRow, viewSetSelectedRow, viewTogglePanel } from '../../stores/views';
   import type {
     ActivityDirective,
@@ -42,8 +43,8 @@
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxes from './RowYAxes.svelte';
+  import RowYAxisTicks from './RowYAxisTicks.svelte';
   import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
-  import { allResources } from '../../stores/simulation';
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -274,6 +275,7 @@
       <g transform="translate({marginLeft}, 0)">
         {#if drawWidth > 0}
           <RowXAxisTicks {drawHeight} {xScaleView} {xTicksView} />
+          <RowYAxisTicks {drawHeight} {drawWidth} yAxes={yAxesWithScaleDomains} />
           <ConstraintViolations
             {constraintResults}
             {drawHeight}

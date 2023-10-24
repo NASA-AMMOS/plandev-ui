@@ -3,16 +3,16 @@
 <script lang="ts">
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { viewTimeRange } from '../../../stores/plan';
+  import { resourcesByViewLayerId } from '../../../stores/simulation';
   import { selectedRow, selectedTimeline, viewUpdateRow } from '../../../stores/views';
   import type { Axis, AxisDomainFitMode } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
+  import { getYAxisBounds } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
-  import { getYAxisBounds } from '../../../utilities/timeline';
-  import { resourcesByViewLayerId } from '../../../stores/simulation';
-  import { viewTimeRange } from '../../../stores/plan';
 
   export let yAxis: Axis;
   export let yAxes: Axis[];
@@ -73,6 +73,17 @@
     viewUpdateRow('yAxes', newRowYAxes);
   }
 
+  function updateYAxisTickLines(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    const newRowYAxes = yAxes.map(axis => {
+      if (axis.id === yAxis.id) {
+        return { ...axis, renderTickLines: checked };
+      }
+      return axis;
+    });
+    viewUpdateRow('yAxes', newRowYAxes);
+  }
+
   function updateYAxisScaleDomain(event: Event, yAxis: Axis) {
     const { name, value: v } = getTarget(event);
     const numberValue = v as number;
@@ -112,6 +123,16 @@
   <Menu bind:this={axisMenu} hideAfterClick={false} placement="bottom-end" width={280}>
     <MenuHeader title="Y Axis Settings" />
     <div class="body st-typography-body">
+      <Input layout="inline">
+        <label for="renderTickLines">Horizontal Ticks</label>
+        <input
+          style:width="max-content"
+          checked={yAxis.renderTickLines}
+          id="renderTickLines"
+          on:change={event => updateYAxisTickLines(event)}
+          type="checkbox"
+        />
+      </Input>
       <Input layout="inline">
         <label for="autofitDomain">Domain Fitting</label>
         <select

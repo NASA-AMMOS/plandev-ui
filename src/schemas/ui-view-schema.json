@@ -408,13 +408,17 @@
                       "items": {
                         "additionalProperties": false,
                         "properties": {
+                          "color": {
+                            "$ref": "#/definitions/color"
+                          },
                           "domainFitMode": {
                             "description": "Describes the domain fitting behavior for the axis",
                             "enum": ["fitPlan", "fitTimeWindow", "manual"],
                             "type": "string"
                           },
-                          "color": {
-                            "$ref": "#/definitions/color"
+                          "renderTickLines": {
+                            "description": "If true render horizontal lines for each y axis tick, if false do not render them",
+                            "type": "boolean"
                           },
                           "id": {
                             "$ref": "#/definitions/id"
