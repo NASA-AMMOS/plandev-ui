@@ -29,6 +29,7 @@
   let dataGrid: DataGrid<Span>;
   let defaultColumnDefinitions: Partial<Record<SpanColumns, SpanColDef>>;
   let derivedColumnDefs: ColDef[] = [];
+  let filterExpression: string = '';
 
   $: activitySpansTable = $view?.definition.plan.activitySpansTable;
   /* eslint-disable sort-keys */
@@ -204,6 +205,7 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Simulated Activities Table" />
     <div class="table-menu">
+      <input type="search" bind:value={filterExpression} placeholder="Filter Simulated Activities" class="st-input" />
       <div class="size-actions">
         <button
           class="st-button secondary"
@@ -235,6 +237,7 @@
       bind:selectedSpanId={$selectedSpanId}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activitySpansTable?.columnStates}
+      {filterExpression}
       spans={$spans}
       on:columnStateChange={onColumnStateChange}
       on:selectionChanged={onSelectionChanged}

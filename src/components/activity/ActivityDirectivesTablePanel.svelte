@@ -38,6 +38,7 @@
   let dataGrid: DataGrid<ActivityDirective>;
   let defaultColumnDefinitions: Partial<Record<ActivityDirectiveColumns, ActivityDirectiveColDef>> = {};
   let derivedColumnDefs: ColDef[] = [];
+  let filterExpression: string = '';
 
   $: activityDirectivesTable = $view?.definition.plan.activityDirectivesTable;
   $: defaultColumnDefinitions = {
@@ -285,6 +286,7 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Activity Directives Table" />
     <div class="table-menu">
+      <input type="search" bind:value={filterExpression} placeholder="Filter Activity Directives" class="st-input" />
       <div class="size-actions">
         <button
           class="st-button secondary"
@@ -315,6 +317,7 @@
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
       activityDirectives={$activityDirectivesList}
+      {filterExpression}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       plan={$plan}

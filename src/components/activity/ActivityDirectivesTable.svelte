@@ -20,6 +20,7 @@
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let planReadOnly: boolean = false;
   export let user: User | null;
+  export let filterExpression: string = '';
 
   type CellRendererParams = {
     deleteActivityDirective: (activity: ActivityDirective) => void;
@@ -107,6 +108,7 @@
   singleItemDisplayText="Activity Directive"
   suppressDragLeaveHidesColumns={false}
   {user}
+  {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
   on:columnStateChange
   on:selectionChanged

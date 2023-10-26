@@ -11,6 +11,7 @@
   export let dataGrid: DataGrid<Span> | undefined = undefined;
   export let selectedSpanId: SpanId | null = null;
   export let spans: Span[] = [];
+  export let filterExpression: string = '';
 
   let selectedItemIds: RowId[] = [];
 
@@ -32,6 +33,7 @@
   autoSizeColumnsToFit={false}
   columnDefs={[...(columnDefs ?? [])]}
   {columnStates}
+  {filterExpression}
   {getRowId}
   useCustomContextMenu
   rowData={spans}

@@ -85,6 +85,7 @@
   export let suppressCellFocus: boolean = true;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
+  export let filterExpression: string = '';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
     return parseInt(data[idKey]);
@@ -173,6 +174,10 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     previousSelectedRowId = currentSelectedRowId;
   }
 
+  $: {
+    gridOptions?.api?.setQuickFilter(filterExpression);
+  }
+
   onDestroy(() => {
     resizeObserver?.disconnect();
   });
@@ -230,6 +235,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
       columnDefs,
+      excludeHiddenColumnsFromQuickFilter: false,
       getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isRowSelectable,

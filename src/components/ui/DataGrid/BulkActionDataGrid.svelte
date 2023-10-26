@@ -37,6 +37,7 @@
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
   export let user: User | null;
+  export let filterExpression: string = '';
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): RowId => parseInt(data[idKey]);
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
@@ -132,6 +133,7 @@
   {scrollToSelection}
   {suppressDragLeaveHidesColumns}
   {suppressRowClickSelection}
+  {filterExpression}
   on:blur={onBlur}
   on:cellMouseOver
   on:columnMoved
