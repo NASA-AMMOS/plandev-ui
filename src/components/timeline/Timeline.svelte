@@ -373,11 +373,14 @@
     {contextMenu}
     {hasUpdateDirectivePermission}
     {hasUpdateSimulationPermission}
+    {maxTimeRange}
     on:deleteActivityDirective
     on:jumpToActivityDirective
     on:jumpToSpan
     on:hide={() => (contextMenu = null)}
     on:updateVerticalGuides
+    on:viewTimeRangeChanged
+    on:viewTimeRangeReset={() => dispatch('viewTimeRangeChanged', maxTimeRange)}
     {simulation}
     {simulationDataset}
     {spansMap}

@@ -29,10 +29,13 @@
 
 <div class="date-picker-field">
   <Input {layout}>
-    {#if layout === 'inline'}
-      <label use:tooltip={{ content: label, placement: 'top' }} class:error={$field.invalid} for={name}>{label}</label>
-    {:else}
-      <label class:error={$field.invalid} for={name}>{label}</label>
+    {#if label}
+      {#if layout === 'inline'}
+        <label use:tooltip={{ content: label, placement: 'top' }} class:error={$field.invalid} for={name}>{label}</label
+        >
+      {:else}
+        <label class:error={$field.invalid} for={name}>{label}</label>
+      {/if}
     {/if}
     <DatePicker
       dateString={$field.value}

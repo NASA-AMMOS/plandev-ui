@@ -21,6 +21,7 @@
   import { clamp } from '../../utilities/generic';
   import { searchQuadtreeRect } from '../../utilities/timeline';
 
+  export let contextmenu: MouseEvent | undefined;
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
   export let dpr: number = 1;
   export let drawHeight: number = 0;
@@ -61,6 +62,7 @@
   ) {
     draw();
   }
+  $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
@@ -200,6 +202,12 @@
     return { textHeight: 0, textWidth: 0 };
   }
 
+  function onContextMenu(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('contextMenu', { e });
+    }
+  }
+
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX: x, offsetY: y } = e;
@@ -294,6 +302,7 @@
   id={`layer-x-range-${id}`}
   style="height: {drawHeight}px; width: {drawWidth}px;"
   width={canvasWidthDpr}
+  on:contextmenu={onContextMenu}
 />
 
 <style>

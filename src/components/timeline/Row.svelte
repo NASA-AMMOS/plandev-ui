@@ -351,6 +351,7 @@
         {#if layer.chartType === 'line'}
           <LayerLine
             {...layer}
+            {contextmenu}
             {dpr}
             {drawHeight}
             {drawWidth}
@@ -361,12 +362,14 @@
             {viewTimeRange}
             {xScaleView}
             yAxes={yAxesWithScaleDomains}
+            on:contextMenu
             on:mouseOver={onMouseOver}
           />
         {/if}
         {#if layer.chartType === 'x-range'}
           <LayerXRange
             {...layer}
+            {contextmenu}
             {dpr}
             {drawHeight}
             {drawWidth}
@@ -375,6 +378,7 @@
             {mouseout}
             resources={resourcesByViewLayerId[layer.id] ?? []}
             {xScaleView}
+            on:contextMenu
             on:mouseOver={onMouseOver}
           />
         {/if}

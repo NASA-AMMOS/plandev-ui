@@ -9,6 +9,7 @@
   import type { Axis, LinePoint, QuadtreePoint, ResourceLayerFilter, TimeRange } from '../../types/timeline';
   import { getYScale, searchQuadtreePoint } from '../../utilities/timeline';
 
+  export let contextmenu: MouseEvent | undefined;
   export let dpr: number = 1;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -56,6 +57,7 @@
   ) {
     draw();
   }
+  $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToLinePoints(resources, pointRadius);
@@ -117,6 +119,12 @@
           ctx.fill(circle);
         }
       }
+    }
+  }
+
+  function onContextMenu(e: MouseEvent | undefined): void {
+    if (e) {
+      dispatch('contextMenu', { e });
     }
   }
 
@@ -186,6 +194,7 @@
   id={`layer-line-${id}`}
   style="height: {drawHeight}px; width: {drawWidth}px;"
   width={canvasWidthDpr}
+  on:contextmenu={onContextMenu}
 />
 
 <style>

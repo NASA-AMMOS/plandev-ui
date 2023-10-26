@@ -4,13 +4,14 @@
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { TIME_MS } from '../../enums/time';
   import { planReadOnly } from '../../stores/plan';
   import { view, viewUpdateGrid } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
   import type { Simulation, SimulationDataset, Span, SpanUtilityMaps, SpansMap } from '../../types/simulation';
-  import type { MouseOver, VerticalGuide } from '../../types/timeline';
+  import type { MouseOver, TimeRange, VerticalGuide } from '../../types/timeline';
   import { getAllSpansForActivityDirective, getSpanRootParent } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -24,6 +25,7 @@
   export let activityDirectivesMap: ActivityDirectivesMap;
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
+  export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let simulation: Simulation | null;
   export let simulationDataset: SimulationDataset | null = null;
   export let spansMap: SpansMap;
@@ -109,6 +111,21 @@
   function getSpanDate(span: Span, includeDuration: boolean = false) {
     const duration = includeDuration ? getIntervalInMs(span.duration) : 0;
     return new Date(getUnixEpochTimeFromInterval(startYmd, span.start_offset) + duration);
+  }
+
+  function onZoom(duration: number) {
+    if (xScaleView && contextMenu) {
+      const time = activityDirectiveStartDate ? activityDirectiveStartDate : xScaleView.invert(contextMenu.e.offsetX);
+      const newViewTimeRange: TimeRange = {
+        end: Math.min(time.getTime() + duration / 2, maxTimeRange.end),
+        start: Math.max(time.getTime() - duration / 2, maxTimeRange.start),
+      };
+      dispatch('viewTimeRangeChanged', newViewTimeRange);
+    }
+  }
+
+  function onZoomHome() {
+    dispatch('viewTimeRangeReset');
   }
 </script>
 
@@ -267,4 +284,26 @@
       Set Simulation End
     </ContextMenuItem>
   {/if}
+  <ContextMenuSeparator />
+  <ContextSubMenuItem
+    text={`Zoom${activityDirective ? ' around Selected Directive' : ''}`}
+    parentMenu={contextMenuComponent}
+  >
+    <ContextMenuItem on:click={() => onZoomHome()}>Reset Zoom</ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND)}>Millisecond</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 10)}>10 Milliseconds</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 50)}>50 Milliseconds</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND)}>Second</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND * 30)}>30 Seconds</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE)}>Minute</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE * 30)}>30 Minutes</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR)}>Hour</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR * 12)}>12 Hours</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY)}>Day</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 3)}>3 Days</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 7)}>Week</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.MONTH)}>Month</ContextMenuItem>
+    <ContextMenuItem on:click={() => onZoom(TIME_MS.YEAR)}>Year</ContextMenuItem>
+  </ContextSubMenuItem>
 </ContextMenu>

@@ -16,7 +16,6 @@
   import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
-  export let minZoomMS = 100; // Min zoom of one minute
   export let nudgePercent = 0.05;
   export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -27,11 +26,7 @@
 
   $: maxDuration = maxTimeRange.end - maxTimeRange.start;
   $: viewDuration = viewTimeRange.end - viewTimeRange.start;
-  $: viewTimeRangePercentZoom = (viewTimeRange.end - viewTimeRange.start) / (maxTimeRange.end - maxTimeRange.start);
 
-  // TODO implement a more sophisticated zooming step that based off time instead of percentage for the high zoom
-  // cases or even the whole range
-  $: zoomActionPercent = viewTimeRangePercentZoom < 0.1 ? 0.005 : 0.05;
   $: {
     const rowVisibilities = Object.values(timelineDirectiveVisibilityToggles);
     const allSame = rowVisibilities.every(val => val === rowVisibilities[0]);
@@ -60,16 +55,19 @@
 
   function onZoomIn() {
     // Compute current zoom percentage
-    const newDuration = Math.max((viewTimeRangePercentZoom - zoomActionPercent) * maxDuration, minZoomMS);
+    const duration = viewTimeRange.end - viewTimeRange.start;
+    const newDuration = duration * 0.66;
     const pivotTime = viewTimeRange.start + viewDuration / 2;
     const newStart = pivotTime - newDuration / 2;
     const newEnd = pivotTime + newDuration / 2;
+
     dispatch('viewTimeRangeChanged', { end: newEnd, start: newStart });
   }
 
   function onZoomOut() {
     // Compute current zoom percentage
-    let newDuration = (viewTimeRangePercentZoom + zoomActionPercent) * maxDuration;
+    const duration = viewTimeRange.end - viewTimeRange.start;
+    let newDuration = duration * (1 / 0.66);
 
     // Clamp zoom
     if (viewDuration >= maxDuration) {
@@ -162,12 +160,7 @@
 >
   <MinusIcon />
 </button>
-<button
-  class="st-button icon"
-  on:click={onZoomIn}
-  use:tooltip={{ content: `Zoom In '='`, placement: 'bottom' }}
-  disabled={viewDuration === minZoomMS}
->
+<button class="st-button icon" on:click={onZoomIn} use:tooltip={{ content: `Zoom In '='`, placement: 'bottom' }}>
   <PlusIcon />
 </button>
 <button
