@@ -90,36 +90,36 @@
     <div class="filter-search-icon" slot="left"><SearchIcon /></div>
   </Input>
   <Menu hideAfterClick={false} bind:this={filterMenu} placement="bottom-start" on:hide={() => (filterString = '')}>
-    <MenuHeader title={menuTitle} />
-    <div class="body st-typography-body">
-      {#if filteredValues.length}
-        <div class="values">
-          {#each filteredValues as item}
-            <button
-              class="value st-button tertiary st-typography-body"
-              on:click={() => toggleItem(item)}
-              class:active={selectedValuesMap[item]}
-            >
-              {item}
-            </button>
-          {/each}
-        </div>
-        <div class="list-buttons">
-          {#if filterString}
-            <button class="st-button secondary list-button" on:click={selectFilteredValues}>
-              Select {filteredValues.length}
-              {#if filteredValues.length === 1}
-                {layer.chartType === 'activity' ? 'activity' : 'resource'}
-              {:else}
-                {layer.chartType === 'activity' ? 'activities' : 'resources'}
-              {/if}
-            </button>
+    <div class="menu-content">
+      <MenuHeader title={menuTitle} />
+      <div class="body st-typography-body">
+        {#if filteredValues.length}
+          <div class="values">
+            {#each filteredValues as item}
+              <button
+                class="value st-button tertiary st-typography-body"
+                on:click={() => toggleItem(item)}
+                class:active={selectedValuesMap[item]}
+              >
+                {item}
+              </button>
+            {/each}
+          </div>
+        {:else}
+          <div class="st-typography-label empty-state">No items matching filter</div>
+        {/if}
+      </div>
+      <div class="list-buttons menu-border-top">
+        <button class="st-button secondary list-button" on:click={selectFilteredValues}>
+          Select {filteredValues.length}
+          {#if filteredValues.length === 1}
+            {layer.chartType === 'activity' ? 'activity' : 'resource'}
+          {:else}
+            {layer.chartType === 'activity' ? 'activities' : 'resources'}
           {/if}
-          <button class="st-button secondary list-button" on:click={unselectFilteredValues}>Unselect all</button>
-        </div>
-      {:else}
-        <div class="st-typography-label empty-state">No items matching filter</div>
-      {/if}
+        </button>
+        <button class="st-button secondary list-button" on:click={unselectFilteredValues}>Unselect all</button>
+      </div>
     </div>
   </Menu>
 </div>
@@ -139,11 +139,16 @@
     display: flex;
   }
 
+  .menu-content {
+    display: grid;
+    grid-template-rows: min-content 1fr min-content;
+    max-height: 360px;
+  }
+
   .body {
     cursor: auto;
     display: grid;
     gap: 8px;
-    max-height: 376px;
     overflow: auto;
     text-align: left;
   }
@@ -176,14 +181,15 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .list-button {
-    margin: 0px 8px;
+    padding: 8px;
+    width: 100%;
   }
 
   .empty-state {
     margin: 8px;
+  }
+
+  .menu-border-top {
+    border-top: 1px solid var(--st-gray-20);
   }
 </style>
