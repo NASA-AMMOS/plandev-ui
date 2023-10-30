@@ -21,7 +21,7 @@
   import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
-  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { getActivityMetadata } from '../../utilities/activities';
   import effects from '../../utilities/effects';
@@ -144,6 +144,16 @@
     editingActivityName = true;
   }
 
+  function getDisplayedArguments(): ArgumentsMap {
+    return formParameters.reduce(
+      (args: ArgumentsMap, { name, value }: { name: ParameterName; value: Argument }) => ({
+        ...args,
+        [name]: value,
+      }),
+      {},
+    );
+  }
+
   function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId>) {
     const { id } = activityDirective;
     if ($plan) {
@@ -224,7 +234,7 @@
       detail: { name },
     } = event;
     const createdActivityPreset = await effects.createActivityPreset(
-      activityDirective.arguments,
+      getDisplayedArguments(),
       activityDirective.type,
       name,
       modelId,
@@ -236,14 +246,16 @@
   }
 
   async function onSavePreset(event: CustomEvent<ActivityPresetInsertInput>) {
-    const { detail } = event;
-    const { name } = detail;
+    const {
+      detail: { name },
+    } = event;
     if (activityDirective.applied_preset) {
       await effects.updateActivityPreset(
         activityDirective.applied_preset.preset_id,
         {
           ...activityDirective.applied_preset.preset_applied,
-          arguments: activityDirective.arguments,
+          arguments: getDisplayedArguments(),
+          model_id: modelId,
           name,
         },
         user,

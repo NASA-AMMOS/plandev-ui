@@ -416,6 +416,7 @@ const effects = {
         model_id: modelId,
         name,
       };
+
       const data = await reqHasura<ActivityPreset>(gql.CREATE_ACTIVITY_PRESET, { activityPresetInsertInput }, user);
 
       if (data.insert_activity_presets_one != null) {
@@ -3714,10 +3715,12 @@ const effects = {
       if (!queryPermissions.UPDATE_ACTIVITY_PRESET(user, updatedActivityPreset)) {
         throwPermissionError('update this activity preset');
       }
-
+      const { id: _id, ...restOfPresetPayload } = updatedActivityPreset;
       const { update_activity_presets_by_pk } = await reqHasura<ActivityPreset>(
         gql.UPDATE_ACTIVITY_PRESET,
-        { ...updatedActivityPreset, id },
+        {
+          activityPresetSetInput: restOfPresetPayload,
+        },
         user,
       );
 
