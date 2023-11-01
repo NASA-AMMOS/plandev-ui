@@ -48,7 +48,7 @@
       }
     }
     if (y > window.innerHeight - rect.height) {
-      y = Math.max(y - rect.height, 8);
+      y = Math.max(window.innerHeight - rect.height, 8);
     }
   }
 

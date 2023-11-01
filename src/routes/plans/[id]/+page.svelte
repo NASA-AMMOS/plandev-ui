@@ -218,7 +218,7 @@
 
   $: if ($plan) {
     effects
-      .getResourcesExternal($plan.id, $plan.start_time, data.user)
+      .getResourcesExternal($plan.id, $simulationDatasetId ?? null, $plan.start_time, data.user)
       .then(newResources => ($externalResources = newResources));
   }
 

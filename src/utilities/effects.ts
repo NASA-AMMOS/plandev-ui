@@ -2766,9 +2766,26 @@ const effects = {
     }
   },
 
-  async getResourcesExternal(planId: number, startTimeYmd: string, user: User | null): Promise<Resource[]> {
+  async getResourcesExternal(
+    planId: number,
+    simulationDatasetId: number | null,
+    startTimeYmd: string,
+    user: User | null,
+  ): Promise<Resource[]> {
     try {
-      const data = await reqHasura<PlanDataset[]>(gql.GET_PROFILES_EXTERNAL, { planId }, user);
+      const data = await reqHasura<PlanDataset[]>(
+        gql.GET_PROFILES_EXTERNAL,
+        {
+          planId,
+          simulationDatasetFilter:
+            simulationDatasetId === null
+              ? {
+                  _is_null: true,
+                }
+              : { _eq: simulationDatasetId },
+        },
+        user,
+      );
       const { plan_dataset: plan_datasets } = data;
       if (plan_datasets != null) {
         let resources: Resource[] = [];

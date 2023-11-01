@@ -1036,8 +1036,8 @@ const gql = {
   `,
 
   GET_PROFILES_EXTERNAL: `#graphql
-    query GetProfilesExternal($planId: Int!) {
-      plan_dataset(where: { plan_id: { _eq: $planId } }) {
+    query GetProfilesExternal($planId: Int!, $simulationDatasetFilter: Int_comparison_exp) {
+      plan_dataset(where: { plan_id: { _eq: $planId }, simulation_dataset_id: $simulationDatasetFilter }) {
         dataset {
           profiles {
             dataset_id
