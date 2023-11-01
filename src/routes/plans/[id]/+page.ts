@@ -3,15 +3,10 @@ import { redirect } from '@sveltejs/kit';
 import { SearchParameters } from '../../../enums/searchParameters';
 import effects from '../../../utilities/effects';
 import { getSearchParameterNumber } from '../../../utilities/generic';
-import { shouldRedirectToLogin } from '../../../utilities/login';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params, url }) => {
   const { user } = await parent();
-
-  if (shouldRedirectToLogin(user)) {
-    throw redirect(302, `${base}/login`);
-  }
 
   const { id } = params;
   const planId = parseFloat(id);

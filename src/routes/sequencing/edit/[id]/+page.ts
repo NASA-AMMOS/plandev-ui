@@ -3,15 +3,10 @@ import { redirect } from '@sveltejs/kit';
 import type { UserSequence } from '../../../../types/sequencing';
 import effects from '../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../utilities/generic';
-import { shouldRedirectToLogin } from '../../../../utilities/login';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
-
-  if (shouldRedirectToLogin(user)) {
-    throw redirect(302, `${base}/login`);
-  }
 
   const { id: sequenceIdParam } = params;
 

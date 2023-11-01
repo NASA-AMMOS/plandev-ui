@@ -1,17 +1,10 @@
-import { base } from '$app/paths';
-import { redirect } from '@sveltejs/kit';
 import { SearchParameters } from '../../../../enums/searchParameters';
 import effects from '../../../../utilities/effects';
 import { parseFloatOrNull } from '../../../../utilities/generic';
-import { shouldRedirectToLogin } from '../../../../utilities/login';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, url }) => {
   const { user } = await parent();
-
-  if (shouldRedirectToLogin(user)) {
-    throw redirect(302, `${base}/login`);
-  }
 
   const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling(user);
 

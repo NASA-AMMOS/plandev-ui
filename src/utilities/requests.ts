@@ -133,7 +133,8 @@ export async function reqHasura<T = any>(
         throw new Error(errorMessage ?? defaultError);
       }
     } else if (code === INVALID_JWT) {
-      await logout(error?.message);
+      // awaiting here only works if SSR is disabled
+      logout(error?.message);
     }
 
     throw new Error(error?.message ?? defaultError);

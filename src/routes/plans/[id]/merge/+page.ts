@@ -6,15 +6,10 @@ import type {
   PlanMergeRequestSchema,
 } from '../../../../types/plan';
 import effects from '../../../../utilities/effects';
-import { shouldRedirectToLogin } from '../../../../utilities/login';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
-
-  if (shouldRedirectToLogin(user)) {
-    throw redirect(302, `${base}/login`);
-  }
 
   const { id } = params;
   const planId = parseFloat(id);
