@@ -202,8 +202,8 @@ const gql = {
   `,
 
   CREATE_PLAN_SNAPSHOT: `#graphql
-    mutation CreatePlanSnapshot($plan_id: Int!, $snapshot_name: String!) {
-      createSnapshot: create_snapshot(args: { _plan_id: $plan_id, _snapshot_name: $snapshot_name } ) {
+    mutation CreatePlanSnapshot($plan_id: Int!, $snapshot_name: String!, $description: String!) {
+      createSnapshot: create_snapshot(args: { _plan_id: $plan_id, _snapshot_name: $snapshot_name, _description: $description } ) {
         snapshot_id
       }
     }

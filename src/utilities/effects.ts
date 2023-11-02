@@ -933,16 +933,12 @@ const effects = {
   ): Promise<void> {
     const data = await reqHasura<{ snapshot_id: number }>(
       gql.CREATE_PLAN_SNAPSHOT,
-      { plan_id: planId, /* snapshot_description: description, */ snapshot_name: name },
+      { description, plan_id: planId, snapshot_name: name },
       user,
     );
     const { createSnapshot } = data;
     if (createSnapshot != null) {
       const { snapshot_id } = createSnapshot;
-      // TODO this will soon be part of create plan snapshot
-      const updates = { description };
-      await reqHasura(gql.UPDATE_PLAN_SNAPSHOT, { planSnapshot: updates, snapshot_id }, user);
-
       // Associate tags with the snapshot
       const newPlanSnapshotTags: PlanSnapshotTagsInsertInput[] =
         tags?.map(({ id: tag_id }) => ({
