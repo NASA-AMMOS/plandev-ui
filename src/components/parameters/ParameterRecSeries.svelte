@@ -15,6 +15,7 @@
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
+  import ParameterUnits from './ParameterUnits.svelte';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
@@ -84,7 +85,8 @@
       <ParameterName {formParameter} />
     </div>
     <div class="series-right" slot="right">
-      <CssGrid gap="3px" columns="auto auto auto" class="parameter-rec-series-css-grid">
+      <CssGrid gap="3px" columns="auto auto auto auto" class="parameter-rec-series-css-grid">
+        <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
         <button
           class="st-button icon"
           disabled={subFormParameters?.length === 0 || disabled}
@@ -127,6 +129,7 @@
                 {parameterType}
                 {use}
                 on:change={onChange}
+                on:reset={onResetSeries}
               />
             {:else}
               <ParameterBase
@@ -139,6 +142,7 @@
                 {parameterType}
                 {use}
                 on:change={onChange}
+                on:reset={onResetSeries}
               />
             {/if}
           </li>
@@ -176,7 +180,7 @@
 
   :global(.parameter-rec-series-css-grid) {
     align-items: center;
-    margin-right: 5px;
+    margin-right: 3px;
   }
 
   .parameter-rec-series :global(.form-parameter-name .name) {

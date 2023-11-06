@@ -4,12 +4,14 @@
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import type { ValueSchemaStruct } from '../../types/schema';
+  import { isRecParameter } from '../../utilities/parameters';
   import type { ActionArray } from '../../utilities/useActions';
   import Collapse from '../Collapse.svelte';
   import ParameterBase from './ParameterBase.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
   import ParameterRec from './ParameterRec.svelte';
+  import ParameterUnits from './ParameterUnits.svelte';
 
   export let disabled: boolean = false;
   export let expanded: boolean = false;
@@ -67,6 +69,7 @@
       <ParameterName {formParameter} />
     </div>
     <div class="right" slot="right">
+      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
       <ParameterBaseRightAdornments
         {disabled}
         hidden={hideRightAdornments}
@@ -79,7 +82,7 @@
     <ul style="padding-inline-start: {levelPadding}px">
       {#each subFormParameters as subFormParameter (subFormParameter.name)}
         <li>
-          {#if subFormParameter.schema.type === 'series' || subFormParameter.schema.type === 'struct'}
+          {#if isRecParameter(subFormParameter)}
             <ParameterRec
               {disabled}
               {hideRightAdornments}
@@ -90,6 +93,7 @@
               {parameterType}
               {use}
               on:change={onChange}
+              on:reset={onResetStruct}
             />
           {:else}
             <ParameterBase
@@ -102,6 +106,7 @@
               {parameterType}
               {use}
               on:change={onChange}
+              on:reset={onResetStruct}
             />
           {/if}
         </li>
@@ -144,6 +149,7 @@
   }
 
   .right {
-    margin-right: 5px;
+    display: inline-flex;
+    margin-right: 6px;
   }
 </style>

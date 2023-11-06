@@ -7,6 +7,7 @@
   import { useActions, type ActionArray } from '../../utilities/useActions';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
+  import ParameterUnits from './ParameterUnits.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
@@ -40,14 +41,17 @@
         </option>
       {/each}
     </select>
-    <ParameterBaseRightAdornments
-      {disabled}
-      hidden={hideRightAdornments}
-      {formParameter}
-      {parameterType}
-      {use}
-      on:reset={() => dispatch('reset', formParameter)}
-    />
+    <div class="parameter-right">
+      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      <ParameterBaseRightAdornments
+        {disabled}
+        hidden={hideRightAdornments}
+        {formParameter}
+        {parameterType}
+        {use}
+        on:reset={() => dispatch('reset', formParameter)}
+      />
+    </div>
   </div>
 </div>
 
@@ -59,7 +63,15 @@
 
   .parameter-base-variant-content {
     align-items: center;
-    display: flex;
-    margin-right: 5px;
+    display: grid;
+    grid-template-columns: auto min-content;
+    margin-right: 6px;
+  }
+
+  .parameter-right {
+    column-gap: 5px;
+    display: inline-flex;
+    margin-left: 5px;
+    width: 100%;
   }
 </style>

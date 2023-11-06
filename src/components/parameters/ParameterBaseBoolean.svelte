@@ -7,6 +7,7 @@
   import Input from '../form/Input.svelte';
   import ParameterBaseRightAdornments from './ParameterBaseRightAdornments.svelte';
   import ParameterName from './ParameterName.svelte';
+  import ParameterUnits from './ParameterUnits.svelte';
 
   export let disabled: boolean = false;
   export let formParameter: FormParameter;
@@ -32,16 +33,19 @@
       on:change={() => dispatch('change', formParameter)}
       use:useActions={use}
     />
-    <ParameterBaseRightAdornments
-      {disabled}
-      hidden={hideRightAdornments}
-      slot="right"
-      {formParameter}
-      {parameterType}
-      on:reset={() => dispatch('reset', formParameter)}
-      {use}
-    />
+    <div class="parameter-right" slot="right">
+      <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
+      <ParameterBaseRightAdornments
+        {disabled}
+        hidden={hideRightAdornments}
+        {formParameter}
+        {parameterType}
+        on:reset={() => dispatch('reset', formParameter)}
+        {use}
+      />
+    </div>
   </Input>
+  <div />
 </div>
 
 <style>
@@ -54,5 +58,11 @@
     align-items: center;
     display: grid;
     padding: 4px 0px;
+  }
+
+  .parameter-right {
+    column-gap: 5px;
+    display: inline-flex;
+    width: 100%;
   }
 </style>

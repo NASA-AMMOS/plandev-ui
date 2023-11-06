@@ -7,6 +7,9 @@
   export let layout: 'inline' | 'stacked' | null = 'stacked';
   export { className as class };
 
+  const padLeft = 5;
+  const padRight = 6;
+
   let className: string = '';
   let container: HTMLDivElement;
   let containerObserver: MutationObserver;
@@ -51,27 +54,51 @@
   });
 
   function padLeftSlot() {
-    const padLeft = 5;
-    const padRight = 3;
     if (left !== null) {
       left.style.left = `${padLeft}px`;
+      left.style.width = 'min-content';
+
       if (input !== null) {
-        input.style.paddingLeft = `${padLeft + left.clientWidth + padRight}px`;
+        input.style.paddingLeft = `min(40%, ${padLeft + padRight}px)`;
       }
       setChildrenStyles([left]);
     }
+    // because the content of the slot might not have been fully rendered by the time this function is called
+    // we must kick it out to a timeout to wait for it to be rendered
+    setTimeout(() => {
+      if (left !== null) {
+        left.style.left = `${padLeft}px`;
+
+        left.style.width = `min(40%, ${left.clientWidth}px)`;
+        if (input !== null) {
+          input.style.paddingLeft = `min(40%, ${padLeft + left.clientWidth + padRight}px)`;
+        }
+      }
+    }, 100);
   }
 
   function padRightSlot() {
-    const padLeft = 3;
-    const padRight = 5;
     if (right !== null) {
       right.style.right = `${padRight}px`;
+      right.style.width = 'min-content';
+
       if (input !== null) {
-        input.style.paddingRight = `${padLeft + right.clientWidth + padRight}px`;
+        input.style.paddingRight = `min(40%, ${padLeft + padRight}px)`;
       }
       setChildrenStyles([right]);
     }
+    // because the content of the slot might not have been fully rendered by the time this function is called
+    // we must kick it out to a timeout to wait for it to be rendered
+    setTimeout(() => {
+      if (right !== null) {
+        right.style.right = `${padRight}px`;
+
+        right.style.width = `min(40%, ${right.clientWidth}px)`;
+        if (input !== null) {
+          input.style.paddingRight = `min(40%, ${padLeft + right.clientWidth + padRight}px)`;
+        }
+      }
+    }, 100);
   }
 
   function inputObserverCallback(mutations: MutationRecord[]) {

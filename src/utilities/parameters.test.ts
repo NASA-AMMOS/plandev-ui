@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getArgument, getValueSchemaDefaultValue } from './parameters';
+import { getArgument, getValueSchemaDefaultValue, isRecParameter } from './parameters';
 
 describe('getArgument', () => {
   test('Should return the preset value', () => {
@@ -138,5 +138,84 @@ describe('getValueSchemaDefaultValue', () => {
   test('variant', () => {
     const defaultVariantValue = getValueSchemaDefaultValue({ type: 'variant', variants: [{ key: 'A', label: 'A' }] });
     expect(defaultVariantValue).toEqual('A');
+  });
+});
+
+describe('isRecParameter', () => {
+  test('Should return true for a form parameter that is a recursive parameter', () => {
+    expect(
+      isRecParameter({
+        errors: [],
+        name: 'test',
+        order: 0,
+        schema: {
+          items: {
+            type: 'string',
+          },
+          type: 'series',
+        },
+        value: 'foo',
+        valueSource: 'mission',
+      }),
+    ).toEqual(true);
+
+    expect(
+      isRecParameter({
+        errors: [],
+        name: 'test',
+        order: 0,
+        schema: {
+          items: {
+            foo: {
+              type: 'string',
+            },
+          },
+          type: 'struct',
+        },
+        value: 'foo',
+        valueSource: 'mission',
+      }),
+    ).toEqual(true);
+
+    expect(
+      isRecParameter({
+        errors: [],
+        name: 'test',
+        order: 0,
+        schema: {
+          type: 'string',
+        },
+        value: 'foo',
+        valueSource: 'mission',
+      }),
+    ).toEqual(false);
+  });
+
+  test('Should return false for a form parameter that is not a recursive parameter', () => {
+    expect(
+      isRecParameter({
+        errors: [],
+        name: 'test',
+        order: 0,
+        schema: {
+          type: 'string',
+        },
+        value: 'foo',
+        valueSource: 'mission',
+      }),
+    ).toEqual(false);
+
+    expect(
+      isRecParameter({
+        errors: [],
+        name: 'test',
+        order: 0,
+        schema: {
+          type: 'boolean',
+        },
+        value: 'foo',
+        valueSource: 'mission',
+      }),
+    ).toEqual(false);
   });
 });

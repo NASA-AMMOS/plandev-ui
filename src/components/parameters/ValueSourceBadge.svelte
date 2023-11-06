@@ -8,6 +8,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import { useActions, type ActionArray } from '../../utilities/useActions';
 
+  export let isCompact: boolean = true;
   export let disabled: boolean = false;
   export let source: ValueSource;
   export let parameterType: ParameterType = 'activity';
@@ -15,6 +16,8 @@
 
   const dispatch = createEventDispatcher();
 
+  let showButton: boolean = false;
+  let status: string = '';
   let tooltipContent: string = '';
   let tooltipContentModifiedReset: string = '';
 
@@ -25,9 +28,11 @@
   });
   $: {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
+    showButton = false;
     switch (source) {
       case 'user on model':
       case 'user on preset':
+        showButton = true;
         tooltipContentModifiedReset = `<div class="value-source-tooltip-modified-reset">
                                           <span>Reset to ${source === 'user on preset' ? presetText : 'Model'}</span>
                                           <div>${isMacOs() ? '⌘' : 'CTRL'} Click</div>
@@ -44,24 +49,48 @@
       default:
         tooltipContent = 'Mission Model';
     }
+    switch (source) {
+      case 'user on model':
+      case 'user on preset':
+        status = 'Override';
+        break;
+      case 'preset':
+        status = `${presetText} Value`;
+        break;
+      case 'mission':
+      default:
+        status = 'Mission Model';
+    }
   }
 
   function onClick(event: MouseEvent) {
     if (isMetaOrCtrlPressed(event) && !disabled) {
-      dispatch('reset');
+      reset();
     }
+  }
+
+  function reset() {
+    dispatch('reset');
   }
 </script>
 
 {#if source !== 'none'}
   <div
-    class="value-source-badge-dot-root"
+    class={classNames('value-source-badge-dot-root', {
+      'value-source-badge-compact': isCompact,
+    })}
     role="none"
-    use:tooltip={{ allowHTML: true, content: tooltipContent, placement: 'top' }}
+    use:tooltip={{ allowHTML: true, content: tooltipContent, disabled: !isCompact, placement: 'top' }}
     use:useActions={use}
     on:click={onClick}
   >
     <div class={dotClasses} />
+    {#if !isCompact}
+      <span>{status}</span>
+      {#if showButton && !disabled}
+        <button type="button" class="value-source-reset-button st-button icon" on:click={reset}>Reset</button>
+      {/if}
+    {/if}
   </div>
 {/if}
 
@@ -69,9 +98,12 @@
   .value-source-badge-dot-root {
     align-items: center;
     display: flex;
+    gap: 4px;
     height: 16px;
+    min-width: auto;
+  }
+  .value-source-badge-dot-root.value-source-badge-compact {
     justify-content: center;
-    width: 16px;
   }
 
   .value-source-badge-dot {
@@ -91,6 +123,12 @@
 
   .value-source-badge-dot--mission {
     background: var(--st-success-green);
+  }
+
+  .value-source-reset-button {
+    border: 1px solid var(--st-gray-30);
+    min-width: inherit;
+    padding: 0 8px;
   }
 
   :global(.value-source-tooltip-modified) {

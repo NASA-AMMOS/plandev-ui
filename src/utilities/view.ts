@@ -39,6 +39,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
   resourceTypes.map(resourceType => {
     const { name, schema } = resourceType;
     const { type: schemaType } = schema;
+    const unit = schema.metadata?.unit?.value;
     const isDiscreteSchema = schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
     const isNumericSchema =
       schemaType === 'int' ||
@@ -46,7 +47,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
       (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
 
     const yAxis = createYAxis(timelines, {
-      label: { text: name },
+      label: { text: `${name}${unit ? ` (${unit})` : ''}` },
       tickCount: isNumericSchema ? 5 : 0,
     });
 

@@ -27,6 +27,7 @@
   export let spanUtilityMaps: SpanUtilityMaps;
   export let user: User | null;
 
+  let activityType: ActivityType | null = null;
   let endTimeDoy: string | null = null;
   let formParametersComputedAttributes: FormParameter[] = [];
   let formParameters: FormParameter[] = [];
@@ -59,8 +60,12 @@
             activityType.parameters,
             span.attributes.arguments,
             activityType.required_parameters,
+            {},
             activityArguments.arguments,
-          );
+          ).map(formParameter => ({
+            ...formParameter,
+            valueSource: 'none',
+          }));
         }
       });
   }

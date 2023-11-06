@@ -19,6 +19,10 @@
     }
   }
 
+  export function isShown() {
+    return shown;
+  }
+
   export function showDirectly(_x: number, _y: number, _xAnchor: number): void {
     shown = true;
     x = _x;
@@ -34,7 +38,7 @@
   }
 
   let div: HTMLDivElement;
-  let shown = false;
+  let shown: boolean = false;
   let x: number;
   let y: number;
 
@@ -62,6 +66,7 @@
 <svelte:body on:click={() => hide(true)} />
 
 {#if shown}
+  <!-- svelte-ignore a11y-mouse-events-have-key-events -->
   <div
     bind:this={div}
     class="context-menu"
@@ -70,6 +75,8 @@
     style:top={`${y}px`}
     transition:fade={{ duration: 50 }}
     on:click|stopPropagation={onClick}
+    on:mouseout
+    on:mouseover
   >
     <slot />
   </div>
