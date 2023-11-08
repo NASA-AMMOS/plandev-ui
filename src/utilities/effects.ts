@@ -4,7 +4,7 @@ import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aeri
 import { get } from 'svelte/store';
 import { SearchParameters } from '../enums/searchParameters';
 import { activityDirectives, activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, constraintResultsResponse } from '../stores/constraints';
+import { checkConstraintsStatus, constraintResponse } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError,
@@ -37,7 +37,7 @@ import type {
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User, UserId } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
-import type { Constraint, ConstraintInsertInput, ConstraintResult } from '../types/constraint';
+import type { Constraint, ConstraintInsertInput, ConstraintResponse, ConstraintResult } from '../types/constraint';
 import type {
   ExpansionRule,
   ExpansionRuleInsertInput,
@@ -285,19 +285,44 @@ const effects = {
       checkConstraintsStatus.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
-        const data = await reqHasura<ConstraintResult[]>(
+        const data = await reqHasura<ConstraintResponse[]>(
           gql.CHECK_CONSTRAINTS,
           {
             planId,
           },
           user,
         );
+        const { constraintResponses } = data;
+        if (constraintResponses) {
+          constraintResponse.set(constraintResponses);
 
-        const { constraintResults } = data;
-        if (constraintResults != null) {
-          constraintResultsResponse.set(constraintResults);
-          checkConstraintsStatus.set(Status.Complete);
-          showSuccessToast('Check Constraints Complete');
+          // find only the constraints compiled.
+          const successfulConstraintResults: ConstraintResult[] = constraintResponses
+            .filter(constraintResponse => constraintResponse.success)
+            .map(constraintResponse => constraintResponse.results);
+
+          const failedConstraintResponses = constraintResponses.filter(
+            constraintResponse => !constraintResponse.success,
+          );
+
+          if (successfulConstraintResults.length === 0 && constraintResponses.length > 0) {
+            showFailureToast('All Constraints Failed');
+            checkConstraintsStatus.set(Status.Failed);
+          } else if (successfulConstraintResults.length !== constraintResponses.length) {
+            showFailureToast('Partial Constraints Checked');
+            checkConstraintsStatus.set(successfulConstraintResults.length !== 0 ? Status.Incomplete : Status.Failed);
+          } else {
+            showSuccessToast('All Constraints Checked');
+            checkConstraintsStatus.set(Status.Complete);
+          }
+
+          if (failedConstraintResponses.length > 0) {
+            failedConstraintResponses.forEach(failedConstraint => {
+              failedConstraint.errors.forEach(error => {
+                catchError(`${error.message}`, error.stack);
+              });
+            });
+          }
         } else {
           throw Error(`Unable to check constraints for plan with ID: "${plan.id}"`);
         }

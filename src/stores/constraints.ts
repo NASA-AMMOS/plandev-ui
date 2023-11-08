@@ -1,6 +1,6 @@
 import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import type { Constraint, ConstraintResult } from '../types/constraint';
+import type { Constraint, ConstraintResponse, ConstraintResult } from '../types/constraint';
 import gql from '../utilities/gql';
 import type { Status } from '../utilities/status';
 import { modelId, planId, planStartTimeMs } from './plan';
@@ -34,7 +34,7 @@ export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>
 
 export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
-export const constraintResultsResponse: Writable<ConstraintResult[]> = writable([]);
+export const constraintResponse: Writable<ConstraintResponse[]> = writable([]);
 
 export const constraintsColumns: Writable<string> = writable('2fr 3px 1fr');
 export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
@@ -42,22 +42,25 @@ export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 /* Derived. */
 
 export const constraintResults: Readable<ConstraintResult[]> = derived(
-  [constraintResultsResponse, planStartTimeMs],
-  ([$constraintResultsResponse, $planStartTimeMs]) =>
-    $constraintResultsResponse.reduce((list: ConstraintResult[], constraintResult) => {
-      list.push({
-        ...constraintResult,
-        violations: constraintResult.violations.map(violation => ({
-          ...violation,
-          windows: violation.windows.map(({ end, start }) => ({
-            end: $planStartTimeMs + end / 1000,
-            start: $planStartTimeMs + start / 1000,
+  [constraintResponse, planStartTimeMs],
+  ([$constraintResponse, $planStartTimeMs]) =>
+    $constraintResponse
+      .filter(response => response.success)
+      .map(successfulResponse => successfulResponse.results)
+      .reduce((list: ConstraintResult[], constraintResult) => {
+        list.push({
+          ...constraintResult,
+          violations: constraintResult.violations.map(violation => ({
+            ...violation,
+            windows: violation.windows.map(({ end, start }) => ({
+              end: $planStartTimeMs + end / 1000,
+              start: $planStartTimeMs + start / 1000,
+            })),
           })),
-        })),
-      });
+        });
 
-      return list;
-    }, []),
+        return list;
+      }, []),
 );
 
 export const visibleConstraintResults: Readable<ConstraintResult[]> = derived(
@@ -88,5 +91,5 @@ export function setAllConstraintsVisible(visible: boolean) {
 
 export function resetConstraintStores(): void {
   checkConstraintsStatus.set(null);
-  constraintResultsResponse.set([]);
+  constraintResponse.set([]);
 }

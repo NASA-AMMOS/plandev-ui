@@ -36,3 +36,20 @@ export type ConstraintResult = {
   type: ConstraintType;
   violations: ConstraintViolation[];
 };
+
+export type ConstraintResponse = {
+  errors: UserCodeError[];
+  results: ConstraintResult;
+  success: boolean;
+};
+
+export type UserCodeError = {
+  location: CodeLocation;
+  message: string;
+  stack: string;
+};
+
+export type CodeLocation = {
+  column: number;
+  line: number;
+};

@@ -26,16 +26,31 @@ const gql = {
 
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!) {
-      constraintResults: constraintViolations(planId: $planId) {
-        constraintId
-        constraintName
-        resourceIds
-        type
-        violations {
-          activityInstanceIds
-          windows {
+      constraintResponses: constraintViolations(planId: $planId) {
+        success
+        results {
+          constraintId
+          constraintName
+          resourceIds
+          type
+          gaps {
             end
             start
+          }
+          violations {
+            activityInstanceIds
+            windows {
+              end
+              start
+            }
+          }
+        }
+        errors {
+          message
+          stack
+          location {
+            column
+            line
           }
         }
       }
