@@ -611,8 +611,10 @@
                     <span class="drag-icon">
                       <GripVerticalIcon />
                     </span>
-                    {row.name}
-                    <div>
+                    <span class="timeline-row-name">
+                      {row.name}
+                    </span>
+                    <div class="timeline-row-buttons">
                       <button
                         use:tooltip={{ content: 'Edit Row', placement: 'top' }}
                         class="st-button icon"
@@ -1032,6 +1034,11 @@
     user-select: none;
   }
 
+  .editor-section-draggable .timeline-rows.timeline-elements {
+    display: flex;
+    flex-direction: column;
+  }
+
   .editor-section-header .st-button.icon,
   .timeline-row .st-button.icon,
   .guide .st-button.icon,
@@ -1093,6 +1100,7 @@
     display: flex;
     height: 40px;
     justify-content: space-between;
+    overflow: hidden;
     padding: 0px 16px;
     position: relative;
   }
@@ -1108,6 +1116,18 @@
   .timeline-row:hover,
   .timeline-row:active {
     background: var(--st-gray-10);
+  }
+
+  .timeline-row-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: break-all;
+  }
+
+  .timeline-row-buttons {
+    display: flex;
   }
 
   .editor-section-draggable .timeline-element:hover .drag-icon,
