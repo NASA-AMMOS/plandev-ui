@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { debounce } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { FormParameter, ParameterType } from '../../types/parameter';
   import { useActions, type ActionArray } from '../../utilities/useActions';
@@ -20,7 +21,16 @@
 
   const dispatch = createEventDispatcher();
 
+  let debouncedOnChange = debounce(onChange, 350, {
+    leading: true,
+    trailing: true,
+  });
+
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
+
+  function onChange() {
+    dispatch('change', formParameter);
+  }
 </script>
 
 <div class="parameter-base-number" style="grid-template-columns: {columns}">
@@ -33,7 +43,7 @@
       {disabled}
       type="number"
       use:useActions={use}
-      on:change={() => dispatch('change', formParameter)}
+      on:change={debouncedOnChange}
     />
     <div class="parameter-right" slot="right">
       <ParameterUnits unit={formParameter.schema?.metadata?.unit?.value} />
