@@ -2679,9 +2679,12 @@ const effects = {
 
   async getPlanTags(planId: number, user: User | null): Promise<Tag[]> {
     try {
-      const data = await reqHasura(convertToQuery(gql.SUB_PLAN_TAGS), { planId }, user);
-      const { tags } = data;
-      return tags;
+      const data = await reqHasura<Pick<Plan, 'tags'>>(convertToQuery(gql.SUB_PLAN_TAGS), { planId }, user);
+      const { plan } = data;
+      if (!plan || !plan.tags || !Array.isArray(plan.tags)) {
+        return [];
+      }
+      return plan.tags.map(({ tag }) => tag);
     } catch (e) {
       catchError(e as Error);
       return [];
