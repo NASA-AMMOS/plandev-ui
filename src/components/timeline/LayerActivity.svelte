@@ -331,12 +331,15 @@
     }
     const showContextMenu = !!e && isRightClick(e);
     if (showContextMenu) {
-      dispatch('contextMenu', {
-        e,
-        layerId: id,
-        selectedActivityDirectiveId,
-        selectedSpanId,
-      });
+      // delay the context menu a little bit to allow any selection events to occur first
+      setTimeout(() => {
+        dispatch('contextMenu', {
+          e,
+          layerId: id,
+          selectedActivityDirectiveId,
+          selectedSpanId,
+        });
+      }, 1);
     }
   }
 

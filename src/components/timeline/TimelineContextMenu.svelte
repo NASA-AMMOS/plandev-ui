@@ -41,6 +41,7 @@
   let contextMenuComponent: ContextMenu;
   let activityDirective: ActivityDirective | null;
   let activityDirectiveSpans: Span[] | null = [];
+  let activityDirectiveStartDate: Date | null = null;
   let span: Span | null;
 
   // TODO imports here could be better, should we handle the vertical guide creation in Timeline?
@@ -53,10 +54,10 @@
     span = null;
     activityDirectiveSpans = null;
 
-    if (selectedActivityDirectiveId !== undefined) {
+    if (selectedActivityDirectiveId != null) {
       activityDirective = activityDirectivesMap[selectedActivityDirectiveId];
       activityDirectiveSpans = getAllSpansForActivityDirective(selectedActivityDirectiveId, spansMap, spanUtilityMaps);
-    } else if (selectedSpanId !== undefined) {
+    } else if (selectedSpanId != null) {
       span = spansMap[selectedSpanId];
     }
   } else {
@@ -111,6 +112,18 @@
   function getSpanDate(span: Span, includeDuration: boolean = false) {
     const duration = includeDuration ? getIntervalInMs(span.duration) : 0;
     return new Date(getUnixEpochTimeFromInterval(startYmd, span.start_offset) + duration);
+  }
+
+  function onFocus(duration: number) {
+    if (xScaleView && contextMenu && span) {
+      const start = getSpanDate(span);
+      const end = getSpanDate(span, true);
+      const newViewTimeRange: TimeRange = {
+        end: Math.min(end.getTime() + duration, maxTimeRange.end),
+        start: Math.max(start.getTime() - duration, maxTimeRange.start),
+      };
+      dispatch('viewTimeRangeChanged', newViewTimeRange);
+    }
   }
 
   function onZoom(duration: number) {
@@ -285,25 +298,46 @@
     </ContextMenuItem>
   {/if}
   <ContextMenuSeparator />
-  <ContextSubMenuItem
-    text={`Zoom${activityDirective ? ' around Selected Directive' : ''}`}
-    parentMenu={contextMenuComponent}
-  >
-    <ContextMenuItem on:click={() => onZoomHome()}>Reset Zoom</ContextMenuItem>
-    <ContextMenuSeparator />
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND)}>Millisecond</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 10)}>10 Milliseconds</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 50)}>50 Milliseconds</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND)}>Second</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND * 30)}>30 Seconds</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE)}>Minute</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE * 30)}>30 Minutes</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR)}>Hour</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR * 12)}>12 Hours</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY)}>Day</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 3)}>3 Days</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 7)}>Week</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.MONTH)}>Month</ContextMenuItem>
-    <ContextMenuItem on:click={() => onZoom(TIME_MS.YEAR)}>Year</ContextMenuItem>
-  </ContextSubMenuItem>
+  {#if span}
+    <ContextSubMenuItem text="Zoom around Simulated Activity" parentMenu={contextMenuComponent}>
+      <ContextMenuItem on:click={() => onZoomHome()}>Reset Zoom</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MILLISECOND)}>1 Millisecond Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MILLISECOND * 10)}>10 Millisecond Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MILLISECOND * 50)}>50 Millisecond Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.SECOND)}>1 Second Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.SECOND * 30)}>30 Second Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MINUTE)}>1 Minute Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MINUTE * 30)}>30 Minute Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.HOUR)}>1 Hour Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.HOUR * 12)}>12 Hour Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.DAY)}>1 Day Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.DAY * 3)}>3 Day Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.DAY * 7)}>1 Week Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.MONTH)}>1 Month Padding</ContextMenuItem>
+      <ContextMenuItem on:click={() => onFocus(TIME_MS.YEAR)}>1 Year Padding</ContextMenuItem>
+    </ContextSubMenuItem>
+  {:else}
+    <ContextSubMenuItem
+      text={`Zoom${activityDirective ? ' around Activity Directive' : ''}`}
+      parentMenu={contextMenuComponent}
+    >
+      <ContextMenuItem on:click={() => onZoomHome()}>Reset Zoom</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND)}>1 Millisecond</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 10)}>10 Milliseconds</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MILLISECOND * 50)}>50 Milliseconds</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND)}>1 Second</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.SECOND * 30)}>30 Seconds</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE)}>1 Minute</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MINUTE * 30)}>30 Minutes</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR)}>1 Hour</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.HOUR * 12)}>12 Hours</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY)}>1 Day</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 3)}>3 Days</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.DAY * 7)}>1 Week</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.MONTH)}>1 Month</ContextMenuItem>
+      <ContextMenuItem on:click={() => onZoom(TIME_MS.YEAR)}>1 Year</ContextMenuItem>
+    </ContextSubMenuItem>
+  {/if}
 </ContextMenu>
