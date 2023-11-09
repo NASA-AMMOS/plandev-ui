@@ -78,7 +78,7 @@
     }
 
     const revision: ActivityDirectiveRevision = event.detail;
-    const activityType = $activityTypes.find(type => type.name == $selectedActivityDirective?.type);
+    const activityType = $activityTypes.find(type => type.name === $selectedActivityDirective?.type);
     const changedKeys: string[] = [];
 
     const potentialChanges: Array<keyof ActivityDirective & keyof ActivityDirectiveRevision> = [

@@ -49,7 +49,7 @@ export function useActions(node: HTMLElement | SVGElement, actions: ActionArray)
     },
 
     update(actions: ActionArray) {
-      if (((actions && actions.length) || 0) != actionReturns.length) {
+      if (((actions && actions.length) || 0) !== actionReturns.length) {
         throw new Error('You must not change the length of an actions array.');
       }
 

@@ -254,7 +254,7 @@
           {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].currentValue)}
         </div>
         <div class="actions">
-          {#if i == 0}
+          {#if i === 0}
             <span>Current Revision</span>
           {:else}
             <button

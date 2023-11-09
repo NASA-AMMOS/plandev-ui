@@ -318,7 +318,7 @@ function validateInteger(value: string, name: string, range: NumericRange | null
   if ((error_string = validateFloat(value, name, range)) !== false) {
     return error_string;
   }
-  if (Number(value) % 1 != 0) {
+  if (Number(value) % 1 !== 0) {
     return CustomErrorCodes.InvalidInteger(name, value);
   }
 

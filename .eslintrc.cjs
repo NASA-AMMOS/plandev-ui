@@ -38,6 +38,7 @@ module.exports = {
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true, argsIgnorePattern: '^_' }],
     curly: 2,
+    eqeqeq: ['error', 'always', { null: 'ignore' }],
     'no-undef': 'off',
     'sort-keys': ['error', 'asc', { caseSensitive: true, natural: false, minKeys: 2 }],
   },

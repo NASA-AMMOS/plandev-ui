@@ -50,7 +50,7 @@ export function modalBodyClickListener(): void {
 export function modalBodyKeyListener(event: KeyboardEvent): void {
   if (browser) {
     const target: ModalElement | null = document.querySelector('#svelte-modal');
-    if (target && target.resolve && event.key == 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
+    if (target && target.resolve && event.key === 'Escape' && target.getAttribute('data-dismissible') !== 'false') {
       target.replaceChildren();
       target.resolve({ confirm: false });
       target.resolve = null;
