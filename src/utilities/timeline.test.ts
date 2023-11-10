@@ -10,6 +10,7 @@ import {
   createTimelineXRangeLayer,
   createVerticalGuide,
   createYAxis,
+  duplicateRow,
   getYAxisBounds,
 } from './timeline';
 
@@ -180,4 +181,28 @@ test('getYAxisBounds', () => {
   expect(
     getYAxisBounds({ ...yAxis, domainFitMode: 'fitPlan' }, layers, resourcesByViewLayerId, { end: 4, start: 3 }),
   ).toEqual([10, 15]);
+});
+
+test('duplicateRow', () => {
+  const timelines = genTimelines();
+  populateTimelineRows(timelines);
+  populateTimelineYAxes(timelines);
+  populateTimelineLayers(timelines);
+
+  const firstRow = timelines[0].rows[0];
+  const duplicatedRow = duplicateRow(firstRow, timelines, timelines[0].id);
+  expect(duplicatedRow).to.not.be.null;
+  if (duplicatedRow && timelines && timelines[0].rows) {
+    const lastTimeline = timelines.at(-1);
+    if (lastTimeline) {
+      const lastRow = lastTimeline.rows.at(-1);
+      if (lastRow) {
+        expect(duplicatedRow.id).toEqual(lastRow.id + 1);
+        expect(duplicatedRow.layers.length).toEqual(firstRow.layers.length);
+        expect(duplicatedRow.horizontalGuides.length).toEqual(firstRow.horizontalGuides.length);
+        expect(duplicatedRow.yAxes.length).toEqual(firstRow.yAxes.length);
+        expect(duplicatedRow.name).toEqual(`${firstRow.name} (copy)`);
+      }
+    }
+  }
 });

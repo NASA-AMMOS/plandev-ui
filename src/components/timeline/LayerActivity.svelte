@@ -54,6 +54,7 @@
   export let hasUpdateDirectivePermission: boolean = false;
   export let id: number;
   export let focus: FocusEvent | undefined;
+  export let mode: 'packed' | 'heatmap' = 'packed';
   export let mousedown: MouseEvent | undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
@@ -64,6 +65,7 @@
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
   export let showDirectives: boolean = true;
+  export let showSpans: boolean = true;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -86,9 +88,11 @@
   let planStartTimeMs: number;
   let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
   let quadtreeSpans: Quadtree<QuadtreeRect>;
+  let quadtreeHeatmap: Quadtree<QuadtreeRect>;
   let spanTimeBoundCache: Record<SpanId, SpanTimeBounds> = {};
   let visibleActivityDirectivesById: Record<ActivityDirectiveId, ActivityDirective> = {};
   let visibleSpansById: Record<SpanId, Span> = {};
+  let visibleHeatmapBoxesById: Record<ActivityDirectiveId, ActivityDirective> = {};
   let xScaleViewRangeMax: number;
 
   // Asset cache
@@ -138,6 +142,7 @@
     activityColor &&
     activityHeight &&
     showDirectives !== undefined &&
+    showSpans !== undefined &&
     canvasHeightDpr &&
     canvasWidthDpr &&
     ctx &&
@@ -148,6 +153,7 @@
     selectedActivityDirectiveId !== undefined &&
     selectedSpanId !== undefined &&
     spansMap &&
+    mode &&
     viewTimeRange &&
     xScaleView
   ) {
@@ -291,22 +297,47 @@
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX, offsetY } = e;
-      const activityDirectives = searchQuadtreeRect<ActivityDirective>(
-        quadtreeActivityDirectives,
-        offsetX,
-        offsetY,
-        activityHeight,
-        maxActivityWidth,
-        visibleActivityDirectivesById,
-      );
-      const spans = searchQuadtreeRect<Span>(
-        quadtreeSpans,
-        offsetX,
-        offsetY,
-        activityHeight,
-        maxActivityWidth,
-        visibleSpansById,
-      );
+      let activityDirectives: ActivityDirective[] = [];
+      let spans: Span[] = [];
+      if (mode === 'packed') {
+        activityDirectives = searchQuadtreeRect<ActivityDirective>(
+          quadtreeActivityDirectives,
+          offsetX,
+          offsetY,
+          activityHeight,
+          maxActivityWidth,
+          visibleActivityDirectivesById,
+        );
+        spans = searchQuadtreeRect<Span>(
+          quadtreeSpans,
+          offsetX,
+          offsetY,
+          activityHeight,
+          maxActivityWidth,
+          visibleSpansById,
+        );
+      } else {
+        activityDirectives = searchQuadtreeRect<ActivityDirective>(
+          quadtreeHeatmap,
+          offsetX,
+          offsetY,
+          activityHeight,
+          maxActivityWidth,
+          visibleHeatmapBoxesById,
+        );
+        spans = activityDirectives
+          .map(directive => {
+            const rootSpan = getSpanForActivityDirective(directive);
+            if (rootSpan) {
+              const spanChildren = (spanUtilityMaps.spanIdToChildIdsMap[rootSpan.id] || []).map(id => spansMap[id]);
+              return [rootSpan].concat(spanChildren);
+            }
+            return [];
+          })
+          .flat();
+      }
+
+      /* TODO tooltip renders offscreen if there are too many items, maybe show a more compact tooltip summary in heatmap mode hover? */
       dispatch('mouseOver', { activityDirectives, e, layerId: id, spans });
       dragActivityDirective(offsetX);
     }
@@ -331,15 +362,18 @@
     }
     const showContextMenu = !!e && isRightClick(e);
     if (showContextMenu) {
-      // delay the context menu a little bit to allow any selection events to occur first
+      // TODO if we don't move this to the end of the call stack we risk not having selectedActivityDirectiveId or selectedSpanId
+      // properly selected since the right click has to trigger selected entity store update first..
+      // Could potentially do a quadtree search based off right click position instead of relying on these stores?
       setTimeout(() => {
         dispatch('contextMenu', {
           e,
           layerId: id,
+          origin: 'layer-activity',
           selectedActivityDirectiveId,
           selectedSpanId,
         });
-      }, 1);
+      }, 0);
     }
   }
 
@@ -505,8 +539,16 @@
           [0, 0],
           [drawWidth, drawHeight],
         ]);
+      quadtreeHeatmap = d3Quadtree<QuadtreeRect>()
+        .x(p => p.x)
+        .y(p => p.y)
+        .extent([
+          [0, 0],
+          [drawWidth, drawHeight],
+        ]);
       visibleActivityDirectivesById = {};
       visibleSpansById = {};
+      visibleHeatmapBoxesById = {};
       spanTimeBoundCache = {};
 
       maxActivityWidth = Number.MIN_SAFE_INTEGER;
@@ -515,59 +557,65 @@
 
       const sortedActivityDirectives: ActivityDirective[] = activityDirectives.sort(sortActivityDirectivesOrSpans);
       for (const activityDirective of sortedActivityDirectives) {
-        const directiveBounds = getDirectiveBounds(activityDirective); // Directive element
-        const directiveInView = directiveBounds.xCanvas <= xScaleViewRangeMax && directiveBounds.xEndCanvas >= 0;
-
-        const span = getSpanForActivityDirective(activityDirective);
         let spanInView = false;
         let initialSpanBounds = null;
-        if (span) {
-          initialSpanBounds = getSpanBounds(span);
-          if (initialSpanBounds !== null) {
-            spanInView = initialSpanBounds.minX <= xScaleViewRangeMax && initialSpanBounds.maxX >= 0;
+        let span;
+        if (showSpans) {
+          span = getSpanForActivityDirective(activityDirective);
+          if (span) {
+            initialSpanBounds = getSpanBounds(span);
+            if (initialSpanBounds !== null) {
+              spanInView = initialSpanBounds.minX <= xScaleViewRangeMax && initialSpanBounds.maxX >= 0;
+            }
           }
         }
 
+        const directiveBounds = getDirectiveBounds(activityDirective); // Directive element
+        const directiveInView = directiveBounds.xCanvas <= xScaleViewRangeMax && directiveBounds.xEndCanvas >= 0;
         if (directiveInView || spanInView) {
-          const {
-            spanBounds,
-            directiveStartY,
-            maxXPerY: newMaxXPerY,
-          } = placeActivityDirective(maxXPerY, directiveBounds, initialSpanBounds, showDirectives);
+          if (mode === 'packed') {
+            const {
+              spanBounds,
+              directiveStartY,
+              maxXPerY: newMaxXPerY,
+            } = placeActivityDirective(maxXPerY, directiveBounds, initialSpanBounds, showDirectives);
 
-          // Update maxXPerY
-          maxXPerY = newMaxXPerY;
+            // Update maxXPerY
+            maxXPerY = newMaxXPerY;
 
-          const maxCanvasRowY = Math.floor(drawHeight / rowHeight) * rowHeight;
+            const maxCanvasRowY = Math.floor(drawHeight / rowHeight) * rowHeight;
 
-          // Draw spans
-          let constrainedSpanY = -1;
-          if (span) {
-            const spanStartY = directiveStartY;
-            // Wrap spans if overflowing draw height
-            constrainedSpanY =
-              spanBounds.maxY > drawHeight ? (spanBounds.maxY % maxCanvasRowY) - rowHeight : spanStartY;
-            drawSpans([span], constrainedSpanY);
-          }
+            // Draw spans
+            let constrainedSpanY = -1;
+            if (span) {
+              const spanStartY = directiveStartY;
+              // Wrap spans if overflowing draw height
+              constrainedSpanY =
+                spanBounds.maxY > drawHeight ? (spanBounds.maxY % maxCanvasRowY) - rowHeight : spanStartY;
+              drawSpans([span], constrainedSpanY);
+            }
 
-          // Draw directive
-          let constrainedDirectiveY = 0;
-          // If the span exists, use the constrained span Y as the starting point for the directive
-          // so that the directive wraps with the span
-          if (constrainedSpanY > -1) {
-            constrainedDirectiveY = constrainedSpanY;
+            // Draw directive
+            let constrainedDirectiveY = 0;
+            // If the span exists, use the constrained span Y as the starting point for the directive
+            // so that the directive wraps with the span
+            if (constrainedSpanY > -1) {
+              constrainedDirectiveY = constrainedSpanY;
+            } else {
+              // Wrap directive if overflowing draw height and no span is found
+              constrainedDirectiveY =
+                directiveStartY > drawHeight - rowHeight
+                  ? (directiveStartY % maxCanvasRowY) + rowHeight
+                  : directiveStartY;
+            }
+            if (showDirectives) {
+              drawActivityDirective(activityDirective, directiveBounds.xCanvas, constrainedDirectiveY);
+            }
+
+            totalMaxY = Math.max(totalMaxY, directiveStartY, directiveStartY, spanBounds?.maxY || 0);
           } else {
-            // Wrap directive if overflowing draw height and no span is found
-            constrainedDirectiveY =
-              directiveStartY > drawHeight - rowHeight
-                ? (directiveStartY % maxCanvasRowY) + rowHeight
-                : directiveStartY;
+            drawHeatmapBox(directiveBounds.xCanvas, 0, initialSpanBounds?.maxTimeX || 0, activityDirective);
           }
-          if (showDirectives) {
-            drawActivityDirective(activityDirective, directiveBounds.xCanvas, constrainedDirectiveY);
-          }
-
-          totalMaxY = Math.max(totalMaxY, directiveStartY, directiveStartY, spanBounds?.maxY || 0);
         }
       }
 
@@ -579,6 +627,41 @@
       if (debugMode) {
         drawDebugInfo(maxXPerY, newHeight);
       }
+    }
+  }
+
+  function drawHeatmapBox(x: number, y: number, end: number, activityDirective: ActivityDirective) {
+    visibleHeatmapBoxesById[activityDirective.id] = activityDirective;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    const width = end === 0 ? 2 : end - x;
+    if (end === 0) {
+      const rect = new Path2D();
+      ctx.fillStyle = hexToRgba(activityColor, 0.5);
+      rect.rect(x, y, 2, drawHeight);
+      ctx.fill(rect);
+    } else {
+      ctx.strokeStyle = `rgba(0,0,0,0.02)`;
+      const rect = new Path2D();
+      ctx.fillStyle = hexToRgba(activityColor, 0.5);
+      rect.rect(x, y, Math.max(width, 2), drawHeight);
+      // ctx.strokeRect(x, y, width, drawHeight);
+      ctx.fill(rect);
+    }
+    ctx.restore();
+
+    quadtreeHeatmap.add({
+      height: drawHeight,
+      id: activityDirective.id,
+      width,
+      x,
+      y,
+    });
+
+    // Update maxActivityWidth
+    if (width > maxActivityWidth) {
+      maxActivityWidth = width;
     }
   }
 
@@ -773,6 +856,7 @@
       const boundingBoxes: BoundingBox[] = [];
 
       let maxX = Number.MIN_SAFE_INTEGER;
+      let maxTimeX = Number.MIN_SAFE_INTEGER;
       let maxY = Number.MIN_SAFE_INTEGER;
       let minX = Number.MAX_SAFE_INTEGER;
       let y = parentY + rowHeight;
@@ -811,6 +895,9 @@
           if (xEnd > maxX) {
             maxX = xEnd;
           }
+          if (endTimeX > maxTimeX) {
+            maxTimeX = endTimeX;
+          }
           if (y > maxY) {
             maxY = y;
           }
@@ -830,13 +917,16 @@
             if (childrenBoundingBox.maxY > maxY) {
               maxY = childrenBoundingBox.maxY;
             }
+            if (childrenBoundingBox.maxTimeX > maxTimeX) {
+              maxTimeX = childrenBoundingBox.maxTimeX;
+            }
           }
         }
 
-        boundingBoxes.push({ maxX, maxY, minX });
+        boundingBoxes.push({ maxTimeX, maxX, maxY, minX });
       }
 
-      return { maxX, maxY, minX };
+      return { maxTimeX, maxX, maxY, minX };
     }
 
     return null;

@@ -3,11 +3,11 @@
 <script lang="ts">
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
-  import { SearchParameters } from '../../enums/searchParameters';
-  import { planSnapshot } from '../../stores/planSnapshots';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planReadOnly, planStartTimeMs } from '../../stores/plan';
+  import { planSnapshot } from '../../stores/planSnapshots';
   import {
     enableSimulation,
     simulation,
@@ -16,6 +16,7 @@
     simulationDatasetsPlan,
     simulationStatus,
   } from '../../stores/simulation';
+  import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter, ParametersMap } from '../../types/parameter';
@@ -46,7 +47,6 @@
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SimulationHistoryDataset from './SimulationHistoryDataset.svelte';
   import SimulationTemplateInput from './SimulationTemplateInput.svelte';
-  import { viewTogglePanel } from '../../stores/views';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;

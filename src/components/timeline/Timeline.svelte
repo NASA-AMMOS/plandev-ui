@@ -3,6 +3,7 @@
 <script lang="ts">
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
+  import { viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResult } from '../../types/constraint';
@@ -21,27 +22,29 @@
     MouseDown,
     MouseOver,
     Row,
+    SpanVisibilityToggleMap,
     TimeRange,
     Timeline,
     XAxisTick,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { getDoy, getDoyTime } from '../../utilities/time';
+  import { getDoyTime } from '../../utilities/time';
   import {
     MAX_CANVAS_SIZE,
     TimelineLockStatus,
     customD3Ticks,
-    durationHour,
-    durationMinute,
     durationMonth,
+    durationWeek,
     durationYear,
     getXScale,
   } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
+  import RowHeaderDragHandleWidth from './RowHeaderDragHandleWidth.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
   import TimelineHistogram from './TimelineHistogram.svelte';
   import TimelineSimulationRange from './TimelineSimulationRange.svelte';
+  import TimelineTimeDisplay from './TimelineTimeDisplay.svelte';
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
@@ -64,6 +67,7 @@
   export let spans: Span[] = [];
   export let timeline: Timeline | null = null;
   export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
+  export let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
   export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let user: User | null;
@@ -77,13 +81,14 @@
   let tooltip: Tooltip;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
-  let estimatedLabelWidthPx: number = 74; // Width of MS time which is the largest display format
+  let estimatedLabelWidthPx: number = 130; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver | null;
   let removeDPRChangeListener: (() => void) | null = null;
   let rowDragMoveDisabled = true;
   let rowsMaxHeight: number = 600;
   let rows: Row[] = [];
+  let rowHeaderDragHandleWidthPx: number = 2;
   let tickCount: number = 10;
   let timelineDiv: HTMLDivElement;
   let timelineHistogramDiv: HTMLDivElement;
@@ -116,25 +121,23 @@
     xTicksView = customD3Ticks(viewTimeRangeStartDate, viewTimeRangeEndDate, tickCount).map((date: Date) => {
       // Format fine and coarse time based off duration
       const doyTimestamp = getDoyTime(date, true);
-      const splits = doyTimestamp.split('T');
-      let coarseTime = splits[0];
-      let fineTime = splits[1];
+      let formattedDateUTC = doyTimestamp;
+      let formattedDateLocal = date.toISOString();
+      formattedDateLocal = formattedDateLocal.slice(0, formattedDateLocal.length - 1);
       if (xScaleViewDuration > durationYear * tickCount) {
-        coarseTime = date.getFullYear().toString();
-        fineTime = '';
-        labelWidth = 29;
-      } else if (xScaleViewDuration > durationMonth) {
-        coarseTime = date.getFullYear().toString();
-        fineTime = getDoy(date).toString();
-        labelWidth = 29;
-      } else if (xScaleViewDuration > durationHour) {
-        fineTime = splits[1].slice(0, 5);
-        labelWidth = 55;
-      } else if (xScaleViewDuration > durationMinute) {
-        fineTime = splits[1].slice(0, 8);
-        labelWidth = 55;
+        formattedDateUTC = doyTimestamp.slice(0, 4);
+        formattedDateLocal = formattedDateLocal.slice(0, 4);
+        labelWidth = 28;
+      } else if (xScaleViewDuration > durationMonth * tickCount) {
+        formattedDateUTC = doyTimestamp.slice(0, 8);
+        formattedDateLocal = formattedDateLocal.slice(0, 7);
+        labelWidth = 50;
+      } else if (xScaleViewDuration > durationWeek) {
+        formattedDateUTC = doyTimestamp.slice(0, 8);
+        formattedDateLocal = formattedDateLocal.slice(0, 10);
+        labelWidth = 58;
       }
-      return { coarseTime, date, fineTime, hideLabel: false };
+      return { date, formattedDateLocal, formattedDateUTC, hideLabel: false };
     });
 
     // Determine whether or not to hide the last tick label
@@ -213,13 +216,14 @@
     rowDragMoveDisabled = false;
   }
 
+  function onMouseUpRowMove(event: Event) {
+    event.preventDefault();
+    rowDragMoveDisabled = true;
+  }
+
   function onToggleRowExpansion(event: CustomEvent<{ expanded: boolean; rowId: number }>) {
     const { rowId, expanded } = event.detail;
     dispatch('toggleRowExpansion', { expanded, rowId });
-  }
-
-  function onToggleDirectiveVisibility(rowId: number, visible: boolean) {
-    dispatch('toggleDirectiveVisibility', { rowId, visible });
   }
 
   function onUpdateRowHeight(event: CustomEvent<{ newHeight: number; rowId: number; wasAutoAdjusted?: boolean }>) {
@@ -238,6 +242,38 @@
     histogramCursorTime = event.detail;
   }
 
+  function onUpdateRowHeaderWidth(event: CustomEvent<{ newWidth: number }>) {
+    const { newWidth } = event.detail;
+    viewUpdateTimeline('marginLeft', newWidth, timeline?.id);
+    mouseOver = null;
+    histogramCursorTime = null;
+  }
+
+  function onMoveRow(event: CustomEvent<{ direction: 'up' | 'down'; row: Row }>) {
+    const {
+      detail: { direction, row },
+    } = event;
+    const newRows = [...rows];
+    const rowIndex = rows.findIndex(r => r.id === row.id);
+    if (rowIndex < 0) {
+      return;
+    }
+    if (direction === 'up') {
+      if (rowIndex > 0) {
+        const oldRow = newRows[rowIndex - 1];
+        newRows[rowIndex - 1] = row;
+        newRows[rowIndex] = oldRow;
+      }
+    } else if (direction === 'down') {
+      if (rowIndex < rows.length - 1) {
+        const oldRow = newRows[rowIndex + 1];
+        newRows[rowIndex + 1] = row;
+        newRows[rowIndex] = oldRow;
+      }
+    }
+    dispatch('updateRows', newRows);
+  }
+
   async function setRowsMaxHeight(
     timelineDiv: HTMLDivElement,
     xAxisDiv: HTMLDivElement,
@@ -251,116 +287,143 @@
       rowsMaxHeight = maxHeight;
     }
   }
+
+  function onContextMenu(e: CustomEvent, row: Row) {
+    // Allow right clicking on interactive tippy tooltips on the canvas
+    // in order to copy text within the tooltips
+    const a = e.detail.e.target as HTMLElement;
+    if (a && a.classList.value && a.classList.value.indexOf('tippy') > -1) {
+      return;
+    }
+    contextMenu = { ...e.detail, row };
+    tooltip.hide();
+  }
 </script>
 
 <svelte:window on:keydown={onKeyDown} />
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
-  <div bind:this={timelineHistogramDiv} style="padding-top: 12px">
-    <TimelineHistogram
-      activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]
-        ? activityDirectivesByView.byTimelineId[timeline.id]
-        : []}
-      {constraintResults}
-      {cursorEnabled}
-      drawHeight={timelineHistogramDrawHeight}
-      {drawWidth}
-      marginLeft={timeline?.marginLeft}
-      {mouseOver}
-      {planStartTimeYmd}
-      {simulationDataset}
-      {spans}
-      {viewTimeRange}
-      {xScaleView}
-      {xScaleMax}
-      on:cursorTimeChange={onHistogramCursorTimeChanged}
+  <div bind:this={timelineHistogramDiv} class="timeline-time-row">
+    <TimelineTimeDisplay
+      planEndTimeDoy={plan?.end_time_doy}
+      planStartTimeDoy={plan?.start_time_doy}
+      width={timeline?.marginLeft}
       on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
     />
-  </div>
-  <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
-    <TimelineXAxis
-      {constraintResults}
-      drawHeight={xAxisDrawHeight}
-      {drawWidth}
-      marginLeft={timeline?.marginLeft}
-      {viewTimeRange}
-      {xScaleView}
-      {xTicksView}
-      on:viewTimeRangeChanged
-    />
-  </div>
-  <TimelineSimulationRange
-    {cursorHeaderHeight}
-    {drawWidth}
-    marginLeft={timeline?.marginLeft}
-    {simulationDataset}
-    {xScaleView}
-  />
-  <TimelineCursors
-    {cursorHeaderHeight}
-    {cursorEnabled}
-    {drawWidth}
-    {histogramCursorTime}
-    marginLeft={timeline?.marginLeft}
-    {mouseOver}
-    verticalGuides={timeline?.verticalGuides}
-    {xScaleView}
-    on:updateVerticalGuides
-  />
-  <div
-    class="rows"
-    style="max-height: {rowsMaxHeight}px"
-    on:consider={handleDndConsiderRows}
-    on:finalize={handleDndFinalizeRows}
-    use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
-  >
-    {#each rows as row (row.id)}
-      <TimelineRow
-        {activityDirectivesByView}
-        {activityDirectivesMap}
-        autoAdjustHeight={row.autoAdjustHeight}
+    <div class="timeline-histogram-container">
+      <TimelineHistogram
+        activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]
+          ? activityDirectivesByView.byTimelineId[timeline.id]
+          : []}
         {constraintResults}
-        {dpr}
-        drawHeight={row.height}
+        {cursorEnabled}
+        drawHeight={timelineHistogramDrawHeight}
         {drawWidth}
-        expanded={row.expanded}
-        {hasUpdateDirectivePermission}
-        horizontalGuides={row.horizontalGuides}
-        id={row.id}
-        layers={row.layers}
-        name={row.name}
-        marginLeft={timeline?.marginLeft}
-        {planEndTimeDoy}
-        {plan}
+        {mouseOver}
         {planStartTimeYmd}
-        {resourcesByViewLayerId}
-        {rowDragMoveDisabled}
-        {selectedActivityDirectiveId}
-        {selectedSpanId}
-        showDirectives={timelineDirectiveVisibilityToggles[row.id]}
         {simulationDataset}
-        {spanUtilityMaps}
-        {spansMap}
-        {timelineLockStatus}
-        {user}
+        {spans}
+        {viewTimeRange}
+        {xScaleView}
+        {xScaleMax}
+        on:cursorTimeChange={onHistogramCursorTimeChanged}
+        on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
+      />
+    </div>
+  </div>
+  <div class="timeline-padded-content">
+    <RowHeaderDragHandleWidth
+      rowHeaderWidth={timeline?.marginLeft}
+      on:updateRowHeaderWidth={onUpdateRowHeaderWidth}
+      width={rowHeaderDragHandleWidthPx}
+    />
+    <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
+      <TimelineXAxis
+        {constraintResults}
+        drawHeight={xAxisDrawHeight}
+        {drawWidth}
+        marginLeft={timeline?.marginLeft ?? 0}
         {viewTimeRange}
         {xScaleView}
         {xTicksView}
-        yAxes={row.yAxes}
-        on:contextMenu={e => {
-          contextMenu = e.detail;
-          tooltip.hide();
-        }}
-        on:dblClick
-        on:deleteActivityDirective
-        on:mouseDown={onMouseDown}
-        on:mouseDownRowMove={onMouseDownRowMove}
-        on:mouseOver={e => (mouseOver = e.detail)}
-        on:toggleRowExpansion={onToggleRowExpansion}
-        on:toggleDirectiveVisibility={e => onToggleDirectiveVisibility(row.id, e.detail)}
-        on:updateRowHeight={onUpdateRowHeight}
+        on:viewTimeRangeChanged
       />
-    {/each}
+    </div>
+    <TimelineSimulationRange
+      {cursorHeaderHeight}
+      {drawWidth}
+      marginLeft={timeline?.marginLeft}
+      {simulationDataset}
+      {xScaleView}
+    />
+    <TimelineCursors
+      {cursorHeaderHeight}
+      {cursorEnabled}
+      {drawWidth}
+      {histogramCursorTime}
+      marginLeft={timeline?.marginLeft}
+      {mouseOver}
+      verticalGuides={timeline?.verticalGuides}
+      {xScaleView}
+      on:updateVerticalGuides
+    />
+
+    <div
+      class="rows"
+      style="max-height: {rowsMaxHeight}px"
+      on:consider={handleDndConsiderRows}
+      on:finalize={handleDndFinalizeRows}
+      use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
+    >
+      {#each rows as row (row.id)}
+        <div class="timeline-row-wrapper">
+          <TimelineRow
+            {activityDirectivesByView}
+            {activityDirectivesMap}
+            autoAdjustHeight={row.autoAdjustHeight}
+            {constraintResults}
+            {dpr}
+            drawHeight={row.height}
+            {drawWidth}
+            expanded={row.expanded}
+            {hasUpdateDirectivePermission}
+            horizontalGuides={row.horizontalGuides}
+            id={row.id}
+            layers={row.layers}
+            name={row.name}
+            marginLeft={timeline?.marginLeft}
+            {planEndTimeDoy}
+            {plan}
+            {planStartTimeYmd}
+            {resourcesByViewLayerId}
+            {rowDragMoveDisabled}
+            {rowHeaderDragHandleWidthPx}
+            {selectedActivityDirectiveId}
+            {selectedSpanId}
+            showDirectives={timelineDirectiveVisibilityToggles[row.id]}
+            showSpans={timelineSpanVisibilityToggles[row.id]}
+            {simulationDataset}
+            {spanUtilityMaps}
+            {spansMap}
+            {timelineLockStatus}
+            {user}
+            {viewTimeRange}
+            {xScaleView}
+            {xTicksView}
+            yAxes={row.yAxes}
+            on:contextMenu={e => onContextMenu(e, row)}
+            on:dblClick
+            on:deleteActivityDirective
+            on:mouseDown={onMouseDown}
+            on:mouseDownRowMove={onMouseDownRowMove}
+            on:mouseUpRowMove={onMouseUpRowMove}
+            on:mouseOver={e => (mouseOver = e.detail)}
+            on:toggleRowExpansion={onToggleRowExpansion}
+            on:updateRowHeight={onUpdateRowHeight}
+          />
+        </div>
+      {/each}
+    </div>
   </div>
 
   <!-- Timeline Tooltip. -->
@@ -381,15 +444,25 @@
     on:updateVerticalGuides
     on:viewTimeRangeChanged
     on:viewTimeRangeReset={() => dispatch('viewTimeRangeChanged', maxTimeRange)}
+    on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
     {simulation}
     {simulationDataset}
     {spansMap}
     {spanUtilityMaps}
     {plan}
+    {timelineDirectiveVisibilityToggles}
+    {timelineSpanVisibilityToggles}
     {planStartTimeYmd}
     verticalGuides={timeline?.verticalGuides ?? []}
     {xScaleView}
     {user}
+    on:toggleDirectiveVisibility
+    on:toggleSpanVisibility
+    on:editRow
+    on:deleteRow
+    on:moveRow={onMoveRow}
+    on:duplicateRow
+    on:insertRow
   />
 </div>
 
@@ -403,6 +476,7 @@
   }
 
   .timeline {
+    background-color: var(--st-gray-15);
     height: 100%;
     overflow-x: hidden;
     overflow-y: hidden;
@@ -411,5 +485,26 @@
 
   .x-axis {
     pointer-events: none;
+  }
+
+  .timeline-time-row {
+    background: white;
+    border-bottom: 1px solid var(--st-gray-20);
+    display: flex;
+  }
+
+  .timeline-histogram-container {
+    padding: 4px 8px 4px 0px;
+  }
+
+  .timeline-padded-content {
+    background: white;
+    border-radius: 4px;
+  }
+
+  :global(#dnd-action-dragged-el .row-root) {
+    background: white;
+    border: 1px solid var(--st-gray-40);
+    box-shadow: var(--st-shadow-popover);
   }
 </style>

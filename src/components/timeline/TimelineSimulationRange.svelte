@@ -82,6 +82,7 @@
     pointer-events: none;
     position: absolute;
     width: 100%;
+    z-index: 4;
   }
 
   .timeline-simulation-range-header {

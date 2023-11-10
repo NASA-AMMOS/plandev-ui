@@ -2,12 +2,14 @@
 
 <script lang="ts">
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
+  import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
+  import { ViewConstants } from '../../../enums/view';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import {
     externalResources,
@@ -38,8 +40,8 @@
     XRangeLayer,
   } from '../../../types/timeline';
   import type { ViewGridSection } from '../../../types/view';
+  import effects from '../../../utilities/effects';
   import { getTarget } from '../../../utilities/generic';
-  import { showConfirmModal } from '../../../utilities/modal';
   import { getDoyTime } from '../../../utilities/time';
   import {
     createHorizontalGuide,
@@ -86,9 +88,28 @@
     viewUpdateRow(name, value);
   }
 
+  function updateRowMinHeight(event: Event) {
+    const { name, value } = getTarget(event);
+    if (typeof value === 'number' && !isNaN(value)) {
+      if (value >= ViewConstants.MIN_ROW_HEIGHT) {
+        viewUpdateRow(name, value);
+      }
+    }
+  }
+
   function updateTimelineEvent(event: Event) {
     const { name, value } = getTarget(event);
     viewUpdateTimeline(name, value);
+  }
+
+  function updateTimelineMarginLeft(event: Event) {
+    const { name, value } = getTarget(event);
+    if (typeof value === 'number' && !isNaN(value)) {
+      if (value >= ViewConstants.MIN_MARGIN_LEFT) {
+        viewUpdateRow(name, value);
+        viewUpdateTimeline(name, value);
+      }
+    }
   }
 
   function updateYAxisTickCount(event: Event, yAxis: Axis) {
@@ -140,23 +161,6 @@
     const row = createRow(timelines);
     rows = [...rows, row];
     viewUpdateTimeline('rows', rows);
-  }
-
-  function deleteTimelineRow(row: Row) {
-    const filteredRows = rows.filter(r => r.id !== row.id);
-    viewUpdateTimeline('rows', filteredRows);
-  }
-
-  async function handleDeleteRowClick(row: Row) {
-    const { confirm } = await showConfirmModal(
-      'Delete',
-      'Are you sure you want to delete this timeline row?',
-      'Delete Row',
-      true,
-    );
-    if (confirm) {
-      deleteTimelineRow(row);
-    }
   }
 
   function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
@@ -483,18 +487,19 @@
         <fieldset class="editor-section">
           <div class="st-typography-medium editor-section-header">Margins</div>
           <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
-            <Input>
-              <label for="marginLeft">Margin Left</label>
-              <input
-                min={0}
-                class="st-input w-100"
-                name="marginLeft"
-                type="number"
-                value={$selectedTimeline.marginLeft}
-                on:input|stopPropagation={updateTimelineEvent}
-              />
-            </Input>
-
+            <form on:submit={event => event.preventDefault()}>
+              <Input>
+                <label for="marginLeft">Margin Left</label>
+                <input
+                  min={ViewConstants.MIN_MARGIN_LEFT}
+                  class="st-input w-100"
+                  name="marginLeft"
+                  type="number"
+                  value={$selectedTimeline.marginLeft}
+                  on:input|stopPropagation={updateTimelineMarginLeft}
+                />
+              </Input>
+            </form>
             <Input>
               <label for="marginRight">Margin Right</label>
               <input
@@ -625,9 +630,22 @@
                         <PenIcon />
                       </button>
                       <button
+                        use:tooltip={{ content: 'Duplicate Row', placement: 'top' }}
+                        class="st-button icon"
+                        on:click={() => {
+                          if ($selectedTimeline) {
+                            effects.duplicateTimelineRow(row, $selectedTimeline, timelines);
+                          }
+                        }}
+                      >
+                        <DuplicateIcon />
+                      </button>
+                      <button
                         use:tooltip={{ content: 'Delete Row', placement: 'top' }}
                         class="st-button icon"
-                        on:click|stopPropagation={() => handleDeleteRowClick(row)}
+                        on:click|stopPropagation={() => {
+                          effects.deleteTimelineRow(row, rows, $selectedTimelineId);
+                        }}
                       >
                         <TrashIcon />
                       </button>
@@ -686,17 +704,20 @@
           </Input>
         </div>
         <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
-          <Input>
-            <label for="marginLeft">Row Height</label>
-            <input
-              disabled={$selectedRow.autoAdjustHeight}
-              class="st-input w-100"
-              name="height"
-              type="number"
-              value={$selectedRow.height}
-              on:input|stopPropagation={updateRowEvent}
-            />
-          </Input>
+          <form on:submit={event => event.preventDefault()}>
+            <Input>
+              <label for="marginLeft">Row Height</label>
+              <input
+                min={ViewConstants.MIN_ROW_HEIGHT}
+                disabled={$selectedRow.autoAdjustHeight}
+                class="st-input w-100"
+                name="height"
+                type="number"
+                value={$selectedRow.height}
+                on:input|stopPropagation={updateRowMinHeight}
+              />
+            </Input>
+          </form>
           <Input>
             <label for="marginLeft">Resize Mode</label>
             <select
@@ -813,7 +834,7 @@
           {#if yAxes.length}
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid-labels" padding="0px 16px">
-                <div>Label</div>
+                <div>Name</div>
                 <div>Ticks</div>
               </CssGrid>
               <div
@@ -860,6 +881,7 @@
                           class="st-input w-100"
                           name="tickCount"
                           type="number"
+                          min="1"
                           value={yAxis.tickCount}
                           on:input={event => updateYAxisTickCount(event, yAxis)}
                         />
@@ -1082,6 +1104,10 @@
     overflow-x: hidden;
     overflow-y: auto;
     padding-bottom: 16px;
+  }
+
+  :global(.editor-section-grid form) {
+    display: grid;
   }
 
   :global(.editor-section-grid) {

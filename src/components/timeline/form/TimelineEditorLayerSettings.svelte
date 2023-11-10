@@ -40,14 +40,18 @@
   }
 </script>
 
-<button
-  class="st-button icon timeline-editor-layer-settings"
-  use:tooltip={{ content: 'Layer Settings', placement: 'top' }}
-  style="position: relative"
-  on:click|stopPropagation={() => layerMenu.toggle()}
->
-  <div class="button-inner"><SettingsIcon /></div>
-  <Menu bind:this={layerMenu} hideAfterClick={false} placement="bottom-end">
+<div style="position: relative;">
+  <button
+    class="st-button icon timeline-editor-layer-settings"
+    use:tooltip={{ content: 'Layer Settings', placement: 'top' }}
+    style="position: relative"
+    on:click|stopPropagation={() => {
+      layerMenu.toggle();
+    }}
+  >
+    <div class="button-inner"><SettingsIcon /></div>
+  </button>
+  <Menu bind:this={layerMenu} hideAfterClick={false} placement="bottom-end" width={300}>
     <MenuHeader title={`${layer.chartType} Layer Settings`} />
     <div class="body st-typography-body">
       {#if layer.chartType === 'activity'}
@@ -63,6 +67,18 @@
           />
         </Input>
       {:else if layer.chartType === 'line'}
+        <Input layout="inline">
+          <label for="name">Layer Name</label>
+          <input
+            autocomplete="off"
+            placeholder="Overrides resource name"
+            class="st-input w-100"
+            name="name"
+            type="string"
+            value={layerAsLine.name || ''}
+            on:input={onInput}
+          />
+        </Input>
         <Input layout="inline">
           <label for="yAxisId">Y Axis</label>
           <select
@@ -103,6 +119,18 @@
         </Input>
       {:else if layer.chartType === 'x-range'}
         <Input layout="inline">
+          <label for="name">Layer Name</label>
+          <input
+            autocomplete="off"
+            placeholder="Overrides resource name"
+            class="st-input w-100"
+            name="name"
+            type="string"
+            value={layerAsXRange.name || ''}
+            on:input={onInput}
+          />
+        </Input>
+        <Input layout="inline">
           <label for="yAxisId">Y Axis</label>
           <select
             on:input={onInput}
@@ -140,7 +168,7 @@
       >
     </div>
   </Menu>
-</button>
+</div>
 
 <style>
   .button-inner {

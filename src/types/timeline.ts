@@ -25,6 +25,7 @@ export type Axis = {
 };
 
 export type BoundingBox = {
+  maxTimeX: number;
   maxX: number;
   maxY: number;
   minX: number;
@@ -70,6 +71,7 @@ export interface Layer {
     resource?: ResourceLayerFilter;
   };
   id: number;
+  name: string;
   yAxisId: number | null;
 }
 
@@ -99,11 +101,15 @@ export type MouseOver = {
   e: MouseEvent;
   gaps?: Point[];
   layerId: number;
+  origin?: MouseOverOrigin;
   points?: Point[];
+  row?: Row;
   selectedActivityDirectiveId?: number;
   selectedSpanId?: number;
   spans?: Span[];
 };
+
+export type MouseOverOrigin = 'row-header' | 'layer-line' | 'layer-activity' | 'layer-x-range';
 
 export interface Point {
   id: number;
@@ -166,9 +172,9 @@ export type VerticalGuideSelection = {
 };
 
 export type XAxisTick = {
-  coarseTime: string;
   date: Date;
-  fineTime: string;
+  formattedDateLocal: string;
+  formattedDateUTC: string;
   hideLabel: boolean;
 };
 
@@ -198,3 +204,5 @@ export interface XRangePoint extends Point {
 }
 
 export type DirectiveVisibilityToggleMap = Record<string, boolean>;
+
+export type SpanVisibilityToggleMap = Record<string, boolean>;

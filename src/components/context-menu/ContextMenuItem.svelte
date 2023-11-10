@@ -22,6 +22,7 @@
   .context-menu-item {
     cursor: pointer;
     padding: 4px;
+    user-select: none;
     white-space: nowrap;
   }
 

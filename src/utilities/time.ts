@@ -525,3 +525,22 @@ export function getTimeAgo(
 export function getShortISOForDate(date: Date) {
   return date.toISOString().slice(0, 19);
 }
+
+export function getShortTimeZoneName() {
+  return new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).format(new Date());
+}
+
+export function getTimeZoneName() {
+  // set up formatter
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    timeZoneName: 'short',
+  });
+  // run formatter on current date
+  const parts = formatter?.formatToParts(Date.now());
+  // extract the actual value from the formatter
+  const timeZoneName = parts.find(formatted => formatted.type === 'timeZoneName');
+  if (timeZoneName) {
+    return timeZoneName.value;
+  }
+  return 'UNK';
+}

@@ -1,13 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { allResources } from '../../stores/simulation';
-  import { selectedRow, viewSetSelectedRow, viewTogglePanel } from '../../stores/views';
+  import { selectedRow } from '../../stores/views';
   import type {
     ActivityDirective,
     ActivityDirectiveId,
@@ -32,7 +31,6 @@
   import { classNames } from '../../utilities/generic';
   import { getDoyTime } from '../../utilities/time';
   import { getYAxesWithScaleDomains, type TimelineLockStatus } from '../../utilities/timeline';
-  import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
   import LayerGaps from './LayerGaps.svelte';
@@ -42,9 +40,7 @@
   import RowHeader from './RowHeader.svelte';
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
-  import RowYAxes from './RowYAxes.svelte';
   import RowYAxisTicks from './RowYAxisTicks.svelte';
-  import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -65,9 +61,11 @@
   export let planStartTimeYmd: string;
   export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let rowDragMoveDisabled = true;
+  export let rowHeaderDragHandleWidthPx: number = 2;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
   export let showDirectives: boolean = true;
+  export let showSpans: boolean = true;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -107,6 +105,7 @@
   $: onDragleave(dragleave);
   $: onDragover(dragover);
   $: onDrop(drop);
+  $: computedDrawHeight = expanded ? drawHeight : 24;
 
   $: heightsByLayer = pick(
     heightsByLayer,
@@ -130,7 +129,7 @@
         .attr('x1', offsetX)
         .attr('y1', 0)
         .attr('x2', offsetX)
-        .attr('y2', drawHeight)
+        .attr('y2', computedDrawHeight)
         .attr('stroke', 'black')
         .style('pointer-events', 'none');
     }
@@ -211,178 +210,175 @@
       const newHeight = Math.max(...heights);
 
       // Only update row height if a change has occurred to avoid loopback
-      if (newHeight !== drawHeight) {
+      if (newHeight !== computedDrawHeight) {
         dispatch('updateRowHeight', { newHeight, rowId: id, wasAutoAdjusted: true });
       }
     }
   }
-
-  function onEditRow() {
-    // Open the timeline editor panel on the right.
-    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
-
-    // Set row to edit.
-    viewSetSelectedRow(id);
-  }
 </script>
 
-<div class="row-root" class:active-row={$selectedRow ? $selectedRow.id === id : false}>
-  <!-- Row Header. -->
-  <RowHeader {expanded} rowId={id} title={name} {rowDragMoveDisabled} on:mouseDownRowMove on:toggleRowExpansion>
-    <div slot="right" class="row-controls">
-      {#if hasActivityLayer}
-        <TimelineViewDirectiveControls
-          directivesVisible={showDirectives}
-          offTooltipContent="Show Directives on this Timeline Row"
-          onTooltipContent="Hide Directives on this Timeline Row"
-          useBorder={false}
-          on:toggleDirectiveVisibility
-        />
-      {/if}
-      <button
-        use:tooltip={{ content: 'Edit Row', placement: 'top' }}
-        class="st-button icon row-edit-button"
-        on:click={onEditRow}
-      >
-        <PenIcon />
-      </button>
-    </div>
-  </RowHeader>
-
-  <div class={rowClasses} id={`row-${id}`} style="height: {drawHeight}px;">
-    <!-- Overlay for Pointer Events. -->
-    <svg
-      bind:this={overlaySvg}
-      class="overlay"
-      role="none"
-      style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px"
-      on:blur={e => (blur = e)}
-      on:contextmenu={e => (contextmenu = e)}
-      on:dragenter|preventDefault={e => (dragenter = e)}
-      on:dragleave={e => (dragleave = e)}
-      on:dragover|preventDefault={e => (dragover = e)}
-      on:drop|preventDefault={e => (drop = e)}
-      on:focus={e => (focus = e)}
-      on:mousedown={e => (mousedown = e)}
-      on:mousemove={e => (mousemove = e)}
-      on:mouseout={e => (mouseout = e)}
-      on:mouseup={e => (mouseup = e)}
-      on:dblclick={e => (dblclick = e)}
+<div class="row-root" class:active-row={$selectedRow ? $selectedRow.id === id : false} class:expanded>
+  <div class="row-content">
+    <!-- Row Header. -->
+    <RowHeader
+      width={marginLeft}
+      height={computedDrawHeight}
+      {expanded}
+      rowId={id}
+      title={name}
+      {rowDragMoveDisabled}
+      {layers}
+      {resourcesByViewLayerId}
+      yAxes={yAxesWithScaleDomains}
+      {rowHeaderDragHandleWidthPx}
+      on:mouseDownRowMove
+      on:mouseUpRowMove
+      on:toggleRowExpansion
+      on:contextMenu
     />
 
-    <!-- SVG Elements. -->
-    <svg>
-      <g transform="translate({marginLeft}, 0)">
-        {#if drawWidth > 0}
-          <RowXAxisTicks {drawHeight} {xScaleView} {xTicksView} />
-          <RowYAxisTicks {drawHeight} {drawWidth} yAxes={yAxesWithScaleDomains} />
-          <ConstraintViolations
-            {constraintResults}
-            {drawHeight}
-            {drawWidth}
-            {mousemove}
-            {mouseout}
-            {viewTimeRange}
-            {xScaleView}
-            on:mouseOver={onMouseOver}
-          />
-          <RowYAxes {drawHeight} yAxes={yAxesWithScaleDomains} />
-          <RowHorizontalGuides {drawHeight} {drawWidth} {horizontalGuides} yAxes={yAxesWithScaleDomains} />
-        {/if}
-      </g>
-    </svg>
+    <div class={rowClasses} id={`row-${id}`} style={`height: ${computedDrawHeight}px;`}>
+      <!-- Overlay for Pointer Events. -->
+      <svg
+        bind:this={overlaySvg}
+        class="overlay"
+        role="none"
+        style="width: {drawWidth}px"
+        on:blur={e => (blur = e)}
+        on:contextmenu={e => (contextmenu = e)}
+        on:dragenter|preventDefault={e => (dragenter = e)}
+        on:dragleave={e => (dragleave = e)}
+        on:dragover|preventDefault={e => (dragover = e)}
+        on:drop|preventDefault={e => (drop = e)}
+        on:focus={e => (focus = e)}
+        on:mousedown={e => (mousedown = e)}
+        on:mousemove={e => (mousemove = e)}
+        on:mouseout={e => (mouseout = e)}
+        on:mouseup={e => (mouseup = e)}
+        on:dblclick={e => (dblclick = e)}
+      />
 
-    <!-- Layers of Canvas Visualizations. -->
-    <div class="layers" style="transform: translate({marginLeft}px, 0px); width: {drawWidth}px">
-      {#each layers as layer (layer.id)}
-        {#if layer.chartType === 'activity'}
-          <LayerActivity
-            {...layer}
-            activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
-            {activityDirectivesMap}
-            {hasUpdateDirectivePermission}
-            {showDirectives}
-            {blur}
-            {contextmenu}
-            {dpr}
-            {drawHeight}
-            {drawWidth}
-            filter={layer.filter.activity}
-            {focus}
-            {dblclick}
-            {mousedown}
-            {mousemove}
-            {mouseout}
-            {mouseup}
-            {planEndTimeDoy}
-            {plan}
-            {planStartTimeYmd}
-            {selectedActivityDirectiveId}
-            {selectedSpanId}
-            {simulationDataset}
-            {spanUtilityMaps}
-            {spansMap}
-            {timelineLockStatus}
-            {user}
-            {viewTimeRange}
-            {xScaleView}
-            on:contextMenu
-            on:deleteActivityDirective
-            on:dblClick
-            on:mouseDown={onMouseDown}
-            on:mouseOver={onMouseOver}
-            on:updateRowHeight={onUpdateRowHeightLayer}
-          />
-        {/if}
-        {#if layer.chartType === 'line' || layer.chartType === 'x-range'}
-          <LayerGaps
-            {...layer}
-            {dpr}
-            {drawHeight}
-            {drawWidth}
-            filter={layer.filter.resource}
-            {mousemove}
-            {mouseout}
-            resources={resourcesByViewLayerId[layer.id] ?? []}
-            {xScaleView}
-            on:mouseOver={onMouseOver}
-          />
-        {/if}
-        {#if layer.chartType === 'line'}
-          <LayerLine
-            {...layer}
-            {contextmenu}
-            {dpr}
-            {drawHeight}
-            {drawWidth}
-            filter={layer.filter.resource}
-            {mousemove}
-            {mouseout}
-            resources={resourcesByViewLayerId[layer.id] ?? []}
-            {viewTimeRange}
-            {xScaleView}
-            yAxes={yAxesWithScaleDomains}
-            on:contextMenu
-            on:mouseOver={onMouseOver}
-          />
-        {/if}
-        {#if layer.chartType === 'x-range'}
-          <LayerXRange
-            {...layer}
-            {contextmenu}
-            {dpr}
-            {drawHeight}
-            {drawWidth}
-            filter={layer.filter.resource}
-            {mousemove}
-            {mouseout}
-            resources={resourcesByViewLayerId[layer.id] ?? []}
-            {xScaleView}
-            on:contextMenu
-            on:mouseOver={onMouseOver}
-          />
-        {/if}
-      {/each}
+      <!-- SVG Elements. -->
+      <svg>
+        <g>
+          {#if drawWidth > 0}
+            <RowXAxisTicks drawHeight={computedDrawHeight} {xScaleView} {xTicksView} />
+            {#if expanded}
+              <RowYAxisTicks drawHeight={computedDrawHeight} {drawWidth} yAxes={yAxesWithScaleDomains} {layers} />
+            {/if}
+            <ConstraintViolations
+              {constraintResults}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              {mousemove}
+              {mouseout}
+              {viewTimeRange}
+              {xScaleView}
+              on:mouseOver={onMouseOver}
+            />
+            <RowHorizontalGuides
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              {horizontalGuides}
+              yAxes={yAxesWithScaleDomains}
+            />
+          {/if}
+        </g>
+      </svg>
+      <!-- Layers of Canvas Visualizations. -->
+      <div class="layers" style="width: {drawWidth}px">
+        {#each layers as layer (layer.id)}
+          {#if layer.chartType === 'activity'}
+            <LayerActivity
+              {...layer}
+              activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
+              {activityDirectivesMap}
+              {hasUpdateDirectivePermission}
+              {showDirectives}
+              {showSpans}
+              {blur}
+              {contextmenu}
+              {dpr}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              filter={layer.filter.activity}
+              {focus}
+              {dblclick}
+              {mousedown}
+              {mousemove}
+              {mouseout}
+              {mouseup}
+              mode={expanded ? 'packed' : 'heatmap'}
+              {planEndTimeDoy}
+              {plan}
+              {planStartTimeYmd}
+              {selectedActivityDirectiveId}
+              {selectedSpanId}
+              {simulationDataset}
+              {spanUtilityMaps}
+              {spansMap}
+              {timelineLockStatus}
+              {user}
+              {viewTimeRange}
+              {xScaleView}
+              on:contextMenu
+              on:deleteActivityDirective
+              on:dblClick
+              on:mouseDown={onMouseDown}
+              on:mouseOver={onMouseOver}
+              on:updateRowHeight={onUpdateRowHeightLayer}
+            />
+          {/if}
+          {#if layer.chartType === 'line' || layer.chartType === 'x-range'}
+            <LayerGaps
+              {...layer}
+              {dpr}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              filter={layer.filter.resource}
+              {mousemove}
+              {mouseout}
+              resources={resourcesByViewLayerId[layer.id] ?? []}
+              {xScaleView}
+              on:mouseOver={onMouseOver}
+            />
+          {/if}
+          {#if layer.chartType === 'line'}
+            <LayerLine
+              {...layer}
+              {contextmenu}
+              {dpr}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              filter={layer.filter.resource}
+              {mousemove}
+              {mouseout}
+              resources={resourcesByViewLayerId[layer.id] ?? []}
+              {viewTimeRange}
+              {xScaleView}
+              yAxes={yAxesWithScaleDomains}
+              on:mouseOver={onMouseOver}
+              on:contextMenu
+            />
+          {/if}
+          {#if layer.chartType === 'x-range'}
+            <LayerXRange
+              {...layer}
+              {contextmenu}
+              {dpr}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              filter={layer.filter.resource}
+              {mousemove}
+              {mouseout}
+              resources={resourcesByViewLayerId[layer.id] ?? []}
+              {xScaleView}
+              on:mouseOver={onMouseOver}
+              on:contextMenu
+            />
+          {/if}
+        {/each}
+      </div>
     </div>
   </div>
 
@@ -431,10 +427,6 @@
     display: flex;
   }
 
-  .row.row-collapsed {
-    display: none;
-  }
-
   :global(.right) {
     z-index: 0;
   }
@@ -452,11 +444,23 @@
   }
 
   .row-root {
+    border-bottom: 2px solid var(--st-gray-20);
+    display: flex;
+    flex-direction: column;
     position: relative;
   }
 
-  .active-row:after {
-    border: 1px solid var(--st-utility-blue);
+  .row-root.expanded {
+    border-bottom: none;
+  }
+
+  .row-content {
+    display: flex;
+    position: relative;
+  }
+
+  .active-row .row-content:after {
+    box-shadow: 0 0 0px 1px inset var(--st-utility-blue);
     content: ' ';
     height: 100%;
     left: 0;
@@ -464,5 +468,13 @@
     position: absolute;
     top: 0;
     width: 100%;
+    z-index: 9;
+  }
+
+  .active-row .row-content {
+    background: rgba(47, 128, 237, 0.06);
+  }
+  .active-row :global(.row-header) {
+    background: rgba(47, 128, 237, 0.06);
   }
 </style>

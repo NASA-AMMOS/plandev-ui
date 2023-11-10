@@ -57,7 +57,7 @@
       tooltipDiv.style('opacity', 1.0);
       tooltipDiv.style('left', `${xPosition}px`);
       tooltipDiv.style('top', `${yPosition}px`);
-      tooltipDiv.style('z-index', 5);
+      tooltipDiv.style('z-index', 9);
 
       const node = tooltipDiv.node() as HTMLElement;
       const { height, width, x, y } = node.getBoundingClientRect();

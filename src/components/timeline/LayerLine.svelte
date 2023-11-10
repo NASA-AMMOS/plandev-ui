@@ -124,7 +124,7 @@
 
   function onContextMenu(e: MouseEvent | undefined): void {
     if (e) {
-      dispatch('contextMenu', { e });
+      dispatch('contextMenu', { e, origin: 'layer-line' });
     }
   }
 

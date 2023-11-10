@@ -61,15 +61,26 @@ export const customD3TimeDay: CountableTimeInterval = timeInterval(
 // From https://github.com/d3/d3-time/blob/main/src/ticks.js
 export const customD3TickIntervals: [CountableTimeInterval, number, number][] = [
   [timeSecond, 1, durationSecond],
+  [timeSecond, 2, 2 * durationSecond],
+  [timeSecond, 3, 3 * durationSecond],
+  [timeSecond, 4, 4 * durationSecond],
   [timeSecond, 5, 5 * durationSecond],
+  [timeSecond, 10, 10 * durationSecond],
   [timeSecond, 15, 15 * durationSecond],
   [timeSecond, 30, 30 * durationSecond],
   [timeMinute, 1, durationMinute],
+  [timeMinute, 2, durationMinute],
+  [timeMinute, 3, durationMinute],
+  [timeMinute, 4, durationMinute],
   [timeMinute, 5, 5 * durationMinute],
+  [timeMinute, 10, 10 * durationMinute],
   [timeMinute, 15, 15 * durationMinute],
   [timeMinute, 30, 30 * durationMinute],
   [timeHour, 1, durationHour],
+  [timeHour, 2, 2 * durationHour],
   [timeHour, 3, 3 * durationHour],
+  [timeHour, 4, 4 * durationHour],
+  [timeHour, 5, 5 * durationHour],
   [timeHour, 6, 6 * durationHour],
   [timeHour, 12, 12 * durationHour],
   [customD3TimeDay, 1, durationDay],
@@ -364,7 +375,7 @@ export function createRow(timelines: Timeline[], args: Partial<Row> = {}): Row {
   return {
     autoAdjustHeight: false,
     expanded: true,
-    height: 200,
+    height: 160,
     horizontalGuides: [],
     id,
     layers: [],
@@ -381,10 +392,10 @@ export function createYAxis(timelines: Timeline[], args: Partial<Axis> = {}): Ax
   const id = getNextYAxisID(timelines);
 
   return {
-    color: '#000000',
+    color: '#1b1d1e',
     domainFitMode: 'fitTimeWindow',
     id,
-    label: { text: 'Label' },
+    label: { text: `Y Axis (${id})` },
     renderTickLines: true,
     tickCount: 4,
     ...args,
@@ -423,6 +434,7 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
       },
     },
     id,
+    name: '',
     yAxisId: null,
     ...args,
   };
@@ -449,6 +461,7 @@ export function createTimelineLineLayer(
     id,
     lineColor: '#283593',
     lineWidth: 1,
+    name: '',
     pointRadius: 2,
     yAxisId,
     ...args,
@@ -475,6 +488,7 @@ export function createTimelineXRangeLayer(
       },
     },
     id,
+    name: '',
     opacity: 0.8,
     yAxisId,
     ...args,
@@ -589,4 +603,48 @@ export function getYAxesWithScaleDomains(
     }
     return yAxis;
   });
+}
+
+/* TODO this would all be much easier if we just gave things UUIDs instead of incrementing numerical ids.  */
+/**
+ * Duplicates the given row and internal axes, layers, and horizontal guides.
+ */
+export function duplicateRow(row: Row, timelines: Timeline[], timelineId: number): Row | null {
+  const timelinesClone = structuredClone(timelines);
+  const timeline = timelinesClone.find(t => t.id === timelineId);
+  if (!timeline) {
+    return null;
+  }
+
+  const rowClone = structuredClone(row);
+  const { id, name, layers, yAxes, horizontalGuides, ...rowArgs } = rowClone;
+  const newRow = createRow(timelines, { ...rowArgs, name: `${name} (copy)` });
+  timeline.rows.push(newRow);
+
+  yAxes.forEach(axis => {
+    const { id, ...axisArgs } = axis;
+    newRow.yAxes.push(createYAxis(timelinesClone, axisArgs));
+  });
+
+  layers.forEach(layer => {
+    if (layer.chartType === 'activity') {
+      const { id, ...layerArgs } = layer;
+      newRow.layers.push(createTimelineActivityLayer(timelinesClone, layerArgs));
+    } else if (layer.chartType === 'line') {
+      const { id, yAxisId, ...layerArgs } = layer;
+      newRow.layers.push(createTimelineLineLayer(timelinesClone, newRow.yAxes, layerArgs));
+    } else if (layer.chartType === 'x-range') {
+      const { id, yAxisId, ...layerArgs } = layer;
+      newRow.layers.push(createTimelineXRangeLayer(timelinesClone, newRow.yAxes, layerArgs));
+    } else {
+      console.warn('Unable to clone row layer with chart type:', layer.chartType);
+    }
+  });
+
+  horizontalGuides.forEach(guide => {
+    const { id, yAxisId, ...guideArgs } = guide;
+    newRow.horizontalGuides.push(createHorizontalGuide(timelinesClone, newRow.yAxes, guideArgs));
+  });
+
+  return newRow;
 }

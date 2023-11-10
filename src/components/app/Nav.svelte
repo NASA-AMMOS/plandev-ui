@@ -52,7 +52,7 @@
     display: flex;
     height: var(--nav-header-height);
     padding: 1rem;
-    z-index: 2;
+    z-index: 9;
   }
 
   .divider {

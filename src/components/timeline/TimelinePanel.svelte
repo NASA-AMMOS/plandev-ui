@@ -18,10 +18,23 @@
     spans,
     spansMap,
   } from '../../stores/simulation';
-  import { timelineLockStatus, view, viewTogglePanel, viewUpdateRow, viewUpdateTimeline } from '../../stores/views';
+  import {
+    timelineLockStatus,
+    view,
+    viewSetSelectedRow,
+    viewTogglePanel,
+    viewUpdateRow,
+    viewUpdateTimeline,
+  } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { DirectiveVisibilityToggleMap, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
+  import type {
+    DirectiveVisibilityToggleMap,
+    MouseDown,
+    Row,
+    SpanVisibilityToggleMap,
+    Timeline as TimelineType,
+  } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import Panel from '../ui/Panel.svelte';
@@ -37,17 +50,24 @@
   let timelineId: number = 0;
   let timeline: TimelineType | undefined;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
+  let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
 
   $: if (user !== null && $plan !== null) {
     hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan) && !$planReadOnly;
     hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
-  $: timeline = $view?.definition.plan.timelines.find(timeline => {
+
+  $: timelines = $view?.definition.plan.timelines || [];
+  $: timeline = timelines.find(timeline => {
     return timeline.id === timelineId;
   });
 
   $: timelineDirectiveVisibilityToggles = timeline
     ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles)
+    : {};
+
+  $: timelineSpanVisibilityToggles = timeline
+    ? generateSpanVisibilityToggles(timeline, timelineSpanVisibilityToggles)
     : {};
 
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
@@ -84,6 +104,24 @@
     }, {});
   }
 
+  function generateSpanVisibilityToggles(
+    timeline: TimelineType,
+    currentVisibilityMap: SpanVisibilityToggleMap,
+    visible?: boolean,
+  ): SpanVisibilityToggleMap {
+    return (timeline?.rows ?? []).reduce((prevToggles: SpanVisibilityToggleMap, row: Row) => {
+      const { id, layers } = row;
+      const containsActivityLayer: boolean = layers.find(layer => layer.chartType === 'activity') !== undefined;
+      if (containsActivityLayer) {
+        return {
+          ...prevToggles,
+          ...toggleSpanVisibility(id, visible ?? currentVisibilityMap[id] ?? true),
+        };
+      }
+      return prevToggles;
+    }, {});
+  }
+
   function jumpToActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
     selectActivity(activityDirectiveId, null);
@@ -112,15 +150,76 @@
       : {};
   }
 
-  function onToggleDirectiveVisibility(rowId: number, visible: boolean) {
+  function onToggleDirectiveVisibility(event: CustomEvent<{ row: Row; show: boolean }>) {
+    const {
+      detail: { row, show },
+    } = event;
     timelineDirectiveVisibilityToggles = {
       ...timelineDirectiveVisibilityToggles,
-      ...toggleDirectiveVisibility(rowId, visible),
+      ...toggleDirectiveVisibility(row.id, show),
     };
   }
 
   function toggleDirectiveVisibility(rowId: number, visible: boolean) {
     return { [rowId]: visible };
+  }
+
+  // function onToggleAllSpanVisibility(visible: boolean) {
+  //   timelineSpanVisibilityToggles = timeline
+  //     ? generateSpanVisibilityToggles(timeline, timelineSpanVisibilityToggles, visible)
+  //     : {};
+  // }
+
+  function onToggleSpanVisibility(event: CustomEvent<{ row: Row; show: boolean }>) {
+    const {
+      detail: { row, show },
+    } = event;
+    timelineSpanVisibilityToggles = {
+      ...timelineSpanVisibilityToggles,
+      ...toggleSpanVisibility(row.id, show),
+    };
+  }
+
+  function toggleSpanVisibility(rowId: number, visible: boolean) {
+    return { [rowId]: visible };
+  }
+
+  function editRow(row: Row) {
+    // Open the timeline editor panel on the right.
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
+
+    // Set row to edit.
+    viewSetSelectedRow(row.id);
+  }
+
+  function onEditRow(event: CustomEvent<Row>) {
+    const { detail: row } = event;
+    editRow(row);
+  }
+
+  function onDeleteRow(event: CustomEvent<Row>) {
+    const { detail: row } = event;
+    effects.deleteTimelineRow(row, timeline?.rows ?? [], timelineId);
+  }
+
+  function onDuplicateRow(event: CustomEvent<Row>) {
+    const { detail: row } = event;
+    if (timeline) {
+      const newRow = effects.duplicateTimelineRow(row, timeline, timelines);
+      if (newRow) {
+        editRow(newRow);
+      }
+    }
+  }
+
+  function onInsertRow(event: CustomEvent<Row>) {
+    const { detail: row } = event;
+    if (timeline) {
+      const newRow = effects.insertTimelineRow(row, timeline, timelines);
+      if (newRow) {
+        editRow(newRow);
+      }
+    }
   }
 </script>
 
@@ -169,6 +268,7 @@
       planStartTimeYmd={$plan?.start_time ?? ''}
       {timeline}
       {timelineDirectiveVisibilityToggles}
+      {timelineSpanVisibilityToggles}
       resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
@@ -185,7 +285,8 @@
       on:jumpToActivityDirective={jumpToActivityDirective}
       on:jumpToSpan={jumpToSpan}
       on:mouseDown={onMouseDown}
-      on:toggleDirectiveVisibility={({ detail: { rowId, visible } }) => onToggleDirectiveVisibility(rowId, visible)}
+      on:toggleDirectiveVisibility={onToggleDirectiveVisibility}
+      on:toggleSpanVisibility={onToggleSpanVisibility}
       on:toggleRowExpansion={({ detail: { expanded, rowId } }) => {
         viewUpdateRow('expanded', expanded, timelineId, rowId);
       }}
@@ -201,6 +302,10 @@
       on:viewTimeRangeChanged={({ detail: newViewTimeRange }) => {
         $viewTimeRange = newViewTimeRange;
       }}
+      on:editRow={onEditRow}
+      on:deleteRow={onDeleteRow}
+      on:duplicateRow={onDuplicateRow}
+      on:insertRow={onInsertRow}
     />
   </svelte:fragment>
 </Panel>

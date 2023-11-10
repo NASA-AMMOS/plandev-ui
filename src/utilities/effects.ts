@@ -16,9 +16,9 @@ import {
 import { createModelError, createPlanError, creatingModel, creatingPlan, models } from '../stores/plan';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { selectedSpanId, simulationDatasetId } from '../stores/simulation';
+import { fetchingResources, selectedSpanId, simulationDatasetId } from '../stores/simulation';
 import { createTagError } from '../stores/tags';
-import { applyViewUpdate, view } from '../stores/views';
+import { applyViewUpdate, view, viewUpdateTimeline } from '../stores/views';
 import type {
   ActivityDirective,
   ActivityDirectiveId,
@@ -123,6 +123,7 @@ import type {
   TagsInsertInput,
   TagsSetInput,
 } from '../types/tags';
+import type { Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { convertToQuery, getSearchParameterNumber, setQueryParam, sleep } from './generic';
@@ -143,6 +144,7 @@ import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
+import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
 import { generateDefaultView, validateViewJSONAgainstSchema } from './view';
 
@@ -2120,6 +2122,19 @@ const effects = {
     }
   },
 
+  async deleteTimelineRow(row: Row, rows: Row[], timelineId: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete timeline row: ${row.name}?`,
+      'Delete Row',
+      true,
+    );
+    if (confirm) {
+      const filteredRows = rows.filter(r => r.id !== row.id);
+      viewUpdateTimeline('rows', filteredRows, timelineId);
+    }
+  },
+
   async deleteUserSequence(sequence: UserSequence, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_USER_SEQUENCE(user, sequence)) {
@@ -2214,6 +2229,21 @@ const effects = {
     }
 
     return false;
+  },
+
+  duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
+    const newRow = duplicateRow(row, timelines, timeline.id);
+    if (newRow) {
+      // Add row after the existing row
+      const newRows = timeline.rows ?? [];
+      const rowIndex = newRows.findIndex(r => r.id === row.id);
+      if (rowIndex > -1) {
+        newRows.splice(rowIndex + 1, 0, newRow);
+        viewUpdateTimeline('rows', [...newRows], timeline.id);
+        return newRow;
+      }
+    }
+    return null;
   },
 
   async editView(view: View, user: User | null): Promise<boolean> {
@@ -2781,11 +2811,15 @@ const effects = {
 
   async getResources(datasetId: number, startTimeYmd: string, user: User | null): Promise<Resource[]> {
     try {
+      fetchingResources.set(true);
       const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId }, user);
       const { profile: profiles } = data;
-      return sampleProfiles(profiles, startTimeYmd);
+      const sampledProfiles = sampleProfiles(profiles, startTimeYmd);
+      fetchingResources.set(false);
+      return sampledProfiles;
     } catch (e) {
       catchError(e as Error);
+      fetchingResources.set(false);
       return [];
     }
   },
@@ -3192,7 +3226,6 @@ const effects = {
           }
         }
       }
-
       return generateDefaultView(activityTypes, resourceTypes);
     } catch (e) {
       catchError(e as Error);
@@ -3261,6 +3294,19 @@ const effects = {
       showFailureToast('Add Expansion Sequence To Activity Failed');
       return null;
     }
+  },
+
+  insertTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
+    const newRow = createRow(timelines);
+    // Add row after the existing row
+    const newRows = timeline.rows ?? [];
+    const rowIndex = newRows.findIndex(r => r.id === row.id);
+    if (rowIndex > -1) {
+      newRows.splice(rowIndex + 1, 0, newRow);
+      viewUpdateTimeline('rows', [...newRows], timeline.id);
+      return newRow;
+    }
+    return null;
   },
 
   async loadViewFromFile(files: FileList): Promise<{ definition: ViewDefinition | null; errors?: string[] }> {

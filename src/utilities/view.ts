@@ -20,7 +20,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
   const now = new Date().toISOString();
   const types: string[] = activityTypes.map(({ name }) => name);
 
-  const timeline = createTimeline([], { marginLeft: 110, marginRight: 30 });
+  const timeline = createTimeline([], { marginLeft: 160, marginRight: 30 });
   const timelines = [timeline];
 
   const activityLayer = createTimelineActivityLayer(timelines, {

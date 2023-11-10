@@ -2,30 +2,46 @@
 
 <script lang="ts">
   import { axisLeft as d3AxisLeft } from 'd3-axis';
-  import type { Axis } from '../../types/timeline';
+  import type { Axis, Layer, LineLayer } from '../../types/timeline';
+  import { hexToRgba } from '../../utilities/color';
   import { getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
+  export let layers: Layer[];
   export let yAxes: Axis[] = [];
 
-  let ticks: number[] = [];
+  let ticks: { color: string; values: number[] }[] = [];
   $: if (drawHeight && drawWidth) {
     ticks = [];
     yAxes.forEach(axis => {
+      const tickCount = axis.tickCount;
+      const scaleDomain = axis.scaleDomain;
       if (
+        typeof tickCount === 'number' &&
+        tickCount > 0 &&
         axis.renderTickLines &&
-        axis.scaleDomain &&
-        axis.scaleDomain.length === 2 &&
-        typeof axis.scaleDomain[0] === 'number' &&
-        typeof axis.scaleDomain[1] === 'number'
+        scaleDomain &&
+        scaleDomain.length === 2 &&
+        typeof scaleDomain[0] === 'number' &&
+        typeof scaleDomain[1] === 'number'
       ) {
-        const scale = getYScale(axis.scaleDomain, drawHeight);
-        const axisLeft = d3AxisLeft(scale).ticks(5);
-        // D3 typings do not correctly reflect the presence of the "ticks()" function
-        const tickValues = (axisLeft.scale() as any).ticks() as number[];
-        const tickValues2 = tickValues.map(tick => scale(tick));
-        ticks.push(...tickValues2);
+        const scale = getYScale(scaleDomain as number[], drawHeight);
+        const axisLeft = d3AxisLeft(scale).ticks(tickCount);
+        const tickValues = (axisLeft.scale() as any).ticks(tickCount) as number[];
+        const scaledTickValues = tickValues.map(tick => scale(tick));
+
+        let color = 'rgba(210, 210, 210, 1)';
+        if (yAxes.length > 1) {
+          const yAxisLayers = layers.filter(layer => layer.yAxisId === axis.id && layer.chartType === 'line');
+          if (yAxisLayers.length === 1) {
+            color = hexToRgba((yAxisLayers[0] as LineLayer).lineColor, 0.3);
+          }
+        }
+        ticks.push({
+          color,
+          values: scaledTickValues,
+        });
       }
     });
   }
@@ -33,8 +49,10 @@
 
 <g class="row-y-axis-ticks">
   {#each ticks as tick}
-    <g class="tick" opacity="1" transform="translate(0 {tick})">
-      <line stroke="rgba(241, 242, 243, 1)" x2={drawWidth} />
-    </g>
+    {#each tick.values as value}
+      <g class="tick" opacity="1" transform="translate(0 {value})">
+        <line stroke-dasharray="4" stroke={tick.color} x2={drawWidth} />
+      </g>
+    {/each}
   {/each}
 </g>

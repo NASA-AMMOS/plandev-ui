@@ -308,6 +308,10 @@
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
+                              },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
                               }
@@ -328,6 +332,10 @@
                               },
                               "id": {
                                 "$ref": "#/definitions/id"
+                              },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
                               },
                               "lineColor": {
                                 "$ref": "#/definitions/color"
@@ -384,6 +392,10 @@
                               },
                               "id": {
                                 "$ref": "#/definitions/id"
+                              },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
                               },
                               "opacity": {
                                 "type": "number"

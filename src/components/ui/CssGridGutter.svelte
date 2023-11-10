@@ -9,9 +9,14 @@
 
 <style>
   .css-grid-gutter {
-    background-color: #eee;
+    background-color: var(--st-gray-20);
     background-position: 50%;
     background-repeat: no-repeat;
+  }
+
+  .css-grid-gutter:hover,
+  .css-grid-gutter:active {
+    background-color: var(--st-gray-30);
   }
 
   .css-grid-gutter.column {
