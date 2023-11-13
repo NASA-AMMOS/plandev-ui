@@ -217,7 +217,12 @@
   }
 </script>
 
-<div class="row-root" class:active-row={$selectedRow ? $selectedRow.id === id : false} class:expanded>
+<div
+  class="row-root"
+  class:active-row={$selectedRow ? $selectedRow.id === id : false}
+  class:expanded
+  class:auto-height={autoAdjustHeight}
+>
   <div class="row-content">
     <!-- Row Header. -->
     <RowHeader
@@ -450,7 +455,7 @@
     position: relative;
   }
 
-  .row-root.expanded {
+  .row-root.expanded:not(.auto-height) {
     border-bottom: none;
   }
 
