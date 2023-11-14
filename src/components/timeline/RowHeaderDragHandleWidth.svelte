@@ -9,55 +9,52 @@
 
   const dispatch = createEventDispatcher();
 
-  let clientX: number | null = null;
+  let dragElement: HTMLElement;
+  let previousWidth: number = 0;
 
   function onMouseMove(event: MouseEvent): void {
-    if (clientX == null) {
-      return;
+    const dx = event.clientX - dragElement.getBoundingClientRect().x;
+    const newWidth = Math.max(rowHeaderWidth + dx, ViewConstants.MIN_MARGIN_LEFT);
+
+    if (newWidth !== previousWidth) {
+      dispatch('updateRowHeaderWidth', { newWidth });
+      previousWidth = newWidth;
     }
 
-    const dx = event.clientX - clientX;
-    const newWidth = rowHeaderWidth + dx;
-    dispatch('updateRowHeaderWidth', {
-      newWidth: newWidth >= ViewConstants.MIN_MARGIN_LEFT ? newWidth : ViewConstants.MIN_MARGIN_LEFT,
-    });
-
-    clientX = event.clientX;
     event.stopPropagation();
     event.preventDefault();
   }
 
-  function onMouseDown(event: MouseEvent): void {
-    clientX = event.clientX;
+  function onMouseDown(): void {
     document.addEventListener('mousemove', onMouseMove, false);
   }
 
   function onMouseUp(): void {
-    clientX = null;
     document.removeEventListener('mousemove', onMouseMove, false);
   }
 </script>
 
 <svelte:window on:mouseup={onMouseUp} />
 
-<div class="row-header-drag-handle-height">
+<div class="row-header-drag-handle-width">
   <div
+    bind:this={dragElement}
     style={`transform: translateX(${rowHeaderWidth || 0}px); left: -${width}px; width: ${width}px`}
-    class="row-header-drag-handle-height--handle"
+    class="row-header-drag-handle-width--handle"
     role="none"
     on:mousedown|capture={onMouseDown}
   />
 </div>
 
 <style>
-  .row-header-drag-handle-height {
+  .row-header-drag-handle-width {
     height: 100%;
     pointer-events: none;
     position: absolute;
     width: 100%;
   }
 
-  .row-header-drag-handle-height--handle {
+  .row-header-drag-handle-width--handle {
     background-color: var(--st-gray-20);
     cursor: col-resize;
     height: 100%;
@@ -66,7 +63,7 @@
     z-index: 4;
   }
 
-  .row-header-drag-handle-height--handle:hover {
+  .row-header-drag-handle-width--handle:hover {
     background-color: var(--st-gray-30);
   }
 </style>
