@@ -122,19 +122,18 @@
       // Format fine and coarse time based off duration
       const doyTimestamp = getDoyTime(date, true);
       let formattedDateUTC = doyTimestamp;
-      let formattedDateLocal = date.toISOString();
-      formattedDateLocal = formattedDateLocal.slice(0, formattedDateLocal.length - 1);
+      let formattedDateLocal = date.toLocaleString();
       if (xScaleViewDuration > durationYear * tickCount) {
         formattedDateUTC = doyTimestamp.slice(0, 4);
-        formattedDateLocal = formattedDateLocal.slice(0, 4);
+        formattedDateLocal = date.getFullYear().toString();
         labelWidth = 28;
       } else if (xScaleViewDuration > durationMonth * tickCount) {
         formattedDateUTC = doyTimestamp.slice(0, 8);
-        formattedDateLocal = formattedDateLocal.slice(0, 7);
+        formattedDateLocal = date.toLocaleDateString();
         labelWidth = 50;
       } else if (xScaleViewDuration > durationWeek) {
         formattedDateUTC = doyTimestamp.slice(0, 8);
-        formattedDateLocal = formattedDateLocal.slice(0, 10);
+        formattedDateLocal = date.toLocaleDateString();
         labelWidth = 58;
       }
       return { date, formattedDateLocal, formattedDateUTC, hideLabel: false };
