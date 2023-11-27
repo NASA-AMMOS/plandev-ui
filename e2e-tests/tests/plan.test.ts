@@ -178,6 +178,8 @@ test.describe.serial('Plan', () => {
     await expect(page.locator('.modal-content .error')).toBeVisible();
     await expect(page.locator('.modal .st-button:has-text("Upload View")')).toBeDisabled();
     await expect(page.locator('.modal')).toBeVisible();
+    // Expect validation error collapse to be visible
+    await expect(page.locator('.modal-content .collapse')).toBeVisible();
     await page.locator('.modal .st-button:has-text("Cancel")').click();
   });
 

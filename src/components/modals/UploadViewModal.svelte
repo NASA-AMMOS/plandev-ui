@@ -1,17 +1,19 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CheckmarkIcon from '@nasa-jpl/stellar/icons/check.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { ViewDefinition } from '../../types/view';
   import effects from '../../utilities/effects';
   import { tooltip } from '../../utilities/tooltip';
+  import Collapse from '../Collapse.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let height: number | string = 150;
-  export let width: number | string = 380;
+  export let height: number | string = 450;
+  export let width: number | string = 550;
 
   const dispatch = createEventDispatcher();
 
@@ -33,6 +35,7 @@
 
   function onClick() {
     fileInput.value = '';
+    errors = [];
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -54,7 +57,7 @@
 
 <Modal {height} {width}>
   <ModalHeader on:close>Upload View JSON</ModalHeader>
-  <ModalContent style="padding:0">
+  <ModalContent style="overflow: auto; padding: 0">
     <fieldset>
       <label for="name">View Name</label>
       <input bind:value={viewName} autocomplete="off" class="st-input w-100" name="name" required />
@@ -71,8 +74,30 @@
         bind:files
         on:click={onClick}
         on:change={onChange}
-        use:tooltip={{ content: errors.join(', '), placement: 'bottom' }}
+        use:tooltip={{ content: errors.length ? 'Invalid view' : '', placement: 'bottom' }}
       />
+      {#if errors.length}
+        <Collapse
+          title={`Validation Errors (${errors.length})`}
+          defaultExpanded={false}
+          className="upload-view-modal-collapse"
+          padContent={false}
+        >
+          {#each errors as error}
+            <div>
+              <pre>
+                {error}
+              </pre>
+            </div>
+          {/each}
+        </Collapse>
+      {/if}
+      {#if fileInput?.value && !errors.length}
+        <div class="st-typography-label valid-json">
+          <CheckmarkIcon />
+          View JSON valid
+        </div>
+      {/if}
     </fieldset>
   </ModalContent>
   <ModalFooter>
@@ -89,6 +114,32 @@
   .error {
     background-color: var(--st-input-error-background-color);
     border: 1px solid var(--st-red);
+  }
+
+  :global(.upload-view-modal-collapse .collapse-header .title),
+  :global(.upload-view-modal-collapse .collapse-icon svg) {
     color: var(--st-red);
+  }
+
+  :global(.upload-view-modal-collapse) {
+    padding-bottom: 16px;
+  }
+
+  pre {
+    background: var(--st-gray-10);
+    border: 1px solid var(--st-gray-20);
+    border-radius: 4px;
+    height: unset;
+    margin: 2px 16px;
+    padding: 8px;
+    white-space: unset;
+    word-break: break-word;
+    word-wrap: normal;
+  }
+
+  .valid-json {
+    color: #0eaf0a;
+    display: flex;
+    gap: 2px;
   }
 </style>

@@ -107,6 +107,7 @@
     height: 9px;
     margin-right: 2px;
     overflow: hidden;
+    pointer-events: none;
     width: 9px;
   }
 
