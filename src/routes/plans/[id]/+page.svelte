@@ -28,7 +28,6 @@
   import { SearchParameters } from '../../../enums/searchParameters';
   import {
     activityDirectives,
-    activityDirectivesList,
     activityDirectivesMap,
     resetActivityStores,
     selectActivity,
@@ -241,9 +240,7 @@
 
   $: {
     $activityDirectivesMap =
-      $planSnapshotId !== null && planSnapshotActivityDirectives.length > 0
-        ? keyBy(planSnapshotActivityDirectives, 'id')
-        : keyBy($activityDirectives, 'id');
+      $planSnapshotId !== null ? keyBy(planSnapshotActivityDirectives, 'id') : keyBy($activityDirectives, 'id');
   }
 
   $: if ($plan && $planLocked) {
@@ -551,7 +548,7 @@
   </Nav>
   {#if $planSnapshot}
     <PlanSnapshotBar
-      numOfDirectives={$activityDirectivesList.length}
+      numOfDirectives={planSnapshotActivityDirectives.length}
       snapshot={$planSnapshot}
       on:close={onCloseSnapshotPreview}
       on:restore={onRestoreSnapshot}
