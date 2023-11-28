@@ -251,7 +251,6 @@
     } = event;
     if (activityDirective.applied_preset) {
       await effects.updateActivityPreset(
-        activityDirective.applied_preset.preset_id,
         {
           ...activityDirective.applied_preset.preset_applied,
           arguments: getDisplayedArguments(),

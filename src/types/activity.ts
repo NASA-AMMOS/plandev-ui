@@ -97,7 +97,7 @@ export type ActivityPresetInsertInput = Pick<
   'arguments' | 'associated_activity_type' | 'model_id' | 'name'
 >;
 
-export type ActivityPresetSetInput = PartialWith<ActivityPreset, 'owner'>;
+export type ActivityPresetSetInput = PartialWith<ActivityPreset, 'id' | 'owner'>;
 
 export type AnchorValidationStatus = {
   activity_id: ActivityDirectiveId;

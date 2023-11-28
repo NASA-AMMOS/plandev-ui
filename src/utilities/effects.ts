@@ -3793,20 +3793,18 @@ const effects = {
     }
   },
 
-  async updateActivityPreset(
-    id: ActivityPresetId,
-    updatedActivityPreset: ActivityPresetSetInput,
-    user: User | null,
-  ): Promise<void> {
+  async updateActivityPreset(updatedActivityPreset: ActivityPresetSetInput, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_ACTIVITY_PRESET(user, updatedActivityPreset)) {
         throwPermissionError('update this activity preset');
       }
-      const { id: _id, ...restOfPresetPayload } = updatedActivityPreset;
+
+      const { id, ...restOfPresetPayload } = updatedActivityPreset;
       const { update_activity_presets_by_pk } = await reqHasura<ActivityPreset>(
         gql.UPDATE_ACTIVITY_PRESET,
         {
           activityPresetSetInput: restOfPresetPayload,
+          id,
         },
         user,
       );
