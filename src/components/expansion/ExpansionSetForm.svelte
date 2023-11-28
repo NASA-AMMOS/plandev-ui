@@ -71,7 +71,7 @@
     permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create an'} expansion set.`;
   }
 
-  function hasModelPermission(modelId: number): boolean {
+  function hasModelPermission(modelId: number, user: User | null): boolean {
     const model = $models.find(model => model.id === modelId);
     if (user && model) {
       return featurePermissions.expansionSets.canCreate(user, plans, model);
@@ -199,14 +199,10 @@
           class="st-select w-100"
           name="modelId"
           on:change={() => (selectedExpansionRules = {})}
-          use:permissionHandler={{
-            hasPermission,
-            permissionError,
-          }}
         >
           <option value={null} />
           {#each $models as model}
-            <option value={model.id} disabled={!hasModelPermission(model.id)}>
+            <option value={model.id} disabled={!hasModelPermission(model.id, user)}>
               {model.name}
             </option>
           {/each}
