@@ -173,15 +173,7 @@
     <svelte:fragment slot="body">
       <fieldset>
         <label for="commandDictionary">Command Dictionary</label>
-        <select
-          bind:value={setDictionaryId}
-          class="st-select w-100"
-          name="commandDictionary"
-          use:permissionHandler={{
-            hasPermission,
-            permissionError,
-          }}
-        >
+        <select bind:value={setDictionaryId} class="st-select w-100" name="commandDictionary">
           <option value={null} />
           {#each $commandDictionaries as commandDictionary}
             <option value={commandDictionary.id}>

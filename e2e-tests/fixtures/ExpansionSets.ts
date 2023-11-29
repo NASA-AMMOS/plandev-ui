@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Dictionaries } from './Dictionaries.js';
 import { ExpansionRules } from './ExpansionRules.js';
@@ -9,6 +10,8 @@ export class ExpansionSets {
   inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   inputModel: Locator;
   inputModelSelector: string = 'select[name="modelId"]';
+  inputName: Locator;
+  inputNameSelector: string = 'input[name="name"]';
   inputRule: Locator;
   inputRuleSelector: string;
   newButton: Locator;
@@ -34,9 +37,17 @@ export class ExpansionSets {
     await this.selectCommandDictionary();
     await this.selectModel();
     await this.selectRule();
+    await this.fillInputName();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/sets`);
+  }
+
+  async fillInputName() {
+    const expansionSetName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    await this.inputName.focus();
+    await this.inputName.fill(expansionSetName);
+    await this.inputName.evaluate(e => e.blur());
   }
 
   async goto() {
@@ -71,6 +82,7 @@ export class ExpansionSets {
   updatePage(page: Page): void {
     this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
     this.inputModel = page.locator(this.inputModelSelector);
+    this.inputName = page.locator(this.inputNameSelector);
     this.inputRule = page.locator(this.inputRuleSelector);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;

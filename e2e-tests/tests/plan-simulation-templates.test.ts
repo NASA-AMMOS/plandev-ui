@@ -45,6 +45,8 @@ test.beforeAll(async ({ browser }) => {
   await plan.panelSimulation.getByRole('button', { name: 'Enter a unique name for the new template' }).click();
   await plan.panelSimulation.locator('.dropdown-header').waitFor({ state: 'detached' });
 
+  await page.waitForFunction(() => document.querySelector('.selected-display-value')?.innerHTML === 'Template 1');
+
   await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().fill('120');
   await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().blur();
 
