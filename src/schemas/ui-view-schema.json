@@ -53,6 +53,11 @@
       "additionalProperties": false,
       "description": "Table specification for visualizing tabular data via ag-grid",
       "properties": {
+        "autoSizeColumns": {
+          "default": "fill",
+          "description": "The state of which the table should resize automatically",
+          "type": "string"
+        },
         "columnDefs": {
           "description": "Array of column definition objects that conform to the ag-grid ColumnDef type",
           "items": {
@@ -181,7 +186,6 @@
         },
         "iFrames": {
           "description": "IFrame specifications for embedding other web pages",
-          "type": "array",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -199,7 +203,8 @@
             },
             "required": ["id", "src", "title"],
             "type": "object"
-          }
+          },
+          "type": "array"
         },
         "timelines": {
           "description": "Timeline specifications for visualizing activities or resources in a timeline",
@@ -333,16 +338,16 @@
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
-                              "name": {
-                                "description": "Name of the layer",
-                                "type": "string"
-                              },
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
                               "lineWidth": {
                                 "description": "Width of the line",
                                 "type": "number"
+                              },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
                               },
                               "pointRadius": {
                                 "description": "Radius of the points",
@@ -428,15 +433,15 @@
                             "enum": ["fitPlan", "fitTimeWindow", "manual"],
                             "type": "string"
                           },
-                          "renderTickLines": {
-                            "description": "If true render horizontal lines for each y axis tick, if false do not render them",
-                            "type": "boolean"
-                          },
                           "id": {
                             "$ref": "#/definitions/id"
                           },
                           "label": {
                             "$ref": "#/definitions/label"
+                          },
+                          "renderTickLines": {
+                            "description": "If true render horizontal lines for each y axis tick, if false do not render them",
+                            "type": "boolean"
                           },
                           "scaleDomain": {
                             "description": "Min and max values of the axis domain: [min, max], only used if domainFitMode is set to manual",

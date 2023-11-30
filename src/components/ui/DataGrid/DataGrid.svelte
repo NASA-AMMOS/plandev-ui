@@ -13,6 +13,7 @@
     columnStateChange: CustomEvent<ColumnState[] | undefined>;
     columnVisible: CustomEvent<ColumnVisibleEvent<RowData>>;
     filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
+    gridSizeChanged: CustomEvent<GridSizeChangedEvent<RowData>>;
     rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
     rowDoubleClicked: CustomEvent<RowData>;
     rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
@@ -32,6 +33,7 @@
     type ColumnState,
     type ColumnVisibleEvent,
     type GridOptions,
+    type GridSizeChangedEvent,
     type IRowNode,
     type RowClassParams,
     type RowClickedEvent,
@@ -58,6 +60,9 @@
   export function focusDataGrid() {
     gridDiv.focus();
   }
+  export function getColumnState() {
+    return gridOptions?.columnApi?.getColumnState();
+  }
   // expose ag-grid function to select all visible rows
   export function selectAllVisible() {
     gridOptions?.api?.selectAllFiltered();
@@ -76,7 +81,7 @@
   export let currentSelectedRowId: RowId | null = null;
   export let highlightOnSelection: boolean = true;
   export let idKey: keyof RowData = 'id';
-  export let useCustomContextMenu: boolean | undefined = undefined;
+  export let maintainColumnOrder: boolean | undefined = undefined;
   export let rowData: RowData[] = [];
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let scrollToSelection: boolean = false;
@@ -86,6 +91,7 @@
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
   export let filterExpression: string = '';
+  export let useCustomContextMenu: boolean | undefined = undefined;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
     return parseInt(data[idKey]);
@@ -239,6 +245,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isRowSelectable,
+      maintainColumnOrder,
       onCellContextMenu,
       onCellMouseOver(event: CellMouseOverEvent<RowData>) {
         dispatch('cellMouseOver', event);
@@ -272,6 +279,9 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 
         // re-throw `selectionChanged` with only the visible rows after filtering
         dispatch('selectionChanged', selectedRows);
+      },
+      onGridSizeChanged(event: GridSizeChangedEvent<RowData>) {
+        dispatch('gridSizeChanged', event);
       },
       onRowClicked({ data, node }: RowClickedEvent<RowData>) {
         const isSelected = node.isSelected();

@@ -40,7 +40,11 @@
   rowSelection="single"
   scrollToSelection={true}
   suppressDragLeaveHidesColumns={false}
-  on:columnStateChange
-  on:selectionChanged
+  on:columnMoved
+  on:columnPinned
+  on:columnResized
+  on:columnVisible
+  on:gridSizeChanged
   on:rowDoubleClicked
+  on:selectionChanged
 />

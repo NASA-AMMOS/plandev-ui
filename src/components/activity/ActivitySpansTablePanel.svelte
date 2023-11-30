@@ -3,12 +3,13 @@
 <script lang="ts">
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
-  import type { ColDef, ColumnState } from 'ag-grid-community';
+  import type { ColDef, ColumnResizedEvent, ColumnState } from 'ag-grid-community';
+  import { debounce } from 'lodash-es';
   import { selectActivity } from '../../stores/activities';
   import { selectedSpanId, simulationDataset, spans } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivitySpansTable } from '../../stores/views';
   import type { Span } from '../../types/simulation';
-  import type { ViewGridSection, ViewTable } from '../../types/view';
+  import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
   import { convertDoyToYmd, getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
@@ -26,12 +27,16 @@
   }
 
   let activitySpansTable: ViewTable | undefined;
+  let autoSizeColumns: AutoSizeColumns | undefined;
   let dataGrid: DataGrid<Span>;
   let defaultColumnDefinitions: Partial<Record<SpanColumns, SpanColDef>>;
   let derivedColumnDefs: ColDef[] = [];
   let filterExpression: string = '';
+  let onGridSizeChangedDebounced = debounce(onGridSizeChanged, 100);
+  let viewUpdateActivitySpansTableDebounced = debounce(viewUpdateActivitySpansTable, 100);
 
   $: activitySpansTable = $view?.definition.plan.activitySpansTable;
+  $: autoSizeColumns = activitySpansTable?.autoSizeColumns;
   /* eslint-disable sort-keys */
   $: defaultColumnDefinitions = {
     dataset_id: {
@@ -130,11 +135,11 @@
     return defaultColumnDef;
   });
 
-  function onAutoSizeContent() {
+  function autoSizeContent() {
     dataGrid?.autoSizeAllColumns();
   }
 
-  function onAutoSizeSpace() {
+  function autoSizeSpace() {
     dataGrid?.sizeColumnsToFit();
   }
 
@@ -165,11 +170,52 @@
         ],
       });
     }
+
+    setTimeout(() => {
+      if (autoSizeColumns === 'fit') {
+        autoSizeContent();
+      } else if (autoSizeColumns === 'fill') {
+        autoSizeSpace();
+      }
+    }, 0);
   }
 
-  function onColumnStateChange({ detail: columnStates }: CustomEvent<ColumnState[] | undefined>) {
+  function onColumnMoved() {
+    const columnStates = dataGrid?.getColumnState();
     const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
     viewUpdateActivitySpansTable({ columnStates: updatedColumnStates });
+  }
+
+  function onColumnPinned() {
+    const columnStates = dataGrid?.getColumnState();
+    const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
+    viewUpdateActivitySpansTable({ columnStates: updatedColumnStates });
+  }
+
+  function onColumnResized({ detail }: CustomEvent<ColumnResizedEvent>) {
+    const { source } = detail;
+
+    const columnStates = dataGrid?.getColumnState();
+    const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
+    if (source === 'uiColumnResized') {
+      viewUpdateActivitySpansTableDebounced({ autoSizeColumns: 'off', columnStates: updatedColumnStates });
+    } else {
+      viewUpdateActivitySpansTable({ columnStates: updatedColumnStates });
+    }
+  }
+
+  function onColumnVisible() {
+    const columnStates = dataGrid?.getColumnState();
+    const updatedColumnStates = (columnStates ?? []).filter(columnState => columnState.colId !== 'actions');
+    viewUpdateActivitySpansTable({ columnStates: updatedColumnStates });
+  }
+
+  function onGridSizeChanged() {
+    if (activitySpansTable?.autoSizeColumns === 'fill') {
+      autoSizeSpace();
+    } else if (activitySpansTable?.autoSizeColumns === 'fit') {
+      autoSizeContent();
+    }
   }
 
   function onSelectionChanged() {
@@ -199,6 +245,24 @@
         .filter(filterEmpty),
     });
   }
+
+  function toggleAutoSizeContent() {
+    if (autoSizeColumns !== 'fit') {
+      viewUpdateActivitySpansTable({ autoSizeColumns: 'fit' });
+      autoSizeContent();
+    } else {
+      viewUpdateActivitySpansTable({ autoSizeColumns: 'off' });
+    }
+  }
+
+  function toggleAutoSizeSpace() {
+    if (autoSizeColumns !== 'fill') {
+      viewUpdateActivitySpansTable({ autoSizeColumns: 'fill' });
+      autoSizeSpace();
+    } else {
+      viewUpdateActivitySpansTable({ autoSizeColumns: 'off' });
+    }
+  }
 </script>
 
 <Panel padBody={false}>
@@ -209,15 +273,17 @@
       <div class="size-actions">
         <button
           class="st-button secondary"
-          use:tooltip={{ content: 'Fit Columns to Content', placement: 'top' }}
-          on:click={onAutoSizeContent}
+          class:selected={autoSizeColumns === 'fit'}
+          use:tooltip={{ content: 'Toggle Auto Fit Columns to Content', placement: 'top' }}
+          on:click={toggleAutoSizeContent}
         >
           <TableFitIcon />
         </button>
         <button
           class="st-button secondary"
-          use:tooltip={{ content: 'Fit Columns to Available Space', placement: 'top' }}
-          on:click={onAutoSizeSpace}
+          class:selected={autoSizeColumns === 'fill'}
+          use:tooltip={{ content: 'Toggle Auto Fit Columns to Available Space', placement: 'top' }}
+          on:click={toggleAutoSizeSpace}
         >
           <TableFillIcon />
         </button>
@@ -239,9 +305,13 @@
       columnStates={activitySpansTable?.columnStates}
       {filterExpression}
       spans={$spans}
-      on:columnStateChange={onColumnStateChange}
-      on:selectionChanged={onSelectionChanged}
+      on:columnMoved={onColumnMoved}
+      on:columnPinned={onColumnPinned}
+      on:columnResized={onColumnResized}
+      on:columnVisible={onColumnVisible}
+      on:gridSizeChanged={onGridSizeChangedDebounced}
       on:rowDoubleClicked={onRowDoubleClicked}
+      on:selectionChanged={onSelectionChanged}
     />
   </svelte:fragment>
 </Panel>
@@ -250,5 +320,9 @@
   .table-menu {
     column-gap: 1rem;
     display: flex;
+  }
+
+  .st-button.secondary.selected {
+    background: var(--st-gray-20);
   }
 </style>

@@ -2,7 +2,10 @@ import type { ColDef, ColumnState } from 'ag-grid-community';
 import type { UserId } from './app';
 import type { Timeline } from './timeline';
 
+export type AutoSizeColumns = 'fit' | 'fill' | 'off';
+
 export type ViewTable = {
+  autoSizeColumns?: AutoSizeColumns;
   columnDefs: ColDef[];
   columnStates: ColumnState[];
 };

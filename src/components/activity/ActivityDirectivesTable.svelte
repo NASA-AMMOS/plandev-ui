@@ -110,7 +110,11 @@
   {user}
   {filterExpression}
   on:bulkDeleteItems={deleteActivityDirectives}
-  on:columnStateChange
+  on:columnMoved
+  on:columnPinned
+  on:columnResized
+  on:columnVisible
+  on:gridSizeChanged
   on:selectionChanged
   on:rowDoubleClicked
 />
