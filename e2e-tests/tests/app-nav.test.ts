@@ -1,5 +1,5 @@
+import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { AppNav } from '../fixtures/AppNav.js';
-import { expect, test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
 
 let appNav: AppNav;
 let context: BrowserContext;

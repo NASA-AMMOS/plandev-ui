@@ -1,6 +1,5 @@
+import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Models } from '../fixtures/Models.js';
-import { expect, test, type BrowserContext, type Page } from '../fixtures/PlaywrightTest.js';
-
 let context: BrowserContext;
 let models: Models;
 let page: Page;
