@@ -2255,7 +2255,7 @@ const effects = {
       const { confirm, value = null } = await showEditViewModal();
       if (confirm && value) {
         const { id, name } = value;
-        const viewUpdateInput: ViewUpdateInput = { ...view, name };
+        const viewUpdateInput: ViewUpdateInput = { definition: view.definition, name };
         const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view: viewUpdateInput }, user);
         const { updatedView } = data;
 

@@ -80,7 +80,7 @@
   }
 </script>
 
-<div class="view-menu st-typography-medium">
+<div class="view-menu-button st-typography-medium">
   <PlanNavButton status={$viewIsModified ? Status.Modified : null} title={$view?.name ?? defaultViewName} menuTitle="">
     <ViewGridIcon />
     <div class="view-menu st-typography-medium" slot="menu">
@@ -226,8 +226,8 @@
     margin: 0 4px;
   }
 
-  .view-menu :global(.header),
-  .view-menu :global(.nav-button .menu-body) {
+  .view-menu-button :global(.header),
+  .view-menu-button :global(.nav-button .menu-body) {
     display: none;
   }
 </style>

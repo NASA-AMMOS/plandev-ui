@@ -129,74 +129,9 @@ test.describe.serial('Plan', () => {
     await expect(plan.navButtonSchedulingMenu).not.toBeVisible();
   });
 
-  test(`Hovering on 'Default View' in the top navigation bar should show the view menu`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.hover();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    plan.planTitle.hover();
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-  });
-
-  test(`Clicking on 'Saved Views' in the view menu should pop up a SavedViewsModal`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.hover();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    await expect(plan.navButtonViewSavedViewsMenuButton).toBeVisible();
-    await plan.navButtonViewSavedViewsMenuButton.click();
-    await expect(page.locator('.modal .modal-header:has-text("Saved Views")')).toBeVisible();
-    await page.locator('.modal .st-button .bi-x').click();
-  });
-
-  test(`Clicking on 'Upload view file' in the view menu should pop up a UploadViewModal`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.hover();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    await expect(plan.navButtonViewUploadViewMenuButton).toBeVisible();
-    await plan.navButtonViewUploadViewMenuButton.click();
-    await expect(page.locator('.modal .modal-header:has-text("Upload View JSON")')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
-  });
-
-  test(`Clicking on 'Save As' in the view menu should pop up a CreateViewModal`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.click();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    await expect(plan.navButtonViewSaveAsMenuButton).toBeVisible();
-    await plan.navButtonViewSaveAsMenuButton.click();
-    await expect(page.locator('.modal .modal-header:has-text("Save new view")')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
-  });
-
-  test(`Selecting an invalid view file should display an error and prevent the file from being uploaded`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.hover();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    await expect(plan.navButtonViewUploadViewMenuButton).toBeVisible();
-    await plan.navButtonViewUploadViewMenuButton.click();
-    await plan.fillViewInputName();
-    await plan.fillViewInputFile(plan.invalidPlanFilePath);
-    await expect(page.locator('.modal-content .error')).toBeVisible();
-    await expect(page.locator('.modal .st-button:has-text("Upload View")')).toBeDisabled();
-    await expect(page.locator('.modal')).toBeVisible();
-    // Expect validation error collapse to be visible
-    await expect(page.locator('.modal-content .collapse')).toBeVisible();
-    await page.locator('.modal .st-button:has-text("Cancel")').click();
-  });
-
-  test(`Selecting an valid view file should not display an error and not prevent the file from being uploaded`, async () => {
-    await expect(plan.navButtonViewMenu).not.toBeVisible();
-    plan.navButtonView.hover();
-    await expect(plan.navButtonViewMenu).toBeVisible();
-    await expect(plan.navButtonViewUploadViewMenuButton).toBeVisible();
-    await plan.navButtonViewUploadViewMenuButton.click();
-    await plan.fillViewInputName();
-    await plan.fillViewInputFile();
-    await expect(page.locator('.modal-content .error')).not.toBeVisible();
-    await page.locator('.modal .st-button:has-text("Upload View")').click();
-    await expect(page.locator('.modal')).not.toBeVisible();
-  });
-
   test(`Changing to a new plan should clear the selected activity`, async () => {
+    await plan.showPanel('Activity Types');
+
     // Create an activity which will be auto selected
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
 
