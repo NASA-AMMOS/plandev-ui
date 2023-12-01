@@ -7,6 +7,7 @@
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { View } from '../../types/view';
   import { featurePermissions } from '../../utilities/permissions';
+  import { downloadView as downloadViewUtil } from '../../utilities/view';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
@@ -90,7 +91,7 @@
       },
       cellRendererParams: {
         deleteView,
-        downloadView,
+        downloadView: downloadViewUtil,
         openView,
       } as CellRendererParams,
       field: 'actions',
@@ -110,13 +111,6 @@
   function deleteViews({ detail: views }: CustomEvent<View[]>) {
     const viewIds = views.map(({ id }) => id);
     dispatch('deleteViews', viewIds);
-  }
-
-  function downloadView(view: View) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(view.definition, null, 2)], { type: 'application/json' }));
-    a.download = view.name;
-    a.click();
   }
 
   function hasDeletePermission(user: User | null, view: View) {

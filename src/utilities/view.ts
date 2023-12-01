@@ -434,3 +434,10 @@ export function validateViewJSONAgainstSchema(json: any) {
     return { errors: [message], valid: false };
   }
 }
+
+export function downloadView(view: View) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(view.definition, null, 2)], { type: 'application/json' }));
+  a.download = view.name;
+  a.click();
+}

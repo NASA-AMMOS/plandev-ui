@@ -19,6 +19,7 @@
   import { showSavedViewsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { Status } from '../../utilities/status';
+  import { downloadView } from '../../utilities/view';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ToggleableIcon from '../ui/ToggleableIcon.svelte';
   import MenuItem from './MenuItem.svelte';
@@ -162,6 +163,15 @@
         ]}
       >
         Upload view file
+      </MenuItem>
+      <MenuItem
+        on:click={() => {
+          if ($view) {
+            downloadView($view);
+          }
+        }}
+      >
+        Download view
       </MenuItem>
       <MenuItem on:click={() => showSavedViewsModal(user)}>Browse saved views</MenuItem>
       {#if $view?.name && $view.name !== defaultViewName}
