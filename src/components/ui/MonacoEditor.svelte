@@ -104,7 +104,7 @@
 
     if (language && language === 'typescript') {
       monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
-        customWorkerPath: '/customTS.worker.js',
+        customWorkerPath: `${base}/customTS.worker.js`,
       });
 
       if (actionProvider) {
