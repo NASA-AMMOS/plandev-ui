@@ -33,7 +33,11 @@ import { filterEmpty } from './generic';
 export enum TimelineLockStatus {
   Locked = 'Locked',
   Unlocked = 'Unlocked',
-  TemporaryUnlock = 'TemporaryUnlock',
+}
+
+export enum TimelineInteractionMode {
+  Interact = 'Interact',
+  Navigate = 'Navigate',
 }
 
 // From https://github.com/d3/d3-time/blob/main/src/duration.js

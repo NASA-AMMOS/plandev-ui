@@ -33,7 +33,7 @@
     getUnixEpochTime,
     getUnixEpochTimeFromInterval,
   } from '../../utilities/time';
-  import { searchQuadtreeRect, TimelineLockStatus } from '../../utilities/timeline';
+  import { searchQuadtreeRect, TimelineInteractionMode, TimelineLockStatus } from '../../utilities/timeline';
 
   export let activityDirectives: ActivityDirective[] = [];
   export let activityDirectivesMap: ActivityDirectivesMap = {};
@@ -69,6 +69,7 @@
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
+  export let timelineInteractionMode: TimelineInteractionMode;
   export let timelineLockStatus: TimelineLockStatus;
   export let user: User | null;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -259,7 +260,8 @@
   }
 
   function onMousedown(e: MouseEvent | undefined): void {
-    if (e) {
+    // Do not process events if meta/ctrl is pressed to avoid interaction conflicts with zoom/pan
+    if (e && timelineInteractionMode === TimelineInteractionMode.Interact) {
       const { offsetX, offsetY } = e;
       const activityDirectives = searchQuadtreeRect<ActivityDirective>(
         quadtreeActivityDirectives,

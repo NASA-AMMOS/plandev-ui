@@ -1,7 +1,7 @@
 <script lang="ts">
   import LockIcon from '@nasa-jpl/stellar/icons/lock.svg?component';
   import UnlockIcon from '@nasa-jpl/stellar/icons/unlock.svg?component';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { TimelineLockStatus } from '../../utilities/timeline';
@@ -12,42 +12,12 @@
   export let planReadOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
-  const lockTooltipContent = 'Click to unlock timeline, or press and hold the Shift key to temporarily unlock';
 
-  $: tooltipDisabled = timelineLockStatus !== TimelineLockStatus.Locked;
-  $: lockClassName = timelineLockStatus === TimelineLockStatus.TemporaryUnlock ? 'temporary-unlock' : '';
+  $: lockTooltipContent = `${timelineLockStatus === TimelineLockStatus.Locked ? 'Unlock' : 'Lock'} the timeline`;
+  $: lockClassName = timelineLockStatus === TimelineLockStatus.Unlocked ? 'unlocked' : '';
 
   $: if (!hasUpdatePermission) {
     dispatch('lock', TimelineLockStatus.Locked);
-  }
-
-  onMount(() => {
-    document.addEventListener('keydown', onKeydown);
-    document.addEventListener('keyup', onKeyup);
-
-    return () => {
-      document.removeEventListener('keydown', onKeydown);
-      document.removeEventListener('keyup', onKeyup);
-    };
-  });
-
-  function onKeydown(e: KeyboardEvent) {
-    // If user holds shift while not focused on an input then activate the temporary unlock.
-    // If an input is focused, we assume they're holding shift to capitalize instead.
-    if (
-      e.key === 'Shift' &&
-      (e.target as HTMLElement).tagName !== 'INPUT' &&
-      timelineLockStatus !== TimelineLockStatus.Unlocked &&
-      hasUpdatePermission
-    ) {
-      dispatch('temporaryUnlock', TimelineLockStatus.TemporaryUnlock);
-    }
-  }
-
-  function onKeyup(e: KeyboardEvent) {
-    if (e.key === 'Shift' && timelineLockStatus === TimelineLockStatus.TemporaryUnlock) {
-      dispatch('lock', TimelineLockStatus.Locked);
-    }
   }
 
   function onClick() {
@@ -62,7 +32,7 @@
 <button
   class={`st-button icon ${lockClassName}`}
   on:click={onClick}
-  use:tooltip={{ content: lockTooltipContent, disabled: tooltipDisabled || !hasUpdatePermission, placement: 'bottom' }}
+  use:tooltip={{ content: lockTooltipContent, disabled: !hasUpdatePermission, placement: 'bottom' }}
   use:permissionHandler={{
     hasPermission: hasUpdatePermission,
     permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to update this timeline',
@@ -81,9 +51,9 @@
     color: var(--st-gray-70);
   }
 
-  .temporary-unlock,
-  .temporary-unlock:hover {
-    background-color: var(--st-utility-blue);
+  .unlocked,
+  .unlocked:hover {
+    background-color: var(--st-utility-blue) !important;
     border-color: transparent;
     color: #ffffff;
   }

@@ -31,7 +31,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
-  import { hideAll as hideAllTooltips, type Placement } from 'tippy.js';
+  import type { Placement } from 'tippy.js';
 
   export let hideAfterClick: boolean = true;
   export let offset: number[] = [0, 1];
@@ -67,7 +67,6 @@
 
   export function show(): void {
     hideAllMenus(type);
-    hideAllTooltips();
     shown = true;
   }
 
@@ -129,7 +128,11 @@
     role="menu"
     use:popperRef
     on:click|stopPropagation={onClick}
-    on:mouseenter={() => hideAllTooltips()}
+    on:mouseenter={() => {
+      // TODO why is this necessary? Also destroys tooltips and they don't show up
+      // after menus are opened if they were previously shown.
+      // hideAllTooltips();
+    }}
   >
     <div
       class="menu-slot st-typography-medium"

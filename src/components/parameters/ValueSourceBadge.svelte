@@ -19,7 +19,8 @@
   let showButton: boolean = false;
   let status: string = '';
   let tooltipContent: string = '';
-  let tooltipContentModifiedReset: string = '';
+  let tooltipShortcut: string = '';
+  let tooltipShortcutLabel: string = '';
 
   $: dotClasses = classNames('value-source-badge-dot st-typography-body', {
     'value-source-badge-dot--mission': source === 'mission',
@@ -33,21 +34,20 @@
       case 'user on model':
       case 'user on preset':
         showButton = true;
-        tooltipContentModifiedReset = `<div class="value-source-tooltip-modified-reset">
-                                          <span>Reset to ${source === 'user on preset' ? presetText : 'Model'}</span>
-                                          <div>${isMacOs() ? '⌘' : 'CTRL'} Click</div>
-                                       </div>`;
-        tooltipContent = `<div class="value-source-tooltip-modified">
-                            <span>Modified</span>
-                            ${disabled ? '' : tooltipContentModifiedReset}
-                          </div>`;
+        tooltipShortcut = `${isMacOs() ? '⌘' : 'CTRL'} Click`;
+        tooltipShortcutLabel = `Reset to ${source === 'user on preset' ? presetText : 'Model'}`;
+        tooltipContent = 'Modified';
         break;
       case 'preset':
         tooltipContent = `${presetText} Value`;
+        tooltipShortcut = '';
+        tooltipShortcutLabel = '';
         break;
       case 'mission':
       default:
         tooltipContent = 'Mission Model';
+        tooltipShortcut = '';
+        tooltipShortcutLabel = '';
     }
     switch (source) {
       case 'user on model':
@@ -80,7 +80,13 @@
       'value-source-badge-compact': isCompact,
     })}
     role="none"
-    use:tooltip={{ allowHTML: true, content: tooltipContent, disabled: !isCompact, placement: 'top' }}
+    use:tooltip={{
+      content: tooltipContent,
+      disabled: !isCompact,
+      placement: 'top',
+      shortcut: tooltipShortcut,
+      shortcutLabel: tooltipShortcutLabel,
+    }}
     use:useActions={use}
     on:click={onClick}
   >

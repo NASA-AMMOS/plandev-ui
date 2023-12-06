@@ -139,7 +139,7 @@
 <button
   class="st-button icon"
   on:click={onNudgeLeft}
-  use:tooltip={{ content: `Shift Left '['`, placement: 'bottom' }}
+  use:tooltip={{ content: 'Shift Left', placement: 'bottom', shortcut: '[' }}
   disabled={viewTimeRange.start === maxTimeRange.start}
 >
   <ArrowLeftIcon />
@@ -147,7 +147,7 @@
 <button
   class="st-button icon"
   on:click={onNudgeRight}
-  use:tooltip={{ content: `Shift Right ']'`, placement: 'bottom' }}
+  use:tooltip={{ content: 'Shift Right', placement: 'bottom', shortcut: ']' }}
   disabled={viewTimeRange.end === maxTimeRange.end}
 >
   <ArrowRightIcon />
@@ -155,18 +155,22 @@
 <button
   class="st-button icon"
   on:click={onZoomOut}
-  use:tooltip={{ content: `Zoom Out '-'`, placement: 'bottom' }}
+  use:tooltip={{ content: 'Zoom Out', placement: 'bottom', shortcut: '-' }}
   disabled={viewDuration === maxDuration}
 >
   <MinusIcon />
 </button>
-<button class="st-button icon" on:click={onZoomIn} use:tooltip={{ content: `Zoom In '='`, placement: 'bottom' }}>
+<button
+  class="st-button icon"
+  on:click={onZoomIn}
+  use:tooltip={{ content: 'Zoom In', placement: 'bottom', shortcut: '=' }}
+>
   <PlusIcon />
 </button>
 <button
   class="st-button icon"
   on:click={onResetViewTimeRange}
-  use:tooltip={{ content: `Reset Visible Time Range '0'`, placement: 'bottom' }}
+  use:tooltip={{ content: 'Reset Visible Time Range', placement: 'bottom', shortcut: '0' }}
   disabled={viewDuration === maxDuration}
 >
   <RotateCounterClockwiseIcon />

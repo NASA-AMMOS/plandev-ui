@@ -21,10 +21,8 @@
   const dispatch = createEventDispatcher();
 
   $: onCursorEnableChange(cursorEnabled);
-  $: if (mouseOver !== null) {
+  $: if (mouseOver !== undefined || histogramCursorTime !== undefined) {
     onMouseOver(mouseOver);
-  }
-  $: if (histogramCursorTime !== null) {
     onHistogramCursorTime(histogramCursorTime);
   }
   $: onVerticalGuidesChange(verticalGuides, xScaleView, drawWidth);
@@ -100,14 +98,16 @@
     cursorWithinView = false; // Hide active cursor that would overlap the created guide until mouse is moved again
   }
 
-  function onMouseOver(event: MouseOver | undefined) {
+  function onMouseOver(event: MouseOver | null) {
     if (event && xScaleView) {
       offsetX = event.e.offsetX;
-      updateCursor();
+    } else {
+      offsetX = -1;
     }
+    updateCursor();
   }
 
-  function onHistogramCursorTime(date: Date | undefined) {
+  function onHistogramCursorTime(date: Date | null) {
     if (!cursorEnabled || !date) {
       return;
     }

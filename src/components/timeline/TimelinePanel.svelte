@@ -19,6 +19,7 @@
     spansMap,
   } from '../../stores/simulation';
   import {
+    timelineInteractionMode,
     timelineLockStatus,
     view,
     viewSetSelectedRow,
@@ -40,6 +41,7 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import Timeline from './Timeline.svelte';
+  import TimelineInteractionModeControl from './TimelineInteractionModeControl.svelte';
   import TimelineLockControl from './TimelineLockControl.svelte';
   import TimelineViewControls from './TimelineViewControls.svelte';
 
@@ -49,6 +51,7 @@
   let hasUpdateSimulationPermission: boolean = false;
   let timelineId: number = 0;
   let timeline: TimelineType | undefined;
+  let timelineRef: Timeline;
   let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
   let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
 
@@ -228,13 +231,22 @@
     <div />
     <PanelHeaderActions>
       <div class="header-actions">
+        <TimelineInteractionModeControl
+          timelineInteractionMode={$timelineInteractionMode}
+          on:change={({ detail: mode }) => {
+            $timelineInteractionMode = mode;
+          }}
+        />
         <TimelineViewControls
           maxTimeRange={$maxTimeRange}
           {timelineDirectiveVisibilityToggles}
           viewTimeRange={$viewTimeRange}
           on:toggleDirectiveVisibility={({ detail }) => onToggleAllDirectiveVisibility(detail)}
           on:viewTimeRangeChanged={({ detail: newViewTimeRange }) => {
-            $viewTimeRange = newViewTimeRange;
+            // TODO unsure of cleaner way to accomplish this without pulling xScaleMax and the
+            // zoom transform sync into TimelinePanel which feels out of scope for this component which
+            // is primarily supposed to manage store interactions?
+            timelineRef?.viewTimeRangeChanged(newViewTimeRange);
           }}
         />
         <TimelineLockControl
@@ -243,9 +255,6 @@
           timelineLockStatus={$timelineLockStatus}
           on:lock={({ detail: lock }) => {
             $timelineLockStatus = lock;
-          }}
-          on:temporaryUnlock={({ detail: temporaryUnlock }) => {
-            $timelineLockStatus = temporaryUnlock;
           }}
           on:unlock={({ detail: unlock }) => {
             $timelineLockStatus = unlock;
@@ -257,6 +266,7 @@
 
   <svelte:fragment slot="body">
     <Timeline
+      bind:this={timelineRef}
       activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
       constraintResults={$visibleConstraintResults}
@@ -267,6 +277,7 @@
       plan={$plan}
       planStartTimeYmd={$plan?.start_time ?? ''}
       {timeline}
+      timelineInteractionMode={$timelineInteractionMode}
       {timelineDirectiveVisibilityToggles}
       {timelineSpanVisibilityToggles}
       resourcesByViewLayerId={$resourcesByViewLayerId}

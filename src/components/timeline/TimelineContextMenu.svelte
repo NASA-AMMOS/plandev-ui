@@ -202,6 +202,14 @@
     dispatch('toggleDirectiveVisibility', { row, show: newShowDirectives });
     dispatch('toggleSpanVisibility', { row, show: newShowSpans });
   }
+
+  export function hide() {
+    contextMenuComponent.hide();
+  }
+
+  export function isShown() {
+    return contextMenuComponent.isShown();
+  }
 </script>
 
 <ContextMenu hideAfterClick on:hide bind:this={contextMenuComponent}>

@@ -4,6 +4,7 @@
   import { brushX, type BrushSelection, type D3BrushEvent } from 'd3-brush';
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
+  import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResult } from '../../types/constraint';
@@ -22,6 +23,7 @@
   export let planStartTimeYmd: string;
   export let simulationDataset: SimulationDataset | null = null;
   export let spans: Span[] = [];
+  export let timelineZoomTransform: ZoomTransform | null;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -36,17 +38,15 @@
   let cursorLeft = 0;
   let cursorTooltip = '';
   let cursorVisible = false;
-  let drawingRange = false;
   let gTimeSelectorContainer: SVGGElement;
-  let histogramContainer: HTMLDivElement;
-  let movingSlider = false;
+  let svgSelectorContainer: SVGElement;
+  let histogramContainer: Element;
   let numBinsMax = 300;
   let numBinsMin = 50;
-  let resizingSliderLeft = false;
-  let resizingSliderRight = false;
   let timelineHovering = false;
   let windowMin: number | undefined;
   let windowMax: number | undefined;
+  let zoom: ZoomBehavior<SVGElement, unknown>;
 
   $: if (drawWidth && xScaleMax) {
     const xBrush = brushX()
@@ -55,7 +55,7 @@
         [drawWidth, drawHeight],
       ])
       .on('start', (event: D3BrushEvent<number[]>) => {
-        brushed(event);
+        brushed(event.selection as [number, number]);
       })
       .on('brush', (event: D3BrushEvent<number[]>) => {
         brushing = true;
@@ -94,7 +94,8 @@
           onMouseMove(handleWestX + handleWidth / 2, 0, false);
         }
 
-        brushed(event);
+        onBrushExtentChange(event);
+        brushed(event.selection as [number, number]);
       })
 
       .on('end', (event: D3BrushEvent<number[]>) => {
@@ -102,50 +103,13 @@
         if (!event.sourceEvent) {
           return;
         }
-
-        if (xScaleMax) {
-          let start: number;
-          let end: number;
-          if (!event.selection && windowMin !== undefined && windowMax !== undefined) {
-            const unixEpochTime = xScaleMax.invert(event.sourceEvent.offsetX).getTime();
-            const startDate = new Date(viewTimeRange.start).getTime();
-            const endDate = new Date(viewTimeRange.end).getTime();
-            const unixEpochTimeDuration = endDate - startDate;
-            // Center slider on user's mouse position
-            start = unixEpochTime - unixEpochTimeDuration / 2;
-            end = unixEpochTime + unixEpochTimeDuration / 2;
-
-            // Ensure slider is within bounds
-            const windowStartTime = xScaleMax.invert(windowMax).getTime();
-            const windowEndTime = xScaleMax.invert(windowMin).getTime();
-            if (unixEpochTimeDuration > windowEndTime - windowStartTime) {
-              // Cover case where duration could be unexpectedly large
-              start = windowStartTime;
-              end = windowEndTime;
-            } else if (start < windowStartTime) {
-              // Case where slider comes before entire window time range
-              start = windowStartTime;
-              end = start + unixEpochTimeDuration;
-            } else if (end > windowEndTime) {
-              // Case where slider comes after entire window time range
-              end = windowEndTime;
-              start = end - unixEpochTimeDuration;
-            }
-
-            dispatch('viewTimeRangeChanged', { end, start });
-          } else if (event.selection) {
-            start = xScaleMax.invert(event.selection[0] as number).getTime();
-            end = xScaleMax.invert(event.selection[1] as number).getTime();
-            brushed(event);
-
-            dispatch('viewTimeRangeChanged', { end, start });
-          }
-        }
+        onBrushExtentChange(event);
       });
 
     brush = select(gTimeSelectorContainer).call(xBrush);
     const extent = [new Date(viewTimeRange.start), new Date(viewTimeRange.end)].map(xScaleMax);
     brush.call(xBrush.move, extent as BrushSelection);
+    brushed(extent as [number, number]);
   }
 
   $: histogramHeight = (drawHeight / 5) * 2;
@@ -239,8 +203,81 @@
     });
   }
 
-  function brushed({ selection }: D3BrushEvent<number[]>) {
-    if (!selection || (selection[1] as number) - (selection[0] as number) === 0) {
+  $: if (histogramContainer && drawWidth) {
+    const svgSelection = select(svgSelectorContainer) as Selection<SVGElement, unknown, null, undefined>;
+    zoom = d3Zoom<SVGElement, unknown>()
+      .on('zoom', zoomed)
+      .scaleExtent([1, Infinity])
+      .translateExtent([
+        [0, 0],
+        [drawWidth, drawHeight],
+      ])
+      .wheelDelta((e: WheelEvent) => {
+        // Override default d3 wheelDelta function to remove ctrl key for modifying zoom amount
+        // https://d3js.org/d3-zoom#zoom_wheelDelta
+        return -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002);
+      });
+    svgSelection.call(zoom.transform, timelineZoomTransform || zoomIdentity);
+    svgSelection
+      .call(zoom)
+      .on('mousedown.zoom', null)
+      .on('touchstart.zoom', null)
+      .on('touchmove.zoom', null)
+      .on('touchend.zoom', null);
+  }
+
+  function zoomed(e: D3ZoomEvent<HTMLCanvasElement, any>) {
+    // Prevent dispatch when zoom did not originate from this row (i.e. propagated from zoomTransform)
+    if (e.transform && timelineZoomTransform && e.transform.toString() === timelineZoomTransform.toString()) {
+      return;
+    }
+    dispatch('zoom', e);
+  }
+
+  function onBrushExtentChange(event: D3BrushEvent<number[]>) {
+    if (xScaleMax) {
+      let start: number;
+      let end: number;
+      if (!event.selection && windowMin !== undefined && windowMax !== undefined) {
+        const unixEpochTime = xScaleMax.invert(event.sourceEvent.offsetX).getTime();
+        const startDate = new Date(viewTimeRange.start).getTime();
+        const endDate = new Date(viewTimeRange.end).getTime();
+        const unixEpochTimeDuration = endDate - startDate;
+        // Center slider on user's mouse position
+        start = unixEpochTime - unixEpochTimeDuration / 2;
+        end = unixEpochTime + unixEpochTimeDuration / 2;
+
+        // Ensure slider is within bounds
+        const windowStartTime = xScaleMax.invert(windowMax).getTime();
+        const windowEndTime = xScaleMax.invert(windowMin).getTime();
+        if (unixEpochTimeDuration > windowEndTime - windowStartTime) {
+          // Cover case where duration could be unexpectedly large
+          start = windowStartTime;
+          end = windowEndTime;
+        } else if (start < windowStartTime) {
+          // Case where slider comes before entire window time range
+          start = windowStartTime;
+          end = start + unixEpochTimeDuration;
+        } else if (end > windowEndTime) {
+          // Case where slider comes after entire window time range
+          end = windowEndTime;
+          start = end - unixEpochTimeDuration;
+        }
+
+        dispatch('viewTimeRangeChanged', { end, start });
+      } else if (event.selection) {
+        start = xScaleMax.invert(event.selection[0] as number).getTime();
+        end = xScaleMax.invert(event.selection[1] as number).getTime();
+
+        brushed(event.selection as [number, number]);
+
+        dispatch('viewTimeRangeChanged', { end, start });
+      }
+    }
+  }
+
+  function brushed(extent: [number, number] | null) {
+    if (!extent || extent[1] - extent[0] === 0) {
       brush.attr('display', 'none');
     } else {
       brush.attr('display', 'initial');
@@ -272,7 +309,7 @@
       cursorTooltip = getDoyTime(cursorTime, false);
 
       // Only dispatch a cursor change if we're just hovering
-      if (!movingSlider && !drawingRange && !resizingSliderLeft && !resizingSliderRight) {
+      if (!brushing) {
         dispatch('cursorTimeChange', cursorTime);
       }
     } else {
@@ -324,7 +361,7 @@
     </div>
   {/if}
   {#if drawWidth > 0}
-    <svg>
+    <svg bind:this={svgSelectorContainer}>
       <g bind:this={gTimeSelectorContainer} />
     </svg>
   {/if}

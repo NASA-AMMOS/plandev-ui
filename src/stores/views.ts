@@ -3,7 +3,7 @@ import { derived, get, writable, type Writable } from 'svelte/store';
 import type { View, ViewGrid, ViewTable, ViewToggleEvent } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
-import { TimelineLockStatus } from '../utilities/timeline';
+import { TimelineInteractionMode, TimelineLockStatus } from '../utilities/timeline';
 import { createColumnSizes, createRowSizes, parseColumnSizes } from '../utilities/view';
 import { gqlSubscribable } from './subscribable';
 
@@ -26,6 +26,8 @@ export const selectedTimelineId: Writable<number | null> = writable(null);
 export const selectedYAxisId: Writable<number | null> = writable(null);
 
 export const timelineLockStatus: Writable<TimelineLockStatus> = writable(TimelineLockStatus.Locked);
+
+export const timelineInteractionMode: Writable<TimelineInteractionMode> = writable(TimelineInteractionMode.Interact);
 
 /* Derived. */
 

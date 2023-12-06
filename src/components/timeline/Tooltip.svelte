@@ -15,6 +15,7 @@
   let points: Point[] = [];
   let gaps: Point[] = [];
   let spans: Span[] = [];
+  let visible: boolean = false;
 
   $: if (mouseOver) {
     onMouseOver(mouseOver);
@@ -34,6 +35,11 @@
 
   export function hide() {
     select('.tooltip').style('opacity', 0).style('z-index', -1).html('');
+    visible = false;
+  }
+
+  export function isShown() {
+    return visible;
   }
 
   function show(event: MouseEvent): void {
@@ -71,6 +77,7 @@
 
       tooltipDiv.style('left', `${xPosition}px`);
       tooltipDiv.style('top', `${yPosition}px`);
+      visible = true;
     } else {
       hide();
     }

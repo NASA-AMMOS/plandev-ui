@@ -1,6 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { ScaleTime } from 'd3-scale';
+  import { zoomIdentity, type D3ZoomEvent, type ZoomTransform } from 'd3-zoom';
+  import { throttle } from 'lodash-es';
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { viewUpdateTimeline } from '../../stores/views';
@@ -31,6 +34,7 @@
   import { getDoyTime } from '../../utilities/time';
   import {
     MAX_CANVAS_SIZE,
+    TimelineInteractionMode,
     TimelineLockStatus,
     customD3Ticks,
     durationMonth,
@@ -67,6 +71,7 @@
   export let spans: Span[] = [];
   export let timeline: Timeline | null = null;
   export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
+  export let timelineInteractionMode: TimelineInteractionMode;
   export let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
   export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -74,6 +79,7 @@
 
   const dispatch = createEventDispatcher();
 
+  let timelineZoomTransform: ZoomTransform | null = null;
   let clientWidth: number = 0;
   let contextMenu: MouseOver | null;
   let contextMenuComponent: TimelineContextMenu;
@@ -97,6 +103,16 @@
   let xAxisDrawHeight: number = 64;
   let xTicksView: XAxisTick[] = [];
 
+  let throttledZoom = throttle(onZoom, 16, {
+    leading: true,
+    trailing: true,
+  });
+
+  let throttledHistogramViewTimeRangeChanged = throttle(onHistogramViewTimeRangeChanged, 16, {
+    leading: true,
+    trailing: true,
+  });
+
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
 
@@ -105,6 +121,9 @@
     const padding = 1.5;
     let ticks = Math.round(drawWidth / (estimatedLabelWidthPx * padding));
     tickCount = clamp(ticks, 2, 16);
+
+    // Recompute zoom transform based off new drawWidth
+    recomputeZoomTransform(viewTimeRange, drawWidth, xScaleMax);
   }
 
   $: setRowsMaxHeight(timelineDiv, xAxisDiv, timelineHistogramDiv);
@@ -163,6 +182,20 @@
     detectDPRChange();
   });
 
+  function recomputeZoomTransform(
+    viewTimeRange: TimeRange,
+    drawWidth: number,
+    xScaleMax: ScaleTime<number, number, never>,
+  ) {
+    const extent = [viewTimeRange.start, viewTimeRange.end];
+    const transform = zoomIdentity
+      // width of full domain relative to the view domain
+      .scale(Math.max(1, drawWidth / (xScaleMax(extent[1]) - xScaleMax(extent[0]))))
+      // Shift the transform to account for starting value
+      .translate(-xScaleMax(extent[0]), 0);
+    timelineZoomTransform = transform;
+  }
+
   function detectDPRChange() {
     // Adapted from https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#monitoring_screen_resolution_or_zoom_level_changes
 
@@ -200,6 +233,14 @@
     dispatch('updateRows', rows);
   }
 
+  function handleScroll(event: WheelEvent) {
+    // Prevent default scroll behavior when meta key is pressed
+    // as to not interfere with certain zoom scenarios
+    if (event.metaKey) {
+      event.preventDefault();
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent) {
     if (event.key === 't' && event.ctrlKey) {
       cursorEnabled = !cursorEnabled;
@@ -232,9 +273,22 @@
     }
   }
 
-  function onHistogramViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
-    dispatch('viewTimeRangeChanged', event.detail);
+  export function viewTimeRangeChanged(viewTimeRange: TimeRange, zoomTransform?: ZoomTransform) {
+    dispatch('viewTimeRangeChanged', viewTimeRange);
+    // Assign zoom transform if provided to syncronize all d3 zoom handlers
+    if (zoomTransform) {
+      timelineZoomTransform = zoomTransform;
+    } else {
+      // Otherwise compute the zoom transform based on the view extent
+      recomputeZoomTransform(viewTimeRange, drawWidth, xScaleMax);
+    }
+  }
+
+  async function onHistogramViewTimeRangeChanged(event: CustomEvent<TimeRange>) {
+    await tick();
+    viewTimeRangeChanged(event.detail);
     mouseOver = null;
+    histogramCursorTime = null;
   }
 
   function onHistogramCursorTimeChanged(event: CustomEvent<Date>) {
@@ -297,6 +351,30 @@
     contextMenu = { ...e.detail, row };
     tooltip.hide();
   }
+
+  async function onZoom(e: CustomEvent<D3ZoomEvent<HTMLCanvasElement, any>>) {
+    await tick();
+    const newScale = e.detail.transform.rescaleX(xScaleMax).domain();
+    let [start, end] = newScale;
+
+    // Clear timeline and histogram cursor if this is a pan event
+    const isPanEvent = e.detail.sourceEvent.type === 'mousemove';
+    if (isPanEvent) {
+      mouseOver = null;
+      histogramCursorTime = null;
+    }
+    viewTimeRangeChanged({ end: end.getTime(), start: start.getTime() }, e.detail.transform);
+
+    // Hide context menu and tooltip
+    contextMenu = null;
+    if (contextMenuComponent.isShown()) {
+      contextMenuComponent.hide();
+    }
+    mouseOver = null;
+    if (tooltip.isShown()) {
+      tooltip.hide();
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeyDown} />
@@ -307,7 +385,6 @@
       planEndTimeDoy={plan?.end_time_doy}
       planStartTimeDoy={plan?.start_time_doy}
       width={timeline?.marginLeft}
-      on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
     />
     <div class="timeline-histogram-container">
       <TimelineHistogram
@@ -322,11 +399,13 @@
         {planStartTimeYmd}
         {simulationDataset}
         {spans}
+        {timelineZoomTransform}
         {viewTimeRange}
         {xScaleView}
         {xScaleMax}
         on:cursorTimeChange={onHistogramCursorTimeChanged}
-        on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
+        on:viewTimeRangeChanged={throttledHistogramViewTimeRangeChanged}
+        on:zoom={throttledZoom}
       />
     </div>
   </div>
@@ -336,7 +415,7 @@
       on:updateRowHeaderWidth={onUpdateRowHeaderWidth}
       width={rowHeaderDragHandleWidthPx}
     />
-    <div bind:this={xAxisDiv} class="x-axis" style="height: {xAxisDrawHeight}px">
+    <div bind:this={xAxisDiv} style="height: {xAxisDrawHeight}px">
       <TimelineXAxis
         {constraintResults}
         drawHeight={xAxisDrawHeight}
@@ -345,7 +424,9 @@
         {viewTimeRange}
         {xScaleView}
         {xTicksView}
-        on:viewTimeRangeChanged
+        {timelineInteractionMode}
+        {timelineZoomTransform}
+        on:zoom={throttledZoom}
       />
     </div>
     <TimelineSimulationRange
@@ -372,6 +453,7 @@
       style="max-height: {rowsMaxHeight}px"
       on:consider={handleDndConsiderRows}
       on:finalize={handleDndFinalizeRows}
+      on:wheel={handleScroll}
       use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
     >
       {#each rows as row (row.id)}
@@ -404,12 +486,14 @@
             {simulationDataset}
             {spanUtilityMaps}
             {spansMap}
+            {timelineInteractionMode}
             {timelineLockStatus}
             {user}
             {viewTimeRange}
             {xScaleView}
             {xTicksView}
             yAxes={row.yAxes}
+            {timelineZoomTransform}
             on:contextMenu={e => onContextMenu(e, row)}
             on:dblClick
             on:deleteActivityDirective
@@ -419,6 +503,7 @@
             on:mouseOver={e => (mouseOver = e.detail)}
             on:toggleRowExpansion={onToggleRowExpansion}
             on:updateRowHeight={onUpdateRowHeight}
+            on:zoom={throttledZoom}
           />
         </div>
       {/each}
@@ -441,9 +526,8 @@
     on:jumpToSpan
     on:hide={() => (contextMenu = null)}
     on:updateVerticalGuides
-    on:viewTimeRangeChanged
-    on:viewTimeRangeReset={() => dispatch('viewTimeRangeChanged', maxTimeRange)}
-    on:viewTimeRangeChanged={onHistogramViewTimeRangeChanged}
+    on:viewTimeRangeReset={() => viewTimeRangeChanged(maxTimeRange)}
+    on:viewTimeRangeChanged={event => viewTimeRangeChanged(event.detail)}
     {simulation}
     {simulationDataset}
     {spansMap}
@@ -480,10 +564,6 @@
     overflow-x: hidden;
     overflow-y: hidden;
     width: 100%;
-  }
-
-  .x-axis {
-    pointer-events: none;
   }
 
   .timeline-time-row {
