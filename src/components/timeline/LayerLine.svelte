@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
-  import type { ScaleTime } from 'd3-scale';
+  import type { ScaleLinear, ScaleTime } from 'd3-scale';
   import { curveLinear, line as d3Line } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
@@ -34,6 +34,8 @@
   let mounted: boolean = false;
   let quadtree: Quadtree<QuadtreePoint>;
   let visiblePointsById: Record<number, LinePoint> = {};
+  let yScale: ScaleLinear<number, number, never>;
+  let drawPointsRequest: number;
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -61,6 +63,7 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToLinePoints(resources, pointRadius);
+  $: offscreenPoint = ctx && generateOffscreenPoint(lineColor, pointRadius);
 
   onMount(() => {
     if (canvas) {
@@ -71,6 +74,7 @@
 
   async function draw(): Promise<void> {
     if (ctx && xScaleView) {
+      window.cancelAnimationFrame(drawPointsRequest);
       await tick();
 
       ctx.resetTransform();
@@ -79,21 +83,10 @@
 
       const [yAxis] = yAxes.filter(axis => yAxisId === axis.id);
       const domain = yAxis?.scaleDomain || [];
-      const yScale = getYScale(domain, drawHeight);
+      yScale = getYScale(domain, drawHeight);
 
-      quadtree = d3Quadtree<QuadtreePoint>()
-        .x(p => p.x)
-        .y(p => p.y)
-        .extent([
-          [0, 0],
-          [drawWidth, drawHeight],
-        ]);
-      visiblePointsById = {};
-
-      const fill = lineColor;
-      ctx.fillStyle = fill;
       ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = fill;
+      ctx.strokeStyle = lineColor;
 
       const line = d3Line<LinePoint>()
         .x(d => (xScaleView as ScaleTime<number, number, never>)(d.x))
@@ -105,19 +98,31 @@
       ctx.stroke();
       ctx.closePath();
 
-      for (const point of points) {
-        const { id, radius } = point;
+      drawPointsRequest = window.requestAnimationFrame(() => drawPoints());
+    }
+  }
 
-        if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
-          const x = (xScaleView as ScaleTime<number, number, never>)(point.x);
-          const y = yScale(point.y);
-          quadtree.add({ id, x, y });
-          visiblePointsById[id] = point;
+  function drawPoints() {
+    quadtree = d3Quadtree<QuadtreePoint>()
+      .x(p => p.x)
+      .y(p => p.y)
+      .extent([
+        [0, 0],
+        [drawWidth, drawHeight],
+      ]);
+    visiblePointsById = {};
 
-          const circle = new Path2D();
-          circle.arc(x, y, radius, 0, 2 * Math.PI);
-          ctx.fill(circle);
-        }
+    if (!ctx || !offscreenPoint) {
+      return;
+    }
+
+    for (const point of points) {
+      if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
+        const x = (xScaleView as ScaleTime<number, number, never>)(point.x);
+        const y = yScale(point.y);
+        quadtree.add({ id: point.id, x, y });
+        visiblePointsById[point.id] = point;
+        ctx.drawImage(offscreenPoint, x - pointRadius, y - pointRadius, pointRadius * 2, pointRadius * 2);
       }
     }
   }
@@ -185,6 +190,29 @@
     }
 
     return points;
+  }
+
+  function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | null {
+    if (!radius) {
+      return null;
+    }
+
+    const tempCanvas = new OffscreenCanvas(radius * 2 * dpr, radius * 2 * dpr);
+    const tempCtx = tempCanvas.getContext('2d');
+
+    if (!tempCtx) {
+      return null;
+    }
+
+    tempCtx.resetTransform();
+    tempCtx.scale(dpr, dpr);
+    tempCtx.fillStyle = lineColor;
+
+    const circle = new Path2D();
+    circle.arc(radius, radius, radius, 0, 2 * Math.PI);
+    tempCtx.fill(circle);
+
+    return tempCanvas;
   }
 </script>
 
