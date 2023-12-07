@@ -236,7 +236,7 @@
   function handleScroll(event: WheelEvent) {
     // Prevent default scroll behavior when meta key is pressed
     // as to not interfere with certain zoom scenarios
-    if (event.metaKey) {
+    if (event.metaKey || timelineInteractionMode === TimelineInteractionMode.Navigate) {
       event.preventDefault();
     }
   }
