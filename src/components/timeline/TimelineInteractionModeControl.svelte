@@ -2,7 +2,7 @@
   import CursorDefaultIcon from '@nasa-jpl/stellar/icons/cursor_default.svg?component';
   import MoveIcon from '@nasa-jpl/stellar/icons/move.svg?component';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { isMacOs } from '../../utilities/generic';
+  import { addPageFocusListener, isMacOs } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { TimelineInteractionMode } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
@@ -22,9 +22,18 @@
     document.addEventListener('keydown', onKeydown);
     document.addEventListener('keyup', onKeyup);
 
+    // Add page focus listener to handle command + tab events that
+    // can cause the mode change to be stuck in Navigation mode on Macs.
+    const removeDocumentFocusListener = addPageFocusListener(e => {
+      if (e === 'out') {
+        dispatch('change', TimelineInteractionMode.Interact);
+      }
+    });
+
     return () => {
       document.removeEventListener('keydown', onKeydown);
       document.removeEventListener('keyup', onKeyup);
+      removeDocumentFocusListener();
     };
   });
 
