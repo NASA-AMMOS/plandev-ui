@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type {
   ActivityDirective,
   ActivityDirectiveId,
+  ActivityDirectiveValidationStatus,
   ActivityDirectivesByView,
   ActivityDirectivesMap,
   AnchorValidationStatus,
@@ -33,6 +34,13 @@ export const anchorValidationStatuses = gqlSubscribable<AnchorValidationStatus[]
 export const activityMetadataDefinitions = gqlSubscribable<ActivityMetadataDefinition[]>(
   gql.SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS,
   {},
+  [],
+  null,
+);
+
+export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirectiveValidationStatus[]>(
+  gql.SUB_ACTIVITY_DIRECTIVE_VALIDATIONS,
+  { planId },
   [],
   null,
 );
@@ -115,6 +123,7 @@ export function selectActivity(
   activityDirectiveId: ActivityDirectiveId | null,
   spanId: SpanId | null,
   switchToTable = true,
+  switchToPanel = false,
 ): void {
   if (activityDirectiveId !== null && spanId === null) {
     selectedSpanId.set(null);
@@ -122,11 +131,17 @@ export function selectActivity(
     if (switchToTable) {
       viewUpdateGrid({ middleComponentBottom: 'ActivityDirectivesTablePanel' });
     }
+    if (switchToPanel) {
+      viewUpdateGrid({ rightComponentTop: 'ActivityFormPanel' });
+    }
   } else if (activityDirectiveId === null && spanId !== null) {
     selectedSpanId.set(spanId);
     selectedActivityDirectiveId.set(null);
     if (switchToTable) {
       viewUpdateGrid({ middleComponentBottom: 'ActivitySpansTablePanel' });
+    }
+    if (switchToPanel) {
+      viewUpdateGrid({ rightComponentTop: 'ActivityFormPanel' });
     }
   } else {
     selectedSpanId.set(null);

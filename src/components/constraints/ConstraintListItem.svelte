@@ -13,6 +13,7 @@
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
+  import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
@@ -41,7 +42,7 @@
         {#if violationCount}
           <div
             class="st-badge violation-badge"
-            use:tooltip={{ content: `${violationCount} Violation${violationCount !== 1 ? 's' : ''}`, placement: 'top' }}
+            use:tooltip={{ content: `${violationCount} Violation${pluralize(violationCount)}`, placement: 'top' }}
           >
             {#if totalViolationCount !== violationCount}
               <FilterIcon /> {violationCount} of {totalViolationCount}

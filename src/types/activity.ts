@@ -1,6 +1,7 @@
 import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
 import type { PartialWith, UserId } from './app';
+import type { ActivityDirectiveValidationFailures } from './errors';
 import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
@@ -104,6 +105,17 @@ export type AnchorValidationStatus = {
   plan_id: number;
   reason_invalid: string;
 };
+
+export interface ActivityDirectiveValidationStatus {
+  directive_id: number;
+  plan_id: number;
+  status: 'complete' | 'pending';
+  validations: ActivityDirectiveValidationSuccess | ActivityDirectiveValidationFailures;
+}
+
+export interface ActivityDirectiveValidationSuccess {
+  success: true;
+}
 
 export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
   snapshot_id: number;

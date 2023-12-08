@@ -7,14 +7,17 @@
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import VerticalCollapseIcon from '@nasa-jpl/stellar/icons/vertical_collapse_with_center_line.svg?component';
+  import WaterfallIcon from '@nasa-jpl/stellar/icons/waterfall.svg?component';
   import GearWideConnectedIcon from 'bootstrap-icons/icons/gear-wide-connected.svg?component';
   import { keyBy } from 'lodash-es';
   import { onDestroy } from 'svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
-  import ConsoleSection from '../../../components/console/ConsoleSection.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
+  import ConsoleActivityErrors from '../../../components/console/views/ActivityErrors.svelte';
+  import ConsoleGenericErrors from '../../../components/console/views/GenericErrors.svelte';
+  import ActivityStatusMenu from '../../../components/menus/ActivityStatusMenu.svelte';
   import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
@@ -27,6 +30,7 @@
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
   import {
+    activityDirectiveValidationStatuses,
     activityDirectives,
     activityDirectivesMap,
     resetActivityStores,
@@ -35,6 +39,7 @@
   } from '../../../stores/activities';
   import { checkConstraintsStatus, constraintResults, resetConstraintStores } from '../../../stores/constraints';
   import {
+    activityErrorRollups,
     allErrors,
     anchorValidationErrors,
     clearAllErrors,
@@ -88,6 +93,7 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirective } from '../../../types/activity';
+  import type { ActivityErrorCounts } from '../../../types/errors';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -113,7 +119,26 @@
 
   export let data: PageData;
 
+  enum ConsoleTabs {
+    ALL = 'all',
+    ANCHOR = 'anchor',
+    SCHEDULING = 'scheduling',
+    SIMULATION = 'simulation',
+    ACTIVITY = 'activity',
+  }
+
+  let activityErrorCounts: ActivityErrorCounts = {
+    all: 0,
+    extra: 0,
+    invalidAnchor: 0,
+    invalidParameter: 0,
+    missing: 0,
+    outOfBounds: 0,
+    pending: 0,
+    wrongType: 0,
+  };
   let compactNavMode = false;
+  let errorConsole: Console;
   let consoleHeightString = '36px';
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
@@ -128,6 +153,40 @@
   let selectedSimulationStatus: string | null;
   let windowWidth = 0;
 
+  $: activityErrorCounts = $activityErrorRollups.reduce(
+    (prevCounts, activityErrorRollup) => {
+      let extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
+      let invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
+      let invalidParameter = prevCounts.invalidParameter + activityErrorRollup.errorCounts.invalidParameter;
+      let missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
+      let outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
+      let pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
+      let wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
+
+      let all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
+
+      return {
+        all,
+        extra,
+        invalidAnchor,
+        invalidParameter,
+        missing,
+        outOfBounds,
+        pending,
+        wrongType,
+      };
+    },
+    {
+      all: 0,
+      extra: 0,
+      invalidAnchor: 0,
+      invalidParameter: 0,
+      missing: 0,
+      outOfBounds: 0,
+      pending: 0,
+      wrongType: 0,
+    },
+  );
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($plan) {
@@ -306,6 +365,10 @@
     }
   }
 
+  function onActivityValidationSelected(event: CustomEvent) {
+    selectActivity(event.detail?.[0]?.id, null, true, true);
+  }
+
   async function onCreateView(event: CustomEvent<ViewSaveEvent>) {
     const { detail } = event;
     const { definition } = detail;
@@ -413,6 +476,14 @@
       <PlanMergeRequestsStatusButton user={data.user} />
     </svelte:fragment>
     <svelte:fragment slot="right">
+      <ActivityStatusMenu
+        {activityErrorCounts}
+        {compactNavMode}
+        activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
+        on:viewActivityValidations={() => {
+          errorConsole.openConsole(ConsoleTabs.ACTIVITY);
+        }}
+      />
       <PlanNavButton
         title={!compactNavMode ? 'Expansion' : ''}
         buttonText="Expand Activities"
@@ -563,29 +634,58 @@
     on:changeRightRowSizes={onChangeRightRowSizes}
   />
 
-  <Console on:resize={onConsoleResize}>
+  <Console bind:this={errorConsole} on:resize={onConsoleResize}>
     <svelte:fragment slot="console-tabs">
       <div class="console-tabs">
         <div>
-          <ConsoleTab numberOfErrors={$allErrors?.length} title="All Errors">All</ConsoleTab>
+          <ConsoleTab tabId={ConsoleTabs.ALL} numberOfErrors={$allErrors?.length} title="All Errors">All</ConsoleTab>
         </div>
         <div class="separator">|</div>
         <div class="grouped-error-tabs">
-          <ConsoleTab numberOfErrors={$anchorValidationErrors?.length} title="Anchor Validation Errors">
+          <ConsoleTab
+            tabId={ConsoleTabs.ANCHOR}
+            numberOfErrors={$anchorValidationErrors?.length}
+            title="Anchor Validation Errors"
+          >
             <ActivityIcon />
           </ConsoleTab>
-          <ConsoleTab numberOfErrors={$schedulingErrors?.length} title="Scheduling Errors"><CalendarIcon /></ConsoleTab>
-          <ConsoleTab numberOfErrors={$simulationDatasetErrors?.length} title="Simulation Errors">
+          <ConsoleTab
+            tabId={ConsoleTabs.SCHEDULING}
+            numberOfErrors={$schedulingErrors?.length}
+            title="Scheduling Errors"><CalendarIcon /></ConsoleTab
+          >
+          <ConsoleTab
+            tabId={ConsoleTabs.SIMULATION}
+            numberOfErrors={$simulationDatasetErrors?.length}
+            title="Simulation Errors"
+          >
             <GearWideConnectedIcon />
+          </ConsoleTab>
+          <ConsoleTab
+            tabId={ConsoleTabs.ACTIVITY}
+            numberOfErrors={activityErrorCounts.all}
+            title="Activity Validation Errors"
+          >
+            <WaterfallIcon />
           </ConsoleTab>
         </div>
       </div>
     </svelte:fragment>
 
-    <ConsoleSection errors={$allErrors} title="All Errors" on:clearMessages={onClearAllErrors} />
-    <ConsoleSection errors={$anchorValidationErrors} title="Anchor Validation Errors" />
-    <ConsoleSection errors={$schedulingErrors} title="Scheduling Errors" on:clearMessages={onClearSchedulingErrors} />
-    <ConsoleSection errors={$simulationDatasetErrors} isClearable={false} title="Simulation Errors" />
+    <ConsoleGenericErrors errors={$allErrors} title="All Errors" on:clearMessages={onClearAllErrors} />
+    <ConsoleGenericErrors errors={$anchorValidationErrors} title="Anchor Validation Errors" />
+    <ConsoleGenericErrors
+      errors={$schedulingErrors}
+      title="Scheduling Errors"
+      on:clearMessages={onClearSchedulingErrors}
+    />
+    <ConsoleGenericErrors errors={$simulationDatasetErrors} isClearable={false} title="Simulation Errors" />
+    <ConsoleActivityErrors
+      activityValidationErrorTotalRollup={activityErrorCounts}
+      activityValidationErrorRollups={$activityErrorRollups}
+      title="Activity Validation Errors"
+      on:selectionChanged={onActivityValidationSelected}
+    />
   </Console>
 </CssGrid>
 

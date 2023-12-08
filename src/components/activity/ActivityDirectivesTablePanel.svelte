@@ -11,6 +11,7 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../stores/activities';
+  import { activityErrorRollupsMap } from '../../stores/errors';
   import { plan, planReadOnly } from '../../stores/plan';
   import { spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
@@ -384,6 +385,7 @@
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
       activityDirectives={$activityDirectivesList}
+      activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}

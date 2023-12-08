@@ -3,13 +3,14 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   import type { TabContext, TabId } from '../../../types/tabs';
-  import { TabContextKey } from './Tabs.svelte';
+  import { DefaultTabContextKey } from './Tabs.svelte';
 
   export { className as class };
   export let disabled: boolean = false;
+  export let tabContextKey: string = DefaultTabContextKey;
   export let tabId: TabId = {};
 
-  const { registerTab, selectTab, selectedTab, unregisterTab } = getContext<TabContext>(TabContextKey);
+  const { registerTab, selectTab, selectedTab, unregisterTab } = getContext<TabContext>(tabContextKey);
 
   let className: string = '';
 

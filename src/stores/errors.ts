@@ -1,27 +1,45 @@
+import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { ActivityDirectiveId } from '../types/activity';
 import type {
+  ActivityDirectiveValidationFailureStatus,
+  ActivityErrorRollup,
+  ActivityValidationErrors,
   AnchorValidationError,
   BaseError,
   CaughtError,
   SchedulingError,
   SimulationDatasetError,
 } from '../types/errors';
-import { ErrorTypes } from '../utilities/errors';
+import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
 import { compare } from '../utilities/generic';
-import { anchorValidationStatuses } from './activities';
+import { activityDirectiveValidationStatuses, activityDirectives, anchorValidationStatuses } from './activities';
 import { simulationDataset } from './simulation';
 
 export function parseErrorReason(error: string) {
   return error.replace(/\s*at\s(gov|com)/, ' : ').replace(/gov\S*:\s*(?<reason>[^:]+)\s*:(.|\s|\n|\t|\r)*/, '$1');
 }
 
+/* Derived. */
+
+export const activityDirectiveValidationFailures: Readable<ActivityDirectiveValidationFailureStatus[]> = derived(
+  [activityDirectiveValidationStatuses],
+  ([$activityDirectiveValidationStatuses]) => {
+    return $activityDirectiveValidationStatuses.filter(
+      ({ validations }) => !validations.success,
+    ) as ActivityDirectiveValidationFailureStatus[];
+  },
+  [],
+);
+
 export const anchorValidationErrors: Readable<AnchorValidationError[]> = derived(
   [anchorValidationStatuses],
   ([$anchorValidationStatuses]) => {
     return $anchorValidationStatuses
       .filter(({ reason_invalid }) => !!reason_invalid)
-      .map(({ reason_invalid }) => {
+      .map(({ activity_id, reason_invalid }) => {
         const error: AnchorValidationError = {
+          activityId: activity_id,
           message: reason_invalid,
           timestamp: `${new Date()}`,
           type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
@@ -30,6 +48,53 @@ export const anchorValidationErrors: Readable<AnchorValidationError[]> = derived
       });
   },
   [],
+);
+
+export const activityValidationErrors: Readable<ActivityValidationErrors[]> = derived(
+  [activityDirectiveValidationFailures, anchorValidationErrors, activityDirectives],
+  ([$activityDirectiveValidationFailures, $anchorValidationErrors, $activityDirectives]) => {
+    const activityDirectivesMap = keyBy($activityDirectives, 'id');
+    const activityValidationsErrorMap: Record<string, ActivityValidationErrors> = {};
+
+    $activityDirectiveValidationFailures.forEach(({ validations, directive_id: directiveId, status }) => {
+      if (activityValidationsErrorMap[directiveId] === undefined) {
+        activityValidationsErrorMap[directiveId] = {
+          activityId: directiveId,
+          errors: [validations],
+          status,
+          type: activityDirectivesMap[directiveId]?.type,
+        };
+      } else {
+        activityValidationsErrorMap[directiveId].errors.push(validations);
+      }
+    });
+
+    $anchorValidationErrors.forEach(anchorValidationError => {
+      const { activityId } = anchorValidationError;
+      if (activityValidationsErrorMap[activityId] === undefined) {
+        activityValidationsErrorMap[activityId] = {
+          activityId: activityId,
+          errors: [anchorValidationError],
+          status: 'complete',
+          type: activityDirectivesMap[activityId]?.type,
+        };
+      } else {
+        activityValidationsErrorMap[activityId].errors.push(anchorValidationError);
+      }
+    });
+
+    return Object.values(activityValidationsErrorMap);
+  },
+);
+
+export const activityErrorRollups: Readable<ActivityErrorRollup[]> = derived(
+  [activityValidationErrors],
+  ([$activityValidationErrors]) => generateActivityValidationErrorRollups($activityValidationErrors),
+);
+
+export const activityErrorRollupsMap: Readable<Record<ActivityDirectiveId, ActivityErrorRollup>> = derived(
+  [activityErrorRollups],
+  ([$activityErrorRollups]) => keyBy($activityErrorRollups, 'id'),
 );
 
 export const simulationDatasetErrors: Readable<SimulationDatasetError[]> = derived(

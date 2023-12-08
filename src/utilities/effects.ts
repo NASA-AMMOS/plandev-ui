@@ -25,6 +25,7 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSetInput,
+  ActivityDirectiveValidationStatus,
   ActivityDirectivesMap,
   ActivityPreset,
   ActivityPresetId,
@@ -143,6 +144,7 @@ import { queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { Status } from './status';
+import { pluralize } from './text';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
 import { createRow, duplicateRow } from './timeline';
 import { showFailureToast, showSuccessToast } from './toast';
@@ -173,9 +175,11 @@ const effects = {
       if (numOfUserChanges > 0) {
         ({ confirm } = await showConfirmModal(
           'Apply Preset',
-          `There ${numOfUserChanges > 1 ? 'are' : 'is'} currently ${numOfUserChanges} manually edited parameter${
-            numOfUserChanges > 1 ? 's' : ''
-          }. This will remove existing edits and apply preset parameters.`,
+          `There ${
+            numOfUserChanges > 1 ? 'are' : 'is'
+          } currently ${numOfUserChanges} manually edited parameter${pluralize(
+            numOfUserChanges,
+          )}. This will remove existing edits and apply preset parameters.`,
           'Apply Preset to Activity Directive',
         ));
       }
@@ -218,9 +222,11 @@ const effects = {
       if (numOfUserChanges > 0) {
         ({ confirm } = await showConfirmModal(
           'Apply Simulation Template',
-          `There ${numOfUserChanges > 1 ? 'are' : 'is'} currently ${numOfUserChanges} manually edited parameter${
-            numOfUserChanges > 1 ? 's' : ''
-          }. This will remove existing edits and apply template parameters.`,
+          `There ${
+            numOfUserChanges > 1 ? 'are' : 'is'
+          } currently ${numOfUserChanges} manually edited parameter${pluralize(
+            numOfUserChanges,
+          )}. This will remove existing edits and apply template parameters.`,
           'Apply Template to Simulation',
         ));
       }
@@ -2320,6 +2326,30 @@ const effects = {
         return activityDirectiveRevisions;
       } else {
         throw Error('Unable to retrieve activity directive changelog');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return [];
+    }
+  },
+
+  async getActivityDirectiveValidations(
+    planId: number,
+    user: User | null,
+  ): Promise<ActivityDirectiveValidationStatus[]> {
+    try {
+      const data = await reqHasura<ActivityDirectiveValidationStatus[]>(
+        gql.SUB_ACTIVITY_DIRECTIVE_VALIDATIONS,
+        { planId },
+        user,
+      );
+
+      const { activity_directive_validations: activityDirectiveValidations } = data;
+
+      if (activityDirectiveValidations != null) {
+        return activityDirectiveValidations;
+      } else {
+        throw Error('Unable to retrieve activity directive validations');
       }
     } catch (e) {
       catchError(e as Error);

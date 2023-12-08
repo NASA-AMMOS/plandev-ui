@@ -9,6 +9,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import ProgressRadial from './ProgressRadial.svelte';
 
+  export let badgeText: string | undefined = undefined;
   export let status: Status | null = null;
   export let showTooltip: boolean = true;
   export let prefix: string = '';
@@ -26,20 +27,26 @@
     style="background: {status === Status.Failed ? 'transparent' : color}"
     use:tooltip={{ content: showTooltip ? `${prefix}${status}` : '', placement: 'top' }}
   >
-    {#if status === Status.Complete}
-      <CheckIcon />
-    {:else if status === Status.Failed}
-      <WarningIcon style="color: {color}" />
-    {:else if status === Status.Canceled}
-      <CloseIcon />
-    {:else if status === Status.Incomplete}
-      <ProgressRadial {progress} />
-    {:else if status === Status.Modified}
-      <EditingIcon />
-    {:else if status === Status.Pending}
-      <ThreeDotsIcon />
-    {:else if status === Status.PartialSuccess}
-      <MinusIcon />
+    {#if badgeText === undefined}
+      {#if status === Status.Complete}
+        <CheckIcon />
+      {:else if status === Status.Failed}
+        <WarningIcon style="color: {color}" />
+      {:else if status === Status.Canceled}
+        <CloseIcon />
+      {:else if status === Status.Incomplete}
+        <ProgressRadial {progress} />
+      {:else if status === Status.Modified}
+        <EditingIcon />
+      {:else if status === Status.Pending}
+        <ThreeDotsIcon />
+      {:else if status === Status.PartialSuccess}
+        <MinusIcon />
+      {/if}
+    {:else}
+      <div class="status-badge-text" style="background-color: {color}">
+        {badgeText}
+      </div>
     {/if}
   </span>
 {/if}
@@ -68,5 +75,11 @@
     height: 10px;
     position: absolute;
     width: 10px;
+  }
+
+  .status-badge-text {
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 0.5px 5px;
   }
 </style>

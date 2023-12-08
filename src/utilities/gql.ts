@@ -1457,6 +1457,19 @@ const gql = {
     }
   `,
 
+  SUB_ACTIVITY_DIRECTIVE_VALIDATIONS: `#graphql
+    subscription SubActivityDirectiveValidationErrors($planId: Int!) {
+      activity_directive_validations(where: {
+        plan_id: {_eq: $planId}
+      }) {
+        directive_id
+        plan_id
+        status
+        validations
+      }
+    }
+  `,
+
   SUB_ACTIVITY_PRESETS: `#graphql
     subscription SubActivityPresets($modelId: Int!, $activityTypeName: String!) {
       activity_presets(where: {

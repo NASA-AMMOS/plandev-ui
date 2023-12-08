@@ -35,6 +35,7 @@
     type GridOptions,
     type GridSizeChangedEvent,
     type IRowNode,
+    type IsExternalFilterPresentParams,
     type RowClassParams,
     type RowClickedEvent,
     type RowDoubleClickedEvent,
@@ -74,15 +75,24 @@
     gridOptions?.api?.sizeColumnsToFit(params);
   }
 
+  export function onFilterChanged() {
+    gridOptions?.api?.onFilterChanged();
+  }
+
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
-  export let columnStates: ColumnState[] = [];
   export let columnShiftResize: boolean = false;
+  export let columnStates: ColumnState[] = [];
   export let currentSelectedRowId: RowId | null = null;
+  export let filterExpression: string = '';
   export let highlightOnSelection: boolean = true;
+  export let doesExternalFilterPass: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let idKey: keyof RowData = 'id';
   export let maintainColumnOrder: boolean | undefined = undefined;
+  export let isExternalFilterPresent: ((params: IsExternalFilterPresentParams<RowData, any>) => boolean) | undefined =
+    undefined;
   export let rowData: RowData[] = [];
+  export let rowHeight: number | undefined = undefined;
   export let rowSelection: 'single' | 'multiple' | undefined = undefined;
   export let scrollToSelection: boolean = false;
   export let selectedRowIds: RowId[] = [];
@@ -90,7 +100,6 @@
   export let suppressCellFocus: boolean = true;
   export let suppressDragLeaveHidesColumns: boolean = true;
   export let suppressRowClickSelection: boolean = false;
-  export let filterExpression: string = '';
   export let useCustomContextMenu: boolean | undefined = undefined;
 
   export let getRowId: (data: RowData) => RowId = (data: RowData): number => {
@@ -241,9 +250,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
       columnDefs,
+      doesExternalFilterPass,
       excludeHiddenColumnsFromQuickFilter: false,
       getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
+      isExternalFilterPresent,
       isRowSelectable,
       maintainColumnOrder,
       onCellContextMenu,
@@ -351,6 +362,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       },
       preventDefaultOnContextMenu: useCustomContextMenu,
       rowData,
+      rowHeight,
       rowSelection,
       suppressCellFocus,
       suppressDragLeaveHidesColumns,

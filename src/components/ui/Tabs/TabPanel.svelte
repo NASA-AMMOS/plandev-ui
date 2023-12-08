@@ -3,12 +3,13 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   import type { PanelId, TabContext } from '../../../types/tabs';
-  import { TabContextKey } from './Tabs.svelte';
+  import { DefaultTabContextKey } from './Tabs.svelte';
 
   export let disabled: boolean = false;
   export let panelId: PanelId = {};
+  export let tabContextKey: string = DefaultTabContextKey;
 
-  const { registerPanel, selectedPanel, unregisterPanel } = getContext<TabContext>(TabContextKey);
+  const { registerPanel, selectedPanel, unregisterPanel } = getContext<TabContext>(tabContextKey);
 
   $: if (!disabled) {
     registerPanel(panelId);

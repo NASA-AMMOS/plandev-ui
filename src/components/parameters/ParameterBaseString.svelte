@@ -56,8 +56,6 @@
   }
 
   .parameter-right {
-    column-gap: 5px;
-    display: inline-flex;
     width: 100%;
   }
 </style>

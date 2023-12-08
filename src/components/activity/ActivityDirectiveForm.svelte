@@ -5,8 +5,10 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
+  import { keyBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/errors';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
   import type {
@@ -20,15 +22,22 @@
   } from '../../types/activity';
   import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
   import type { User } from '../../types/app';
+  import type {
+    ActivityDirectiveInstantiationFailure,
+    ActivityErrorCategories,
+    ActivityErrorRollup,
+  } from '../../types/errors';
   import type { FieldStore } from '../../types/form';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { getActivityMetadata } from '../../utilities/activities';
   import effects from '../../utilities/effects';
+  import { isInstantiationError } from '../../utilities/errors';
   import { classNames, keyByBoolean } from '../../utilities/generic';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { pluralize } from '../../utilities/text';
   import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, timestamp } from '../../utilities/validators';
@@ -37,7 +46,9 @@
   import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
+  import ExtraneousParameters from '../parameters/ExtraneousParameters.svelte';
   import Parameters from '../parameters/Parameters.svelte';
+  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import Highlight from '../ui/Highlight.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import ActivityAnchorForm from './ActivityAnchorForm.svelte';
@@ -59,13 +70,15 @@
 
   const dispatch = createEventDispatcher();
 
+  let activityErrorRollup: ActivityErrorRollup | undefined;
   let editingActivityName: boolean = false;
-  let hasUpdatePermission: boolean = false;
-  let numOfUserChanges: number = 0;
+  let extraArguments: string[] = [];
   let formParameters: FormParameter[] = [];
+  let hasUpdatePermission: boolean = false;
   let highlightKeysMap: Record<string, boolean> = {};
-  let parametersWithErrorsCount: number = 0;
+  let numOfUserChanges: number = 0;
   let parameterErrorMap: Record<string, string[]> = {};
+  let parametersWithErrorsCount: number = 0;
   let startTimeDoy: string;
   let startTimeDoyField: FieldStore<string>;
 
@@ -111,15 +124,42 @@
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
+  $: activityErrorRollup = $activityErrorRollupsMap[activityDirective.id];
+  $: if (parameterErrorMap || $activityValidationErrors.length) {
+    let missing: Record<string, true> = {};
+    const activityValidationErrorsMap = keyBy($activityValidationErrors, 'activityId');
+    const activityValidationError = activityValidationErrorsMap[activityDirective.id];
 
-  $: if (parameterErrorMap) {
+    extraArguments = [];
+
+    if (activityValidationError) {
+      const instantiationFailure: ActivityDirectiveInstantiationFailure | undefined =
+        activityValidationError.errors.find(isInstantiationError) as ActivityDirectiveInstantiationFailure | undefined;
+      if (instantiationFailure) {
+        const { extraneousArguments, missingArguments } = instantiationFailure.errors;
+        extraArguments = extraneousArguments;
+        missing = missingArguments.reduce((prevArguments, missingArgument) => {
+          return {
+            ...prevArguments,
+            [missingArgument]: true,
+          };
+        }, {});
+      }
+    }
+
     formParameters = formParameters.map((formParameter: FormParameter) => {
-      const errors = parameterErrorMap[formParameter.name];
+      let errors = parameterErrorMap[formParameter.name];
+      if (missing[formParameter.name]) {
+        if (!errors) {
+          errors = [];
+        }
+        errors.push('Parameter not explicitly set');
+      }
       return { ...formParameter, errors: errors || null };
     });
+
     parametersWithErrorsCount = Object.keys(parameterErrorMap).length;
   }
-
   $: getActivityMetadataValue = (key: string) => {
     const metadata = activityDirective.metadata;
     if (metadata) {
@@ -195,6 +235,38 @@
     const newArguments = getArguments(argumentsMap, formParameter);
     if ($plan) {
       effects.updateActivityDirective($plan, id, { arguments: newArguments }, user);
+    }
+  }
+
+  function onAutoFixFormParameters(event: CustomEvent<ActivityErrorCategories>) {
+    const { detail: selectedCategory } = event;
+    const { id, arguments: activityArguments } = activityDirective;
+
+    if (selectedCategory != null) {
+      switch (selectedCategory) {
+        case 'invalidParameter':
+          if ($plan) {
+            effects.updateActivityDirective($plan, id, { arguments: {} }, user);
+          }
+          break;
+        case 'extra':
+          if ($plan) {
+            const cleanedArguments: ArgumentsMap = Object.keys(activityArguments).reduce(
+              (prevArguments, argumentName) => {
+                if (!extraArguments.includes(argumentName)) {
+                  return {
+                    ...prevArguments,
+                    [argumentName]: activityArguments[argumentName],
+                  };
+                }
+                return prevArguments;
+              },
+              {},
+            );
+            effects.updateActivityDirective($plan, id, { arguments: cleanedArguments }, user);
+          }
+          break;
+      }
     }
   }
 
@@ -351,187 +423,124 @@
   }
 </script>
 
-{#if showHeader}
-  <div class="activity-header">
-    <div class={classNames('activity-header-title', { 'activity-header-title--editing': editingActivityName })}>
-      {#if !editable}
-        <div class="activity-header-title-value st-typography-medium">
-          {revision ? revision.name : $activityNameField.value}
-        </div>
-      {:else if !editingActivityName}
-        <button class="icon st-button activity-header-title-edit-button" on:click={editActivityName}>
+<div class="activity-form-container">
+  {#if showHeader}
+    <div class="activity-header">
+      <div class={classNames('activity-header-title', { 'activity-header-title--editing': editingActivityName })}>
+        {#if !editable}
           <div class="activity-header-title-value st-typography-medium">
-            {$activityNameField.value}
+            {revision ? revision.name : $activityNameField.value}
           </div>
-          <PenIcon />
-        </button>
-      {:else}
-        <Field field={activityNameField} on:change={onUpdateActivityName}>
-          <input
-            on:keyup={onActivityNameKeyup}
-            autocomplete="off"
-            class="st-input w-100"
-            name="activity-name"
-            placeholder="Enter activity name"
+        {:else if !editingActivityName}
+          <button class="icon st-button activity-header-title-edit-button" on:click={editActivityName}>
+            <div class="activity-header-title-value st-typography-medium">
+              {$activityNameField.value}
+            </div>
+            <PenIcon />
+          </button>
+        {:else}
+          <Field field={activityNameField} on:change={onUpdateActivityName}>
+            <input
+              on:keyup={onActivityNameKeyup}
+              autocomplete="off"
+              class="st-input w-100"
+              name="activity-name"
+              placeholder="Enter activity name"
+            />
+          </Field>
+          <button
+            use:tooltip={{ content: 'Save', placement: 'top' }}
+            class="icon st-button"
+            on:click={onUpdateActivityName}
+          >
+            <CheckIcon />
+          </button>
+        {/if}
+      </div>
+      <div class="activity-header-icons">
+        <div class="activity-error-rollup">
+          <ActivityErrorsRollup
+            counts={activityErrorRollup?.errorCounts}
+            hasPermission={hasUpdatePermission}
+            mode="minimal"
+            permissionError={updatePermissionError}
+            selectable={false}
+            on:resetCategory={onAutoFixFormParameters}
           />
-        </Field>
+        </div>
         <button
-          use:tooltip={{ content: 'Save', placement: 'top' }}
-          class="icon st-button"
-          on:click={onUpdateActivityName}
+          class="st-button icon activity-header-changelog"
+          on:click|stopPropagation={() => dispatch('viewChangelog')}
+          use:tooltip={{ content: 'View Activity Changelog', placement: 'top' }}
         >
-          <CheckIcon />
+          <HistoryIcon />
         </button>
-      {/if}
+      </div>
     </div>
-    <div>
+  {/if}
+
+  {#if revision}
+    <div class="revision-preview-header">
+      <div>
+        <button
+          class="st-button primary"
+          use:permissionHandler={{
+            hasPermission: hasUpdatePermission,
+            permissionError: updatePermissionError,
+          }}
+          on:click|stopPropagation={() => revision && restoreRevision(revision.revision)}
+        >
+          Restore
+        </button>
+        <span class="st-typography-medium">{highlightKeys.length} Change{pluralize(highlightKeys.length)}</span>
+      </div>
       <button
-        class="st-button icon activity-header-changelog"
-        on:click|stopPropagation={() => dispatch('viewChangelog')}
-        use:tooltip={{ content: 'View Activity Changelog', placement: 'top' }}
+        use:tooltip={{ content: 'Close Revision Preview', placement: 'top' }}
+        class="icon st-button"
+        on:click|stopPropagation={() => dispatch('closeRevisionPreview')}
       >
-        <HistoryIcon />
+        <CloseIcon />
       </button>
     </div>
-  </div>
-{/if}
+  {/if}
 
-{#if revision}
-  <div class="revision-preview-header">
-    <div>
-      <button
-        class="st-button primary"
-        use:permissionHandler={{
-          hasPermission: hasUpdatePermission,
-          permissionError: updatePermissionError,
-        }}
-        on:click|stopPropagation={() => revision && restoreRevision(revision.revision)}
-      >
-        Restore
-      </button>
-      <span class="st-typography-medium">{highlightKeys.length} Change{highlightKeys.length === 1 ? '' : 's'}</span>
-    </div>
-    <button
-      use:tooltip={{ content: 'Close Revision Preview', placement: 'top' }}
-      class="icon st-button"
-      on:click|stopPropagation={() => dispatch('closeRevisionPreview')}
-    >
-      <CloseIcon />
-    </button>
-  </div>
-{/if}
+  <div class="activity-form">
+    <fieldset>
+      <Collapse title="Definition">
+        {#if showActivityName}
+          <Highlight highlight={highlightKeysMap.name}>
+            <Input layout="inline">
+              <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
+                Activity Name
+              </label>
+              <input class="st-input w-100" disabled name="activityName" value={activityDirective.name} />
+            </Input>
+          </Highlight>
+        {/if}
 
-<div class="activity-form">
-  <fieldset>
-    <Collapse title="Definition">
-      {#if showActivityName}
-        <Highlight highlight={highlightKeysMap.name}>
+        <Highlight highlight={highlightKeysMap.id}>
           <Input layout="inline">
-            <label use:tooltip={{ content: 'Activity Name', placement: 'top' }} for="activityName">
-              Activity Name
-            </label>
-            <input class="st-input w-100" disabled name="activityName" value={activityDirective.name} />
+            <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
+            <input class="st-input w-100" disabled name="id" value={activityDirective.id} />
           </Input>
         </Highlight>
-      {/if}
 
-      <Highlight highlight={highlightKeysMap.id}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Activity ID', placement: 'top' }} for="id"> ID</label>
-          <input class="st-input w-100" disabled name="id" value={activityDirective.id} />
-        </Input>
-      </Highlight>
+        <Highlight highlight={highlightKeysMap.type}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
+              Activity Type
+            </label>
+            <input class="st-input w-100" disabled name="activity-type" value={activityDirective.type} />
+          </Input>
+        </Highlight>
 
-      <Highlight highlight={highlightKeysMap.type}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Activity Type', placement: 'top' }} for="activity-type">
-            Activity Type
-          </label>
-          <input class="st-input w-100" disabled name="activity-type" value={activityDirective.type} />
-        </Input>
-      </Highlight>
-
-      <Highlight highlight={highlightKeysMap.start_offset}>
-        <DatePickerField
-          disabled={!editable || activityDirective.anchor_id !== null}
-          field={startTimeDoyField}
-          label="Start Time - YYYY-DDDThh:mm:ss"
-          layout="inline"
-          name="start-time"
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasUpdatePermission,
-                permissionError: updatePermissionError,
-              },
-            ],
-          ]}
-          on:change={onUpdateStartTime}
-          on:keydown={onUpdateStartTime}
-        />
-      </Highlight>
-
-      <ActivityAnchorForm
-        {activityDirective}
-        {activityDirectivesMap}
-        {hasUpdatePermission}
-        anchorId={revision ? revision.anchor_id : activityDirective.anchor_id}
-        disabled={!editable}
-        {highlightKeysMap}
-        planReadOnly={$planReadOnly}
-        isAnchoredToStart={revision ? revision.anchored_to_start : activityDirective.anchored_to_start}
-        startOffset={revision ? revision.start_offset : activityDirective.start_offset}
-        on:updateAnchor={updateAnchor}
-        on:updateAnchorEdge={updateAnchorEdge}
-        on:updateStartOffset={updateStartOffset}
-      />
-
-      <Highlight highlight={highlightKeysMap.created_at}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime">Creation Time</label>
-          <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
-        </Input>
-      </Highlight>
-
-      <Highlight highlight={highlightKeysMap.last_modified_at}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Last Modified Time', placement: 'top' }} for="lastModifiedTime">
-            Last Modified Time
-          </label>
-          <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
-        </Input>
-      </Highlight>
-
-      <Highlight highlight={highlightKeysMap.last_modified_by}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
-            Last Modified By
-          </label>
-          <input class="st-input w-100" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
-        </Input>
-      </Highlight>
-
-      <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }} for="sourceSchedulingGoalId">
-            Source Scheduling Goal ID
-          </label>
-          <input
-            class="st-input w-100"
-            disabled
-            name="sourceSchedulingGoalId"
-            value={activityDirective.source_scheduling_goal_id ?? 'None'}
-          />
-        </Input>
-      </Highlight>
-
-      <Highlight highlight={highlightKeysMap.tags}>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
-          <TagsInput
-            options={tags}
-            selected={activityDirective.tags.map(({ tag }) => tag)}
+        <Highlight highlight={highlightKeysMap.start_offset}>
+          <DatePickerField
+            disabled={!editable || activityDirective.anchor_id !== null}
+            field={startTimeDoyField}
+            label="Start Time - YYYY-DDDThh:mm:ss"
+            layout="inline"
+            name="start-time"
             use={[
               [
                 permissionHandler,
@@ -541,75 +550,174 @@
                 },
               ],
             ]}
-            on:change={onTagsInputChange}
-          />
-        </Input>
-      </Highlight>
-    </Collapse>
-  </fieldset>
-
-  <fieldset>
-    <Collapse
-      error={parametersWithErrorsCount > 0}
-      title={`Parameters${parametersWithErrorsCount > 0 ? ` (${parametersWithErrorsCount} invalid)` : ''}`}
-    >
-      <div class="activity-preset">
-        <ActivityPresetInput
-          {modelId}
-          {activityDirective}
-          disabled={!editable}
-          hasChanges={numOfUserChanges > 0}
-          {user}
-          plan={$plan}
-          on:applyPreset={onApplyPresetToActivity}
-          on:deletePreset={onDeletePreset}
-          on:saveNewPreset={onSaveNewPreset}
-          on:savePreset={onSavePreset}
-        />
-      </div>
-      <Parameters
-        disabled={!editable}
-        {formParameters}
-        {highlightKeysMap}
-        on:change={onChangeFormParameters}
-        on:reset={onResetFormParameters}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasUpdatePermission,
-              permissionError: updatePermissionError,
-            },
-          ],
-        ]}
-      />
-      {#if formParameters.length === 0}
-        <div class="st-typography-label">No Parameters Found</div>
-      {/if}
-    </Collapse>
-  </fieldset>
-
-  <fieldset>
-    <Collapse title="Annotations">
-      {#if activityMetadataDefinitions.length === 0}
-        <div class="st-typography-label">No Annotations Found</div>
-      {/if}
-
-      {#each activityMetadataDefinitions as definition}
-        <Highlight highlight={highlightKeysMap[definition.key]}>
-          <ActivityMetadataField
-            disabled={!editable}
-            on:change={onChangeActivityMetadata}
-            value={getActivityMetadataValue(definition.key)}
-            {definition}
+            on:change={onUpdateStartTime}
+            on:keydown={onUpdateStartTime}
           />
         </Highlight>
-      {/each}
-    </Collapse>
-  </fieldset>
+
+        <ActivityAnchorForm
+          {activityDirective}
+          {activityDirectivesMap}
+          {hasUpdatePermission}
+          anchorId={revision ? revision.anchor_id : activityDirective.anchor_id}
+          disabled={!editable}
+          {highlightKeysMap}
+          planReadOnly={$planReadOnly}
+          isAnchoredToStart={revision ? revision.anchored_to_start : activityDirective.anchored_to_start}
+          startOffset={revision ? revision.start_offset : activityDirective.start_offset}
+          on:updateAnchor={updateAnchor}
+          on:updateAnchorEdge={updateAnchorEdge}
+          on:updateStartOffset={updateStartOffset}
+        />
+
+        <Highlight highlight={highlightKeysMap.created_at}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Creation Time', placement: 'top' }} for="creationTime">Creation Time</label>
+            <input class="st-input w-100" disabled name="creationTime" value={activityDirective.created_at} />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.last_modified_at}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Last Modified Time', placement: 'top' }} for="lastModifiedTime">
+              Last Modified Time
+            </label>
+            <input class="st-input w-100" disabled name="lastModifiedTime" value={activityDirective.last_modified_at} />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.last_modified_by}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Last Modified By', placement: 'top' }} for="modifiedBy">
+              Last Modified By
+            </label>
+            <input class="st-input w-100" disabled name="modifiedBy" value={activityDirective.last_modified_by} />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
+          <Input layout="inline">
+            <label
+              use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
+              for="sourceSchedulingGoalId"
+            >
+              Source Scheduling Goal ID
+            </label>
+            <input
+              class="st-input w-100"
+              disabled
+              name="sourceSchedulingGoalId"
+              value={activityDirective.source_scheduling_goal_id ?? 'None'}
+            />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.tags}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
+            <TagsInput
+              options={tags}
+              selected={activityDirective.tags.map(({ tag }) => tag)}
+              use={[
+                [
+                  permissionHandler,
+                  {
+                    hasPermission: hasUpdatePermission,
+                    permissionError: updatePermissionError,
+                  },
+                ],
+              ]}
+              on:change={onTagsInputChange}
+            />
+          </Input>
+        </Highlight>
+      </Collapse>
+    </fieldset>
+
+    <fieldset>
+      <Collapse
+        error={parametersWithErrorsCount > 0}
+        title={`Parameters${parametersWithErrorsCount > 0 ? ` (${parametersWithErrorsCount} invalid)` : ''}`}
+      >
+        <div class="activity-preset">
+          <ActivityPresetInput
+            {modelId}
+            {activityDirective}
+            disabled={!editable}
+            hasChanges={numOfUserChanges > 0}
+            {user}
+            plan={$plan}
+            on:applyPreset={onApplyPresetToActivity}
+            on:deletePreset={onDeletePreset}
+            on:saveNewPreset={onSaveNewPreset}
+            on:savePreset={onSavePreset}
+          />
+        </div>
+        <Parameters
+          disabled={!editable}
+          {formParameters}
+          {highlightKeysMap}
+          on:change={onChangeFormParameters}
+          on:reset={onResetFormParameters}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasUpdatePermission,
+                permissionError: updatePermissionError,
+              },
+            ],
+          ]}
+        />
+        {#if formParameters.length === 0}
+          <div class="st-typography-label">No Parameters Found</div>
+        {/if}
+      </Collapse>
+    </fieldset>
+
+    {#if extraArguments.length}
+      <ExtraneousParameters
+        {extraArguments}
+        argumentsMap={activityDirective.arguments}
+        hasPermission={hasUpdatePermission}
+        permissionError={updatePermissionError}
+        on:reset={onAutoFixFormParameters}
+      />
+    {/if}
+
+    <fieldset>
+      <Collapse title="Annotations">
+        {#if activityMetadataDefinitions.length === 0}
+          <div class="st-typography-label">No Annotations Found</div>
+        {/if}
+
+        {#each activityMetadataDefinitions as definition}
+          <Highlight highlight={highlightKeysMap[definition.key]}>
+            <ActivityMetadataField
+              disabled={!editable}
+              on:change={onChangeActivityMetadata}
+              value={getActivityMetadataValue(definition.key)}
+              {definition}
+            />
+          </Highlight>
+        {/each}
+      </Collapse>
+    </fieldset>
+  </div>
 </div>
 
 <style>
+  .activity-form-container {
+    display: grid;
+    grid-template-rows: min-content auto;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .activity-form {
+    overflow-y: auto;
+  }
+
   .activity-form fieldset:last-child {
     padding-bottom: 16px;
   }
@@ -627,6 +735,16 @@
     font-style: italic;
     padding: 4px 8px;
     padding-left: 8px;
+  }
+
+  .activity-header-icons {
+    align-items: center;
+    display: flex;
+  }
+
+  .activity-error-rollup {
+    display: inline;
+    font-style: normal;
   }
 
   .activity-header-title-placeholder,

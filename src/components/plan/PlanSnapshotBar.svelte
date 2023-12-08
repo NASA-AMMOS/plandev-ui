@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import type { PlanSnapshot } from '../../types/plan-snapshot';
+  import { pluralize } from '../../utilities/text';
 
   export let snapshot: PlanSnapshot;
   export let numOfDirectives: number;
@@ -14,7 +15,7 @@
   <div class="info">
     <div>Preview of plan snapshot</div>
     <div class="snapshot-name">{snapshot.snapshot_name}</div>
-    <div>{numOfDirectives} directive{numOfDirectives !== 1 ? 's' : ''}</div>
+    <div>{numOfDirectives} directive{pluralize(numOfDirectives)}</div>
   </div>
 
   <div class="buttons">

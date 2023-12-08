@@ -69,8 +69,6 @@
   }
 
   .parameter-right {
-    column-gap: 5px;
-    display: inline-flex;
     margin-left: 5px;
     width: 100%;
   }

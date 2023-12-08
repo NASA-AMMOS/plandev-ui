@@ -444,6 +444,12 @@
   font-size: 1rem;
 }
 
+.ag-row .issues-cell {
+  align-items: center;
+  display: flex;
+  height: 100%;
+}
+
 .ag-theme-stellar .ag-row.ag-selectable-row {
   cursor: pointer;
 }

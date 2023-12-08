@@ -215,77 +215,90 @@
   });
 </script>
 
-<div class="activity-header">
-  <div class="activity-header-title">
-    <div class="activity-header-title-value st-typography-medium">
-      {activityDirective.name}
+<div class="activity-revisions-container">
+  <div class="activity-header">
+    <div class="activity-header-title">
+      <div class="activity-header-title-value st-typography-medium">
+        {activityDirective.name}
+      </div>
+    </div>
+    <div>
+      <button
+        class="st-button icon activity-header-changelog"
+        on:click|stopPropagation={() => dispatch('closeChangelog')}
+        use:tooltip={{ content: 'Close Activity Changelog', placement: 'top' }}
+      >
+        <HistoryIcon />
+      </button>
     </div>
   </div>
-  <div>
-    <button
-      class="st-button icon activity-header-changelog"
-      on:click|stopPropagation={() => dispatch('closeChangelog')}
-      use:tooltip={{ content: 'Close Activity Changelog', placement: 'top' }}
-    >
-      <HistoryIcon />
-    </button>
-  </div>
-</div>
 
-<div class="activity-revisions">
-  {#if activityRevisionChangeMap.length}
-    {#each activityRevisions as revision, i}
-      <div class="activity-revision">
-        <div class="date st-typography-medium">{formatDate(revision.changed_at)}</div>
-        <div
-          class="change-summary st-typography-body"
-          use:tooltip={{ content: activityRevisionChangeMap[i].name, placement: 'top' }}
-        >
-          {activityRevisionChangeMap[i].name}
+  <div class="activity-revisions">
+    {#if activityRevisionChangeMap.length}
+      {#each activityRevisions as revision, i}
+        <div class="activity-revision">
+          <div class="date st-typography-medium">{formatDate(revision.changed_at)}</div>
+          <div
+            class="change-summary st-typography-body"
+            use:tooltip={{ content: activityRevisionChangeMap[i].name, placement: 'top' }}
+          >
+            {activityRevisionChangeMap[i].name}
+          </div>
+          <div class="changed-by st-typography-label">@{revision.changed_by}</div>
+          <div
+            class="new-value st-typography-body"
+            use:tooltip={{
+              content: formatParameterValue(
+                activityRevisionChangeMap[i].name,
+                activityRevisionChangeMap[i].currentValue,
+              ),
+              placement: 'top',
+            }}
+          >
+            {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].currentValue)}
+          </div>
+          <div class="actions">
+            {#if i === 0}
+              <span>Current Revision</span>
+            {:else}
+              <button
+                class="st-button"
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: updatePermissionError,
+                }}
+                on:click={() => restoreRevision(revision.revision)}>Restore</button
+              >
+              <button class="st-button secondary" on:click={() => dispatch('previewRevision', revision)}>Preview</button
+              >
+            {/if}
+          </div>
+          <div
+            class="previous-value st-typography-body"
+            use:tooltip={{
+              content: formatParameterValue(
+                activityRevisionChangeMap[i].name,
+                activityRevisionChangeMap[i].previousValue,
+              ),
+              placement: 'top',
+            }}
+          >
+            {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].previousValue)}
+          </div>
         </div>
-        <div class="changed-by st-typography-label">@{revision.changed_by}</div>
-        <div
-          class="new-value st-typography-body"
-          use:tooltip={{
-            content: formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].currentValue),
-            placement: 'top',
-          }}
-        >
-          {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].currentValue)}
-        </div>
-        <div class="actions">
-          {#if i === 0}
-            <span>Current Revision</span>
-          {:else}
-            <button
-              class="st-button"
-              use:permissionHandler={{
-                hasPermission: hasUpdatePermission,
-                permissionError: updatePermissionError,
-              }}
-              on:click={() => restoreRevision(revision.revision)}>Restore</button
-            >
-            <button class="st-button secondary" on:click={() => dispatch('previewRevision', revision)}>Preview</button>
-          {/if}
-        </div>
-        <div
-          class="previous-value st-typography-body"
-          use:tooltip={{
-            content: formatParameterValue(
-              activityRevisionChangeMap[i].name,
-              activityRevisionChangeMap[i].previousValue,
-            ),
-            placement: 'top',
-          }}
-        >
-          {formatParameterValue(activityRevisionChangeMap[i].name, activityRevisionChangeMap[i].previousValue)}
-        </div>
-      </div>
-    {/each}
-  {/if}
+      {/each}
+    {/if}
+  </div>
 </div>
 
 <style>
+  .activity-revisions-container {
+    display: grid;
+    grid-template-rows: min-content auto;
+    height: 100%;
+    overflow: hidden;
+  }
+
   .activity-header {
     align-items: center;
     background: var(--st-gray-10);
@@ -303,6 +316,10 @@
     justify-items: center;
     padding-left: 8px;
     width: 100%;
+  }
+
+  .activity-revisions {
+    overflow-y: auto;
   }
 
   .activity-revision {

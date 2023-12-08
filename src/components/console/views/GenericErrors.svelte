@@ -3,9 +3,10 @@
 <script lang="ts">
   import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import type { BaseError } from '../../types/errors';
-  import { tooltip } from '../../utilities/tooltip';
-  import TabPanel from '../ui/Tabs/TabPanel.svelte';
+  import type { BaseError } from '../../../types/errors';
+  import { tooltip } from '../../../utilities/tooltip';
+  import TabPanel from '../../ui/Tabs/TabPanel.svelte';
+  import { ConsoleContextKey } from '../Console.svelte';
 
   export let errors: BaseError[] = [];
   export let title: string;
@@ -18,8 +19,8 @@
   }
 </script>
 
-<TabPanel>
-  <div class="console-section">
+<TabPanel tabContextKey={ConsoleContextKey}>
+  <div class="generic-errors-container">
     <div class="console-header">
       <div>{title}</div>
       {#if isClearable}
@@ -56,7 +57,7 @@
 </TabPanel>
 
 <style>
-  .console-section {
+  .generic-errors-container {
     display: grid;
     grid-template-rows: min-content auto;
     height: 100%;

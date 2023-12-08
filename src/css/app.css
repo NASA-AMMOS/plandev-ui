@@ -20,6 +20,7 @@
 @import 'ag-grid-community/styles/ag-theme-alpine.min.css';
 @import './ag-grid-stellar.css';
 @import './tooltip.css';
+@import './icon.css';
 
 html,
 body,

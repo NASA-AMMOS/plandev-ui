@@ -1,27 +1,48 @@
 <svelte:options immutable={true} />
 
+<script context="module">
+  // Tabs implementation taken from: https://svelte.dev/repl/8e68120858e5322272dc9136c4bb79cc?version=3.7.0
+
+  export const ConsoleContextKey = 'console';
+</script>
+
 <script lang="ts">
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import ChevronUpIcon from '@nasa-jpl/stellar/icons/chevron_up.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { TabId } from '../../types/tabs';
   import Tabs from '../ui/Tabs/Tabs.svelte';
   import ConsoleDragHandle from './ConsoleDragHandle.svelte';
+
+  export function openConsole(tabId: TabId) {
+    tabs.selectTab(tabId);
+    toggleConsole(true);
+  }
 
   const consoleHeaderHeight: number = 36;
   const dispatch = createEventDispatcher();
 
   let consoleHeight: number = 0;
   let consoleHeightString: string;
+  let currentSelectedConsoleIndex: number | null = null;
   let isOpen: boolean = false;
   let previousConsoleHeight: number = 300;
+  let tabs: Tabs;
 
   $: {
     consoleHeightString = `${consoleHeight + consoleHeaderHeight}px`;
     dispatch('resize', consoleHeightString);
   }
 
-  function onSelectTab() {
-    toggleConsole(true);
+  function onSelectTab(event: CustomEvent<{ index: number }>) {
+    const { index } = event.detail;
+    if (currentSelectedConsoleIndex === index) {
+      onToggle();
+    } else {
+      toggleConsole(true);
+    }
+
+    currentSelectedConsoleIndex = index;
   }
 
   function onToggle() {
@@ -49,11 +70,11 @@
     {#if isOpen}
       <ConsoleDragHandle maxHeight="75%" rowHeight={consoleHeight} on:updateRowHeight={onUpdateRowHeight} />
     {/if}
-    <Tabs on:select-tab={onSelectTab}>
+    <Tabs bind:this={tabs} tabContextKey={ConsoleContextKey} on:select-tab={onSelectTab}>
       <svelte:fragment slot="tab-list">
         <div class="console-tabs-container">
           <div class="console-tabs">
-            <slot name="console-tabs" />
+            <slot name="console-tabs" foo="hi" />
           </div>
           <div class="console-toggle" role="none" on:click={onToggle}>
             {#if isOpen}

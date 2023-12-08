@@ -1,0 +1,11 @@
+.red-icon {
+  color: var(--st-error-red, #db5139);
+}
+
+.dark-red-icon {
+  color: #991b1b;
+}
+
+.yellow-icon {
+  color: var(--st-yellow, #ffdd5c);
+}

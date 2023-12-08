@@ -1,6 +1,6 @@
 import type { ColDef } from 'ag-grid-community';
 
-export type DataGridColumnDef = ColDef;
+export type DataGridColumnDef<TRowData = any> = ColDef<TRowData>;
 
 export interface DataGridRowSelection<TRowData> {
   data: TRowData;

@@ -14,6 +14,7 @@
   export let menuTitle: string = '';
   export let permissionError: string | undefined = undefined;
   export let status: Status | null = null;
+  export let statusBadgeText: string | undefined = undefined;
   export let statusText: string = '';
   export let showStatusInMenu: boolean = true;
   export let progress: number = 0;
@@ -32,7 +33,7 @@
     <slot />
     <span class="nav-button-status">
       {#if status}
-        <StatusBadge {progress} {status} showTooltip={false} />
+        <StatusBadge badgeText={statusBadgeText} {progress} {status} showTooltip={false} />
       {/if}
     </span>
   </div>
