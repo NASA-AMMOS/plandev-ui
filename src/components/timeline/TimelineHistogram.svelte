@@ -5,6 +5,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
+  import { isEmpty } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResult } from '../../types/constraint';
@@ -186,21 +187,23 @@
 
     // Compute constraint violations histogram
     constraintViolationsToRender = [];
-    constraintResults.forEach(constraintResult => {
-      constraintResult.violations.forEach(violation => {
-        violation.windows.forEach(window => {
-          if (xScaleMax !== null) {
-            const xStart = xScaleMax(window.start);
-            const xEnd = xScaleMax(window.end);
-            const clampedStart = xStart < 0 ? 0 : xStart;
-            const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
-            const width = clampedEnd - clampedStart;
-            const clampedWidth = width <= 0 ? 5 : width;
-            constraintViolationsToRender.push({ width: clampedWidth, x: clampedStart });
-          }
+    constraintResults
+      .filter(result => !isEmpty(result))
+      .forEach(constraintResult => {
+        constraintResult.violations.forEach(violation => {
+          violation.windows.forEach(window => {
+            if (xScaleMax !== null) {
+              const xStart = xScaleMax(window.start);
+              const xEnd = xScaleMax(window.end);
+              const clampedStart = xStart < 0 ? 0 : xStart;
+              const clampedEnd = xEnd > drawWidth ? drawWidth : xEnd;
+              const width = clampedEnd - clampedStart;
+              const clampedWidth = width <= 0 ? 5 : width;
+              constraintViolationsToRender.push({ width: clampedWidth, x: clampedStart });
+            }
+          });
         });
       });
-    });
   }
 
   $: if (histogramContainer && drawWidth) {

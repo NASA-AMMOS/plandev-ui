@@ -28,11 +28,11 @@ const gql = {
     query CheckConstraints($planId: Int!) {
       constraintResponses: constraintViolations(planId: $planId) {
         success
+        constraintId
+        constraintName
+        type
         results {
-          constraintId
-          constraintName
           resourceIds
-          type
           gaps {
             end
             start

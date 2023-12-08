@@ -6,9 +6,10 @@
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
-  import type { Constraint, ConstraintResult } from '../../types/constraint';
+  import type { Constraint, ConstraintResponse } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -19,7 +20,7 @@
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: Constraint;
-  export let constraintResult: ConstraintResult;
+  export let constraintResponse: ConstraintResponse;
   export let hasDeletePermission: boolean = false;
   export let hasEditPermission: boolean = false;
   export let plan: Plan | null;
@@ -29,7 +30,8 @@
 
   const dispatch = createEventDispatcher();
 
-  $: violationCount = constraintResult?.violations?.length;
+  $: violationCount = constraintResponse?.results?.violations?.length;
+  $: success = constraintResponse?.success;
 </script>
 
 <div class="constraint-list-item">
@@ -47,7 +49,11 @@
               {violationCount}
             {/if}
           </div>
-        {:else}
+        {:else if constraintResponse && !success}
+          <div class="violations-error" use:tooltip={{ content: 'Compile Errors', placement: 'top' }}>
+            <WarningIcon />
+          </div>
+        {:else if constraintResponse && success}
           <div class="no-violations" use:tooltip={{ content: 'No Violations', placement: 'top' }}>
             <CheckmarkIcon />
           </div>
@@ -77,9 +83,9 @@
     </Collapse>
 
     <Collapse title="Violations" defaultExpanded={false}>
-      {#if constraintResult?.violations?.length}
+      {#if constraintResponse?.results?.violations?.length}
         <div class="violations">
-          {#each constraintResult.violations as violation}
+          {#each constraintResponse?.results?.violations as violation}
             {#each violation.windows as window}
               <ConstraintViolationButton {window} />
             {/each}
@@ -150,6 +156,15 @@
   .no-violations {
     align-items: center;
     color: var(--st-success-green);
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    width: 20px;
+  }
+
+  .violations-error {
+    align-items: center;
+    color: var(--st-error-red);
     display: flex;
     flex-shrink: 0;
     justify-content: center;

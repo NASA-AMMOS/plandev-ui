@@ -29,18 +29,18 @@ export type ConstraintViolation = {
 };
 
 export type ConstraintResult = {
-  constraintId: Constraint['id'];
-  constraintName: Constraint['name'];
   gaps: TimeRange[];
   resourceIds: string[];
-  type: ConstraintType;
   violations: ConstraintViolation[];
 };
 
 export type ConstraintResponse = {
+  constraintId: Constraint['id'];
+  constraintName: Constraint['name'];
   errors: UserCodeError[];
   results: ConstraintResult;
   success: boolean;
+  type: ConstraintType;
 };
 
 export type UserCodeError = {

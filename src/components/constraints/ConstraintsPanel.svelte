@@ -8,11 +8,11 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
+  import { isEmpty } from 'lodash-es';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     checkConstraintsStatus,
-    constraintResultMap,
-    constraintResults,
+    constraintResponseMap,
     constraintVisibilityMap,
     constraints,
     setAllConstraintsVisible,
@@ -21,7 +21,7 @@
   import { field } from '../../stores/form';
   import { plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import type { User } from '../../types/app';
-  import type { Constraint, ConstraintResult } from '../../types/constraint';
+  import type { Constraint, ConstraintResponse } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
@@ -51,7 +51,7 @@
   let startTimeDoyField: FieldStore<string>;
   let showFilters: boolean = false;
   let showConstraintsWithNoViolations: boolean = true;
-  let filteredConstraintResultMap: Record<Constraint['id'], ConstraintResult> = {};
+  let filteredConstraintResponseMap: Record<Constraint['id'], ConstraintResponse> = {};
 
   $: startTimeDoy = $plan?.start_time_doy || '';
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
@@ -60,33 +60,42 @@
   $: startTimeMs = getUnixEpochTime(startTimeDoy);
   $: endTimeMs = getUnixEpochTime(endTimeDoy);
 
-  $: if ($constraints && $constraintResults && startTimeMs && endTimeMs) {
-    filteredConstraintResultMap = {};
+  $: if ($constraints && $constraintResponseMap && startTimeMs && endTimeMs) {
+    filteredConstraintResponseMap = {};
     $constraints.forEach(constraint => {
-      const constraintResult = $constraintResultMap[constraint.id];
-      if (constraintResult) {
+      const constraintResponse = $constraintResponseMap[constraint.id];
+      if (constraintResponse) {
         // Filter violations/windows by time bounds
-        const filteredViolations = constraintResult.violations.map(violation => ({
-          ...violation,
-          windows: violation.windows.filter(window => window.end >= startTimeMs && window.start <= endTimeMs),
-        }));
-        filteredConstraintResultMap[constraint.id] = { ...constraintResult, violations: filteredViolations };
+        if (constraintResponse.results && !isEmpty(constraintResponse.results)) {
+          constraintResponse.results.violations = constraintResponse.results.violations.map(violation => ({
+            ...violation,
+            windows: violation.windows.filter(window => window.end >= startTimeMs && window.start <= endTimeMs),
+          }));
+        }
+        filteredConstraintResponseMap[constraint.id] = {
+          constraintId: constraintResponse.constraintId,
+          constraintName: constraintResponse.constraintName,
+          errors: constraintResponse.errors,
+          results: constraintResponse.results,
+          success: constraintResponse.success,
+          type: constraintResponse.type,
+        };
       }
     });
   }
 
   $: filteredConstraints = filterConstraints(
     $constraints,
-    filteredConstraintResultMap,
+    filteredConstraintResponseMap,
     filterText,
     showConstraintsWithNoViolations,
   );
-  $: totalViolationCount = getViolationCount($constraintResults);
-  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResultMap));
+  $: totalViolationCount = getViolationCount(Object.values($constraintResponseMap));
+  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponseMap));
 
   function filterConstraints(
     constraints: Constraint[],
-    filteredConstraintResultMap: Record<Constraint['id'], ConstraintResult>,
+    filteredConstraintResponseMap: Record<Constraint['id'], ConstraintResponse>,
     filterText: string,
     showConstraintsWithNoViolations: boolean,
   ) {
@@ -97,9 +106,9 @@
         return false;
       }
 
-      const constraintResult = filteredConstraintResultMap[constraint.id];
+      const constraintResponse = filteredConstraintResponseMap[constraint.id];
       // Always show constraints with no violations
-      if (!constraintResult?.violations?.length) {
+      if (!constraintResponse?.results.violations?.length) {
         return showConstraintsWithNoViolations;
       }
 
@@ -107,9 +116,9 @@
     });
   }
 
-  function getViolationCount(constraintResults: ConstraintResult[]) {
-    return constraintResults.reduce((count, constraintResult) => {
-      return count + constraintResult.violations.length;
+  function getViolationCount(constraintResponse: ConstraintResponse[]) {
+    return constraintResponse.reduce((count, constraintResponse) => {
+      return constraintResponse.results.violations ? constraintResponse.results.violations.length + count : 0;
     }, 0);
   }
 
@@ -278,11 +287,11 @@
         {#each filteredConstraints as constraint}
           <ConstraintListItem
             {constraint}
-            constraintResult={filteredConstraintResultMap[constraint.id]}
+            constraintResponse={filteredConstraintResponseMap[constraint.id]}
             hasDeletePermission={$plan ? featurePermissions.constraints.canDelete(user, $plan) : false}
             hasEditPermission={$plan ? featurePermissions.constraints.canUpdate(user, $plan) : false}
             plan={$plan}
-            totalViolationCount={$constraintResultMap[constraint.id]?.violations?.length || 0}
+            totalViolationCount={$constraintResponseMap[constraint.id]?.results.violations?.length || 0}
             {user}
             visible={$constraintVisibilityMap[constraint.id]}
             on:toggleVisibility={toggleVisibility}

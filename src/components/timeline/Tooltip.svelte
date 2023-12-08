@@ -2,8 +2,10 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
+  import { find } from 'lodash-es';
+  import { constraintResponseMap } from '../../stores/constraints';
   import type { ActivityDirective } from '../../types/activity';
-  import type { ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResponse, ConstraintResult } from '../../types/constraint';
   import type { Span } from '../../types/simulation';
   import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
@@ -186,14 +188,20 @@
   }
 
   function textForConstraintViolation(constraintViolation: ConstraintResult): string {
-    const { constraintName } = constraintViolation;
-    return `
+    const matchResponse: ConstraintResponse = find(
+      Object.values(constraintResponseMap),
+      (response: ConstraintResponse) => response.results === constraintViolation,
+    );
+
+    return matchResponse
+      ? `
       <div>
         Constraint Violation
         <br>
-        Name: ${constraintName}
+        Name: ${matchResponse.constraintName}
       </div>
-    `;
+    `
+      : '';
   }
 
   function textForLinePoint(point: LinePoint): string {

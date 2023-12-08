@@ -1,4 +1,4 @@
-import { keyBy } from 'lodash-es';
+import { isEmpty, keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { Constraint, ConstraintResponse, ConstraintResult } from '../types/constraint';
 import gql from '../utilities/gql';
@@ -50,13 +50,15 @@ export const constraintResults: Readable<ConstraintResult[]> = derived(
       .reduce((list: ConstraintResult[], constraintResult) => {
         list.push({
           ...constraintResult,
-          violations: constraintResult.violations.map(violation => ({
-            ...violation,
-            windows: violation.windows.map(({ end, start }) => ({
-              end: $planStartTimeMs + end / 1000,
-              start: $planStartTimeMs + start / 1000,
-            })),
-          })),
+          violations: !isEmpty(constraintResult)
+            ? constraintResult.violations.map(violation => ({
+                ...violation,
+                windows: violation.windows.map(({ end, start }) => ({
+                  end: $planStartTimeMs + end / 1000,
+                  start: $planStartTimeMs + start / 1000,
+                })),
+              }))
+            : [],
         });
 
         return list;
@@ -64,14 +66,16 @@ export const constraintResults: Readable<ConstraintResult[]> = derived(
 );
 
 export const visibleConstraintResults: Readable<ConstraintResult[]> = derived(
-  [constraintResults, constraintVisibilityMap],
-  ([$constraintResults, $constraintVisibilityMap]) =>
-    $constraintResults.filter(constraintResult => $constraintVisibilityMap[constraintResult.constraintId]),
+  [constraintResponse, constraintVisibilityMap],
+  ([$constraintResponse, $constraintVisibilityMap]) =>
+    $constraintResponse
+      .filter(response => $constraintVisibilityMap[response.constraintId])
+      .map(response => response.results),
 );
 
-export const constraintResultMap: Readable<Record<Constraint['id'], ConstraintResult>> = derived(
-  [constraintResults],
-  ([$constraintResults]) => keyBy($constraintResults, 'constraintId'),
+export const constraintResponseMap: Readable<Record<Constraint['id'], ConstraintResponse>> = derived(
+  [constraintResponse],
+  ([$constraintResponse]) => keyBy($constraintResponse, 'constraintId'),
 );
 
 /* Helper Functions. */
