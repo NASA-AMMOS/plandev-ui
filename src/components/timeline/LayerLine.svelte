@@ -192,13 +192,25 @@
     return points;
   }
 
-  function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | null {
+  function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | HTMLCanvasElement | null {
     if (!radius) {
       return null;
     }
 
-    const tempCanvas = new OffscreenCanvas(radius * 2 * dpr, radius * 2 * dpr);
-    const tempCtx = tempCanvas.getContext('2d');
+    let tempCanvas: OffscreenCanvas | HTMLCanvasElement;
+    let tempCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+
+    if ('OffscreenCanvas' in window) {
+      tempCanvas = new OffscreenCanvas(radius * 2 * dpr, radius * 2 * dpr);
+    } else {
+      tempCanvas = document.createElement('canvas');
+      tempCanvas.height = radius * 2 * dpr;
+      tempCanvas.width = radius * 2 * dpr;
+      tempCanvas.style.height = `${radius * 2}px`;
+      tempCanvas.style.width = `${radius * 2}px`;
+    }
+
+    tempCtx = tempCanvas.getContext('2d');
 
     if (!tempCtx) {
       return null;
