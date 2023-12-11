@@ -125,7 +125,7 @@ import type {
   TagsSetInput,
 } from '../types/tags';
 import type { Row, Timeline } from '../types/timeline';
-import type { View, ViewDefinition, ViewInsertInput, ViewUpdateInput } from '../types/view';
+import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
 import { convertToQuery, getSearchParameterNumber, setQueryParam, sleep } from './generic';
 import gql, { convertToGQLArray } from './gql';
@@ -2171,7 +2171,7 @@ const effects = {
     }
   },
 
-  async deleteView(view: View, user: User | null): Promise<boolean> {
+  async deleteView(view: ViewSlim, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_VIEW(user, view)) {
         throwPermissionError('delete this view');
@@ -2186,25 +2186,27 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_VIEW, { id: view.id }, user);
         if (data.deletedView != null) {
+          showSuccessToast('View Deleted Successfully');
           return true;
         } else {
           throw Error(`Unable to delete view "${view.name}"`);
         }
       }
     } catch (e) {
+      showFailureToast('View Delete Failed');
       catchError(e as Error);
     }
 
     return false;
   },
 
-  async deleteViews(views: View[], user: User | null): Promise<boolean> {
+  async deleteViews(views: ViewSlim[], user: User | null): Promise<boolean> {
     try {
       const hasPermission = views.reduce((previousValue, view) => {
-        return previousValue || queryPermissions.DELETE_VIEWS(user, view);
+        return previousValue && queryPermissions.DELETE_VIEWS(user, view);
       }, true);
       if (!hasPermission) {
-        throwPermissionError('delete these views');
+        throwPermissionError('delete one or all of these views');
       }
 
       const { confirm } = await showConfirmModal(
@@ -2225,12 +2227,14 @@ const effects = {
           if (leftoverViewIds.length > 0) {
             throw new Error(`Some views were not successfully deleted: ${leftoverViewIds.join(', ')}`);
           }
+          showSuccessToast('Views Deleted Successfully');
           return true;
         } else {
           throw Error('Unable to delete views');
         }
       }
     } catch (e) {
+      showFailureToast('View Deletes Failed');
       catchError(e as Error);
     }
 

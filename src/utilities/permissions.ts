@@ -19,7 +19,7 @@ import type { SchedulingCondition, SchedulingGoal } from '../types/scheduling';
 import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
-import type { View } from '../types/view';
+import type { View, ViewSlim } from '../types/view';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
@@ -506,10 +506,10 @@ const queryPermissions = {
   DELETE_USER_SEQUENCE: (user: User | null, sequence: AssetWithOwner<UserSequence>): boolean => {
     return isUserAdmin(user) || (getPermission(['delete_user_sequence_by_pk'], user) && isUserOwner(user, sequence));
   },
-  DELETE_VIEW: (user: User | null, view: View): boolean => {
+  DELETE_VIEW: (user: User | null, view: ViewSlim): boolean => {
     return isUserAdmin(user) || (getPermission(['delete_view_by_pk'], user) && isUserOwner(user, view));
   },
-  DELETE_VIEWS: (user: User | null, view: View): boolean => {
+  DELETE_VIEWS: (user: User | null, view: ViewSlim): boolean => {
     return isUserAdmin(user) || (getPermission(['delete_view'], user) && isUserOwner(user, view));
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
@@ -870,7 +870,7 @@ interface FeaturePermissions {
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
   tags: CRUDPermission<Tag>;
-  view: CRUDPermission<View>;
+  view: CRUDPermission<ViewSlim>;
 }
 
 const featurePermissions: FeaturePermissions = {

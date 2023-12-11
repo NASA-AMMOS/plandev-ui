@@ -5,9 +5,10 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { initializeView, view, views } from '../../stores/views';
   import type { User } from '../../types/app';
-  import type { View } from '../../types/view';
+  import type { View, ViewSlim } from '../../types/view';
   import effects from '../../utilities/effects';
   import { setQueryParam } from '../../utilities/generic';
+  import { downloadView as downloadViewUtil } from '../../utilities/view';
   import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
@@ -22,12 +23,12 @@
 
   const dispatch = createEventDispatcher();
 
-  let userViews: View[] = [];
+  let userViews: ViewSlim[] = [];
 
-  $: userViews = $views.filter((view: View) => view.owner === user?.id);
+  $: userViews = $views.filter((view: ViewSlim) => view.owner === user?.id);
 
   async function deleteView({ detail: viewId }: CustomEvent<number>) {
-    const matchingView = userViews.find(v => v.id === viewId);
+    const matchingView = $views.find(v => v.id === viewId);
     if (matchingView) {
       const success = await effects.deleteView(matchingView, user);
 
@@ -40,7 +41,7 @@
   }
 
   async function deleteViews({ detail: viewIds }: CustomEvent<number[]>) {
-    const matchingViews = userViews.filter(v => viewIds.some(viewId => viewId === v.id));
+    const matchingViews = $views.filter(v => viewIds.some(viewId => viewId === v.id));
     const success = await effects.deleteViews(matchingViews, user);
 
     if (success) {
@@ -58,13 +59,26 @@
     }
   }
 
-  async function openView({ detail: viewId }: CustomEvent<number>) {
+  async function getFullView(viewId: number): Promise<View | null> {
     const query = new URLSearchParams(`?${SearchParameters.VIEW_ID}=${viewId}`);
-    const newView = await effects.getView(query, user);
+    return await effects.getView(query, user);
+  }
 
-    if (view !== null && newView !== null) {
-      initializeView({ ...newView });
-      setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
+  async function openView({ detail: viewId }: CustomEvent<number>) {
+    const view = await getFullView(viewId);
+    if (view !== null) {
+      initializeView({ ...view });
+      setQueryParam(SearchParameters.VIEW_ID, `${view.id}`);
+      dispatch('close');
+    } else {
+      console.log(`No view found for ID: ${viewId}`);
+    }
+  }
+
+  async function downloadView({ detail: viewId }: CustomEvent<number>) {
+    const view = await getFullView(viewId);
+    if (view !== null) {
+      downloadViewUtil(view);
       dispatch('close');
     } else {
       console.log(`No view found for ID: ${viewId}`);
@@ -87,6 +101,7 @@
           on:deleteView={deleteView}
           on:deleteViews={deleteViews}
           on:openView={openView}
+          on:downloadView={downloadView}
         />
       </TabPanel>
       <TabPanel>
@@ -96,6 +111,7 @@
           on:deleteView={deleteView}
           on:deleteViews={deleteViews}
           on:openView={openView}
+          on:downloadView={downloadView}
         />
       </TabPanel>
     </Tabs>

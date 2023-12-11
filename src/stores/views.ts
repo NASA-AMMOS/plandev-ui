@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
-import type { View, ViewGrid, ViewTable, ViewToggleEvent } from '../types/view';
+import type { View, ViewGrid, ViewSlim, ViewTable, ViewToggleEvent } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
 import { TimelineInteractionMode, TimelineLockStatus } from '../utilities/timeline';
@@ -9,7 +9,7 @@ import { gqlSubscribable } from './subscribable';
 
 /* Subscriptions. */
 
-export const views = gqlSubscribable<View[]>(gql.SUB_VIEWS, {}, [], null);
+export const views = gqlSubscribable<ViewSlim[]>(gql.SUB_VIEWS, {}, [], null);
 
 /* Writeable. */
 

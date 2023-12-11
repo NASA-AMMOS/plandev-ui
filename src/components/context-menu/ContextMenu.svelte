@@ -63,13 +63,14 @@
   }
 
   function onKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
+    if (shown && event.key === 'Escape') {
       hide(true);
+      event.stopPropagation();
     }
   }
 </script>
 
-<svelte:body on:click={() => hide(true)} on:keydown={onKeyDown} />
+<svelte:body on:click={() => hide(true)} on:keydown|capture={onKeyDown} />
 
 {#if shown}
   <!-- svelte-ignore a11y-mouse-events-have-key-events -->

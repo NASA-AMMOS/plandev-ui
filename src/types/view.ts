@@ -92,3 +92,5 @@ export type View = {
   owner: UserId;
   updated_at: string;
 };
+
+export type ViewSlim = Omit<View, 'definition'>;

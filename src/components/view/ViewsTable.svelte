@@ -5,21 +5,20 @@
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { View } from '../../types/view';
+  import type { View, ViewSlim } from '../../types/view';
   import { featurePermissions } from '../../utilities/permissions';
-  import { downloadView as downloadViewUtil } from '../../utilities/view';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
 
-  export let views: View[] = [];
+  export let views: ViewSlim[] = [];
   export let user: User | null;
 
   type CellRendererParams = {
-    deleteView: (view: View) => void;
-    downloadView: (view: View) => void;
-    openView: (view: View) => void;
+    deleteView: (view: ViewSlim) => void;
+    downloadView: (view: ViewSlim) => void;
+    openView: (view: ViewSlim) => void;
   };
-  type ViewCellRendererParams = ICellRendererParams<View> & CellRendererParams;
+  type ViewCellRendererParams = ICellRendererParams<ViewSlim> & CellRendererParams;
 
   const dispatch = createEventDispatcher();
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -91,7 +90,7 @@
       },
       cellRendererParams: {
         deleteView,
-        downloadView: downloadViewUtil,
+        downloadView,
         openView,
       } as CellRendererParams,
       field: 'actions',
@@ -104,20 +103,24 @@
     },
   ];
 
-  function deleteView({ id: viewId }: View) {
+  function deleteView({ id: viewId }: ViewSlim) {
     dispatch('deleteView', viewId);
   }
 
-  function deleteViews({ detail: views }: CustomEvent<View[]>) {
+  function downloadView({ id: viewId }: ViewSlim) {
+    dispatch('downloadView', viewId);
+  }
+
+  function deleteViews({ detail: views }: CustomEvent<ViewSlim[]>) {
     const viewIds = views.map(({ id }) => id);
     dispatch('deleteViews', viewIds);
   }
 
-  function hasDeletePermission(user: User | null, view: View) {
+  function hasDeletePermission(user: User | null, view: ViewSlim) {
     return featurePermissions.view.canDelete(user, view);
   }
 
-  function openView({ id: viewId }: Partial<View>) {
+  function openView({ id: viewId }: Partial<ViewSlim>) {
     dispatch('openView', viewId);
   }
 </script>
