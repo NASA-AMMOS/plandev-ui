@@ -35,6 +35,7 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
 
   const dispatch = createEventDispatcher();
+  const textMeasurementCache: Record<string, { textHeight: number; textWidth: number }> = {};
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
@@ -142,7 +143,7 @@
           if (textWidth < xWidth) {
             ctx.fillText(labelText, xStart + xWidth / 2 - textWidth / 2, drawHeight / 2 + textHeight / 2, textWidth);
           } else {
-            const extraLabelPadding = 10;
+            const extraLabelPadding = 8;
             let newLabelText = labelText;
             let newTextWidth = textWidth;
 
@@ -153,12 +154,15 @@
               newTextWidth = textMeasurement.textWidth;
             }
 
-            ctx.fillText(
-              `${newLabelText}...`,
-              xStart + xWidth / 2 - newTextWidth / 2,
-              drawHeight / 2 + textHeight / 2,
-              newTextWidth,
-            );
+            // Only draw if text will be visible
+            if (newTextWidth > 0) {
+              ctx.fillText(
+                `${newLabelText}...`,
+                xStart + xWidth / 2 - newTextWidth / 2,
+                drawHeight / 2 + textHeight / 2,
+                newTextWidth,
+              );
+            }
           }
         }
       }
@@ -193,13 +197,19 @@
   }
 
   function measureText(text: string) {
+    if (textMeasurementCache[text]) {
+      return textMeasurementCache[text];
+    }
     if (ctx) {
       const textMetrics = ctx.measureText(text);
       const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
       const textWidth = textMetrics.width;
-      return { textHeight, textWidth };
+      const measurement = { textHeight, textWidth };
+      textMeasurementCache[text] = measurement;
+      return measurement;
     }
-    return { textHeight: 0, textWidth: 0 };
+    const measurement = { textHeight: 0, textWidth: 0 };
+    return measurement;
   }
 
   function onContextMenu(e: MouseEvent | undefined): void {
@@ -285,7 +295,7 @@
     textWidth: number;
   } {
     const fontSize = point.label?.fontSize || 10;
-    const fontFace = point.label?.fontFace || 'Helvetica Neue';
+    const fontFace = point.label?.fontFace || 'Inter';
     if (ctx) {
       ctx.fillStyle = point.label?.color || '#000000';
       ctx.font = `${fontSize}px ${fontFace}`;
