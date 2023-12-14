@@ -1224,6 +1224,14 @@ const gql = {
     }
   `,
 
+  GET_UPLOADED_FILENAME: `#graphql
+    query GetUploadedFileName($id: Int!) {
+      uploaded_file(where: { id: { _eq: $id }}) {
+        name
+      }
+    }
+  `,
+
   GET_USER_SEQUENCE: `#graphql
     query GetUserSequence($id: Int!) {
       userSequence: user_sequence_by_pk(id: $id) {

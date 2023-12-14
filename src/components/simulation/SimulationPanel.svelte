@@ -131,7 +131,7 @@
         arguments: newArgumentsMap,
       };
 
-      effects.updateSimulation($plan, newSimulation, user, newFiles);
+      effects.updateSimulation($plan, newSimulation, user, newFiles, $plan.model.parameters.parameters);
     }
   }
 
@@ -149,7 +149,7 @@
         arguments: newArguments,
       };
 
-      effects.updateSimulation($plan, newSimulation, user, newFiles);
+      effects.updateSimulation($plan, newSimulation, user, newFiles, $plan.model.parameters.parameters);
     }
   }
 

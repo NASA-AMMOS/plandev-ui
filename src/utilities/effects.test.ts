@@ -2,8 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Errors from '../stores/errors';
 import type { User } from '../types/app';
 import type { Model } from '../types/model';
+import type { ArgumentsMap, ParametersMap } from '../types/parameter';
 import type { Plan } from '../types/plan';
-import effects from './effects';
+import effects, { replacePaths } from './effects';
 import * as Modals from './modal';
 import * as Requests from './requests';
 
@@ -308,6 +309,50 @@ describe('Handle modal and requests in effects', () => {
         'Create Activity Directive Tags Failed',
         Error('Some activity directive tags were not successfully created'),
       );
+    });
+  });
+
+  describe('replacePaths', () => {
+    it('should find and replace all matching paths in sim config', async () => {
+      const modelParameters: ParametersMap = {
+        parameter0: { order: 0, schema: { type: 'int' } },
+        parameter1: { order: 1, schema: { type: 'path' } },
+        parameter2: { order: 2, schema: { items: { x: { type: 'boolean' }, y: { type: 'path' } }, type: 'struct' } },
+        parameter3: {
+          order: 3,
+          schema: { items: { type: 'variant', variants: [{ key: 'A', label: 'A' }] }, type: 'series' },
+        },
+        parameter4: { order: 4, schema: { items: { type: 'path' }, type: 'series' } },
+      };
+      const simArgs: ArgumentsMap = {
+        parameter0: 1,
+        parameter1: 'abcdefg',
+        parameter2: {
+          x: true,
+          y: 'hijklmnop',
+        },
+        parameter3: ['A'],
+        parameter4: ['qrstuvwxyz', 'zyxwvut'],
+      };
+      const filenames = {
+        abcdefg: 'path1',
+        hijklmnop: 'path2',
+        qrstuvwxyz: 'path3',
+        zyxwvut: 'path4',
+      };
+
+      const res = replacePaths(modelParameters, simArgs, filenames);
+
+      expect(res).toEqual({
+        parameter0: 1,
+        parameter1: 'path1',
+        parameter2: {
+          x: true,
+          y: 'path2',
+        },
+        parameter3: ['A'],
+        parameter4: ['path3', 'path4'],
+      });
     });
   });
 });

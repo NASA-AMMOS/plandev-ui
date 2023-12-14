@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
+import { env } from '$env/dynamic/public';
 import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { SearchParameters } from '../enums/searchParameters';
@@ -54,10 +55,13 @@ import type { Extension, ExtensionPayload } from '../types/extension';
 import type { Model, ModelInsertInput, ModelSchema, ModelSlim } from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
+  Argument,
   ArgumentsMap,
   EffectiveArguments,
+  Parameter,
   ParameterValidationError,
   ParameterValidationResponse,
+  ParametersMap,
 } from '../types/parameter';
 import type {
   PermissibleQueriesMap,
@@ -93,6 +97,7 @@ import type {
   SchedulingSpecGoalInsertInput,
   SchedulingSpecInsertInput,
 } from '../types/scheduling';
+import type { ValueSchema } from '../types/schema';
 import type {
   CommandDictionary,
   GetSeqJsonResponse,
@@ -4107,10 +4112,33 @@ const effects = {
     simulationSetInput: Simulation,
     user: User | null,
     newFiles: File[] = [],
+    modelParameters: ParametersMap | null = null,
   ): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_SIMULATION(user, plan)) {
         throwPermissionError('update this simulation');
+      }
+
+      const ids = await effects.uploadFiles(newFiles, user);
+      const original_filename_to_id: Record<string, number> = {};
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        if (id !== null) {
+          original_filename_to_id[newFiles[i].name] = id;
+        }
+      }
+
+      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
+      // Here, we use the ids of the files we just uploaded to look up the generated filenames
+      const generatedFilenames: Record<string, string> = {};
+      for (const newFile of newFiles) {
+        const id = original_filename_to_id[newFile.name];
+        const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user))[
+          'uploaded_file'
+        ];
+        if (response !== null) {
+          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0]['name']}`;
+        }
       }
 
       const data = await reqHasura<Pick<Simulation, 'id'>>(
@@ -4118,7 +4146,7 @@ const effects = {
         {
           id: simulationSetInput.id,
           simulation: {
-            arguments: simulationSetInput.arguments,
+            arguments: replacePaths(modelParameters, simulationSetInput.arguments, generatedFilenames),
             simulation_end_time: simulationSetInput?.simulation_end_time ?? null,
             simulation_start_time: simulationSetInput?.simulation_start_time ?? null,
             simulation_template_id: simulationSetInput?.template?.id ?? null,
@@ -4127,7 +4155,6 @@ const effects = {
         user,
       );
       if (data.updateSimulation !== null) {
-        await effects.uploadFiles(newFiles, user);
         showSuccessToast('Simulation Updated Successfully');
       } else {
         throw Error(`Unable to update simulation with ID: "${simulationSetInput.id}"`);
@@ -4266,15 +4293,16 @@ const effects = {
     }
   },
 
-  async uploadFiles(files: File[], user: User | null): Promise<boolean> {
+  async uploadFiles(files: File[], user: User | null): Promise<(number | null)[]> {
     try {
+      const ids = [];
       for (const file of files) {
-        await effects.uploadFile(file, user);
+        ids.push(await effects.uploadFile(file, user));
       }
-      return true;
+      return ids;
     } catch (e) {
       catchError(e as Error);
-      return false;
+      return [];
     }
   },
 
@@ -4358,5 +4386,55 @@ const effects = {
     }
   },
 };
+
+/**
+ * Traverses the given simulation arguments and does a "find and replace", replacing any paths that match the keys of `pathsToReplace` with the corresponding values.
+ *
+ * @param modelParameters The type definitions of the mission model parameters. Used to determine which parameters have type 'path'.
+ * @param simArgs The full simulation arguments, which are assumed to conform to the above type definition.
+ * @param pathsToReplace A map from old paths to new paths. Any occurrences of old paths in simArgs will be replaced with new paths.
+ * @returns
+ */
+export function replacePaths(
+  modelParameters: ParametersMap | null,
+  simArgs: ArgumentsMap,
+  pathsToReplace: Record<string, string>,
+): ArgumentsMap {
+  if (modelParameters === null) {
+    return simArgs;
+  }
+  const result: ArgumentsMap = {};
+  for (const parameterName in modelParameters) {
+    const parameter: Parameter = modelParameters[parameterName];
+    const arg: Argument = simArgs[parameterName];
+    if (arg !== undefined) {
+      result[parameterName] = replacePathsHelper(parameter.schema, arg, pathsToReplace);
+    }
+  }
+  return result;
+}
+
+function replacePathsHelper(schema: ValueSchema, arg: Argument, pathsToReplace: Record<string, string>) {
+  switch (schema.type) {
+    case 'path':
+      if (arg in pathsToReplace) {
+        return pathsToReplace[arg];
+      } else {
+        return arg;
+      }
+    case 'struct':
+      return (function () {
+        const res: Argument = {};
+        for (const key in schema.items) {
+          res[key] = replacePathsHelper(schema.items[key], arg[key], pathsToReplace);
+        }
+        return res;
+      })();
+    case 'series':
+      return arg.map((x: Argument) => replacePathsHelper(schema.items, x, pathsToReplace));
+    default:
+      return arg;
+  }
+}
 
 export default effects;
