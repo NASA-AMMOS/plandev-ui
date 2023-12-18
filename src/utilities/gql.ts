@@ -1158,6 +1158,14 @@ const gql = {
     }
   `,
 
+  GET_SIMULATION_DATASET_ID: `#graphql
+    query GetSimulationDatasetId($datasetId: Int!) {
+      simulation_dataset(where: {dataset_id: {_eq: $datasetId}}) {
+        id
+      }
+    }
+  `,
+
   GET_SPANS: `#graphql
     query GetSpans($datasetId: Int!) {
       span(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
@@ -1399,6 +1407,7 @@ const gql = {
       schedule(specificationId: $specificationId) {
         reason
         status
+        datasetId
       }
     }
   `,

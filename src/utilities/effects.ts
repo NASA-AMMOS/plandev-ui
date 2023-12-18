@@ -3705,11 +3705,23 @@ const effects = {
             const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId }, user);
             const { schedule } = data;
             if (schedule != null) {
-              const { reason, status } = schedule;
+              const { datasetId, reason, status } = schedule;
 
               if (status === 'complete') {
                 schedulingStatus.set(Status.Complete);
                 incomplete = false;
+                if (datasetId != null) {
+                  const simDatasetIdData = await reqHasura<{ id: number }>(
+                    gql.GET_SIMULATION_DATASET_ID,
+                    { datasetId },
+                    user,
+                  );
+                  const { simulation_dataset } = simDatasetIdData;
+                  // the request above will return either 0 or 1 element
+                  if (Array.isArray(simulation_dataset) && simulation_dataset.length > 0) {
+                    simulationDatasetId.set(simulation_dataset[0].id);
+                  }
+                }
                 showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
               } else if (status === 'failed') {
                 schedulingStatus.set(Status.Failed);

@@ -69,6 +69,7 @@ export type SchedulingGoalInsertInput = Omit<
 >;
 
 export type SchedulingResponse = {
+  datasetId: number | null;
   reason: SchedulingError;
   status: 'complete' | 'failed' | 'incomplete';
 };
