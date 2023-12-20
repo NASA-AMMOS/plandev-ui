@@ -6,7 +6,7 @@
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
   import { pick } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
-  import { allResources } from '../../stores/simulation';
+  import { allResources, fetchingResources, fetchingResourcesExternal } from '../../stores/simulation';
   import { selectedRow } from '../../stores/views';
   import type {
     ActivityDirective,
@@ -118,6 +118,7 @@
   $: overlaySvgSelection = select(overlaySvg) as Selection<SVGElement, unknown, any, any>;
   $: rowClasses = classNames('row', { 'row-collapsed': !expanded });
   $: hasActivityLayer = !!layers.find(layer => layer.chartType === 'activity');
+  $: hasResourceLayer = !!layers.find(layer => layer.chartType === 'line' || layer.chartType === 'x-range');
 
   // Compute scale domains for axes since it is optionally defined in the view
   $: if ($allResources && yAxes) {
@@ -333,6 +334,10 @@
           {/if}
         </g>
       </svg>
+      <!-- Loading indicator -->
+      {#if hasResourceLayer && ($fetchingResources || $fetchingResourcesExternal)}
+        <div class="loading st-typography-label">Loading</div>
+      {/if}
       <!-- Layers of Canvas Visualizations. -->
       <div class="layers" style="width: {drawWidth}px">
         {#each layers as layer (layer.id)}
@@ -525,5 +530,31 @@
   }
   .active-row :global(.row-header) {
     background: rgba(47, 128, 237, 0.06);
+  }
+
+  .loading {
+    align-items: center;
+    animation: 1s delayVisibility;
+    color: var(--st-gray-50);
+    display: flex;
+    font-size: 10px;
+    height: 100%;
+    justify-content: center;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    z-index: 3;
+  }
+
+  @keyframes delayVisibility {
+    0% {
+      visibility: hidden;
+    }
+    99% {
+      visibility: hidden;
+    }
+    100% {
+      visibility: visible;
+    }
   }
 </style>

@@ -17,7 +17,12 @@ import {
 import { createModelError, createPlanError, creatingModel, creatingPlan, models } from '../stores/plan';
 import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { fetchingResources, selectedSpanId, simulationDatasetId } from '../stores/simulation';
+import {
+  fetchingResources,
+  fetchingResourcesExternal,
+  selectedSpanId,
+  simulationDatasetId,
+} from '../stores/simulation';
 import { createTagError } from '../stores/tags';
 import { applyViewUpdate, view, viewUpdateTimeline } from '../stores/views';
 import type {
@@ -2848,17 +2853,25 @@ const effects = {
     }
   },
 
-  async getResources(datasetId: number, startTimeYmd: string, user: User | null): Promise<Resource[]> {
+  async getResources(
+    datasetId: number,
+    startTimeYmd: string,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<Resource[]> {
     try {
       fetchingResources.set(true);
-      const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId }, user);
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILES, { datasetId }, user, signal);
       const { profile: profiles } = data;
       const sampledProfiles = sampleProfiles(profiles, startTimeYmd);
       fetchingResources.set(false);
       return sampledProfiles;
     } catch (e) {
-      catchError(e as Error);
-      fetchingResources.set(false);
+      const error = e as Error;
+      if (error.name !== 'AbortError') {
+        catchError(error);
+        fetchingResources.set(false);
+      }
       return [];
     }
   },
@@ -2868,8 +2881,10 @@ const effects = {
     simulationDatasetId: number | null,
     startTimeYmd: string,
     user: User | null,
+    signal: AbortSignal | undefined = undefined,
   ): Promise<Resource[]> {
     try {
+      fetchingResourcesExternal.set(true);
       const data = await reqHasura<PlanDataset[]>(
         gql.GET_PROFILES_EXTERNAL,
         {
@@ -2882,6 +2897,7 @@ const effects = {
               : { _eq: simulationDatasetId },
         },
         user,
+        signal,
       );
       const { plan_dataset: plan_datasets } = data;
       if (plan_datasets != null) {
@@ -2894,13 +2910,17 @@ const effects = {
           const sampledResources: Resource[] = sampleProfiles(profiles, startTimeYmd, offset_from_plan_start);
           resources = [...resources, ...sampledResources];
         }
-
+        fetchingResourcesExternal.set(false);
         return resources;
       } else {
         throw Error('Unable to get external resources');
       }
     } catch (e) {
-      catchError(e as Error);
+      const error = e as Error;
+      if (error.name !== 'AbortError') {
+        catchError(error);
+        fetchingResourcesExternal.set(false);
+      }
       return [];
     }
   },
@@ -3004,9 +3024,9 @@ const effects = {
     }
   },
 
-  async getSpans(datasetId: number, user: User | null): Promise<Span[]> {
+  async getSpans(datasetId: number, user: User | null, signal: AbortSignal | undefined = undefined): Promise<Span[]> {
     try {
-      const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId }, user);
+      const data = await reqHasura<Span[]>(gql.GET_SPANS, { datasetId }, user, signal);
       const { span: spans } = data;
       if (spans != null) {
         return spans;

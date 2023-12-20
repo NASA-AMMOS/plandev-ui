@@ -73,6 +73,7 @@
   import {
     enableSimulation,
     externalResources,
+    fetchingResources,
     resetSimulationStores,
     resourceTypes,
     resources,
@@ -152,6 +153,8 @@
   let simulationExtent: string | null;
   let selectedSimulationStatus: string | null;
   let windowWidth = 0;
+  let simulationDataAbortController: AbortController;
+  let resourcesExternalAbortController: AbortController;
 
   $: activityErrorCounts = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -275,8 +278,16 @@
   }
 
   $: if ($plan) {
+    resourcesExternalAbortController?.abort();
+    resourcesExternalAbortController = new AbortController();
     effects
-      .getResourcesExternal($plan.id, $simulationDatasetId ?? null, $plan.start_time, data.user)
+      .getResourcesExternal(
+        $plan.id,
+        $simulationDatasetId ?? null,
+        $plan.start_time,
+        data.user,
+        resourcesExternalAbortController.signal,
+      )
       .then(newResources => ($externalResources = newResources));
   }
 
@@ -285,16 +296,25 @@
     selectActivity(null, null);
   }
 
-  $: if ($plan && $simulationDataset !== undefined) {
-    if ($simulationDataset !== null && $simulationDatasetId !== -1) {
-      const datasetId = $simulationDataset.dataset_id;
-      const startTimeYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
-      effects.getResources(datasetId, startTimeYmd, data.user).then(newResources => ($resources = newResources));
-      effects.getSpans(datasetId, data.user).then(newSpans => ($spans = newSpans));
-    } else {
-      $resources = [];
-      $spans = [];
-    }
+  $: if (
+    $plan &&
+    $simulationDatasetId !== -1 &&
+    $simulationDataset?.id === $simulationDatasetId &&
+    getSimulationStatus($simulationDataset) === Status.Complete
+  ) {
+    const datasetId = $simulationDatasetId;
+    const startTimeYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
+    simulationDataAbortController?.abort();
+    simulationDataAbortController = new AbortController();
+    effects
+      .getResources(datasetId, startTimeYmd, data.user, simulationDataAbortController.signal)
+      .then(newResources => ($resources = newResources));
+    effects.getSpans(datasetId, data.user, simulationDataAbortController.signal).then(newSpans => ($spans = newSpans));
+  } else {
+    simulationDataAbortController?.abort();
+    fetchingResources.set(false);
+    $resources = [];
+    $spans = [];
   }
 
   $: {
