@@ -6,6 +6,11 @@ The client application for [Aerie](https://github.com/NASA-AMMOS/aerie).
 
 <span style="display:block;text-align:center">![Example](/docs/images/Full_Example.png)</span>
 
+## Need Help?
+
+- Join us on the [NASA-AMMOS Slack](https://join.slack.com/t/nasa-ammos/shared_invite/zt-1mlgmk5c2-MgqVSyKzVRUWrXy87FNqPw) (#aerie-users)
+- Contact aerie-support@googlegroups.com
+
 ## Directory Structure
 
 ```sh
