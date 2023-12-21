@@ -1,6 +1,6 @@
 import { bisector, tickStep } from 'd3-array';
 import type { Quadtree, QuadtreeInternalNode, QuadtreeLeaf } from 'd3-quadtree';
-import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
+import { scaleLinear, scalePoint, scaleTime, type ScaleLinear, type ScalePoint, type ScaleTime } from 'd3-scale';
 import {
   timeHour,
   timeInterval,
@@ -139,10 +139,20 @@ export function getXScale(domain: Date[], width: number): ScaleTime<number, numb
     .range([CANVAS_PADDING_X, width - CANVAS_PADDING_X]);
 }
 
+export function getOrdinalYScale(domain: (string | null)[], height: number): ScalePoint<string> {
+  return scalePoint()
+    .domain(domain as string[])
+    .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
+}
+
 export function getYScale(domain: (number | null)[], height: number): ScaleLinear<number, number> {
   return scaleLinear()
     .domain(domain.filter(filterEmpty))
     .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
+}
+
+export function isXRangeLayer(layer: Layer): layer is XRangeLayer {
+  return layer.chartType === 'x-range';
 }
 
 function isQuadtreeLeaf<T>(node?: QuadtreeInternalNode<T> | QuadtreeLeaf<T>): node is QuadtreeLeaf<T> {
@@ -355,7 +365,11 @@ export function createHorizontalGuide(
       if (firstAxis.scaleDomain.length === 2) {
         if (firstAxis.scaleDomain[0] !== null && firstAxis.scaleDomain[1] !== null) {
           // Default y value to the middle of the domain
-          y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+          if (typeof firstAxis.scaleDomain[0] === 'number' && typeof firstAxis.scaleDomain[1] === 'number') {
+            y = (firstAxis.scaleDomain[1] + firstAxis.scaleDomain[0]) / 2;
+          } else {
+            // TODO: Figure out how to place a horizontal guide on a categorical axis
+          }
         }
       }
     }
@@ -494,6 +508,7 @@ export function createTimelineXRangeLayer(
     id,
     name: '',
     opacity: 0.8,
+    showAsLinePlot: false,
     yAxisId,
     ...args,
   };

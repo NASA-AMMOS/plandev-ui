@@ -196,6 +196,7 @@ export type XRangeLayerColorScheme =
 export interface XRangeLayer extends Layer {
   colorScheme: XRangeLayerColorScheme;
   opacity: number;
+  showAsLinePlot: boolean;
 }
 
 export interface XRangePoint extends Point {

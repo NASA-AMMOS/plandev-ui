@@ -95,10 +95,21 @@ export function getTarget(event: Event) {
 
   if (target.tagName === 'INPUT') {
     const input = target as HTMLInputElement;
-    const { name, type, value: valueAsString, valueAsNumber } = input;
-    const value = type === 'number' ? valueAsNumber : valueAsString;
+    const { name, type, value: valueAsString, valueAsNumber, checked } = input;
+    let convertedValue;
 
-    return { name, value };
+    switch (type) {
+      case 'number':
+        convertedValue = valueAsNumber;
+        break;
+      case 'checkbox':
+        convertedValue = checked;
+        break;
+      default:
+        convertedValue = valueAsString;
+    }
+
+    return { name, value: convertedValue };
   } else if (target.tagName === 'SELECT') {
     const select = target as HTMLSelectElement;
     const type = select.getAttribute('data-type') ?? 'text';

@@ -405,6 +405,9 @@
                               "opacity": {
                                 "type": "number"
                               },
+                              "showAsLinePlot": {
+                                "type": "boolean"
+                              },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
                               }

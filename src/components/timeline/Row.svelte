@@ -31,7 +31,12 @@
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
   import { getDoyTime } from '../../utilities/time';
-  import { getYAxesWithScaleDomains, TimelineInteractionMode, type TimelineLockStatus } from '../../utilities/timeline';
+  import {
+    getYAxesWithScaleDomains,
+    isXRangeLayer,
+    TimelineInteractionMode,
+    type TimelineLockStatus,
+  } from '../../utilities/timeline';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import LayerActivity from './LayerActivity.svelte';
   import LayerGaps from './LayerGaps.svelte';
@@ -415,21 +420,40 @@
               on:contextMenu
             />
           {/if}
-          {#if layer.chartType === 'x-range'}
-            <LayerXRange
-              {...layer}
-              {contextmenu}
-              {dpr}
-              drawHeight={computedDrawHeight}
-              {drawWidth}
-              filter={layer.filter.resource}
-              {mousemove}
-              {mouseout}
-              resources={resourcesByViewLayerId[layer.id] ?? []}
-              {xScaleView}
-              on:mouseOver={onMouseOver}
-              on:contextMenu
-            />
+          {#if isXRangeLayer(layer)}
+            {#if layer.showAsLinePlot === true}
+              <LayerLine
+                {...layer}
+                {contextmenu}
+                {dpr}
+                drawHeight={computedDrawHeight}
+                {drawWidth}
+                filter={layer.filter.resource}
+                {mousemove}
+                {mouseout}
+                resources={resourcesByViewLayerId[layer.id] ?? []}
+                {viewTimeRange}
+                {xScaleView}
+                yAxes={yAxesWithScaleDomains}
+                on:mouseOver={onMouseOver}
+                on:contextMenu
+              />
+            {:else}
+              <LayerXRange
+                {...layer}
+                {contextmenu}
+                {dpr}
+                drawHeight={computedDrawHeight}
+                {drawWidth}
+                filter={layer.filter.resource}
+                {mousemove}
+                {mouseout}
+                resources={resourcesByViewLayerId[layer.id] ?? []}
+                {xScaleView}
+                on:mouseOver={onMouseOver}
+                on:contextMenu
+              />
+            {/if}
           {/if}
         {/each}
       </div>

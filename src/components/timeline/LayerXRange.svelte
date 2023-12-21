@@ -222,6 +222,7 @@
     if (e) {
       const { offsetX: x, offsetY: y } = e;
       const points = searchQuadtreeRect<XRangePoint>(quadtree, x, y, drawHeight, maxXWidth, visiblePointsById);
+
       dispatch('mouseOver', { e, layerId: id, points });
     }
   }

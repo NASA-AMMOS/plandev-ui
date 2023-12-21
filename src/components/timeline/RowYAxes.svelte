@@ -1,13 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { axisLeft as d3AxisLeft } from 'd3-axis';
+  import { axisLeft as d3AxisLeft, type AxisScale } from 'd3-axis';
   import { format as d3Format } from 'd3-format';
-  import { select } from 'd3-selection';
+  import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
-  import type { Axis, Layer, LineLayer } from '../../types/timeline';
-  import { getYScale } from '../../utilities/timeline';
+  import type { Axis, Layer, LineLayer, XRangeLayer } from '../../types/timeline';
+  import { getOrdinalYScale, getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -34,8 +34,55 @@
       const axisClass = 'y-axis';
       gSelection.selectAll(`.${axisClass}`).remove();
 
+      /**
+       * TODO: This is a temporary solution to showing state mode changes as a line chart.
+       * The correct way to do this would be generating a Y axes when the user toggles the line chart,
+       * but for now we're just setting the Y axes dynamically based on the data.
+       */
+      const xRangeLayers = layers.filter(layer => layer.chartType === 'x-range');
+      let i = 0;
+
+      for (const layer of xRangeLayers) {
+        const resources = resourcesByViewLayerId[layer.id];
+        const xRangeAxisG = gSelection.append('g').attr('class', axisClass);
+        xRangeAxisG.selectAll('*').remove();
+
+        if ((layer as XRangeLayer).showAsLinePlot && resources && resources.length > 0) {
+          let domain: string[] = [];
+
+          // Get all the unique ordinal values of the chart.
+          for (const value of resources[0].values) {
+            if (domain.indexOf(value.y as string) === -1) {
+              domain.push(value.y as string);
+            }
+          }
+
+          const scale = getOrdinalYScale(domain, drawHeight);
+          // Don't do any special formatting here because we're dealing with strings.
+          const axisLeft = d3AxisLeft(scale as AxisScale<string>)
+            .tickSizeInner(0)
+            .tickSizeOuter(0)
+            .ticks(domain.length)
+            .tickPadding(2);
+          const axisMargin = 2;
+          const startPosition = -(totalWidth + axisMargin * i);
+          marginWidth += i > 0 ? axisMargin : 0;
+          xRangeAxisG.attr('transform', `translate(${startPosition}, 0)`);
+          xRangeAxisG.style('color', 'black');
+          xRangeAxisG.call(axisLeft);
+          xRangeAxisG.call(g => g.select('.domain').remove());
+
+          totalWidth += getBoundingClientRectWidth(xRangeAxisG.node());
+        }
+
+        drawSeparator(xRangeAxisG);
+        i++;
+      }
+
       for (let i = 0; i < yAxes.length; ++i) {
         const axis = yAxes[i];
+        const axisG = gSelection.append('g').attr('class', axisClass);
+        axisG.selectAll('*').remove();
 
         // Get color for axis by examining associated layers. If more than one layer is associated,
         // use the default axis color, otherwise use the color from the layer.
@@ -53,8 +100,6 @@
         // const labelFontSize = axis.label?.fontSize || 12;
         // const labelText = axis.label.text;
         const tickCount = axis.tickCount || 1;
-        const axisG = gSelection.append('g').attr('class', axisClass);
-        axisG.selectAll('*').remove();
         if (
           tickCount > 0 &&
           axis.scaleDomain &&
@@ -89,30 +134,36 @@
             axisG.call(axisLeft);
             axisG.call(g => g.select('.domain').remove());
           }
-
-          // Draw separator
-          axisG
-            .append('line')
-            .attr('x1', 2)
-            .attr('y1', 0)
-            .attr('x2', 2)
-            .attr('y2', drawHeight)
-            .style('stroke', '#EBECEC')
-            .style('stroke-width', 2);
         }
 
-        const axisGElement: SVGGElement | null = axisG.node();
-        if (axisGElement !== null) {
-          // TODO might be able to save minor perf by getting bounding rect of entire
-          // container instead of each individual axis?
-          totalWidth += axisGElement.getBoundingClientRect().width;
-        }
+        drawSeparator(axisG);
+
+        totalWidth += getBoundingClientRectWidth(axisG.node());
       }
+
       totalWidth += marginWidth;
-      if (totalWidth > 0 && drawWidth !== totalWidth) {
-        dispatch('updateYAxesWidth', totalWidth);
-      }
+      // Dispatch the width so the RowHeader can recalculate the label width.
+      dispatch('updateYAxesWidth', totalWidth);
     }
+  }
+
+  function drawSeparator(axisG: Selection<SVGGElement, unknown, null, undefined>): void {
+    axisG
+      .append('line')
+      .attr('x1', 2)
+      .attr('y1', 0)
+      .attr('x2', 2)
+      .attr('y2', drawHeight)
+      .style('stroke', '#EBECEC')
+      .style('stroke-width', 2);
+  }
+
+  function getBoundingClientRectWidth(axisG: SVGGElement | null): number {
+    if (axisG !== null) {
+      return axisG.getBoundingClientRect().width + 4;
+    }
+
+    return 0;
   }
 </script>
 
