@@ -5,14 +5,29 @@
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
+  import FollowIcon from '@nasa-jpl/stellar/icons/switch.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { selectedActivityDirective } from '../../stores/activities';
-  import { selectedSpan, simulationDatasetId } from '../../stores/simulation';
+  import { activityDirectivesMap, selectedActivityDirective } from '../../stores/activities';
+  import { plan } from '../../stores/plan';
+  import {
+    selectedSpan,
+    simulationDataset,
+    simulationDatasetId,
+    spanUtilityMaps,
+    spansMap,
+  } from '../../stores/simulation';
   import { viewIsModified } from '../../stores/views';
   import type { DirectiveVisibilityToggleMap, TimeRange } from '../../types/timeline';
+  import {
+    getActivityDirectiveStartTimeMs,
+    getDoyTimeFromInterval,
+    getIntervalInMs,
+    getUnixEpochTime,
+  } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
+  import ToggleableIconButton from '../ui/ToggleableIconButton.svelte';
   import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
 
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
@@ -21,6 +36,7 @@
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   let allDirectivesVisible: boolean = true;
+  let followSelection: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -33,6 +49,9 @@
     if (allSame) {
       allDirectivesVisible = rowVisibilities[0];
     }
+  }
+  $: if (followSelection && ($selectedActivityDirective || $selectedSpan)) {
+    scrollIfOffscreen();
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -132,6 +151,52 @@
       showFailureToast('Error copying URL to clipboard');
     }
   }
+
+  function getSelectionTime() {
+    let time: number = NaN;
+    if ($selectedActivityDirective && $plan) {
+      time = getActivityDirectiveStartTimeMs(
+        $selectedActivityDirective.id,
+        $plan.start_time,
+        $plan.end_time_doy,
+        $activityDirectivesMap,
+        $spansMap,
+        $spanUtilityMaps,
+      );
+    } else if ($selectedSpan && $simulationDataset?.simulation_start_time) {
+      time = getUnixEpochTime(
+        getDoyTimeFromInterval($simulationDataset?.simulation_start_time, $selectedSpan.start_offset),
+      );
+    }
+    return time;
+  }
+
+  function onToggleFollowSelection() {
+    followSelection = !followSelection;
+    if (followSelection) {
+      scrollIfOffscreen();
+    }
+  }
+
+  function scrollIfOffscreen() {
+    const time = getSelectionTime();
+    if (time < viewTimeRange.start || time > viewTimeRange.end) {
+      scrollToSelection();
+    }
+  }
+
+  function scrollToSelection() {
+    const time = getSelectionTime();
+    if (!isNaN(time) && (time < viewTimeRange.start || time > viewTimeRange.end)) {
+      const midSpan = time + getIntervalInMs($selectedSpan?.duration) / 2;
+      const start = Math.max(maxTimeRange.start, midSpan - viewDuration / 2);
+      const end = Math.min(maxTimeRange.end, midSpan + viewDuration / 2);
+      dispatch('viewTimeRangeChanged', {
+        end,
+        start,
+      });
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -198,6 +263,21 @@
   <LinkIcon />
 </button>
 
+<ToggleableIconButton
+  isOn={followSelection}
+  offTooltipContent="Enable auto scroll to offscreen selections"
+  onTooltipContent="Disable auto scroll to offscreen selections"
+  tooltipPlacement="bottom"
+  useBorder={true}
+  on:toggle={onToggleFollowSelection}
+>
+  <FollowIcon />
+  <div slot="offIcon" class="off-icon">
+    <FollowIcon />
+    <div class="toggle-slash" />
+  </div>
+</ToggleableIconButton>
+
 <style>
   .st-button {
     border: 1px solid var(--st-gray-30);
@@ -206,5 +286,22 @@
 
   .st-button:hover :global(svg) {
     color: var(--st-gray-80);
+  }
+
+  .off-icon {
+    align-items: center;
+    display: inline-flex;
+    position: relative;
+  }
+
+  .toggle-slash {
+    background-color: var(--st-gray-70);
+    bottom: 6px;
+    height: 2px;
+    left: -3px;
+    outline: 2px solid #fff;
+    position: absolute;
+    transform: rotate(-35deg);
+    width: 20px;
   }
 </style>
