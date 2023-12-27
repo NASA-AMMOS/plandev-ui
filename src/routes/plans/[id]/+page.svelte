@@ -147,6 +147,7 @@
   let hasScheduleAnalysisPermission: boolean = false;
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
+  let invalidActivityCount: number = 0;
   let planHasBeenLocked = false;
   let planSnapshotActivityDirectives: ActivityDirective[] = [];
   let schedulingAnalysisStatus: Status | null;
@@ -156,7 +157,7 @@
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
 
-  $: activityErrorCounts = $activityErrorRollups.reduce(
+  $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
       let extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
       let invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
@@ -167,10 +168,19 @@
       let wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
 
       let all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
-
       return {
         all,
         extra,
+        invalidActivityCount:
+          activityErrorRollup.errorCounts.extra ||
+          activityErrorRollup.errorCounts.invalidAnchor ||
+          activityErrorRollup.errorCounts.invalidParameter ||
+          activityErrorRollup.errorCounts.missing ||
+          activityErrorRollup.errorCounts.outOfBounds ||
+          activityErrorRollup.errorCounts.pending ||
+          activityErrorRollup.errorCounts.wrongType
+            ? prevCounts.invalidActivityCount + 1
+            : prevCounts.invalidActivityCount,
         invalidAnchor,
         invalidParameter,
         missing,
@@ -182,6 +192,7 @@
     {
       all: 0,
       extra: 0,
+      invalidActivityCount: 0,
       invalidAnchor: 0,
       invalidParameter: 0,
       missing: 0,
@@ -189,7 +200,7 @@
       pending: 0,
       wrongType: 0,
     },
-  );
+  ));
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($plan) {
@@ -497,9 +508,10 @@
     </svelte:fragment>
     <svelte:fragment slot="right">
       <ActivityStatusMenu
+        activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
         {activityErrorCounts}
         {compactNavMode}
-        activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
+        {invalidActivityCount}
         on:viewActivityValidations={() => {
           errorConsole.openConsole(ConsoleTabs.ACTIVITY);
         }}

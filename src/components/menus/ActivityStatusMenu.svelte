@@ -11,33 +11,16 @@
 
   export let activityErrorCounts: ActivityErrorCounts;
   export let activityDirectiveValidationStatuses: ActivityDirectiveValidationStatus[] = [];
+  export let invalidActivityCount: number = 0;
   export let compactNavMode: boolean = false;
 
   const dispatch = createEventDispatcher();
 
-  let invalidActivityCount: number = 0;
   let totalActivitiesCheckedCount: number = 0;
-  let totalActivityCount: number = 0;
 
-  $: {
-    ({ invalidActivityCount, totalActivitiesCheckedCount, totalActivityCount } =
-      activityDirectiveValidationStatuses.reduce(
-        (prevCounts, validationStatus) => {
-          return {
-            invalidActivityCount:
-              prevCounts.invalidActivityCount + (validationStatus.validations.success === false ? 1 : 0),
-            totalActivitiesCheckedCount:
-              prevCounts.totalActivitiesCheckedCount + (validationStatus.status === 'complete' ? 1 : 0),
-            totalActivityCount: prevCounts.totalActivityCount + 1,
-          };
-        },
-        {
-          invalidActivityCount: 0,
-          totalActivitiesCheckedCount: 0,
-          totalActivityCount: 0,
-        },
-      ));
-  }
+  $: totalActivitiesCheckedCount = activityDirectiveValidationStatuses.reduce((prevCount, validationStatus) => {
+    return prevCount + (validationStatus.status === 'complete' ? 1 : 0);
+  }, 0);
 
   function onClickViewConsole() {
     dispatch('viewActivityValidations');
@@ -55,7 +38,10 @@
   <svelte:fragment slot="metadata">
     <div class="activity-status-nav-container">
       <div class="total-count">
-        {totalActivitiesCheckedCount}/{totalActivityCount} activit{totalActivityCount !== 1 ? 'ies' : 'y'} checked
+        {totalActivitiesCheckedCount}/{activityDirectiveValidationStatuses.length} activit{activityDirectiveValidationStatuses.length !==
+        1
+          ? 'ies'
+          : 'y'} checked
       </div>
       {#if invalidActivityCount === 0}
         <div class="no-errors">No problems detected</div>
