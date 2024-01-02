@@ -82,7 +82,6 @@ export interface LineLayer extends Layer {
 }
 
 export interface LinePoint extends Point {
-  radius: number;
   y: number;
 }
 

@@ -30,6 +30,7 @@
   export let yAxisId: number | null = null;
 
   const dispatch = createEventDispatcher();
+  const WORK_TIME_THRESHOLD = 32; // ms to allow for processing time, beyond which remaining work will be split to a new frame
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
@@ -40,6 +41,9 @@
   let drawPointsRequest: number;
   let stateLinePlotYScale: ScalePoint<string>;
   let yScale: ScaleLinear<number, number, never>;
+  let points: LinePoint[];
+  let tempPoints: LinePoint[];
+  let processingRequest: number;
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -67,7 +71,7 @@
   $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
-  $: points = resourcesToLinePoints(resources, pointRadius);
+  $: processResourcesToLinePoints(resources);
   $: offscreenPoint = ctx && generateOffscreenPoint(lineColor, pointRadius);
 
   onMount(() => {
@@ -183,64 +187,107 @@
     }
   }
 
-  function resourcesToLinePoints(resources: Resource[], radius: number): LinePoint[] {
-    const points: LinePoint[] = [];
-    let id = 0;
+  function processResourcesToLinePoints(resources: Resource[]) {
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    for (const resource of resources) {
+    window.cancelAnimationFrame(processingRequest);
+
+    points = [];
+    tempPoints = [];
+
+    processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources));
+  }
+
+  function resourcesToLinePoints(
+    resources: Resource[],
+    resourceStartIndex = 0,
+    valueStartIndex = 0,
+    startId = 0,
+  ): void {
+    const startTime = performance.now();
+    let resourceIndex = resourceStartIndex;
+    let valueIndex = valueStartIndex;
+    let id = startId;
+
+    for (resourceIndex; resourceIndex < resources.length; ++resourceIndex) {
+      const resource = resources[resourceIndex];
       const { name, schema, values } = resource;
 
       if (schema.type === 'boolean') {
-        for (let i = 0; i < values.length; ++i) {
-          const value = values[i];
+        for (valueIndex; valueIndex < values.length; ++valueIndex) {
+          const value = values[valueIndex];
           const { x, y: yBoolean } = value;
           const y = yBoolean ? 1 : 0;
-          points.push({
+          tempPoints.push({
             id: id++,
             name,
-            radius,
             type: 'line',
             x,
             y,
           });
+
+          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
+            processingRequest = window.requestAnimationFrame(() =>
+              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+            );
+            return;
+          }
         }
+
+        valueIndex = 0;
       } else if (
         schema.type === 'int' ||
         schema.type === 'real' ||
         (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
       ) {
-        for (let i = 0; i < values.length; ++i) {
-          const value = values[i];
+        for (valueIndex; valueIndex < values.length; ++valueIndex) {
+          const value = values[valueIndex];
           const { x } = value;
           const y = value.y as number;
-          points.push({
+          tempPoints.push({
             id: id++,
             name,
-            radius,
             type: 'line',
             x,
             y,
           });
+
+          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
+            processingRequest = window.requestAnimationFrame(() =>
+              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+            );
+            return;
+          }
         }
+        valueIndex = 0;
       } else if (schema.type === 'string' || schema.type === 'variant') {
         for (let i = 0; i < values.length; ++i) {
           const value = values[i];
           const { x } = value;
           const y = value.y as number;
           scaleDomain.add(value.y as string);
-          points.push({
+          tempPoints.push({
             id: id++,
             name,
-            radius: radius,
             type: 'line',
             x,
             y,
           });
+
+          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
+            processingRequest = window.requestAnimationFrame(() =>
+              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+            );
+            return;
+          }
         }
+        valueIndex = 0;
       }
     }
 
-    return points;
+    points = tempPoints;
   }
 
   function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | HTMLCanvasElement | null {
