@@ -12,7 +12,7 @@
   import { ViewConstants } from '../../../enums/view';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import {
-    externalResources,
+    externalResourceNames,
     resourceTypes,
     resourcesByViewLayerId,
     simulationDataset,
@@ -436,8 +436,8 @@
       return $activityTypes.map(t => t.name);
     } else if (layer.chartType === 'line' || layer.chartType === 'x-range') {
       return $resourceTypes
-        .concat($externalResources)
         .map(t => t.name)
+        .concat($externalResourceNames)
         .sort();
     }
     return [];

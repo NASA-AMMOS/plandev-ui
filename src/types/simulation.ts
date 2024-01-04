@@ -9,6 +9,10 @@ export type PlanDataset = {
   offset_from_plan_start: string;
 };
 
+export type PlanDatasetNames = {
+  dataset: { profiles: { name: string }[] };
+};
+
 export type Profile = {
   dataset_id: number;
   duration: string;

@@ -1051,8 +1051,8 @@ const gql = {
   `,
 
   GET_PROFILES_EXTERNAL: `#graphql
-    query GetProfilesExternal($planId: Int!, $simulationDatasetFilter: Int_comparison_exp) {
-      plan_dataset(where: { plan_id: { _eq: $planId }, simulation_dataset_id: $simulationDatasetFilter }) {
+    query GetProfilesExternal($planId: Int!, $simulationDatasetFilter: [plan_dataset_bool_exp!]) {
+      plan_dataset(where: { plan_id: { _eq: $planId }, _or: $simulationDatasetFilter }) {
         dataset {
           profiles {
             dataset_id
@@ -1070,6 +1070,18 @@ const gql = {
           }
         }
         offset_from_plan_start
+      }
+    }
+  `,
+
+  GET_PROFILES_EXTERNAL_NAMES: `#graphql
+    query GetProfilesExternalNames($planId: Int!) {
+      plan_dataset(where: { plan_id: { _eq: $planId }}) {
+        dataset {
+          profiles {
+            name
+          }
+        }
       }
     }
   `,

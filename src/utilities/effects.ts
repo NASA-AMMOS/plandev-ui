@@ -112,6 +112,7 @@ import type {
 } from '../types/sequencing';
 import type {
   PlanDataset,
+  PlanDatasetNames,
   Profile,
   Resource,
   ResourceType,
@@ -2580,6 +2581,44 @@ const effects = {
     }
   },
 
+  async getExternalDatasetNames(
+    planId: number,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<string[]> {
+    try {
+      const data = await reqHasura<PlanDatasetNames[]>(
+        gql.GET_PROFILES_EXTERNAL_NAMES,
+        {
+          planId,
+        },
+        user,
+        signal,
+      );
+      const { plan_dataset: plan_datasets } = data;
+
+      if (plan_datasets != null) {
+        const resourceNames: string[] = [];
+
+        for (const dataset of plan_datasets) {
+          for (const profile of dataset.dataset.profiles) {
+            resourceNames.push(profile.name);
+          }
+        }
+
+        return [...new Set(resourceNames)];
+      } else {
+        throw Error('Unable to get external resource names');
+      }
+    } catch (e) {
+      const error = e as Error;
+      if (error.name !== 'AbortError') {
+        catchError(error);
+      }
+      return [];
+    }
+  },
+
   async getModels(user: User | null): Promise<ModelSlim[]> {
     try {
       const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS, {}, user);
@@ -2885,16 +2924,20 @@ const effects = {
   ): Promise<Resource[]> {
     try {
       fetchingResourcesExternal.set(true);
+
+      // Always fetch external resources that aren't tied to a simulation, optionally get the resources tied to one if we have a dataset ID.
+      const clauses: { simulation_dataset_id: { _is_null: boolean } | { _eq: number } }[] = [
+        { simulation_dataset_id: { _is_null: true } },
+      ];
+      if (simulationDatasetId !== null) {
+        clauses.push({ simulation_dataset_id: { _eq: simulationDatasetId } });
+      }
+
       const data = await reqHasura<PlanDataset[]>(
         gql.GET_PROFILES_EXTERNAL,
         {
           planId,
-          simulationDatasetFilter:
-            simulationDatasetId === null
-              ? {
-                  _is_null: true,
-                }
-              : { _eq: simulationDatasetId },
+          simulationDatasetFilter: clauses,
         },
         user,
         signal,

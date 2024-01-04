@@ -26,6 +26,8 @@ export const simulationDatasetId: Writable<number> = writable(-1);
 
 export const externalResources: Writable<Resource[]> = writable([]);
 
+export const externalResourceNames: Writable<string[]> = writable([]);
+
 export const resources: Writable<Resource[]> = writable([]);
 
 export const fetchingResources: Writable<boolean> = writable(false);

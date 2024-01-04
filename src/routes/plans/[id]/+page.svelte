@@ -72,6 +72,7 @@
   } from '../../../stores/scheduling';
   import {
     enableSimulation,
+    externalResourceNames,
     externalResources,
     fetchingResources,
     resetSimulationStores,
@@ -156,6 +157,7 @@
   let windowWidth = 0;
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
+  let externalDatasetNamesAbortController: AbortController;
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -289,12 +291,18 @@
   }
 
   $: if ($plan) {
+    externalDatasetNamesAbortController?.abort();
+    externalDatasetNamesAbortController = new AbortController();
+    effects
+      .getExternalDatasetNames($plan.id, data.user, externalDatasetNamesAbortController.signal)
+      .then(names => ($externalResourceNames = names));
+
     resourcesExternalAbortController?.abort();
     resourcesExternalAbortController = new AbortController();
     effects
       .getResourcesExternal(
         $plan.id,
-        $simulationDatasetId ?? null,
+        $simulationDatasetId > -1 ? $simulationDatasetId : null,
         $plan.start_time,
         data.user,
         resourcesExternalAbortController.signal,
