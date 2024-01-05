@@ -19,10 +19,13 @@
   import JournalTextIcon from 'bootstrap-icons/icons/journal-text.svg?component';
   import JournalsIcon from 'bootstrap-icons/icons/journals.svg?component';
   import AerieWordmarkDark from '../../assets/aerie-wordmark-dark.svg?component';
+  import type { User } from '../../types/app';
   import { logout } from '../../utilities/login';
   import { showAboutModal } from '../../utilities/modal';
   import Menu from './Menu.svelte';
   import MenuItem from './MenuItem.svelte';
+
+  export let user: User | null = null;
 
   let appMenu: Menu;
 </script>
@@ -88,6 +91,17 @@
       <InfoCircleIcon />
       About
     </MenuItem>
+    <!-- Render user display as a button to intercept click events and prevent menu closure on click -->
+    <button
+      class="st-button tertiary app-menu--user"
+      on:click|capture={evt => {
+        evt.stopPropagation();
+      }}
+    >
+      <span>
+        Logged in as <span class="st-typography-medium">{user?.id || 'Unknown'}</span>
+      </span>
+    </button>
   </Menu>
 </div>
 
@@ -109,5 +123,19 @@
     justify-content: center;
     line-height: 24px;
     width: 88px;
+  }
+
+  .app-menu--user {
+    background: var(--st-gray-10);
+    border-top: 1px solid var(--st-gray-15);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    color: var(--st-gray-60);
+    cursor: default;
+    flex: 1;
+    height: auto;
+    justify-content: flex-start;
+    padding: 8px;
+    width: 100%;
   }
 </style>

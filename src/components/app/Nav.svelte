@@ -22,7 +22,7 @@
 
 <div class="nav">
   <div class="left">
-    <AppMenu />
+    <AppMenu {user} />
     <div class="divider" />
     <div class="title st-typography-medium">
       <slot name="title" />
