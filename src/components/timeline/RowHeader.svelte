@@ -131,7 +131,7 @@
       {/if}
     </div>
   </div>
-  {#if expanded && yAxes.length}
+  {#if expanded}
     <div class="row-header-right-column" style:width={`${yAxesWidth}px`}>
       <div class="row-header-y-axes">
         <RowYAxes

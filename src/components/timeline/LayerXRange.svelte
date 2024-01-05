@@ -98,7 +98,7 @@
 
       for (let i = 0; i < points.length; ++i) {
         const point = points[i];
-        if (point.is_gap) {
+        if (point.is_gap || point.is_null) {
           continue;
         }
 
@@ -248,6 +248,7 @@
           points.push({
             id: id++,
             is_gap,
+            is_null: false,
             label: { text },
             name,
             type: 'x-range',
@@ -258,26 +259,32 @@
         const domainMap: Record<string, string> = {};
         for (let i = 0; i < values.length; ++i) {
           const { x, y, is_gap } = values[i];
-          const text = y as string;
+          const isNull = y === null;
+          const text = isNull ? '' : (y as string);
           points.push({
             id: id++,
             is_gap,
+            is_null: isNull,
             label: { text },
             name,
             type: 'x-range',
             x,
           });
-          domainMap[text] = text;
+          if (!isNull) {
+            domainMap[text] = text;
+          }
         }
         domain = Object.values(domainMap);
       } else if (schema.type === 'variant') {
         domain = schema.variants.map(({ label }) => label);
         for (let i = 0; i < values.length; ++i) {
           const { x, y, is_gap } = values[i];
-          const text = y as string;
+          const isNull = y === null;
+          const text = isNull ? '' : (y as string);
           points.push({
             id: id++,
             is_gap,
+            is_null: isNull,
             label: { text },
             name,
             type: 'x-range',

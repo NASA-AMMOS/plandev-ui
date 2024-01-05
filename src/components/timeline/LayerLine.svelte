@@ -112,7 +112,7 @@
 
         line = d3Line<LinePoint>()
           .x(d => (xScaleView as ScaleTime<number, number, never>)(d.x))
-          .y(d => stateLinePlotYScale(d.y.toString()) as number)
+          .y(d => stateLinePlotYScale(d.y?.toString()) as number)
           .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
           .curve(curveLinear);
       } else {
@@ -155,7 +155,7 @@
         let y: number;
 
         if (showAsLinePlot) {
-          y = stateLinePlotYScale(point.y.toString()) as number;
+          y = stateLinePlotYScale(point.y?.toString()) as number;
         } else {
           y = yScale(point.y) as number;
         }
