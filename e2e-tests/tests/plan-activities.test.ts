@@ -91,4 +91,15 @@ test.describe.serial('Plan Activities', () => {
     await page.locator('.modal-content select').nth(1).selectOption('anchor-root');
     await page.getByRole('button', { name: 'Confirm' }).click();
   });
+
+  test('Setting an input path successfully uploads the corresponding file', async () => {
+    await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-LineCount' }).click();
+
+    await page.locator('input[type="file"]').click();
+    await page.locator('input[type="file"]').setInputFiles('./e2e-tests/data/valid-view.json');
+
+    const errorBadge = await page.locator('.input-error-badge-root');
+
+    expect(errorBadge).not.toBeAttached();
+  });
 });

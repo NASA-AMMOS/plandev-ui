@@ -224,7 +224,7 @@
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
       if (dragStartX !== dragCurrentX && plan) {
         const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
-        effects.updateActivityDirective(plan, dragActivityDirectiveActive.id, { start_offset }, user);
+        effects.updateActivityDirective(plan, dragActivityDirectiveActive.id, { start_offset }, null, user);
       }
 
       dragActivityDirectiveActive = null;

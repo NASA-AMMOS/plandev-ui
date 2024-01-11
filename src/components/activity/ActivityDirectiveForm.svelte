@@ -197,21 +197,21 @@
   function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId>) {
     const { id } = activityDirective;
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { anchor_id: anchorId }, user);
+      effects.updateActivityDirective($plan, id, { anchor_id: anchorId }, activityType, user);
     }
   }
 
   function updateAnchorEdge({ detail: isStart }: CustomEvent<boolean>) {
     const { id } = activityDirective;
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { anchored_to_start: isStart }, user);
+      effects.updateActivityDirective($plan, id, { anchored_to_start: isStart }, activityType, user);
     }
   }
 
   function updateStartOffset({ detail: offset }: CustomEvent<string>) {
     const { id } = activityDirective;
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { start_offset: offset }, user);
+      effects.updateActivityDirective($plan, id, { start_offset: offset }, activityType, user);
     }
   }
 
@@ -234,7 +234,14 @@
     const { arguments: argumentsMap, id } = activityDirective;
     const newArguments = getArguments(argumentsMap, formParameter);
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { arguments: newArguments }, user);
+      effects.updateActivityDirective(
+        $plan,
+        id,
+        { arguments: newArguments },
+        activityType,
+        user,
+        formParameter.file ? [formParameter.file] : [],
+      );
     }
   }
 
@@ -246,7 +253,7 @@
       switch (selectedCategory) {
         case 'invalidParameter':
           if ($plan) {
-            effects.updateActivityDirective($plan, id, { arguments: {} }, user);
+            effects.updateActivityDirective($plan, id, { arguments: {} }, activityType, user);
           }
           break;
         case 'extra':
@@ -263,7 +270,7 @@
               },
               {},
             );
-            effects.updateActivityDirective($plan, id, { arguments: cleanedArguments }, user);
+            effects.updateActivityDirective($plan, id, { arguments: cleanedArguments }, activityType, user);
           }
           break;
       }
@@ -280,7 +287,7 @@
         : null,
     });
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { arguments: newArguments }, user);
+      effects.updateActivityDirective($plan, id, { arguments: newArguments }, activityType, user);
     }
   }
 
@@ -290,7 +297,7 @@
     const { id, metadata } = activityDirective;
     const newActivityMetadata = getActivityMetadata(metadata, key, value);
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { metadata: newActivityMetadata }, user);
+      effects.updateActivityDirective($plan, id, { metadata: newActivityMetadata }, activityType, user);
     }
   }
 
@@ -339,7 +346,7 @@
       if ($activityNameField.value) {
         const { id } = activityDirective;
         if ($plan) {
-          effects.updateActivityDirective($plan, id, { name: $activityNameField.value }, user);
+          effects.updateActivityDirective($plan, id, { name: $activityNameField.value }, activityType, user);
         }
       } else {
         resetActivityName();
@@ -354,7 +361,7 @@
       const planStartTimeDoy = getDoyTime(new Date(planStartTimeYmd));
       const start_offset = getIntervalFromDoyRange(planStartTimeDoy, $startTimeDoyField.value);
       if ($plan) {
-        effects.updateActivityDirective($plan, id, { start_offset }, user);
+        effects.updateActivityDirective($plan, id, { start_offset }, activityType, user);
       }
     }
   }
@@ -384,7 +391,7 @@
     activityNameField.reset(initialValue);
     const { id } = activityDirective;
     if ($plan) {
-      effects.updateActivityDirective($plan, id, { name: initialValue }, user);
+      effects.updateActivityDirective($plan, id, { name: initialValue }, activityType, user);
     }
   }
 

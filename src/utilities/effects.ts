@@ -3849,17 +3849,25 @@ const effects = {
     plan: Plan,
     id: ActivityDirectiveId,
     partialActivityDirective: Partial<ActivityDirective>,
+    activityType: ActivityType | null,
     user: User | null,
+    newFiles: File[] = [],
   ): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVE(user, plan)) {
         throwPermissionError('update this activity directive');
       }
 
+      const generatedFilenames = await effects.uploadFiles(newFiles, user);
+
       const activityDirectiveSetInput: ActivityDirectiveSetInput = {};
 
       if (partialActivityDirective.arguments) {
-        activityDirectiveSetInput.arguments = partialActivityDirective.arguments;
+        activityDirectiveSetInput.arguments = replacePaths(
+          activityType?.parameters ?? null,
+          partialActivityDirective.arguments,
+          generatedFilenames,
+        );
       }
 
       if (partialActivityDirective.anchor_id !== undefined) {
@@ -3891,6 +3899,7 @@ const effects = {
         },
         user,
       );
+
       if (data.update_activity_directive_by_pk) {
         const { update_activity_directive_by_pk: updatedDirective } = data;
         activityDirectivesMap.update((currentActivityDirectivesMap: ActivityDirectivesMap) => ({
@@ -4194,27 +4203,7 @@ const effects = {
         throwPermissionError('update this simulation');
       }
 
-      const ids = await effects.uploadFiles(newFiles, user);
-      const original_filename_to_id: Record<string, number> = {};
-      for (let i = 0; i < ids.length; i++) {
-        const id = ids[i];
-        if (id !== null) {
-          original_filename_to_id[newFiles[i].name] = id;
-        }
-      }
-
-      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
-      // Here, we use the ids of the files we just uploaded to look up the generated filenames
-      const generatedFilenames: Record<string, string> = {};
-      for (const newFile of newFiles) {
-        const id = original_filename_to_id[newFile.name];
-        const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user))[
-          'uploaded_file'
-        ];
-        if (response !== null) {
-          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0]['name']}`;
-        }
-      }
+      const generatedFilenames = await effects.uploadFiles(newFiles, user);
 
       const data = await reqHasura<Pick<Simulation, 'id'>>(
         gql.UPDATE_SIMULATION,
@@ -4368,16 +4357,37 @@ const effects = {
     }
   },
 
-  async uploadFiles(files: File[], user: User | null): Promise<(number | null)[]> {
+  async uploadFiles(files: File[], user: User | null): Promise<Record<string, string>> {
     try {
       const ids = [];
       for (const file of files) {
         ids.push(await effects.uploadFile(file, user));
       }
-      return ids;
+      const originalFilenameToId: Record<string, number> = {};
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        if (id !== null) {
+          originalFilenameToId[files[i].name] = id;
+        }
+      }
+
+      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
+      // Here, we use the ids of the files we just uploaded to look up the generated filenames
+      const generatedFilenames: Record<string, string> = {};
+      for (const newFile of files) {
+        const id = originalFilenameToId[newFile.name];
+        const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user))[
+          'uploaded_file'
+        ];
+        if (response !== null) {
+          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0]['name']}`;
+        }
+      }
+
+      return generatedFilenames;
     } catch (e) {
       catchError(e as Error);
-      return [];
+      return {};
     }
   },
 
