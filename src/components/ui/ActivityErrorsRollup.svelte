@@ -68,7 +68,7 @@
           content: `${getResetActionName(category)} ${count} ${category}${
             itemName ? ` ${itemName}${pluralize(count)}` : ''
           }${category !== 'extraneous' ? ' to mission model' : ''}`,
-          shortcut: `${isMacOs() ? '⌘' : 'CTRL'} Click}`,
+          shortcut: `${isMacOs() ? '⌘' : 'CTRL'} Click`,
         };
       } else {
         return {
