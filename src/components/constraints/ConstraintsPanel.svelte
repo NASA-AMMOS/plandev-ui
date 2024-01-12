@@ -8,7 +8,6 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
-  import { isEmpty } from 'lodash-es';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     checkConstraintsStatus,
@@ -65,18 +64,19 @@
     $constraints.forEach(constraint => {
       const constraintResponse = $constraintResponseMap[constraint.id];
       if (constraintResponse) {
-        // Filter violations/windows by time bounds
-        if (constraintResponse.results && !isEmpty(constraintResponse.results)) {
-          constraintResponse.results.violations = constraintResponse.results.violations.map(violation => ({
-            ...violation,
-            windows: violation.windows.filter(window => window.end >= startTimeMs && window.start <= endTimeMs),
-          }));
-        }
         filteredConstraintResponseMap[constraint.id] = {
           constraintId: constraintResponse.constraintId,
           constraintName: constraintResponse.constraintName,
           errors: constraintResponse.errors,
-          results: constraintResponse.results,
+          results: constraintResponse.results && {
+            ...constraintResponse.results,
+            violations:
+              constraintResponse.results.violations?.map(violation => ({
+                ...violation,
+                // Filter violations/windows by time bounds
+                windows: violation.windows.filter(window => window.end >= startTimeMs && window.start <= endTimeMs),
+              })) ?? null,
+          },
           success: constraintResponse.success,
           type: constraintResponse.type,
         };

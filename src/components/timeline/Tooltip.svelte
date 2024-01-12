@@ -2,10 +2,8 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
-  import { find } from 'lodash-es';
-  import { constraintResponseMap } from '../../stores/constraints';
   import type { ActivityDirective } from '../../types/activity';
-  import type { ConstraintResponse, ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Span } from '../../types/simulation';
   import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
@@ -13,7 +11,7 @@
   export let mouseOver: MouseOver | null;
 
   let activityDirectives: ActivityDirective[] = [];
-  let constraintResults: ConstraintResult[] = [];
+  let constraintResults: ConstraintResultWithName[] = [];
   let points: Point[] = [];
   let gaps: Point[] = [];
   let spans: Span[] = [];
@@ -123,7 +121,7 @@
       tooltipText = `${tooltipText}<hr>`;
     }
 
-    constraintResults.forEach((constraintResult: ConstraintResult, i: number) => {
+    constraintResults.forEach((constraintResult: ConstraintResultWithName, i: number) => {
       const text = textForConstraintViolation(constraintResult);
       tooltipText = `${tooltipText} ${text}`;
 
@@ -187,21 +185,14 @@
     `;
   }
 
-  function textForConstraintViolation(constraintViolation: ConstraintResult): string {
-    const matchResponse: ConstraintResponse = find(
-      Object.values(constraintResponseMap),
-      (response: ConstraintResponse) => response.results === constraintViolation,
-    );
-
-    return matchResponse
-      ? `
+  function textForConstraintViolation(constraintViolation: ConstraintResultWithName): string {
+    return `
       <div>
         Constraint Violation
         <br>
-        Name: ${matchResponse.constraintName}
+        Name: ${constraintViolation.constraintName}
       </div>
-    `
-      : '';
+    `;
   }
 
   function textForLinePoint(point: LinePoint): string {

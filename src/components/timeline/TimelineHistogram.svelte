@@ -190,7 +190,7 @@
     constraintResults
       .filter(result => !isEmpty(result))
       .forEach(constraintResult => {
-        constraintResult.violations.forEach(violation => {
+        constraintResult.violations?.forEach(violation => {
           violation.windows.forEach(window => {
             if (xScaleMax !== null) {
               const xStart = xScaleMax(window.start);

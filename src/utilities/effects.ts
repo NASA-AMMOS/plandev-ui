@@ -5,7 +5,7 @@ import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aeri
 import { get } from 'svelte/store';
 import { SearchParameters } from '../enums/searchParameters';
 import { activityDirectives, activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, constraintResponse } from '../stores/constraints';
+import { checkConstraintsStatus, rawConstraintResponses } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError,
@@ -311,23 +311,22 @@ const effects = {
           },
           user,
         );
-        const { constraintResponses } = data;
-        if (constraintResponses) {
-          constraintResponse.set(constraintResponses);
+        if (data.constraintResponses) {
+          rawConstraintResponses.set(data.constraintResponses);
 
           // find only the constraints compiled.
-          const successfulConstraintResults: ConstraintResult[] = constraintResponses
+          const successfulConstraintResults: ConstraintResult[] = data.constraintResponses
             .filter(constraintResponse => constraintResponse.success)
             .map(constraintResponse => constraintResponse.results);
 
-          const failedConstraintResponses = constraintResponses.filter(
+          const failedConstraintResponses = data.constraintResponses.filter(
             constraintResponse => !constraintResponse.success,
           );
 
-          if (successfulConstraintResults.length === 0 && constraintResponses.length > 0) {
+          if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
             checkConstraintsStatus.set(Status.Failed);
-          } else if (successfulConstraintResults.length !== constraintResponses.length) {
+          } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
             showFailureToast('Partial Constraints Checked');
             checkConstraintsStatus.set(successfulConstraintResults.length !== 0 ? Status.Incomplete : Status.Failed);
           } else {

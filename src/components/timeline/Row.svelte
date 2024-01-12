@@ -15,7 +15,7 @@
     ActivityDirectivesMap,
   } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
   import type { Resource, SimulationDataset, Span, SpanId, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
@@ -51,7 +51,7 @@
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let autoAdjustHeight: boolean = false;
-  export let constraintResults: ConstraintResult[] = [];
+  export let constraintResults: ConstraintResultWithName[] = [];
   export let dpr: number = 0;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -102,7 +102,7 @@
   let mouseDownActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
   let mouseDownSpansByLayer: Record<number, Span[]> = {};
   let mouseOverActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
-  let mouseOverConstraintResults: ConstraintResult[] = []; // For this row.
+  let mouseOverConstraintResults: ConstraintResultWithName[] = []; // For this row.
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
   let mouseOverSpansByLayer: Record<number, Span[]> = {};
   let mouseOverGapsByLayer: Record<number, Point[]> = {};

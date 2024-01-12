@@ -4,10 +4,10 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResultWithName } from '../../types/constraint';
   import type { TimeRange } from '../../types/timeline';
 
-  export let constraintResults: ConstraintResult[] = [];
+  export let constraintResults: ConstraintResultWithName[] = [];
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let mousemove: MouseEvent | undefined;
@@ -82,7 +82,7 @@
   function onMousemove(e: MouseEvent | undefined): void {
     if (e) {
       const { offsetX } = e;
-      const constraintResultsWithViolations: ConstraintResult[] = [];
+      const constraintResultsWithViolations: ConstraintResultWithName[] = [];
 
       for (const constraintResult of constraintResults || []) {
         for (const constraintViolation of constraintResult.violations || []) {

@@ -5,14 +5,14 @@
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
   import { createEventDispatcher } from 'svelte';
-  import type { ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResultWithName } from '../../types/constraint';
   import type { TimeRange, XAxisTick } from '../../types/timeline';
   import { getTimeZoneName } from '../../utilities/time';
   import { TimelineInteractionMode } from '../../utilities/timeline';
   import ConstraintViolations from './ConstraintViolations.svelte';
   import RowXAxisTicks from './RowXAxisTicks.svelte';
 
-  export let constraintResults: ConstraintResult[] = [];
+  export let constraintResults: ConstraintResultWithName[] = [];
   export let drawHeight: number = 70;
   export let drawWidth: number = 0;
   export let marginLeft: number = 50;

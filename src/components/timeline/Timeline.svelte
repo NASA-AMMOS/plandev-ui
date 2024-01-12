@@ -9,7 +9,7 @@
   import { viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { ConstraintResult } from '../../types/constraint';
+  import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
   import type {
     Resource,
@@ -54,7 +54,7 @@
 
   export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
-  export let constraintResults: ConstraintResult[] = [];
+  export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
   export let hasUpdateSimulationPermission: boolean = false;
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
