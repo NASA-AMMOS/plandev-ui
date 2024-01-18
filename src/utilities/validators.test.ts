@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { min, required, timestamp } from './validators';
+import { min, required, timestamp, validateEndTime, validateStartTime } from './validators';
 
 describe('min', () => {
   const value = 5;
@@ -69,4 +69,54 @@ describe('timestamp', () => {
     const invalidMsg = await timestamp('2020-001T00:00:00.000');
     expect(invalidMsg).toEqual(null);
   });
+});
+
+describe('validateStartTime', () => {
+  const startTimeError = 'Simulation start must be before end';
+
+  test.each([
+    { endTime: '2020-400T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-399T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-400T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+  ])(
+    'Should return an error message for out of order start/end ($startTime/$endTime) times',
+    async ({ endTime, startTime }) => {
+      expect(await validateStartTime(startTime, endTime, 'Simulation')).toEqual(startTimeError);
+    },
+  );
+
+  test.each([
+    { endTime: '2020-401T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-411T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+  ])(
+    'Should not return an error for out of order start/end ($startTime/$endTime) times',
+    async ({ endTime, startTime }) => {
+      expect(await validateStartTime(startTime, endTime, 'Simulation')).toEqual(null);
+    },
+  );
+});
+
+describe('validateEndTime', () => {
+  const endTimeError = 'Simulation end must be after start';
+
+  test.each([
+    { endTime: '2020-400T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-399T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-400T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+  ])(
+    'Should return an error message for out of order start/end ($startTime/$endTime) times',
+    async ({ endTime, startTime }) => {
+      expect(await validateEndTime(startTime, endTime, 'Simulation')).toEqual(endTimeError);
+    },
+  );
+
+  test.each([
+    { endTime: '2020-401T00:00:00.000', startTime: '2020-400T00:00:00.000' },
+    { endTime: '2020-411T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+  ])(
+    'Should not return an error for out of order start/end ($startTime/$endTime) times',
+    async ({ endTime, startTime }) => {
+      expect(await validateEndTime(startTime, endTime, 'Simulation')).toEqual(null);
+    },
+  );
 });

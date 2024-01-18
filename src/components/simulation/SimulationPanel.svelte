@@ -35,7 +35,7 @@
   import { getSimulationQueuePosition } from '../../utilities/simulation';
   import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
-  import { required, timestamp } from '../../utilities/validators';
+  import { required, timestamp, validateEndTime, validateStartTime } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -53,6 +53,7 @@
 
   const updatePermissionError = 'You do not have permission to update this simulation';
 
+  let buttonTooltip: string = '';
   let endTimeDoy: string;
   let endTimeDoyField: FieldStore<string>;
   let formParameters: FormParameter[] = [];
@@ -65,6 +66,13 @@
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
 
+  function validateStartTimeField(startTime: string) {
+    return validateStartTime(startTime, $endTimeDoyField.value, 'Simulation');
+  }
+  function validateEndTimeField(endTime: string) {
+    return validateEndTime($startTimeDoyField.value, endTime, 'Simulation');
+  }
+
   $: if (user !== null && $plan !== null) {
     hasRunPermission = featurePermissions.simulation.canRun(user, $plan, $plan.model) && !$planReadOnly;
     hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
@@ -75,14 +83,14 @@
         ? getDoyTime(new Date($simulation.simulation_start_time))
         : $plan.start_time_doy;
   }
-  $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
+  $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp, validateStartTimeField]);
   $: if ($plan) {
     endTimeDoy =
       $simulation && $simulation.simulation_end_time
         ? getDoyTime(new Date($simulation.simulation_end_time))
         : $plan.end_time_doy;
   }
-  $: endTimeDoyField = field<string>(endTimeDoy, [required, timestamp]);
+  $: endTimeDoyField = field<string>(endTimeDoy, [required, timestamp, validateEndTimeField]);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
@@ -109,6 +117,13 @@
         );
       }
     });
+  }
+  $: if ($startTimeDoyField.invalid || $endTimeDoyField.invalid) {
+    buttonTooltip = 'Simulation start and end times are not valid';
+  } else if ($simulationStatus === Status.Complete || $simulationStatus === Status.Failed) {
+    buttonTooltip = 'Simulation up-to-date';
+  } else {
+    buttonTooltip = '';
   }
 
   $: isFilteredBySnapshot = $planSnapshot !== null;
@@ -222,43 +237,49 @@
     isFilteredBySnapshot = !isFilteredBySnapshot;
   }
 
-  function updateStartTime(doyString: string) {
+  function updateStartEndTimes({ endDoyString, startDoyString }: { endDoyString?: string; startDoyString?: string }) {
     if ($simulation !== null && $plan !== null) {
-      const newSimulation: Simulation = { ...$simulation, simulation_start_time: doyString };
+      const newSimulation: Simulation = {
+        ...$simulation,
+        ...(startDoyString ? { simulation_start_time: startDoyString } : {}),
+        ...(endDoyString ? { simulation_end_time: endDoyString } : {}),
+      };
+
       effects.updateSimulation($plan, newSimulation, user);
     }
   }
 
-  function updateEndTime(doyString: string) {
-    if ($simulation !== null && $plan !== null) {
-      const newSimulation: Simulation = { ...$simulation, simulation_end_time: doyString };
-      effects.updateSimulation($plan, newSimulation, user);
-    }
-  }
-
-  function onUpdateStartTime() {
+  async function onUpdateStartTime() {
     if ($startTimeDoyField.valid && startTimeDoy !== $startTimeDoyField.value) {
-      updateStartTime($startTimeDoyField.value);
+      await endTimeDoyField.validateAndSet($endTimeDoyField.value);
+      updateStartEndTimes({
+        ...($endTimeDoyField.valid ? { endDoyString: $endTimeDoyField.value } : {}),
+        startDoyString: $startTimeDoyField.value,
+      });
     }
   }
 
-  function onUpdateEndTime() {
+  async function onUpdateEndTime() {
     if ($endTimeDoyField.valid && endTimeDoy !== $endTimeDoyField.value) {
-      updateEndTime($endTimeDoyField.value);
+      await startTimeDoyField.validateAndSet($startTimeDoyField.value);
+      updateStartEndTimes({
+        endDoyString: $endTimeDoyField.value,
+        ...($startTimeDoyField.valid ? { startDoyString: $startTimeDoyField.value } : {}),
+      });
     }
   }
 
   async function onPlanStartTimeClick() {
     if ($plan) {
       await startTimeDoyField.validateAndSet($plan.start_time_doy);
-      updateStartTime($startTimeDoyField.value);
+      updateStartEndTimes({ startDoyString: $startTimeDoyField.value });
     }
   }
 
   async function onPlanEndTimeClick() {
     if ($plan) {
       await endTimeDoyField.validateAndSet($plan.end_time_doy);
-      updateEndTime($endTimeDoyField.value);
+      updateStartEndTimes({ endDoyString: $endTimeDoyField.value });
     }
   }
 
@@ -272,10 +293,8 @@
     <GridMenu {gridSection} title="Simulation" />
     <PanelHeaderActions>
       <PanelHeaderActionButton
-        disabled={!$enableSimulation}
-        tooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-          ? 'Simulation up-to-date'
-          : ''}
+        disabled={!$enableSimulation || $startTimeDoyField.invalid || $endTimeDoyField.invalid}
+        tooltipContent={buttonTooltip}
         title="Simulate"
         showLabel
         use={[

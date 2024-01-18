@@ -49,7 +49,7 @@
     >
       <slot />
     </DatePicker>
-    <FieldError {field} />
+    <FieldError {field} inline={layout === 'inline'} />
   </Input>
 </div>
 

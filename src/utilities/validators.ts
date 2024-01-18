@@ -70,6 +70,24 @@ export function hex(value: string): Promise<ValidationResult> {
   });
 }
 
+export function validateStartTime(startTime: string, endTime: string, type: string): Promise<ValidationResult> {
+  return new Promise(resolve => {
+    if (startTime >= endTime) {
+      return resolve(`${type} start must be before end`);
+    }
+    return resolve(null);
+  });
+}
+
+export function validateEndTime(startTime: string, endTime: string, type: string): Promise<ValidationResult> {
+  return new Promise(resolve => {
+    if (endTime <= startTime) {
+      return resolve(`${type} end must be after start`);
+    }
+    return resolve(null);
+  });
+}
+
 export async function validateField<T>(field: Field<T>): Promise<string[]> {
   const { validators, value } = field;
   const errors: string[] = [];
