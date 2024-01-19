@@ -112,7 +112,6 @@ import type {
 } from '../types/sequencing';
 import type {
   PlanDataset,
-  PlanDatasetNames,
   Profile,
   Resource,
   ResourceType,
@@ -2576,44 +2575,6 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
-      return [];
-    }
-  },
-
-  async getExternalDatasetNames(
-    planId: number,
-    user: User | null,
-    signal: AbortSignal | undefined = undefined,
-  ): Promise<string[]> {
-    try {
-      const data = await reqHasura<PlanDatasetNames[]>(
-        gql.GET_PROFILES_EXTERNAL_NAMES,
-        {
-          planId,
-        },
-        user,
-        signal,
-      );
-      const { plan_dataset: plan_datasets } = data;
-
-      if (plan_datasets != null) {
-        const resourceNames: string[] = [];
-
-        for (const dataset of plan_datasets) {
-          for (const profile of dataset.dataset.profiles) {
-            resourceNames.push(profile.name);
-          }
-        }
-
-        return [...new Set(resourceNames)];
-      } else {
-        throw Error('Unable to get external resource names');
-      }
-    } catch (e) {
-      const error = e as Error;
-      if (error.name !== 'AbortError') {
-        catchError(error);
-      }
       return [];
     }
   },

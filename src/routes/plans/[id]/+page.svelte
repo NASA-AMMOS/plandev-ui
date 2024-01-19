@@ -52,6 +52,7 @@
     activityTypes,
     maxTimeRange,
     plan,
+    planDatasets,
     planEndTimeMs,
     planId,
     planLocked,
@@ -157,7 +158,6 @@
   let windowWidth = 0;
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
-  let externalDatasetNamesAbortController: AbortController;
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -290,12 +290,16 @@
     initializeView({ ...data.initialView });
   }
 
-  $: if ($plan) {
-    externalDatasetNamesAbortController?.abort();
-    externalDatasetNamesAbortController = new AbortController();
-    effects
-      .getExternalDatasetNames($plan.id, data.user, externalDatasetNamesAbortController.signal)
-      .then(names => ($externalResourceNames = names));
+  $: if ($plan && $planDatasets) {
+    let datasetNames = [];
+
+    for (const dataset of $planDatasets) {
+      for (const profile of dataset.dataset.profiles) {
+        datasetNames.push(profile.name);
+      }
+    }
+
+    $externalResourceNames = [...new Set(datasetNames)];
 
     resourcesExternalAbortController?.abort();
     resourcesExternalAbortController = new AbortController();

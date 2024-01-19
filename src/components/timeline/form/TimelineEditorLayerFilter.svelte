@@ -10,7 +10,7 @@
 
   export let layer: Layer;
   export let values: string[];
-  export let options: string[];
+  export let options: string[] = [];
 
   const dispatch = createEventDispatcher();
 

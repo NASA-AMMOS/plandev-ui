@@ -28,6 +28,7 @@
     viewUpdateRow,
     viewUpdateTimeline,
   } from '../../../stores/views';
+  import type { ActivityType } from '../../../types/activity';
   import type {
     ActivityLayer,
     Axis,
@@ -431,15 +432,16 @@
     return [];
   }
 
-  function getFilterOptionsForLayer(layer: Layer) {
+  function getFilterOptionsForLayer(layer: Layer, activityTypes: ActivityType[], externalResourceNames: string[]) {
     if (layer.chartType === 'activity') {
-      return $activityTypes.map(t => t.name);
+      return activityTypes.map(t => t.name);
     } else if (layer.chartType === 'line' || layer.chartType === 'x-range') {
       return $resourceTypes
         .map(t => t.name)
-        .concat($externalResourceNames)
+        .concat(externalResourceNames)
         .sort();
     }
+
     return [];
   }
 
@@ -945,7 +947,7 @@
                     </span>
                     <TimelineEditorLayerFilter
                       values={getFilterValuesForLayer(layer)}
-                      options={getFilterOptionsForLayer(layer)}
+                      options={getFilterOptionsForLayer(layer, $activityTypes, $externalResourceNames)}
                       {layer}
                       on:change={event => {
                         const { values } = event.detail;

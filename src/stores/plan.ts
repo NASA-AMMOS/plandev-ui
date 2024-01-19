@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../types/activity';
 import type { ModelSlim } from '../types/model';
 import type { Plan, PlanMergeRequest, PlanMergeRequestSchema } from '../types/plan';
+import type { PlanDataset } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { TimeRange } from '../types/timeline';
 import gql from '../utilities/gql';
@@ -46,6 +47,8 @@ export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, []
 );
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
+
+export const planDatasets = gqlSubscribable<PlanDataset[]>(gql.SUB_PLAN_DATASET, { planId }, [], null);
 
 export const planLocked = gqlSubscribable<boolean>(
   gql.SUB_PLAN_LOCKED,

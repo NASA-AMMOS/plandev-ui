@@ -1683,6 +1683,23 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_DATASET: `#graphql
+    subscription SubPlanDatasets($planId: Int!) {
+      plan_dataset(where: {plan_id: {_eq: $planId}}) {
+        dataset_id
+        simulation_dataset_id
+        dataset {
+          profiles {
+            duration
+            id
+            name
+            type
+          }
+        }
+      }
+    }
+  `,
+
   SUB_PLAN_LOCKED: `#graphql
     subscription SubPlanLocked($planId: Int!) {
       planLocked: plan_by_pk(id: $planId) {
