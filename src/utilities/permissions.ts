@@ -6,6 +6,7 @@ import type { Constraint } from '../types/constraint';
 import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import type { Model } from '../types/model';
 import type {
+  AssetWithAuthor,
   AssetWithOwner,
   CreatePermissionCheck,
   ModelWithOwner,
@@ -39,6 +40,15 @@ function isUserOwner(user: User | null, thingWithOwner?: AssetWithOwner | null):
   if (thingWithOwner !== null) {
     if (thingWithOwner && user) {
       return thingWithOwner.owner === user.id;
+    }
+  }
+  return false;
+}
+
+function isUserAuthor(user: User | null, thingWithAuthor?: AssetWithAuthor | null): boolean {
+  if (thingWithAuthor !== null) {
+    if (thingWithAuthor && user) {
+      return thingWithAuthor.author === user.id;
     }
   }
   return false;
@@ -475,18 +485,30 @@ const queryPermissions = {
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
-  DELETE_SCHEDULING_CONDITION: (user: User | null, plan: PlanWithOwners): boolean => {
+  DELETE_SCHEDULING_CONDITION: (
+    user: User | null,
+    plan: PlanWithOwners | null,
+    condition?: AssetWithAuthor<SchedulingCondition>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
       (getPermission(['delete_scheduling_condition_by_pk'], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+        // If there is a plan, ensure user is the plan owner or is a collaborator
+        // Otherwise if no plan, user may delete if they are goal author since associated plan may have been deleted
+        (plan ? isPlanOwner(user, plan) || isPlanCollaborator(user, plan) : isUserAuthor(user, condition)))
     );
   },
-  DELETE_SCHEDULING_GOAL: (user: User | null, plan: PlanWithOwners): boolean => {
+  DELETE_SCHEDULING_GOAL: (
+    user: User | null,
+    plan: PlanWithOwners | null,
+    goal?: AssetWithAuthor<SchedulingGoal>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
       (getPermission(['delete_scheduling_goal_by_pk'], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+        // If there is a plan, ensure user is the plan owner or is a collaborator
+        // Otherwise if no plan, user may delete if they are goal author since associated plan may have been deleted
+        (plan ? isPlanOwner(user, plan) || isPlanCollaborator(user, plan) : isUserAuthor(user, goal)))
     );
   },
   DELETE_SCHEDULING_GOAL_TAGS: (user: User | null): boolean => {
@@ -704,18 +726,30 @@ const queryPermissions = {
   UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission(['update_plan_snapshot_by_pk'], user);
   },
-  UPDATE_SCHEDULING_CONDITION: (user: User | null, plan: PlanWithOwners): boolean => {
+  UPDATE_SCHEDULING_CONDITION: (
+    user: User | null,
+    plan: PlanWithOwners | null,
+    condition?: AssetWithAuthor<SchedulingCondition>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
       (getPermission(['update_scheduling_condition_by_pk'], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+        // If there is a plan, ensure user is the plan owner or is a collaborator
+        // Otherwise if no plan, user may update if they are condition author since associated plan may have been deleted
+        (plan ? isPlanOwner(user, plan) || isPlanCollaborator(user, plan) : isUserAuthor(user, condition)))
     );
   },
-  UPDATE_SCHEDULING_GOAL: (user: User | null, plan: PlanWithOwners): boolean => {
+  UPDATE_SCHEDULING_GOAL: (
+    user: User | null,
+    plan: PlanWithOwners | null,
+    goal?: AssetWithAuthor<SchedulingGoal>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
       (getPermission(['update_scheduling_goal_by_pk'], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+        // If there is a plan, ensure user is the plan owner or is a collaborator
+        // Otherwise if no plan, user may update if they are goal author since associated plan may have been deleted
+        (plan ? isPlanOwner(user, plan) || isPlanCollaborator(user, plan) : isUserAuthor(user, goal)))
     );
   },
   UPDATE_SCHEDULING_SPEC: (user: User | null, plan: PlanWithOwners): boolean => {
@@ -849,7 +883,14 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
 
 interface SchedulingCRUDPermission<T = null> extends RunnableCRUDPermission<T> {
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
+  canDelete: (user: User | null, plan: PlanWithOwners | null, asset?: T) => boolean;
+  canUpdate: (user: User | null, plan: PlanWithOwners | null, asset?: T) => boolean;
   canUpdateSpecification: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
+interface ConditionsCRUDPermission<T = null> extends PlanAssetCRUDPermission<T> {
+  canDelete: (user: User | null, plan: PlanWithOwners | null, asset?: T) => boolean;
+  canUpdate: (user: User | null, plan: PlanWithOwners | null, asset?: T) => boolean;
 }
 
 interface FeaturePermissions {
@@ -864,8 +905,8 @@ interface FeaturePermissions {
   plan: CRUDPermission<PlanWithOwners>;
   planBranch: PlanBranchCRUDPermission;
   planSnapshot: PlanSnapshotCRUDPermission;
-  schedulingConditions: PlanAssetCRUDPermission<AssetWithOwner<SchedulingCondition>>;
-  schedulingGoals: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoal>>;
+  schedulingConditions: ConditionsCRUDPermission<AssetWithAuthor<SchedulingCondition>>;
+  schedulingGoals: SchedulingCRUDPermission<AssetWithAuthor<SchedulingGoal>>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -955,19 +996,19 @@ const featurePermissions: FeaturePermissions = {
   },
   schedulingConditions: {
     canCreate: (user, plan) => queryPermissions.CREATE_SCHEDULING_CONDITION(user, plan),
-    canDelete: (user, plan) => queryPermissions.DELETE_SCHEDULING_CONDITION(user, plan),
+    canDelete: (user, plan, condition) => queryPermissions.DELETE_SCHEDULING_CONDITION(user, plan, condition),
     canRead: () => false,
-    canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_CONDITION(user, plan),
+    canUpdate: (user, plan, condition) => queryPermissions.UPDATE_SCHEDULING_CONDITION(user, plan, condition),
   },
   schedulingGoals: {
     canAnalyze: (user, plan, model) =>
       queryPermissions.UPDATE_SCHEDULING_SPEC(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
     canCreate: (user, plan) => queryPermissions.CREATE_SCHEDULING_GOAL(user, plan),
-    canDelete: (user, plan) => queryPermissions.DELETE_SCHEDULING_GOAL(user, plan),
+    canDelete: (user, plan, goal) => queryPermissions.DELETE_SCHEDULING_GOAL(user, plan, goal),
     canRead: () => false,
     canRun: (user, plan, model) =>
       queryPermissions.UPDATE_SCHEDULING_SPEC(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
-    canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_GOAL(user, plan),
+    canUpdate: (user, plan, goal) => queryPermissions.UPDATE_SCHEDULING_GOAL(user, plan, goal),
     canUpdateSpecification: (user, plan) => queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL(user, plan),
   },
   sequences: {

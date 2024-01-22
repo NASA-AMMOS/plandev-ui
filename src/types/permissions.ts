@@ -6,6 +6,10 @@ export type AssetWithOwner<T = any> = Partial<T> & {
   owner: UserId;
 };
 
+export type AssetWithAuthor<T = any> = Partial<T> & {
+  author: UserId;
+};
+
 export type ModelWithOwner = Pick<Model, 'id' | 'owner'>;
 
 export type PermissibleQueriesMap = Record<string, true>;

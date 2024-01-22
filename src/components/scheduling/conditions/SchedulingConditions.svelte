@@ -121,24 +121,22 @@
     editCondition({ id: event.detail[0] as number });
   }
 
-  function hasDeletePermission(condition: SchedulingCondition) {
-    const { scheduling_specification_conditions } = condition;
-    const specification_id = scheduling_specification_conditions[0].specification_id;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    if (plan) {
-      return featurePermissions.schedulingConditions.canDelete(user, plan);
+  function getPlanForCondition(condition: SchedulingCondition): PlanSchedulingSpec | null {
+    // If there is no spec id attached to the goal, the goal is not associated with a plan
+    let plan = null;
+    if (condition.scheduling_specification_conditions.length > 0) {
+      const specification_id = condition.scheduling_specification_conditions[0].specification_id;
+      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
     }
-    return false;
+    return plan;
+  }
+
+  function hasDeletePermission(condition: SchedulingCondition) {
+    return featurePermissions.schedulingConditions.canDelete(user, getPlanForCondition(condition), condition);
   }
 
   function hasEditPermission(condition: SchedulingCondition) {
-    const { scheduling_specification_conditions } = condition;
-    const specification_id = scheduling_specification_conditions[0].specification_id;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    if (plan) {
-      return featurePermissions.schedulingConditions.canUpdate(user, plan);
-    }
-    return false;
+    return featurePermissions.schedulingConditions.canUpdate(user, getPlanForCondition(condition), condition);
   }
 
   function hasCreatePermission(user: User): boolean {

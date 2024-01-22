@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { schedulingColumns, schedulingConditions, schedulingGoals } from '../../stores/scheduling';
+  import { schedulingColumns, schedulingConditionsAll, schedulingGoalsAll } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { DataGridRowSelection } from '../../types/data-grid';
   import type { PlanSchedulingSpec } from '../../types/plan';
@@ -22,14 +22,14 @@
   let editorTitle: string = 'Scheduling';
 
   $: if (selectedCondition !== null) {
-    const found = $schedulingConditions.findIndex(condition => condition.id === selectedCondition?.id);
+    const found = $schedulingConditionsAll.findIndex(condition => condition.id === selectedCondition?.id);
     if (found === -1) {
       selectedCondition = null;
     }
   }
 
   $: if (selectedGoal !== null) {
-    const found = $schedulingGoals.findIndex(goal => goal.id === selectedGoal?.id);
+    const found = $schedulingGoalsAll.findIndex(goal => goal.id === selectedGoal?.id);
     if (found === -1) {
       selectedGoal = null;
     }
@@ -44,7 +44,7 @@
       const success = await effects.deleteSchedulingCondition(condition, plan, user);
 
       if (success) {
-        schedulingConditions.filterValueById(condition.id);
+        schedulingConditionsAll.filterValueById(condition.id);
 
         if (condition.id === selectedCondition?.id) {
           selectedCondition = null;
@@ -55,25 +55,24 @@
 
   async function deleteGoal(goal: SchedulingGoalSlim) {
     const { scheduling_specification_goal } = goal;
-    const specification_id = scheduling_specification_goal.specification_id;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    let plan = null;
+    if (scheduling_specification_goal) {
+      const specification_id = scheduling_specification_goal.specification_id;
+      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
+    }
+    const success = await effects.deleteSchedulingGoal(goal, plan, user);
+    if (success) {
+      schedulingGoalsAll.filterValueById(goal.id);
 
-    if (plan) {
-      const success = await effects.deleteSchedulingGoal(goal, plan, user);
-
-      if (success) {
-        schedulingGoals.filterValueById(goal.id);
-
-        if (goal.id === selectedGoal?.id) {
-          selectedGoal = null;
-        }
+      if (goal.id === selectedGoal?.id) {
+        selectedGoal = null;
       }
     }
   }
 
   function deleteConditionContext(event: CustomEvent<number>) {
     const id = event.detail;
-    const condition = $schedulingConditions.find(s => s.id === id);
+    const condition = $schedulingConditionsAll.find(s => s.id === id);
     if (condition) {
       deleteCondition(condition);
     }
@@ -81,7 +80,7 @@
 
   function deleteGoalContext(event: CustomEvent<number>) {
     const id = event.detail;
-    const goal = $schedulingGoals.find(s => s.id === id);
+    const goal = $schedulingGoalsAll.find(s => s.id === id);
     if (goal) {
       deleteGoal(goal);
     }
@@ -129,7 +128,7 @@
     <SchedulingGoals
       {plans}
       {selectedGoal}
-      schedulingGoals={$schedulingGoals}
+      schedulingGoals={$schedulingGoalsAll}
       {user}
       on:deleteGoal={deleteGoalContext}
       on:rowSelected={toggleGoal}
@@ -138,7 +137,7 @@
     <SchedulingConditions
       {plans}
       {selectedCondition}
-      schedulingConditions={$schedulingConditions}
+      schedulingConditions={$schedulingConditionsAll}
       {user}
       on:deleteCondition={deleteConditionContext}
       on:rowSelected={toggleCondition}

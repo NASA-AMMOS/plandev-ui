@@ -16,7 +16,7 @@ export type SchedulingGoal = {
   revision: number;
   scheduling_specification_goal: {
     specification_id: number;
-  };
+  } | null;
   tags: { tag: Tag }[];
 };
 
@@ -40,6 +40,7 @@ export type SchedulingCondition = {
 
 export type SchedulingGoalAnalysis = {
   analysis_id: number;
+  request: { specification_id: number };
   satisfied: boolean;
   satisfying_activities: { activity_id: number }[];
 };

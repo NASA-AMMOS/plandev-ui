@@ -1197,9 +1197,9 @@ const effects = {
       }
 
       const data = await reqHasura<SchedulingSpecGoal>(gql.CREATE_SCHEDULING_SPEC_GOAL, { spec_goal }, user);
-      const { createSchedulingGoal } = data;
-      if (createSchedulingGoal != null) {
-        const { specification_id } = createSchedulingGoal;
+      const { createSchedulingSpecGoal } = data;
+      if (createSchedulingSpecGoal != null) {
+        const { specification_id } = createSchedulingSpecGoal;
         return specification_id;
       } else {
         throw Error('Unable to create a scheduling spec goal');
@@ -1974,11 +1974,11 @@ const effects = {
 
   async deleteSchedulingCondition(
     condition: SchedulingCondition,
-    plan: PlanSchedulingSpec,
+    plan: PlanSchedulingSpec | null,
     user: User | null,
   ): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_SCHEDULING_CONDITION(user, plan)) {
+      if (!queryPermissions.DELETE_SCHEDULING_CONDITION(user, plan, condition)) {
         throwPermissionError('delete this scheduling condition');
       }
 
@@ -2006,7 +2006,11 @@ const effects = {
     }
   },
 
-  async deleteSchedulingGoal(goal: SchedulingGoalSlim, plan: PlanSchedulingSpec, user: User | null): Promise<boolean> {
+  async deleteSchedulingGoal(
+    goal: SchedulingGoalSlim,
+    plan: PlanSchedulingSpec | null,
+    user: User | null,
+  ): Promise<boolean> {
     try {
       if (!queryPermissions.DELETE_SCHEDULING_GOAL(user, plan)) {
         throwPermissionError('delete this scheduling goal');

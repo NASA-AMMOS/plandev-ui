@@ -1925,6 +1925,9 @@ const gql = {
       goals: scheduling_goal(order_by: { id: desc }) {
         analyses(limit: 0) {
           analysis_id
+          request {
+            specification_id
+          }
         }
         author
         created_date
@@ -1937,6 +1940,9 @@ const gql = {
         name
         scheduling_specification_goal {
           specification_id
+          specification {
+            plan_id
+          }
         }
         revision
         tags {
@@ -1961,6 +1967,9 @@ const gql = {
           modified_date
           name
           revision
+          scheduling_specification_conditions {
+            specification_id
+          }
         }
         specification {
           analysis_only
@@ -1987,6 +1996,9 @@ const gql = {
             satisfied
             satisfying_activities {
               activity_id
+            }
+            request {
+              specification_id
             }
           }
           author

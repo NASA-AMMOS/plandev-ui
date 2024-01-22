@@ -150,26 +150,24 @@
     editGoal({ id: event.detail[0] as number });
   }
 
-  function hasDeletePermission(goal: SchedulingGoal) {
-    const {
-      scheduling_specification_goal: { specification_id },
-    } = goal;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    if (plan) {
-      return featurePermissions.schedulingGoals.canDelete(user, plan);
+  function getPlanForGoal(goal: SchedulingGoal): PlanSchedulingSpec | null {
+    // If there is no spec id attached to the goal, the goal is not associated with a plan
+    let plan = null;
+    if (goal.scheduling_specification_goal) {
+      const {
+        scheduling_specification_goal: { specification_id },
+      } = goal;
+      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
     }
-    return false;
+    return plan;
+  }
+
+  function hasDeletePermission(goal: SchedulingGoal) {
+    return featurePermissions.schedulingGoals.canDelete(user, getPlanForGoal(goal), goal);
   }
 
   function hasEditPermission(goal: SchedulingGoal) {
-    const {
-      scheduling_specification_goal: { specification_id },
-    } = goal;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
-    if (plan) {
-      return featurePermissions.schedulingGoals.canUpdate(user, plan);
-    }
-    return false;
+    return featurePermissions.schedulingGoals.canUpdate(user, getPlanForGoal(goal), goal);
   }
 
   function hasCreatePermission(user: User): boolean {
