@@ -204,10 +204,18 @@ export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $se
 
 export function resetSimulationStores() {
   externalResources.set([]);
-  resources.set([]);
+  externalResourceNames.set([]);
+  fetchingResources.set(false);
+  fetchingResourcesExternal.set(false);
+  selectedSpanId.update(() => null);
+  simulation.updateValue(() => null);
   simulationDatasetId.set(-1);
   simulationDataset.updateValue(() => null);
+  simulationDatasetLatest.updateValue(() => null);
   simulationTemplates.updateValue(() => []);
-  simulation.updateValue(() => null);
+  simulationDatasetsPlan.updateValue(() => []);
+  simulationDatasetsAll.updateValue(() => []);
   spans.set([]);
+  resources.set([]);
+  resourceTypes.set([]);
 }
