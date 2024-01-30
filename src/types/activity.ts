@@ -39,6 +39,7 @@ export type ActivityDirective = {
   applied_preset?: AppliedPreset | null;
   arguments: ArgumentsMap;
   created_at: string;
+  created_by: string;
   id: ActivityDirectiveId;
   last_modified_arguments_at: string;
   last_modified_at: string;

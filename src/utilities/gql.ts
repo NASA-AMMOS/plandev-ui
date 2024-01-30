@@ -1456,6 +1456,7 @@ const gql = {
         }
         arguments
         created_at
+        created_by
         id
         last_modified_arguments_at
         last_modified_at

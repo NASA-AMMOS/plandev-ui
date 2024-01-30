@@ -602,6 +602,13 @@
           </Input>
         </Highlight>
 
+        <Highlight highlight={highlightKeysMap.last_modified_by}>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Created By', placement: 'top' }} for="createdBy"> Created By </label>
+            <input class="st-input w-100" disabled name="createdBy" value={activityDirective.created_by} />
+          </Input>
+        </Highlight>
+
         <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
           <Input layout="inline">
             <label
