@@ -43,10 +43,10 @@ test('convertUsToDurationString', () => {
 });
 
 test('convertDoyToYmd', () => {
-  expect(convertDoyToYmd('2023-001T00:10:12', false)).toEqual('2023-01-01T00:10:12');
-  expect(convertDoyToYmd('2023-001T00:00:00', false)).toEqual('2023-01-01T00:00:00');
-  expect(convertDoyToYmd('2023-032T00:00:00', false)).toEqual('2023-02-01T00:00:00');
-  expect(convertDoyToYmd('2023-048T10:32:44.123', true)).toEqual('2023-02-17T10:32:44.123');
+  expect(convertDoyToYmd('2023-001T00:10:12', false)).toEqual('2023-01-01T00:10:12Z');
+  expect(convertDoyToYmd('2023-001T00:00:00', false)).toEqual('2023-01-01T00:00:00Z');
+  expect(convertDoyToYmd('2023-032T00:00:00', false)).toEqual('2023-02-01T00:00:00Z');
+  expect(convertDoyToYmd('2023-048T10:32:44.123', true)).toEqual('2023-02-17T10:32:44.123Z');
 });
 
 test('getDaysInMonth', () => {
