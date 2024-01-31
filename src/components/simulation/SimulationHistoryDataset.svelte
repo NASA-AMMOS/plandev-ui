@@ -1,8 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { planReadOnly } from '../../stores/plan';
   import type { SimulationDataset } from '../../types/simulation';
   import { hexToRgba } from '../../utilities/color';
   import {
@@ -65,7 +66,7 @@
         simulationBoundsVizRangeWidth = ((simulationEndTimeMS - simulationStartTimeMS) / planDuration) * 100 || 0;
 
         let simulationExtentMS = 0;
-        if ((status === Status.Incomplete || status === Status.Failed) && extent) {
+        if ((status === Status.Incomplete || status === Status.Failed || status === Status.Canceled) && extent) {
           simulationExtentMS =
             getUnixEpochTimeFromInterval(simulationDataset.simulation_start_time, extent) - simulationStartTimeMS;
         } else if (status === Status.Complete) {
@@ -110,14 +111,15 @@
             {getHumanReadableSimulationStatus(status)}
           {/if}
         </div>
-        {#if status === Status.Pending}
+        {#if status === Status.Pending || status === Status.Incomplete}
           <button
             use:tooltip={{ content: 'Cancel Simulation', placement: 'top' }}
             class="st-button icon simulation-dataset-status-cancel"
             type="button"
+            disabled={$planReadOnly}
             on:click={onCancelSimulation}
           >
-            <CloseIcon />
+            <CancelIcon />
           </button>
         {/if}
       {/if}
@@ -296,13 +298,17 @@
   }
 
   .simulation-dataset-status-cancel {
-    background: var(--st-gray-15);
     border-radius: 16px;
-    color: var(--st-gray-70);
+    color: var(--st-gray-60);
   }
 
-  .simulation-dataset-status-cancel:hover {
+  .simulation-dataset-status-cancel:hover:disabled {
+    cursor: not-allowed;
+  }
+
+  .simulation-dataset-status-cancel:hover:enabled {
     background: var(--st-gray-30);
+    color: var(--st-gray-80);
   }
 
   .simulation-dataset-extent {

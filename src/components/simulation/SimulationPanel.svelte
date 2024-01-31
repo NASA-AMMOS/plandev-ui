@@ -284,7 +284,7 @@
   }
 
   function onCancelSimulation(event: CustomEvent) {
-    effects.cancelPendingSimulation(event.detail.id, user);
+    effects.cancelSimulation(event.detail.id, user);
   }
 </script>
 

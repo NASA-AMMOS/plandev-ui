@@ -275,21 +275,21 @@ const effects = {
     }
   },
 
-  async cancelPendingSimulation(simulationDatasetId: number, user: User | null): Promise<void> {
+  async cancelSimulation(simulationDatasetId: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_SIMULATION_DATASET(user)) {
         throwPermissionError('update a simulation dataset');
       }
       const { confirm } = await showConfirmModal(
         'Cancel Simulation',
-        `This will cancel the queued simulation with ID: ${simulationDatasetId}. Once canceled, the simulation cannot be restarted.`,
+        `This will cancel the simulation with ID: ${simulationDatasetId}. Once canceled, the simulation cannot be restarted.`,
         'Cancel Simulation',
         true,
         'Keep Simulating',
       );
 
       if (confirm) {
-        await reqHasura<SeqId>(gql.CANCEL_PENDING_SIMULATION, { id: simulationDatasetId }, user);
+        await reqHasura<SeqId>(gql.CANCEL_SIMULATION, { id: simulationDatasetId }, user);
         showSuccessToast('Simulation Successfully Canceled');
       }
     } catch (e) {

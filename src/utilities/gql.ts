@@ -14,8 +14,8 @@ const gql = {
     }
   `,
 
-  CANCEL_PENDING_SIMULATION: `#graphql
-    mutation CancelPendingSim($id: Int!) {
+  CANCEL_SIMULATION: `#graphql
+    mutation CancelSim($id: Int!) {
       update_simulation_dataset_by_pk(pk_columns: {id: $id}, _set: {
         canceled: true
       }) {
