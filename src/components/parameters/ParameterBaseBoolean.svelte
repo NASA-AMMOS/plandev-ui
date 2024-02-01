@@ -61,6 +61,9 @@
   }
 
   .parameter-right {
+    display: flex;
+    gap: 2px;
+    min-width: min-content;
     width: 100%;
   }
 </style>
