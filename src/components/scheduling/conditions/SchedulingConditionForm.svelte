@@ -245,7 +245,8 @@
           <option value={null} />
           {#each models as model}
             <option value={model.id} disabled={!hasModelPermission(model.id, mode, user)}>
-              {model.name} ({model.id})
+              {model.name}
+              (Version: {model.version})
             </option>
           {/each}
         </select>

@@ -196,6 +196,7 @@
           {#each $models as model}
             <option value={model.id} disabled={!hasModelPermission(model.id, user)}>
               {model.name}
+              (Version: {model.version})
             </option>
           {/each}
         </select>
