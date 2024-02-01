@@ -83,7 +83,7 @@ test.describe.serial('Plans', () => {
     await plans.fillInputStartTime();
 
     const endTime = await plans.inputEndTime.inputValue();
-    expect(endTime).toEqual(plans.startTime);
+    expect(endTime).toEqual('2022-002T00:00:00');
   });
 
   test('Entering an invalid start should not prepopulate the end time', async () => {

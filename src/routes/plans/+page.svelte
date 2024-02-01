@@ -34,7 +34,7 @@
   import { removeQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertUsToDurationString, getShortISOForDate, getUnixEpochTime } from '../../utilities/time';
+  import { convertUsToDurationString, getDoyTime, getShortISOForDate, getUnixEpochTime } from '../../utilities/time';
   import { min, required, timestamp } from '../../utilities/validators';
   import type { PageData } from './$types';
 
@@ -293,10 +293,15 @@
     goto(`${base}/plans/${plan.id}`);
   }
 
-  function onStartTimeChanged() {
+  async function onStartTimeChanged() {
     if ($startTimeDoyField.value && $startTimeDoyField.valid && $endTimeDoyField.value === '') {
-      endTimeDoyField.set($startTimeDoyField);
+      // Set end time as start time plus a day by default
+      const startTimeDate = new Date(getUnixEpochTime($startTimeDoyField.value));
+      startTimeDate.setDate(startTimeDate.getDate() + 1);
+      const newEndTimeDoy = getDoyTime(startTimeDate, false);
+      await endTimeDoyField.validateAndSet(newEndTimeDoy);
     }
+
     updateDurationString();
   }
 
