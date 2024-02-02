@@ -14,7 +14,7 @@ export const POST: RequestHandler = async event => {
     { message: 'Logout successful', success: invalidated },
     {
       headers: {
-        'set-cookie': `activeRole=deleted; path=${base}/,user=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+        'set-cookie': `activeRole=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT,user=deleted; path=${base}/; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
       },
     },
   );
