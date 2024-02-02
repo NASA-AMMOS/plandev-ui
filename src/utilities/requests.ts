@@ -83,6 +83,25 @@ export async function reqGateway<T = any>(
 }
 
 /**
+ * Function to make HTTP requests to the Aerie Gateway, forwarding all cookies
+ */
+export async function reqGatewayForwardCookies<T = any>(path: string, cookies: string, referrer?: string): Promise<T> {
+  const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
+
+  const opts = {
+    headers: {
+      cookie: cookies,
+      referrer: referrer ?? '',
+    },
+  };
+
+  const validationResponse = await fetch(`${GATEWAY_URL}${path}`, opts);
+  const validationData: T = await validationResponse.json();
+
+  return validationData;
+}
+
+/**
  * Function to make HTTP POST requests to the Hasura GraphQL API.
  */
 export async function reqHasura<T = any>(

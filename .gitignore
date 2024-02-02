@@ -9,3 +9,4 @@ node_modules
 /.svelte-kit
 test-results
 unit-test-results
+*.local

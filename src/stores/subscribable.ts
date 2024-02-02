@@ -92,7 +92,7 @@ export function gqlSubscribable<T>(
       if (userCookie) {
         try {
           const splitCookie = userCookie.split('user=')[1];
-          const decodedUserCookie = atob(splitCookie);
+          const decodedUserCookie = atob(decodeURIComponent(splitCookie));
           const parsedUserCookie: BaseUser = JSON.parse(decodedUserCookie);
           return parsedUserCookie.token;
         } catch (e) {
