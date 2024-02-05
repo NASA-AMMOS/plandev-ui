@@ -8,6 +8,7 @@
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { Status } from '../../enums/status';
   import type { User } from '../../types/app';
   import type { Constraint, ConstraintResponse } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
@@ -18,6 +19,7 @@
   import Collapse from '../Collapse.svelte';
   import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
+  import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
   export let constraint: Constraint;
@@ -58,6 +60,10 @@
           <div class="no-violations" use:tooltip={{ content: 'No Violations', placement: 'top' }}>
             <CheckmarkIcon />
           </div>
+        {:else}
+          <span class="unchecked">
+            <StatusBadge status={Status.Unchecked} />
+          </span>
         {/if}
         <button
           use:tooltip={{ content: visible ? 'Hide' : 'Show', placement: 'top' }}
@@ -96,6 +102,16 @@
         <div class="st-typography-label">No Violations</div>
       {/if}
     </Collapse>
+
+    {#if !success && constraintResponse?.errors}
+      <Collapse title="Errors" defaultExpanded={false}>
+        <div class="errors">
+          {#each constraintResponse?.errors as error}
+            <div class="st-typography-body">{error.message}</div>
+          {/each}
+        </div>
+      </Collapse>
+    {/if}
 
     <svelte:fragment slot="contextMenuContent">
       <ContextMenuHeader>Actions</ContextMenuHeader>
@@ -149,9 +165,14 @@
     padding: 0px 6px;
   }
 
-  .violations {
+  .violations,
+  .errors {
     display: flex;
     flex-direction: column;
+  }
+
+  .errors {
+    gap: 8px;
   }
 
   .no-violations {
@@ -166,6 +187,13 @@
   .violations-error {
     align-items: center;
     color: var(--st-error-red);
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    width: 20px;
+  }
+
+  .unchecked {
     display: flex;
     flex-shrink: 0;
     justify-content: center;

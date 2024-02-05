@@ -1,7 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { Status } from '../enums/status';
 import type { ExpansionRuleSlim, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import gql from '../utilities/gql';
-import type { Status } from '../utilities/status';
 import { simulationDatasetId } from './simulation';
 import { gqlSubscribable } from './subscribable';
 

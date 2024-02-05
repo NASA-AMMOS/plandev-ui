@@ -1,8 +1,8 @@
 import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
+import { Status } from '../enums/status';
 import type { Constraint, ConstraintResponse, ConstraintResultWithName } from '../types/constraint';
 import gql from '../utilities/gql';
-import type { Status } from '../utilities/status';
 import { modelId, planId, planStartTimeMs } from './plan';
 import { gqlSubscribable } from './subscribable';
 
@@ -33,6 +33,7 @@ export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>
 );
 
 export const checkConstraintsStatus: Writable<Status | null> = writable(null);
+export const constraintsViolationStatus: Writable<Status | null> = writable(null);
 
 export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
 
@@ -61,6 +62,35 @@ export const constraintResponseMap: Readable<Record<Constraint['id'], Constraint
       })),
       'constraintId',
     ),
+);
+
+export const uncheckedConstraintCount: Readable<number> = derived(
+  [constraints, constraintResponseMap],
+  ([$constraints, $constraintResponseMap]) => {
+    return $constraints.reduce((count, prev) => {
+      if (!(prev.id in $constraintResponseMap)) {
+        count++;
+      }
+      return count;
+    }, 0);
+  },
+);
+
+export const constraintsStatus: Readable<Status | null> = derived(
+  [checkConstraintsStatus, constraintsViolationStatus, uncheckedConstraintCount],
+  ([$checkConstraintsStatus, $constraintsViolationStatus, $uncheckedConstraintCount]) => {
+    if (!$checkConstraintsStatus) {
+      return null;
+    }
+    if ($checkConstraintsStatus !== Status.Complete) {
+      return $checkConstraintsStatus;
+    }
+    if ($uncheckedConstraintCount > 0) {
+      return Status.Unchecked;
+    }
+
+    return $constraintsViolationStatus;
+  },
 );
 
 export const visibleConstraintResults: Readable<ConstraintResultWithName[]> = derived(

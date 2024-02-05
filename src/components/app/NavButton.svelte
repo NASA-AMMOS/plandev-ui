@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { getColorForStatus, type Status } from '../../utilities/status';
+  import type { Status } from '../../enums/status';
+  import { getColorForStatus } from '../../utilities/status';
 
   export let selected: boolean = false;
   export let status: Status | null = null;

@@ -3,19 +3,19 @@
 <script lang="ts">
   import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { Status } from '../../enums/status';
   import { planReadOnly } from '../../stores/plan';
   import type { SimulationDataset } from '../../types/simulation';
   import { hexToRgba } from '../../utilities/color';
   import {
     formatSimulationQueuePosition,
-    getHumanReadableSimulationStatus,
+    getHumanReadableStatus,
     getSimulationExtent,
     getSimulationProgress,
     getSimulationProgressColor,
     getSimulationStatus,
     getSimulationTimestamp,
   } from '../../utilities/simulation';
-  import { Status } from '../../utilities/status';
   import { getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Card from '../ui/Card.svelte';
@@ -108,7 +108,7 @@
           {#if status === Status.Pending}
             {formatSimulationQueuePosition(queuePosition)}
           {:else}
-            {getHumanReadableSimulationStatus(status)}
+            {getHumanReadableStatus(status)}
           {/if}
         </div>
         {#if status === Status.Pending || status === Status.Incomplete}

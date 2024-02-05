@@ -65,7 +65,7 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Scheduling Goals" />
-    <PanelHeaderActions status={$schedulingStatus}>
+    <PanelHeaderActions status={$schedulingStatus} indeterminate>
       <PanelHeaderActionButton
         title="Analyze"
         on:click={() => effects.schedule(true, $plan, user)}

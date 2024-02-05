@@ -13,12 +13,12 @@
   import ViewGridRightPanelSplitEmpty from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_empty.svg?component';
   import ViewGridRightPanelSplitFilled from '@nasa-jpl/stellar/icons/view_grid_right_panel_split_filled.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { Status } from '../../enums/status';
   import { view, viewIsModified } from '../../stores/views';
   import type { User } from '../../types/app';
   import type { ViewToggleType } from '../../types/view';
   import { showSavedViewsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { Status } from '../../utilities/status';
   import { downloadView } from '../../utilities/view';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ToggleableIcon from '../ui/ToggleableIcon.svelte';

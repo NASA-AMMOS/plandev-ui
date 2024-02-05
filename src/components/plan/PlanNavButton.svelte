@@ -1,7 +1,8 @@
 <script lang="ts">
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
+  import type { Status } from '../../enums/status';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import type { Status } from '../../utilities/status';
+  import { getHumanReadableStatus } from '../../utilities/simulation';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
@@ -11,6 +12,7 @@
   export let buttonTooltipContent: string = '';
   export let disabled: boolean = false;
   export let hasPermission: boolean = true;
+  export let indeterminate: boolean = false;
   export let menuTitle: string = '';
   export let permissionError: string | undefined = undefined;
   export let status: Status | null = null;
@@ -33,7 +35,7 @@
     <slot />
     <span class="nav-button-status">
       {#if status}
-        <StatusBadge badgeText={statusBadgeText} {progress} {status} showTooltip={false} />
+        <StatusBadge badgeText={statusBadgeText} {indeterminate} {progress} {status} showTooltip={false} />
       {/if}
     </span>
   </div>
@@ -49,8 +51,8 @@
     <div class="menu-body">
       {#if status && showStatusInMenu}
         <div class="status-row st-typography-body">
-          <StatusBadge {status} {progress} showTooltip={false} />
-          {statusText || status}
+          <StatusBadge {status} {indeterminate} {progress} showTooltip={false} />
+          {statusText || getHumanReadableStatus(status)}
         </div>
       {/if}
       <div class="menu-metadata st-typography-body">

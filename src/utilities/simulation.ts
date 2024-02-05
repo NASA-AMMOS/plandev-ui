@@ -1,6 +1,7 @@
+import { Status } from '../enums/status';
 import type { SimulationDataset, SimulationDatasetSlim } from '../types/simulation';
 import { compare, getNumberWithOrdinal } from './generic';
-import { Status, statusColors } from './status';
+import { statusColors } from './status';
 import { getDoyTime, getUnixEpochTimeFromInterval } from './time';
 
 /**
@@ -59,14 +60,16 @@ export function getSimulationTimestamp(simulationDataset: SimulationDataset): st
 }
 
 /**
- * Returns a human readable string representing a Simulation Status
+ * Returns a human readable string representing a Status
  */
-export function getHumanReadableSimulationStatus(status: Status | null): string {
+export function getHumanReadableStatus(status: Status | null): string {
   if (!status) {
     return 'Unknown';
   }
   if (status === Status.Complete) {
     return Status.Complete;
+  } else if (status === Status.PartialSuccess) {
+    return 'Partially Succeeded';
   } else if (status === Status.Failed) {
     return Status.Failed;
   } else if (status === Status.Incomplete) {

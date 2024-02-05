@@ -9,16 +9,19 @@
   import VisibleHideIcon from '@nasa-jpl/stellar/icons/visible_hide.svg?component';
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { Status } from '../../enums/status';
   import {
     checkConstraintsStatus,
     constraintResponseMap,
     constraintVisibilityMap,
     constraints,
+    constraintsStatus,
     setAllConstraintsVisible,
     setConstraintVisibility,
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
   import { plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { Constraint, ConstraintResponse } from '../../types/constraint';
   import type { FieldStore } from '../../types/form';
@@ -50,7 +53,7 @@
   let startTimeDoyField: FieldStore<string>;
   let showFilters: boolean = false;
   let showConstraintsWithNoViolations: boolean = true;
-  let filteredConstraintResponseMap: Record<Constraint['id'], ConstraintResponse> = {};
+  let constraintToConstraintResponseMap: Record<Constraint['id'], ConstraintResponse> = {};
 
   $: startTimeDoy = $plan?.start_time_doy || '';
   $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
@@ -60,11 +63,11 @@
   $: endTimeMs = getUnixEpochTime(endTimeDoy);
 
   $: if ($constraints && $constraintResponseMap && startTimeMs && endTimeMs) {
-    filteredConstraintResponseMap = {};
+    constraintToConstraintResponseMap = {};
     $constraints.forEach(constraint => {
       const constraintResponse = $constraintResponseMap[constraint.id];
       if (constraintResponse) {
-        filteredConstraintResponseMap[constraint.id] = {
+        constraintToConstraintResponseMap[constraint.id] = {
           constraintId: constraintResponse.constraintId,
           constraintName: constraintResponse.constraintName,
           errors: constraintResponse.errors,
@@ -86,16 +89,20 @@
 
   $: filteredConstraints = filterConstraints(
     $constraints,
-    filteredConstraintResponseMap,
+    constraintToConstraintResponseMap,
     filterText,
     showConstraintsWithNoViolations,
   );
+  $: filteredConstraintResponses = Object.values(constraintToConstraintResponseMap).filter(r =>
+    filteredConstraints.find(c => c.id === r.constraintId),
+  );
+
   $: totalViolationCount = getViolationCount(Object.values($constraintResponseMap));
-  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponseMap));
+  $: filteredViolationCount = getViolationCount(Object.values(filteredConstraintResponses));
 
   function filterConstraints(
     constraints: Constraint[],
-    filteredConstraintResponseMap: Record<Constraint['id'], ConstraintResponse>,
+    constraintToConstraintResponseMap: Record<Constraint['id'], ConstraintResponse>,
     filterText: string,
     showConstraintsWithNoViolations: boolean,
   ) {
@@ -106,7 +113,7 @@
         return false;
       }
 
-      const constraintResponse = filteredConstraintResponseMap[constraint.id];
+      const constraintResponse = constraintToConstraintResponseMap[constraint.id];
       // Always show constraints with no violations
       if (!constraintResponse?.results.violations?.length) {
         return showConstraintsWithNoViolations;
@@ -118,7 +125,7 @@
 
   function getViolationCount(constraintResponse: ConstraintResponse[]) {
     return constraintResponse.reduce((count, constraintResponse) => {
-      return constraintResponse.results.violations ? constraintResponse.results.violations.length + count : 0;
+      return constraintResponse.results.violations ? constraintResponse.results.violations.length + count : count;
     }, 0);
   }
 
@@ -170,8 +177,10 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Constraints" />
-    <PanelHeaderActions status={$checkConstraintsStatus}>
+    <PanelHeaderActions status={$constraintsStatus} indeterminate>
       <PanelHeaderActionButton
+        disabled={$simulationStatus !== Status.Complete}
+        tooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
         title="Check Constraints"
         on:click={() => $plan && effects.checkConstraints($plan, user)}
         use={[
@@ -287,7 +296,7 @@
         {#each filteredConstraints as constraint}
           <ConstraintListItem
             {constraint}
-            constraintResponse={filteredConstraintResponseMap[constraint.id]}
+            constraintResponse={constraintToConstraintResponseMap[constraint.id]}
             hasDeletePermission={$plan ? featurePermissions.constraints.canDelete(user, $plan) : false}
             hasEditPermission={$plan ? featurePermissions.constraints.canUpdate(user, $plan) : false}
             plan={$plan}
@@ -329,6 +338,10 @@
   .filter-label {
     display: flex;
     gap: 4px;
+  }
+
+  .filter-label :global(svg) {
+    flex-shrink: 0;
   }
 
   .checkbox-container {

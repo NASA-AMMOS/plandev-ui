@@ -4,8 +4,9 @@ import { env } from '$env/dynamic/public';
 import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { SearchParameters } from '../enums/searchParameters';
+import { Status } from '../enums/status';
 import { activityDirectives, activityDirectivesMap, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, rawConstraintResponses } from '../stores/constraints';
+import { checkConstraintsStatus, constraintsViolationStatus, rawConstraintResponses } from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError,
@@ -153,7 +154,6 @@ import {
 import { queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
-import { Status } from './status';
 import { pluralize } from './text';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
 import { createRow, duplicateRow } from './timeline';
@@ -301,6 +301,7 @@ const effects = {
   async checkConstraints(plan: Plan, user: User | null): Promise<void> {
     try {
       checkConstraintsStatus.set(Status.Incomplete);
+      constraintsViolationStatus.set(null);
       if (plan !== null) {
         const { id: planId } = plan;
         const data = await reqHasura<ConstraintResponse[]>(
@@ -322,12 +323,20 @@ const effects = {
             constraintResponse => !constraintResponse.success,
           );
 
+          const anyViolations = successfulConstraintResults.reduce((bool, prev) => {
+            if (prev.violations && prev.violations.length > 0) {
+              bool = true;
+            }
+            return bool;
+          }, false);
+          constraintsViolationStatus.set(anyViolations ? Status.Failed : Status.Complete);
+
           if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
             checkConstraintsStatus.set(Status.Failed);
           } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
-            showFailureToast('Partial Constraints Checked');
-            checkConstraintsStatus.set(successfulConstraintResults.length !== 0 ? Status.Incomplete : Status.Failed);
+            showFailureToast('Constraints Partially Checked');
+            checkConstraintsStatus.set(successfulConstraintResults.length !== 0 ? Status.Failed : Status.Failed);
           } else {
             showSuccessToast('All Constraints Checked');
             checkConstraintsStatus.set(Status.Complete);

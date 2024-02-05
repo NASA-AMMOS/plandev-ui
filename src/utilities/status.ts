@@ -1,14 +1,7 @@
-export enum Status {
-  Canceled = 'Canceled',
-  Complete = 'Complete',
-  Failed = 'Failed',
-  Incomplete = 'Incomplete',
-  Modified = 'Modified',
-  Pending = 'Pending',
-  PartialSuccess = 'PartialSuccess',
-}
+import { Status } from '../enums/status';
 
 export const statusColors: Record<string, string> = {
+  blue: '#2f80ed',
   gray: '#bec0c2',
   green: '#0eaf0a',
   orange: '#c58b00',
@@ -25,7 +18,9 @@ export function getColorForStatus(status: Status | null): string {
   } else if (status === Status.Failed || status === Status.Canceled) {
     return statusColors.red;
   } else if (status === Status.Incomplete) {
-    return statusColors.gray;
+    return statusColors.blue;
+  } else if (status === Status.Unchecked) {
+    return statusColors.yellow;
   } else if (status === Status.Modified) {
     return statusColors.yellow;
   } else if (status === Status.Pending) {

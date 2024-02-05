@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { Status } from '../enums/status';
 import { plan } from '../stores/plan';
 import type {
   SchedulingCondition,
@@ -8,7 +9,6 @@ import type {
   SchedulingSpecGoal,
 } from '../types/scheduling';
 import gql from '../utilities/gql';
-import type { Status } from '../utilities/status';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */

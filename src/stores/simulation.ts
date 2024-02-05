@@ -1,5 +1,6 @@
 import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { Status } from '../enums/status';
 import type {
   Resource,
   ResourceType,
@@ -15,7 +16,6 @@ import type {
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { getSimulationProgress } from '../utilities/simulation';
-import { Status } from '../utilities/status';
 import { modelId, planId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { view } from './views';

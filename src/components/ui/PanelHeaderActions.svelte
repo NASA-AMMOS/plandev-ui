@@ -1,13 +1,14 @@
 <script lang="ts">
-  import type { Status } from '../../utilities/status';
+  import type { Status } from '../../enums/status';
   import StatusBadge from './StatusBadge.svelte';
 
   export let status: Status | null = null;
+  export let indeterminate: boolean = false;
 </script>
 
 <span class="header-actions">
   {#if status}
-    <StatusBadge {status} />
+    <StatusBadge {status} {indeterminate} />
   {/if}
   <slot />
 </span>

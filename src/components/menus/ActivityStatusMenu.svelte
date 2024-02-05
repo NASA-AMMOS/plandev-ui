@@ -3,9 +3,9 @@
 <script lang="ts">
   import WaterfallIcon from '@nasa-jpl/stellar/icons/waterfall.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { Status } from '../../enums/status';
   import type { ActivityDirectiveValidationStatus } from '../../types/activity';
   import type { ActivityErrorCounts } from '../../types/errors';
-  import { Status } from '../../utilities/status';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
 

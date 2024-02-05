@@ -5,6 +5,7 @@
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
+  import { Status } from '../../enums/status';
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planReadOnly, planStartTimeMs } from '../../stores/plan';
   import { planSnapshot } from '../../stores/planSnapshots';
@@ -33,7 +34,6 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getSimulationQueuePosition } from '../../utilities/simulation';
-  import { Status } from '../../utilities/status';
   import { getDoyTime } from '../../utilities/time';
   import { required, timestamp, validateEndTime, validateStartTime } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';

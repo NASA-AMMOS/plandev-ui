@@ -139,7 +139,7 @@
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Expansion" />
-    <PanelHeaderActions status={$planExpansionStatus}>
+    <PanelHeaderActions status={$planExpansionStatus} indeterminate>
       <PanelHeaderActionButton
         title="Expand"
         showLabel
