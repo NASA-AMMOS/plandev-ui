@@ -1,15 +1,23 @@
 <script lang="ts">
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import ArrowRightIcon from '@nasa-jpl/stellar/icons/arrow_right.svg?component';
+  import ArrowUpRightIcon from '@nasa-jpl/stellar/icons/arrow_up_right.svg?component';
+  import AutoScrollIcon from '@nasa-jpl/stellar/icons/auto_scroll.svg?component';
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
+  import DecimateIcon from '@nasa-jpl/stellar/icons/decimate.svg?component';
+  import ShowTooltipIcon from '@nasa-jpl/stellar/icons/hide_tooltip.svg?component';
+  import HorizontalDragIcon from '@nasa-jpl/stellar/icons/horizontal_drag.svg?component';
+  import InterpolateIcon from '@nasa-jpl/stellar/icons/interpolate.svg?component';
   import LinkIcon from '@nasa-jpl/stellar/icons/link.svg?component';
   import MinusIcon from '@nasa-jpl/stellar/icons/minus.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RotateCounterClockwiseIcon from '@nasa-jpl/stellar/icons/rotate_counter_clockwise.svg?component';
-  import FollowIcon from '@nasa-jpl/stellar/icons/switch.svg?component';
+  import TooltipLineIcon from '@nasa-jpl/stellar/icons/tooltip_line.svg?component';
+  import ClipboardIcon from 'bootstrap-icons/icons/clipboard.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import { activityDirectivesMap, selectedActivityDirective } from '../../stores/activities';
-  import { plan } from '../../stores/plan';
+  import { plan, planReadOnly } from '../../stores/plan';
   import {
     selectedSpan,
     simulationDataset,
@@ -17,7 +25,7 @@
     spanUtilityMaps,
     spansMap,
   } from '../../stores/simulation';
-  import { viewIsModified } from '../../stores/views';
+  import { timelineInteractionMode, timelineLockStatus, viewIsModified } from '../../stores/views';
   import type { DirectiveVisibilityToggleMap, TimeRange } from '../../types/timeline';
   import {
     getActivityDirectiveStartTimeMs,
@@ -25,18 +33,29 @@
     getIntervalInMs,
     getUnixEpochTime,
   } from '../../utilities/time';
+  import { TimelineLockStatus } from '../../utilities/timeline';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
-  import ToggleableIconButton from '../ui/ToggleableIconButton.svelte';
-  import TimelineViewDirectiveControls from './TimelineViewDirectiveControls.svelte';
+  import Input from '../form/Input.svelte';
+  import Menu from '../menus/Menu.svelte';
+  import ActivityDirectiveIcon from '../ui/ActivityDirectiveIcon.svelte';
+  import TimelineInteractionModeControl from './TimelineInteractionModeControl.svelte';
+  import TimelineLockControl from './TimelineLockControl.svelte';
 
   export let maxTimeRange: TimeRange = { end: 0, start: 0 };
   export let nudgePercent = 0.05;
+  export let decimate = false;
+  export let hasUpdateDirectivePermission = false;
+  export let showTimelineTooltip = true;
+  export let interpolateHoverValue = false;
+  export let limitTooltipToLine = false;
   export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
   let allDirectivesVisible: boolean = true;
   let followSelection: boolean = false;
+  let pickerMenu: Menu;
+  let viewURL: URL | null = null;
 
   const dispatch = createEventDispatcher();
 
@@ -52,6 +71,24 @@
   }
   $: if (followSelection && ($selectedActivityDirective || $selectedSpan)) {
     scrollIfOffscreen();
+  }
+
+  $: if (
+    typeof window !== 'undefined' &&
+    ($selectedActivityDirective || $selectedSpan || $simulationDatasetId !== null)
+  ) {
+    viewURL = new URL(window.location.href);
+    viewURL.searchParams.set(SearchParameters.START_TIME, new Date(viewTimeRange.start).toISOString());
+    viewURL.searchParams.set(SearchParameters.END_TIME, new Date(viewTimeRange.end).toISOString());
+    if ($selectedActivityDirective) {
+      viewURL.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
+    }
+    if ($selectedSpan) {
+      viewURL.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.id.toFixed());
+    }
+    if ($simulationDatasetId) {
+      viewURL.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());
+    }
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -130,26 +167,20 @@
     dispatch('toggleDirectiveVisibility', !allDirectivesVisible);
   }
 
-  async function onCopyViewportURL() {
-    const targetUrl = new URL(window.location.href);
-    targetUrl.searchParams.set(SearchParameters.START_TIME, new Date(viewTimeRange.start).toISOString());
-    targetUrl.searchParams.set(SearchParameters.END_TIME, new Date(viewTimeRange.end).toISOString());
-    if ($selectedActivityDirective) {
-      targetUrl.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
-    }
-    if ($selectedSpan) {
-      targetUrl.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.id.toFixed());
-    }
-    if ($simulationDatasetId) {
-      targetUrl.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());
-    }
+  function onToggleDecimation() {
+    dispatch('toggleDecimation', !decimate);
+  }
 
-    try {
-      await navigator.clipboard.writeText(targetUrl.href);
-      showSuccessToast('URL of plan and view copied to clipboard');
-    } catch {
-      showFailureToast('Error copying URL to clipboard');
-    }
+  function onToggleTimelineTooltip() {
+    dispatch('toggleTimelineTooltip', !showTimelineTooltip);
+  }
+
+  function onToggleInterpolate() {
+    dispatch('toggleInterpolateHoverValue', !interpolateHoverValue);
+  }
+
+  function onLimitTooltipToLine() {
+    dispatch('toggleLimitTooltipToLine', !limitTooltipToLine);
   }
 
   function getSelectionTime() {
@@ -197,15 +228,108 @@
       });
     }
   }
+
+  function openDoc(event: MouseEvent, url: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(url, '_newtab');
+  }
+
+  async function copyViewToClipboard() {
+    if (viewURL) {
+      try {
+        await navigator.clipboard.writeText(viewURL.href);
+        showSuccessToast('URL of plan and view copied to clipboard');
+      } catch {
+        showFailureToast('Error copying URL to clipboard');
+      }
+    }
+  }
+
+  function toggleTimelineLock() {
+    if ($timelineLockStatus === TimelineLockStatus.Locked) {
+      $timelineLockStatus = TimelineLockStatus.Unlocked;
+    } else {
+      $timelineLockStatus = TimelineLockStatus.Locked;
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} />
-
+<button
+  class="st-button icon toggle-button"
+  class:active={followSelection}
+  on:click={onToggleFollowSelection}
+  use:tooltip={{
+    content: `${followSelection ? 'Disable' : 'Enable'} auto scroll to offscreen selections`,
+    placement: 'bottom',
+  }}
+>
+  <AutoScrollIcon />
+</button>
+<button
+  class="st-button icon toggle-button"
+  class:active={decimate}
+  on:click={onToggleDecimation}
+  use:tooltip={{ content: `${decimate ? 'Disable' : 'Enable'} decimation`, placement: 'bottom' }}
+>
+  <DecimateIcon />
+</button>
+<button
+  class="st-button icon toggle-button"
+  class:active={interpolateHoverValue}
+  on:click={onToggleInterpolate}
+  use:tooltip={{
+    content: `${interpolateHoverValue ? 'Disable' : 'Enable'} cursor value interpolation`,
+    placement: 'bottom',
+  }}
+>
+  <InterpolateIcon />
+</button>
+{#if Object.keys(timelineDirectiveVisibilityToggles).length > 0}
+  <button
+    class="st-button icon toggle-button"
+    class:active={allDirectivesVisible}
+    on:click={onToggleDirectiveVisibility}
+    use:tooltip={{
+      content: `${allDirectivesVisible ? 'Hide' : 'Show'} directives on all timeline rows`,
+      placement: 'bottom',
+    }}
+  >
+    <ActivityDirectiveIcon backgroundColor="#ccc" size="12px" />
+  </button>
+{/if}
+<button
+  class="st-button icon toggle-button"
+  class:active={limitTooltipToLine}
+  on:click={onLimitTooltipToLine}
+  use:tooltip={{
+    content: `${limitTooltipToLine ? 'Disable' : 'Enable'} cursor line intersection`,
+    placement: 'bottom',
+  }}
+>
+  <TooltipLineIcon />
+</button>
+<div class="timeline-icon-tray-divider" />
+<button
+  class="st-button icon toggle-button"
+  class:active={showTimelineTooltip}
+  on:click={onToggleTimelineTooltip}
+  use:tooltip={{ content: `${showTimelineTooltip ? 'Hide' : 'Show'} timeline tooltip`, placement: 'bottom' }}
+>
+  <ShowTooltipIcon />
+</button>
+<TimelineInteractionModeControl
+  timelineInteractionMode={$timelineInteractionMode}
+  on:change={({ detail: mode }) => {
+    $timelineInteractionMode = mode;
+  }}
+/>
+<div class="timeline-icon-tray-divider" />
 <button
   class="st-button icon"
   on:click={onNudgeLeft}
   use:tooltip={{ content: 'Shift Left', placement: 'bottom', shortcut: '[' }}
-  disabled={viewTimeRange.start === maxTimeRange.start}
 >
   <ArrowLeftIcon />
 </button>
@@ -213,7 +337,6 @@
   class="st-button icon"
   on:click={onNudgeRight}
   use:tooltip={{ content: 'Shift Right', placement: 'bottom', shortcut: ']' }}
-  disabled={viewTimeRange.end === maxTimeRange.end}
 >
   <ArrowRightIcon />
 </button>
@@ -221,7 +344,6 @@
   class="st-button icon"
   on:click={onZoomOut}
   use:tooltip={{ content: 'Zoom Out', placement: 'bottom', shortcut: '-' }}
-  disabled={viewDuration === maxDuration}
 >
   <MinusIcon />
 </button>
@@ -236,23 +358,13 @@
   class="st-button icon"
   on:click={onResetViewTimeRange}
   use:tooltip={{ content: 'Reset Visible Time Range', placement: 'bottom', shortcut: '0' }}
-  disabled={viewDuration === maxDuration}
 >
   <RotateCounterClockwiseIcon />
 </button>
-{#if Object.keys(timelineDirectiveVisibilityToggles).length > 0}
-  <TimelineViewDirectiveControls
-    directivesVisible={allDirectivesVisible}
-    offTooltipContent="Show Directives on all Timeline Rows"
-    onTooltipContent="Hide Directives on all Timeline Rows"
-    tooltipPlacement="bottom"
-    on:toggleDirectiveVisibility={onToggleDirectiveVisibility}
-  />
-{/if}
-
+<div class="timeline-icon-tray-divider" />
 <button
   class="st-button icon"
-  on:click={onCopyViewportURL}
+  on:click={copyViewToClipboard}
   use:tooltip={{
     content: `Copy URL including plan, visible time window, selection, and simulation dataset to clipboard.${
       $viewIsModified ? ' View has unsaved changes.' : ''
@@ -262,46 +374,215 @@
 >
   <LinkIcon />
 </button>
-
-<ToggleableIconButton
-  isOn={followSelection}
-  offTooltipContent="Enable auto scroll to offscreen selections"
-  onTooltipContent="Disable auto scroll to offscreen selections"
-  tooltipPlacement="bottom"
-  useBorder={true}
-  on:toggle={onToggleFollowSelection}
->
-  <FollowIcon />
-  <div slot="offIcon" class="off-icon">
-    <FollowIcon />
-    <div class="toggle-slash" />
-  </div>
-</ToggleableIconButton>
+<TimelineLockControl
+  hasUpdatePermission={hasUpdateDirectivePermission}
+  planReadOnly={$planReadOnly}
+  timelineLockStatus={$timelineLockStatus}
+  on:lock={({ detail: lock }) => {
+    $timelineLockStatus = lock;
+  }}
+  on:unlock={({ detail: unlock }) => {
+    $timelineLockStatus = unlock;
+  }}
+  on:click={toggleTimelineLock}
+/>
+<div style="position: relative">
+  <button
+    class="st-button secondary timeline-view-controls-menu--button"
+    use:tooltip={{ content: 'Timeline Options', placement: 'bottom' }}
+    style="position: relative"
+    on:click|stopPropagation={() => pickerMenu.toggle()}
+  >
+    <div class="button-inner"><ChevronDownIcon /></div>
+  </button>
+  <Menu bind:this={pickerMenu} hideAfterClick={false} placement="bottom-end">
+    <div class="timeline-view-controls-menu">
+      <div class="timeline-view-controls-menu--group">
+        <div class="st-typography-medium">Actions</div>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="autoscroll">
+            <AutoScrollIcon />Auto scroll to selected activity
+          </label>
+          <input
+            checked={followSelection}
+            id="autoscroll"
+            name="autoscroll"
+            on:change={onToggleFollowSelection}
+            type="checkbox"
+          />
+        </Input>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="decimate">
+            <DecimateIcon />Decimate data (lossless)
+            <button
+              class="st-button secondary docs-button"
+              on:click|capture={event => {
+                openDoc(
+                  event,
+                  'https://nasa-ammos.github.io/aerie-docs/planning/timeline-controls/#line-layer-decimation',
+                );
+              }}
+            >
+              Docs <ArrowUpRightIcon />
+            </button>
+          </label>
+          <input checked={decimate} id="decimate" name="decimate" on:change={onToggleDecimation} type="checkbox" />
+        </Input>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="interpolate">
+            <InterpolateIcon />Show interpolated values
+            <button
+              class="st-button secondary docs-button"
+              on:click|capture={event => {
+                openDoc(
+                  event,
+                  'https://nasa-ammos.github.io/aerie-docs/planning/timeline-controls/#cursor-value-interpolation',
+                );
+              }}
+            >
+              Docs <ArrowUpRightIcon />
+            </button>
+          </label>
+          <input
+            checked={interpolateHoverValue}
+            id="interpolate"
+            name="interpolate"
+            on:change={onToggleInterpolate}
+            type="checkbox"
+          />
+        </Input>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="lockTimeline">
+            <HorizontalDragIcon />Drag and drop to move activities
+          </label>
+          <input
+            checked={$timelineLockStatus === TimelineLockStatus.Unlocked}
+            id="lockTimeline"
+            name="lockTimeline"
+            on:change={toggleTimelineLock}
+            type="checkbox"
+          />
+        </Input>
+      </div>
+      <div class="timeline-view-controls-menu--group">
+        <div class="st-typography-medium">Tooltips</div>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="toggleTooltipVisibility">
+            <ShowTooltipIcon />Show tooltip
+          </label>
+          <input
+            checked={showTimelineTooltip}
+            id="toggleTooltipVisibility"
+            name="toggleTooltipVisibility"
+            on:change={onToggleTimelineTooltip}
+            type="checkbox"
+          />
+        </Input>
+        <Input layout="inline" class="timeline-view-control-menu--input">
+          <label class="st-typography-label" for="toggleTooltipLine">
+            <TooltipLineIcon />Limit tooltip to line
+          </label>
+          <input
+            checked={limitTooltipToLine}
+            id="toggleTooltipLine"
+            name="toggleTooltipLine"
+            on:change={onLimitTooltipToLine}
+            type="checkbox"
+          />
+        </Input>
+      </div>
+      <div class="timeline-view-controls-menu--group">
+        <div class="st-typography-medium">Current View</div>
+        <div class="st-typography-body">Includes current plan, time window, selection, and simulation dataset</div>
+        <div class="timeline-view-controls--input">
+          <button
+            use:tooltip={{ content: `Copy to clipboard`, placement: 'top' }}
+            class="st-button icon"
+            on:click={copyViewToClipboard}><ClipboardIcon /></button
+          >
+          <input readonly class="st-input" value={viewURL?.href} />
+        </div>
+      </div>
+    </div>
+  </Menu>
+</div>
 
 <style>
-  .st-button {
-    border: 1px solid var(--st-gray-30);
-    color: var(--st-gray-70);
+  .st-button.timeline-view-controls-menu--button {
+    padding: 0;
+    width: 32px;
   }
 
-  .st-button:hover :global(svg) {
+  .button-inner {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    padding: 0;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .timeline-view-controls-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    width: 340px;
+  }
+
+  .timeline-view-controls-menu--group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    user-select: none;
+    white-space: normal;
+  }
+
+  .timeline-view-controls-menu--group .st-typography-body {
+    color: var(--st-gray-60);
+  }
+
+  .docs-button {
+    color: var(--st-gray-60);
+    display: flex;
+    gap: 2px;
+    height: 16px;
+    margin-left: auto;
+    padding: 0px 4px;
+  }
+
+  /* TODO fix this icon */
+  .docs-button :global(svg) {
+    color: var(--st-gray-40);
+    height: 12px;
+    width: 12px;
+  }
+
+  :global(.timeline-view-control-menu--input.input.input-inline) {
+    gap: 12px;
+    grid-template-columns: 1fr min-content;
+    height: 24px;
+    padding: 0;
+  }
+
+  :global(.timeline-view-control-menu--input label) {
+    display: flex;
+    gap: 8px;
+    user-select: none;
+  }
+
+  :global(.timeline-view-control-menu--input label svg) {
     color: var(--st-gray-80);
   }
 
-  .off-icon {
-    align-items: center;
-    display: inline-flex;
-    position: relative;
+  .timeline-view-controls--input {
+    display: flex;
+    gap: 8px;
   }
 
-  .toggle-slash {
-    background-color: var(--st-gray-70);
-    bottom: 6px;
-    height: 2px;
-    left: -3px;
-    outline: 2px solid #fff;
-    position: absolute;
-    transform: rotate(-35deg);
-    width: 20px;
+  .timeline-view-controls--input input {
+    flex: 1;
   }
 </style>

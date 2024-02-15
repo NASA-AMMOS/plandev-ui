@@ -23,8 +23,8 @@
     HorizontalGuide,
     Layer,
     MouseDown,
-    MouseOver,
     Point,
+    RowMouseOverEvent,
     TimeRange,
     XAxisTick,
   } from '../../types/timeline';
@@ -52,6 +52,9 @@
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let autoAdjustHeight: boolean = false;
   export let constraintResults: ConstraintResultWithName[] = [];
+  export let decimate: boolean = false;
+  export let interpolateHoverValue: boolean = false;
+  export let limitTooltipToLine: boolean = false;
   export let dpr: number = 0;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -221,7 +224,7 @@
     dispatch('mouseDown', { ...detail, activityDirectives, rowId: id, spans });
   }
 
-  function onMouseOver(event: CustomEvent<MouseOver>) {
+  function onMouseOver(event: CustomEvent<RowMouseOverEvent>) {
     const { detail } = event;
     const { layerId } = detail;
 
@@ -231,13 +234,14 @@
     mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
     mouseOverGapsByLayer[layerId] = detail?.gaps ?? mouseOverGapsByLayer[layerId] ?? [];
 
-    const activityDirectives = Object.values(mouseOverActivityDirectivesByLayer).flat();
-    const constraintResults = mouseOverConstraintResults;
-    const points = Object.values(mouseOverPointsByLayer).flat();
-    const spans = Object.values(mouseOverSpansByLayer).flat();
-    const gaps = Object.values(mouseOverGapsByLayer).flat();
-
-    dispatch('mouseOver', { ...detail, activityDirectives, constraintResults, gaps, points, spans });
+    dispatch('mouseOver', {
+      ...detail,
+      activityDirectivesByLayer: mouseOverActivityDirectivesByLayer,
+      constraintResults: mouseOverConstraintResults,
+      gapsByLayer: mouseOverGapsByLayer,
+      pointsByLayer: mouseOverPointsByLayer,
+      spansByLayer: mouseOverSpansByLayer,
+    });
   }
 
   function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
@@ -402,9 +406,13 @@
               on:mouseOver={onMouseOver}
             />
           {/if}
-          {#if layer.chartType === 'line'}
+          {#if layer.chartType === 'line' || (isXRangeLayer(layer) && layer.showAsLinePlot)}
             <LayerLine
               {...layer}
+              ordinalScale={isXRangeLayer(layer) && layer.showAsLinePlot}
+              {decimate}
+              {interpolateHoverValue}
+              {limitTooltipToLine}
               {contextmenu}
               {dpr}
               drawHeight={computedDrawHeight}
@@ -420,40 +428,21 @@
               on:contextMenu
             />
           {/if}
-          {#if isXRangeLayer(layer)}
-            {#if layer.showAsLinePlot === true}
-              <LayerLine
-                {...layer}
-                {contextmenu}
-                {dpr}
-                drawHeight={computedDrawHeight}
-                {drawWidth}
-                filter={layer.filter.resource}
-                {mousemove}
-                {mouseout}
-                resources={resourcesByViewLayerId[layer.id] ?? []}
-                {viewTimeRange}
-                {xScaleView}
-                yAxes={yAxesWithScaleDomains}
-                on:mouseOver={onMouseOver}
-                on:contextMenu
-              />
-            {:else}
-              <LayerXRange
-                {...layer}
-                {contextmenu}
-                {dpr}
-                drawHeight={computedDrawHeight}
-                {drawWidth}
-                filter={layer.filter.resource}
-                {mousemove}
-                {mouseout}
-                resources={resourcesByViewLayerId[layer.id] ?? []}
-                {xScaleView}
-                on:mouseOver={onMouseOver}
-                on:contextMenu
-              />
-            {/if}
+          {#if isXRangeLayer(layer) && !layer.showAsLinePlot}
+            <LayerXRange
+              {...layer}
+              {contextmenu}
+              {dpr}
+              drawHeight={computedDrawHeight}
+              {drawWidth}
+              filter={layer.filter.resource}
+              {mousemove}
+              {mouseout}
+              resources={resourcesByViewLayerId[layer.id] ?? []}
+              {xScaleView}
+              on:mouseOver={onMouseOver}
+              on:contextMenu
+            />
           {/if}
         {/each}
       </div>

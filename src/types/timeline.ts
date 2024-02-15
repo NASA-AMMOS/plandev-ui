@@ -82,7 +82,10 @@ export interface LineLayer extends Layer {
 }
 
 export interface LinePoint extends Point {
-  y: number;
+  y:
+    | number
+    | string
+    | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
 }
 
 export type MouseDown = {
@@ -95,16 +98,26 @@ export type MouseDown = {
 };
 
 export type MouseOver = {
-  activityDirectives?: ActivityDirective[];
+  activityDirectivesByLayer?: Record<number, ActivityDirective[]>;
   constraintResults?: ConstraintResultWithName[];
   e: MouseEvent;
-  gaps?: Point[];
-  layerId: number;
-  origin?: MouseOverOrigin;
-  points?: Point[];
+  gapsByLayer?: Record<number, Point[]>;
+  layerId: number; //TODO not relevant since we sometimes have multiple layers per click
+  origin?: MouseOverOrigin; //TODO perhaps remove this
+  pointsByLayer?: Record<number, Point[]>;
   row?: Row;
   selectedActivityDirectiveId?: number;
   selectedSpanId?: number;
+  spansByLayer?: Record<number, Span[]>;
+};
+
+export type RowMouseOverEvent = Omit<
+  MouseOver,
+  'activityDirectivesByLayer' | 'gapsByLayer' | 'pointsByLayer' | 'spansByLayer'
+> & {
+  activityDirectives?: ActivityDirective[];
+  gaps?: Point[];
+  points?: Point[];
   spans?: Span[];
 };
 

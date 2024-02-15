@@ -77,6 +77,11 @@
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let user: User | null;
 
+  export let decimate: boolean = false;
+  export let interpolateHoverValue: boolean = false;
+  export let showTimelineTooltip: boolean = false;
+  export let limitTooltipToLine: boolean = false;
+
   const dispatch = createEventDispatcher();
 
   let timelineZoomTransform: ZoomTransform | null = null;
@@ -478,6 +483,9 @@
             {planStartTimeYmd}
             {resourcesByViewLayerId}
             {rowDragMoveDisabled}
+            {decimate}
+            {interpolateHoverValue}
+            {limitTooltipToLine}
             {rowHeaderDragHandleWidthPx}
             {selectedActivityDirectiveId}
             {selectedSpanId}
@@ -500,7 +508,7 @@
             on:mouseDown={onMouseDown}
             on:mouseDownRowMove={onMouseDownRowMove}
             on:mouseUpRowMove={onMouseUpRowMove}
-            on:mouseOver={e => (mouseOver = e.detail)}
+            on:mouseOver={e => (mouseOver = { ...e.detail, row })}
             on:toggleRowExpansion={onToggleRowExpansion}
             on:updateRowHeight={onUpdateRowHeight}
             on:zoom={throttledZoom}
@@ -511,7 +519,13 @@
   </div>
 
   <!-- Timeline Tooltip. -->
-  <Tooltip bind:this={tooltip} {mouseOver} />
+  <Tooltip
+    bind:this={tooltip}
+    {mouseOver}
+    {interpolateHoverValue}
+    {resourcesByViewLayerId}
+    hidden={!showTimelineTooltip}
+  />
 
   <!-- Timeline Context Menu. -->
   <TimelineContextMenu

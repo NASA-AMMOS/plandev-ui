@@ -4,17 +4,21 @@
   import { select } from 'd3-selection';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResultWithName } from '../../types/constraint';
-  import type { Span } from '../../types/simulation';
-  import type { LinePoint, MouseOver, Point, XRangePoint } from '../../types/timeline';
+  import type { Resource, Span } from '../../types/simulation';
+  import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
 
   export let mouseOver: MouseOver | null;
+  export let interpolateHoverValue: boolean = false;
+  export let resourcesByViewLayerId: Record<number, Resource[]> = {};
+  export let hidden: boolean = false;
 
   let activityDirectives: ActivityDirective[] = [];
   let constraintResults: ConstraintResultWithName[] = [];
   let points: Point[] = [];
   let gaps: Point[] = [];
   let spans: Span[] = [];
+  let row: Row | null = null;
   let visible: boolean = false;
 
   $: if (mouseOver) {
@@ -22,12 +26,15 @@
   }
 
   function onMouseOver(event: MouseOver | undefined) {
-    if (event) {
-      activityDirectives = event?.activityDirectives ?? [];
+    if (event && !hidden) {
+      activityDirectives = event?.activityDirectivesByLayer
+        ? Object.values(event.activityDirectivesByLayer).flat()
+        : [];
       constraintResults = event?.constraintResults ?? [];
-      gaps = event?.gaps ?? [];
-      points = event?.points ?? [];
-      spans = event?.spans ?? [];
+      gaps = event?.gapsByLayer ? Object.values(event.gapsByLayer).flat() : [];
+      points = event?.pointsByLayer ? Object.values(event.pointsByLayer).flat() : [];
+      row = event?.row ?? null;
+      spans = event?.spansByLayer ? Object.values(event.spansByLayer).flat() : [];
 
       show(event.e);
     }
@@ -134,14 +141,21 @@
       tooltipText = `${tooltipText}<hr>`;
     }
 
-    points.forEach((point: Point, i: number) => {
+    const flatPointsByLayer = Object.entries(mouseOver?.pointsByLayer || {})
+      .map(([layerId, points]) => {
+        return points.map(point => ({ layerId, point }));
+      })
+      .flat();
+
+    flatPointsByLayer.forEach(({ point, layerId }, i) => {
+      const layerIdAsNumber = parseInt(layerId);
       if (point.type === 'line') {
-        const text = textForLinePoint(point as LinePoint);
+        const text = textForLinePoint(point as LinePoint, layerIdAsNumber);
         tooltipText = `${tooltipText} ${text}`;
       }
 
       if (point.type === 'x-range') {
-        const text = textForXRangePoint(point as XRangePoint);
+        const text = textForXRangePoint(point as XRangePoint, layerIdAsNumber);
         tooltipText = `${tooltipText} ${text}`;
       }
 
@@ -169,43 +183,86 @@
   function textForActivityDirective(activityDirective: ActivityDirective): string {
     const { anchor_id, id, name, start_offset, type } = activityDirective;
     return `
-      <div>
-        Activity Directive
-        <br>
-        Id: ${id}
-        <br>
-        Name: ${name}
-        <br>
-        Type: ${type}
-        <br>
-        Start Offset: ${start_offset}
-        <br>
-        Anchored To ID: ${anchor_id ?? 'None'}
+      <div class='tooltip-row-container'>
+        <div class='st-typography-bold' style='color: var(--st-gray-10)'>Activity Directive</div>
+        <div class='tooltip-row'>
+          <span>Name:</span>
+          <span class='tooltip-value-row'>
+            <span class='tooltip-value-highlight st-typography-medium'>${name}</span>
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Id:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Type:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Start Offset:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${start_offset}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Anchored To ID:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${anchor_id ?? 'None'}</span>
+        </div>
       </div>
     `;
   }
 
   function textForConstraintViolation(constraintViolation: ConstraintResultWithName): string {
     return `
-      <div>
-        Constraint Violation
-        <br>
-        Name: ${constraintViolation.constraintName}
+      <div class='tooltip-row-container'>
+        <div class='st-typography-bold' style='color: var(--st-gray-10)'>Constraint Violation</div>
+        <div class='tooltip-row'>
+          <span>Name:</span>
+          <span class='tooltip-value-row'>
+            <span class='tooltip-value-highlight st-typography-medium'>${constraintViolation.constraintName}</span>
+          </span>
+        </div>
       </div>
     `;
   }
 
-  function textForLinePoint(point: LinePoint): string {
-    const { id, x, y } = point;
+  function textForLinePoint(point: LinePoint, layerId: number): string {
+    const { x, y } = point;
+    const layer = row ? row.layers.find(l => l.id === layerId) : null;
+    let color = '#FFFFFF';
+    let unit = '';
+    let name = point.name;
+    if (layer && layer.chartType === 'line') {
+      const resources = resourcesByViewLayerId[layerId] || [];
+      if (resources.length > 0) {
+        // Only consider a single resource since multiple resources on a single layer is
+        // supported in config but not valid
+        unit = resources[0].schema.metadata?.unit?.value || '';
+        name = layer.name ? layer.name : point.name;
+      }
+      color = (layer as LineLayer).lineColor;
+    }
+
     return `
-      <div>
-        Id: ${id}
-        <br>
-        Resource Name: ${point.name}
-        <br>
-        Time: ${getDoyTime(new Date(x))}
-        <br>
-        Value: ${y}
+      <div class='tooltip-row-container'>
+        <div class='tooltip-row'>
+          <span>Resource Name:</span>
+          <span class='tooltip-value-row'>
+            <span style='background: ${color}' class='tooltip-color-box'></span>
+            <span class='tooltip-value-highlight st-typography-medium'>${name}</span>
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Time:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>
+            ${getDoyTime(new Date(x))}
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>${interpolateHoverValue ? 'Interpolated' : 'Nearest'} Value:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>
+            ${y}${unit ? ` (${unit})` : ''}
+          </span>
+        </div>
       </div>
     `;
   }
@@ -213,31 +270,65 @@
   function textForSpan(span: Span): string {
     const { id, duration, start_offset, type } = span;
     return `
-      <div>
-        Simulated Activity (Span)
-        <br>
-        Id: ${id}
-        <br>
-        Type: ${type}
-        <br>
-        Start Offset: ${start_offset}
-        <br>
-        Duration: ${duration}
+      <div class='tooltip-row-container'>
+        <div class='st-typography-bold' style='color: var(--st-gray-10)'>Simulated Activity (Span)</div>
+        <div class='tooltip-row'>
+          <span>Id:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Type:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Start Offset:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${start_offset}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Duration:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${duration}</span>
+        </div>
       </div>
     `;
   }
 
-  function textForXRangePoint(point: XRangePoint): string {
-    const { id, x } = point;
+  function textForXRangePoint(point: XRangePoint, layerId: number): string {
+    const { x } = point;
+
+    const layer = row ? row.layers.find(l => l.id === layerId) : null;
+    let color = '#FFFFFF';
+    let name = '';
+    if (layer && layer.chartType === 'x-range') {
+      const resources = resourcesByViewLayerId[layerId] || [];
+      if (resources.length > 0) {
+        // Only consider a single resource since multiple resources on a single layer is
+        // supported in config but not valid
+        name = layer.name ? layer.name : point.name;
+      }
+      color = (layer as LineLayer).lineColor;
+    }
+
     return `
-      <div>
-        Id: ${id}
-        <br>
-        Resource Name: ${point.name}
-        <br>
-        Start: ${getDoyTime(new Date(x))}
-        <br>
-        Value: ${point.label.text}
+      <div class='tooltip-row-container'>
+        <div class='tooltip-row'>
+          <span>Resource Name:</span>
+          <span class='tooltip-value-row'>
+            <span style='background: ${color}' class='tooltip-color-box'></span>
+            <span class='tooltip-value-highlight st-typography-medium'>${name}</span>
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Start:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>
+            ${getDoyTime(new Date(x))}
+          </span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Value:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>
+            ${point.label.text}
+          </span>
+        </div>
       </div>
     `;
   }
