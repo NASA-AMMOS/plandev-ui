@@ -177,7 +177,7 @@ test('getYAxisBounds', () => {
       [layer1.id]: [resourceWithNoValues],
     }),
   ).toEqual([0, 10]);
-  expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId, { end: 4, start: 3 })).toEqual([12, 13]);
+  expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId, { end: 4, start: 3 })).toEqual([11, 14]);
   expect(
     getYAxisBounds({ ...yAxis, domainFitMode: 'fitPlan' }, layers, resourcesByViewLayerId, { end: 4, start: 3 }),
   ).toEqual([10, 15]);

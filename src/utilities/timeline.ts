@@ -551,7 +551,7 @@ export function getYAxisBounds(
             }
           }
           // Identify the first value to the right of the viewTimeRange
-          if (viewTimeRange && value.x > viewTimeRange.start) {
+          if (viewTimeRange && value.x > viewTimeRange.end) {
             if (value.is_gap) {
               rightValue = undefined;
             } else {
@@ -580,16 +580,18 @@ export function getYAxisBounds(
             }
           }
         });
-        // If viewTimeRange is supplied and the minY and maxY are still undefined,
-        // look for the first numerical value to the left and to the right of the time window
-        if (
-          viewTimeRange &&
-          (minY === undefined || maxY === undefined) &&
-          leftValue !== undefined &&
-          rightValue !== undefined
-        ) {
-          minY = Math.min(leftValue.y as number, rightValue.y as number);
-          maxY = Math.max(leftValue.y as number, rightValue.y as number);
+        // Account for the neighboring left and right values as these values are connected to in line drawing
+        if (viewTimeRange) {
+          minY = Math.min(
+            minY ?? Number.MAX_SAFE_INTEGER,
+            leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MAX_SAFE_INTEGER,
+            rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MAX_SAFE_INTEGER,
+          );
+          maxY = Math.max(
+            maxY ?? Number.MIN_SAFE_INTEGER,
+            leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MIN_SAFE_INTEGER,
+            rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MIN_SAFE_INTEGER,
+          );
         }
       });
     }
