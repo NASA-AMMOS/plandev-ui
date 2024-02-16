@@ -1840,7 +1840,7 @@ const effects = {
       );
 
       if (confirm) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_EXPANSION_SET, { id: set.name }, user);
+        const data = await reqHasura<{ id: number }>(gql.DELETE_EXPANSION_SET, { id: set.id }, user);
         if (data.deleteExpansionSet != null) {
           showSuccessToast('Expansion Set Deleted Successfully');
           return true;
