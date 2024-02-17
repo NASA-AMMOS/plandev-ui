@@ -32,11 +32,12 @@
 
 <button class="st-button tertiary violation-button" on:click={() => zoomToViolation(window)}>
   <div>
-    {startYear}-<span class="st-typography-bold">{startDoy}</span> T {startHours}:{startMins}:{startSecs}.{startMsecs}
+    {startYear}-<span class="st-typography-bold">{startDoy}</span> T {startHours}:{startMins}:{startSecs}.{startMsecs} UTC
   </div>
+
   <div class="separator">–</div>
   <div>
-    {endYear}-<span class="st-typography-bold">{endDoy}</span> T {endHours}:{endMins}:{endSecs}.{endMsecs}
+    {endYear}-<span class="st-typography-bold">{endDoy}</span> T {endHours}:{endMins}:{endSecs}.{endMsecs} UTC
   </div>
 </button>
 

@@ -1,4 +1,5 @@
 import Ajv from 'ajv';
+import { ViewConstants } from '../enums/view';
 import jsonSchema from '../schemas/ui-view-schema.json';
 import type { ActivityType } from '../types/activity';
 import type { ResourceType } from '../types/simulation';
@@ -20,7 +21,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
   const now = new Date().toISOString();
   const types: string[] = activityTypes.map(({ name }) => name);
 
-  const timeline = createTimeline([], { marginLeft: 160, marginRight: 30 });
+  const timeline = createTimeline([], { marginLeft: ViewConstants.MIN_MARGIN_LEFT, marginRight: 30 });
   const timelines = [timeline];
 
   const activityLayer = createTimelineActivityLayer(timelines, {
@@ -217,7 +218,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             {
               field: 'derived_start_time',
               filter: 'text',
-              headerName: 'Absolute Start Time',
+              headerName: 'Absolute Start Time (UTC)',
               resizable: true,
               sortable: true,
               width: 200,
@@ -237,7 +238,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             {
               field: 'created_at',
               filter: 'text',
-              headerName: 'Created At',
+              headerName: 'Created At (UTC)',
               hide: true,
               resizable: true,
               sortable: true,
@@ -287,7 +288,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             {
               field: 'derived_start_time',
               filter: 'text',
-              headerName: 'Absolute Start Time',
+              headerName: 'Absolute Start Time (UTC)',
               hide: false,
               resizable: true,
               sortable: true,
@@ -295,7 +296,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
             {
               field: 'derived_end_time',
               filter: 'text',
-              headerName: 'Absolute End Time',
+              headerName: 'Absolute End Time (UTC)',
               hide: false,
               resizable: true,
               sortable: true,

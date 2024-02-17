@@ -7,12 +7,12 @@
 </script>
 
 <div style:width={`${width ?? 10}px`} class="timeline-time-display">
-  <div use:tooltip={{ content: 'Plan Start Time' }} class="timeline-time-display--date st-typography-medium">
-    {planStartTimeDoy}
+  <div use:tooltip={{ content: 'Plan Start Time (UTC)' }} class="timeline-time-display--date st-typography-medium">
+    {planStartTimeDoy} UTC
   </div>
 
-  <div use:tooltip={{ content: 'Plan End Time' }} class="timeline-time-display--date st-typography-medium">
-    {planEndTimeDoy}
+  <div use:tooltip={{ content: 'Plan End Time (UTC)' }} class="timeline-time-display--date st-typography-medium">
+    {planEndTimeDoy} UTC
   </div>
 </div>
 

@@ -254,7 +254,7 @@
         <div class='tooltip-row'>
           <span>Time:</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${getDoyTime(new Date(x))}
+            ${getDoyTime(new Date(x))} UTC
           </span>
         </div>
         <div class='tooltip-row'>
@@ -320,7 +320,7 @@
         <div class='tooltip-row'>
           <span>Start:</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${getDoyTime(new Date(x))}
+            ${getDoyTime(new Date(x))} UTC
           </span>
         </div>
         <div class='tooltip-row'>

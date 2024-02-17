@@ -107,11 +107,12 @@
           <input class="st-input w-100" disabled name="modelVersion" value={plan.model.version} />
         </Input>
         <Input layout="inline">
-          <label use:tooltip={{ content: 'Start Time', placement: 'top' }} for="startTime">Start Time</label>
+          <label use:tooltip={{ content: 'Start Time (UTC)', placement: 'top' }} for="startTime">Start Time (UTC)</label
+          >
           <input class="st-input w-100" disabled name="startTime" value={plan.start_time_doy} />
         </Input>
         <Input layout="inline">
-          <label use:tooltip={{ content: 'End Time', placement: 'top' }} for="endTime">End Time</label>
+          <label use:tooltip={{ content: 'End Time (UTC)', placement: 'top' }} for="endTime">End Time (UTC)</label>
           <input class="st-input w-100" disabled name="endTime" value={plan.end_time_doy} />
         </Input>
         <Input layout="inline">

@@ -50,7 +50,7 @@
     derived_start_time: {
       field: 'derived_start_time',
       filter: 'text',
-      headerName: 'Absolute Start Time',
+      headerName: 'Absolute Start Time (UTC)',
       hide: true,
       resizable: true,
       sortable: true,
@@ -64,7 +64,7 @@
     derived_end_time: {
       field: 'derived_end_time',
       filter: 'text',
-      headerName: 'Absolute End Time',
+      headerName: 'Absolute End Time (UTC)',
       hide: true,
       resizable: true,
       sortable: true,

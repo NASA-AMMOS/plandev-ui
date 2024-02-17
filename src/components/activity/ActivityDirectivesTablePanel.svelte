@@ -105,7 +105,7 @@
     derived_start_time: {
       field: 'derived_start_time',
       filter: 'text',
-      headerName: 'Absolute Start Time',
+      headerName: 'Absolute Start Time (UTC)',
       hide: true,
       resizable: true,
       sortable: true,
@@ -140,7 +140,7 @@
     last_modified_at: {
       field: 'last_modified_at',
       filter: 'text',
-      headerName: 'Last Modified At',
+      headerName: 'Last Modified At (UTC)',
       hide: true,
       resizable: true,
       sortable: true,
@@ -148,7 +148,7 @@
     last_modified_by: {
       field: 'last_modified_by',
       filter: 'text',
-      headerName: 'Last Modified By',
+      headerName: 'Last Modified By (UTC)',
       hide: true,
       resizable: true,
       sortable: true,

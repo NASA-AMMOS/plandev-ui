@@ -531,7 +531,7 @@
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
-                <div>Date</div>
+                <div>Date (UTC)</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
@@ -558,7 +558,6 @@
                         />
                       </Input>
                       <Input layout="stacked" class="editor-input">
-                        <label for="timestamp">Time</label>
                         <DatePicker
                           name="timestamp"
                           minDate={new Date($maxTimeRange.start)}

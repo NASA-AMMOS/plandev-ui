@@ -112,7 +112,7 @@
       const currentStartTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, current.start_offset);
       const previousStartTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, previous.start_offset);
 
-      differences['Start Time'] = {
+      differences['Start Time (UTC)'] = {
         currentValue: currentStartTimeDoy,
         previousValue: previousStartTimeDoy,
       };

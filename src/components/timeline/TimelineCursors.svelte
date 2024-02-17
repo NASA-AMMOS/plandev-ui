@@ -177,7 +177,7 @@
   {#if cursorEnabled && cursorWithinView}
     <TimelineCursor
       x={cursorX}
-      label={cursorDOY}
+      label={`${cursorDOY} UTC`}
       maxWidth={cursorMaxWidth}
       on:click={() => addVerticalGuide(cursorDOY)}
       activeCursor

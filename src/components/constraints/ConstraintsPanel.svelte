@@ -238,7 +238,7 @@
         <div>
           <DatePickerField
             field={startTimeDoyField}
-            label="Violation Start Time"
+            label="Violation Start Time (UTC)"
             layout="inline"
             name="start-time"
             on:change={onUpdateStartTime}
@@ -250,7 +250,7 @@
           </DatePickerField>
           <DatePickerField
             field={endTimeDoyField}
-            label="Violation End Time"
+            label="Violation End Time (UTC)"
             layout="inline"
             name="end-time"
             on:change={onUpdateEndTime}

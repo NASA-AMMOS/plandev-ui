@@ -318,7 +318,7 @@
       <Collapse title="General">
         <DatePickerField
           field={startTimeDoyField}
-          label="Start Time"
+          label="Start Time (UTC)"
           layout="inline"
           name="start-time"
           use={[
@@ -339,7 +339,7 @@
         </DatePickerField>
         <DatePickerField
           field={endTimeDoyField}
-          label="End Time"
+          label="End Time (UTC)"
           layout="inline"
           name="end-time"
           use={[
