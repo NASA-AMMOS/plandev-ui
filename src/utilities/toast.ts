@@ -16,6 +16,11 @@ function findToast(toastText: string, checkIsClosed: boolean = false) {
 }
 
 function hideToast(toast: Toast) {
+  // Only hide toast if in browser context
+  if (typeof document === 'undefined') {
+    return;
+  }
+
   toast.options.close = true;
   toast.hideToast();
 }
@@ -35,6 +40,10 @@ function toastCallback(this: Element) {
 }
 
 function showToast(toast: Toast) {
+  // Only show toast if in browser context
+  if (typeof document === 'undefined') {
+    return;
+  }
   const toastText = toast.options.text;
   const existingToastIndex = toastText !== undefined ? findToast(toastText, true) : -1;
 
