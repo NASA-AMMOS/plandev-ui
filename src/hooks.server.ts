@@ -100,8 +100,8 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
       event.cookies.set('user', userCookie, cookieOpts);
     }
 
-    // don't overwrite existing activeRole
-    if (!activeRoleCookie || activeRoleCookie === 'deleted') {
+    // don't overwrite existing activeRole, unless it doesn't exist anymore
+    if (!activeRoleCookie || activeRoleCookie === 'deleted' || !roles.allowedRoles.includes(activeRoleCookie)) {
       event.cookies.set('activeRole', roles.defaultRole, cookieOpts);
     }
   }
