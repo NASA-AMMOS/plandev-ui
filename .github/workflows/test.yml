@@ -26,9 +26,9 @@ jobs:
     environment: test-workflow
     steps:
       - name: Checkout Repo (UI)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Node (UI)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
           cache: npm
@@ -47,18 +47,14 @@ jobs:
         run: npm run test:e2e
       - name: Test (unit)
         run: npm run test:unit
-      - name: Upload Results (Test - e2e)
+      - name: Upload Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Test Results
-          path: '**/e2e-test-results'
-      - name: Upload Results (Test - unit)
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: Test Results
-          path: '**/unit-test-results'
+          path: |
+            **/e2e-test-results
+            **/unit-test-results
       - name: Print Logs for Services (Aerie)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t

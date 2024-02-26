@@ -28,22 +28,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+        uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
       - name: NASA Scrub
         run: |
           pip install nasa-scrub
           python3 -m scrub.tools.parsers.translate_results /home/runner/work/aerie-ui/results/*.sarif /home/runner/work/aerie-ui/results/codeql.scrub ${{ github.workspace }} scrub
           python3 -m scrub.tools.parsers.csv_parser /home/runner/work/aerie-ui/results
       - name: Upload Security Scan Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Security Scan Results
           path: /home/runner/work/aerie-ui/results/*
