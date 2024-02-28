@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { Resource } from '../types/simulation';
+import type { Resource, ResourceType } from '../types/simulation';
 import type { Timeline } from '../types/timeline';
 import {
   createHorizontalGuide,
@@ -11,6 +11,7 @@ import {
   createVerticalGuide,
   createYAxis,
   duplicateRow,
+  filterResourcesByLayer,
   getYAxisBounds,
 } from './timeline';
 
@@ -141,11 +142,11 @@ test('getYAxisBounds', () => {
   populateTimelineLayers(timelines);
 
   const layer1 = timelines[0].rows[0].layers[1];
-  const layer2 = timelines[0].rows[0].layers[2];
+  layer1.filter.resource = { names: ['resourceWithValues', 'resourceWithNoValues'] };
   const yAxis = timelines[0].rows[0].yAxes[0];
   const layers = timelines[0].rows[0].layers;
-  const resource: Resource = {
-    name: 'test',
+  const resourceWithValues: Resource = {
+    name: 'resourceWithValues',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
       type: 'struct',
@@ -160,27 +161,25 @@ test('getYAxisBounds', () => {
     ],
   };
   const resourceWithNoValues: Resource = {
-    name: 'test',
+    name: 'resourceWithNoValues',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
       type: 'struct',
     },
     values: [],
   };
-  const resourcesByViewLayerId = { [layer1.id]: [resource], [layer2.id]: [] };
-  expect(getYAxisBounds(yAxis, [], {})).toEqual([]);
-  expect(getYAxisBounds(yAxis, layers, {})).toEqual([]);
-  expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId)).toEqual([10, 15]);
-  expect(getYAxisBounds(yAxis, layers, { [layer1.id]: [resourceWithNoValues] })).toEqual([]);
+  const resources: Resource[] = [resourceWithValues, resourceWithNoValues];
+  expect(getYAxisBounds(yAxis, [], [])).toEqual([]);
+  expect(getYAxisBounds(yAxis, layers, [])).toEqual([]);
+  expect(getYAxisBounds(yAxis, layers, resources)).toEqual([10, 15]);
+  expect(getYAxisBounds(yAxis, layers, [resourceWithNoValues])).toEqual([]);
   expect(
-    getYAxisBounds({ ...yAxis, domainFitMode: 'manual', scaleDomain: [0, 10] }, layers, {
-      [layer1.id]: [resourceWithNoValues],
-    }),
+    getYAxisBounds({ ...yAxis, domainFitMode: 'manual', scaleDomain: [0, 10] }, layers, [resourceWithNoValues]),
   ).toEqual([0, 10]);
-  expect(getYAxisBounds(yAxis, layers, resourcesByViewLayerId, { end: 4, start: 3 })).toEqual([11, 14]);
-  expect(
-    getYAxisBounds({ ...yAxis, domainFitMode: 'fitPlan' }, layers, resourcesByViewLayerId, { end: 4, start: 3 }),
-  ).toEqual([10, 15]);
+  expect(getYAxisBounds(yAxis, layers, resources, { end: 4, start: 3 })).toEqual([11, 14]);
+  expect(getYAxisBounds({ ...yAxis, domainFitMode: 'fitPlan' }, layers, resources, { end: 4, start: 3 })).toEqual([
+    10, 15,
+  ]);
 });
 
 test('duplicateRow', () => {
@@ -205,4 +204,31 @@ test('duplicateRow', () => {
       }
     }
   }
+});
+
+test('filterResourcesByLayer', () => {
+  const resourceA: ResourceType = {
+    name: 'resourceA',
+    schema: {
+      items: { initial: { type: 'real' }, rate: { type: 'real' } },
+      type: 'struct',
+    },
+  };
+  const resourceB: ResourceType = {
+    name: 'resourceB',
+    schema: {
+      items: { initial: { type: 'real' }, rate: { type: 'real' } },
+      type: 'struct',
+    },
+  };
+  const layer = createTimelineLineLayer([], []);
+  expect(filterResourcesByLayer(layer, [resourceA, resourceB])).to.deep.equal([]);
+
+  const layer2 = createTimelineLineLayer([], []);
+  layer2.filter.resource = { names: [] };
+  expect(filterResourcesByLayer(layer2, [])).to.deep.equal([]);
+
+  const layer3 = createTimelineLineLayer([], []);
+  layer3.filter.resource = { names: ['resourceA'] };
+  expect(filterResourcesByLayer(layer3, [resourceA, resourceB])).to.deep.equal([resourceA]);
 });

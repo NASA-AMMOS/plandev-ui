@@ -1031,6 +1031,25 @@ const gql = {
     }
   `,
 
+  GET_PROFILE: `#graphql
+    query GetProfile($datasetId: Int!, $name: String!) {
+      profile(where: { _and: { dataset_id: { _eq: $datasetId }, name: { _eq: $name } } }, limit: 1) {
+        dataset_id
+        duration
+        id
+        name
+        profile_segments(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
+          dataset_id
+          dynamics
+          is_gap
+          profile_id
+          start_offset
+        }
+        type
+      }
+    }
+  `,
+
   GET_PROFILES: `#graphql
     query GetProfiles($datasetId: Int!) {
       profile(where: { dataset_id: { _eq: $datasetId } }) {

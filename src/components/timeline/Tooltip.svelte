@@ -4,14 +4,15 @@
   import { select } from 'd3-selection';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResultWithName } from '../../types/constraint';
-  import type { Resource, Span } from '../../types/simulation';
+  import type { ResourceType, Span } from '../../types/simulation';
   import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
   import { getDoyTime } from '../../utilities/time';
+  import { filterResourcesByLayer } from '../../utilities/timeline';
 
-  export let mouseOver: MouseOver | null;
   export let interpolateHoverValue: boolean = false;
-  export let resourcesByViewLayerId: Record<number, Resource[]> = {};
   export let hidden: boolean = false;
+  export let mouseOver: MouseOver | null;
+  export let resourceTypes: ResourceType[] = [];
 
   let activityDirectives: ActivityDirective[] = [];
   let constraintResults: ConstraintResultWithName[] = [];
@@ -232,12 +233,12 @@
     let unit = '';
     let name = point.name;
     if (layer && layer.chartType === 'line') {
-      const resources = resourcesByViewLayerId[layerId] || [];
-      if (resources.length > 0) {
+      name = layer.name ? layer.name : point.name;
+      const layerResources = filterResourcesByLayer(layer, resourceTypes);
+      if (layerResources.length > 0) {
         // Only consider a single resource since multiple resources on a single layer is
         // supported in config but not valid
-        unit = resources[0].schema.metadata?.unit?.value || '';
-        name = layer.name ? layer.name : point.name;
+        unit = layerResources[0].schema.metadata?.unit?.value || '';
       }
       color = (layer as LineLayer).lineColor;
     }
@@ -299,12 +300,7 @@
     let color = '#FFFFFF';
     let name = '';
     if (layer && layer.chartType === 'x-range') {
-      const resources = resourcesByViewLayerId[layerId] || [];
-      if (resources.length > 0) {
-        // Only consider a single resource since multiple resources on a single layer is
-        // supported in config but not valid
-        name = layer.name ? layer.name : point.name;
-      }
+      name = layer.name ? layer.name : point.name;
       color = (layer as LineLayer).lineColor;
     }
 

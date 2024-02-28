@@ -8,6 +8,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type { Axis, Layer, LineLayer } from '../../types/timeline';
+  import { filterResourcesByLayer } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import RowHeaderMenu from './RowHeaderMenu.svelte';
   import RowYAxes from './RowYAxes.svelte';
@@ -15,7 +16,7 @@
   export let expanded: boolean = true;
   export let height: number = 0;
   export let layers: Layer[];
-  export let resourcesByViewLayerId: Record<number, Resource[]> = {}; /* TODO give this a type */
+  export let resources: Resource[];
   export let rowDragMoveDisabled: boolean = false;
   export let rowHeaderDragHandleWidthPx: number = 2;
   export let rowId: number = 0;
@@ -45,8 +46,8 @@
       );
       // For each layer get the resources and color
       yAxisResourceLayers.forEach(layer => {
-        const resources = resourcesByViewLayerId[layer.id] || [];
-        const newResourceLabels = resources
+        const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
+        const newResourceLabels = layerResources
           .map(resource => {
             const color = (layer as LineLayer).lineColor || 'var(--st-gray-80)';
             const unit = resource.schema.metadata?.unit?.value || '';
@@ -140,7 +141,7 @@
           {yAxes}
           on:updateYAxesWidth={onUpdateYAxesWidth}
           {layers}
-          {resourcesByViewLayerId}
+          {resources}
         />
       </div>
     </div>

@@ -10,13 +10,14 @@
   import { visibleConstraintResults } from '../../stores/constraints';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
-    resourcesByViewLayerId,
+    resourceTypes,
     selectedSpanId,
     simulation,
     simulationDataset,
     spanUtilityMaps,
     spans,
     spansMap,
+    yAxesWithScaleDomainsCache,
   } from '../../stores/simulation';
   import {
     timelineInteractionMode,
@@ -30,6 +31,7 @@
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type {
+    Axis,
     DirectiveVisibilityToggleMap,
     MouseDown,
     Row,
@@ -226,6 +228,13 @@
       }
     }
   }
+
+  function onUpdateYAxes(event: CustomEvent<{ axes: Axis[]; id: number }>) {
+    const {
+      detail: { axes, id },
+    } = event;
+    $yAxesWithScaleDomainsCache = { ...$yAxesWithScaleDomainsCache, [id]: axes };
+  }
 </script>
 
 <Panel padBody={false}>
@@ -283,11 +292,11 @@
       planEndTimeDoy={$plan?.end_time_doy ?? ''}
       plan={$plan}
       planStartTimeYmd={$plan?.start_time ?? ''}
+      resourceTypes={$resourceTypes}
       {timeline}
       timelineInteractionMode={$timelineInteractionMode}
       {timelineDirectiveVisibilityToggles}
       {timelineSpanVisibilityToggles}
-      resourcesByViewLayerId={$resourcesByViewLayerId}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
       simulation={$simulation}
@@ -324,6 +333,7 @@
       on:deleteRow={onDeleteRow}
       on:duplicateRow={onDuplicateRow}
       on:insertRow={onInsertRow}
+      on:updateYAxes={onUpdateYAxes}
     />
   </svelte:fragment>
 </Panel>

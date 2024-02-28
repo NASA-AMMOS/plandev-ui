@@ -12,7 +12,7 @@
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
   import type {
-    Resource,
+    ResourceType,
     Simulation,
     SimulationDataset,
     Span,
@@ -61,7 +61,7 @@
   export let planEndTimeDoy: string;
   export let plan: Plan | null = null;
   export let planStartTimeYmd: string;
-  export let resourcesByViewLayerId: Record<number, Resource[]> = {};
+  export let resourceTypes: ResourceType[] = [];
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
   export let simulation: Simulation | null = null;
@@ -481,7 +481,6 @@
             {planEndTimeDoy}
             {plan}
             {planStartTimeYmd}
-            {resourcesByViewLayerId}
             {rowDragMoveDisabled}
             {decimate}
             {interpolateHoverValue}
@@ -511,6 +510,7 @@
             on:mouseOver={e => (mouseOver = { ...e.detail, row })}
             on:toggleRowExpansion={onToggleRowExpansion}
             on:updateRowHeight={onUpdateRowHeight}
+            on:updateYAxes
             on:zoom={throttledZoom}
           />
         </div>
@@ -519,13 +519,7 @@
   </div>
 
   <!-- Timeline Tooltip. -->
-  <Tooltip
-    bind:this={tooltip}
-    {mouseOver}
-    {interpolateHoverValue}
-    {resourcesByViewLayerId}
-    hidden={!showTimelineTooltip}
-  />
+  <Tooltip bind:this={tooltip} {mouseOver} {interpolateHoverValue} hidden={!showTimelineTooltip} {resourceTypes} />
 
   <!-- Timeline Context Menu. -->
   <TimelineContextMenu

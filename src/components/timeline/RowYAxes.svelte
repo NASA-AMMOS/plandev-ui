@@ -7,11 +7,11 @@
   import { createEventDispatcher, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type { Axis, Layer, LineLayer, XRangeLayer } from '../../types/timeline';
-  import { getOrdinalYScale, getYScale } from '../../utilities/timeline';
+  import { filterResourcesByLayer, getOrdinalYScale, getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
-  export let resourcesByViewLayerId: Record<number, Resource[]> = {}; /* TODO give this a type */
+  export let resources: Resource[];
   export let layers: Layer[] = [];
   export let yAxes: Axis[] = [];
 
@@ -19,7 +19,7 @@
 
   let g: SVGGElement;
 
-  $: if (drawHeight && g && yAxes && resourcesByViewLayerId && layers) {
+  $: if (drawHeight && g && yAxes && resources && layers) {
     draw();
   }
 
@@ -43,15 +43,15 @@
       let i = 0;
 
       for (const layer of xRangeLayers) {
-        const resources = resourcesByViewLayerId[layer.id];
+        const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
         const xRangeAxisG = gSelection.append('g').attr('class', axisClass);
         xRangeAxisG.selectAll('*').remove();
 
-        if ((layer as XRangeLayer).showAsLinePlot && resources && resources.length > 0) {
+        if ((layer as XRangeLayer).showAsLinePlot && layerResources && layerResources.length > 0) {
           let domain: string[] = [];
 
           // Get all the unique ordinal values of the chart.
-          for (const value of resources[0].values) {
+          for (const value of layerResources[0].values) {
             if (domain.indexOf(value.y as string) === -1) {
               domain.push(value.y as string);
             }

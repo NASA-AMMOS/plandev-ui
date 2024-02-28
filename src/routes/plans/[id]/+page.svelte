@@ -84,11 +84,10 @@
     enableSimulation,
     externalResourceNames,
     externalResources,
-    fetchingResources,
     fetchingResourcesExternal,
     resetSimulationStores,
     resourceTypes,
-    resources,
+    resourceTypesLoading,
     simulationDataset,
     simulationDatasetId,
     simulationDatasetLatest,
@@ -269,9 +268,10 @@
     planTags.updateValue(() => data.initialPlanTags);
 
     // Asynchronously fetch resource types
-    effects
-      .getResourceTypes($plan.model_id, data.user)
-      .then(initialResourceTypes => ($resourceTypes = initialResourceTypes));
+    effects.getResourceTypes($plan.model_id, data.user).then(initialResourceTypes => {
+      $resourceTypes = initialResourceTypes;
+      $resourceTypesLoading = false;
+    });
   }
   $: if (data.initialPlanSnapshotId !== null) {
     $planSnapshotId = data.initialPlanSnapshotId;
@@ -314,6 +314,8 @@
 
     resourcesExternalAbortController?.abort();
     resourcesExternalAbortController = new AbortController();
+    $fetchingResourcesExternal = true;
+    $externalResources = [];
     effects
       .getResourcesExternal(
         $plan.id,
@@ -322,7 +324,12 @@
         data.user,
         resourcesExternalAbortController.signal,
       )
-      .then(newResources => ($externalResources = newResources));
+      .then(({ aborted, resources }) => {
+        if (!aborted) {
+          $externalResources = resources;
+          $fetchingResourcesExternal = false;
+        }
+      });
   }
 
   $: if ($planId > -1) {
@@ -330,20 +337,18 @@
     selectActivity(null, null);
   }
 
-  $: if ($plan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
+  $: if (
+    $plan &&
+    $simulationDataset !== null &&
+    (getSimulationStatus($simulationDataset) === Status.Complete ||
+      getSimulationStatus($simulationDataset) === Status.Complete)
+  ) {
     const datasetId = $simulationDataset.dataset_id;
-    const startTimeYmd = $simulationDataset?.simulation_start_time ?? $plan.start_time;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
-    effects
-      .getResources(datasetId, startTimeYmd, data.user, simulationDataAbortController.signal)
-      .then(newResources => ($resources = newResources));
     effects.getSpans(datasetId, data.user, simulationDataAbortController.signal).then(newSpans => ($spans = newSpans));
   } else {
     simulationDataAbortController?.abort();
-    fetchingResources.set(false);
-    fetchingResourcesExternal.set(false);
-    $resources = [];
     $spans = [];
   }
 
@@ -519,7 +524,6 @@
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={data.initialPlan.name} title="Plans" />
-
 <CssGrid
   class="plan-container"
   rows={$planSnapshot

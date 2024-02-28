@@ -13,7 +13,7 @@ import {
   type CountableTimeInterval,
   type TimeInterval,
 } from 'd3-time';
-import type { Resource, ResourceValue } from '../types/simulation';
+import type { Resource, ResourceType, ResourceValue } from '../types/simulation';
 import type {
   ActivityLayer,
   Axis,
@@ -520,7 +520,7 @@ export function createTimelineXRangeLayer(
 export function getYAxisBounds(
   yAxis: Axis,
   layers: Layer[],
-  resourcesByViewLayerId: Record<number, Resource[]>,
+  resources: Resource[],
   viewTimeRange?: TimeRange,
 ): number[] {
   // Find all layers that are associated with this y axis
@@ -530,8 +530,9 @@ export function getYAxisBounds(
   let minY: number | undefined = undefined;
   let maxY: number | undefined = undefined;
   yAxisLayers.forEach(layer => {
-    if (resourcesByViewLayerId[layer.id]) {
-      resourcesByViewLayerId[layer.id].forEach(resource => {
+    const layerResources = filterResourcesByLayer(layer, resources) as Resource[];
+    if (layerResources) {
+      layerResources.forEach(resource => {
         let leftValue: ResourceValue | undefined;
         let rightValue: ResourceValue | undefined;
         resource.values.forEach(value => {
@@ -615,12 +616,12 @@ export function getYAxisBounds(
 export function getYAxesWithScaleDomains(
   yAxes: Axis[],
   layers: Layer[],
-  resourcesByViewLayerId: Record<number, Resource[]> = {},
+  resources: Resource[],
   viewTimeRange: TimeRange,
 ): Axis[] {
   return yAxes.map(yAxis => {
     if (yAxis.domainFitMode !== 'manual') {
-      const scaleDomain = getYAxisBounds(yAxis, layers, resourcesByViewLayerId, viewTimeRange);
+      const scaleDomain = getYAxisBounds(yAxis, layers, resources, viewTimeRange);
       return { ...yAxis, scaleDomain };
     }
     return yAxis;
@@ -757,4 +758,11 @@ export function minMaxDecimation<T>(
   }
 
   return decimated as T[];
+}
+
+/**
+ * Filteres list of resources by the layer's resource filter
+ */
+export function filterResourcesByLayer(layer: Layer, resources: Resource[] | ResourceType[]) {
+  return resources.filter(resource => (layer.filter.resource?.names || []).indexOf(resource.name) > -1);
 }

@@ -48,7 +48,7 @@ export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, []
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
 
-export const planDatasets = gqlSubscribable<PlanDataset[]>(gql.SUB_PLAN_DATASET, { planId }, [], null);
+export const planDatasets = gqlSubscribable<PlanDataset[] | null>(gql.SUB_PLAN_DATASET, { planId }, null, null);
 
 export const planLocked = gqlSubscribable<boolean>(
   gql.SUB_PLAN_LOCKED,

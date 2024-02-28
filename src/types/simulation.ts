@@ -3,6 +3,7 @@ import type { UserId } from './app';
 import type { BaseError, SimulationDatasetError } from './errors';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
+import type { Subscription } from './subscribable';
 
 export type PlanDataset = {
   dataset: { profiles: Profile[] };
@@ -40,6 +41,16 @@ export type Resource = {
   name: string;
   schema: ValueSchema;
   values: ResourceValue[];
+};
+
+export type ResourceRequest = {
+  controller?: AbortController;
+  error: string;
+  loading: boolean;
+  resource: Resource | null;
+  simulationDatasetId: number;
+  subscription?: Subscription<Resource>;
+  type: 'internal' | 'external';
 };
 
 export type ResourceType = {

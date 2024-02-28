@@ -11,12 +11,7 @@
   import { dndzone } from 'svelte-dnd-action';
   import { ViewConstants } from '../../../enums/view';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
-  import {
-    externalResourceNames,
-    resourceTypes,
-    resourcesByViewLayerId,
-    simulationDataset,
-  } from '../../../stores/simulation';
+  import { externalResourceNames, resourceTypes, yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRow,
     selectedRowId,
@@ -52,7 +47,6 @@
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
-    getYAxesWithScaleDomains,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
@@ -82,7 +76,6 @@
   $: yAxes = $selectedRow?.yAxes || [];
   $: layers = $selectedRow?.layers || [];
   $: rowHasNonActivityChartLayer = !!$selectedRow?.layers.find(layer => layer.chartType !== 'activity') || false;
-  $: simulationDataAvailable = $simulationDataset !== null;
 
   function updateRowEvent(event: Event) {
     const { name, value } = getTarget(event);
@@ -381,7 +374,7 @@
     if (!$selectedRow) {
       return;
     }
-    const yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, $resourcesByViewLayerId, $viewTimeRange);
+    const yAxesWithScaleDomains = $yAxesWithScaleDomainsCache[$selectedRow.id];
     const newHorizontalGuide = createHorizontalGuide(timelines, yAxesWithScaleDomains);
     viewUpdateRow('horizontalGuides', [...horizontalGuides, newHorizontalGuide]);
   }
@@ -887,12 +880,7 @@
                           on:input={event => updateYAxisTickCount(event, yAxis)}
                         />
                       </Input>
-                      <TimelineEditorYAxisSettings
-                        {yAxis}
-                        {yAxes}
-                        {simulationDataAvailable}
-                        on:delete={() => handleDeleteYAxisClick(yAxis)}
-                      />
+                      <TimelineEditorYAxisSettings {yAxis} {yAxes} on:delete={() => handleDeleteYAxisClick(yAxis)} />
                       <button
                         on:click={() => handleDeleteYAxisClick(yAxis)}
                         use:tooltip={{ content: 'Delete Y Axis', placement: 'top' }}

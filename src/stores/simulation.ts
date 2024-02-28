@@ -13,12 +13,12 @@ import type {
   SpanUtilityMaps,
   SpansMap,
 } from '../types/simulation';
+import type { Axis } from '../types/timeline';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { getSimulationProgress } from '../utilities/simulation';
 import { modelId, planId, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
-import { view } from './views';
 
 /* Writeable. */
 
@@ -28,15 +28,16 @@ export const externalResources: Writable<Resource[]> = writable([]);
 
 export const externalResourceNames: Writable<string[]> = writable([]);
 
-export const resources: Writable<Resource[]> = writable([]);
-
-export const fetchingResources: Writable<boolean> = writable(false);
-
-export const fetchingResourcesExternal: Writable<boolean> = writable(false);
+// default to true since we cannot differentiate between "ext resources have been initially fetched" and "fetching ext resources"
+export const fetchingResourcesExternal: Writable<boolean> = writable(true);
 
 export const resourceTypes: Writable<ResourceType[]> = writable([]);
 
+export const resourceTypesLoading: Writable<boolean> = writable(true);
+
 export const spans: Writable<Span[]> = writable([]);
+
+export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
 /* Subscriptions. */
 
@@ -100,54 +101,6 @@ export const spanUtilityMaps: Readable<SpanUtilityMaps> = derived(spans, $spans 
   return createSpanUtilityMaps($spans);
 });
 
-export const allResources: Readable<Resource[]> = derived(
-  [externalResources, resources],
-  ([$externalResources, $resources]) => [...$externalResources, ...$resources],
-);
-
-export const resourcesByViewLayerId: Readable<Record<number, Resource[]>> = derived(
-  [externalResources, resources, view],
-  ([$externalResources, $resources, $view]) => {
-    if ($view) {
-      const resources: Resource[] = [...$externalResources, ...$resources];
-      const { definition } = $view;
-      const { plan } = definition;
-      const { timelines } = plan;
-      const resourcesByViewLayerId: Record<number, Resource[]> = {};
-
-      for (const resource of resources) {
-        for (const timeline of timelines) {
-          const { rows } = timeline;
-
-          for (const row of rows) {
-            const { layers } = row;
-
-            for (const layer of layers) {
-              const { filter } = layer;
-
-              if (filter.resource !== undefined) {
-                const { resource: resourceFilter } = filter;
-                const { names } = resourceFilter;
-                const includeResource = names.indexOf(resource.name) > -1;
-
-                if (includeResource) {
-                  if (resourcesByViewLayerId[layer.id] === undefined) {
-                    resourcesByViewLayerId[layer.id] = [resource];
-                  } else {
-                    resourcesByViewLayerId[layer.id].push(resource);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      return resourcesByViewLayerId;
-    }
-    return {};
-  },
-);
-
 export const simulationStatus: Readable<Status | null> = derived(
   [planRevision, simulationDatasetLatest, simulation],
   ([$planRevision, $simulationDataset, $simulation]) => {
@@ -204,7 +157,6 @@ export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $se
 export function resetSimulationStores() {
   externalResources.set([]);
   externalResourceNames.set([]);
-  fetchingResources.set(false);
   fetchingResourcesExternal.set(false);
   selectedSpanId.update(() => null);
   simulation.updateValue(() => null);
@@ -215,6 +167,5 @@ export function resetSimulationStores() {
   simulationDatasetsPlan.updateValue(() => []);
   simulationDatasetsAll.updateValue(() => []);
   spans.set([]);
-  resources.set([]);
   resourceTypes.set([]);
 }

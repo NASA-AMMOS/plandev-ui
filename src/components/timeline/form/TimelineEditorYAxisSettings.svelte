@@ -3,12 +3,10 @@
 <script lang="ts">
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
-  import { viewTimeRange } from '../../../stores/plan';
-  import { resourcesByViewLayerId } from '../../../stores/simulation';
+  import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import { selectedRow, selectedTimeline, viewUpdateRow } from '../../../stores/views';
   import type { Axis, AxisDomainFitMode } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
-  import { getYAxisBounds } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
@@ -16,7 +14,6 @@
 
   export let yAxis: Axis;
   export let yAxes: Axis[];
-  export let simulationDataAvailable: boolean = false;
 
   let axisMenu: Menu;
 
@@ -29,31 +26,13 @@
   function getManualFitScaleDomain() {
     let scaleDomain: number[] = [];
     if ($selectedRow && $selectedTimeline) {
-      scaleDomain = getYAxisBounds(
-        { ...yAxis, domainFitMode: 'fitTimeWindow' },
-        $selectedRow.layers,
-        $resourcesByViewLayerId,
-        $viewTimeRange,
-      );
+      const rowAxes = $yAxesWithScaleDomainsCache[$selectedRow.id];
+      const axis = rowAxes.find(axis => axis.id === yAxis.id);
+      if (axis) {
+        scaleDomain = axis.scaleDomain as number[];
+      }
     }
     return scaleDomain;
-  }
-
-  function onFitAxis() {
-    const newRowYAxes = yAxes.map(axis => {
-      if (axis.id === yAxis.id) {
-        const newAxis: Axis = { ...axis };
-        let scaleDomain: number[] = [];
-
-        // Get bounds for initial values if possible using current time window
-        if ($selectedRow && $selectedTimeline) {
-          scaleDomain = getManualFitScaleDomain();
-        }
-        return { ...newAxis, scaleDomain };
-      }
-      return axis;
-    });
-    viewUpdateRow('yAxes', newRowYAxes);
   }
 
   function updateYAxisAutofit(event: Event) {
@@ -170,18 +149,6 @@
             on:input={event => updateYAxisScaleDomain(event, yAxis)}
           />
         </Input>
-        <div
-          use:tooltip={{
-            content: simulationDataAvailable
-              ? 'Fit axis bounds to domain of in-view axis resources'
-              : 'Axis bounds fit only available after simulation',
-            placement: 'top',
-          }}
-        >
-          <button class="st-button secondary w-100" disabled={!simulationDataAvailable} on:click={onFitAxis}
-            >Fit Axis Bounds</button
-          >
-        </div>
       {/if}
       <button class="st-button secondary w-100" style="position: relative" on:click={onDeleteAxis}>Delete Axis</button>
     </div>
