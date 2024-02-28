@@ -37,6 +37,14 @@
       dispatch('reset', 'extra');
     }
   }
+
+  function getStringValue(value: unknown): string {
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return `${value}`;
+  }
 </script>
 
 <div class="extra-parameters-container">
@@ -68,7 +76,7 @@
         </div>
         <Input>
           <input
-            value={argumentsMap[extraArgument] ? `${argumentsMap[extraArgument]}` : ''}
+            value={argumentsMap[extraArgument] ? getStringValue(argumentsMap[extraArgument]) : ''}
             class="st-input w-100 error"
             readonly
             type="text"
@@ -76,7 +84,7 @@
           <div class="parameter-right" slot="right">
             <button
               class="st-button icon"
-              value={argumentsMap[extraArgument] ? `${argumentsMap[extraArgument]}` : ''}
+              value={argumentsMap[extraArgument] ? getStringValue(argumentsMap[extraArgument]) : ''}
               use:tooltip={{ content: 'Copy value to clipboard', placement: 'top' }}
               on:click={onCopy}
             >
