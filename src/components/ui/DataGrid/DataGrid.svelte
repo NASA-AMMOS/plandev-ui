@@ -6,7 +6,10 @@
   // eslint-disable-next-line
   interface $$Events extends ComponentEvents<SvelteComponent> {
     cellContextMenu: CustomEvent<CellContextMenuEvent<RowData>>;
+    cellEditingStarted: CustomEvent<CellEditingStartedEvent<RowData>>;
+    cellEditingStopped: CustomEvent<CellEditingStoppedEvent<RowData>>;
     cellMouseOver: CustomEvent<CellMouseOverEvent<RowData>>;
+    cellValueChanged: CustomEvent<CellValueChangedEvent<RowData>>;
     columnMoved: CustomEvent<ColumnMovedEvent<RowData>>;
     columnPinned: CustomEvent<ColumnPinnedEvent<RowData>>;
     columnResized: CustomEvent<ColumnResizedEvent<RowData>>;
@@ -24,7 +27,10 @@
   import {
     Grid,
     type CellContextMenuEvent,
+    type CellEditingStartedEvent,
+    type CellEditingStoppedEvent,
     type CellMouseOverEvent,
+    type CellValueChangedEvent,
     type ColDef,
     type Column,
     type ColumnMovedEvent,
@@ -258,8 +264,18 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       isRowSelectable,
       maintainColumnOrder,
       onCellContextMenu,
+      onCellEditingStarted(event: CellEditingStartedEvent<RowData>) {
+        dispatch('cellEditingStarted', event);
+      },
+      onCellEditingStopped(event: CellEditingStoppedEvent<RowData>) {
+        dispatch('cellEditingStopped', event);
+      },
       onCellMouseOver(event: CellMouseOverEvent<RowData>) {
         dispatch('cellMouseOver', event);
+      },
+      onCellValueChanged(event: CellValueChangedEvent<RowData>) {
+        console.log('event :>> ', event);
+        dispatch('cellValueChanged', event);
       },
       onColumnMoved(event: ColumnMovedEvent<RowData>) {
         dispatch('columnMoved', event);

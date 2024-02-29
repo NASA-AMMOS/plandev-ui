@@ -1,5 +1,6 @@
 import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
+import type { ConstraintPlanSpec } from './constraint';
 import type { Model } from './model';
 import type { SchedulingSpec } from './scheduling';
 import type { Tag } from './tags';
@@ -72,6 +73,7 @@ export type PlanMergeResolution = 'none' | 'source' | 'target';
 export type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
   collaborators: PlanCollaborator[];
+  constraint_specification: ConstraintPlanSpec[];
   created_at: string;
   duration: string;
   id: number;

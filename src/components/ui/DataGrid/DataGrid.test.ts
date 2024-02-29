@@ -30,7 +30,7 @@ describe('DataGrid Component', () => {
       rowData: testRowData,
     });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row')).toHaveLength(numOfRows);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row')).toHaveLength(numOfRows);
   });
 
   it('Should highlight the correctly selected rows on initialization', async () => {
@@ -46,7 +46,7 @@ describe('DataGrid Component', () => {
       selectedRowIds: [1, 2, 3],
     });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(3);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(3);
   });
 
   it('Should highlight the correctly selected rows through user interaction', async () => {
@@ -61,15 +61,15 @@ describe('DataGrid Component', () => {
       rowSelection: 'multiple',
     });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(0);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(0);
 
-    await fireEvent.click(container.querySelectorAll('.ag-center-cols-clipper .ag-row')[0]);
+    await fireEvent.click(container.querySelectorAll('.ag-center-cols-container .ag-row')[0]);
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(1);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(1);
 
-    await fireEvent.click(container.querySelectorAll('.ag-center-cols-clipper .ag-row')[2], { shiftKey: true });
+    await fireEvent.click(container.querySelectorAll('.ag-center-cols-container .ag-row')[2], { shiftKey: true });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(3);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(3);
   });
 
   it('Should indicate that the row that was selected last is indicated as the current selected row', async () => {
@@ -84,21 +84,21 @@ describe('DataGrid Component', () => {
       rowSelection: 'multiple',
     });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(0);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(0);
 
-    await fireEvent.click(container.querySelectorAll('.ag-center-cols-clipper .ag-row')[2]);
-    await fireEvent.click(container.querySelectorAll('.ag-center-cols-clipper .ag-row')[0], {
+    await fireEvent.click(container.querySelectorAll('.ag-center-cols-container .ag-row')[2]);
+    await fireEvent.click(container.querySelectorAll('.ag-center-cols-container .ag-row')[0], {
       bubbles: true,
       shiftKey: true,
     });
 
-    expect(container.querySelectorAll('.ag-center-cols-clipper .ag-row.ag-row-selected')).toHaveLength(3);
+    expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(3);
 
     // need to wait for the component to fully update
     await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(
-      container.querySelector('.ag-center-cols-clipper .ag-row.ag-row-selected.ag-current-row-selected'),
+      container.querySelector('.ag-center-cols-container .ag-row.ag-row-selected.ag-current-row-selected'),
     ).not.toBeNull();
   });
 });

@@ -70,7 +70,8 @@ self.customTSWorkerFactory = tsw => {
     async getSemanticDiagnostics(fileName: string): Promise<Diagnostic[]> {
       const diagnostics = await super.getSemanticDiagnostics(fileName);
       const model_id = getModelId(fileName);
-      const model_config = model_id !== null ? this.model_configurations?.[model_id] : null;
+      const model_config: ModelData | null =
+        model_id !== null && this.model_configurations[model_id] ? this.model_configurations[model_id] : null;
 
       if (model_config !== null && model_config.should_inject === true) {
         diagnostics.push(...generateTimeDiagnostics(fileName, this._languageService));

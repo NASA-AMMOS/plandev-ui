@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
   import AppMenu from '../../components/menus/AppMenu.svelte';
   import type { User, UserRole } from '../../types/app';
   import { getTarget } from '../../utilities/generic';
@@ -15,7 +14,7 @@
     const { value } = getTarget(event);
     if (value) {
       await changeUserRole(value as string);
-      await invalidateAll();
+      window.location.reload();
     }
   }
 </script>

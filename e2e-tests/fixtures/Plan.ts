@@ -12,6 +12,7 @@ export class Plan {
   analyzeButton: Locator;
   appError: Locator;
   constraintListItemSelector: string;
+  constraintManageButton: Locator;
   constraintNewButton: Locator;
   gridMenu: Locator;
   gridMenuButton: Locator;
@@ -74,12 +75,18 @@ export class Plan {
   }
 
   async createConstraint(baseURL: string | undefined) {
-    const [newConstraintPage] = await Promise.all([this.page.waitForEvent('popup'), this.constraintNewButton.click()]);
+    await this.constraintManageButton.click();
+    const [newConstraintPage] = await Promise.all([
+      this.page.waitForEvent('popup'),
+      await this.constraintNewButton.click(),
+    ]);
     this.constraints.updatePage(newConstraintPage);
-    await newConstraintPage.waitForURL(`${baseURL}/constraints/new`);
+    await newConstraintPage.waitForURL(`${baseURL}/constraints/new?modelId=*`);
     await this.constraints.createConstraint(baseURL);
     await newConstraintPage.close();
     this.constraints.updatePage(this.page);
+    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
+    await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.constraintListItemSelector, { state: 'visible', strict: true });
   }
 
@@ -146,6 +153,13 @@ export class Plan {
     await this.page.waitForTimeout(1200);
     await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
+  }
+
+  async removeConstraint() {
+    await this.constraintManageButton.click();
+    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
+    await this.page.getByRole('button', { name: 'Update' }).click();
+    await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
   }
 
   async runAnalysis() {
@@ -287,6 +301,7 @@ export class Plan {
     this.activitiesTableFirstRow = page
       .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
       .nth(0);
+    this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.gridMenu = page.locator('.grid-menu > .menu > .menu-slot');
     this.gridMenuButton = page.locator('.grid-menu');

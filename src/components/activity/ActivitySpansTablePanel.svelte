@@ -22,9 +22,7 @@
   export let gridSection: ViewGridSection;
 
   type SpanColumns = keyof Span | 'derived_start_time' | 'derived_end_time';
-  interface SpanColDef extends ColDef<Span> {
-    field: SpanColumns;
-  }
+  type SpanColDef = ColDef<Span>;
 
   let activitySpansTable: ViewTable | undefined;
   let autoSizeColumns: AutoSizeColumns | undefined;
@@ -48,7 +46,6 @@
       sortable: true,
     },
     derived_start_time: {
-      field: 'derived_start_time',
       filter: 'text',
       headerName: 'Absolute Start Time (UTC)',
       hide: true,
@@ -62,7 +59,6 @@
       },
     },
     derived_end_time: {
-      field: 'derived_end_time',
       filter: 'text',
       headerName: 'Absolute End Time (UTC)',
       hide: true,

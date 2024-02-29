@@ -7,7 +7,6 @@ import { gqlSubscribable } from './subscribable';
 /* Writeable. */
 
 export const createTagError: Writable<string | null> = writable(null);
-
 /* Subscriptions. */
 
 export const tags = gqlSubscribable<Tag[]>(gql.SUB_TAGS, {}, [], null);

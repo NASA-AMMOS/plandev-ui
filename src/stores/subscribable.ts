@@ -107,6 +107,25 @@ export function gqlSubscribable<T>(
     return '';
   }
 
+  /**
+   * Helper that parses a user cookie to get a token.
+   * @todo We should migrate away from doing this and just pass the
+   * user to the subscription during initialization.
+   */
+  function getRoleFromCookie(): string {
+    if (browser && document?.cookie) {
+      const cookies = document.cookie.split(/\s*;\s*/);
+      const roleCookie = cookies.find(entry => entry.startsWith('activeRole='));
+      if (roleCookie) {
+        return roleCookie.split('activeRole=')[1];
+      } else {
+        console.log(`No 'role' cookie found`);
+      }
+    }
+
+    return '';
+  }
+
   function resubscribe() {
     subscribers.forEach(subscriber => {
       subscriber.unsubscribe();
@@ -150,6 +169,7 @@ export function gqlSubscribable<T>(
         connectionParams: {
           headers: {
             Authorization: `Bearer ${token}`,
+            'x-hasura-role': getRoleFromCookie(),
           },
         },
         url: env.PUBLIC_HASURA_WEB_SOCKET_URL,

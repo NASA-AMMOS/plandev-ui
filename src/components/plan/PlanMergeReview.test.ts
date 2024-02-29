@@ -48,12 +48,14 @@ const mockMergeRequest: PlanMergeRequestSchema = {
 const mockInitialPlan: Plan = {
   child_plans: [{ id: 2, name: 'Branch 1' }],
   collaborators: [{ collaborator: 'tester 2' }],
+  constraint_specification: [],
   created_at: '2023-02-16T00:00:00',
   duration: '168:00:00',
   end_time_doy: '2023-054T00:00:00',
   id: 1,
   is_locked: true,
   model: {
+    constraint_specification: [],
     created_at: '2023-02-16T00:00:00',
     id: 1,
     jar_id: 1,

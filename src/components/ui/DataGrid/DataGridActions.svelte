@@ -25,7 +25,9 @@
   export let deleteTooltip: Tooltip | undefined = undefined;
   export let downloadTooltip: Tooltip | undefined = undefined;
   export let hasDeletePermission: boolean = true;
+  export let hasDeletePermissionError: string | undefined = undefined;
   export let hasEditPermission: boolean = true;
+  export let hasEditPermissionError: string | undefined = undefined;
   export let planReadOnly: boolean = false;
   export let viewTooltip: Tooltip | undefined = undefined;
 
@@ -74,7 +76,7 @@
       hasPermission: hasEditPermission,
       permissionError: planReadOnly
         ? PlanStatusMessages.READ_ONLY
-        : `You do not have permission to ${editTooltip?.content ?? 'edit'}.`,
+        : hasEditPermissionError || `You do not have permission to ${editTooltip?.content ?? 'edit'}.`,
     }}
   >
     <PenIcon />
@@ -93,7 +95,7 @@
       hasPermission: hasDeletePermission,
       permissionError: planReadOnly
         ? PlanStatusMessages.READ_ONLY
-        : `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
+        : hasDeletePermissionError || `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
     }}
   >
     <TrashIcon />

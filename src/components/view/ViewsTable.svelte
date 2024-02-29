@@ -41,10 +41,13 @@
       resizable: true,
       sortable: true,
       valueFormatter: ({ value: updatedAt }: ValueFormatterParams<View, string>) => {
-        const updatedAtDate = new Date(updatedAt);
-        updatedAtDate.setMilliseconds(0);
+        if (updatedAt) {
+          const updatedAtDate = new Date(updatedAt);
+          updatedAtDate.setMilliseconds(0);
 
-        return updatedAtDate.toISOString().replace(/.\d+Z$/g, 'Z');
+          return updatedAtDate.toISOString().replace(/.\d+Z$/g, 'Z');
+        }
+        return '';
       },
     },
   ];

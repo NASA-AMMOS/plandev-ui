@@ -1,50 +1,82 @@
 import { keyBy } from 'lodash-es';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import { Status } from '../enums/status';
-import type { Constraint, ConstraintResponse, ConstraintResultWithName } from '../types/constraint';
+import type {
+  ConstraintDefinition,
+  ConstraintMetadata,
+  ConstraintPlanSpec,
+  ConstraintResponse,
+  ConstraintResultWithName,
+} from '../types/constraint';
 import gql from '../utilities/gql';
-import { modelId, planId, planStartTimeMs } from './plan';
+import { planId, planStartTimeMs } from './plan';
 import { gqlSubscribable } from './subscribable';
+
+/* Writeable. */
+
+export const constraintMetadataId: Writable<number> = writable(-1);
+
+export const constraintsViolationStatus: Writable<Status | null> = writable(null);
+
+export const constraintVisibilityMapWritable: Writable<Record<ConstraintMetadata['id'], boolean>> = writable({});
+
+export const checkConstraintsStatus: Writable<Status | null> = writable(null);
+
+export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
+
+export const constraintsColumns: Writable<string> = writable('1fr 3px 2fr');
+export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
 
 /* Subscriptions. */
 
-export const constraints = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS, { modelId, planId }, [], null);
+export const constraints = gqlSubscribable<ConstraintMetadata[]>(gql.SUB_CONSTRAINTS, {}, [], null);
 
-export const constraintsAll = gqlSubscribable<Constraint[]>(gql.SUB_CONSTRAINTS_ALL, {}, [], null);
+export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpec[]>(
+  gql.SUB_CONSTRAINT_PLAN_SPECIFICATIONS,
+  { planId },
+  [],
+  null,
+);
 
-export const constraintsMap: Readable<Record<string, Constraint>> = derived([constraints], ([$constraints]) =>
+export const constraintMetadata = gqlSubscribable<ConstraintMetadata | null>(
+  gql.SUB_CONSTRAINT,
+  { id: constraintMetadataId },
+  null,
+  null,
+);
+
+/* Derived. */
+export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = derived([constraints], ([$constraints]) =>
   keyBy($constraints, 'id'),
 );
 
-export const constraintVisibilityMapWritable: Writable<Record<Constraint['id'], boolean>> = writable({});
+export const allowedConstraintSpecs: Readable<ConstraintPlanSpec[]> = derived(
+  [constraintPlanSpecs],
+  ([$constraintPlanSpecs]) =>
+    $constraintPlanSpecs.filter(({ constraint_metadata: constraintMetadata }) => constraintMetadata !== null),
+);
 
-export const constraintVisibilityMap: Readable<Record<Constraint['id'], boolean>> = derived(
-  [constraintsMap, constraintVisibilityMapWritable],
-  ([$constraintsMap, $constraintVisibilityMapWritable]) => {
-    return Object.values($constraintsMap).reduce((map: Record<number, boolean>, constraint) => {
-      if (constraint.id in $constraintVisibilityMapWritable) {
-        map[constraint.id] = $constraintVisibilityMapWritable[constraint.id];
+export const allowedConstraintPlanSpecMap: Readable<Record<string, ConstraintPlanSpec>> = derived(
+  [allowedConstraintSpecs],
+  ([$allowedConstraintSpecs]) => keyBy($allowedConstraintSpecs, 'constraint_id'),
+);
+
+export const constraintVisibilityMap: Readable<Record<ConstraintMetadata['id'], boolean>> = derived(
+  [allowedConstraintPlanSpecMap, constraintVisibilityMapWritable],
+  ([$allowedConstraintPlanSpecMap, $constraintVisibilityMapWritable]) => {
+    return Object.values($allowedConstraintPlanSpecMap).reduce((map: Record<number, boolean>, constraint) => {
+      if (constraint.constraint_id in $constraintVisibilityMapWritable) {
+        map[constraint.constraint_id] = $constraintVisibilityMapWritable[constraint.constraint_id];
       } else {
-        map[constraint.id] = true;
+        map[constraint.constraint_id] = true;
       }
       return map;
     }, {});
   },
 );
 
-export const checkConstraintsStatus: Writable<Status | null> = writable(null);
-export const constraintsViolationStatus: Writable<Status | null> = writable(null);
-
-export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
-
-export const constraintsColumns: Writable<string> = writable('2fr 3px 1fr');
-export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
-
-/* Derived. */
-
-export const constraintResponseMap: Readable<Record<Constraint['id'], ConstraintResponse>> = derived(
-  [rawConstraintResponses, planStartTimeMs],
-  ([$constraintResponses, $planStartTimeMs]) =>
+export const constraintResponseMap: Readable<Record<ConstraintDefinition['constraint_id'], ConstraintResponse>> =
+  derived([rawConstraintResponses, planStartTimeMs], ([$constraintResponses, $planStartTimeMs]) =>
     keyBy(
       $constraintResponses.map(response => ({
         ...response,
@@ -62,13 +94,13 @@ export const constraintResponseMap: Readable<Record<Constraint['id'], Constraint
       })),
       'constraintId',
     ),
-);
+  );
 
 export const uncheckedConstraintCount: Readable<number> = derived(
-  [constraints, constraintResponseMap],
-  ([$constraints, $constraintResponseMap]) => {
-    return $constraints.reduce((count, prev) => {
-      if (!(prev.id in $constraintResponseMap)) {
+  [allowedConstraintSpecs, constraintResponseMap],
+  ([$allowedConstraintSpecs, $constraintResponseMap]) => {
+    return $allowedConstraintSpecs.reduce((count, prev) => {
+      if (!(prev.constraint_id in $constraintResponseMap)) {
         count++;
       }
       return count;
@@ -106,7 +138,7 @@ export const visibleConstraintResults: Readable<ConstraintResultWithName[]> = de
 
 /* Helper Functions. */
 
-export function setConstraintVisibility(constraintId: Constraint['id'], visible: boolean) {
+export function setConstraintVisibility(constraintId: ConstraintDefinition['constraint_id'], visible: boolean) {
   constraintVisibilityMapWritable.set({ ...get(constraintVisibilityMapWritable), [constraintId]: visible });
 }
 

@@ -232,12 +232,20 @@ export function removeQueryParam(key: SearchParameters, mode: 'PUSH' | 'REPLACE'
  * Changes the current URL to include a query parameter given by [key]=[value].
  * @note Only runs in the browser (not server-side).
  */
-export function setQueryParam(key: SearchParameters, value: string, mode: 'PUSH' | 'REPLACE' = 'REPLACE'): void {
+export function setQueryParam(
+  key: SearchParameters,
+  value?: string | null,
+  mode: 'PUSH' | 'REPLACE' = 'REPLACE',
+): void {
   const { history, location } = window;
   const { hash, host, pathname, protocol, search } = location;
 
   const urlSearchParams = new URLSearchParams(search);
-  urlSearchParams.set(key, value);
+  if (value !== '' && value != null) {
+    urlSearchParams.set(key, value);
+  } else {
+    urlSearchParams.delete(key);
+  }
   const params = urlSearchParams.toString();
 
   const path = `${protocol}//${host}${pathname}?${params}${hash}`;

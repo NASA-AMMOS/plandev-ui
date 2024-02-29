@@ -8,37 +8,79 @@
   import VisibleShowIcon from '@nasa-jpl/stellar/icons/visible_show.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
-  import type { User } from '../../types/app';
-  import type { Constraint, ConstraintResponse } from '../../types/constraint';
-  import type { Plan } from '../../types/plan';
-  import effects from '../../utilities/effects';
+  import type { ConstraintMetadata, ConstraintPlanSpec, ConstraintResponse } from '../../types/constraint';
+  import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
-  import ContextMenuHeader from '../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../context-menu/ContextMenuItem.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
   import ConstraintViolationButton from './ConstraintViolationButton.svelte';
 
-  export let constraint: Constraint;
+  export let constraint: ConstraintMetadata;
+  export let constraintPlanSpec: ConstraintPlanSpec;
   export let constraintResponse: ConstraintResponse;
-  export let hasDeletePermission: boolean = false;
+  export let modelId: number | undefined;
+  export let hasReadPermission: boolean = false;
   export let hasEditPermission: boolean = false;
-  export let plan: Plan | null;
+  export let readOnly: boolean = false;
   export let totalViolationCount: number = 0;
-  export let user: User | null;
   export let visible: boolean = true;
 
   const dispatch = createEventDispatcher();
 
+  let revisions: number[] = [];
+
+  $: revisions = constraint.versions
+    .map(({ revision }) => revision)
+    .sort((revisionA, revisionB) => revisionB - revisionA);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
+
+  function onEnable(event: Event) {
+    const { value: enabled } = getTarget(event);
+    dispatch('updateConstraintPlanSpec', {
+      ...constraintPlanSpec,
+      enabled,
+    });
+  }
+
+  function onUpdateRevision(event: Event) {
+    const { value: revision } = getTarget(event);
+    dispatch('updateConstraintPlanSpec', {
+      ...constraintPlanSpec,
+      constraint_revision: revision === '' ? null : parseInt(`${revision}`),
+    });
+  }
 </script>
 
 <div class="constraint-list-item">
   <Collapse title={constraint.name} tooltipContent={constraint.name} defaultExpanded={false}>
+    <svelte:fragment slot="left">
+      <div class="left-content">
+        <input
+          type="checkbox"
+          checked={constraintPlanSpec.enabled}
+          on:change={onEnable}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError: readOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to edit plan constraints',
+          }}
+          use:tooltip={{
+            content: `${constraintPlanSpec.enabled ? 'Disable constraint' : 'Enable constraint'} on plan`,
+            disabled: !hasEditPermission,
+            placement: 'top',
+          }}
+        />
+      </div>
+    </svelte:fragment>
     <svelte:fragment slot="right">
       <div class="right-content">
         {#if violationCount}
@@ -76,7 +118,49 @@
             <VisibleHideIcon />
           {/if}
         </button>
+        <select
+          class="st-select"
+          value={constraintPlanSpec.constraint_revision}
+          on:change={onUpdateRevision}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError: readOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to edit plan constraints',
+          }}
+        >
+          <option value={null}>Always use latest</option>
+          {#each revisions as revision, index}
+            <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
+          {/each}
+        </select>
       </div>
+    </svelte:fragment>
+
+    <svelte:fragment slot="contextMenuContent">
+      <ContextMenuItem
+        on:click={() =>
+          window.open(
+            `${base}/constraints/edit/${constraint.id}${
+              constraintPlanSpec.constraint_revision !== null
+                ? `?${SearchParameters.REVISION}=${constraintPlanSpec.constraint_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                : ''
+            }`,
+            '_blank',
+          )}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasReadPermission,
+              permissionError: 'You do not have permission to edit this constraint',
+            },
+          ],
+        ]}
+      >
+        View Constraint
+      </ContextMenuItem>
     </svelte:fragment>
 
     <Collapse title="Description" defaultExpanded={false}>
@@ -112,39 +196,6 @@
         </div>
       </Collapse>
     {/if}
-
-    <svelte:fragment slot="contextMenuContent">
-      <ContextMenuHeader>Actions</ContextMenuHeader>
-      <ContextMenuItem
-        on:click={() => window.open(`${base}/constraints/edit/${constraint.id}`, '_blank')}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasEditPermission,
-              permissionError: 'You do not have permission to edit this constraint',
-            },
-          ],
-        ]}
-      >
-        Edit Constraint
-      </ContextMenuItem>
-      <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem
-        on:click={() => plan && effects.deleteConstraint(constraint, plan, user)}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasDeletePermission,
-              permissionError: 'You do not have permission to delete this constraint',
-            },
-          ],
-        ]}
-      >
-        Delete Constraint
-      </ContextMenuItem>
-    </svelte:fragment>
   </Collapse>
 </div>
 

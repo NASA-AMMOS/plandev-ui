@@ -40,7 +40,17 @@ import type {
 import type { ActivityMetadata } from '../types/activity-metadata';
 import type { BaseUser, User, UserId } from '../types/app';
 import type { ReqAuthResponse, ReqSessionResponse } from '../types/auth';
-import type { Constraint, ConstraintInsertInput, ConstraintResponse, ConstraintResult } from '../types/constraint';
+import type {
+  ConstraintDefinition,
+  ConstraintDefinitionInsertInput,
+  ConstraintInsertInput,
+  ConstraintMetadata,
+  ConstraintMetadataSetInput,
+  ConstraintPlanSpec,
+  ConstraintPlanSpecInsertInput,
+  ConstraintResponse,
+  ConstraintResult,
+} from '../types/constraint';
 import type {
   ExpansionRule,
   ExpansionRuleInsertInput,
@@ -121,6 +131,8 @@ import type {
 } from '../types/simulation';
 import type {
   ActivityDirectiveTagsInsertInput,
+  ConstraintDefinitionTagsInsertInput,
+  ConstraintMetadataTagsInsertInput,
   ConstraintTagsInsertInput,
   ExpansionRuleTagsInsertInput,
   PlanSnapshotTagsInsertInput,
@@ -142,6 +154,7 @@ import {
   showCreateViewModal,
   showDeleteActivitiesModal,
   showEditViewModal,
+  showManagePlanConstraintsModal,
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showUploadViewModal,
@@ -272,7 +285,7 @@ const effects = {
 
   async cancelSimulation(simulationDatasetId: number, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SIMULATION_DATASET(user)) {
+      if (!queryPermissions.CANCEL_PENDING_SIMULATION(user)) {
         throwPermissionError('update a simulation dataset');
       }
       const { confirm } = await showConfirmModal(
@@ -501,42 +514,45 @@ const effects = {
   },
 
   async createConstraint(
-    definition: string,
-    model: ModelSlim | null,
     name: string,
-    plan: PlanSlim | null,
+    isPublic: boolean,
+    metadataTags: ConstraintTagsInsertInput[],
+    definition: string,
+    definitionTags: ConstraintTagsInsertInput[],
     user: User | null,
-    description: string,
-    plans: PlanSlim[],
+    description?: string,
   ): Promise<number | null> {
     try {
-      let hasPermission = false;
-      if (model) {
-        hasPermission = model.plans.reduce((previousValue, { id }) => {
-          const plan = plans.find(({ id: planId }) => planId === id);
-          if (plan) {
-            return previousValue || queryPermissions.CREATE_CONSTRAINT(user, plan);
-          }
-          return previousValue;
-        }, true);
-      } else if (plan) {
-        hasPermission = queryPermissions.CREATE_CONSTRAINT(user, plan);
-      }
-      if (!hasPermission) {
+      if (!queryPermissions.CREATE_CONSTRAINT(user)) {
         throwPermissionError('create a constraint');
       }
 
       const constraintInsertInput: ConstraintInsertInput = {
-        definition,
-        description,
-        model_id: plan !== null ? null : model?.id ?? null,
+        ...(description ? { description } : {}),
         name,
-        plan_id: plan?.id ?? null,
+        public: isPublic,
+        tags: {
+          data: metadataTags,
+        },
+        versions: {
+          data: [
+            {
+              definition,
+              tags: {
+                data: definitionTags,
+              },
+            },
+          ],
+        },
       };
-      const data = await reqHasura(gql.CREATE_CONSTRAINT, { constraint: constraintInsertInput }, user);
-      const { createConstraint } = data;
-      if (createConstraint != null) {
-        const { id } = createConstraint;
+      const data = await reqHasura<ConstraintMetadata>(
+        gql.CREATE_CONSTRAINT,
+        { constraint: constraintInsertInput },
+        user,
+      );
+      const { constraint } = data;
+      if (constraint != null) {
+        const { id } = constraint;
 
         showSuccessToast('Constraint Created Successfully');
         return id;
@@ -550,27 +566,39 @@ const effects = {
     }
   },
 
-  async createConstraintTags(tags: ConstraintTagsInsertInput[], user: User | null): Promise<number | null> {
+  async createConstraintDefinition(
+    constraintId: number,
+    definition: string,
+    definitionTags: ConstraintTagsInsertInput[],
+    user: User | null,
+  ): Promise<Pick<ConstraintDefinition, 'constraint_id' | 'definition' | 'revision'> | null> {
     try {
-      if (!queryPermissions.CREATE_CONSTRAINT_TAGS(user)) {
-        throwPermissionError('create constraint tags');
+      if (!queryPermissions.CREATE_CONSTRAINT_DEFINITION(user)) {
+        throwPermissionError('create a constraint');
       }
 
-      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_CONSTRAINT_TAGS, { tags }, user);
-      const { insert_constraint_tags } = data;
-      if (insert_constraint_tags != null) {
-        const { affected_rows } = insert_constraint_tags;
-
-        if (affected_rows !== tags.length) {
-          throw Error('Some constraint tags were not successfully created');
-        }
-        return affected_rows;
+      const constraintDefinitionInsertInput: ConstraintDefinitionInsertInput = {
+        constraint_id: constraintId,
+        definition,
+        tags: {
+          data: definitionTags,
+        },
+      };
+      const data = await reqHasura<ConstraintDefinition>(
+        gql.CREATE_CONSTRAINT_DEFINITION,
+        { constraintDefinition: constraintDefinitionInsertInput },
+        user,
+      );
+      const { constraintDefinition } = data;
+      if (constraintDefinition != null) {
+        showSuccessToast('New Constraint Revision Created Successfully');
+        return constraintDefinition;
       } else {
-        throw Error('Unable to create constraint tags');
+        throw Error(`Unable to create constraint definition for constraint "${constraintId}"`);
       }
     } catch (e) {
-      catchError('Create Constraint Tags Failed', e as Error);
-      showFailureToast('Create Constraint Tags Failed');
+      catchError('Constraint Creation Failed', e as Error);
+      showFailureToast('Constraint Creation Failed');
       return null;
     }
   },
@@ -1657,9 +1685,9 @@ const effects = {
     }
   },
 
-  async deleteConstraint(constraint: Constraint, plan: PlanSlim, user: User | null): Promise<boolean> {
+  async deleteConstraint(constraint: ConstraintMetadata, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_CONSTRAINT(user, plan)) {
+      if (!queryPermissions.DELETE_CONSTRAINT_METADATA(user, constraint)) {
         throwPermissionError('delete this constraint');
       }
 
@@ -1670,8 +1698,8 @@ const effects = {
       );
 
       if (confirm) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_CONSTRAINT, { id: constraint.id }, user);
-        if (data.deleteConstraint != null) {
+        const data = await reqHasura<{ id: number }>(gql.DELETE_CONSTRAINT_METADATA, { id: constraint.id }, user);
+        if (data.deleteConstraintMetadata != null) {
           showSuccessToast('Constraint Deleted Successfully');
           return true;
         } else {
@@ -1686,13 +1714,13 @@ const effects = {
     return false;
   },
 
-  async deleteConstraintTags(ids: Tag['id'][], user: User | null): Promise<boolean> {
+  async deleteConstraintMetadataTags(ids: Tag['id'][], user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_CONSTRAINT_TAGS(user)) {
+      if (!queryPermissions.DELETE_CONSTRAINT_METADATA_TAGS(user)) {
         throwPermissionError('delete constraint tags');
       }
 
-      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_CONSTRAINT_TAGS, { ids }, user);
+      const data = await reqHasura<{ affected_rows: number }>(gql.DELETE_CONSTRAINT_METADATA_TAGS, { ids }, user);
       if (data.delete_constraint_tags != null) {
         if (data.delete_constraint_tags.affected_rows !== ids.length) {
           throw Error('Some constraint tags were not successfully deleted');
@@ -1704,6 +1732,32 @@ const effects = {
     } catch (e) {
       catchError('Delete Constraint Tags Failed', e as Error);
       showFailureToast('Delete Constraint Tags Failed');
+      return false;
+    }
+  },
+
+  async deleteConstraintPlanSpecifications(plan: Plan, constraintIds: number[], user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
+        throwPermissionError('delete constraint plan specifications');
+      }
+
+      const data = await reqHasura<{ affected_rows: number }>(
+        gql.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS,
+        { constraintIds, planId: plan.id },
+        user,
+      );
+      if (data.delete_constraint_specification != null) {
+        if (data.delete_constraint_specification.affected_rows !== constraintIds.length) {
+          throw Error('Some constraint plan specifications were not successfully deleted');
+        }
+        return true;
+      } else {
+        throw Error('Unable to delete constraint plan specifications');
+      }
+    } catch (e) {
+      catchError('Delete Constraint Plan Specifications Failed', e as Error);
+      showFailureToast('Delete Constraint Plan Specifications Failed');
       return false;
     }
   },
@@ -2131,11 +2185,10 @@ const effects = {
 
   async deleteTag(tag: Tag, user: User | null): Promise<boolean> {
     try {
-      if (!queryPermissions.DELETE_TAGS(user, tag)) {
+      if (!queryPermissions.DELETE_TAG(user, tag)) {
         throwPermissionError('delete tags');
       }
 
-      await reqHasura<{ id: number }>(gql.DELETE_TAG, { id: tag.id }, user);
       showSuccessToast('Tag Deleted Successfully');
       return true;
     } catch (e) {
@@ -2420,9 +2473,9 @@ const effects = {
     }
   },
 
-  async getConstraint(id: number, user: User | null): Promise<Constraint | null> {
+  async getConstraint(id: number, user: User | null): Promise<ConstraintMetadata | null> {
     try {
-      const data = await reqHasura<Constraint>(gql.GET_CONSTRAINT, { id }, user);
+      const data = await reqHasura<ConstraintMetadata>(convertToQuery(gql.SUB_CONSTRAINT), { id }, user);
       const { constraint } = data;
       return constraint;
     } catch (e) {
@@ -2796,37 +2849,6 @@ const effects = {
     }
   },
 
-  async getPlansAndModelsForConstraints(user: User | null): Promise<{
-    modelMap: Record<number, ModelSlim>;
-    models: ModelSlim[];
-    planMap: Record<number, PlanSlim>;
-    plans: PlanSlim[];
-  }> {
-    try {
-      const { models, plans } = await effects.getPlansAndModels(user);
-      const planMap: Record<number, PlanSlim> = plans.reduce((prevMap: Record<number, PlanSlim>, plan: PlanSlim) => {
-        return {
-          ...prevMap,
-          [plan.id]: plan,
-        };
-      }, {});
-      const modelMap: Record<number, ModelSlim> = models.reduce(
-        (prevMap: Record<number, ModelSlim>, model: ModelSlim) => {
-          return {
-            ...prevMap,
-            [model.id]: model,
-          };
-        },
-        {},
-      );
-
-      return { modelMap, models, planMap, plans };
-    } catch (e) {
-      catchError(e as Error);
-      return { modelMap: {}, models: [], planMap: {}, plans: [] };
-    }
-  },
-
   async getPlansAndModelsForScheduling(user: User | null): Promise<{
     models: ModelSlim[];
     plans: PlanSchedulingSpec[];
@@ -3121,14 +3143,10 @@ const effects = {
     }
   },
 
-  async getTsFilesConstraints(model_id: number, plan_id: number | null, user: User | null): Promise<TypeScriptFile[]> {
+  async getTsFilesConstraints(model_id: number, user: User | null): Promise<TypeScriptFile[]> {
     if (model_id !== null && model_id !== undefined) {
       try {
-        const data = await reqHasura<DslTypeScriptResponse>(
-          gql.GET_TYPESCRIPT_CONSTRAINTS,
-          { model_id, plan_id },
-          user,
-        );
+        const data = await reqHasura<DslTypeScriptResponse>(gql.GET_TYPESCRIPT_CONSTRAINTS, { model_id }, user);
         const { dslTypeScriptResponse } = data;
         if (dslTypeScriptResponse != null) {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
@@ -3418,6 +3436,15 @@ const effects = {
         success: false,
         token: null,
       };
+    }
+  },
+
+  async managePlanConstraints(user: User | null): Promise<void> {
+    try {
+      await showManagePlanConstraintsModal(user);
+    } catch (e) {
+      catchError('Constraint Unable To Be Applied To Plan', e as Error);
+      showFailureToast('Constraint Application Failed');
     }
   },
 
@@ -3897,49 +3924,128 @@ const effects = {
     }
   },
 
-  async updateConstraint(
-    id: number,
-    definition: string,
-    model: ModelSlim | null,
-    name: string,
-    plan: PlanSlim | null,
+  async updateConstraintDefinitionTags(
+    constraintId: number,
+    constraintRevision: number,
+    tags: ConstraintDefinitionTagsInsertInput[],
+    tagIdsToDelete: number[],
     user: User | null,
-    plans: PlanSlim[],
-    description?: string,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
-      let hasPermission = false;
-      if (model) {
-        hasPermission = model.plans.reduce((previousValue, { id }) => {
-          const plan = plans.find(({ id: planId }) => planId === id);
-          if (plan) {
-            return previousValue || queryPermissions.UPDATE_CONSTRAINT(user, plan);
-          }
-          return previousValue;
-        }, true);
-      } else if (plan) {
-        hasPermission = queryPermissions.UPDATE_CONSTRAINT(user, plan);
+      if (!queryPermissions.UPDATE_CONSTRAINT_DEFINITION_TAGS(user)) {
+        throwPermissionError('create constraint definition tags');
       }
-      if (!hasPermission) {
+
+      const data = await reqHasura<{ affected_rows: number }>(
+        gql.UPDATE_CONSTRAINT_DEFINITION_TAGS,
+        { constraintId, constraintRevision, tagIdsToDelete, tags },
+        user,
+      );
+      const { deleteConstraintDefinitionTags, insertConstraintDefinitionTags } = data;
+      if (insertConstraintDefinitionTags != null && deleteConstraintDefinitionTags != null) {
+        const { affected_rows } = insertConstraintDefinitionTags;
+
+        showSuccessToast('Constraint Updated Successfully');
+
+        return affected_rows;
+      } else {
+        throw Error('Unable to create constraint definition tags');
+      }
+    } catch (e) {
+      catchError('Create Constraint Definition Tags Failed', e as Error);
+      showFailureToast('Create Constraint Definition Tags Failed');
+      return null;
+    }
+  },
+
+  async updateConstraintMetadata(
+    id: number,
+    constraintMetadata: ConstraintMetadataSetInput,
+    tags: ConstraintMetadataTagsInsertInput[],
+    tagIdsToDelete: number[],
+    currentConstraintOwner: UserId,
+    user: User | null,
+  ): Promise<boolean> {
+    try {
+      if (!queryPermissions.UPDATE_CONSTRAINT_METADATA(user, { owner: currentConstraintOwner })) {
         throwPermissionError('update this constraint');
       }
 
-      const constraint: Partial<Constraint> = {
-        definition,
-        model_id: plan !== null ? null : model?.id,
-        name,
-        plan_id: plan?.id ?? null,
-        ...(description && { description }),
-      };
-      const data = await reqHasura(gql.UPDATE_CONSTRAINT, { constraint, id }, user);
-      if (data.updateConstraint != null) {
-        showSuccessToast('Constraint Updated Successfully');
+      const data = await reqHasura(
+        gql.UPDATE_CONSTRAINT_METADATA,
+        { constraintMetadata, id, tagIdsToDelete, tags },
+        user,
+      );
+      if (
+        data.updateConstraintMetadata == null ||
+        data.insertConstraintTags == null ||
+        data.deleteConstraintTags == null
+      ) {
+        throw Error(`Unable to update constraint metadata with ID: "${id}"`);
+      }
+
+      showSuccessToast('Constraint Updated Successfully');
+      return true;
+    } catch (e) {
+      catchError('Constraint Metadata Update Failed', e as Error);
+      showFailureToast('Constraint Metadata Update Failed');
+      return false;
+    }
+  },
+
+  async updateConstraintPlanSpecification(
+    plan: Plan,
+    constraintPlanSpecification: Omit<ConstraintPlanSpec, 'constraint_metadata'>,
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
+        throwPermissionError('update this constraint plan specification');
+      }
+      const { enabled, constraint_id: constraintId, constraint_revision: revision } = constraintPlanSpecification;
+
+      const { updateConstraintPlanSpecification } = await reqHasura(
+        gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATION,
+        { enabled, id: constraintId, planId: plan.id, revision },
+        user,
+      );
+
+      if (updateConstraintPlanSpecification !== null) {
+        showSuccessToast(`Constraints Updated Successfully`);
       } else {
-        throw Error(`Unable to update constraint with ID: "${id}"`);
+        throw Error('Unable to update the constraints for the plan');
       }
     } catch (e) {
-      catchError('Constraint Update Failed', e as Error);
-      showFailureToast('Constraint Update Failed');
+      catchError('Constraint Plan Specification Update Failed', e as Error);
+      showFailureToast('Constraint Plan Specification Update Failed');
+    }
+  },
+
+  async updateConstraintPlanSpecifications(
+    plan: Plan,
+    constraintSpecsToUpdate: ConstraintPlanSpecInsertInput[],
+    constraintSpecIdsToDelete: number[],
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
+        throwPermissionError('update this constraint plan specification');
+      }
+
+      const { deleteConstraintPlanSpecifications, updateConstraintPlanSpecifications } = await reqHasura(
+        gql.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS,
+        { constraintSpecIdsToDelete, constraintSpecsToUpdate, planId: plan.id },
+        user,
+      );
+
+      if (updateConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
+        showSuccessToast(`Constraints Updated Successfully`);
+      } else {
+        throw Error('Unable to update the constraints for the plan');
+      }
+    } catch (e) {
+      catchError('Constraint Plan Specification Update Failed', e as Error);
+      showFailureToast('Constraint Plan Specification Update Failed');
     }
   },
 

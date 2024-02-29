@@ -30,7 +30,7 @@ const gql = {
         success
         constraintId
         constraintName
-        type
+        constraintRevision
         results {
           resourceIds
           gaps {
@@ -121,23 +121,46 @@ const gql = {
   `,
 
   CREATE_CONSTRAINT: `#graphql
-    mutation CreateConstraint($constraint: constraint_insert_input!) {
-      createConstraint: insert_constraint_one(object: $constraint) {
+    mutation CreateConstraint($constraint: constraint_metadata_insert_input!) {
+      constraint: insert_constraint_metadata_one(object: $constraint) {
         id
+        name
+        description
+        owner
+        public
+        tags {
+          tag_id
+        }
+        versions {
+          revision
+          definition
+          tags {
+            tag_id
+          }
+        }
       }
     }
   `,
 
-  CREATE_CONSTRAINT_TAGS: `#graphql
-    mutation CreateConstraintTags($tags: [constraint_tags_insert_input!]!) {
-      insert_constraint_tags(objects: $tags, on_conflict: {
-        constraint: constraint_tags_pkey,
-        update_columns: []
-      }) {
-        affected_rows
+  CREATE_CONSTRAINT_DEFINITION: `#graphql
+    mutation insertConstraintDefinition($constraintDefinition: constraint_definition_insert_input!) {
+      constraintDefinition: insert_constraint_definition_one(object: $constraintDefinition) {
+        constraint_id
+        definition
+        revision
       }
     }
-`,
+  `,
+
+  CREATE_CONSTRAINT_MODEL_SPECIFICATION: `#graphql
+    mutation CreateConstraintModelSpecification($constraintModelSpecification: constraint_model_specification_insert_input!) {
+      constraintModelSpecification: insert_constraint_model_specification_one(object: $constraintModelSpecification) {
+        constraint_id
+        constraint_revision
+        model_id
+      }
+    }
+  `,
 
   CREATE_EXPANSION_RULE: `#graphql
     mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
@@ -440,21 +463,51 @@ const gql = {
     }
   `,
 
-  DELETE_CONSTRAINT: `#graphql
+  DELETE_CONSTRAINT_METADATA: `#graphql
     mutation DeleteConstraint($id: Int!) {
-      deleteConstraint: delete_constraint_by_pk(id: $id) {
+      deleteConstraintMetadata: delete_constraint_metadata_by_pk(id: $id) {
         id
       }
     }
   `,
 
-  DELETE_CONSTRAINT_TAGS: `#graphql
-    mutation DeleteConstraintTags($ids: [Int!]!) {
-        delete_constraint_tags(where: { tag_id: { _in: $ids } }) {
+  DELETE_CONSTRAINT_METADATA_TAGS: `#graphql
+    mutation DeleteConstraintMetadataTags($ids: [Int!]!) {
+      delete_constraint_tags(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
-`,
+  `,
+
+  DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
+    mutation DeleteConstraintModelSpecification($constraintIds: [Int!]!, $modelId: Int!) {
+      delete_constraint_model_specification(
+        where: {
+          constraint_id: { _in: $constraintIds },
+          _and: {
+            model_id: { _eq: $modelId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
+    mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
+      delete_constraint_specification(
+        where: {
+          constraint_id: { _in: $constraintIds },
+          _and: {
+            plan_id: { _eq: $planId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
 
   DELETE_EXPANSION_RULE: `#graphql
     mutation DeleteExpansionRule($id: Int!) {
@@ -667,30 +720,6 @@ const gql = {
           updated_at
         }
         name
-      }
-    }
-  `,
-
-  GET_CONSTRAINT: `#graphql
-    query GetConstraint($id: Int!) {
-      constraint: constraint_by_pk(id: $id) {
-        created_at
-        definition
-        description
-        id
-        model_id
-        name
-        owner
-        plan_id
-        updated_at
-        updated_by
-        tags {
-          tag {
-            color
-            id
-            name
-          }
-        }
       }
     }
   `,
@@ -1238,8 +1267,8 @@ const gql = {
   `,
 
   GET_TYPESCRIPT_CONSTRAINTS: `#graphql
-    query GetTypeScriptConstraints($model_id: ID!, $plan_id: Int) {
-      dslTypeScriptResponse: constraintsDslTypescript(missionModelId: $model_id, planId: $plan_id) {
+    query GetTypeScriptConstraints($model_id: ID!) {
+      dslTypeScriptResponse: constraintsDslTypescript(missionModelId: $model_id) {
         reason
         status
         typescriptFiles {
@@ -1568,24 +1597,84 @@ const gql = {
     }
   `,
 
-  SUB_CONSTRAINTS: `#graphql
-    subscription SubConstraints($modelId: Int!, $planId: Int!) {
-      constraints: constraint(where: {
-        _or: [
-          { model_id: { _eq: $modelId } },
-          { plan_id: { _eq: $planId } }
-        ]
-      }, order_by: { name: asc }) {
+  SUB_CONSTRAINT: `#graphql
+    subscription SubConstraint($id: Int!) {
+      constraint: constraint_metadata_by_pk(id: $id) {
         created_at
-        definition
         description
         id
-        model_id
         name
+        models_using {
+          model_id
+        }
         owner
-        plan_id
+        plans_using {
+          plan_id
+        }
+        public
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
         updated_at
         updated_by
+        versions {
+          author
+          definition
+          revision
+          tags {
+            tag {
+              color
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_CONSTRAINTS: `#graphql
+    subscription SubConstraints {
+      constraints: constraint_metadata(order_by: { name: asc }) {
+        created_at
+        description
+        id
+        name
+        models_using {
+          model_id
+        }
+        owner
+        plans_using {
+          plan_id
+        }
+        public
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
+        updated_at
+        updated_by
+        versions {
+          author
+          definition
+          revision
+        }
+      }
+    }
+  `,
+
+  SUB_CONSTRAINT_DEFINITION: `#graphql
+    subscription SubConstraintDefinition($id: Int!, $revision: Int!) {
+      constraintDefinition: constraint_definition_by_pk(constraint_id: $id, revision: $revision) {
+        definition
+        revision
         tags {
           tag {
             color
@@ -1597,26 +1686,24 @@ const gql = {
     }
   `,
 
-  SUB_CONSTRAINTS_ALL: `#graphql
-    subscription SubConstraintsAll {
-      constraints: constraint(order_by: { name: asc }) {
-        created_at
-        definition
-        description
-        id
-        model_id
-        name
-        owner
-        plan_id
-        updated_at
-        updated_by
-        tags {
-          tag {
-            color
-            id
-            name
+  SUB_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
+    subscription SubConstraintPlanSpecifications($planId: Int!) {
+      constraintPlanSpecs: constraint_specification(
+        where: {plan_id: {_eq: $planId}},
+        order_by: { constraint_id: desc }
+      ) {
+        constraint_id
+        constraint_revision
+        enabled
+        constraint_metadata {
+          name
+          owner
+          public
+          versions {
+            revision
           }
         }
+        plan_id
       }
     }
   `,
@@ -2234,12 +2321,85 @@ const gql = {
     }
   `,
 
-  UPDATE_CONSTRAINT: `#graphql
-    mutation UpdateConstraint($id: Int!, $constraint: constraint_set_input!) {
-      updateConstraint: update_constraint_by_pk(
-        pk_columns: { id: $id }, _set: $constraint
+  UPDATE_CONSTRAINT_DEFINITION_TAGS: `#graphql
+    mutation UpdateConstraintTags($constraintId: Int!, $constraintRevision: Int!, $tags: [constraint_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      insertConstraintDefinitionTags: insert_constraint_definition_tags(objects: $tags, on_conflict: {
+        constraint: constraint_definition_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteConstraintDefinitionTags: delete_constraint_definition_tags(
+        where: {
+          tag_id: { _in: $tagIdsToDelete },
+          _and: {
+            constraint_id: { _eq: $constraintId },
+            constraint_revision: { _eq: $constraintRevision }
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  UPDATE_CONSTRAINT_METADATA: `#graphql
+    mutation UpdateConstraintMetadata($id: Int!, $constraintMetadata: constraint_metadata_set_input!, $tags: [constraint_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      updateConstraintMetadata: update_constraint_metadata_by_pk(
+        pk_columns: { id: $id }, _set: $constraintMetadata
       ) {
         id
+      }
+      insertConstraintTags: insert_constraint_tags(objects: $tags, on_conflict: {
+        constraint: constraint_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteConstraintTags: delete_constraint_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+          affected_rows
+      }
+    }
+  `,
+
+  UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
+    mutation UpdateConstraintPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $planId: Int!) {
+      updateConstraintPlanSpecification: update_constraint_specification_by_pk(
+        pk_columns: { constraint_id: $id, plan_id: $planId },
+        _set: {
+          constraint_revision: $revision,
+          enabled: $enabled
+        }
+      ) {
+        constraint_revision
+        enabled
+      }
+    }
+  `,
+
+  UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
+    mutation UpdateConstraintPlanSpecifications($constraintSpecsToUpdate: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = [], $planId: Int!) {
+      updateConstraintPlanSpecifications: insert_constraint_specification(
+        objects: $constraintSpecsToUpdate,
+        on_conflict: {
+          constraint: constraint_specification_pkey,
+          update_columns: [constraint_revision, enabled]
+        },
+      ) {
+        returning {
+          constraint_revision
+          enabled
+        }
+      }
+      deleteConstraintPlanSpecifications: delete_constraint_specification(
+        where: {
+          constraint_id: { _in: $constraintSpecIdsToDelete },
+          _and: {
+            plan_id: { _eq: $planId },
+          }
+        }
+      ) {
+        affected_rows
       }
     }
   `,
@@ -2419,7 +2579,7 @@ const gql = {
       }
     }
   `,
-};
+} as const;
 
 export function convertToGQLArray(array: string[] | number[]) {
   return `{${array.join(',')}}`;

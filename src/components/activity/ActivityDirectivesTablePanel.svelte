@@ -32,9 +32,7 @@
   export let user: User | null;
 
   type ActivityDirectiveColumns = keyof ActivityDirective | 'derived_start_time';
-  interface ActivityDirectiveColDef extends ColDef<ActivityDirective> {
-    field: ActivityDirectiveColumns;
-  }
+  type ActivityDirectiveColDef = ColDef<ActivityDirective>;
 
   let activityDirectivesTable: ViewTable | undefined;
   let autoSizeColumns: AutoSizeColumns | undefined;
@@ -103,7 +101,6 @@
       sortable: true,
     },
     derived_start_time: {
-      field: 'derived_start_time',
       filter: 'text',
       headerName: 'Absolute Start Time (UTC)',
       hide: true,

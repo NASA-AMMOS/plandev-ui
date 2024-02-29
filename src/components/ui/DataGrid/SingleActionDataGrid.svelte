@@ -116,6 +116,9 @@
   rowSelection="single"
   {scrollToSelection}
   on:blur={onBlur}
+  on:cellEditingStarted
+  on:cellEditingStopped
+  on:cellValueChanged
   on:cellMouseOver
   on:columnMoved
   on:columnPinned

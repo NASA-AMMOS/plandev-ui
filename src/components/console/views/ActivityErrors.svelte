@@ -70,7 +70,6 @@
       width: 60,
     },
     {
-      field: 'fields',
       filter: 'number',
       headerName: '# fields',
       resizable: true,

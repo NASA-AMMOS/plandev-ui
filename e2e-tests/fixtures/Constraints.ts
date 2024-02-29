@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
 export class Constraints {
@@ -26,14 +25,12 @@ export class Constraints {
 
   async createConstraint(baseURL: string | undefined) {
     await expect(this.saveButton).toBeDisabled();
-    await this.selectModel();
     await this.fillConstraintName();
     await this.fillConstraintDescription();
     await this.fillConstraintDefinition();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/constraints/edit/*`);
-    await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/constraints`);
@@ -43,7 +40,6 @@ export class Constraints {
     await this.goto();
     await expect(this.tableRow).toBeVisible();
     await expect(this.tableRowDeleteButton).not.toBeVisible();
-
     await this.tableRow.hover();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
@@ -83,14 +79,6 @@ export class Constraints {
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
-  }
-
-  async selectModel() {
-    await this.page.waitForSelector(`option:has-text("${this.models.modelName}")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputConstraintModelSelector, this.models.modelName);
-    await this.inputConstraintModel.focus();
-    await this.inputConstraintModel.selectOption(value);
-    await this.inputConstraintModel.evaluate(e => e.blur());
   }
 
   updatePage(page: Page): void {

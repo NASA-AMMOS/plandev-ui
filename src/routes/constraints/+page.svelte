@@ -10,9 +10,4 @@
 
 <PageTitle title="Constraints" />
 
-<Constraints
-  initialModelMap={data.initialModelMap}
-  initialPlanMap={data.initialPlanMap}
-  initialPlans={data.initialPlans}
-  user={data.user}
-/>
+<Constraints user={data.user} />

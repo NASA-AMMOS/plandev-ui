@@ -217,7 +217,7 @@
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($plan) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraints.canCheck(data.user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.constraintPlanSpec.canCheck(data.user, $plan, $plan.model) && !$planReadOnly;
     hasExpandPermission =
       featurePermissions.expansionSequences.canExpand(data.user, $plan, $plan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =

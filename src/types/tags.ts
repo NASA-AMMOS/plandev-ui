@@ -7,7 +7,17 @@ export type ActivityDirectiveTagsInsertInput = {
 };
 
 export type ConstraintTagsInsertInput = {
+  tag_id: number;
+};
+
+export type ConstraintMetadataTagsInsertInput = {
   constraint_id: number;
+  tag_id: number;
+};
+
+export type ConstraintDefinitionTagsInsertInput = {
+  constraint_id: number;
+  constraint_revision: number;
   tag_id: number;
 };
 

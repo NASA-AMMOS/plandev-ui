@@ -52,6 +52,7 @@ test.describe.serial('Constraints', () => {
   });
 
   test('Delete constraint', async () => {
+    await plan.removeConstraint();
     await constraints.deleteConstraint();
   });
 });

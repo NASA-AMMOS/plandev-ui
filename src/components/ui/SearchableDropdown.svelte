@@ -11,6 +11,7 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -19,7 +20,6 @@
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
 
   interface PlaceholderOption extends Omit<DropdownOption, 'value'> {
     value: null;
@@ -32,6 +32,7 @@
   export let hasUpdatePermission: boolean = true;
   export let options: DropdownOptions = [];
   export let maxListHeight: string = '300px';
+  export let name: string | undefined = undefined;
   export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string = '';
   export let planReadOnly: boolean = false;
@@ -107,6 +108,7 @@
     class="selected-display st-input w-100"
     class:error
     class:disabled
+    {name}
     on:click|stopPropagation={openMenu}
     role="textbox"
     aria-label={selectedOption?.display ?? placeholder}
@@ -203,6 +205,7 @@
   }
 
   .selected-display-value {
+    cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

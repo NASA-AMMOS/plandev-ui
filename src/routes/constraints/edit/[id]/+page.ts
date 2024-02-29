@@ -14,20 +14,9 @@ export const load: PageLoad = async ({ parent, params }) => {
 
     if (constraintId !== null) {
       const initialConstraint = await effects.getConstraint(constraintId, user);
-      const {
-        modelMap: initialModelMap,
-        models: initialModels,
-        planMap: initialPlanMap,
-        plans: initialPlans,
-      } = await effects.getPlansAndModelsForConstraints(user);
-
       if (initialConstraint !== null) {
         return {
           initialConstraint,
-          initialModelMap,
-          initialModels,
-          initialPlanMap,
-          initialPlans,
           user,
         };
       }

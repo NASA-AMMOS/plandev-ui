@@ -1,4 +1,5 @@
 import type { UserId } from './app';
+import type { ConstraintModelSpec } from './constraint';
 import type { ParametersMap } from './parameter';
 
 export type Model = ModelSchema;
@@ -6,6 +7,7 @@ export type Model = ModelSchema;
 export type ModelInsertInput = Pick<Model, 'description' | 'jar_id' | 'mission' | 'name' | 'version'>;
 
 export type ModelSchema = {
+  constraint_specification: ConstraintModelSpec[];
   created_at: string;
   description?: string;
   id: number;
