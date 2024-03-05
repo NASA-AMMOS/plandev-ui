@@ -74,11 +74,10 @@
   import { planSnapshot, planSnapshotId } from '../../../stores/planSnapshots';
   import {
     enableScheduling,
-    latestAnalyses,
-    resetSchedulingStores,
+    latestSchedulingRequest,
     satisfiedSchedulingGoalCount,
+    schedulingAnalysisStatus,
     schedulingGoalCount,
-    schedulingStatus,
   } from '../../../stores/scheduling';
   import {
     enableSimulation,
@@ -162,12 +161,12 @@
   let invalidActivityCount: number = 0;
   let planHasBeenLocked = false;
   let planSnapshotActivityDirectives: ActivityDirective[] = [];
-  let schedulingAnalysisStatus: Status | null;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
   let windowWidth = 0;
   let simulationDataAbortController: AbortController;
   let resourcesExternalAbortController: AbortController;
+  let schedulingStatusText: string = '';
 
   $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
     (prevCounts, activityErrorRollup) => {
@@ -366,13 +365,25 @@
   }
 
   $: compactNavMode = windowWidth < 1100;
-  $: schedulingAnalysisStatus = $schedulingStatus;
-  $: if ($latestAnalyses) {
-    if ($schedulingGoalCount !== $satisfiedSchedulingGoalCount) {
-      schedulingAnalysisStatus = Status.PartialSuccess;
-    }
-  }
 
+  $: if ($schedulingAnalysisStatus) {
+    let newSchedulingStatusText = '';
+    const satisfactionReport = `${$satisfiedSchedulingGoalCount} satisfied, ${
+      $schedulingGoalCount - $satisfiedSchedulingGoalCount
+    } unsatisfied`;
+    if ($schedulingAnalysisStatus === Status.Complete) {
+      newSchedulingStatusText = satisfactionReport;
+    } else if ($schedulingAnalysisStatus === Status.Failed) {
+      if ($latestSchedulingRequest && $latestSchedulingRequest.reason) {
+        newSchedulingStatusText = 'Failed to run scheduling';
+      } else {
+        newSchedulingStatusText = satisfactionReport;
+      }
+    } else if ($schedulingAnalysisStatus === Status.Modified) {
+      newSchedulingStatusText = 'Scheduling out-of-date';
+    }
+    schedulingStatusText = newSchedulingStatusText;
+  }
   $: if ($simulationDatasetLatest) {
     simulationExtent = getSimulationExtent($simulationDatasetLatest);
     selectedSimulationStatus = getSimulationStatus($simulationDatasetLatest);
@@ -391,7 +402,6 @@
     resetConstraintStores();
     resetExpansionStores();
     resetPlanStores();
-    resetSchedulingStores();
     resetSimulationStores();
     closeActiveModal();
   });
@@ -703,16 +713,26 @@
         permissionError={$planReadOnly
           ? PlanStatusMessages.READ_ONLY
           : 'You do not have permission to run a scheduling analysis'}
-        status={schedulingAnalysisStatus}
-        statusText={schedulingAnalysisStatus === Status.PartialSuccess || schedulingAnalysisStatus === Status.Complete
-          ? `${$satisfiedSchedulingGoalCount} satisfied, ${
-              $schedulingGoalCount - $satisfiedSchedulingGoalCount
-            } unsatisfied`
-          : ''}
+        status={$schedulingAnalysisStatus}
+        statusText={schedulingStatusText}
         on:click={() => effects.schedule(true, $plan, data.user)}
         indeterminate
       >
         <CalendarIcon />
+        <svelte:fragment slot="metadata">
+          <div class="st-typography-body">
+            {#if !$schedulingAnalysisStatus}
+              Scheduling analysis not run
+            {/if}
+          </div>
+          {#if $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete}
+            <button
+              on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, data.user)}
+              class="st-button cancel-button"
+              disabled={$planReadOnly}>Cancel</button
+            >
+          {/if}
+        </svelte:fragment>
       </PlanNavButton>
       <ExtensionMenu
         extensions={data.extensions}

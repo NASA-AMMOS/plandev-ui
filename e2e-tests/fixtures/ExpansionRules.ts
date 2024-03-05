@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import os from 'node:os';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { fillEditorText } from '../utilities/editor.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Dictionaries } from './Dictionaries.js';
 import { Models } from './Models.js';
@@ -75,15 +75,7 @@ export class ExpansionRules {
   }
 
   async fillInputEditor() {
-    await this.inputEditor.focus();
-    // Need to emulate actual clearing of editor instead of manipulating the
-    // underlying textbox, see: https://github.com/microsoft/playwright/issues/14126#issuecomment-1728327258
-    const isMac = os.platform() === 'darwin';
-    const modifier = isMac ? 'Meta' : 'Control';
-    await this.inputEditor.press(`${modifier}+A`);
-    await this.inputEditor.press(`Backspace`);
-    await this.inputEditor.fill(this.ruleLogic);
-    await this.inputEditor.evaluate(e => e.blur());
+    await fillEditorText(this.inputEditor, this.ruleLogic);
   }
 
   async fillInputName() {

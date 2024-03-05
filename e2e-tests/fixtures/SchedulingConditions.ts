@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { fillEditorText } from '../utilities/editor.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
@@ -64,9 +65,7 @@ export class SchedulingConditions {
   }
 
   async fillConditionDefinition() {
-    await this.inputConditionDefinition.focus();
-    await this.inputConditionDefinition.fill(this.conditionDefinition);
-    await this.inputConditionDefinition.evaluate(e => e.blur());
+    await fillEditorText(this.inputConditionDefinition, this.conditionDefinition);
   }
 
   async fillConditionDescription() {

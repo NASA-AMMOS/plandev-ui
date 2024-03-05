@@ -36,6 +36,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
+  await plan.deleteAllActivities();
   await plans.goto();
   await plans.deletePlan();
   await models.goto();
@@ -65,14 +66,14 @@ test.describe.serial('Scheduling', () => {
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).uncheck();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).not.toBeChecked();
-    await plan.runScheduling();
+    await plan.runScheduling('Failed');
     await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).check();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
   });
 
   test('The condition should prevent showing +10 in the goals badge', async () => {
-    await plan.runScheduling();
+    await plan.runScheduling('Failed');
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
   });
 
@@ -106,6 +107,13 @@ test.describe.serial('Scheduling', () => {
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
     await plan.runAnalysis();
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+  });
+
+  test('Modifying the plan should result in scheduling status marked as out of date', async () => {
+    await plan.showPanel('Activity Types');
+    await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
+    await plan.showPanel('Scheduling Goals');
+    await plan.waitForSchedulingStatus('Modified');
   });
 
   test('Delete scheduling goal', async () => {

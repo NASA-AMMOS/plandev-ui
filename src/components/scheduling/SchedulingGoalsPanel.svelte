@@ -6,7 +6,12 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { enableScheduling, schedulingSpecGoals, schedulingStatus, selectedSpecId } from '../../stores/scheduling';
+  import {
+    enableScheduling,
+    schedulingAnalysisStatus,
+    schedulingSpecGoals,
+    selectedSpecId,
+  } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { SchedulingSpecGoal } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
@@ -65,7 +70,7 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Scheduling Goals" />
-    <PanelHeaderActions status={$schedulingStatus} indeterminate>
+    <PanelHeaderActions status={$schedulingAnalysisStatus} indeterminate>
       <PanelHeaderActionButton
         title="Analyze"
         on:click={() => effects.schedule(true, $plan, user)}

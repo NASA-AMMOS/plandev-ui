@@ -292,6 +292,9 @@ const queryPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model, preset))
     );
   },
+  CANCEL_PENDING_SCHEDULING_REQUEST: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission(['update_scheduling_request'], user);
+  },
   CANCEL_PENDING_SIMULATION: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission(['update_simulation_dataset_by_pk'], user);
   },

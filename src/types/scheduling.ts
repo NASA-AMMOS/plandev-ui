@@ -70,9 +70,8 @@ export type SchedulingGoalInsertInput = Omit<
 >;
 
 export type SchedulingResponse = {
-  datasetId: number | null;
+  analysisId: number | null;
   reason: SchedulingError;
-  status: 'complete' | 'failed' | 'incomplete';
 };
 
 export type SchedulingSpec = {
@@ -113,4 +112,16 @@ export type SchedulingSpecGoalInsertInput = {
   enabled: boolean;
   goal_id: number;
   specification_id: number;
+};
+
+export type SchedulingRequest = {
+  analysis_id: number;
+  canceled: boolean;
+  dataset_id: number | null;
+  reason: SchedulingError | null;
+  requested_at: string;
+  requested_by: string;
+  specification_id: number;
+  specification_revision: number;
+  status: 'success' | 'failed' | 'incomplete' | 'pending';
 };

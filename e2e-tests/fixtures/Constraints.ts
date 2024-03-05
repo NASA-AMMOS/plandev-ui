@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { fillEditorText } from '../utilities/editor.js';
 import { Models } from './Models.js';
 
 export class Constraints {
@@ -59,9 +60,7 @@ export class Constraints {
   }
 
   async fillConstraintDefinition() {
-    await this.inputConstraintDefinition.focus();
-    await this.inputConstraintDefinition.fill(this.constraintDefinition);
-    await this.inputConstraintDefinition.evaluate(e => e.blur());
+    await fillEditorText(this.inputConstraintDefinition, this.constraintDefinition);
   }
 
   async fillConstraintDescription() {

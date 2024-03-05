@@ -14,6 +14,16 @@ const gql = {
     }
   `,
 
+  CANCEL_SCHEDULING_REQUEST: `#graphql
+    mutation CancelSchedulingRequest($id: Int!) {
+      update_scheduling_request(where: { analysis_id: { _eq: $id } }, _set: {
+        canceled: true
+      }) {
+        affected_rows
+      }
+    }
+  `,
+
   CANCEL_SIMULATION: `#graphql
     mutation CancelSim($id: Int!) {
       update_simulation_dataset_by_pk(pk_columns: {id: $id}, _set: {
@@ -1466,8 +1476,7 @@ const gql = {
     query Schedule($specificationId: Int!) {
       schedule(specificationId: $specificationId) {
         reason
-        status
-        datasetId
+        analysisId
       }
     }
   `,
@@ -2059,6 +2068,34 @@ const gql = {
     }
   `,
 
+  SUB_SCHEDULING_REQUESTS: `#graphql
+    subscription SubSchedulingRequests($specId: Int!) {
+      scheduling_request(where: { specification_id: { _eq: $specId } }, order_by: { analysis_id: desc }) {
+        specification_id
+        analysis_id
+        requested_at
+        requested_by
+        status
+        reason
+        dataset_id
+        specification_revision
+        canceled
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_SPEC: `#graphql
+    subscription SubSchedulingSpec($planId: Int!) {
+      scheduling_specification(where: { plan_id: { _eq: $planId } }, limit: 1) {
+        id
+        revision
+        plan_id
+        plan_revision
+        analysis_only
+      }
+    }
+  `,
+
   SUB_SCHEDULING_SPEC_CONDITIONS: `#graphql
     subscription SubSchedulingSpecConditions($specification_id: Int!) {
       specConditions: scheduling_specification_conditions(where: { specification_id: { _eq: $specification_id } }, order_by: { condition_id: asc }) {
@@ -2173,6 +2210,7 @@ const gql = {
         simulation_datasets(order_by: { id: desc }) {
           canceled
           id
+          dataset_id
           plan_revision
           requested_at
           requested_by

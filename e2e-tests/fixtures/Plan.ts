@@ -117,14 +117,17 @@ export class Plan {
   }
 
   async deleteAllActivities() {
-    await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
-    await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
-    await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
-    await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
+    const gridCells = await this.panelActivityDirectivesTable.getByRole('gridcell');
+    if ((await gridCells.count()) > 0) {
+      await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
+      await this.page.locator('.context-menu > .context-menu-item:has-text("Select All Activity Directives")').click();
+      await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
+      await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
 
-    const applyPresetButton = this.page.getByRole('button', { name: 'Confirm' });
-    await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
-    await applyPresetButton.click();
+      const confirmDeletionButton = this.page.getByRole('button', { name: 'Confirm' });
+      await confirmDeletionButton.waitFor({ state: 'attached', timeout: 1000 });
+      await confirmDeletionButton.click();
+    }
   }
 
   async fillActivityPresetName(presetName: string) {
@@ -164,18 +167,14 @@ export class Plan {
 
   async runAnalysis() {
     await this.analyzeButton.click();
-    await this.page.waitForSelector(this.schedulingStatusSelector('Incomplete'), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Incomplete'), { state: 'visible', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'visible', strict: true });
+    await this.waitForSchedulingStatus('Incomplete');
+    await this.waitForSchedulingStatus('Complete');
   }
 
-  async runScheduling() {
+  async runScheduling(expectedFinalState = 'Complete') {
     await this.scheduleButton.click();
-    await this.page.waitForSelector(this.schedulingStatusSelector('Incomplete'), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Incomplete'), { state: 'visible', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector('Complete'), { state: 'visible', strict: true });
+    await this.waitForSchedulingStatus('Incomplete');
+    await this.waitForSchedulingStatus(expectedFinalState);
   }
 
   async selectActivityAnchorByIndex(index: number) {
@@ -342,5 +341,10 @@ export class Plan {
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
+  }
+
+  async waitForSchedulingStatus(status: string) {
+    await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'attached', strict: true });
+    await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'visible', strict: true });
   }
 }

@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { fillEditorText } from '../utilities/editor.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
@@ -61,9 +62,7 @@ export class SchedulingGoals {
   }
 
   async fillGoalDefinition() {
-    await this.inputGoalDefinition.focus();
-    await this.inputGoalDefinition.fill(this.goalDefinition);
-    await this.inputGoalDefinition.evaluate(e => e.blur());
+    await fillEditorText(this.inputGoalDefinition, this.goalDefinition);
   }
 
   async fillGoalDescription() {

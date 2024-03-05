@@ -15,10 +15,10 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
-import { createModelError, createPlanError, creatingModel, creatingPlan, models } from '../stores/plan';
-import { schedulingStatus, selectedSpecId } from '../stores/scheduling';
+import { createModelError, createPlanError, creatingModel, creatingPlan, models, planId } from '../stores/plan';
+import { schedulingRequests, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
-import { selectedSpanId, simulationDatasetId } from '../stores/simulation';
+import { selectedSpanId, simulationDataset, simulationDatasetId } from '../stores/simulation';
 import { createTagError } from '../stores/tags';
 import { applyViewUpdate, view, viewUpdateTimeline } from '../stores/views';
 import type {
@@ -100,6 +100,7 @@ import type {
   SchedulingGoal,
   SchedulingGoalInsertInput,
   SchedulingGoalSlim,
+  SchedulingRequest,
   SchedulingResponse,
   SchedulingSpec,
   SchedulingSpecCondition,
@@ -145,7 +146,7 @@ import type {
 import type { Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import { ActivityDeletionAction } from './activities';
-import { convertToQuery, getSearchParameterNumber, setQueryParam, sleep } from './generic';
+import { convertToQuery, getSearchParameterNumber, setQueryParam } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showConfirmModal,
@@ -283,10 +284,33 @@ const effects = {
     }
   },
 
+  async cancelSchedulingRequest(analysisId: number, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.CANCEL_PENDING_SCHEDULING_REQUEST(user)) {
+        throwPermissionError('cancel a scheduling request dataset');
+      }
+      const { confirm } = await showConfirmModal(
+        'Cancel Scheduling Request',
+        `This will cancel the scheduling request with Analysis ID: ${analysisId}.`,
+        'Cancel Scheduling Request',
+        true,
+        'Keep Scheduling',
+      );
+
+      if (confirm) {
+        await reqHasura<SeqId>(gql.CANCEL_SCHEDULING_REQUEST, { id: analysisId }, user);
+        showSuccessToast('Scheduling Request Successfully Canceled');
+      }
+    } catch (e) {
+      catchError('Scheduling Request Unable To Be Canceled', e as Error);
+      showFailureToast('Scheduling Request Cancel Failed');
+    }
+  },
+
   async cancelSimulation(simulationDatasetId: number, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.CANCEL_PENDING_SIMULATION(user)) {
-        throwPermissionError('update a simulation dataset');
+        throwPermissionError('cancel a simulation');
       }
       const { confirm } = await showConfirmModal(
         'Cancel Simulation',
@@ -3742,53 +3766,69 @@ const effects = {
             throw Error(`Plan revision for plan ${plan.id} was not found.`);
           }
 
-          let incomplete = true;
-          schedulingStatus.set(Status.Incomplete);
-          do {
-            const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId }, user);
-            const { schedule } = data;
-            if (schedule != null) {
-              const { datasetId, reason, status } = schedule;
-
-              if (status === 'complete') {
-                schedulingStatus.set(Status.Complete);
-                incomplete = false;
-                if (datasetId != null) {
-                  const simDatasetIdData = await reqHasura<{ id: number }>(
-                    gql.GET_SIMULATION_DATASET_ID,
-                    { datasetId },
-                    user,
-                  );
-                  const { simulation_dataset } = simDatasetIdData;
-                  // the request above will return either 0 or 1 element
-                  if (Array.isArray(simulation_dataset) && simulation_dataset.length > 0) {
-                    simulationDatasetId.set(simulation_dataset[0].id);
-                  }
-                }
-                showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
-              } else if (status === 'failed') {
-                schedulingStatus.set(Status.Failed);
-                catchSchedulingError(reason);
-                incomplete = false;
-
-                showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
-                catchError(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
-              } else if (status === 'incomplete') {
-                schedulingStatus.set(Status.Incomplete);
-              }
-
-              await sleep(500); // Sleep half-second before re-scheduling.
-            } else {
-              throw Error('Unable to schedule');
+          const data = await reqHasura<SchedulingResponse>(gql.SCHEDULE, { specificationId }, user);
+          const { schedule } = data;
+          if (schedule) {
+            const { reason, analysisId } = schedule;
+            if (reason) {
+              catchSchedulingError(reason);
+              showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
+              return;
             }
-          } while (incomplete);
+
+            const unsubscribe = schedulingRequests.subscribe(async (requests: SchedulingRequest[]) => {
+              const matchingRequest = requests.find(request => request.analysis_id === analysisId);
+              if (matchingRequest) {
+                if (matchingRequest.canceled) {
+                  unsubscribe();
+                } else if (matchingRequest.status === 'success') {
+                  // If a new simulation was run during scheduling, the response will include a datasetId
+                  // which will need to be cross referenced with a simulation_dataset.id so we
+                  // can load that new simulation.
+                  const currentSimulationDataset = get(simulationDataset);
+                  if (
+                    typeof matchingRequest.dataset_id === 'number' &&
+                    currentSimulationDataset !== null &&
+                    matchingRequest.dataset_id !== currentSimulationDataset.dataset_id
+                  ) {
+                    const simDatasetIdData = await reqHasura<{ id: number }>(
+                      gql.GET_SIMULATION_DATASET_ID,
+                      { datasetId: matchingRequest.dataset_id },
+                      user,
+                    );
+                    const { simulation_dataset } = simDatasetIdData;
+                    // the request above will return either 0 or 1 element
+                    if (Array.isArray(simulation_dataset) && simulation_dataset.length > 0) {
+                      simulationDatasetId.set(simulation_dataset[0].id);
+                    }
+                  }
+                  showSuccessToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Complete`);
+                  unsubscribe();
+                } else if (matchingRequest.status === 'failed') {
+                  if (matchingRequest.reason) {
+                    catchSchedulingError(matchingRequest.reason);
+                  }
+                  showFailureToast(`Scheduling ${analysis_only ? 'Analysis ' : ''}Failed`);
+                  unsubscribe();
+                }
+              }
+            });
+            const planIdUnsubscribe = planId.subscribe(currentPlanId => {
+              if (currentPlanId < 0 || currentPlanId !== plan.id) {
+                unsubscribe();
+                planIdUnsubscribe();
+              }
+            });
+          } else {
+            throw Error('Unable to schedule');
+          }
         }
       } else {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
       catchError(e as Error);
-      schedulingStatus.set(Status.Failed);
+      showFailureToast('Scheduling failed');
     }
   },
 
