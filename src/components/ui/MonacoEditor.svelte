@@ -48,6 +48,7 @@
 
   const dispatch = createEventDispatcher<{
     didChangeModelContent: { e: Editor.IModelContentChangedEvent; value: string };
+    editor: Editor.IStandaloneCodeEditor;
     fullyLoaded: { model: Editor.ITextModel; worker: TypeScriptWorker };
   }>();
 
@@ -101,6 +102,8 @@
     };
     monaco = await import('monaco-editor');
     editor = monaco.editor.create(div, options, override);
+
+    dispatch('editor', editor);
 
     if (language && language === 'typescript') {
       monaco.languages.typescript.typescriptDefaults.setWorkerOptions({

@@ -187,14 +187,4 @@ Suggestion: ${balancedTime}`,
   UncaughtArgumentType: (): ErrorCode => {
     return { id: CustomErrorCodes.Type.UNCAUGHT_ARG, message: `Error: Command Argument Type Mismatch` };
   },
-  /**
-   * uncheckable warning code and message.
-   */
-  UncheckableArgumentType: (): ErrorCode => {
-    return {
-      id: CustomErrorCodes.Type.UNCHECK_ARG,
-      message: `Warning: Not able to evaluate and validate identifier.
-Suggestion: Use literals when you can`,
-    };
-  },
 };

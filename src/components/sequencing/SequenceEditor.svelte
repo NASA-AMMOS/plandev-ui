@@ -29,6 +29,7 @@
   let commandDictionaryJson: AmpcsCommandDictionary | null = null;
   let commandDictionaryTsFiles: TypeScriptFile[] = [];
   let monaco: Monaco;
+  let editor: Editor.IStandaloneCodeEditor;
   let sequenceEditorModel: Editor.ITextModel;
 
   $: effects
@@ -65,6 +66,10 @@
     a.click();
   }
 
+  function editorCreated(event: CustomEvent<Editor.IStandaloneCodeEditor>) {
+    editor = event.detail;
+  }
+
   function workerFullyLoaded(
     event: CustomEvent<{ model: Editor.ITextModel; worker: languages.typescript.TypeScriptWorker }>,
   ) {
@@ -82,19 +87,30 @@
    * Used to update the custom worker to use the selected command dictionary.
    */
   async function workerUpdateModel() {
-    try {
-      const tsWorker = await monaco.languages.typescript.getTypeScriptWorker();
-      const worker = await tsWorker();
+    if (editor) {
+      try {
+        /**
+         * We don't have a way to check if the editor is initialized or not so it was throwing a "typescript not registered"
+         * error here. This is a hacky workaround to see if the editor is ready and we can load the typescript worker.
+         * :woozy:
+         *
+         * https://github.com/microsoft/monaco-editor/issues/115
+         */
+        editor.onDidScrollChange(async () => {
+          const tsWorker = await monaco.languages.typescript.getTypeScriptWorker();
+          const worker = await tsWorker();
 
-      if (commandDictionaryJson && sequenceEditorModel) {
-        worker.updateModelConfig({
-          command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
-          model_id: sequenceEditorModel.id,
-          should_inject: true,
+          if (commandDictionaryJson && sequenceEditorModel) {
+            worker.updateModelConfig({
+              command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+              model_id: sequenceEditorModel.id,
+              should_inject: true,
+            });
+          }
         });
+      } catch (reason) {
+        console.log('Failed to pass the command dictionary to the custom worker.', reason);
       }
-    } catch (reason) {
-      console.log('Failed to pass the command dictionary to the custom worker.', reason);
     }
   }
 </script>
@@ -124,6 +140,7 @@
         tabSize={2}
         value={sequenceDefinition}
         on:didChangeModelContent
+        on:editor={editorCreated}
         on:fullyLoaded={workerFullyLoaded}
       />
     </svelte:fragment>
