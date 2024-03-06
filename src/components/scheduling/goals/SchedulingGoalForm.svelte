@@ -65,9 +65,9 @@
 
   $: planOptions = plans
     .filter(plan => plan.model_id === goalModelId)
-    .map(({ scheduling_specifications, ...plan }) => ({
+    .map(({ scheduling_specification, ...plan }) => ({
       ...plan,
-      specId: (scheduling_specifications && scheduling_specifications[0]?.id) || null,
+      specId: (scheduling_specification && scheduling_specification.id) || null,
     }));
   $: selectedPlan = planOptions.find(({ specId: planSpecId }) => planSpecId === specId);
   $: specId = planOptions.some(plan => plan.specId === specId) ? specId : null; // Null the specId value if the filtered plan list no longer includes the chosen spec

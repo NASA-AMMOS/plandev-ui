@@ -38,7 +38,7 @@
   async function deleteCondition(condition: SchedulingCondition) {
     const { scheduling_specification_conditions } = condition;
     const specification_id = scheduling_specification_conditions[0].specification_id;
-    const plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id);
+    const plan = plans?.find(plan => plan.scheduling_specification?.id === specification_id);
 
     if (plan) {
       const success = await effects.deleteSchedulingCondition(condition, plan, user);
@@ -58,7 +58,7 @@
     let plan = null;
     if (scheduling_specification_goal) {
       const specification_id = scheduling_specification_goal.specification_id;
-      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
+      plan = plans?.find(plan => plan.scheduling_specification?.id === specification_id) ?? null;
     }
     const success = await effects.deleteSchedulingGoal(goal, plan, user);
     if (success) {

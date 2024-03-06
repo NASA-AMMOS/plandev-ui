@@ -157,7 +157,7 @@
       const {
         scheduling_specification_goal: { specification_id },
       } = goal;
-      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
+      plan = plans?.find(plan => plan.scheduling_specification?.id === specification_id) ?? null;
     }
     return plan;
   }

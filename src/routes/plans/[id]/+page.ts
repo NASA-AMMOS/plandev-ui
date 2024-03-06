@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       }
 
       // if plan doesn't have a scheduling spec, create one at this point
-      if (!initialPlan.scheduling_specifications.length) {
+      if (!initialPlan.scheduling_specification) {
         const { start_time_doy, end_time_doy, revision } = initialPlan;
         const schedulingSpec = await effects.createSchedulingSpec(
           {
@@ -36,7 +36,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
 
         initialPlan = {
           ...initialPlan,
-          scheduling_specifications: schedulingSpec ? [schedulingSpec] : [],
+          scheduling_specification: schedulingSpec ? schedulingSpec : null,
         };
       }
 

@@ -946,7 +946,7 @@ const gql = {
           }
         }
         revision
-        scheduling_specifications {
+        scheduling_specification {
           id
         }
         simulations(order_by: { id: desc }, limit: 1) {
@@ -1020,7 +1020,7 @@ const gql = {
         collaborators {
           collaborator
         }
-        scheduling_specifications {
+        scheduling_specification {
           id
         }
         model_id

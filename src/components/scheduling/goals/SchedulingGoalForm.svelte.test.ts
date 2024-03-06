@@ -14,11 +14,9 @@ const plans: PlanSchedulingSpec[] = [
     model_id: 1,
     name: 'Plan With Scheduling Spec',
     owner: 'foo',
-    scheduling_specifications: [
-      {
-        id: 1,
-      },
-    ],
+    scheduling_specification: {
+      id: 1,
+    },
   },
   {
     collaborators: [],
@@ -26,7 +24,7 @@ const plans: PlanSchedulingSpec[] = [
     model_id: 1,
     name: 'Plan Without Scheduling Spec',
     owner: 'foo',
-    scheduling_specifications: [],
+    scheduling_specification: null,
   },
 ];
 

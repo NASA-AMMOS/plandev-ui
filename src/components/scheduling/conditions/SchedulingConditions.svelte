@@ -126,7 +126,7 @@
     let plan = null;
     if (condition.scheduling_specification_conditions.length > 0) {
       const specification_id = condition.scheduling_specification_conditions[0].specification_id;
-      plan = plans?.find(plan => plan.scheduling_specifications[0]?.id === specification_id) ?? null;
+      plan = plans?.find(plan => plan.scheduling_specification?.id === specification_id) ?? null;
     }
     return plan;
   }

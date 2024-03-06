@@ -23,7 +23,7 @@ export const schedulingGoalsColumns: Writable<string> = writable('1fr 3px 2fr');
 
 /* Derived. */
 
-export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specifications[0]?.id ?? null);
+export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? null);
 
 /* Subscriptions. */
 

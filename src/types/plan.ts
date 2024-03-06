@@ -84,7 +84,7 @@ export type PlanSchema = {
   owner: UserId;
   parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators'> | null;
   revision: number;
-  scheduling_specifications: Pick<SchedulingSpec, 'id'>[];
+  scheduling_specification: Pick<SchedulingSpec, 'id'> | null;
   simulations: [{ simulation_datasets: [{ id: number; plan_revision: number }] }];
   start_time: string;
   tags: { tag: Tag }[];
@@ -114,5 +114,5 @@ export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;
 
 export type PlanSchedulingSpec = Pick<
   Plan,
-  'id' | 'name' | 'scheduling_specifications' | 'model_id' | 'owner' | 'collaborators'
+  'id' | 'name' | 'scheduling_specification' | 'model_id' | 'owner' | 'collaborators'
 >;
