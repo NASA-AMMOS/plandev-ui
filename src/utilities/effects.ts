@@ -3784,12 +3784,11 @@ const effects = {
                 } else if (matchingRequest.status === 'success') {
                   // If a new simulation was run during scheduling, the response will include a datasetId
                   // which will need to be cross referenced with a simulation_dataset.id so we
-                  // can load that new simulation.
+                  // can load that new simulation. Load the associated sim dataset if it is not already loaded
                   const currentSimulationDataset = get(simulationDataset);
                   if (
                     typeof matchingRequest.dataset_id === 'number' &&
-                    currentSimulationDataset !== null &&
-                    matchingRequest.dataset_id !== currentSimulationDataset.dataset_id
+                    (!currentSimulationDataset || matchingRequest.dataset_id !== currentSimulationDataset.dataset_id)
                   ) {
                     const simDatasetIdData = await reqHasura<{ id: number }>(
                       gql.GET_SIMULATION_DATASET_ID,

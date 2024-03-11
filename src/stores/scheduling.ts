@@ -179,6 +179,7 @@ export const schedulingAnalysisStatus = derived(
     schedulingSpec,
     planRevision,
     schedulingGoalCount,
+    schedulingGoals,
     satisfiedSchedulingGoalCount,
     simulationDatasetsPlan,
   ],
@@ -188,11 +189,12 @@ export const schedulingAnalysisStatus = derived(
     $schedulingSpec,
     $planRevision,
     $schedulingGoalCount,
+    $schedulingGoals,
     $satisfiedSchedulingGoalCount,
     $simulationDatasetsPlan,
   ]) => {
     // No status if there are no requests
-    if (!$latestSchedulingRequest) {
+    if (!$latestSchedulingRequest || $schedulingGoals.length < 1) {
       return null;
     } else if ($latestSchedulingRequest.canceled) {
       return Status.Canceled;

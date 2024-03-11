@@ -74,7 +74,7 @@ export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[]>(
   { planId },
   [],
   null,
-  v => v[0]?.simulation_datasets,
+  v => v[0]?.simulation_datasets || [],
 );
 
 export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[]>(

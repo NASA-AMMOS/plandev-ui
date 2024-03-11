@@ -274,7 +274,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         dispatch('cellMouseOver', event);
       },
       onCellValueChanged(event: CellValueChangedEvent<RowData>) {
-        console.log('event :>> ', event);
         dispatch('cellValueChanged', event);
       },
       onColumnMoved(event: ColumnMovedEvent<RowData>) {
