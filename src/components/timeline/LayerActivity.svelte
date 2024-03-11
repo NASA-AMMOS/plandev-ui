@@ -259,26 +259,31 @@
     }
   }
 
+  function getDirectivesAndSpansForOffset(offsetX: number, offsetY: number) {
+    const activityDirectives = searchQuadtreeRect<ActivityDirective>(
+      quadtreeActivityDirectives,
+      offsetX,
+      offsetY,
+      activityHeight,
+      maxActivityWidth,
+      visibleActivityDirectivesById,
+    );
+    const spans = searchQuadtreeRect<Span>(
+      quadtreeSpans,
+      offsetX,
+      offsetY,
+      activityHeight,
+      maxActivityWidth,
+      visibleSpansById,
+    );
+    return { activityDirectives, spans };
+  }
+
   function onMousedown(e: MouseEvent | undefined): void {
     // Do not process events if meta/ctrl is pressed to avoid interaction conflicts with zoom/pan
     if (e && timelineInteractionMode === TimelineInteractionMode.Interact) {
       const { offsetX, offsetY } = e;
-      const activityDirectives = searchQuadtreeRect<ActivityDirective>(
-        quadtreeActivityDirectives,
-        offsetX,
-        offsetY,
-        activityHeight,
-        maxActivityWidth,
-        visibleActivityDirectivesById,
-      );
-      const spans = searchQuadtreeRect<Span>(
-        quadtreeSpans,
-        offsetX,
-        offsetY,
-        activityHeight,
-        maxActivityWidth,
-        visibleSpansById,
-      );
+      const { activityDirectives, spans } = getDirectivesAndSpansForOffset(offsetX, offsetY);
 
       /**
        * The setTimeout is needed to prevent a race condition with mousedown events and change events.
@@ -302,22 +307,9 @@
       let activityDirectives: ActivityDirective[] = [];
       let spans: Span[] = [];
       if (mode === 'packed') {
-        activityDirectives = searchQuadtreeRect<ActivityDirective>(
-          quadtreeActivityDirectives,
-          offsetX,
-          offsetY,
-          activityHeight,
-          maxActivityWidth,
-          visibleActivityDirectivesById,
-        );
-        spans = searchQuadtreeRect<Span>(
-          quadtreeSpans,
-          offsetX,
-          offsetY,
-          activityHeight,
-          maxActivityWidth,
-          visibleSpansById,
-        );
+        const hits = getDirectivesAndSpansForOffset(offsetX, offsetY);
+        activityDirectives = hits.activityDirectives;
+        spans = hits.spans;
       } else {
         activityDirectives = searchQuadtreeRect<ActivityDirective>(
           quadtreeHeatmap,
@@ -364,18 +356,27 @@
     }
     const showContextMenu = !!e && isRightClick(e);
     if (showContextMenu) {
-      // TODO if we don't move this to the end of the call stack we risk not having selectedActivityDirectiveId or selectedSpanId
-      // properly selected since the right click has to trigger selected entity store update first..
-      // Could potentially do a quadtree search based off right click position instead of relying on these stores?
-      setTimeout(() => {
-        dispatch('contextMenu', {
-          e,
-          layerId: id,
-          origin: 'layer-activity',
-          selectedActivityDirectiveId,
-          selectedSpanId,
-        });
-      }, 0);
+      // Get new selected directive or span in order to ensure that no race condition exists between
+      // the selectedActivityDirectiveId and selectedSpanId stores and the dispatching of this event
+      // since there is no guarantee that the mousedown event triggering updates to those stores will complete
+      // before the context menu event dispatch fires
+      const { offsetX, offsetY } = e;
+      const { activityDirectives, spans } = getDirectivesAndSpansForOffset(offsetX, offsetY);
+
+      let newSelectedActivityDirectiveId = null;
+      let newSelectedSpanId = null;
+      if (activityDirectives.length > 0) {
+        newSelectedActivityDirectiveId = activityDirectives[0].id;
+      } else if (spans.length > 0) {
+        newSelectedSpanId = spans[0].id;
+      }
+      dispatch('contextMenu', {
+        e,
+        layerId: id,
+        origin: 'layer-activity',
+        selectedActivityDirectiveId: newSelectedActivityDirectiveId,
+        selectedSpanId: newSelectedSpanId,
+      });
     }
   }
 
