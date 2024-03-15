@@ -3,7 +3,7 @@
 <script lang="ts">
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { planReadOnly } from '../../stores/plan';
+  import { planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
   import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
@@ -203,7 +203,7 @@
                 on:click={() => {
                   setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
                   $planSnapshotId = planSnapshot.snapshot_id;
-                  $planReadOnly = true;
+                  $planReadOnlySnapshot = true;
 
                   if (planSnapshot.simulation?.id != null) {
                     setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');

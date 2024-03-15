@@ -12,7 +12,15 @@ import { gqlSubscribable } from './subscribable';
 
 export const activityEditingLocked: Writable<boolean> = writable(false);
 
-export const planReadOnly: Writable<boolean> = writable(false);
+export const planReadOnlySnapshot: Writable<boolean> = writable(false);
+
+// Used to lock the plan if there's an active merge request.
+export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
+
+export const planReadOnly: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
+);
 
 export const creatingModel: Writable<boolean> = writable(false);
 

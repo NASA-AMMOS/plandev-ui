@@ -218,9 +218,27 @@
                     {#if planMergeRequest.pending}
                       {planMergeRequest.type === 'outgoing' ? 'Withdrawing...' : 'Reviewing...'}
                     {:else}
-                      {planMergeRequest.type === 'outgoing' ? 'Withdraw' : 'Review'}
+                      {planMergeRequest.type === 'outgoing' ? 'Withdraw' : 'Begin Review'}
                     {/if}
                   </button>
+                {:else if planMergeRequest.status === 'in-progress'}
+                  <button
+                    on:click={() => goto(`${base}/plans/${planMergeRequest.plan_receiving_changes.id}/merge`)}
+                    class="st-button secondary"
+                  >
+                    {planMergeRequest.type === 'incoming' ? 'Review' : 'View Merge Request'}
+                  </button>
+
+                  {#if planMergeRequest.type === 'outgoing'}
+                    <div
+                      use:tooltip={{
+                        content: 'You cannot withdraw a merge request after the review has started.',
+                        placement: 'top',
+                      }}
+                    >
+                      <button class="st-button secondary" disabled> Withdraw </button>
+                    </div>
+                  {/if}
                 {/if}
               </div>
               <div class="plan-merge-request-row">

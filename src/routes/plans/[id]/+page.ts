@@ -1,6 +1,7 @@
 import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import { SearchParameters } from '../../../enums/searchParameters';
+import { planReadOnlyMergeRequest } from '../../../stores/plan';
 import effects from '../../../utilities/effects';
 import { getSearchParameterNumber } from '../../../utilities/generic';
 import type { PageLoad } from './$types';
@@ -16,7 +17,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
 
     if (initialPlan) {
       if (initialPlan.is_locked) {
-        throw redirect(302, `${base}/plans/${id}/merge`);
+        planReadOnlyMergeRequest.set(true);
       }
 
       // if plan doesn't have a scheduling spec, create one at this point

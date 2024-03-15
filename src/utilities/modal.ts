@@ -11,7 +11,6 @@ import ManagePlanConstraintsModal from '../components/modals/ManagePlanConstrain
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
-import PlanLockedModal from '../components/modals/PlanLockedModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
@@ -170,37 +169,6 @@ export async function showManagePlanConstraintsModal(user: User | null): Promise
             managePlanConstraintsModal.$destroy();
           },
         );
-      }
-    } else {
-      resolve({ confirm: false });
-    }
-  });
-}
-
-/**
- * Shows a PlanLockedModal component with the supplied arguments.
- */
-export async function showPlanLockedModal(planId: number): Promise<ModalElementValue> {
-  return new Promise(resolve => {
-    if (browser) {
-      const target: ModalElement | null = document.querySelector('#svelte-modal');
-
-      if (target) {
-        const planLockedModal = new PlanLockedModal({
-          props: { planId },
-          target,
-        });
-        target.resolve = resolve;
-
-        // Do not allow users to dismiss this modal
-        target.setAttribute('data-dismissible', 'false');
-
-        planLockedModal.$on('close', () => {
-          target.replaceChildren();
-          target.resolve = null;
-          target.removeAttribute('data-dismissible');
-          planLockedModal.$destroy();
-        });
       }
     } else {
       resolve({ confirm: false });

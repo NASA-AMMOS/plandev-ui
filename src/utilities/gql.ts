@@ -944,6 +944,7 @@ const gql = {
           collaborators {
             collaborator
           }
+          is_locked
         }
         revision
         scheduling_specification {

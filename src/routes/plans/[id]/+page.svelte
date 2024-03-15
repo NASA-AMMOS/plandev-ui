@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { page } from '$app/stores';
   import ActivityIcon from '@nasa-jpl/stellar/icons/activity.svg?component';
   import CalendarIcon from '@nasa-jpl/stellar/icons/calendar.svg?component';
@@ -64,8 +66,9 @@
     planDatasets,
     planEndTimeMs,
     planId,
-    planLocked,
     planReadOnly,
+    planReadOnlyMergeRequest,
+    planReadOnlySnapshot,
     planStartTimeMs,
     planTags,
     resetPlanStores,
@@ -111,7 +114,7 @@
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import { closeActiveModal, showPlanLockedModal } from '../../../utilities/modal';
+  import { closeActiveModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     formatSimulationQueuePosition,
@@ -159,7 +162,6 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
-  let planHasBeenLocked = false;
   let planSnapshotActivityDirectives: ActivityDirective[] = [];
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
@@ -274,7 +276,7 @@
   }
   $: if (data.initialPlanSnapshotId !== null) {
     $planSnapshotId = data.initialPlanSnapshotId;
-    $planReadOnly = true;
+    $planReadOnlySnapshot = true;
   }
   $: if ($planSnapshot !== null) {
     effects.getPlanSnapshotActivityDirectives($planSnapshot, data.user).then(directives => {
@@ -356,14 +358,6 @@
       $planSnapshotId !== null ? keyBy(planSnapshotActivityDirectives, 'id') : keyBy($activityDirectives, 'id');
   }
 
-  $: if ($plan && $planLocked) {
-    planHasBeenLocked = true;
-    showPlanLockedModal($plan.id);
-  } else if (planHasBeenLocked) {
-    closeActiveModal();
-    planHasBeenLocked = false;
-  }
-
   $: compactNavMode = windowWidth < 1100;
 
   $: if ($schedulingAnalysisStatus) {
@@ -408,7 +402,7 @@
 
   function clearSnapshot() {
     $planSnapshotId = null;
-    $planReadOnly = false;
+    $planReadOnlySnapshot = false;
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
   }
 
@@ -541,8 +535,22 @@
     : `var(--nav-header-height) auto ${consoleHeightString}`}
 >
   <Nav user={data.user}>
-    <div slot="title">
+    <div class="title" slot="title">
       <PlanMenu plan={data.initialPlan} user={data.user} />
+
+      {#if $planReadOnlyMergeRequest || data.initialPlan.parent_plan?.is_locked}
+        <button
+          on:click={() =>
+            goto(
+              `${base}/plans/${
+                data.initialPlan.parent_plan?.id ? data.initialPlan.parent_plan?.id : data.initialPlan.id
+              }/merge`,
+            )}
+          class="st-button secondary"
+        >
+          View Merge Request
+        </button>
+      {/if}
     </div>
     <svelte:fragment slot="left">
       <PlanMergeRequestsStatusButton user={data.user} />
@@ -870,5 +878,10 @@
     align-items: center;
     display: flex;
     gap: 8px;
+  }
+
+  .title {
+    display: flex;
+    gap: 10px;
   }
 </style>

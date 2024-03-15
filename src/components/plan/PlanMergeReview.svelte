@@ -8,7 +8,7 @@
   import PlanWithUpArrow from '@nasa-jpl/stellar/icons/plan_with_up_arrow.svg?component';
   import { keyBy } from 'lodash-es';
   import { activityMetadataDefinitions } from '../../stores/activities';
-  import { activityTypes } from '../../stores/plan';
+  import { activityTypes, planReadOnlyMergeRequest } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -301,6 +301,7 @@
         user,
       );
       if (success) {
+        $planReadOnlyMergeRequest = false;
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
       }
@@ -316,6 +317,7 @@
         user,
       );
       if (success) {
+        $planReadOnlyMergeRequest = false;
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
       }
@@ -331,6 +333,7 @@
         user,
       );
       if (success) {
+        $planReadOnlyMergeRequest = false;
         userInitiatedMergeRequestResolution = true;
         goto(`${base}/plans/${initialPlan.id}`);
       }
@@ -417,7 +420,16 @@
 
 <div class="flex">
   <Nav {user}>
-    <span class="" slot="title">Merge Review</span>
+    <span class="" slot="title"
+      >Merge Review:
+      <a href={`${base}/plans/${initialMergeRequest?.plan_receiving_changes.id}`} class="link">
+        {initialMergeRequest?.plan_receiving_changes.name}
+      </a>
+      from
+      <a href={`${base}/plans/${initialMergeRequest?.plan_snapshot_supplying_changes.plan.id}`} class="link">
+        {initialMergeRequest?.plan_snapshot_supplying_changes.plan.name}
+      </a>
+    </span>
   </Nav>
   <div class="merge-review-content">
     <CssGrid columns="0.5fr 3px 1fr 3px 1fr 3px 1fr" class="merge-review-content-grid">
@@ -722,7 +734,7 @@
       }}
       on:click={onCancel}
     >
-      Cancel
+      Cancel Review
     </button>
     <button
       class="st-button red"
@@ -984,5 +996,16 @@
     gap: 8px;
     justify-content: flex-end;
     padding: 8px;
+  }
+
+  .link {
+    color: var(--st-white);
+    font-size: 14px;
+    opacity: 0.7;
+    text-decoration: none;
+  }
+
+  .link:hover {
+    opacity: 1;
   }
 </style>
