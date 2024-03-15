@@ -57,7 +57,15 @@
       width: 60,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
-    { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, suppressAutoSize: true, width: 130 },
+    {
+      field: 'model_id',
+      filter: 'number',
+      headerName: 'Model ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      width: 130,
+    },
     {
       field: 'model_name',
       filter: 'text',
