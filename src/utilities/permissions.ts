@@ -762,6 +762,9 @@ const queryPermissions = {
       isUserAdmin(user) || (getPermission(['update_expansion_rule_by_pk'], user) && isUserOwner(user, expansionRule))
     );
   },
+  UPDATE_PLAN: (user: User | null, plan: PlanWithOwners): boolean => {
+    return isUserAdmin(user) || (getPermission(['update_plan_by_pk'], user) && isPlanOwner(user, plan));
+  },
   UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission(['update_plan_snapshot_by_pk'], user);
   },
@@ -1021,7 +1024,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_PLAN(user),
     canDelete: (user, plan) => queryPermissions.DELETE_PLAN(user, plan),
     canRead: user => queryPermissions.GET_PLAN(user),
-    canUpdate: () => false, // no feature to update plan exists
+    canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
   },
   planBranch: {
     canCreateBranch: (user, plan, model) => queryPermissions.DUPLICATE_PLAN(user, plan, model),

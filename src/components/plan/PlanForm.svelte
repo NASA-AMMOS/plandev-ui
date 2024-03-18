@@ -34,7 +34,6 @@
   let hasPlanUpdatePermission: boolean = false;
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
-
   $: {
     if (plan && user) {
       hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
