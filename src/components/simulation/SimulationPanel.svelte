@@ -3,6 +3,7 @@
 <script lang="ts">
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
+  import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
@@ -53,7 +54,8 @@
 
   const updatePermissionError = 'You do not have permission to update this simulation';
 
-  let buttonTooltip: string = '';
+  let simulateButtonTooltip: string = '';
+  let reSimulateButtonTooltip: string = '';
   let endTimeDoy: string;
   let endTimeDoyField: FieldStore<string>;
   let formParameters: FormParameter[] = [];
@@ -119,11 +121,14 @@
     });
   }
   $: if ($startTimeDoyField.invalid || $endTimeDoyField.invalid) {
-    buttonTooltip = 'Simulation start and end times are not valid';
-  } else if ($simulationStatus === Status.Complete || $simulationStatus === Status.Failed) {
-    buttonTooltip = 'Simulation up-to-date';
+    simulateButtonTooltip = 'Simulation start and end times are not valid';
+    reSimulateButtonTooltip = 'Simulation start and end times are not valid';
+  } else if (enableReSimulation) {
+    reSimulateButtonTooltip = 'Re-run the same simulation';
+    simulateButtonTooltip = 'Simulation up-to-date';
   } else {
-    buttonTooltip = '';
+    simulateButtonTooltip = '';
+    reSimulateButtonTooltip = '';
   }
 
   $: isFilteredBySnapshot = $planSnapshot !== null;
@@ -135,6 +140,12 @@
   } else {
     filteredSimulationDatasets = $simulationDatasetsPlan;
   }
+
+  $: enableReSimulation =
+    !$enableSimulation &&
+    ($simulationStatus === Status.Complete ||
+      $simulationStatus === Status.Canceled ||
+      $simulationStatus === Status.Failed);
 
   async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     if ($simulation !== null && $plan !== null) {
@@ -292,9 +303,29 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Simulation" />
     <PanelHeaderActions>
+      {#if enableReSimulation}
+        <PanelHeaderActionButton
+          disabled={!enableReSimulation || $startTimeDoyField.invalid || $endTimeDoyField.invalid}
+          tooltipContent={reSimulateButtonTooltip}
+          title="Re-Run"
+          showLabel
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasRunPermission,
+                permissionError: $planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to run a simulation',
+              },
+            ],
+          ]}
+          on:click={() => effects.simulate($plan, enableReSimulation, user)}><RefreshIcon /></PanelHeaderActionButton
+        >
+      {/if}
       <PanelHeaderActionButton
         disabled={!$enableSimulation || $startTimeDoyField.invalid || $endTimeDoyField.invalid}
-        tooltipContent={buttonTooltip}
+        tooltipContent={simulateButtonTooltip}
         title="Simulate"
         showLabel
         use={[
@@ -308,7 +339,7 @@
             },
           ],
         ]}
-        on:click={() => effects.simulate($plan, user)}
+        on:click={() => effects.simulate($plan, enableReSimulation, user)}
       />
     </PanelHeaderActions>
   </svelte:fragment>

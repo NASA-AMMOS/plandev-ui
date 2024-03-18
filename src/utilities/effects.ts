@@ -3841,14 +3841,13 @@ const effects = {
     }
   },
 
-  async simulate(plan: Plan | null, user: User | null): Promise<void> {
+  async simulate(plan: Plan | null, force: boolean = false, user: User | null): Promise<void> {
     try {
       if (plan !== null) {
         if (!queryPermissions.SIMULATE(user, plan, plan.model)) {
           throwPermissionError('simulate this plan');
         }
-
-        const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { planId: plan.id }, user);
+        const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { force, planId: plan.id }, user);
         const { simulate } = data;
         if (simulate != null) {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
