@@ -13,6 +13,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
+  import DefinitionEditor from '../ui/Association/DefinitionEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -20,7 +21,6 @@
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import ConstraintEditor from './ConstraintEditor.svelte';
 
   export let user: User | null;
 
@@ -100,59 +100,57 @@
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
-  $: hasPermission = featurePermissions.constraints.canRead(user);
+  $: hasPermission = featurePermissions.constraints.canCreate(user);
   $: if (selectedConstraint !== null) {
     const found = $constraints.findIndex(constraint => constraint.id === selectedConstraint?.id);
     if (found === -1) {
       selectedConstraint = null;
     }
   }
-  $: {
-    columnDefs = [
-      ...baseColumnDefs,
-      {
-        cellClass: 'action-cell-container',
-        cellRenderer: (params: ConstraintsCellRendererParams) => {
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'actions-cell';
-          new DataGridActions({
-            props: {
-              deleteCallback: params.deleteConstraint,
-              deleteTooltip: {
-                content: 'Delete Constraint',
-                placement: 'bottom',
-              },
-              editCallback: params.editConstraint,
-              editTooltip: {
-                content: 'Edit Constraint',
-                placement: 'bottom',
-              },
-              hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
-              hasDeletePermissionError:
-                params.data && !hasDeletePermission(user, params.data) && isConstraintInUse(params.data)
-                  ? 'Cannot delete constraint that is being used'
-                  : '',
-              hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
-              rowData: params.data,
+  $: columnDefs = [
+    ...baseColumnDefs,
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: ConstraintsCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteConstraint,
+            deleteTooltip: {
+              content: 'Delete Constraint',
+              placement: 'bottom',
             },
-            target: actionsDiv,
-          });
+            editCallback: params.editConstraint,
+            editTooltip: {
+              content: 'Edit Constraint',
+              placement: 'bottom',
+            },
+            hasDeletePermission: params.data ? hasDeletePermission(user, params.data) : false,
+            hasDeletePermissionError:
+              params.data && !hasDeletePermission(user, params.data) && isConstraintInUse(params.data)
+                ? 'Cannot delete constraint that is being used'
+                : '',
+            hasEditPermission: params.data ? hasEditPermission(user, params.data) : false,
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
 
-          return actionsDiv;
-        },
-        cellRendererParams: {
-          deleteConstraint,
-          editConstraint,
-        } as CellRendererParams,
-        headerName: '',
-        resizable: false,
-        sortable: false,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 55,
+        return actionsDiv;
       },
-    ];
-  }
+      cellRendererParams: {
+        deleteConstraint,
+        editConstraint,
+      } as CellRendererParams,
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
+    },
+  ];
 
   async function deleteConstraint(constraint: ConstraintMetadata) {
     const success = await effects.deleteConstraint(constraint, user);
@@ -195,7 +193,7 @@
     return featurePermissions.constraints.canDelete(user, constraint) && !isConstraintInUse(constraint);
   }
 
-  function hasEditPermission(_user: User | null, constraint: ConstraintMetadata) {
+  function hasEditPermission(user: User | null, constraint: ConstraintMetadata) {
     return featurePermissions.constraints.canUpdate(user, constraint);
   }
 
@@ -257,12 +255,11 @@
 
   <CssGridGutter track={1} type="column" />
 
-  <ConstraintEditor
-    constraintDefinition={selectedConstraint
+  <DefinitionEditor
+    definition={selectedConstraint
       ? selectedConstraint.versions[selectedConstraint.versions.length - 1].definition
       : 'No Constraint Selected'}
     readOnly={true}
     title="Constraint - Definition Editor (Read-only)"
-    {user}
   />
 </CssGrid>

@@ -21,8 +21,34 @@ export type ConstraintDefinitionTagsInsertInput = {
   tag_id: number;
 };
 
+export type SchedulingConditionMetadataTagsInsertInput = {
+  condition_id: number;
+  tag_id: number;
+};
+
+export type SchedulingConditionDefinitionTagsInsertInput = {
+  condition_id: number;
+  condition_revision: number;
+  tag_id: number;
+};
+
+export type SchedulingGoalMetadataTagsInsertInput = {
+  goal_id: number;
+  tag_id: number;
+};
+
+export type SchedulingGoalDefinitionTagsInsertInput = {
+  goal_id: number;
+  goal_revision: number;
+  tag_id: number;
+};
+
 export type ExpansionRuleTagsInsertInput = {
   rule_id: number;
+  tag_id: number;
+};
+
+export type SchedulingTagsInsertInput = {
   tag_id: number;
 };
 

@@ -1,44 +1,38 @@
+import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { Status } from '../enums/status';
-import { plan, planId, planRevision } from '../stores/plan';
+import { plan, planRevision } from '../stores/plan';
 import type {
-  SchedulingCondition,
+  SchedulingConditionDefinition,
+  SchedulingConditionMetadata,
+  SchedulingConditionMetadataResponse,
+  SchedulingConditionPlanSpecification,
   SchedulingGoalAnalysis,
-  SchedulingGoalSlim,
+  SchedulingGoalDefinition,
+  SchedulingGoalMetadata,
+  SchedulingGoalMetadataResponse,
+  SchedulingGoalPlanSpecification,
+  SchedulingPlanSpecification,
   SchedulingRequest,
-  SchedulingSpec,
-  SchedulingSpecCondition,
-  SchedulingSpecGoal,
 } from '../types/scheduling';
 import gql from '../utilities/gql';
+import { convertResponseToMetadata } from '../utilities/scheduling';
 import { simulationDatasetsPlan } from './simulation';
 import { gqlSubscribable } from './subscribable';
+import { tags } from './tags';
 
 /* Writeable. */
 
-export const schedulingColumns: Writable<string> = writable('2fr 3px 1fr');
-export const schedulingFormColumns: Writable<string> = writable('1fr 3px 2fr');
-export const schedulingConditionsFormColumns: Writable<string> = writable('1fr 3px 2fr');
-export const schedulingGoalsColumns: Writable<string> = writable('1fr 3px 2fr');
+export const schedulingConditionMetadataId: Writable<number> = writable(-1);
+export const schedulingGoalMetadataId: Writable<number> = writable(-1);
+
+export const schedulingColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Derived. */
 
 export const selectedSpecId = derived(plan, $plan => $plan?.scheduling_specification?.id ?? null);
 
 /* Subscriptions. */
-
-export const schedulingSpec = gqlSubscribable<SchedulingSpec | null>(
-  gql.SUB_SCHEDULING_SPEC,
-  { planId },
-  null,
-  null,
-  (specs: SchedulingSpec[]) => {
-    if (specs && specs.length > 0) {
-      return specs[0];
-    }
-    return null;
-  },
-);
 
 export const schedulingRequests = gqlSubscribable<SchedulingRequest[]>(
   gql.SUB_SCHEDULING_REQUESTS,
@@ -47,101 +41,129 @@ export const schedulingRequests = gqlSubscribable<SchedulingRequest[]>(
   null,
 );
 
-export const schedulingConditionsAll = gqlSubscribable<SchedulingCondition[]>(
+export const schedulingConditionResponses = gqlSubscribable<SchedulingConditionMetadataResponse[]>(
   gql.SUB_SCHEDULING_CONDITIONS,
   {},
   [],
   null,
 );
 
+export const schedulingGoalResponses = gqlSubscribable<SchedulingGoalMetadataResponse[]>(
+  gql.SUB_SCHEDULING_GOALS,
+  {},
+  [],
+  null,
+);
+
+export const schedulingConditionResponse = gqlSubscribable<SchedulingConditionMetadataResponse | null>(
+  gql.SUB_SCHEDULING_CONDITION,
+  { id: schedulingConditionMetadataId },
+  null,
+  null,
+);
+
+export const schedulingGoalResponse = gqlSubscribable<SchedulingGoalMetadataResponse | null>(
+  gql.SUB_SCHEDULING_GOAL,
+  { id: schedulingGoalMetadataId },
+  null,
+  null,
+);
+
+export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecification | null>(
+  gql.SUB_SCHEDULING_PLAN_SPECIFICATION,
+  { specificationId: selectedSpecId },
+  null,
+  null,
+);
+
+/* Derived. */
 export const schedulingConditions = derived(
-  [selectedSpecId, schedulingConditionsAll],
-  ([$selectedSpecId, $schedulingConditionsAll]) => {
-    return $schedulingConditionsAll.map(schedulingSpecCondition => {
-      return {
-        ...schedulingSpecCondition,
-        scheduling_specification_conditions: schedulingSpecCondition.scheduling_specification_conditions.filter(
-          condition => condition.specification_id === $selectedSpecId,
-        ),
-      };
-    });
+  [schedulingConditionResponses, tags],
+  ([$schedulingConditionResponses, $tags]) => {
+    return $schedulingConditionResponses.map(schedulingConditionResponse =>
+      convertResponseToMetadata<SchedulingConditionMetadata, SchedulingConditionDefinition>(
+        schedulingConditionResponse,
+        $tags,
+      ),
+    );
   },
 );
 
-export const schedulingGoalsAll = gqlSubscribable<SchedulingGoalSlim[]>(gql.SUB_SCHEDULING_GOALS, {}, [], null);
+export const schedulingGoals = derived([schedulingGoalResponses, tags], ([$schedulingGoalResponses, $tags]) => {
+  return $schedulingGoalResponses.map(schedulingGoalResponse =>
+    convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(schedulingGoalResponse, $tags),
+  );
+});
 
-export const schedulingGoals = derived(
-  [selectedSpecId, schedulingGoalsAll],
-  ([$selectedSpecId, $schedulingGoalsAll]) => {
-    return $schedulingGoalsAll
-      .filter(goal => goal.scheduling_specification_goal?.specification_id === $selectedSpecId)
-      .map(goal => {
-        return {
-          ...goal,
-          analyses: goal.analyses.filter(analysis => analysis.request.specification_id === $selectedSpecId),
-        };
-      });
+export const schedulingConditionMetadata = derived(
+  [schedulingConditionResponse, tags],
+  ([$schedulingConditionResponse, $tags]) => {
+    if ($schedulingConditionResponse) {
+      return convertResponseToMetadata<SchedulingConditionMetadata, SchedulingConditionDefinition>(
+        $schedulingConditionResponse,
+        $tags,
+      );
+    }
+    return null;
   },
 );
 
-export const schedulingSpecConditionsAll = gqlSubscribable<SchedulingSpecCondition[]>(
-  gql.SUB_SCHEDULING_SPEC_CONDITIONS,
-  { specification_id: selectedSpecId },
-  [],
-  null,
+export const schedulingGoalMetadata = derived([schedulingGoalResponse, tags], ([$schedulingGoalResponse, $tags]) => {
+  if ($schedulingGoalResponse) {
+    return convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>($schedulingGoalResponse, $tags);
+  }
+  return null;
+});
+
+export const schedulingConditionsMap: Readable<Record<string, SchedulingConditionMetadata>> = derived(
+  [schedulingConditions],
+  ([$schedulingConditions]) => keyBy($schedulingConditions, 'id'),
 );
 
-export const schedulingSpecConditions = derived(
-  [selectedSpecId, schedulingSpecConditionsAll],
-  ([$selectedSpecId, $schedulingSpecConditionsAll]) => {
-    return $schedulingSpecConditionsAll
-      .filter(schedulingSpecCondition => schedulingSpecCondition.specification_id === $selectedSpecId)
-      .map(schedulingSpecCondition => {
-        return {
-          ...schedulingSpecCondition,
-          condition: {
-            ...schedulingSpecCondition.condition,
-            scheduling_specification_conditions:
-              schedulingSpecCondition.condition.scheduling_specification_conditions.filter(
-                condition => condition.specification_id === $selectedSpecId,
-              ),
-          },
-        };
-      });
-  },
+export const schedulingGoalsMap: Readable<Record<string, SchedulingGoalMetadata>> = derived(
+  [schedulingGoals],
+  ([$schedulingGoals]) => keyBy($schedulingGoals, 'id'),
 );
 
-export const schedulingSpecGoalsAll = gqlSubscribable<SchedulingSpecGoal[]>(
-  gql.SUB_SCHEDULING_SPEC_GOALS,
-  { specification_id: selectedSpecId },
-  [],
-  null,
+export const schedulingConditionSpecifications = derived(
+  [schedulingPlanSpecification],
+  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.conditions ?? [],
 );
 
-export const schedulingSpecGoals = derived(
-  [selectedSpecId, schedulingSpecGoalsAll],
-  ([$selectedSpecId, $schedulingSpecGoalsAll]) => {
-    return $schedulingSpecGoalsAll
-      .filter(schedulingSpecGoal => schedulingSpecGoal.specification_id === $selectedSpecId)
-      .map(specGoal => {
-        return {
-          ...specGoal,
-          goal: {
-            ...specGoal.goal,
-            analyses: specGoal.goal.analyses.filter(analysis => analysis.request.specification_id === $selectedSpecId),
-          },
-        };
-      });
-  },
+export const schedulingGoalSpecifications = derived(
+  [schedulingPlanSpecification],
+  ([$schedulingPlanSpecification]) => $schedulingPlanSpecification?.goals ?? [],
+);
+
+export const allowedSchedulingConditionSpecs: Readable<SchedulingConditionPlanSpecification[]> = derived(
+  [schedulingConditionSpecifications],
+  ([$schedulingConditionSpecifications]) =>
+    $schedulingConditionSpecifications.filter(
+      ({ condition_metadata: conditionMetadata }) => conditionMetadata !== null,
+    ),
+);
+
+export const allowedSchedulingGoalSpecs: Readable<SchedulingGoalPlanSpecification[]> = derived(
+  [schedulingGoalSpecifications],
+  ([$schedulingGoalSpecifications]) =>
+    $schedulingGoalSpecifications.filter(({ goal_metadata: goalMetadata }) => goalMetadata !== null),
 );
 
 export const latestSchedulingGoalAnalyses = derived(
-  [selectedSpecId, schedulingSpecGoals],
-  ([$selectedSpecId, $schedulingSpecGoals]) => {
+  [selectedSpecId, schedulingGoalSpecifications],
+  ([$selectedSpecId, $schedulingGoalSpecifications]) => {
     const analysisIdToSpecGoalMap: Record<number, SchedulingGoalAnalysis[]> = {};
     let latestAnalysisId = -1;
-    $schedulingSpecGoals.forEach(schedulingSpecGoal => {
-      schedulingSpecGoal.goal.analyses.forEach(analysis => {
+
+    $schedulingGoalSpecifications.forEach(schedulingSpecGoal => {
+      let analyses: SchedulingGoalAnalysis[] = [];
+      if (schedulingSpecGoal.goal_definition != null) {
+        analyses = schedulingSpecGoal.goal_definition.analyses ?? [];
+      } else {
+        analyses = schedulingSpecGoal.goal_metadata?.versions[0].analyses ?? [];
+      }
+
+      analyses.forEach(analysis => {
         if (analysis.request.specification_id !== $selectedSpecId) {
           return;
         }
@@ -154,6 +176,7 @@ export const latestSchedulingGoalAnalyses = derived(
         }
       });
     });
+
     return analysisIdToSpecGoalMap[latestAnalysisId] || [];
   },
 );
@@ -176,7 +199,7 @@ export const schedulingAnalysisStatus = derived(
   [
     latestSchedulingRequest,
     latestSchedulingGoalAnalyses,
-    schedulingSpec,
+    schedulingPlanSpecification,
     planRevision,
     schedulingGoalCount,
     schedulingGoals,
@@ -186,7 +209,7 @@ export const schedulingAnalysisStatus = derived(
   ([
     $latestSchedulingRequest,
     $latestSchedulingGoalAnalyses,
-    $schedulingSpec,
+    $schedulingPlanSpecification,
     $planRevision,
     $schedulingGoalCount,
     $schedulingGoals,
@@ -218,12 +241,14 @@ export const schedulingAnalysisStatus = derived(
       if (matchingSimDataset) {
         schedulingPlanRevOutdated = !!matchingSimDataset && matchingSimDataset.plan_revision !== $planRevision;
       } else {
-        schedulingPlanRevOutdated = !!$schedulingSpec && $schedulingSpec?.plan_revision !== $planRevision;
+        schedulingPlanRevOutdated =
+          !!$schedulingPlanSpecification && $schedulingPlanSpecification?.plan_revision !== $planRevision;
       }
 
       if (
         schedulingPlanRevOutdated ||
-        ($schedulingSpec && $schedulingSpec.revision !== $latestSchedulingRequest.specification_revision)
+        ($schedulingPlanSpecification &&
+          $schedulingPlanSpecification.revision !== $latestSchedulingRequest.specification_revision)
       ) {
         return Status.Modified;
       } else if ($latestSchedulingRequest.status === 'failed') {
@@ -241,6 +266,9 @@ export const schedulingAnalysisStatus = derived(
   },
 );
 
-export const enableScheduling: Readable<boolean> = derived([schedulingSpecGoals], ([$schedulingSpecGoals]) => {
-  return $schedulingSpecGoals.filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
-});
+export const enableScheduling: Readable<boolean> = derived(
+  [schedulingGoalSpecifications],
+  ([$schedulingGoalSpecifications]) => {
+    return $schedulingGoalSpecifications.filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
+  },
+);

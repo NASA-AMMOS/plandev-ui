@@ -153,7 +153,7 @@ const gql = {
   `,
 
   CREATE_CONSTRAINT_DEFINITION: `#graphql
-    mutation insertConstraintDefinition($constraintDefinition: constraint_definition_insert_input!) {
+    mutation CreateConstraintDefinition($constraintDefinition: constraint_definition_insert_input!) {
       constraintDefinition: insert_constraint_definition_one(object: $constraintDefinition) {
         constraint_id
         definition
@@ -277,58 +277,41 @@ const gql = {
         affected_rows
       }
     }
-`,
+  `,
 
   CREATE_SCHEDULING_CONDITION: `#graphql
-    mutation CreateSchedulingCondition($condition: scheduling_condition_insert_input!) {
-      createSchedulingCondition: insert_scheduling_condition_one(object: $condition) {
-        created_date
-        definition
-        description
+    mutation CreateSchedulingCondition($condition: scheduling_condition_metadata_insert_input!) {
+      createSchedulingCondition: insert_scheduling_condition_metadata_one(object: $condition) {
         id
-        model_id
-        modified_date
         name
+        description
+        owner
+        public
+        tags {
+          tag_id
+        }
+        versions {
+          revision
+          definition
+          tags {
+            tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  CREATE_SCHEDULING_CONDITION_DEFINITION: `#graphql
+    mutation CreateSchedulingConditionDefinition($conditionDefinition: scheduling_condition_definition_insert_input!) {
+      conditionDefinition: insert_scheduling_condition_definition_one(object: $conditionDefinition) {
+        condition_id
+        definition
         revision
       }
     }
   `,
 
-  CREATE_SCHEDULING_GOAL: `#graphql
-    mutation CreateSchedulingGoal($goal: scheduling_goal_insert_input!) {
-      createSchedulingGoal: insert_scheduling_goal_one(object: $goal) {
-        created_date
-        definition
-        description
-        id
-        model_id
-        modified_date
-        name
-        revision
-      }
-    }
-  `,
-
-  CREATE_SCHEDULING_GOAL_TAGS: `#graphql
-    mutation CreateSchedulingGoalTags($tags: [scheduling_goal_tags_insert_input!]!) {
-      insert_scheduling_goal_tags(objects: $tags, on_conflict: {
-        constraint: scheduling_goal_tags_pkey,
-        update_columns: []
-      }) {
-        affected_rows
-      }
-    }
-  `,
-
-  CREATE_SCHEDULING_SPEC: `#graphql
-    mutation CreateSchedulingSpec($spec: scheduling_specification_insert_input!) {
-      createSchedulingSpec: insert_scheduling_specification_one(object: $spec) {
-        id
-      }
-    }
-  `,
-
-  CREATE_SCHEDULING_SPEC_CONDITION: `#graphql
+  CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecCondition($spec_condition: scheduling_specification_conditions_insert_input!) {
       createSchedulingSpecCondition: insert_scheduling_specification_conditions_one(object: $spec_condition) {
         enabled
@@ -338,13 +321,53 @@ const gql = {
     }
   `,
 
-  CREATE_SCHEDULING_SPEC_GOAL: `#graphql
+  CREATE_SCHEDULING_GOAL: `#graphql
+    mutation CreateSchedulingGoal($goal: scheduling_goal_metadata_insert_input!) {
+      createSchedulingGoal: insert_scheduling_goal_metadata_one(object: $goal) {
+        id
+        name
+        description
+        owner
+        public
+        tags {
+          tag_id
+        }
+        versions {
+          revision
+          definition
+          tags {
+            tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  CREATE_SCHEDULING_GOAL_DEFINITION: `#graphql
+    mutation CreateSchedulingGoalDefinition($goalDefinition: scheduling_goal_definition_insert_input!) {
+      goalDefinition: insert_scheduling_goal_definition_one(object: $goalDefinition) {
+        goal_id
+        definition
+        revision
+      }
+    }
+  `,
+
+  CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecGoal($spec_goal: scheduling_specification_goals_insert_input!) {
       createSchedulingSpecGoal: insert_scheduling_specification_goals_one(object: $spec_goal) {
         enabled
         goal_id
         priority
         specification_id
+      }
+    }
+  `,
+
+  CREATE_SCHEDULING_PLAN_SPECIFICATION: `#graphql
+    mutation CreateSchedulingSpec($spec: scheduling_specification_insert_input!) {
+      createSchedulingSpec: insert_scheduling_specification_one(object: $spec) {
+        id
       }
     }
   `,
@@ -607,35 +630,94 @@ const gql = {
     }
   `,
 
-  DELETE_SCHEDULING_CONDITION: `#graphql
+  DELETE_SCHEDULING_CONDITION_METADATA: `#graphql
     mutation DeleteSchedulingCondition($id: Int!) {
-      deleteSchedulingCondition: delete_scheduling_condition_by_pk(id: $id) {
+      deleteSchedulingConditionMetadata: delete_scheduling_condition_metadata_by_pk(id: $id) {
         id
       }
     }
   `,
 
-  DELETE_SCHEDULING_GOAL: `#graphql
-    mutation DeleteSchedulingGoal($id: Int!) {
-      deleteSchedulingGoal: delete_scheduling_goal_by_pk(id: $id) {
-        id
-      }
-    }
-  `,
-
-  DELETE_SCHEDULING_GOAL_TAGS: `#graphql
-    mutation DeleteSchedulingGoalTags($ids: [Int!]!) {
-        delete_scheduling_goal_tags(where: { tag_id: { _in: $ids } }) {
+  DELETE_SCHEDULING_CONDITION_METADATA_TAGS: `#graphql
+    mutation DeleteSchedulingConditionMetadataTags($ids: [Int!]!) {
+      delete_scheduling_condition_metadata_tags(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
   `,
 
-  DELETE_SCHEDULING_SPEC_GOAL: `#graphql
-    mutation DeleteSchedulingSpecGoal($goal_id: Int!, $specification_id: Int!) {
-      deleteSchedulingSpecGoal: delete_scheduling_specification_goals_by_pk(goal_id: $goal_id, specification_id: $specification_id) {
-        goal_id,
-        specification_id,
+  DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: `#graphql
+    mutation DeleteSchedulingConditionModelSpecification($conditionIds: [Int!]!, $modelId: Int!) {
+      delete_scheduling_condition_model_specification(
+        where: {
+          condition_id: { _in: $conditionIds },
+          _and: {
+            model_id: { _eq: $modelId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: `#graphql
+    mutation DeleteSchedulingConditionPlanSpecification($conditionIds: [Int!]!, $planId: Int!) {
+      delete_scheduling_specification_conditions(
+        where: {
+          condition_id: { _in: $conditionIds },
+          _and: {
+            plan_id: { _eq: $planId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_GOAL_METADATA: `#graphql
+    mutation DeleteSchedulingGoal($id: Int!) {
+      deleteSchedulingGoalMetadata: delete_scheduling_goal_metadata_by_pk(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_GOAL_METADATA_TAGS: `#graphql
+    mutation DeleteSchedulingGoalMetadataTags($ids: [Int!]!) {
+      delete_scheduling_goal_metadata_tags(where: { tag_id: { _in: $ids } }) {
+          affected_rows
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
+    mutation DeleteSchedulingGoalModelSpecification($goalIds: [Int!]!, $modelId: Int!) {
+      delete_scheduling_goal_model_specification(
+        where: {
+          goal_id: { _in: $goalIds },
+          _and: {
+            model_id: { _eq: $modelId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
+    mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
+      delete_scheduling_specification_goal(
+        where: {
+          goal_id: { _in: $goalIds },
+          _and: {
+            plan_id: { _eq: $planId },
+          }
+        }
+      ) {
+        affected_rows
       }
     }
   `,
@@ -651,7 +733,7 @@ const gql = {
   DELETE_TAG: `#graphql
     mutation DeleteTags($id: Int!) {
       delete_tags_by_pk(id: $id) {
-          id
+        id
       }
     }
   `,
@@ -1160,50 +1242,6 @@ const gql = {
         role
         action_permissions
         function_permissions
-      }
-    }
-  `,
-
-  GET_SCHEDULING_CONDITION: `#graphql
-    query GetSchedulingCondition($id: Int!) {
-      condition: scheduling_condition_by_pk(id: $id) {
-        author
-        created_date
-        definition
-        description
-        id
-        last_modified_by
-        model_id
-        modified_date
-        name
-        revision
-      }
-    }
-  `,
-
-  GET_SCHEDULING_GOAL: `#graphql
-    query GetSchedulingGoal($id: Int!) {
-      goal: scheduling_goal_by_pk(id: $id) {
-        analyses(limit: 0) {
-          analysis_id
-        }
-        author
-        created_date
-        definition
-        description
-        id
-        last_modified_by
-        model_id
-        modified_date
-        name
-        revision
-        tags {
-          tag {
-            color
-            id
-            name
-          }
-        }
       }
     }
   `,
@@ -2017,53 +2055,220 @@ const gql = {
     }
   `,
 
-  SUB_SCHEDULING_CONDITIONS: `#graphql
-    subscription SubSchedulingConditions {
-      conditions: scheduling_condition(order_by: { id: desc }) {
-        author
-        created_date
-        definition
+  SUB_SCHEDULING_CONDITION: `#graphql
+    subscription SubSchedulingCondition($id: Int!) {
+      condition: scheduling_condition_metadata_by_pk(id: $id) {
+        created_at
         description
         id
-        last_modified_by
-        model_id
-        modified_date
         name
-        scheduling_specification_conditions {
-          specification_id
+        models_using {
+          model_id
         }
-        revision
+        owner
+        plans_using {
+          specification {
+            plan_id
+          }
+        }
+        public
+        tags {
+          tag_id
+        }
+        updated_at
+        updated_by
+        versions {
+          author
+          definition
+          revision
+          tags {
+            tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_CONDITIONS: `#graphql
+    subscription SubSchedulingConditions {
+      conditions: scheduling_condition_metadata(order_by: { name: asc }) {
+        created_at
+        description
+        id
+        name
+        models_using {
+          model_id
+        }
+        owner
+        plans_using {
+          specification {
+            plan_id
+          }
+        }
+        public
+        tags {
+          tag_id
+        }
+        updated_at
+        updated_by
+        versions {
+          author
+          definition
+          revision
+          tags {
+            tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_GOAL: `#graphql
+    subscription SubSchedulingGoal($id: Int!) {
+      goal: scheduling_goal_metadata_by_pk(id: $id) {
+        created_at
+        description
+        id
+        name
+        models_using {
+          model_id
+        }
+        owner
+        plans_using {
+          specification {
+            plan_id
+          }
+        }
+        public
+        tags {
+          tag_id
+        }
+        updated_at
+        updated_by
+        versions {
+          author
+          definition
+          revision
+          tags {
+            tag_id
+          }
+        }
       }
     }
   `,
 
   SUB_SCHEDULING_GOALS: `#graphql
     subscription SubSchedulingGoals {
-      goals: scheduling_goal(order_by: { id: desc }) {
-        analyses(limit: 0) {
+      goals: scheduling_goal_metadata(order_by: { name: asc }) {
+        analyses(order_by: { analysis_id: desc }) {
           analysis_id
+          goal_id
+          goal_revision
           request {
             specification_id
           }
+          satisfied
+          satisfying_activities {
+            activity_id
+          }
         }
-        author
-        created_date
-        definition
+        created_at
         description
         id
-        last_modified_by
-        model_id
-        modified_date
         name
-        scheduling_specification_goal {
-          specification_id
+        models_using {
+          model_id
+        }
+        owner
+        plans_using {
           specification {
             plan_id
           }
         }
-        revision
+        public
         tags {
           tag_id
+        }
+        updated_at
+        updated_by
+        versions {
+          author
+          definition
+          revision
+          tags {
+            tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_PLAN_SPECIFICATION: `#graphql
+    subscription SubSchedulingPlanSpecification($specificationId: Int!) {
+      schedulingPlanSpec: scheduling_specification_by_pk(id: $specificationId) {
+        analysis_only
+        horizon_end
+        horizon_start
+        id
+        plan_id
+        plan_revision
+        revision
+        simulation_arguments
+        conditions {
+          condition_id
+          condition_metadata {
+            name
+            owner
+            public
+            versions {
+              revision
+            }
+          }
+          condition_revision
+          enabled
+          specification_id
+        }
+        goals {
+          enabled
+          goal_definition {
+            analyses(order_by: { analysis_id: desc }) {
+              analysis_id
+              goal_id
+              goal_revision
+              request {
+                specification_id
+              }
+              satisfied
+              satisfying_activities {
+                activity_id
+              }
+            }
+          }
+          goal_id
+          goal_metadata {
+            name
+            owner
+            public
+            versions(order_by: {revision: desc}, limit: 1) {
+              analyses(order_by: { analysis_id: desc }) {
+                analysis_id
+                goal_id
+                goal_revision
+                request {
+                  specification_id
+                }
+                satisfied
+                satisfying_activities {
+                  activity_id
+                }
+              }
+              revision
+            }
+          }
+          goal_revision
+          priority
+          simulate_after
+          specification_id
         }
       }
     }
@@ -2081,86 +2286,6 @@ const gql = {
         dataset_id
         specification_revision
         canceled
-      }
-    }
-  `,
-
-  SUB_SCHEDULING_SPEC: `#graphql
-    subscription SubSchedulingSpec($planId: Int!) {
-      scheduling_specification(where: { plan_id: { _eq: $planId } }, limit: 1) {
-        id
-        revision
-        plan_id
-        plan_revision
-        analysis_only
-      }
-    }
-  `,
-
-  SUB_SCHEDULING_SPEC_CONDITIONS: `#graphql
-    subscription SubSchedulingSpecConditions($specification_id: Int!) {
-      specConditions: scheduling_specification_conditions(where: { specification_id: { _eq: $specification_id } }, order_by: { condition_id: asc }) {
-        enabled
-        condition {
-          author
-          created_date
-          definition
-          description
-          id
-          last_modified_by
-          model_id
-          modified_date
-          name
-          revision
-          scheduling_specification_conditions {
-            specification_id
-          }
-        }
-        specification {
-          analysis_only
-          horizon_end
-          horizon_start
-          id
-          plan_id
-          plan_revision
-          revision
-          simulation_arguments
-        }
-        specification_id
-      }
-    }
-  `,
-
-  SUB_SCHEDULING_SPEC_GOALS: `#graphql
-    subscription SubSchedulingSpecGoals($specification_id: Int!) {
-      specGoals: scheduling_specification_goals(where: { specification_id: { _eq: $specification_id } }, order_by: { priority: asc }) {
-        enabled
-        goal {
-          analyses(order_by: { request: { specification_revision: desc } }, limit: 2) {
-            analysis_id
-            satisfied
-            satisfying_activities {
-              activity_id
-            }
-            request {
-              specification_id
-            }
-          }
-          author
-          created_date
-          definition
-          description
-          description
-          id
-          last_modified_by
-          model_id
-          modified_date
-          name
-          revision
-        }
-        priority
-        simulate_after
-        specification_id
       }
     }
   `,
@@ -2282,7 +2407,7 @@ const gql = {
         owner
       }
     }
-`,
+  `,
 
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {
@@ -2463,26 +2588,170 @@ const gql = {
     }
   `,
 
-  UPDATE_SCHEDULING_CONDITION: `#graphql
-    mutation UpdateSchedulingCondition($id: Int!, $condition: scheduling_condition_set_input!) {
-      updateSchedulingCondition: update_scheduling_condition_by_pk(
-        pk_columns: { id: $id }, _set: $condition
+  UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS: `#graphql
+    mutation UpdateSchedulingConditionTags($conditionId: Int!, $conditionRevision: Int!, $tags: [scheduling_condition_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      insertSchedulingConditionDefinitionTags: insert_scheduling_condition_definition_tags(objects: $tags, on_conflict: {
+        constraint: scheduling_condition_definition_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteSchedulingConditionDefinitionTags: delete_scheduling_condition_definition_tags(
+        where: {
+          tag_id: { _in: $tagIdsToDelete },
+          _and: {
+            condition_id: { _eq: $conditionId },
+            condition_revision: { _eq: $conditionRevision }
+          }
+        }
       ) {
-        id
-        last_modified_by
-        modified_date
+        affected_rows
       }
     }
   `,
 
-  UPDATE_SCHEDULING_GOAL: `#graphql
-    mutation UpdateSchedulingGoal($id: Int!, $goal: scheduling_goal_set_input!) {
-      updateSchedulingGoal: update_scheduling_goal_by_pk(
-        pk_columns: { id: $id }, _set: $goal
+  UPDATE_SCHEDULING_CONDITION_METADATA: `#graphql
+    mutation UpdateSchedulingConditionMetadata($id: Int!, $conditionMetadata: scheduling_condition_metadata_set_input!, $tags: [scheduling_condition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      updateSchedulingConditionMetadata: update_scheduling_condition_metadata_by_pk(
+        pk_columns: { id: $id }, _set: $conditionMetadata
       ) {
         id
-        last_modified_by
-        modified_date
+      }
+      insertSchedulingConditionTags: insert_scheduling_condition_tags(objects: $tags, on_conflict: {
+        constraint: scheduling_condition_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteSchedulingConditionTags: delete_scheduling_condition_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+          affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: `#graphql
+    mutation UpdateSchedulingConditionPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $specificationId: Int!) {
+      updateSchedulingConditionPlanSpecification: update_scheduling_specification_conditions_by_pk(
+        pk_columns: { condition_id: $id, specification_id: $specificationId },
+        _set: {
+          condition_revision: $revision,
+          enabled: $enabled
+        }
+      ) {
+        condition_revision
+        enabled
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: `#graphql
+    mutation UpdateSchedulingConditionPlanSpecifications($conditionSpecsToUpdate: [scheduling_specification_conditions_insert_input!]!, $conditionSpecIdsToDelete: [Int!]! = [], $specificationId: Int!) {
+      updateSchedulingConditionPlanSpecifications: insert_scheduling_specification_conditions(
+        objects: $conditionSpecsToUpdate,
+        on_conflict: {
+          constraint: scheduling_specification_conditions_primary_key,
+          update_columns: [condition_revision, enabled]
+        },
+      ) {
+        returning {
+          condition_revision
+          enabled
+        }
+      }
+      deleteSchedulingConditionPlanSpecifications: delete_scheduling_specification_conditions(
+        where: {
+          condition_id: { _in: $conditionSpecIdsToDelete },
+          _and: {
+            specification_id: { _eq: $specificationId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS: `#graphql
+    mutation UpdateSchedulingGoalTags($goalId: Int!, $goalRevision: Int!, $tags: [scheduling_goal_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      insertSchedulingGoalDefinitionTags: insert_scheduling_goal_definition_tags(objects: $tags, on_conflict: {
+        constraint: scheduling_goal_definition_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteSchedulingGoalDefinitionTags: delete_scheduling_goal_definition_tags(
+        where: {
+          tag_id: { _in: $tagIdsToDelete },
+          _and: {
+            goal_id: { _eq: $goalId },
+            goal_revision: { _eq: $goalRevision }
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL_METADATA: `#graphql
+    mutation UpdateSchedulingGoalMetadata($id: Int!, $goalMetadata: scheduling_goal_metadata_set_input!, $tags: [scheduling_goal_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
+      updateSchedulingGoalMetadata: update_scheduling_goal_metadata_by_pk(
+        pk_columns: { id: $id }, _set: $goalMetadata
+      ) {
+        id
+      }
+      insertSchedulingGoalTags: insert_scheduling_goal_tags(objects: $tags, on_conflict: {
+        constraint: scheduling_goal_tags_pkey,
+        update_columns: []
+      }) {
+        affected_rows
+      }
+      deleteSchedulingGoalTags: delete_scheduling_goal_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+          affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
+    mutation UpdateSchedulingGoalPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!, $specificationId: Int!) {
+      updateSchedulingGoalPlanSpecification: update_scheduling_specification_goals_by_pk(
+        pk_columns: { goal_id: $id, specification_id: $specificationId },
+        _set: {
+          goal_revision: $revision,
+          enabled: $enabled,
+          priority: $priority,
+          simulate_after: $simulateAfter
+        }
+      ) {
+        goal_revision
+        enabled
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
+    mutation UpdateSchedulingGoalPlanSpecifications($goalSpecsToUpdate: [scheduling_specification_goals_insert_input!]!, $goalSpecIdsToDelete: [Int!]! = [], $specificationId: Int!) {
+      updateSchedulingGoalPlanSpecifications: insert_scheduling_specification_goals(
+        objects: $goalSpecsToUpdate,
+        on_conflict: {
+          constraint: scheduling_specification_goals_primary_key,
+          update_columns: [goal_revision, enabled]
+        },
+      ) {
+        returning {
+          goal_revision
+          enabled
+        }
+      }
+      deleteSchedulingGoalPlanSpecifications: delete_scheduling_specification_goals(
+        where: {
+          goal_id: { _in: $goalSpecIdsToDelete },
+          _and: {
+            specification_id: { _eq: $specificationId },
+          }
+        }
+      ) {
+        affected_rows
       }
     }
   `,

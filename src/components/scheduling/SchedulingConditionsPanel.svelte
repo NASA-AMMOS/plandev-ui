@@ -1,16 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { base } from '$app/paths';
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { schedulingSpecConditions, selectedSpecId } from '../../stores/scheduling';
+  import {
+    allowedSchedulingConditionSpecs,
+    schedulingConditionSpecifications,
+    schedulingConditionsMap,
+  } from '../../stores/scheduling';
   import type { User } from '../../types/app';
-  import type { SchedulingSpecCondition } from '../../types/scheduling';
+  import type { SchedulingConditionPlanSpecification } from '../../types/scheduling';
   import type { ViewGridSection } from '../../types/view';
+  import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
+  import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -21,22 +25,51 @@
 
   let activeElement: HTMLElement;
   let conditionsFilterText: string = '';
-  let hasCreatePermission: boolean = false;
-  let hasDeletePermission: boolean = false;
-  let hasEditPermission: boolean = false;
-  let filteredSchedulingSpecConditions: SchedulingSpecCondition[] = [];
+  let filteredSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
+  let numOfPrivateConditions: number = 0;
+  let visibleSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
 
-  $: if ($plan) {
-    hasCreatePermission = featurePermissions.schedulingConditions.canCreate(user, $plan) && !$planReadOnly;
-    hasDeletePermission = featurePermissions.schedulingConditions.canDelete(user, $plan) && !$planReadOnly;
-    hasEditPermission = featurePermissions.schedulingConditions.canUpdate(user, $plan) && !$planReadOnly;
-  }
-
-  $: filteredSchedulingSpecConditions = $schedulingSpecConditions.filter(spec => {
+  // TODO: remove this after db merge as it becomes redundant
+  $: visibleSchedulingConditionSpecs = $allowedSchedulingConditionSpecs.filter(
+    ({ condition_metadata: conditionMetadata }) => {
+      if (conditionMetadata) {
+        const { public: isPublic, owner } = conditionMetadata;
+        if (!isPublic && !isAdminRole(user?.activeRole)) {
+          return owner === user?.id;
+        }
+        return true;
+      }
+      return false;
+    },
+  );
+  $: filteredSchedulingConditionSpecs = visibleSchedulingConditionSpecs.filter(spec => {
     const filterTextLowerCase = conditionsFilterText.toLowerCase();
-    const includesName = spec.condition.name.toLocaleLowerCase().includes(filterTextLowerCase);
+    const includesName = spec.condition_metadata?.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
   });
+  $: numOfPrivateConditions = $schedulingConditionSpecifications.length - visibleSchedulingConditionSpecs.length;
+
+  function onManageConditions() {
+    effects.managePlanSchedulingConditions(user);
+  }
+
+  async function onUpdateCondition(event: CustomEvent<SchedulingConditionPlanSpecification>) {
+    const {
+      detail: { condition_metadata, specification_id, ...conditionPlanSpec },
+    } = event;
+
+    if ($plan) {
+      await effects.updateSchedulingConditionPlanSpecification(
+        $plan,
+        specification_id,
+        {
+          ...conditionPlanSpec,
+          specification_id,
+        },
+        user,
+      );
+    }
+  }
 
   // Manually keep focus as scheduling condition elements are re-ordered.
   // Svelte currently does not retain focus as elements are moved, even when keyed.
@@ -62,44 +95,63 @@
       placeholder="Filter scheduling conditions"
       on:input={event => (conditionsFilterText = event.detail.value)}
     >
-      <button
-        slot="right"
-        name="new-scheduling-condition"
-        class="st-button secondary"
-        on:click={() =>
-          window.open(
-            `${base}/scheduling/conditions/new?modelId=${$plan?.model.id}&&specId=${$selectedSpecId}`,
-            '_blank',
-          )}
-        use:permissionHandler={{
-          hasPermission: hasCreatePermission,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to create scheduling conditions for this plan.',
-        }}
-      >
-        New
-      </button>
+      <svelte:fragment slot="right">
+        <button
+          name="manage-conditions"
+          class="st-button secondary"
+          use:permissionHandler={{
+            hasPermission: $plan ? featurePermissions.schedulingConditions.canCreate(user) && !$planReadOnly : false,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update scheduling conditions',
+          }}
+          on:click|stopPropagation={onManageConditions}
+        >
+          Manage Conditions
+        </button>
+      </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if !filteredSchedulingSpecConditions.length}
+      {#if !filteredSchedulingConditionSpecs.length}
         <div class="pt-1 st-typography-label">No scheduling conditions found</div>
+        <div class="private-label">
+          {#if numOfPrivateConditions > 0}
+            {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}
+            {numOfPrivateConditions > 1 ? 'are' : 'is'} private and not shown
+          {/if}
+        </div>
       {:else}
-        {#each filteredSchedulingSpecConditions as specCondition (specCondition.condition.id)}
-          <SchedulingCondition
-            condition={specCondition.condition}
-            enabled={specCondition.enabled}
-            {hasDeletePermission}
-            {hasEditPermission}
-            plan={$plan}
-            specificationId={specCondition.specification_id}
-            permissionError={$planReadOnly
-              ? PlanStatusMessages.READ_ONLY
-              : 'You do not have permission to edit scheduling conditions for this plan.'}
-            {user}
-          />
+        <div class="private-label">
+          {#if numOfPrivateConditions > 0}
+            {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}
+            {numOfPrivateConditions > 1 ? 'are' : 'is'} private and not shown
+          {/if}
+        </div>
+        {#each filteredSchedulingConditionSpecs as specCondition (specCondition.condition_id)}
+          {#if $schedulingConditionsMap[specCondition.condition_id]}
+            <SchedulingCondition
+              condition={$schedulingConditionsMap[specCondition.condition_id]}
+              conditionPlanSpec={specCondition}
+              hasEditPermission={$plan ? featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) : false}
+              modelId={$plan?.model.id}
+              permissionError={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to edit scheduling conditions for this plan.'}
+              on:updateConditionPlanSpec={onUpdateCondition}
+            />
+          {/if}
         {/each}
       {/if}
     </div>
   </svelte:fragment>
 </Panel>
+
+<style>
+  .private-label {
+    color: #e6b300;
+  }
+
+  .st-button {
+    white-space: nowrap;
+  }
+</style>

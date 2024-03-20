@@ -2,48 +2,103 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import type { User } from '../../../types/app';
-  import type { Plan } from '../../../types/plan';
-  import type { SchedulingCondition } from '../../../types/scheduling';
-  import effects from '../../../utilities/effects';
+  import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
+  import { SearchParameters } from '../../../enums/searchParameters';
+  import type { SchedulingConditionMetadata, SchedulingConditionPlanSpecification } from '../../../types/scheduling';
+  import { getTarget } from '../../../utilities/generic';
   import { permissionHandler } from '../../../utilities/permissionHandler';
+  import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
-  import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
-  import Input from '../../form/Input.svelte';
 
-  export let condition: SchedulingCondition;
-  export let enabled: boolean;
-  export let hasDeletePermission: boolean = false;
+  export let condition: SchedulingConditionMetadata;
+  export let conditionPlanSpec: SchedulingConditionPlanSpecification;
   export let hasEditPermission: boolean = false;
-  export let plan: Plan | null;
+  export let modelId: number | undefined;
   export let permissionError: string = '';
-  export let specificationId: number;
-  export let user: User | null;
+  export let readOnly: boolean = false;
+
+  const dispatch = createEventDispatcher();
+
+  let revisions: number[] = [];
+
+  $: revisions = condition.versions
+    .map(({ revision }) => revision)
+    .sort((revisionA, revisionB) => revisionB - revisionA);
+
+  function onEnable(event: Event) {
+    const { value: enabled } = getTarget(event);
+    dispatch('updateConditionPlanSpec', {
+      ...conditionPlanSpec,
+      enabled,
+    });
+  }
+
+  function onUpdateRevision(event: Event) {
+    const { value: revision } = getTarget(event);
+    dispatch('updateConditionPlanSpec', {
+      ...conditionPlanSpec,
+      condition_revision: revision === '' ? null : parseInt(`${revision}`),
+    });
+  }
 </script>
 
-<div class="scheduling-condition" class:disabled={!enabled}>
+<div class="scheduling-condition" class:disabled={!conditionPlanSpec.enabled}>
   <Collapse title={condition.name} tooltipContent={condition.name} collapsible={false}>
-    <svelte:fragment slot="right">
-      <div class="right-content">
-        <Input>
-          <input
-            bind:checked={enabled}
-            style:cursor="pointer"
-            type="checkbox"
-            on:change={() => effects.updateSchedulingSpecCondition(condition.id, specificationId, { enabled }, user)}
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError,
-            }}
-          />
-        </Input>
+    <svelte:fragment slot="left">
+      <div class="left-content">
+        <input
+          type="checkbox"
+          checked={conditionPlanSpec.enabled}
+          style:cursor="pointer"
+          on:change={onEnable}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError,
+          }}
+          use:tooltip={{
+            content: `${conditionPlanSpec.enabled ? 'Disable condition' : 'Enable condition'} on plan`,
+            disabled: !hasEditPermission,
+            placement: 'top',
+          }}
+        />
       </div>
     </svelte:fragment>
+    <svelte:fragment slot="right">
+      <div class="right-content">
+        <select
+          class="st-select"
+          value={conditionPlanSpec.condition_revision}
+          on:change={onUpdateRevision}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError: readOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to edit plan conditions',
+          }}
+        >
+          <option value={null}>Always use latest</option>
+          {#each revisions as revision, index}
+            <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
+          {/each}
+        </select>
+      </div>
+    </svelte:fragment>
+
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuHeader>Actions</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => window.open(`${base}/scheduling/conditions/edit/${condition.id}`, '_blank')}
+        on:click={() =>
+          window.open(
+            `${base}/scheduling/conditions/edit/${condition.id}${
+              conditionPlanSpec.condition_revision !== null
+                ? `?${SearchParameters.REVISION}=${conditionPlanSpec.condition_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                : ''
+            }`,
+            '_blank',
+          )}
         use={[
           [
             permissionHandler,
@@ -55,21 +110,6 @@
         ]}
       >
         Edit Condition
-      </ContextMenuItem>
-      <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem
-        on:click={() => plan && effects.deleteSchedulingCondition(condition, plan, user)}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasDeletePermission,
-              permissionError,
-            },
-          ],
-        ]}
-      >
-        Delete Condition
       </ContextMenuItem>
     </svelte:fragment>
   </Collapse>

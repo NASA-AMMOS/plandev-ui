@@ -62,7 +62,7 @@
     }
   }
 
-  function onModelSelect(event: CustomEvent<number>) {
+  function onModelSelect(event: CustomEvent<number | null>) {
     const { detail: modelId } = event;
     if (browser) {
       setQueryParam(SearchParameters.MODEL_ID, modelId != null ? `${modelId}` : null);

@@ -85,9 +85,9 @@ export class Constraints {
     this.confirmModal = page.locator(`.modal:has-text("Delete Constraint")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Constraint") >> button:has-text("Delete")`);
     this.inputConstraintDefinition = page.locator('.monaco-editor >> textarea.inputarea');
-    this.inputConstraintDescription = page.locator('textarea[name="constraint-description"]');
+    this.inputConstraintDescription = page.locator('textarea[name="metadata-description"]');
     this.inputConstraintModel = page.locator(this.inputConstraintModelSelector);
-    this.inputConstraintName = page.locator('input[name="constraint-name"]');
+    this.inputConstraintName = page.locator('input[name="metadata-name"]');
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
     this.tableRow = page.locator(`.ag-row:has-text("${this.constraintName}")`);

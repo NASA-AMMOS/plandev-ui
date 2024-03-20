@@ -29,7 +29,7 @@
   let commandDictionaryJson: AmpcsCommandDictionary | null = null;
   let commandDictionaryTsFiles: TypeScriptFile[] = [];
   let monaco: Monaco;
-  let editor: Editor.IStandaloneCodeEditor;
+  let worker: languages.typescript.TypeScriptWorker | null = null;
   let sequenceEditorModel: Editor.ITextModel;
 
   $: effects
@@ -55,8 +55,15 @@
     typescriptDefaults.setExtraLibs(commandDictionaryTsFiles);
   }
 
-  $: if (monaco !== undefined && commandDictionaryJson !== undefined) {
-    workerUpdateModel();
+  /**
+   * Used to update the custom worker to use the selected command dictionary.
+   */
+  $: if (worker != null && sequenceEditorModel) {
+    worker.updateModelConfig({
+      command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
+      model_id: sequenceEditorModel.id,
+      should_inject: true,
+    });
   }
 
   function downloadSeqJson() {
@@ -66,52 +73,15 @@
     a.click();
   }
 
-  function editorCreated(event: CustomEvent<Editor.IStandaloneCodeEditor>) {
-    editor = event.detail;
-  }
-
   function workerFullyLoaded(
-    event: CustomEvent<{ model: Editor.ITextModel; worker: languages.typescript.TypeScriptWorker }>,
+    event: CustomEvent<{
+      editor: Editor.IStandaloneCodeEditor;
+      model: Editor.ITextModel;
+      worker: languages.typescript.TypeScriptWorker;
+    }>,
   ) {
-    const { model, worker } = event.detail;
-    const model_id = model.id;
-
-    worker.updateModelConfig({
-      command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
-      model_id,
-      should_inject: true,
-    });
-  }
-
-  /**
-   * Used to update the custom worker to use the selected command dictionary.
-   */
-  async function workerUpdateModel() {
-    if (editor) {
-      try {
-        /**
-         * We don't have a way to check if the editor is initialized or not so it was throwing a "typescript not registered"
-         * error here. This is a hacky workaround to see if the editor is ready and we can load the typescript worker.
-         * :woozy:
-         *
-         * https://github.com/microsoft/monaco-editor/issues/115
-         */
-        editor.onDidScrollChange(async () => {
-          const tsWorker = await monaco.languages.typescript.getTypeScriptWorker();
-          const worker = await tsWorker();
-
-          if (commandDictionaryJson && sequenceEditorModel) {
-            worker.updateModelConfig({
-              command_dict_str: JSON.stringify(commandDictionaryJson ?? {}),
-              model_id: sequenceEditorModel.id,
-              should_inject: true,
-            });
-          }
-        });
-      } catch (reason) {
-        console.log('Failed to pass the command dictionary to the custom worker.', reason);
-      }
-    }
+    const { worker: eventWorker } = event.detail;
+    worker = eventWorker;
   }
 </script>
 
@@ -140,7 +110,6 @@
         tabSize={2}
         value={sequenceDefinition}
         on:didChangeModelContent
-        on:editor={editorCreated}
         on:fullyLoaded={workerFullyLoaded}
       />
     </svelte:fragment>

@@ -24,8 +24,7 @@ export const checkConstraintsStatus: Writable<Status | null> = writable(null);
 
 export const rawConstraintResponses: Writable<ConstraintResponse[]> = writable([]);
 
-export const constraintsColumns: Writable<string> = writable('1fr 3px 2fr');
-export const constraintsFormColumns: Writable<string> = writable('1fr 3px 2fr');
+export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Subscriptions. */
 

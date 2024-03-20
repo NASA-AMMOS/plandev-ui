@@ -41,12 +41,14 @@ export class Plan {
   scheduleButton: Locator;
   schedulingConditionEnabledCheckbox: Locator;
   schedulingConditionListItemSelector: string;
+  schedulingConditionManageButton: Locator;
   schedulingConditionNewButton: Locator;
   schedulingGoal: Locator;
   schedulingGoalDifferenceBadge: Locator;
   schedulingGoalEnabledCheckboxSelector: (goalName: string) => Locator;
   schedulingGoalExpand: Locator;
   schedulingGoalListItemSelector: (goalName: string) => string;
+  schedulingGoalManageButton: Locator;
   schedulingGoalNewButton: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
@@ -91,28 +93,34 @@ export class Plan {
   }
 
   async createSchedulingCondition(baseURL: string | undefined) {
+    await this.schedulingConditionManageButton.click();
     const [newSchedulingConditionPage] = await Promise.all([
       this.page.waitForEvent('popup'),
       this.schedulingConditionNewButton.click(),
     ]);
     this.schedulingConditions.updatePage(newSchedulingConditionPage);
-    await newSchedulingConditionPage.waitForURL(`${baseURL}/scheduling/conditions/new?modelId=*&&specId=*`);
+    await newSchedulingConditionPage.waitForURL(`${baseURL}/scheduling/conditions/new?modelId=*`);
     await this.schedulingConditions.createSchedulingCondition(baseURL);
     await newSchedulingConditionPage.close();
     this.schedulingConditions.updatePage(this.page);
+    await this.page.getByRole('row', { name: this.schedulingConditions.conditionName }).getByRole('checkbox').click();
+    await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.schedulingConditionListItemSelector, { state: 'visible', strict: true });
   }
 
   async createSchedulingGoal(baseURL: string | undefined, goalName: string) {
+    await this.schedulingGoalManageButton.click();
     const [newSchedulingGoalPage] = await Promise.all([
       this.page.waitForEvent('popup'),
       this.schedulingGoalNewButton.click(),
     ]);
     this.schedulingGoals.updatePage(newSchedulingGoalPage);
-    await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?modelId=*&&specId=*`);
+    await newSchedulingGoalPage.waitForURL(`${baseURL}/scheduling/goals/new?modelId=*`);
     await this.schedulingGoals.createSchedulingGoal(baseURL, goalName);
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
+    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').click();
+    await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.schedulingGoalListItemSelector(goalName), { state: 'visible', strict: true });
   }
 
@@ -163,6 +171,13 @@ export class Plan {
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
+  }
+
+  async removeSchedulingGoal(goalName: string) {
+    await this.schedulingGoalManageButton.click();
+    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').click();
+    await this.page.getByRole('button', { name: 'Update' }).click();
+    await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
   }
 
   async runAnalysis() {
@@ -330,6 +345,8 @@ export class Plan {
     this.roleSelector = page.locator(`.nav select`);
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
     this.analyzeButton = page.locator('.header-actions button[aria-label="Analyze"]');
+    this.schedulingGoalManageButton = page.locator(`button[name="manage-goals"]`);
+    this.schedulingConditionManageButton = page.locator(`button[name="manage-conditions"]`);
     this.schedulingGoal = page.locator('.scheduling-goal').first();
     this.schedulingGoalDifferenceBadge = this.schedulingGoal.locator('.difference-badge');
     this.schedulingGoalEnabledCheckboxSelector = (goalName: string) =>

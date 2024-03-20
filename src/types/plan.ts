@@ -2,7 +2,7 @@ import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
 import type { ConstraintPlanSpec } from './constraint';
 import type { Model } from './model';
-import type { SchedulingSpec } from './scheduling';
+import type { SchedulingPlanSpecification } from './scheduling';
 import type { Tag } from './tags';
 
 export type Plan = PlanSchema & { end_time_doy: string; start_time_doy: string };
@@ -84,7 +84,7 @@ export type PlanSchema = {
   owner: UserId;
   parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked'> | null;
   revision: number;
-  scheduling_specification: Pick<SchedulingSpec, 'id'> | null;
+  scheduling_specification: Pick<SchedulingPlanSpecification, 'id'> | null;
   simulations: [{ simulation_datasets: [{ id: number; plan_revision: number }] }];
   start_time: string;
   tags: { tag: Tag }[];

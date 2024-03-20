@@ -8,6 +8,8 @@ import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.sv
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
 import ManagePlanConstraintsModal from '../components/modals/ManagePlanConstraintsModal.svelte';
+import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
+import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
@@ -169,6 +171,76 @@ export async function showManagePlanConstraintsModal(user: User | null): Promise
             managePlanConstraintsModal.$destroy();
           },
         );
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an ManagePlanSchedulingConditionsModal component with the supplied arguments.
+ */
+export async function showManagePlanSchedulingConditionsModal(user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const managePlanConditionsModal = new ManagePlanSchedulingConditionsModal({
+          props: { user },
+          target,
+        });
+        target.resolve = resolve;
+
+        managePlanConditionsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          managePlanConditionsModal.$destroy();
+        });
+
+        managePlanConditionsModal.$on('add', (e: CustomEvent<{ conditionId: number; conditionRevision: number }[]>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          managePlanConditionsModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an ManagePlanSchedulingGoalsModal component with the supplied arguments.
+ */
+export async function showManagePlanSchedulingGoalsModal(user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const managePlanGoalsModal = new ManagePlanSchedulingGoalsModal({
+          props: { user },
+          target,
+        });
+        target.resolve = resolve;
+
+        managePlanGoalsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          target.removeAttribute('data-dismissible');
+          managePlanGoalsModal.$destroy();
+        });
+
+        managePlanGoalsModal.$on('add', (e: CustomEvent<{ goalId: number; goalRevision: number }[]>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          managePlanGoalsModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });

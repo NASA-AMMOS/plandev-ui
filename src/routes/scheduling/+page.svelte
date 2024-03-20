@@ -10,4 +10,4 @@
 
 <PageTitle title="Scheduling" />
 
-<Scheduling plans={data.plans} user={data.user} />
+<Scheduling user={data.user} />

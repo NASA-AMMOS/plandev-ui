@@ -1,19 +1,10 @@
-import type { PartialWith, UserId } from './app';
-import type { Model } from './model';
-import type { Plan } from './plan';
-import type { ConstraintTagsInsertInput, Tag } from './tags';
+import type { PartialWith } from './app';
+import type { BaseDefinition, BaseMetadata } from './metadata';
+import type { ConstraintTagsInsertInput } from './tags';
 import type { TimeRange } from './timeline';
 
-export type ConstraintDefinition = {
-  author: UserId;
+export type ConstraintDefinition = BaseDefinition & {
   constraint_id: number;
-  created_at: string;
-  definition: string;
-  metadata: ConstraintMetadata;
-  // models_using: Model[];
-  // plans_using: Plan[];
-  revision: number;
-  tags: { tag: Tag }[];
 };
 
 export type ConstraintMetadataVersionDefinition = Pick<
@@ -21,20 +12,7 @@ export type ConstraintMetadataVersionDefinition = Pick<
   'author' | 'definition' | 'revision' | 'tags'
 >;
 
-export type ConstraintMetadata = {
-  created_at: string;
-  description?: string;
-  id: number;
-  models_using: Pick<Model, 'id'>[];
-  name: string;
-  owner: UserId;
-  plans_using: Pick<Plan, 'id'>[];
-  public: boolean;
-  tags: { tag: Tag }[];
-  updated_at: string;
-  updated_by: UserId;
-  versions: ConstraintMetadataVersionDefinition[];
-};
+export type ConstraintMetadata = BaseMetadata<ConstraintDefinition>;
 
 export type ConstraintMetadataSlim = Omit<ConstraintMetadata, 'models_using' | 'plans_using' | 'versions'>;
 
@@ -49,7 +27,9 @@ export type ConstraintModelSpec = {
 
 export type ConstraintPlanSpec = {
   constraint_id: number;
-  constraint_metadata: Pick<ConstraintMetadata, 'name' | 'owner' | 'public' | 'versions'> | null;
+  constraint_metadata:
+    | (Pick<ConstraintMetadata, 'name' | 'owner' | 'public'> & { versions: Pick<ConstraintDefinition, 'revision'>[] })
+    | null;
   constraint_revision: number | null;
   enabled: boolean;
   plan_id: number;

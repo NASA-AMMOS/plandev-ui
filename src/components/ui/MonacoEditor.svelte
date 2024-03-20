@@ -48,8 +48,7 @@
 
   const dispatch = createEventDispatcher<{
     didChangeModelContent: { e: Editor.IModelContentChangedEvent; value: string };
-    editor: Editor.IStandaloneCodeEditor;
-    fullyLoaded: { model: Editor.ITextModel; worker: TypeScriptWorker };
+    fullyLoaded: { editor: Editor.IStandaloneCodeEditor; model: Editor.ITextModel; worker: TypeScriptWorker };
   }>();
 
   let className: string = '';
@@ -103,8 +102,6 @@
     monaco = await import('monaco-editor');
     editor = monaco.editor.create(div, options, override);
 
-    dispatch('editor', editor);
-
     if (language && language === 'typescript') {
       monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
         customWorkerPath: `${base}/customTS.worker.js`,
@@ -146,8 +143,14 @@
 
           // Errors in the dispatch won't trigger the retry and will just fail.
           model = editor?.getModel(); // Set here so parents can bind to the model easily.
-          if (model != null && tsWorker !== null) {
-            dispatch('fullyLoaded', { model, worker: tsWorker });
+          if (editor != null && model != null && tsWorker !== null) {
+            dispatch('fullyLoaded', { editor, model, worker: tsWorker });
+            // Manually trigger a change in the editor to evaluate the source on load
+            // Will highlight errors on load without the user having to input something in the editor
+            if (!readOnly) {
+              editor.trigger('', 'type', { text: ' ' });
+              editor.trigger('', 'deleteLeft', {});
+            }
           }
         },
         5,

@@ -4,35 +4,42 @@
   import { base } from '$app/paths';
   import CaretDownFillIcon from 'bootstrap-icons/icons/caret-down-fill.svg?component';
   import CaretUpFillIcon from 'bootstrap-icons/icons/caret-up-fill.svg?component';
-  import type { User } from '../../../types/app';
-  import type { Plan } from '../../../types/plan';
-  import type { SchedulingGoalSlim } from '../../../types/scheduling';
-  import effects from '../../../utilities/effects';
+  import { createEventDispatcher } from 'svelte';
+  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
+  import { SearchParameters } from '../../../enums/searchParameters';
+  import type { SchedulingGoalMetadata, SchedulingGoalPlanSpecification } from '../../../types/scheduling';
+  import { getTarget } from '../../../utilities/generic';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
-  import ContextMenuHeader from '../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
   import Input from '../../form/Input.svelte';
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
-  export let enabled: boolean;
-  export let goal: SchedulingGoalSlim;
-  export let plan: Plan | null;
-  export let priority: number;
-  export let specificationId: number;
-  export let simulateAfter: boolean = true;
-  export let user: User | null;
-  export let hasGoalEditPermission: boolean = false;
-  export let hasSpecEditPermission: boolean = false;
-  export let hasDeletePermission: boolean = false;
+  export let goal: SchedulingGoalMetadata;
+  export let goalPlanSpec: SchedulingGoalPlanSpecification;
+  export let hasEditPermission: boolean = false;
+  export let modelId: number | undefined;
   export let permissionError: string = '';
+  export let readOnly: boolean = false;
 
-  $: upButtonHidden = priority <= 0;
-  $: simulateGoal = simulateAfter; // Copied to local var to reflect changed values immediately in the UI
+  const dispatch = createEventDispatcher();
 
+  let enabled: boolean;
+  let priority: number;
+  let revisions: number[] = [];
   let schedulingGoalInput: HTMLInputElement;
+  let simulateGoal: boolean = false;
+  let upButtonHidden: boolean = false;
+
+  $: revisions = goal.versions.map(({ revision }) => revision).sort((revisionA, revisionB) => revisionB - revisionA);
+  $: {
+    enabled = goalPlanSpec.enabled;
+    priority = goalPlanSpec.priority;
+    upButtonHidden = priority <= 0;
+    simulateGoal = goalPlanSpec.simulate_after; // Copied to local var to reflect changed values immediately in the UI
+  }
 
   function focusInput() {
     if (document.activeElement !== schedulingGoalInput) {
@@ -42,10 +49,12 @@
     return true;
   }
 
-  function updatePriority(priority: number) {
-    if (plan) {
-      effects.updateSchedulingSpecGoal(goal.id, specificationId, { priority }, plan, user);
-    }
+  function onEnable(event: Event) {
+    const { value: enabled } = getTarget(event);
+    dispatch('updateGoalPlanSpec', {
+      ...goalPlanSpec,
+      enabled,
+    });
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -61,10 +70,52 @@
       }
     }
   }
+
+  function onUpdateRevision(event: Event) {
+    const { value: revision } = getTarget(event);
+    dispatch('updateGoalPlanSpec', {
+      ...goalPlanSpec,
+      goal_revision: revision === '' ? null : parseInt(`${revision}`),
+    });
+  }
+
+  function simulateAfter(simulateAfter: boolean) {
+    dispatch('updateGoalPlanSpec', {
+      ...goalPlanSpec,
+      simulate_after: simulateAfter,
+    });
+  }
+
+  function updatePriority(priority: number) {
+    dispatch('updateGoalPlanSpec', {
+      ...goalPlanSpec,
+      priority,
+    });
+  }
 </script>
 
 <div class="scheduling-goal" class:disabled={!enabled}>
   <Collapse title={goal.name} tooltipContent={goal.name} defaultExpanded={false}>
+    <svelte:fragment slot="left">
+      <div class="left-content">
+        <input
+          type="checkbox"
+          checked={enabled}
+          style:cursor="pointer"
+          on:change={onEnable}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError,
+          }}
+          use:tooltip={{
+            content: `${enabled ? 'Disable goal' : 'Enable goal'} on plan`,
+            disabled: !hasEditPermission,
+            placement: 'top',
+          }}
+        />
+      </div>
+    </svelte:fragment>
     <svelte:fragment slot="right">
       <div class="right-content" role="none" on:click|stopPropagation>
         <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
@@ -80,11 +131,11 @@
             on:change={() => updatePriority(priority)}
             on:keydown={onKeyDown}
             use:permissionHandler={{
-              hasPermission: hasSpecEditPermission,
+              hasPermission: hasEditPermission,
               permissionError,
             }}
           />
-          {#if hasSpecEditPermission}
+          {#if hasEditPermission}
             <div class="priority-buttons">
               <button
                 use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
@@ -104,64 +155,56 @@
               </button>
             </div>
           {/if}
-          <input
-            use:tooltip={{
-              content: hasSpecEditPermission ? (enabled ? 'Disable Scheduling Goal' : 'Enable Scheduling Goal') : '',
-              placement: 'top',
-            }}
-            bind:checked={enabled}
-            style:cursor="pointer"
-            type="checkbox"
-            on:change={() =>
-              plan && effects.updateSchedulingSpecGoal(goal.id, specificationId, { enabled }, plan, user)}
-            use:permissionHandler={{
-              hasPermission: hasSpecEditPermission,
-              permissionError,
-            }}
-          />
         </Input>
+        <select
+          class="st-select"
+          value={goalPlanSpec.goal_revision}
+          on:change={onUpdateRevision}
+          on:click|stopPropagation
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError: readOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit plan goals',
+          }}
+        >
+          <option value={null}>Always use latest</option>
+          {#each revisions as revision, index}
+            <option value={revision}>{revision}{index === 0 ? ' (Latest)' : ''}</option>
+          {/each}
+        </select>
       </div>
     </svelte:fragment>
 
     <SchedulingGoalAnalysesActivities analyses={goal.analyses} />
 
     <svelte:fragment slot="contextMenuContent">
-      <ContextMenuHeader>Actions</ContextMenuHeader>
       <ContextMenuItem
-        on:click={() => window.open(`${base}/scheduling/goals/edit/${goal.id}`, '_blank')}
+        on:click={() =>
+          window.open(
+            `${base}/scheduling/goals/edit/${goal.id}${
+              goalPlanSpec.goal_revision !== null
+                ? `?${SearchParameters.REVISION}=${goalPlanSpec.goal_revision}&${SearchParameters.MODEL_ID}=${modelId}`
+                : ''
+            }`,
+            '_blank',
+          )}
         use={[
           [
             permissionHandler,
             {
-              hasPermission: hasGoalEditPermission,
+              hasPermission: hasEditPermission,
               permissionError,
             },
           ],
         ]}
       >
-        Edit Goal
-      </ContextMenuItem>
-      <ContextMenuHeader>Modify</ContextMenuHeader>
-      <ContextMenuItem
-        on:click={() => plan && effects.deleteSchedulingGoal(goal, plan, user)}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasDeletePermission,
-              permissionError,
-            },
-          ],
-        ]}
-      >
-        Delete Goal
+        View Goal
       </ContextMenuItem>
       <ContextMenuItem
         use={[
           [
             permissionHandler,
             {
-              hasPermission: hasSpecEditPermission,
+              hasPermission: hasEditPermission,
               permissionError,
             },
           ],
@@ -172,9 +215,7 @@
           role="none"
           on:click|stopPropagation={() => {
             simulateGoal = !simulateGoal;
-            if (plan) {
-              effects.updateSchedulingSpecGoal(goal.id, specificationId, { simulate_after: simulateGoal }, plan, user);
-            }
+            simulateAfter(simulateGoal);
           }}
         >
           <input bind:checked={simulateGoal} style:cursor="pointer" type="checkbox" /> Simulate After

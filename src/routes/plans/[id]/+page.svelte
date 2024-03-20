@@ -222,7 +222,7 @@
     hasExpandPermission =
       featurePermissions.expansionSequences.canExpand(data.user, $plan, $plan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
-      featurePermissions.schedulingGoals.canAnalyze(data.user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.schedulingGoalsPlanSpec.canAnalyze(data.user, $plan, $plan.model) && !$planReadOnly;
     hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan, $plan.model) && !$planReadOnly;
   }
   $: if (data.initialPlan) {

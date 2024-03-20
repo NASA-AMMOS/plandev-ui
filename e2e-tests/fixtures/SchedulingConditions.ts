@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
-import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
 export class SchedulingConditions {
@@ -28,14 +27,12 @@ export class SchedulingConditions {
 
   async createSchedulingCondition(baseURL: string | undefined) {
     await expect(this.saveButton).toBeDisabled();
-    await this.selectModel();
     await this.fillConditionName();
     await this.fillConditionDescription();
     await this.fillConditionDefinition();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling/conditions/edit/*`);
-    await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling`);
@@ -45,7 +42,6 @@ export class SchedulingConditions {
     await this.goto();
     await expect(this.tableRow).toBeVisible();
     await expect(this.tableRowDeleteButton).not.toBeVisible();
-
     await this.tableRow.hover();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
@@ -86,14 +82,6 @@ export class SchedulingConditions {
     await this.page.waitForSelector(`input[placeholder="Filter conditions"]`, { state: 'attached' });
   }
 
-  async selectModel() {
-    await this.page.waitForSelector(`option:has-text("${this.models.modelName}")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputConditionModelSelector, this.models.modelName);
-    await this.inputConditionModel.focus();
-    await this.inputConditionModel.selectOption(value);
-    await this.inputConditionModel.evaluate(e => e.blur());
-  }
-
   updatePage(page: Page): void {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Scheduling Condition")`);
@@ -101,9 +89,9 @@ export class SchedulingConditions {
       `.modal:has-text("Delete Scheduling Condition") >> button:has-text("Delete")`,
     );
     this.inputConditionDefinition = page.locator('.monaco-editor >> textarea.inputarea');
-    this.inputConditionDescription = page.locator('textarea[name="condition-description"]');
+    this.inputConditionDescription = page.locator('textarea[name="metadata-description"]');
     this.inputConditionModel = page.locator(this.inputConditionModelSelector);
-    this.inputConditionName = page.locator(`input[name="condition-name"]`);
+    this.inputConditionName = page.locator(`input[name="metadata-name"]`);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);

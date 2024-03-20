@@ -8,21 +8,19 @@ export const load: PageLoad = async ({ parent, params }) => {
   const { user } = await parent();
 
   const { id: goalIdParam } = params;
-  const { models = [], plans = [] } = await effects.getPlansAndModelsForScheduling(user);
 
-  if (goalIdParam !== null && goalIdParam !== undefined) {
+  if (goalIdParam !== null) {
     const goalId = parseFloatOrNull(goalIdParam);
-    const initialGoal = await effects.getSchedulingGoal(goalId, user);
-    const schedulingSpecGoals = await effects.getSchedulingSpecGoalsForGoal(goalId, user);
 
-    if (initialGoal !== null) {
-      return {
-        initialGoal,
-        initialSpecId: schedulingSpecGoals?.[0]?.specification_id,
-        models,
-        plans,
-        user,
-      };
+    if (goalId !== null) {
+      const initialGoal = await effects.getSchedulingGoal(goalId, user);
+
+      if (initialGoal !== null) {
+        return {
+          initialGoal,
+          user,
+        };
+      }
     }
   }
 

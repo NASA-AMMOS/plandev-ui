@@ -117,6 +117,7 @@ test.describe.serial('Scheduling', () => {
   });
 
   test('Delete scheduling goal', async () => {
+    await plan.removeSchedulingGoal(goalName1);
     await schedulingGoals.deleteSchedulingGoal(goalName1);
   });
 });

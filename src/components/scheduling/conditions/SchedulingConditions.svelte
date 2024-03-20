@@ -3,94 +3,95 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
   import type { User } from '../../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../../types/data-grid';
-  import type { PlanSchedulingSpec } from '../../../types/plan';
-  import type { SchedulingCondition } from '../../../types/scheduling';
+  import type { SchedulingConditionMetadata } from '../../../types/scheduling';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import Input from '../../form/Input.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
+  import { tagsCellRenderer, tagsFilterValueGetter } from '../../ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
 
-  export let schedulingConditions: SchedulingCondition[] = [];
-  export let selectedCondition: SchedulingCondition | null | undefined = null;
+  export let schedulingConditions: SchedulingConditionMetadata[] = [];
+  export let selectedCondition: SchedulingConditionMetadata | null | undefined = null;
   export let user: User | null;
-  export let plans: PlanSchedulingSpec[] | null;
 
   type CellRendererParams = {
-    deleteCondition: (condition: SchedulingCondition) => void;
-    editCondition: (condition: SchedulingCondition) => void;
+    deleteCondition: (condition: SchedulingConditionMetadata) => void;
+    editCondition: (condition: SchedulingConditionMetadata) => void;
   };
-  type SchedulingConditionsCellRendererParams = ICellRendererParams<SchedulingCondition> & CellRendererParams;
-
-  let columnDefs: DataGridColumnDef[] = [];
-  $: if (user && plans) {
-    columnDefs = [
-      {
-        field: 'id',
-        filter: 'number',
-        headerName: 'ID',
-        resizable: true,
-        sortable: true,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 60,
-      },
-      { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
-      { field: 'model_id', filter: 'number', headerName: 'Model ID', sortable: true, width: 120 },
-      { field: 'author', filter: 'string', headerName: 'Author', sortable: true, width: 100 },
-      { field: 'last_modified_by', filter: 'string', headerName: 'Last Modified By', sortable: true, width: 100 },
-      { field: 'description', filter: 'string', headerName: 'Description', sortable: true, width: 120 },
-      {
-        cellClass: 'action-cell-container',
-        cellRenderer: (params: SchedulingConditionsCellRendererParams) => {
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'actions-cell';
-          new DataGridActions({
-            props: {
-              deleteCallback: params.deleteCondition,
-              deleteTooltip: {
-                content: 'Delete Condition',
-                placement: 'bottom',
-              },
-              editCallback: params.editCondition,
-              editTooltip: {
-                content: 'Edit Condition',
-                placement: 'bottom',
-              },
-              hasDeletePermission: params.data ? hasDeletePermission(params.data) : false,
-              hasEditPermission: params.data ? hasEditPermission(params.data) : false,
-              rowData: params.data,
-            },
-            target: actionsDiv,
-          });
-
-          return actionsDiv;
-        },
-        cellRendererParams: {
-          deleteCondition,
-          editCondition,
-        } as CellRendererParams,
-        field: 'actions',
-        headerName: '',
-        resizable: false,
-        sortable: false,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 55,
-      },
-    ];
-  }
+  type SchedulingConditionsCellRendererParams = ICellRendererParams<SchedulingConditionMetadata> & CellRendererParams;
 
   const dispatch = createEventDispatcher();
 
-  let filteredConditions: SchedulingCondition[] = [];
+  const baseColumnDefs: DataGridColumnDef<SchedulingConditionMetadata>[] = [
+    {
+      field: 'id',
+      filter: 'number',
+      headerName: 'ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 60,
+    },
+    { field: 'name', filter: 'text', headerName: 'Name', minWidth: 80, resizable: true, sortable: true },
+    {
+      field: 'owner',
+      filter: 'string',
+      headerName: 'Owner',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
+    },
+    {
+      field: 'updated_by',
+      filter: 'string',
+      headerName: 'Updated By',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 120,
+    },
+    {
+      field: 'versions',
+      filter: 'string',
+      headerName: 'Latest Version',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      valueGetter: (params: ValueGetterParams<SchedulingConditionMetadata>) => {
+        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+      },
+      width: 125,
+    },
+    {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      field: 'tags',
+      filter: 'text',
+      filterValueGetter: tagsFilterValueGetter,
+      headerName: 'Tags',
+      resizable: true,
+      sortable: false,
+      width: 220,
+      wrapText: true,
+    },
+  ];
+
+  const permissionError = 'You do not have permission to create Scheduling Conditions';
+
+  let columnDefs: DataGridColumnDef[] = baseColumnDefs;
+
+  let filteredConditions: SchedulingConditionMetadata[] = [];
   let filterText: string = '';
+  let hasPermission: boolean = false;
 
   $: filteredConditions = schedulingConditions.filter(condition => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -98,6 +99,7 @@
     const includesName = condition.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
+  $: hasPermission = featurePermissions.schedulingConditions.canCreate(user);
   $: if (selectedCondition !== null) {
     const found = schedulingConditions.findIndex(condition => condition.id === selectedCondition?.id);
     if (found === -1) {
@@ -105,7 +107,49 @@
     }
   }
 
-  function deleteCondition({ id }: Pick<SchedulingCondition, 'id'>) {
+  $: columnDefs = [
+    ...baseColumnDefs,
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: SchedulingConditionsCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deleteCondition,
+            deleteTooltip: {
+              content: 'Delete Condition',
+              placement: 'bottom',
+            },
+            editCallback: params.editCondition,
+            editTooltip: {
+              content: 'Edit Condition',
+              placement: 'bottom',
+            },
+            hasDeletePermission: params.data ? hasDeletePermission(params.data) : false,
+            hasEditPermission: params.data ? hasEditPermission(params.data) : false,
+            rowData: params.data,
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deleteCondition,
+        editCondition,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 55,
+    },
+  ];
+
+  function deleteCondition({ id }: Pick<SchedulingConditionMetadata, 'id'>) {
     dispatch('deleteCondition', id);
   }
 
@@ -113,7 +157,7 @@
     deleteCondition({ id: event.detail[0] as number });
   }
 
-  function editCondition({ id }: Pick<SchedulingCondition, 'id'>) {
+  function editCondition({ id }: Pick<SchedulingConditionMetadata, 'id'>) {
     goto(`${base}/scheduling/conditions/edit/${id}`);
   }
 
@@ -121,29 +165,15 @@
     editCondition({ id: event.detail[0] as number });
   }
 
-  function getPlanForCondition(condition: SchedulingCondition): PlanSchedulingSpec | null {
-    // If there is no spec id attached to the goal, the goal is not associated with a plan
-    let plan = null;
-    if (condition.scheduling_specification_conditions.length > 0) {
-      const specification_id = condition.scheduling_specification_conditions[0].specification_id;
-      plan = plans?.find(plan => plan.scheduling_specification?.id === specification_id) ?? null;
-    }
-    return plan;
+  function hasDeletePermission(condition: SchedulingConditionMetadata) {
+    return featurePermissions.schedulingConditions.canDelete(user, condition);
   }
 
-  function hasDeletePermission(condition: SchedulingCondition) {
-    return featurePermissions.schedulingConditions.canDelete(user, getPlanForCondition(condition), condition);
+  function hasEditPermission(condition: SchedulingConditionMetadata) {
+    return featurePermissions.schedulingConditions.canUpdate(user, condition);
   }
 
-  function hasEditPermission(condition: SchedulingCondition) {
-    return featurePermissions.schedulingConditions.canUpdate(user, getPlanForCondition(condition), condition);
-  }
-
-  function hasCreatePermission(user: User): boolean {
-    return plans?.some(plan => featurePermissions.schedulingConditions.canCreate(user, plan)) ?? false;
-  }
-
-  function rowSelected(event: CustomEvent<DataGridRowSelection<SchedulingCondition>>) {
+  function rowSelected(event: CustomEvent<DataGridRowSelection<SchedulingConditionMetadata>>) {
     dispatch('rowSelected', event.detail);
   }
 </script>
@@ -160,8 +190,8 @@
       <button
         class="st-button secondary ellipsis"
         use:permissionHandler={{
-          hasPermission: user ? hasCreatePermission(user) : false,
-          permissionError: 'You do not have permission to create Scheduling Conditions',
+          hasPermission,
+          permissionError,
         }}
         on:click={() => goto(`${base}/scheduling/conditions/new`)}
       >

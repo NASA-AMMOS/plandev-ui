@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { fillEditorText } from '../utilities/editor.js';
-import { getOptionValueFromText } from '../utilities/selectors.js';
 import { Models } from './Models.js';
 
 export class SchedulingGoals {
@@ -25,14 +24,12 @@ export class SchedulingGoals {
 
   async createSchedulingGoal(baseURL: string | undefined, goalName: string) {
     await expect(this.saveButton).toBeDisabled();
-    await this.selectModel();
     await this.fillGoalName(goalName);
     await this.fillGoalDescription();
     await this.fillGoalDefinition();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling/goals/edit/*`);
-    await expect(this.saveButton).not.toBeDisabled();
     await expect(this.closeButton).not.toBeDisabled();
     await this.closeButton.click();
     await this.page.waitForURL(`${baseURL}/scheduling`);
@@ -83,14 +80,6 @@ export class SchedulingGoals {
     await this.page.waitForSelector(`input[placeholder="Filter goals"]`, { state: 'attached' });
   }
 
-  async selectModel() {
-    await this.page.waitForSelector(`option:has-text("${this.models.modelName}")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputGoalModelSelector, this.models.modelName);
-    await this.inputGoalModel.focus();
-    await this.inputGoalModel.selectOption(value);
-    await this.inputGoalModel.evaluate(e => e.blur());
-  }
-
   updatePage(page: Page): void {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Scheduling Goal")`);
@@ -98,9 +87,9 @@ export class SchedulingGoals {
       `.modal:has-text("Delete Scheduling Goal") >> button:has-text("Delete")`,
     );
     this.inputGoalDefinition = page.locator('.monaco-editor >> textarea.inputarea');
-    this.inputGoalDescription = page.locator('textarea[name="goal-description"]');
+    this.inputGoalDescription = page.locator('textarea[name="metadata-description"]');
     this.inputGoalModel = page.locator(this.inputGoalModelSelector);
-    this.inputGoalName = page.locator(`input[name="goal-name"]`);
+    this.inputGoalName = page.locator(`input[name="metadata-name"]`);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
