@@ -1,6 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../types/activity';
-import type { ModelSlim } from '../types/model';
 import type { Plan, PlanMergeRequest, PlanMergeRequestSchema } from '../types/plan';
 import type { PlanDataset } from '../types/simulation';
 import type { Tag } from '../types/tags';
@@ -21,10 +20,6 @@ export const planReadOnly: Readable<boolean> = derived(
   [planReadOnlySnapshot, planReadOnlyMergeRequest],
   ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
 );
-
-export const creatingModel: Writable<boolean> = writable(false);
-
-export const createModelError: Writable<string | null> = writable(null);
 
 export const createPlanError: Writable<string | null> = writable(null);
 
@@ -53,8 +48,6 @@ export const activityTypes = gqlSubscribable<ActivityType[]>(gql.SUB_ACTIVITY_TY
 export const planTags = gqlSubscribable<Tag[]>(gql.SUB_PLAN_TAGS, { planId }, [], null, ({ tags }) =>
   tags.map((tag: { tag: Tag }) => tag.tag),
 );
-
-export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, [], null);
 
 export const planDatasets = gqlSubscribable<PlanDataset[] | null>(gql.SUB_PLAN_DATASET, { planId }, null, null);
 
@@ -96,8 +89,6 @@ export const planRevision = gqlSubscribable<number>(
 
 export function resetPlanStores() {
   activityEditingLocked.set(false);
-  creatingModel.set(false);
-  createModelError.set(null);
   createPlanError.set(null);
   creatingPlan.set(false);
   plan.set(null);

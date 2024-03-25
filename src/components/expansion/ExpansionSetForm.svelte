@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { expansionSetsFormColumns, savingExpansionSet } from '../../stores/expansion';
-  import { models } from '../../stores/plan';
+  import { models } from '../../stores/model';
   import { commandDictionaries } from '../../stores/sequencing';
   import type { ActivityTypeExpansionRules } from '../../types/activity';
   import type { User } from '../../types/app';

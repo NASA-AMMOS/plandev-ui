@@ -3,7 +3,7 @@
 <script lang="ts">
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
-  import { models } from '../../../stores/plan';
+  import { models } from '../../../stores/model';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../../types/dropdown';
   import type { Monaco, TypeScriptFile } from '../../../types/monaco';
   import MonacoEditor from '../../ui/MonacoEditor.svelte';

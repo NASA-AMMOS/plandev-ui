@@ -1,13 +1,16 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 let context: BrowserContext;
 let models: Models;
+let constraints: Constraints;
 let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
   models = new Models(page);
+  constraints = new Constraints(page, models);
   await models.goto();
 });
 
@@ -71,5 +74,32 @@ test.describe.serial('Models', () => {
     await expect(models.inputFile).toBeEmpty();
     await expect(models.inputVersion).toBeEmpty();
     await expect(models.inputName).toBeEmpty();
+
+    // Cleanup
+    await models.deleteModel();
+  });
+
+  test('Model creation errors should clear on page destroy', async () => {
+    // Create model
+    await models.createModel(models.modelName);
+
+    // Create model again with the same name
+    await models.fillInputName(models.modelName);
+    await models.fillInputVersion();
+    await models.fillInputFile();
+    await models.createButton.click();
+
+    // Expect an error to be present
+    await expect(models.alertError).toBeVisible();
+
+    // Navigate away and back
+    await constraints.goto();
+    await models.goto();
+
+    // Expect no error
+    await expect(models.alertError).not.toBeVisible();
+
+    // Cleanup
+    await models.deleteModel();
   });
 });

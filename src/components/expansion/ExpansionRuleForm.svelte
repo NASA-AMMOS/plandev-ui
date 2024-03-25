@@ -5,7 +5,8 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { createExpansionRuleError, expansionRulesFormColumns, savingExpansionRule } from '../../stores/expansion';
-  import { activityTypes, models } from '../../stores/plan';
+  import { models } from '../../stores/model';
+  import { activityTypes } from '../../stores/plan';
   import { commandDictionaries } from '../../stores/sequencing';
   import { tags } from '../../stores/tags';
   import type { User, UserId } from '../../types/app';

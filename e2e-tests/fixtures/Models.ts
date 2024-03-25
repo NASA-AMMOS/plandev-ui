@@ -22,9 +22,13 @@ export class Models {
     this.updatePage(page);
   }
 
-  async createModel() {
+  async createModel(modelName = '') {
     await expect(this.tableRow).not.toBeVisible();
-    await this.fillInputName();
+    if (modelName) {
+      await this.fillInputName(modelName);
+    } else {
+      await this.fillInputName();
+    }
     await this.fillInputVersion();
     await this.fillInputFile();
     await this.createButton.click();

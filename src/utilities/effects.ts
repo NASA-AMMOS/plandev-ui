@@ -15,7 +15,8 @@ import {
   savingExpansionRule,
   savingExpansionSet,
 } from '../stores/expansion';
-import { createModelError, createPlanError, creatingModel, creatingPlan, models, planId } from '../stores/plan';
+import { createModelError, creatingModel, models } from '../stores/model';
+import { createPlanError, creatingPlan, planId } from '../stores/plan';
 import { schedulingRequests, selectedSpecId } from '../stores/scheduling';
 import { commandDictionaries } from '../stores/sequencing';
 import { selectedSpanId, simulationDataset, simulationDatasetId } from '../stores/simulation';

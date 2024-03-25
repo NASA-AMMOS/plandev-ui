@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
@@ -14,7 +14,7 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { createModelError, creatingModel, models } from '../../stores/plan';
+  import { createModelError, creatingModel, models, resetModelStores } from '../../stores/model';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
@@ -62,7 +62,7 @@
 
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createButtonDisabled: boolean = false;
-  let files: FileList;
+  let files: FileList | undefined;
   let hasCreatePermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let name = '';
@@ -115,6 +115,10 @@
     models.updateValue(() => data.initialModels);
   });
 
+  onDestroy(() => {
+    resetModelStores();
+  });
+
   function deleteModel(model: ModelSlim) {
     effects.deleteModel(model, user);
   }
@@ -132,9 +136,12 @@
   }
 
   async function submitForm(e: SubmitEvent) {
-    await effects.createModel(name, version, files, data.user, description);
-    if ($createModelError === null && e.target instanceof HTMLFormElement) {
-      e.target.reset();
+    if (files) {
+      await effects.createModel(name, version, files, data.user, description);
+      if ($createModelError === null && e.target instanceof HTMLFormElement) {
+        e.target.reset();
+        files = undefined; // reset list of files since they are not reset on form reset
+      }
     }
   }
 </script>
