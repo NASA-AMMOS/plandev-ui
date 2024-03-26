@@ -93,7 +93,8 @@
     z-index: 1;
   }
   .color-preset-picker :global(.color-picker.active):before {
-    background: linear-gradient(white, white) padding-box,
+    background:
+      linear-gradient(white, white) padding-box,
       conic-gradient(
           from 0deg at 50% 50%,
           #ff0000 0deg,

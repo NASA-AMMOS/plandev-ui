@@ -46,10 +46,10 @@
     selectedFilter === 'incoming'
       ? $planMergeRequestsIncoming
       : selectedFilter === 'outgoing'
-      ? $planMergeRequestsOutgoing
-      : selectedFilter === 'all'
-      ? [...$planMergeRequestsIncoming, ...$planMergeRequestsOutgoing]
-      : [];
+        ? $planMergeRequestsOutgoing
+        : selectedFilter === 'all'
+          ? [...$planMergeRequestsIncoming, ...$planMergeRequestsOutgoing]
+          : [];
 
   $: if (
     showAccepted !== undefined &&

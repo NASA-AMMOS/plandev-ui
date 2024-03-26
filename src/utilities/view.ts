@@ -55,8 +55,8 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
     const resourceLayers = isDiscreteSchema
       ? ([createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
       : isNumericSchema
-      ? ([createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
-      : ([] as Layer[]);
+        ? ([createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
+        : ([] as Layer[]);
 
     const resourceRow = createRow(timelines, {
       autoAdjustHeight: false,

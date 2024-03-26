@@ -55,7 +55,6 @@
   let div: HTMLDivElement;
   let editor: Editor.IStandaloneCodeEditor | undefined = undefined;
   let codeActionProvider: IDisposable | undefined = undefined;
-  let editor_load_event: IDisposable | undefined = undefined;
   let styleName: string = '';
 
   $: if (editor) {
@@ -89,7 +88,6 @@
       automaticLayout,
       fixedOverflowWidgets,
       language,
-      lightbulb: { enabled: true },
       lineNumbers,
       minimap,
       model,
@@ -165,9 +163,6 @@
     }
     if (codeActionProvider) {
       codeActionProvider.dispose();
-    }
-    if (editor_load_event) {
-      editor_load_event.dispose();
     }
   });
 </script>

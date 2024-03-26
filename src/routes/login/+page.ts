@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ parent }) => {
   const { user } = await parent();
 
   if (user && !hasNoAuthorization(user)) {
-    throw redirect(302, `${base}/plans`);
+    redirect(302, `${base}/plans`);
   }
 
   return { user };

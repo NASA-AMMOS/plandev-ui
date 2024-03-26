@@ -19,7 +19,10 @@ export class Constraints {
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
-  constructor(public page: Page, public models: Models) {
+  constructor(
+    public page: Page,
+    public models: Models,
+  ) {
     this.constraintName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }

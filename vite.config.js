@@ -47,6 +47,12 @@ const config = ({ mode }) => {
     },
     test: {
       alias: [{ find: /^svelte$/, replacement: 'svelte/internal' }], // https://github.com/vitest-dev/vitest/issues/2834
+      coverage: {
+        exclude: ['src/routes/*'],
+        include: ['src/**/*'],
+        reporter: ['text', 'json', 'html'],
+        reportsDirectory: './unit-test-results/coverage',
+      },
       environment: 'jsdom',
       include: ['./src/**/*.test.ts'],
       outputFile: {

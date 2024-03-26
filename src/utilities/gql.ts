@@ -44,12 +44,10 @@ export enum Queries {
   DELETE_SCHEDULING_CONDITION_METADATA = 'delete_scheduling_condition_metadata_by_pk',
   DELETE_SCHEDULING_CONDITION_METADATA_TAGS = 'delete_scheduling_condition_tags',
   DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS = 'delete_scheduling_model_specification_conditions',
-  DELETE_SCHEDULING_CONDITION_TAGS = 'delete_scheduling_condition_tags',
   DELETE_SCHEDULING_GOAL_DEFINITION_TAGS = 'delete_scheduling_goal_definition_tags',
   DELETE_SCHEDULING_GOAL_METADATA = 'delete_scheduling_goal_metadata_by_pk',
   DELETE_SCHEDULING_GOAL_METADATA_TAGS = 'delete_scheduling_goal_tags',
   DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS = 'delete_scheduling_model_specification_goals',
-  DELETE_SCHEDULING_GOAL_TAGS = 'delete_scheduling_goal_tags',
   DELETE_SCHEDULING_SPECIFICATION = 'delete_scheduling_specification',
   DELETE_SCHEDULING_SPECIFICATION_CONDITIONS = 'delete_scheduling_specification_conditions',
   DELETE_SCHEDULING_SPECIFICATION_GOALS = 'delete_scheduling_specification_goals',
@@ -2744,7 +2742,7 @@ const gql = {
       }) {
         affected_rows
       }
-      deleteSchedulingConditionTags: ${Queries.DELETE_SCHEDULING_CONDITION_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
+      deleteSchedulingConditionTags: ${Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
       }
     }
@@ -2827,7 +2825,7 @@ const gql = {
       }) {
         affected_rows
       }
-      deleteSchedulingGoalTags: ${Queries.DELETE_SCHEDULING_GOAL_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
+      deleteSchedulingGoalTags: ${Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
       }
     }

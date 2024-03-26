@@ -23,7 +23,10 @@ export class Plans {
   tableRowDeleteButton: Locator;
   tableRowPlanId: Locator;
 
-  constructor(public page: Page, public models: Models) {
+  constructor(
+    public page: Page,
+    public models: Models,
+  ) {
     this.planName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }

@@ -156,7 +156,10 @@
   .menu-slot {
     background: #fff;
     border-radius: 4px;
-    box-shadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #0000001f;
+    box-shadow:
+      0 2px 4px -1px #0003,
+      0 4px 5px #00000024,
+      0 1px 10px #0000001f;
     outline: 0;
     overflow: hidden;
     z-index: 1000;

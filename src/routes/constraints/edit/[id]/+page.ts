@@ -23,5 +23,5 @@ export const load: PageLoad = async ({ parent, params }) => {
     }
   }
 
-  throw redirect(302, `${base}/constraints`);
+  redirect(302, `${base}/constraints`);
 };

@@ -46,7 +46,7 @@ jobs:
       - name: Test (e2e)
         run: npm run test:e2e
       - name: Test (unit)
-        run: npm run test:unit
+        run: npm run test:unit:coverage
       - name: Upload Results
         if: always()
         uses: actions/upload-artifact@v4

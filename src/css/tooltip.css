@@ -5,7 +5,10 @@
     TODO save as a variable, used for both menu and this tooltip
     though all popover/menus/tooltips could really use a consistency pass
   */
-  box-shadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #0000001f;
+  box-shadow:
+    0 2px 4px -1px #0003,
+    0 4px 5px #00000024,
+    0 1px 10px #0000001f;
   display: block;
   opacity: 0;
   padding: 8px;
@@ -98,7 +101,9 @@
 
 .tippy-box[data-theme~='error'] {
   background-color: #f8d7da;
-  box-shadow: 0 0 20px 4px rgba(154, 161, 177, 0.15), 0 4px 80px -8px rgba(36, 40, 47, 0.25),
+  box-shadow:
+    0 0 20px 4px rgba(154, 161, 177, 0.15),
+    0 4px 80px -8px rgba(36, 40, 47, 0.25),
     0 4px 4px -2px rgba(91, 94, 105, 0.15);
   color: var(--st-red);
 }

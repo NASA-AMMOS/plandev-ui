@@ -27,7 +27,11 @@ export class ExpansionRules {
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
-  constructor(public page: Page, public dictionaries: Dictionaries, public models: Models) {
+  constructor(
+    public page: Page,
+    public dictionaries: Dictionaries,
+    public models: Models,
+  ) {
     this.updatePage(page);
   }
 

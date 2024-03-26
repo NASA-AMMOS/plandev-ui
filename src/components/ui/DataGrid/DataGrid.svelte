@@ -25,7 +25,7 @@
   }
 
   import {
-    Grid,
+    createGrid,
     type CellContextMenuEvent,
     type CellEditingStartedEvent,
     type CellEditingStoppedEvent,
@@ -38,10 +38,13 @@
     type ColumnResizedEvent,
     type ColumnState,
     type ColumnVisibleEvent,
+    type GridApi,
     type GridOptions,
     type GridSizeChangedEvent,
     type IRowNode,
+    type ISizeColumnsToFitParams,
     type IsExternalFilterPresentParams,
+    type RedrawRowsParams,
     type RowClassParams,
     type RowClickedEvent,
     type RowDoubleClickedEvent,
@@ -49,8 +52,6 @@
     type SelectionChangedEvent,
     type SortChangedEvent,
   } from 'ag-grid-community';
-  import type { ISizeColumnsToFitParams } from 'ag-grid-community/dist/lib/columns/columnModel';
-  import type { RedrawRowsParams } from 'ag-grid-community/dist/lib/rendering/rowRenderer';
   import { debounce } from 'lodash-es';
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
@@ -59,30 +60,30 @@
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
   export function autoSizeColumns(keys: (string | Column)[], skipHeader?: boolean) {
-    gridOptions?.columnApi?.autoSizeColumns(keys, skipHeader);
+    gridApi?.autoSizeColumns(keys, skipHeader);
   }
   export function autoSizeAllColumns(skipHeader?: boolean) {
-    gridOptions?.columnApi?.autoSizeAllColumns(skipHeader);
+    gridApi?.autoSizeAllColumns(skipHeader);
   }
   export function focusDataGrid() {
     gridDiv.focus();
   }
   export function getColumnState() {
-    return gridOptions?.columnApi?.getColumnState();
+    return gridApi?.getColumnState();
   }
   // expose ag-grid function to select all visible rows
   export function selectAllVisible() {
-    gridOptions?.api?.selectAllFiltered();
+    gridApi?.selectAllFiltered();
   }
   export function redrawRows(params?: RedrawRowsParams<RowData>) {
-    gridOptions?.api?.redrawRows(params);
+    gridApi?.redrawRows(params);
   }
   export function sizeColumnsToFit(params?: ISizeColumnsToFitParams) {
-    gridOptions?.api?.sizeColumnsToFit(params);
+    gridApi?.sizeColumnsToFit(params);
   }
 
   export function onFilterChanged() {
-    gridOptions?.api?.onFilterChanged();
+    gridApi?.onFilterChanged();
   }
 
   export let autoSizeColumnsToFit: boolean = true;
@@ -117,6 +118,7 @@
 
   let contextMenu: ContextMenu;
   let gridOptions: GridOptions<RowData>;
+  let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
   let onColumnStateChangeDebounced = debounce(onColumnStateChange, 500);
   let onWindowResizedDebounced = debounce(sizeColumnsToFit, 50);
@@ -141,11 +143,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         );
       }
     });
-    gridOptions?.api?.setRowData(rowData);
+    gridApi?.setGridOption('rowData', rowData);
 
     const previousSelectedRowIds: RowId[] = [];
     // get all currently selected nodes. we cannot use `getSelectedNodes` because that does not include filtered rows
-    gridOptions?.api?.forEachNode((rowNode: IRowNode<RowData>) => {
+    gridApi?.forEachNode((rowNode: IRowNode<RowData>) => {
       if (rowNode.data && rowNode.isSelected()) {
         previousSelectedRowIds.push(getRowId(rowNode.data));
       }
@@ -167,17 +169,17 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     }
 
     previousSelectedRowIdsSet.forEach(deselectedRowId => {
-      const selectedRow = gridOptions?.api?.getRowNode(`${deselectedRowId}`);
+      const selectedRow = gridApi?.getRowNode(`${deselectedRowId}`);
       selectedRow?.setSelected(false);
     });
 
     selectedRowIdsSet.forEach(selectedRowId => {
-      const selectedRow = gridOptions?.api?.getRowNode(`${selectedRowId}`);
+      const selectedRow = gridApi?.getRowNode(`${selectedRowId}`);
       selectedRow?.setSelected(true);
     });
   }
-  $: gridOptions?.api?.sizeColumnsToFit();
-  $: gridOptions?.columnApi?.applyColumnState({ applyOrder: true, state: columnStates });
+  $: gridApi?.sizeColumnsToFit();
+  $: gridApi?.applyColumnState({ applyOrder: true, state: columnStates });
 
   $: if (!selectedRowIds.length) {
     currentSelectedRowId = null;
@@ -186,17 +188,18 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   $: {
-    gridOptions?.api?.redrawRows({
+    gridApi?.redrawRows({
       rowNodes: [
-        gridOptions?.api?.getRowNode(`${currentSelectedRowId}`),
-        gridOptions?.api?.getRowNode(`${previousSelectedRowId}`),
+        gridApi?.getRowNode(`${currentSelectedRowId}`),
+        gridApi?.getRowNode(`${previousSelectedRowId}`),
       ].filter(filterEmpty),
     });
     previousSelectedRowId = currentSelectedRowId;
   }
 
   $: {
-    gridOptions?.api?.setQuickFilter(filterExpression);
+    // TODO verify
+    gridApi?.setGridOption('quickFilterText', filterExpression);
   }
 
   onDestroy(() => {
@@ -222,15 +225,15 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   function onAutoSizeContent() {
-    gridOptions?.columnApi?.autoSizeAllColumns();
+    gridApi?.autoSizeAllColumns();
   }
 
   function onAutoSizeSpace() {
-    gridOptions?.api?.sizeColumnsToFit();
+    gridApi?.sizeColumnsToFit();
   }
 
   function onColumnStateChange() {
-    dispatch('columnStateChange', gridOptions?.columnApi?.getColumnState());
+    dispatch('columnStateChange', gridApi?.getColumnState());
   }
 
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
@@ -255,6 +258,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     gridOptions = {
       // each entry here represents one column
       ...(columnShiftResize ? {} : { colResizeDefault: 'shift' }),
+      animateRows: false,
       columnDefs,
       doesExternalFilterPass,
       excludeHiddenColumnsFromQuickFilter: false,
@@ -295,13 +299,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       onFilterChanged() {
         const selectedRows: RowData[] = [];
 
-        gridOptions?.api?.forEachNodeAfterFilter((rowNode: IRowNode<RowData>) => {
+        gridApi?.forEachNodeAfterFilter((rowNode: IRowNode<RowData>) => {
           if (rowNode.data && rowNode.isSelected()) {
             selectedRows.push(rowNode.data);
           }
         });
 
-        dispatch('filterChanged', gridOptions?.api?.getFilterModel());
+        dispatch('filterChanged', gridApi?.getFilterModel());
 
         // re-throw `selectionChanged` with only the visible rows after filtering
         dispatch('selectionChanged', selectedRows);
@@ -331,12 +335,12 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         }
       },
       onRowSelected({ data, node }: RowSelectedEvent<RowData>) {
-        const selectedNodes = gridOptions?.api?.getSelectedNodes() ?? [];
+        const selectedNodes = gridApi?.getSelectedNodes() ?? [];
 
         // only dispatch `rowSelected` or enforce visibility for single row selections
         if (selectedNodes.length <= 1 || suppressRowClickSelection) {
           if (selectedNodes.length && scrollToSelection && selectedNodes[0].rowIndex !== null) {
-            gridOptions?.api?.ensureIndexVisible(selectedNodes[0].rowIndex);
+            gridApi?.ensureIndexVisible(selectedNodes[0].rowIndex);
           }
 
           dispatch('rowSelected', {
@@ -346,7 +350,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         }
       },
       onSelectionChanged(event: SelectionChangedEvent) {
-        const selectedRows = gridOptions?.api?.getSelectedRows() ?? [];
+        const selectedRows = gridApi?.getSelectedRows() ?? [];
         selectedRowIds = selectedRows.map((selectedRow: RowData) => getRowId(selectedRow));
 
         if (selectedRows.length === 1) {
@@ -354,7 +358,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         } else if (currentSelectedRowId != null && !selectedRowIds.includes(currentSelectedRowId)) {
           // select the first displayed selected row in the table if the current selected row is deselected
           let wasCurrentSelectedRowUpdated: boolean = false;
-          gridOptions?.api?.forEachNodeAfterFilterAndSort((rowNode: IRowNode<RowData>) => {
+          gridApi?.forEachNodeAfterFilterAndSort((rowNode: IRowNode<RowData>) => {
             if (!wasCurrentSelectedRowUpdated && rowNode.data && rowNode.isSelected()) {
               currentSelectedRowId = getRowId(rowNode.data);
               wasCurrentSelectedRowUpdated = true;
@@ -383,7 +387,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       suppressDragLeaveHidesColumns,
       suppressRowClickSelection,
     };
-    new Grid(gridDiv, gridOptions);
+    gridApi = createGrid(gridDiv, gridOptions);
 
     if (autoSizeColumnsToFit) {
       resizeObserver = new ResizeObserver(() => {

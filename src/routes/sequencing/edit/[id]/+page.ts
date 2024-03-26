@@ -25,5 +25,5 @@ export const load: PageLoad = async ({ parent, params }) => {
     }
   }
 
-  throw redirect(302, `${base}/sequencing`);
+  redirect(302, `${base}/sequencing`);
 };

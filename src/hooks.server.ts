@@ -1,12 +1,12 @@
-import type { Handle } from '@sveltejs/kit';
-import { parse, type CookieSerializeOptions } from 'cookie';
-import jwtDecode from 'jwt-decode';
-import type { BaseUser, ParsedUserToken, User } from './types/app';
-import effects from './utilities/effects';
-import type { ReqValidateSSOResponse } from './types/auth';
-import { reqGatewayForwardCookies } from './utilities/requests';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
+import type { Handle } from '@sveltejs/kit';
+import { parse, type CookieSerializeOptions } from 'cookie';
+import { jwtDecode } from 'jwt-decode';
+import type { BaseUser, ParsedUserToken, User } from './types/app';
+import type { ReqValidateSSOResponse } from './types/auth';
+import effects from './utilities/effects';
+import { reqGatewayForwardCookies } from './utilities/requests';
 
 export const handle: Handle = async ({ event, resolve }) => {
   try {
@@ -89,7 +89,7 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
     // create and set cookies
     const userStr = JSON.stringify(user);
     const userCookie = Buffer.from(userStr).toString('base64');
-    const cookieOpts: CookieSerializeOptions = {
+    const cookieOpts: CookieSerializeOptions & { path: string } = {
       httpOnly: false,
       path: `${base}/`,
       sameSite: 'none',

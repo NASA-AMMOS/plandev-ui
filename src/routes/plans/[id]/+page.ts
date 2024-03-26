@@ -60,5 +60,5 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     }
   }
 
-  throw redirect(302, `${base}/plans`);
+  redirect(302, `${base}/plans`);
 };

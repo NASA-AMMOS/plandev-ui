@@ -23,5 +23,5 @@ export const load: PageLoad = async ({ parent, params }) => {
     }
   }
 
-  throw redirect(302, `${base}/scheduling/conditions`);
+  redirect(302, `${base}/scheduling/conditions`);
 };

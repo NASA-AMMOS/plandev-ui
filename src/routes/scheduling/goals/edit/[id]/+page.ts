@@ -24,5 +24,5 @@ export const load: PageLoad = async ({ parent, params }) => {
     }
   }
 
-  throw redirect(302, `${base}/scheduling/goals`);
+  redirect(302, `${base}/scheduling/goals`);
 };

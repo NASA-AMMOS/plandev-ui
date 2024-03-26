@@ -20,7 +20,10 @@ export class SchedulingConditions {
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
-  constructor(public page: Page, public models: Models) {
+  constructor(
+    public page: Page,
+    public models: Models,
+  ) {
     this.conditionName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }

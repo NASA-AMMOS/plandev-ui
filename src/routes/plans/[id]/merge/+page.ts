@@ -19,7 +19,7 @@ export const load: PageLoad = async ({ parent, params }) => {
 
     if (initialPlan) {
       if (!initialPlan.is_locked) {
-        throw redirect(302, `${base}/plans/${id}`);
+        redirect(302, `${base}/plans/${id}`);
       }
 
       const initialMergeRequest: PlanMergeRequestSchema | null = await effects.getPlanMergeRequestInProgress(
@@ -45,5 +45,5 @@ export const load: PageLoad = async ({ parent, params }) => {
     }
   }
 
-  throw redirect(302, `${base}/plans`);
+  redirect(302, `${base}/plans`);
 };

@@ -1,7 +1,8 @@
 {
+  "prettier.configPath": "./.prettierrc",
   "editor.formatOnSave": true,
   "eslint.validate": ["javascript", "typescript", "svelte"],
-  "[svelte][typescript]": {
+  "[svelte][typescript][css]": {
     "editor.codeActionsOnSave": {
       "source.fixAll": "explicit",
       "source.organizeImports": "explicit",
@@ -9,7 +10,7 @@
     },
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "stylelint.validate": ["css", "less", "postcss", "svelte"],
+  "stylelint.validate": ["css", "postcss", "svelte"],
   "typescript.preferences.importModuleSpecifier": "relative",
   "cSpell.words": ["metadatas", "unconstructable"]
 }

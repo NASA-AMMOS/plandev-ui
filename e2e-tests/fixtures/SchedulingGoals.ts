@@ -18,7 +18,10 @@ export class SchedulingGoals {
   tableRowDeleteButtonSelector: (goalName: string) => Locator;
   tableRowSelector: (goalName: string) => Locator;
 
-  constructor(public page: Page, public models: Models) {
+  constructor(
+    public page: Page,
+    public models: Models,
+  ) {
     this.updatePage(page);
   }
 
