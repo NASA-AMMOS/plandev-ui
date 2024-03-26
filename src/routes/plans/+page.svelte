@@ -260,7 +260,7 @@
         plan_id: newPlan.id,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, user);
+      await effects.createPlanTags(newPlanTags, newPlan, user);
       newPlan.tags = planTags.map(tag => ({ tag }));
       plans = [...plans, newPlan];
     }

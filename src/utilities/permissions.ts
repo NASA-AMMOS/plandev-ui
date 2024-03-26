@@ -20,6 +20,7 @@ import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
+import gql, { Queries } from './gql';
 import { showFailureToast } from './toast';
 
 export const ADMIN_ROLE = 'aerie_admin';
@@ -72,35 +73,34 @@ type FunctionString = string;
 const functionQueryMap: Record<QueryString, FunctionString> = {
   addCommandExpansionTypeScript: 'create_expansion_rule',
   addExternalDataset: 'insert_ext_dataset',
-  apply_preset_to_activity: 'apply_preset',
-  begin_merge: 'begin_merge',
-  cancel_merge: 'cancel_merge',
-  commit_merge: 'commit_merge',
-  constraintViolations: 'check_constraints',
-  createExpansionSet: 'create_expansion_set',
-  create_merge_request: 'create_merge_rq',
-  create_snapshot: 'create_snapshot',
+  [Queries.APPLY_PRESET_TO_ACTIVITY]: 'apply_preset',
+  [Queries.BEGIN_MERGE]: 'begin_merge',
+  [Queries.CANCEL_MERGE]: 'cancel_merge',
+  [Queries.COMMIT_MERGE]: 'commit_merge',
+  [Queries.CONSTRAINT_VIOLATIONS]: 'check_constraints',
+  [Queries.CREATE_EXPANSION_SET]: 'create_expansion_set',
+  [Queries.CREATE_MERGE_REQUEST]: 'create_merge_rq',
+  [Queries.CREATE_SNAPSHOT]: 'create_snapshot',
   delete_activity_by_pk_delete_subtree: 'delete_activity_subtree',
-  delete_activity_by_pk_delete_subtree_bulk: 'delete_activity_subtree_bulk',
+  [Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK]: 'delete_activity_subtree_bulk',
   delete_activity_by_pk_reanchor_plan_start: 'delete_activity_reanchor_plan',
-  delete_activity_by_pk_reanchor_plan_start_bulk: 'delete_activity_reanchor_plan_bulk',
+  [Queries.DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK]: 'delete_activity_reanchor_plan_bulk',
   delete_activity_by_pk_reanchor_to_anchor: 'delete_activity_reanchor',
-  delete_activity_by_pk_reanchor_to_anchor_bulk: 'delete_activity_reanchor_bulk',
-  deny_merge: 'deny_merge',
-  duplicate_plan: 'branch_plan',
-  expandAllActivities: 'expand_all_activities',
+  [Queries.DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK]: 'delete_activity_reanchor_bulk',
+  [Queries.DENY_MERGE]: 'deny_merge',
+  [Queries.DUPLICATE_PLAN]: 'branch_plan',
+  [Queries.EXPAND_ALL_ACTIVITIES]: 'expand_all_activities',
   getSequenceSeqJsonBulk: 'sequence_seq_json_bulk',
-  get_conflicting_activities: 'get_conflicting_activities',
-  get_non_conflicting_activities: 'get_non_conflicting_activities',
+  [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
+  [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
   get_plan_history: 'get_plan_history',
   resourceSamples: 'resource_samples',
-  restore_activity_changelog: 'restore_activity_changelog',
-  restore_from_snapshot: 'restore_snapshot',
-  schedule: 'schedule',
-  set_resolution: 'set_resolution',
-  set_resolution_bulk: 'set_resolution_bulk',
-  simulate: 'simulate',
-  withdraw_merge_request: 'withdraw_merge_rq',
+  [Queries.RESTORE_FROM_SNAPSHOT]: 'restore_snapshot',
+  [Queries.SCHEDULE]: 'schedule',
+  [Queries.SET_RESOLUTION]: 'set_resolution',
+  [Queries.SET_RESOLUTIONS]: 'set_resolution_bulk',
+  [Queries.SIMULATE]: 'simulate',
+  [Queries.WITHDRAW_MERGE_REQUEST]: 'withdraw_merge_rq',
 };
 
 function getFunctionPermission(query: string): string {
@@ -277,63 +277,63 @@ const queryPermissions = {
     model: ModelWithOwner,
     preset: ActivityPreset,
   ): boolean => {
-    const queries = ['apply_preset_to_activity'];
+    const queries = [Queries.APPLY_PRESET_TO_ACTIVITY];
     return (
       isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model, preset))
     );
   },
-  CANCEL_PENDING_SCHEDULING_REQUEST: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['update_scheduling_request'], user);
+  CANCEL_SCHEDULING_REQUEST: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.UPDATE_SCHEDULING_REQUEST], user);
   },
-  CANCEL_PENDING_SIMULATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['update_simulation_dataset_by_pk'], user);
+  CANCEL_SIMULATION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.UPDATE_SIMULATION_DATASET], user);
   },
   CHECK_CONSTRAINTS: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['constraintViolations'];
+    const queries = [Queries.CONSTRAINT_VIOLATIONS];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   CREATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
-    const queries = ['insert_activity_directive_one'];
+    const queries = [Queries.INSERT_ACTIVITY_DIRECTIVE];
     return (
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   CREATE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_activity_directive_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_ACTIVITY_DIRECTIVE_TAGS], user);
   },
   CREATE_ACTIVITY_PRESET: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_activity_presets_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_ACTIVITY_PRESET], user);
   },
   CREATE_COMMAND_DICTIONARY: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['uploadDictionary'], user);
+    return isUserAdmin(user) || getPermission([Queries.UPLOAD_DICTIONARY], user);
   },
   CREATE_CONSTRAINT: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_constraint_metadata_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_CONSTRAINT_METADATA], user);
   },
   CREATE_CONSTRAINT_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_constraint_definition_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_CONSTRAINT_DEFINITION], user);
   },
   CREATE_CONSTRAINT_MODEL_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_constraint_model_specification_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATION], user);
   },
   CREATE_EXPANSION_RULE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_expansion_rule_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE], user);
   },
   CREATE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_expansion_rule_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE_TAGS], user);
   },
   CREATE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_sequence_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE], user);
   },
   CREATE_EXPANSION_SET: (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner): boolean => {
-    const queries = ['createExpansionSet'];
+    const queries = [Queries.CREATE_EXPANSION_SET];
     return isUserAdmin(user) || (getPermission(queries, user) && getRoleModelPermission(queries, user, plans, model));
   },
   CREATE_MODEL: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_mission_model_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
   },
   CREATE_PLAN: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_plan_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_PLAN], user);
   },
   CREATE_PLAN_MERGE_REQUEST: (
     user: User | null,
@@ -341,62 +341,62 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['create_merge_request'];
+    const queries = [Queries.CREATE_MERGE_REQUEST];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
     );
   },
   CREATE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['create_snapshot'];
+    const queries = [Queries.CREATE_SNAPSHOT];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   CREATE_PLAN_SNAPSHOT_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_plan_snapshot_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_PLAN_SNAPSHOT_TAGS], user);
   },
-  CREATE_PLAN_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_plan_tags'], user);
+  CREATE_PLAN_TAGS: (user: User | null, plan: PlanWithOwners): boolean => {
+    return isUserAdmin(user) || (getPermission([Queries.INSERT_PLAN_TAGS], user) && isPlanOwner(user, plan));
   },
   CREATE_SCHEDULING_CONDITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_condition_metadata_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_CONDITION_METADATA], user);
   },
   CREATE_SCHEDULING_CONDITION_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_condition_definition_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_CONDITION_DEFINITION], user);
   },
   CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_specification_conditions_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_SPECIFICATION_CONDITION], user);
   },
   CREATE_SCHEDULING_GOAL: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_goal_metadata_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_GOAL_METADATA], user);
   },
   CREATE_SCHEDULING_GOAL_DEFINITION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_goal_definition_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_GOAL_DEFINITION], user);
   },
   CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_specification_goals_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_SPECIFICATION_GOAL], user);
   },
-  CREATE_SCHEDULING_SPEC: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_scheduling_specification_one'], user);
+  CREATE_SCHEDULING_PLAN_SPECIFICATION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SCHEDULING_SPECIFICATION], user);
   },
   CREATE_SIMULATION_TEMPLATE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_simulation_template_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SIMULATION_TEMPLATE], user);
   },
   CREATE_TAG: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_tags_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_TAG], user);
   },
   CREATE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_TAGS], user);
   },
   CREATE_USER_SEQUENCE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_user_sequence_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_USER_SEQUENCE], user);
   },
   CREATE_VIEW: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_view_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_VIEW], user);
   },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_activity_directive'], user) &&
+      (getPermission([Queries.DELETE_ACTIVITY_DIRECTIVES], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
@@ -405,7 +405,7 @@ const queryPermissions = {
     plan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['delete_activity_by_pk_reanchor_plan_start_bulk'];
+    const queries = [Queries.DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR: (
@@ -413,79 +413,79 @@ const queryPermissions = {
     plan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['delete_activity_by_pk_reanchor_to_anchor_bulk'];
+    const queries = [Queries.DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   DELETE_ACTIVITY_DIRECTIVES_SUBTREE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['delete_activity_by_pk_delete_subtree_bulk'];
+    const queries = [Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   DELETE_ACTIVITY_DIRECTIVE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_activity_directive_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_ACTIVITY_DIRECTIVE_TAGS], user);
   },
   DELETE_ACTIVITY_PRESET: (user: User | null, preset: AssetWithOwner<ActivityPreset>): boolean => {
-    return isUserAdmin(user) || (getPermission(['delete_activity_presets_by_pk'], user) && isUserOwner(user, preset));
+    return isUserAdmin(user) || (getPermission([Queries.DELETE_ACTIVITY_PRESET], user) && isUserOwner(user, preset));
   },
   DELETE_COMMAND_DICTIONARY: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_command_dictionary_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_COMMAND_DICTIONARY], user);
   },
   DELETE_CONSTRAINT_METADATA: (user: User | null, constraintMetadata: AssetWithOwner<ConstraintMetadata>): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_constraint_metadata_by_pk'], user) && isUserOwner(user, constraintMetadata))
+      (getPermission([Queries.DELETE_CONSTRAINT_METADATA], user) && isUserOwner(user, constraintMetadata))
     );
   },
   DELETE_CONSTRAINT_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_constraint_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_TAGS], user);
   },
-  DELETE_CONSTRAINT_MODEL_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_constraint_model_specification'], user);
+  DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS], user);
   },
   DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_constraint_specification'], user) &&
+      (getPermission([Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   DELETE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
     return (
-      isUserAdmin(user) || (getPermission(['delete_expansion_rule_by_pk'], user) && isUserOwner(user, expansionRule))
+      isUserAdmin(user) || (getPermission([Queries.DELETE_EXPANSION_RULE], user) && isUserOwner(user, expansionRule))
     );
   },
   DELETE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_expansion_rule_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_EXPANSION_RULE_TAGS], user);
   },
   DELETE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_sequence_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE], user);
   },
   DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_sequence_to_simulated_activity_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
   DELETE_EXPANSION_SET: (user: User | null, expansionSet: AssetWithOwner<ExpansionSet>): boolean => {
     return (
-      isUserAdmin(user) || (getPermission(['delete_expansion_set_by_pk'], user) && isUserOwner(user, expansionSet))
+      isUserAdmin(user) || (getPermission([Queries.DELETE_EXPANSION_SET], user) && isUserOwner(user, expansionSet))
     );
   },
   DELETE_MODEL: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_mission_model_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_MISSION_MODEL], user);
   },
   DELETE_PLAN: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_plan_by_pk', 'delete_scheduling_specification'], user) && isPlanOwner(user, plan))
+      (getPermission([Queries.DELETE_PLAN, Queries.DELETE_SCHEDULING_SPECIFICATION], user) && isPlanOwner(user, plan))
     );
   },
   DELETE_PLAN_SNAPSHOT: (user: User | null): boolean => {
-    return getPermission(['delete_plan_snapshot_by_pk'], user) && isUserAdmin(user);
+    return getPermission([Queries.DELETE_PLAN_SNAPSHOT], user) && isUserAdmin(user);
   },
   DELETE_PLAN_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_plan_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_PLAN_TAGS], user);
   },
   DELETE_PRESET_TO_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_preset_to_directive_by_pk'], user) &&
+      (getPermission([Queries.DELETE_PRESET_TO_DIRECTIVE], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
@@ -495,14 +495,15 @@ const queryPermissions = {
   ): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_scheduling_condition_metadata_by_pk'], user) && isUserOwner(user, conditionMetadata))
+      (getPermission([Queries.DELETE_SCHEDULING_CONDITION_METADATA], user) && isUserOwner(user, conditionMetadata))
     );
   },
   DELETE_SCHEDULING_CONDITION_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_scheduling_condition_metadata_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS], user);
   },
-  DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_scheduling_specification_conditions'], user);
+  DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: () => true,
+  DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS], user);
   },
   DELETE_SCHEDULING_GOAL_METADATA: (
     user: User | null,
@@ -510,60 +511,89 @@ const queryPermissions = {
   ): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['delete_scheduling_goal_metadata_by_pk'], user) && isUserOwner(user, goalMetadata))
+      (getPermission([Queries.DELETE_SCHEDULING_GOAL_METADATA], user) && isUserOwner(user, goalMetadata))
     );
   },
   DELETE_SCHEDULING_GOAL_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_scheduling_goal_metadata_tags'], user);
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS], user);
   },
-  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['delete_scheduling_specification_goal'], user);
+  DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: () => true,
+  DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS], user);
   },
   DELETE_SIMULATION_TEMPLATE: (user: User | null, template: SimulationTemplate): boolean => {
     return (
-      isUserAdmin(user) || (getPermission(['delete_simulation_template_by_pk'], user) && isUserOwner(user, template))
+      isUserAdmin(user) || (getPermission([Queries.DELETE_SIMULATION_TEMPLATE], user) && isUserOwner(user, template))
     );
   },
   DELETE_TAG: (user: User | null, tag: Tag): boolean => {
-    return isUserAdmin(user) || (getPermission(['delete_tags_by_pk'], user) && isUserOwner(user, tag));
+    return isUserAdmin(user) || (getPermission([Queries.DELETE_TAG], user) && isUserOwner(user, tag));
   },
   DELETE_USER_SEQUENCE: (user: User | null, sequence: AssetWithOwner<UserSequence>): boolean => {
-    return isUserAdmin(user) || (getPermission(['delete_user_sequence_by_pk'], user) && isUserOwner(user, sequence));
+    return isUserAdmin(user) || (getPermission([Queries.DELETE_USER_SEQUENCE], user) && isUserOwner(user, sequence));
   },
   DELETE_VIEW: (user: User | null, view: ViewSlim): boolean => {
-    return isUserAdmin(user) || (getPermission(['delete_view_by_pk'], user) && isUserOwner(user, view));
+    return isUserAdmin(user) || (getPermission([Queries.DELETE_VIEW], user) && isUserOwner(user, view));
   },
   DELETE_VIEWS: (user: User | null, view: ViewSlim): boolean => {
-    return isUserAdmin(user) || (getPermission(['delete_view'], user) && isUserOwner(user, view));
+    return isUserAdmin(user) || (getPermission([Queries.DELETE_VIEWS], user) && isUserOwner(user, view));
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['duplicate_plan'];
+    const queries = [Queries.DUPLICATE_PLAN];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['expandAllActivities'];
+    const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
+  GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
+  GET_EFFECTIVE_ACTIVITY_ARGUMENTS: () => true,
+  GET_EFFECTIVE_MODEL_ARGUMENTS: () => true,
+  GET_EXPANSION_RULE: () => true,
   GET_EXPANSION_RUNS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['expansion_run'], user);
+    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
   },
   GET_EXPANSION_SEQUENCE_ID: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['sequence_to_simulated_activity_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
+  GET_EXPANSION_SEQUENCE_SEQ_JSON: () => true,
+  GET_EXTENSIONS: () => true,
+  GET_MODELS: () => true,
+  GET_PARSED_COMMAND_DICTIONARY: () => true,
+  GET_PERMISSIBLE_QUERIES: () => true,
   GET_PLAN: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['plan_by_pk'], user);
+    return isUserAdmin(user) || getPermission([Queries.PLAN], user);
   },
   GET_PLANS_AND_MODELS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['mission_model'], user);
+    return isUserAdmin(user) || getPermission([Queries.MISSION_MODELS, Queries.PLANS], user);
   },
+  GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: () => true,
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['plan_snapshot_activities'], user);
+    return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOT_ACTIVITIES], user);
   },
+  GET_PROFILE: () => true,
+  GET_PROFILES_EXTERNAL: () => true,
+  GET_RESOURCE_TYPES: () => true,
+  GET_ROLE_PERMISSIONS: () => true,
+  GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION: () => true,
+  GET_SCHEDULING_SPEC_GOALS_FOR_GOAL: () => true,
+  GET_SIMULATION_DATASET_ID: () => true,
+  GET_SPANS: () => true,
+  GET_TYPESCRIPT_ACTIVITY_TYPE: () => true,
+  GET_TYPESCRIPT_COMMAND_DICTIONARY: () => true,
+  GET_TYPESCRIPT_CONSTRAINTS: () => true,
+  GET_TYPESCRIPT_SCHEDULING: () => true,
+  GET_UPLOADED_FILENAME: () => true,
+  GET_USER_SEQUENCE: () => true,
+  GET_USER_SEQUENCE_FROM_SEQ_JSON: () => true,
+  GET_USER_SEQUENCE_SEQ_JSON: () => true,
+  GET_VIEW: () => true,
   INITIAL_SIMULATION_UPDATE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['update_simulation'], user);
+    return isUserAdmin(user) || getPermission([Queries.UPDATE_SIMULATIONS], user);
   },
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['insert_sequence_to_simulated_activity_one'], user);
+    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
   PLAN_MERGE_BEGIN: (
     user: User | null,
@@ -571,7 +601,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['begin_merge'];
+    const queries = [Queries.BEGIN_MERGE];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -583,7 +613,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['cancel_merge'];
+    const queries = [Queries.CANCEL_MERGE];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -595,7 +625,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['commit_merge'];
+    const queries = [Queries.COMMIT_MERGE];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -607,7 +637,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['deny_merge'];
+    const queries = [Queries.DENY_MERGE];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -619,7 +649,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['withdraw_merge_request'];
+    const queries = [Queries.WITHDRAW_MERGE_REQUEST];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -631,7 +661,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['set_resolution_bulk'];
+    const queries = [Queries.SET_RESOLUTIONS];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -643,7 +673,7 @@ const queryPermissions = {
     targetPlan: PlanWithOwners,
     model: ModelWithOwner,
   ): boolean => {
-    const queries = ['set_resolution'];
+    const queries = [Queries.SET_RESOLUTION];
     return (
       isUserAdmin(user) ||
       (getPermission(queries, user) && getRolePlanBranchPermission(queries, user, sourcePlan, targetPlan, model))
@@ -652,107 +682,136 @@ const queryPermissions = {
   RESTORE_ACTIVITY_FROM_CHANGELOG: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['restoreActivityFromChangelog'], user) &&
+      (getPermission([Queries.RESTORE_ACTIVITY_FROM_CHANGELOG], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   RESTORE_PLAN_SNAPSHOT: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['restore_from_snapshot'];
+    const queries = [Queries.RESTORE_FROM_SNAPSHOT];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   SCHEDULE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['schedule'];
+    const queries = [Queries.SCHEDULE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner): boolean => {
-    const queries = ['simulate'];
+    const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  SUB_ACTIVITY_DIRECTIVES: () => true,
+  SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS: () => true,
+  SUB_ACTIVITY_DIRECTIVE_VALIDATIONS: () => true,
   SUB_ACTIVITY_PRESETS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['activity_presets'], user);
+    return isUserAdmin(user) || getPermission([Queries.ACTIVITY_PRESETS], user);
   },
+  SUB_ACTIVITY_TYPES: () => true,
+  SUB_ANCHOR_VALIDATION_STATUS: () => true,
+  SUB_COMMAND_DICTIONARIES: () => true,
+  SUB_CONSTRAINT: () => true,
   SUB_CONSTRAINTS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['constraint_metadata'], user);
+    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_METADATAS], user);
   },
+  SUB_CONSTRAINT_DEFINITION: () => true,
+  SUB_CONSTRAINT_PLAN_SPECIFICATIONS: () => true,
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['expansion_rule'], user);
+    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
   },
+  SUB_EXPANSION_RULE_TAGS: () => true,
+  SUB_EXPANSION_SEQUENCES: () => true,
   SUB_EXPANSION_SETS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['expansion_set'], user);
+    return isUserAdmin(user) || getPermission([Queries.EXPANSION_SETS], user);
   },
+  SUB_MODELS: () => true,
+  SUB_PLAN_DATASET: () => true,
+  SUB_PLAN_LOCKED: () => true,
+  SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: () => true,
+  SUB_PLAN_MERGE_REQUESTS_INCOMING: () => true,
+  SUB_PLAN_MERGE_REQUESTS_OUTGOING: () => true,
+  SUB_PLAN_MERGE_REQUEST_IN_PROGRESS: () => true,
+  SUB_PLAN_MERGE_REQUEST_STATUS: () => true,
+  SUB_PLAN_REVISION: () => true,
   SUB_PLAN_SNAPSHOTS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['plan_snapshot'], user);
+    return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOTS], user);
   },
+  SUB_PLAN_TAGS: () => true,
+  SUB_SCHEDULING_CONDITION: () => true,
   SUB_SCHEDULING_CONDITIONS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['scheduling_condition_metadata'], user);
+    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_CONDITION_METADATAS], user);
   },
+  SUB_SCHEDULING_GOAL: () => true,
   SUB_SCHEDULING_GOALS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['scheduling_goal_metadata'], user);
+    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
   },
   SUB_SCHEDULING_PLAN_SPECIFICATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['scheduling_specification'], user);
+    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_SPECIFICATION], user);
   },
+  SUB_SCHEDULING_REQUESTS: () => true,
   SUB_SIMULATION: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['simulation'], user);
+    return isUserAdmin(user) || getPermission([Queries.SIMULATIONS], user);
   },
+  SUB_SIMULATION_DATASET: () => true,
+  SUB_SIMULATION_DATASETS: () => true,
+  SUB_SIMULATION_DATASETS_ALL: () => true,
+  SUB_SIMULATION_DATASET_LATEST: () => true,
   SUB_SIMULATION_TEMPLATES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['simulation_template'], user);
+    return isUserAdmin(user) || getPermission([Queries.SIMULATION_TEMPLATES], user);
   },
   SUB_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['tag'], user);
+    return isUserAdmin(user) || getPermission([Queries.TAGS], user);
   },
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['user_sequence'], user);
+    return isUserAdmin(user) || getPermission([Queries.USER_SEQUENCES], user);
   },
   SUB_VIEWS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['view'], user);
+    return isUserAdmin(user) || getPermission([Queries.VIEWS], user);
   },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_activity_directive_by_pk'], user) &&
+      (getPermission([Queries.UPDATE_ACTIVITY_DIRECTIVE], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   UPDATE_ACTIVITY_PRESET: (user: User | null, preset: AssetWithOwner<ActivityPreset>): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_activity_presets_by_pk'], user) && isUserOwner(user, preset));
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_ACTIVITY_PRESET], user) && isUserOwner(user, preset));
   },
   UPDATE_CONSTRAINT_DEFINITION_TAGS: (user: User | null): boolean => {
     return (
       isUserAdmin(user) ||
-      getPermission(['insert_constraint_definition_tags', 'delete_constraint_definition_tags'], user)
+      getPermission([Queries.INSERT_CONSTRAINT_DEFINITION_TAGS, Queries.DELETE_CONSTRAINT_DEFINITION_TAGS], user)
     );
   },
   UPDATE_CONSTRAINT_METADATA: (user: User | null, constraintMetadata: AssetWithOwner<ConstraintMetadata>): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_constraint_metadata_by_pk', 'insert_constraint_tags', 'delete_constraint_tags'], user) &&
+      (getPermission(
+        [Queries.UPDATE_CONSTRAINT_METADATA, Queries.INSERT_CONSTRAINT_TAGS, Queries.DELETE_CONSTRAINT_TAGS],
+        user,
+      ) &&
         (constraintMetadata?.public || isUserOwner(user, constraintMetadata)))
     );
   },
+  UPDATE_CONSTRAINT_PLAN_SPECIFICATION: () => true,
   UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['insert_constraint_specification', 'delete_constraint_specification'], user) &&
+      (getPermission([Queries.INSERT_CONSTRAINT_SPECIFICATIONS, Queries.DELETE_CONSTRAINT_SPECIFICATIONS], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   UPDATE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
     return (
-      isUserAdmin(user) || (getPermission(['update_expansion_rule_by_pk'], user) && isUserOwner(user, expansionRule))
+      isUserAdmin(user) || (getPermission([Queries.UPDATE_EXPANSION_RULE], user) && isUserOwner(user, expansionRule))
     );
   },
-  UPDATE_PLAN: (user: User | null, plan: PlanWithOwners): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_plan_by_pk'], user) && isPlanOwner(user, plan));
-  },
   UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
-    return getPermission(['update_plan_snapshot_by_pk'], user);
+    return getPermission([Queries.UPDATE_PLAN_SNAPSHOT], user);
   },
   UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS: (user: User | null): boolean => {
     return (
       isUserAdmin(user) ||
       getPermission(
-        ['insert_scheduling_condition_definition_tags', 'delete_scheduling_condition_definition_tags'],
+        [Queries.INSERT_SCHEDULING_CONDITION_DEFINITION_TAGS, Queries.DELETE_SCHEDULING_CONDITION_DEFINITION_TAGS],
         user,
       )
     );
@@ -765,9 +824,9 @@ const queryPermissions = {
       isUserAdmin(user) ||
       (getPermission(
         [
-          'update_scheduling_condition_metadata_by_pk',
-          'insert_scheduling_condition_tags',
-          'delete_scheduling_condition_tags',
+          Queries.UPDATE_SCHEDULING_CONDITION_METADATA,
+          Queries.INSERT_SCHEDULING_CONDITION_TAGS,
+          Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS,
         ],
         user,
       ) &&
@@ -779,7 +838,7 @@ const queryPermissions = {
   UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_scheduling_specification_conditions_by_pk'], user) &&
+      (getPermission([Queries.UPDATE_SCHEDULING_SPECIFICATION_CONDITION], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
@@ -787,7 +846,7 @@ const queryPermissions = {
     return (
       isUserAdmin(user) ||
       (getPermission(
-        ['insert_scheduling_specification_conditions', 'delete_scheduling_specification_conditions'],
+        [Queries.INSERT_SCHEDULING_SPECIFICATION_CONDITIONS, Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS],
         user,
       ) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
@@ -796,14 +855,21 @@ const queryPermissions = {
   UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS: (user: User | null): boolean => {
     return (
       isUserAdmin(user) ||
-      getPermission(['insert_scheduling_goal_definition_tags', 'delete_scheduling_goal_definition_tags'], user)
+      getPermission(
+        [Queries.INSERT_SCHEDULING_GOAL_DEFINITION_TAGS, Queries.DELETE_SCHEDULING_GOAL_DEFINITION_TAGS],
+        user,
+      )
     );
   },
   UPDATE_SCHEDULING_GOAL_METADATA: (user: User | null, goal?: AssetWithOwner<SchedulingGoalMetadata>): boolean => {
     return (
       isUserAdmin(user) ||
       (getPermission(
-        ['update_scheduling_goal_metadata_by_pk', 'insert_scheduling_goal_tags', 'delete_scheduling_goal_tags'],
+        [
+          Queries.UPDATE_SCHEDULING_GOAL_METADATA,
+          Queries.INSERT_SCHEDULING_GOAL_TAGS,
+          Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS,
+        ],
         user,
       ) &&
         // If there is a plan, ensure user is the plan owner or is a collaborator
@@ -814,53 +880,54 @@ const queryPermissions = {
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_scheduling_specification_goals_by_pk'], user) &&
+      (getPermission([Queries.UPDATE_SCHEDULING_SPECIFICATION_GOAL], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['insert_scheduling_specification_goals', 'delete_scheduling_specification_goals'], user) &&
+      (getPermission(
+        [Queries.INSERT_SCHEDULING_SPECIFICATION_GOALS, Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS],
+        user,
+      ) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
-  UPDATE_SCHEDULING_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
+  UPDATE_SCHEDULING_SPECIFICATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_scheduling_specification_by_pk'], user) &&
-        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
-    );
-  },
-  UPDATE_SCHEDULING_SPEC_CONDITION_ID: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission(['update_scheduling_specification_conditions_by_pk'], user);
-  },
-  UPDATE_SCHEDULING_SPEC_GOAL: (user: User | null, plan: PlanWithOwners): boolean => {
-    return (
-      isUserAdmin(user) ||
-      (getPermission(['update_scheduling_specification_goals_by_pk'], user) &&
+      (getPermission([Queries.UPDATE_SCHEDULING_SPECIFICATION], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   UPDATE_SIMULATION: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
-      (getPermission(['update_simulation_by_pk'], user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+      (getPermission([Queries.UPDATE_SIMULATION], user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   UPDATE_SIMULATION_TEMPLATE: (user: User | null, plan: PlanWithOwners): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_simulation_template_by_pk'], user) && isUserOwner(user, plan));
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_SIMULATION_TEMPLATE], user) && isUserOwner(user, plan));
   },
   UPDATE_TAG: (user: User | null, tag: AssetWithOwner<Tag>): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_tags_by_pk'], user) && isUserOwner(user, tag));
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_TAGS], user) && isUserOwner(user, tag));
   },
   UPDATE_USER_SEQUENCE: (user: User | null, sequence: AssetWithOwner<UserSequence>): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_user_sequence_by_pk'], user) && isUserOwner(user, sequence));
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_USER_SEQUENCE], user) && isUserOwner(user, sequence));
   },
   UPDATE_VIEW: (user: User | null, view: AssetWithOwner<View>): boolean => {
-    return isUserAdmin(user) || (getPermission(['update_view_by_pk'], user) && isUserOwner(user, view));
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_VIEW], user) && isUserOwner(user, view));
   },
+  VALIDATE_ACTIVITY_ARGUMENTS: () => true,
 };
+
+type ShapeOf<T> = Record<keyof T, any>;
+type AssertKeysEqual<X extends ShapeOf<Y>, Y extends ShapeOf<X>> = never;
+type GQLKeys = Record<keyof typeof gql, any>;
+type QueryKeys = Record<keyof typeof queryPermissions, any>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Assertion = AssertKeysEqual<GQLKeys, QueryKeys>;
 
 type PlanAssetCreatePermissionCheck = (user: User | null, plan: PlanWithOwners) => boolean;
 
@@ -1057,7 +1124,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_PLAN(user),
     canDelete: (user, plan) => queryPermissions.DELETE_PLAN(user, plan),
     canRead: user => queryPermissions.GET_PLAN(user),
-    canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
+    canUpdate: (user, plan) => queryPermissions.CREATE_PLAN_TAGS(user, plan),
   },
   planBranch: {
     canCreateBranch: (user, plan, model) => queryPermissions.DUPLICATE_PLAN(user, plan, model),
@@ -1089,7 +1156,7 @@ const featurePermissions: FeaturePermissions = {
   },
   schedulingConditionsPlanSpec: {
     canCreate: user => queryPermissions.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION(user),
-    canDelete: user => queryPermissions.DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATION(user),
+    canDelete: user => queryPermissions.DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS(user),
     canRead: () => false,
     canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS(user, plan),
   },
@@ -1101,16 +1168,14 @@ const featurePermissions: FeaturePermissions = {
   },
   schedulingGoalsPlanSpec: {
     canAnalyze: (user, plan, model) =>
-      queryPermissions.UPDATE_SCHEDULING_PLAN_SPECIFICATIONS(user, plan) &&
-      queryPermissions.SCHEDULE(user, plan, model),
+      queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
     canCreate: user => queryPermissions.CREATE_SCHEDULING_GOAL(user),
     canDelete: (user, goal) => queryPermissions.DELETE_SCHEDULING_GOAL_METADATA(user, goal),
     canRead: () => false,
     canRun: (user, plan, model) =>
-      queryPermissions.UPDATE_SCHEDULING_PLAN_SPECIFICATIONS(user, plan) &&
-      queryPermissions.SCHEDULE(user, plan, model),
+      queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
     canUpdate: (user, goal) => queryPermissions.UPDATE_SCHEDULING_GOAL_METADATA(user, goal),
-    canUpdateSpecification: (user, plan) => queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL(user, plan),
+    canUpdateSpecification: (user, plan) => queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan),
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

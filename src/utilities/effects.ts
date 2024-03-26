@@ -78,6 +78,7 @@ import type {
 import type {
   PermissibleQueriesMap,
   PermissibleQueryResponse,
+  PlanWithOwners,
   RolePermissionResponse,
   RolePermissionsMap,
 } from '../types/permissions';
@@ -300,7 +301,7 @@ const effects = {
 
   async cancelSchedulingRequest(analysisId: number, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.CANCEL_PENDING_SCHEDULING_REQUEST(user)) {
+      if (!queryPermissions.CANCEL_SCHEDULING_REQUEST(user)) {
         throwPermissionError('cancel a scheduling request dataset');
       }
       const { confirm } = await showConfirmModal(
@@ -323,7 +324,7 @@ const effects = {
 
   async cancelSimulation(simulationDatasetId: number, user: User | null): Promise<void> {
     try {
-      if (!queryPermissions.CANCEL_PENDING_SIMULATION(user)) {
+      if (!queryPermissions.CANCEL_SIMULATION(user)) {
         throwPermissionError('cancel a simulation');
       }
       const { confirm } = await showConfirmModal(
@@ -1093,9 +1094,14 @@ const effects = {
     }
   },
 
-  async createPlanTags(tags: PlanTagsInsertInput[], user: User | null, notify: boolean = true): Promise<number | null> {
+  async createPlanTags(
+    tags: PlanTagsInsertInput[],
+    plan: PlanWithOwners,
+    user: User | null,
+    notify: boolean = true,
+  ): Promise<number | null> {
     try {
-      if (!queryPermissions.CREATE_PLAN_TAGS(user)) {
+      if (!queryPermissions.CREATE_PLAN_TAGS(user, plan)) {
         throwPermissionError('create plan tags');
       }
 
@@ -1352,7 +1358,7 @@ const effects = {
     user: User | null,
   ): Promise<Pick<SchedulingPlanSpecification, 'id'> | null> {
     try {
-      if (!queryPermissions.CREATE_SCHEDULING_SPEC(user)) {
+      if (!queryPermissions.CREATE_SCHEDULING_PLAN_SPECIFICATION(user)) {
         throwPermissionError('create a scheduling spec');
       }
 
@@ -2273,29 +2279,6 @@ const effects = {
       return null;
     }
   },
-
-  // async deleteSchedulingSpecGoal(goal_id: number, specification_id: number, user: User | null): Promise<boolean> {
-  //   try {
-  //     if (!queryPermissions.DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user)) {
-  //       throwPermissionError('delete this scheduling goal');
-  //     }
-
-  //     const data = await reqHasura<{ goal_id: number; specification_id: number }>(
-  //       gql.DELETE_SCHEDULING_SPEC_GOAL,
-  //       { goal_id, specification_id },
-  //       user,
-  //     );
-  //     if (data.deleteSchedulingSpecGoal != null) {
-  //       return true;
-  //     } else {
-  //       throw Error(`Unable to delete scheduling goal with ID: "${goal_id}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('Scheduling Goal Delete Failed', e as Error);
-  //     showFailureToast('Scheduling Goal Delete Failed');
-  //     return false;
-  //   }
-  // },
 
   async deleteSimulationTemplate(
     simulationTemplate: SimulationTemplate,
@@ -3895,7 +3878,7 @@ const effects = {
     try {
       if (plan) {
         if (
-          !queryPermissions.UPDATE_SCHEDULING_PLAN_SPECIFICATIONS(user, plan) ||
+          !queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) ||
           !queryPermissions.SCHEDULE(user, plan, plan.model)
         ) {
           throwPermissionError(`run ${analysis_only ? 'scheduling analysis' : 'scheduling'}`);
@@ -4552,11 +4535,11 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_PLAN_SPECIFICATIONS(user, plan)) {
+      if (!queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan)) {
         throwPermissionError('update this scheduling spec');
       }
 
-      const data = await reqHasura(gql.UPDATE_SCHEDULING_SPEC, { id, spec }, user);
+      const data = await reqHasura(gql.UPDATE_SCHEDULING_SPECIFICATION, { id, spec }, user);
       if (data.updateSchedulingSpec == null) {
         throw Error(`Unable to update scheduling spec with ID: "${id}"`);
       }
@@ -4564,30 +4547,6 @@ const effects = {
       catchError(e as Error);
     }
   },
-
-  // async updateSchedulingSpecGoal(
-  //   goal_id: number,
-  //   specification_id: number,
-  //   spec_goal: Partial<SchedulingGoalPlanSpecification>,
-  //   plan: Plan,
-  //   user: User | null,
-  // ): Promise<void> {
-  //   try {
-  //     if (!queryPermissions.UPDATE_SCHEDULING_SPEC_GOAL(user, plan)) {
-  //       throwPermissionError('update this scheduling spec goal');
-  //     }
-
-  //     const data = await reqHasura(gql.UPDATE_SCHEDULING_SPEC_GOAL, { goal_id, spec_goal, specification_id }, user);
-  //     if (data.updateSchedulingSpecGoal != null) {
-  //       showSuccessToast('Scheduling Spec Goal Updated Successfully');
-  //     } else {
-  //       throw Error(`Unable to update scheduling spec goal with ID: "${goal_id}"`);
-  //     }
-  //   } catch (e) {
-  //     catchError('Scheduling Spec Goal Update Failed', e as Error);
-  //     showFailureToast('Scheduling Spec Goal Update Failed');
-  //   }
-  // },
 
   async updateSimulation(
     plan: Plan,

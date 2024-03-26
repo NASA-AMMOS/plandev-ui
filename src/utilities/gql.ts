@@ -1,10 +1,188 @@
+export enum Queries {
+  ACTIVITY_DIRECTIVES = 'activity_directive',
+  ACTIVITY_DIRECTIVE_CHANGELOG = 'activity_directive_changelog',
+  ACTIVITY_DIRECTIVE_METADATA_SCHEMAS = 'activity_directive_metadata_schema',
+  ACTIVITY_DIRECTIVE_VALIDATIONS = 'activity_directive_validations',
+  ACTIVITY_PRESETS = 'activity_presets',
+  ACTIVITY_TYPES = 'activity_type',
+  ANCHOR_VALIDATION_STATUS = 'anchor_validation_status',
+  APPLY_PRESET_TO_ACTIVITY = 'apply_preset_to_activity',
+  BEGIN_MERGE = 'begin_merge',
+  CANCEL_MERGE = 'cancel_merge',
+  COMMAND_DICTIONARIES = 'command_dictionary',
+  COMMIT_MERGE = 'commit_merge',
+  CONSTRAINTS_DSL_TYPESCRIPT = 'constraintsDslTypescript',
+  CONSTRAINT_DEFINITION = 'constraint_definition_by_pk',
+  CONSTRAINT_METADATA = 'constraint_metadata_by_pk',
+  CONSTRAINT_METADATAS = 'constraint_metadata',
+  CONSTRAINT_SPECIFICATIONS = 'constraint_specification',
+  CONSTRAINT_VIOLATIONS = 'constraintViolations',
+  CREATE_EXPANSION_SET = 'createExpansionSet',
+  CREATE_MERGE_REQUEST = 'create_merge_request',
+  CREATE_SNAPSHOT = 'create_snapshot',
+  DELETE_ACTIVITY_DELETE_SUBTREE_BULK = 'delete_activity_by_pk_delete_subtree_bulk',
+  DELETE_ACTIVITY_DIRECTIVES = 'delete_activity_directive',
+  DELETE_ACTIVITY_DIRECTIVE_TAGS = 'delete_activity_directive_tags',
+  DELETE_ACTIVITY_PRESET = 'delete_activity_presets_by_pk',
+  DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK = 'delete_activity_by_pk_reanchor_plan_start_bulk',
+  DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK = 'delete_activity_by_pk_reanchor_to_anchor_bulk',
+  DELETE_COMMAND_DICTIONARY = 'delete_command_dictionary_by_pk',
+  DELETE_CONSTRAINT_DEFINITION_TAGS = 'delete_constraint_definition_tags',
+  DELETE_CONSTRAINT_METADATA = 'delete_constraint_metadata_by_pk',
+  DELETE_CONSTRAINT_MODEL_SPECIFICATIONS = 'delete_constraint_model_specification',
+  DELETE_CONSTRAINT_SPECIFICATIONS = 'delete_constraint_specification',
+  DELETE_CONSTRAINT_TAGS = 'delete_constraint_tags',
+  DELETE_EXPANSION_RULE = 'delete_expansion_rule_by_pk',
+  DELETE_EXPANSION_RULE_TAGS = 'delete_expansion_rule_tags',
+  DELETE_EXPANSION_SET = 'delete_expansion_set_by_pk',
+  DELETE_MISSION_MODEL = 'delete_mission_model_by_pk',
+  DELETE_PLAN = 'delete_plan_by_pk',
+  DELETE_PLAN_SNAPSHOT = 'delete_plan_snapshot_by_pk',
+  DELETE_PLAN_TAGS = 'delete_plan_tags',
+  DELETE_PRESET_TO_DIRECTIVE = 'delete_preset_to_directive_by_pk',
+  DELETE_SCHEDULING_CONDITION_DEFINITION_TAGS = 'delete_scheduling_condition_definition_tags',
+  DELETE_SCHEDULING_CONDITION_METADATA = 'delete_scheduling_condition_metadata_by_pk',
+  DELETE_SCHEDULING_CONDITION_METADATA_TAGS = 'delete_scheduling_condition_tags',
+  DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS = 'delete_scheduling_model_specification_conditions',
+  DELETE_SCHEDULING_CONDITION_TAGS = 'delete_scheduling_condition_tags',
+  DELETE_SCHEDULING_GOAL_DEFINITION_TAGS = 'delete_scheduling_goal_definition_tags',
+  DELETE_SCHEDULING_GOAL_METADATA = 'delete_scheduling_goal_metadata_by_pk',
+  DELETE_SCHEDULING_GOAL_METADATA_TAGS = 'delete_scheduling_goal_tags',
+  DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS = 'delete_scheduling_model_specification_goals',
+  DELETE_SCHEDULING_GOAL_TAGS = 'delete_scheduling_goal_tags',
+  DELETE_SCHEDULING_SPECIFICATION = 'delete_scheduling_specification',
+  DELETE_SCHEDULING_SPECIFICATION_CONDITIONS = 'delete_scheduling_specification_conditions',
+  DELETE_SCHEDULING_SPECIFICATION_GOALS = 'delete_scheduling_specification_goals',
+  DELETE_SEQUENCE = 'delete_sequence_by_pk',
+  DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY = 'delete_sequence_to_simulated_activity_by_pk',
+  DELETE_SIMULATION_TEMPLATE = 'delete_simulation_template_by_pk',
+  DELETE_TAG = 'delete_tags_by_pk',
+  DELETE_USER_SEQUENCE = 'delete_user_sequence_by_pk',
+  DELETE_VIEW = 'delete_view_by_pk',
+  DELETE_VIEWS = 'delete_view',
+  DENY_MERGE = 'deny_merge',
+  DUPLICATE_PLAN = 'duplicate_plan',
+  EXPAND_ALL_ACTIVITIES = 'expandAllActivities',
+  EXPANSION_RULE = 'expansion_rule_by_pk',
+  EXPANSION_RULES = 'expansion_rule',
+  EXPANSION_RULE_TAGS = 'expansion_rule_tags',
+  EXPANSION_RUNS = 'expansion_run',
+  EXPANSION_SETS = 'expansion_set',
+  EXTENSIONS = 'extensions',
+  GET_ACTIVITY_EFFECTIVE_ARGUMENTS = 'getActivityEffectiveArguments',
+  GET_ACTIVITY_TYPE_SCRIPT = 'getActivityTypeScript',
+  GET_COMMAND_TYPE_SCRIPT = 'getCommandTypeScript',
+  GET_CONFLICTING_ACTIVITIES = 'get_conflicting_activities',
+  GET_EDSL_FOR_SEQ_JSON = 'getEdslForSeqJson',
+  GET_MODEL_EFFECTIVE_ARGUMENTS = 'getModelEffectiveArguments',
+  GET_NON_CONFLICTING_ACTIVITIES = 'get_non_conflicting_activities',
+  GET_SEQUENCE_SEQ_JSON = 'getSequenceSeqJson',
+  GET_USER_SEQUENCE_SEQ_JSON = 'getUserSequenceSeqJson',
+  INSERT_ACTIVITY_DIRECTIVE = 'insert_activity_directive_one',
+  INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',
+  INSERT_ACTIVITY_PRESET = 'insert_activity_presets_one',
+  INSERT_CONSTRAINT_DEFINITION = 'insert_constraint_definition_one',
+  INSERT_CONSTRAINT_DEFINITION_TAGS = 'insert_constraint_definition_tags',
+  INSERT_CONSTRAINT_METADATA = 'insert_constraint_metadata_one',
+  INSERT_CONSTRAINT_MODEL_SPECIFICATION = 'insert_constraint_model_specification_one',
+  INSERT_CONSTRAINT_SPECIFICATIONS = 'insert_constraint_specification',
+  INSERT_CONSTRAINT_TAGS = 'insert_constraint_tags',
+  INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',
+  INSERT_EXPANSION_RULE_TAGS = 'insert_expansion_rule_tags',
+  INSERT_MISSION_MODEL = 'insert_mission_model_one',
+  INSERT_PLAN = 'insert_plan_one',
+  INSERT_PLAN_SNAPSHOT_TAGS = 'insert_plan_snapshot_tags',
+  INSERT_PLAN_TAGS = 'insert_plan_tags',
+  INSERT_SCHEDULING_CONDITION_DEFINITION = 'insert_scheduling_condition_definition_one',
+  INSERT_SCHEDULING_CONDITION_DEFINITION_TAGS = 'insert_scheduling_condition_definition_tags',
+  INSERT_SCHEDULING_CONDITION_METADATA = 'insert_scheduling_condition_metadata_one',
+  INSERT_SCHEDULING_CONDITION_TAGS = 'insert_scheduling_condition_tags',
+  INSERT_SCHEDULING_GOAL_DEFINITION = 'insert_scheduling_goal_definition_one',
+  INSERT_SCHEDULING_GOAL_DEFINITION_TAGS = 'insert_scheduling_goal_definition_tags',
+  INSERT_SCHEDULING_GOAL_METADATA = 'insert_scheduling_goal_metadata_one',
+  INSERT_SCHEDULING_GOAL_TAGS = 'insert_scheduling_goal_tags',
+  INSERT_SCHEDULING_SPECIFICATION = 'insert_scheduling_specification_one',
+  INSERT_SCHEDULING_SPECIFICATION_CONDITION = 'insert_scheduling_specification_conditions_one',
+  INSERT_SCHEDULING_SPECIFICATION_CONDITIONS = 'insert_scheduling_specification_conditions',
+  INSERT_SCHEDULING_SPECIFICATION_GOAL = 'insert_scheduling_specification_goals_one',
+  INSERT_SCHEDULING_SPECIFICATION_GOALS = 'insert_scheduling_specification_goals',
+  INSERT_SEQUENCE = 'insert_sequence_one',
+  INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY = 'insert_sequence_to_simulated_activity_one',
+  INSERT_SIMULATION_TEMPLATE = 'insert_simulation_template_one',
+  INSERT_TAG = 'insert_tags_one',
+  INSERT_TAGS = 'insert_tags',
+  INSERT_USER_SEQUENCE = 'insert_user_sequence_one',
+  INSERT_VIEW = 'insert_view_one',
+  MERGE_REQUEST = 'merge_request_by_pk',
+  MERGE_REQUESTS = 'merge_request',
+  MISSION_MODELS = 'mission_model',
+  PLAN = 'plan_by_pk',
+  PLANS = 'plan',
+  PLAN_DATASETS = 'plan_dataset',
+  PLAN_SNAPSHOTS = 'plan_snapshot',
+  PLAN_SNAPSHOT_ACTIVITIES = 'plan_snapshot_activities',
+  PROFILES = 'profile',
+  RESOURCE_TYPES = 'resource_type',
+  RESTORE_ACTIVITY_FROM_CHANGELOG = 'restoreActivityFromChangelog',
+  RESTORE_FROM_SNAPSHOT = 'restore_from_snapshot',
+  SCHEDULE = 'schedule',
+  SCHEDULING_CONDITION_METADATA = 'scheduling_condition_metadata_by_pk',
+  SCHEDULING_CONDITION_METADATAS = 'scheduling_condition_metadata',
+  SCHEDULING_DSL_TYPESCRIPT = 'schedulingDslTypescript',
+  SCHEDULING_GOAL_METADATA = 'scheduling_goal_metadata_by_pk',
+  SCHEDULING_GOAL_METADATAS = 'scheduling_goal_metadata',
+  SCHEDULING_REQUESTS = 'scheduling_request',
+  SCHEDULING_SPECIFICATION = 'scheduling_specification_by_pk',
+  SCHEDULING_SPECIFICATION_CONDITIONS = 'scheduling_specification_conditions',
+  SCHEDULING_SPECIFICATION_GOALS = 'scheduling_specification_goals',
+  SEQUENCE = 'sequence',
+  SEQUENCE_TO_SIMULATED_ACTIVITY = 'sequence_to_simulated_activity_by_pk',
+  SET_RESOLUTION = 'set_resolution',
+  SET_RESOLUTIONS = 'set_resolution_bulk',
+  SIMULATE = 'simulate',
+  SIMULATIONS = 'simulation',
+  SIMULATION_DATASET = 'simulation_dataset_by_pk',
+  SIMULATION_DATASETS = 'simulation_dataset',
+  SIMULATION_TEMPLATES = 'simulation_template',
+  SPANS = 'span',
+  TAGS = 'tags',
+  UPDATE_ACTIVITY_DIRECTIVE = 'update_activity_directive_by_pk',
+  UPDATE_ACTIVITY_PRESET = 'update_activity_presets_by_pk',
+  UPDATE_CONSTRAINT_METADATA = 'update_constraint_metadata_by_pk',
+  UPDATE_CONSTRAINT_SPECIFICATION = 'update_constraint_specification_by_pk',
+  UPDATE_EXPANSION_RULE = 'update_expansion_rule_by_pk',
+  UPDATE_PLAN_SNAPSHOT = 'update_plan_snapshot_by_pk',
+  UPDATE_SCHEDULING_CONDITION_METADATA = 'update_scheduling_condition_metadata_by_pk',
+  UPDATE_SCHEDULING_GOAL_METADATA = 'update_scheduling_goal_metadata_by_pk',
+  UPDATE_SCHEDULING_REQUEST = 'update_scheduling_request',
+  UPDATE_SCHEDULING_SPECIFICATION = 'update_scheduling_specification_by_pk',
+  UPDATE_SCHEDULING_SPECIFICATION_CONDITION = 'update_scheduling_specification_conditions_by_pk',
+  UPDATE_SCHEDULING_SPECIFICATION_GOAL = 'update_scheduling_specification_goals_by_pk',
+  UPDATE_SIMULATION = 'update_simulation_by_pk',
+  UPDATE_SIMULATIONS = 'update_simulation',
+  UPDATE_SIMULATION_DATASET = 'update_simulation_dataset_by_pk',
+  UPDATE_SIMULATION_TEMPLATE = 'update_simulation_template_by_pk',
+  UPDATE_TAGS = 'update_tags_by_pk',
+  UPDATE_USER_SEQUENCE = 'update_user_sequence_by_pk',
+  UPDATE_VIEW = 'update_view_by_pk',
+  UPLOADED_FILES = 'uploaded_file',
+  UPLOAD_DICTIONARY = 'uploadDictionary',
+  USER_ROLE_PERMISSION = 'user_role_permission',
+  USER_SEQUENCE = 'user_sequence_by_pk',
+  USER_SEQUENCES = 'user_sequence',
+  VALIDATE_ACTIVITY_ARGUMENTS = 'validateActivityArguments',
+  VIEW = 'view_by_pk',
+  VIEWS = 'view',
+  WITHDRAW_MERGE_REQUEST = 'withdraw_merge_request',
+}
+
 /**
  * GraphQL Query, Mutation, and Subscription strings.
  */
 const gql = {
   APPLY_PRESET_TO_ACTIVITY: `#graphql
     mutation ApplyPresetToActivity($presetId: Int!, $activityId: Int!, $planId: Int!) {
-      apply_preset_to_activity(args: {
+      ${Queries.APPLY_PRESET_TO_ACTIVITY}(args: {
         _preset_id: $presetId,
         _activity_id: $activityId,
         _plan_id: $planId
@@ -16,7 +194,7 @@ const gql = {
 
   CANCEL_SCHEDULING_REQUEST: `#graphql
     mutation CancelSchedulingRequest($id: Int!) {
-      update_scheduling_request(where: { analysis_id: { _eq: $id } }, _set: {
+      ${Queries.UPDATE_SCHEDULING_REQUEST}(where: { analysis_id: { _eq: $id } }, _set: {
         canceled: true
       }) {
         affected_rows
@@ -26,7 +204,7 @@ const gql = {
 
   CANCEL_SIMULATION: `#graphql
     mutation CancelSim($id: Int!) {
-      update_simulation_dataset_by_pk(pk_columns: {id: $id}, _set: {
+      ${Queries.UPDATE_SIMULATION_DATASET}(pk_columns: {id: $id}, _set: {
         canceled: true
       }) {
         id
@@ -36,7 +214,7 @@ const gql = {
 
   CHECK_CONSTRAINTS: `#graphql
     query CheckConstraints($planId: Int!) {
-      constraintResponses: constraintViolations(planId: $planId) {
+      constraintResponses: ${Queries.CONSTRAINT_VIOLATIONS}(planId: $planId) {
         success
         constraintId
         constraintName
@@ -69,7 +247,7 @@ const gql = {
 
   CREATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation CreateActivityDirective($activityDirectiveInsertInput: activity_directive_insert_input!) {
-      insert_activity_directive_one(object: $activityDirectiveInsertInput) {
+      ${Queries.INSERT_ACTIVITY_DIRECTIVE}(object: $activityDirectiveInsertInput) {
         anchor_id
         anchored_to_start
         arguments
@@ -96,7 +274,7 @@ const gql = {
 
   CREATE_ACTIVITY_DIRECTIVE_TAGS: `#graphql
     mutation CreateActivityDirectiveTags($tags: [activity_directive_tags_insert_input!]!) {
-      insert_activity_directive_tags(objects: $tags, on_conflict: {
+      ${Queries.INSERT_ACTIVITY_DIRECTIVE_TAGS}(objects: $tags, on_conflict: {
         constraint: activity_directive_tags_pkey,
         update_columns: []
       }) {
@@ -107,7 +285,7 @@ const gql = {
 
   CREATE_ACTIVITY_PRESET: `#graphql
     mutation CreateActivityPreset($activityPresetInsertInput: activity_presets_insert_input!) {
-      insert_activity_presets_one(object: $activityPresetInsertInput) {
+      ${Queries.INSERT_ACTIVITY_PRESET}(object: $activityPresetInsertInput) {
         arguments
         associated_activity_type
         id
@@ -120,7 +298,7 @@ const gql = {
 
   CREATE_COMMAND_DICTIONARY: `#graphql
     mutation CreateCommandDictionary($dictionary: String!) {
-      createCommandDictionary: uploadDictionary(dictionary: $dictionary) {
+      createCommandDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
         command_types_typescript_path
         created_at
         id
@@ -132,7 +310,7 @@ const gql = {
 
   CREATE_CONSTRAINT: `#graphql
     mutation CreateConstraint($constraint: constraint_metadata_insert_input!) {
-      constraint: insert_constraint_metadata_one(object: $constraint) {
+      constraint: ${Queries.INSERT_CONSTRAINT_METADATA}(object: $constraint) {
         id
         name
         description
@@ -154,7 +332,7 @@ const gql = {
 
   CREATE_CONSTRAINT_DEFINITION: `#graphql
     mutation CreateConstraintDefinition($constraintDefinition: constraint_definition_insert_input!) {
-      constraintDefinition: insert_constraint_definition_one(object: $constraintDefinition) {
+      constraintDefinition: ${Queries.INSERT_CONSTRAINT_DEFINITION}(object: $constraintDefinition) {
         constraint_id
         definition
         revision
@@ -164,7 +342,7 @@ const gql = {
 
   CREATE_CONSTRAINT_MODEL_SPECIFICATION: `#graphql
     mutation CreateConstraintModelSpecification($constraintModelSpecification: constraint_model_specification_insert_input!) {
-      constraintModelSpecification: insert_constraint_model_specification_one(object: $constraintModelSpecification) {
+      constraintModelSpecification: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATION}(object: $constraintModelSpecification) {
         constraint_id
         constraint_revision
         model_id
@@ -174,7 +352,7 @@ const gql = {
 
   CREATE_EXPANSION_RULE: `#graphql
     mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
-      createExpansionRule: insert_expansion_rule_one(object: $rule) {
+      createExpansionRule: ${Queries.INSERT_EXPANSION_RULE}(object: $rule) {
         id
       }
     }
@@ -182,7 +360,7 @@ const gql = {
 
   CREATE_EXPANSION_RULE_TAGS: `#graphql
     mutation CreateExpansionRuleTags($tags: [expansion_rule_tags_insert_input!]!) {
-      insert_expansion_rule_tags(objects: $tags, on_conflict: {
+      ${Queries.INSERT_EXPANSION_RULE_TAGS}(objects: $tags, on_conflict: {
         constraint: expansion_rule_tags_pkey,
         update_columns: []
       }) {
@@ -193,7 +371,7 @@ const gql = {
 
   CREATE_EXPANSION_SEQUENCE: `#graphql
     mutation CreateExpansionSequence($sequence: sequence_insert_input!) {
-      createExpansionSequence: insert_sequence_one(object: $sequence) {
+      createExpansionSequence: ${Queries.INSERT_SEQUENCE}(object: $sequence) {
         seq_id
       }
     }
@@ -201,7 +379,7 @@ const gql = {
 
   CREATE_EXPANSION_SET: `#graphql
     mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
-      createExpansionSet(
+      ${Queries.CREATE_EXPANSION_SET}(
         commandDictionaryId: $dictionaryId,
         missionModelId: $modelId,
         expansionIds: $expansionRuleIds,
@@ -215,7 +393,7 @@ const gql = {
 
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
-      createModel: insert_mission_model_one(object: $model) {
+      createModel: ${Queries.INSERT_MISSION_MODEL}(object: $model) {
         id
         created_at
         owner
@@ -225,7 +403,7 @@ const gql = {
 
   CREATE_PLAN: `#graphql
     mutation CreatePlan($plan: plan_insert_input!) {
-      createPlan: insert_plan_one(object: $plan) {
+      createPlan: ${Queries.INSERT_PLAN}(object: $plan) {
         created_at
         collaborators {
           collaborator
@@ -243,7 +421,7 @@ const gql = {
 
   CREATE_PLAN_MERGE_REQUEST: `#graphql
     mutation CreatePlanMergeRequest($source_plan_id: Int!, $target_plan_id: Int!) {
-      create_merge_request(args: { source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
+      ${Queries.CREATE_MERGE_REQUEST}(args: { source_plan_id: $source_plan_id, target_plan_id: $target_plan_id }) {
         merge_request_id
       }
     }
@@ -251,7 +429,7 @@ const gql = {
 
   CREATE_PLAN_SNAPSHOT: `#graphql
     mutation CreatePlanSnapshot($plan_id: Int!, $snapshot_name: String!, $description: String!) {
-      createSnapshot: create_snapshot(args: { _plan_id: $plan_id, _snapshot_name: $snapshot_name, _description: $description } ) {
+      createSnapshot: ${Queries.CREATE_SNAPSHOT}(args: { _plan_id: $plan_id, _snapshot_name: $snapshot_name, _description: $description } ) {
         snapshot_id
       }
     }
@@ -259,7 +437,7 @@ const gql = {
 
   CREATE_PLAN_SNAPSHOT_TAGS: `#graphql
     mutation CreatePlanSnapshotTags($tags: [plan_snapshot_tags_insert_input!]!) {
-      insert_plan_snapshot_tags(objects: $tags, on_conflict: {
+      ${Queries.INSERT_PLAN_SNAPSHOT_TAGS}(objects: $tags, on_conflict: {
         constraint: plan_snapshot_tags_pkey,
         update_columns: []
       }) {
@@ -270,7 +448,7 @@ const gql = {
 
   CREATE_PLAN_TAGS: `#graphql
     mutation CreatePlanTags($tags: [plan_tags_insert_input!]!) {
-      insert_plan_tags(objects: $tags, on_conflict: {
+      ${Queries.INSERT_PLAN_TAGS}(objects: $tags, on_conflict: {
         constraint: plan_tags_pkey,
         update_columns: []
       }) {
@@ -281,7 +459,7 @@ const gql = {
 
   CREATE_SCHEDULING_CONDITION: `#graphql
     mutation CreateSchedulingCondition($condition: scheduling_condition_metadata_insert_input!) {
-      createSchedulingCondition: insert_scheduling_condition_metadata_one(object: $condition) {
+      createSchedulingCondition: ${Queries.INSERT_SCHEDULING_CONDITION_METADATA}(object: $condition) {
         id
         name
         description
@@ -303,7 +481,7 @@ const gql = {
 
   CREATE_SCHEDULING_CONDITION_DEFINITION: `#graphql
     mutation CreateSchedulingConditionDefinition($conditionDefinition: scheduling_condition_definition_insert_input!) {
-      conditionDefinition: insert_scheduling_condition_definition_one(object: $conditionDefinition) {
+      conditionDefinition: ${Queries.INSERT_SCHEDULING_CONDITION_DEFINITION}(object: $conditionDefinition) {
         condition_id
         definition
         revision
@@ -313,7 +491,7 @@ const gql = {
 
   CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecCondition($spec_condition: scheduling_specification_conditions_insert_input!) {
-      createSchedulingSpecCondition: insert_scheduling_specification_conditions_one(object: $spec_condition) {
+      createSchedulingSpecCondition: ${Queries.INSERT_SCHEDULING_SPECIFICATION_CONDITION}(object: $spec_condition) {
         enabled
         condition_id
         specification_id
@@ -323,7 +501,7 @@ const gql = {
 
   CREATE_SCHEDULING_GOAL: `#graphql
     mutation CreateSchedulingGoal($goal: scheduling_goal_metadata_insert_input!) {
-      createSchedulingGoal: insert_scheduling_goal_metadata_one(object: $goal) {
+      createSchedulingGoal: ${Queries.INSERT_SCHEDULING_GOAL_METADATA}(object: $goal) {
         id
         name
         description
@@ -345,7 +523,7 @@ const gql = {
 
   CREATE_SCHEDULING_GOAL_DEFINITION: `#graphql
     mutation CreateSchedulingGoalDefinition($goalDefinition: scheduling_goal_definition_insert_input!) {
-      goalDefinition: insert_scheduling_goal_definition_one(object: $goalDefinition) {
+      goalDefinition: ${Queries.INSERT_SCHEDULING_GOAL_DEFINITION}(object: $goalDefinition) {
         goal_id
         definition
         revision
@@ -355,7 +533,7 @@ const gql = {
 
   CREATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpecGoal($spec_goal: scheduling_specification_goals_insert_input!) {
-      createSchedulingSpecGoal: insert_scheduling_specification_goals_one(object: $spec_goal) {
+      createSchedulingSpecGoal: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOAL}(object: $spec_goal) {
         enabled
         goal_id
         priority
@@ -366,7 +544,7 @@ const gql = {
 
   CREATE_SCHEDULING_PLAN_SPECIFICATION: `#graphql
     mutation CreateSchedulingSpec($spec: scheduling_specification_insert_input!) {
-      createSchedulingSpec: insert_scheduling_specification_one(object: $spec) {
+      createSchedulingSpec: ${Queries.INSERT_SCHEDULING_SPECIFICATION}(object: $spec) {
         id
       }
     }
@@ -374,7 +552,7 @@ const gql = {
 
   CREATE_SIMULATION_TEMPLATE: `#graphql
     mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
-      insert_simulation_template_one(object: $simulationTemplateInsertInput) {
+      ${Queries.INSERT_SIMULATION_TEMPLATE}(object: $simulationTemplateInsertInput) {
         arguments
         description
         id
@@ -384,7 +562,7 @@ const gql = {
 
   CREATE_TAG: `#graphql
     mutation CreateTag($tag: tags_insert_input!) {
-      insert_tags_one(object: $tag) {
+      ${Queries.INSERT_TAG}(object: $tag) {
         color
         created_at
         id
@@ -396,7 +574,7 @@ const gql = {
 
   CREATE_TAGS: `#graphql
     mutation CreateTags($tags: [tags_insert_input!]!) {
-      insert_tags(objects: $tags, on_conflict: {
+      ${Queries.INSERT_TAGS}(objects: $tags, on_conflict: {
         constraint: tags_name_key,
         update_columns: [color]
       }) {
@@ -414,7 +592,7 @@ const gql = {
 
   CREATE_USER_SEQUENCE: `#graphql
     mutation CreateUserSequence($sequence: user_sequence_insert_input!) {
-      createUserSequence: insert_user_sequence_one(object: $sequence) {
+      createUserSequence: ${Queries.INSERT_USER_SEQUENCE}(object: $sequence) {
         id
       }
     }
@@ -422,7 +600,7 @@ const gql = {
 
   CREATE_VIEW: `#graphql
     mutation CreateView($view: view_insert_input!) {
-      newView: insert_view_one(object: $view) {
+      newView: ${Queries.INSERT_VIEW}(object: $view) {
         created_at
         definition
         id
@@ -435,7 +613,7 @@ const gql = {
 
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
     mutation DeleteActivityDirectives($plan_id: Int!, $activity_ids: [Int!]!) {
-      deleteActivityDirectives: delete_activity_directive(
+      deleteActivityDirectives: ${Queries.DELETE_ACTIVITY_DIRECTIVES}(
         where: { id: { _in: $activity_ids }, _and: { plan_id: { _eq: $plan_id } } }
       ) {
         returning {
@@ -447,7 +625,7 @@ const gql = {
 
   DELETE_ACTIVITY_DIRECTIVES_REANCHOR_PLAN_START: `#graphql
     mutation DeleteActivityDirectivesReanchorPlanStart($plan_id: Int!, $activity_ids: _int4!) {
-      delete_activity_by_pk_reanchor_plan_start_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+      ${Queries.DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK}(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
         change_type
         affected_row
       }
@@ -456,7 +634,7 @@ const gql = {
 
   DELETE_ACTIVITY_DIRECTIVES_REANCHOR_TO_ANCHOR: `#graphql
     mutation DeleteActivityDirectivesReanchorToAnchor($plan_id: Int!, $activity_ids: _int4!) {
-      delete_activity_by_pk_reanchor_to_anchor_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+      ${Queries.DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK}(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
         change_type
         affected_row
       }
@@ -465,7 +643,7 @@ const gql = {
 
   DELETE_ACTIVITY_DIRECTIVES_SUBTREE: `#graphql
     mutation DeleteActivityDirectivesSubtree($plan_id: Int!, $activity_ids: _int4!) {
-      delete_activity_by_pk_delete_subtree_bulk(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
+      ${Queries.DELETE_ACTIVITY_DELETE_SUBTREE_BULK}(args: { _plan_id: $plan_id, _activity_ids: $activity_ids }) {
         change_type
         affected_row
       }
@@ -474,7 +652,7 @@ const gql = {
 
   DELETE_ACTIVITY_DIRECTIVE_TAGS: `#graphql
     mutation DeleteActivityDirectivesTags($ids: [Int!]!) {
-        delete_activity_directive_tags(where: { tag_id: { _in: $ids } }) {
+        ${Queries.DELETE_ACTIVITY_DIRECTIVE_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -482,7 +660,7 @@ const gql = {
 
   DELETE_ACTIVITY_PRESET: `#graphql
     mutation DeleteActivityPreset($id: Int!) {
-      deleteActivityPreset: delete_activity_presets_by_pk(id: $id) {
+      deleteActivityPreset: ${Queries.DELETE_ACTIVITY_PRESET}(id: $id) {
         id
       }
     }
@@ -490,7 +668,7 @@ const gql = {
 
   DELETE_COMMAND_DICTIONARY: `#graphql
     mutation DeleteCommandDictionary($id: Int!) {
-      deleteCommandDictionary: delete_command_dictionary_by_pk(id: $id) {
+      deleteCommandDictionary: ${Queries.DELETE_COMMAND_DICTIONARY}(id: $id) {
         id
       }
     }
@@ -498,7 +676,7 @@ const gql = {
 
   DELETE_CONSTRAINT_METADATA: `#graphql
     mutation DeleteConstraint($id: Int!) {
-      deleteConstraintMetadata: delete_constraint_metadata_by_pk(id: $id) {
+      deleteConstraintMetadata: ${Queries.DELETE_CONSTRAINT_METADATA}(id: $id) {
         id
       }
     }
@@ -506,7 +684,7 @@ const gql = {
 
   DELETE_CONSTRAINT_METADATA_TAGS: `#graphql
     mutation DeleteConstraintMetadataTags($ids: [Int!]!) {
-      delete_constraint_tags(where: { tag_id: { _in: $ids } }) {
+      ${Queries.DELETE_CONSTRAINT_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -514,7 +692,7 @@ const gql = {
 
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
     mutation DeleteConstraintModelSpecification($constraintIds: [Int!]!, $modelId: Int!) {
-      delete_constraint_model_specification(
+      ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
         where: {
           constraint_id: { _in: $constraintIds },
           _and: {
@@ -529,7 +707,7 @@ const gql = {
 
   DELETE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     mutation DeleteConstraintPlanSpecification($constraintIds: [Int!]!, $planId: Int!) {
-      delete_constraint_specification(
+      ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
           constraint_id: { _in: $constraintIds },
           _and: {
@@ -544,7 +722,7 @@ const gql = {
 
   DELETE_EXPANSION_RULE: `#graphql
     mutation DeleteExpansionRule($id: Int!) {
-      deleteExpansionRule: delete_expansion_rule_by_pk(id: $id) {
+      deleteExpansionRule: ${Queries.DELETE_EXPANSION_RULE}(id: $id) {
         id
       }
     }
@@ -552,7 +730,7 @@ const gql = {
 
   DELETE_EXPANSION_RULE_TAGS: `#graphql
     mutation DeleteExpansionRuleTags($ids: [Int!]!) {
-        delete_expansion_rule_tags(where: { tag_id: { _in: $ids } }) {
+        ${Queries.DELETE_EXPANSION_RULE_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -560,7 +738,7 @@ const gql = {
 
   DELETE_EXPANSION_SEQUENCE: `#graphql
     mutation DeleteExpansionSequence($seqId: String!, $simulationDatasetId: Int!) {
-      deleteExpansionSequence: delete_sequence_by_pk(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
+      deleteExpansionSequence: ${Queries.DELETE_SEQUENCE}(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
         seq_id
       }
     }
@@ -568,7 +746,7 @@ const gql = {
 
   DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation DeleteExpansionSequenceToActivity($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
-      expansionSequence: delete_sequence_to_simulated_activity_by_pk(
+      expansionSequence: ${Queries.DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY}(
         simulation_dataset_id: $simulation_dataset_id,
         simulated_activity_id: $simulated_activity_id
       ) {
@@ -579,7 +757,7 @@ const gql = {
 
   DELETE_EXPANSION_SET: `#graphql
     mutation DeleteExpansionSet($id: Int!) {
-      deleteExpansionSet: delete_expansion_set_by_pk(id: $id) {
+      deleteExpansionSet: ${Queries.DELETE_EXPANSION_SET}(id: $id) {
         id
       }
     }
@@ -587,7 +765,7 @@ const gql = {
 
   DELETE_MODEL: `#graphql
     mutation DeleteModel($id: Int!) {
-      deleteModel: delete_mission_model_by_pk(id: $id) {
+      deleteModel: ${Queries.DELETE_MISSION_MODEL}(id: $id) {
         id
       }
     }
@@ -595,10 +773,10 @@ const gql = {
 
   DELETE_PLAN: `#graphql
     mutation DeletePlan($id: Int!) {
-      deletePlan: delete_plan_by_pk(id: $id) {
+      deletePlan: ${Queries.DELETE_PLAN}(id: $id) {
         id
       }
-      deleteSchedulingSpec: delete_scheduling_specification(where: { plan_id: { _eq: $id } }) {
+      deleteSchedulingSpec: ${Queries.DELETE_SCHEDULING_SPECIFICATION}(where: { plan_id: { _eq: $id } }) {
         returning {
           id
         }
@@ -608,7 +786,7 @@ const gql = {
 
   DELETE_PLAN_SNAPSHOT: `#graphql
     mutation DeletePlanSnapshot($snapshot_id: Int!) {
-      deletePlanSnapshot: delete_plan_snapshot_by_pk(snapshot_id: $snapshot_id) {
+      deletePlanSnapshot: ${Queries.DELETE_PLAN_SNAPSHOT}(snapshot_id: $snapshot_id) {
         snapshot_id
       }
     }
@@ -616,7 +794,7 @@ const gql = {
 
   DELETE_PLAN_TAGS: `#graphql
     mutation DeletePlanTags($ids: [Int!]!) {
-        delete_plan_tags(where: { tag_id: { _in: $ids } }) {
+        ${Queries.DELETE_PLAN_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -624,7 +802,7 @@ const gql = {
 
   DELETE_PRESET_TO_DIRECTIVE: `#graphql
     mutation DeletePresetToDirective($plan_id: Int!, $activity_directive_id: Int!, $preset_id: Int!) {
-      delete_preset_to_directive_by_pk(preset_id: $preset_id, activity_id: $activity_directive_id, plan_id: $plan_id) {
+      ${Queries.DELETE_PRESET_TO_DIRECTIVE}(preset_id: $preset_id, activity_id: $activity_directive_id, plan_id: $plan_id) {
         preset_id
       }
     }
@@ -632,7 +810,7 @@ const gql = {
 
   DELETE_SCHEDULING_CONDITION_METADATA: `#graphql
     mutation DeleteSchedulingCondition($id: Int!) {
-      deleteSchedulingConditionMetadata: delete_scheduling_condition_metadata_by_pk(id: $id) {
+      deleteSchedulingConditionMetadata: ${Queries.DELETE_SCHEDULING_CONDITION_METADATA}(id: $id) {
         id
       }
     }
@@ -640,7 +818,7 @@ const gql = {
 
   DELETE_SCHEDULING_CONDITION_METADATA_TAGS: `#graphql
     mutation DeleteSchedulingConditionMetadataTags($ids: [Int!]!) {
-      delete_scheduling_condition_metadata_tags(where: { tag_id: { _in: $ids } }) {
+      ${Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -648,7 +826,7 @@ const gql = {
 
   DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: `#graphql
     mutation DeleteSchedulingConditionModelSpecification($conditionIds: [Int!]!, $modelId: Int!) {
-      delete_scheduling_condition_model_specification(
+      ${Queries.DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS}(
         where: {
           condition_id: { _in: $conditionIds },
           _and: {
@@ -663,7 +841,7 @@ const gql = {
 
   DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: `#graphql
     mutation DeleteSchedulingConditionPlanSpecification($conditionIds: [Int!]!, $planId: Int!) {
-      delete_scheduling_specification_conditions(
+      ${Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS}(
         where: {
           condition_id: { _in: $conditionIds },
           _and: {
@@ -678,7 +856,7 @@ const gql = {
 
   DELETE_SCHEDULING_GOAL_METADATA: `#graphql
     mutation DeleteSchedulingGoal($id: Int!) {
-      deleteSchedulingGoalMetadata: delete_scheduling_goal_metadata_by_pk(id: $id) {
+      deleteSchedulingGoalMetadata: ${Queries.DELETE_SCHEDULING_GOAL_METADATA}(id: $id) {
         id
       }
     }
@@ -686,7 +864,7 @@ const gql = {
 
   DELETE_SCHEDULING_GOAL_METADATA_TAGS: `#graphql
     mutation DeleteSchedulingGoalMetadataTags($ids: [Int!]!) {
-      delete_scheduling_goal_metadata_tags(where: { tag_id: { _in: $ids } }) {
+      ${Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS}(where: { tag_id: { _in: $ids } }) {
           affected_rows
       }
     }
@@ -694,7 +872,7 @@ const gql = {
 
   DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
     mutation DeleteSchedulingGoalModelSpecification($goalIds: [Int!]!, $modelId: Int!) {
-      delete_scheduling_goal_model_specification(
+      ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
         where: {
           goal_id: { _in: $goalIds },
           _and: {
@@ -709,7 +887,7 @@ const gql = {
 
   DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
     mutation DeleteSchedulingGoalPlanSpecification($goalIds: [Int!]!, $planId: Int!) {
-      delete_scheduling_specification_goal(
+      ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
         where: {
           goal_id: { _in: $goalIds },
           _and: {
@@ -724,7 +902,7 @@ const gql = {
 
   DELETE_SIMULATION_TEMPLATE: `#graphql
     mutation DeleteSimulationTemplate($id: Int!) {
-      deleteSimulationTemplate: delete_simulation_template_by_pk(id: $id) {
+      deleteSimulationTemplate: ${Queries.DELETE_SIMULATION_TEMPLATE}(id: $id) {
         id
       }
     }
@@ -732,7 +910,7 @@ const gql = {
 
   DELETE_TAG: `#graphql
     mutation DeleteTags($id: Int!) {
-      delete_tags_by_pk(id: $id) {
+      ${Queries.DELETE_TAG}(id: $id) {
         id
       }
     }
@@ -740,7 +918,7 @@ const gql = {
 
   DELETE_USER_SEQUENCE: `#graphql
     mutation DeleteUserSequence($id: Int!) {
-      deleteUserSequence: delete_user_sequence_by_pk(id: $id) {
+      deleteUserSequence: ${Queries.DELETE_USER_SEQUENCE}(id: $id) {
         id
       }
     }
@@ -748,7 +926,7 @@ const gql = {
 
   DELETE_VIEW: `#graphql
     mutation DeleteView($id: Int!) {
-      deletedView: delete_view_by_pk(id: $id) {
+      deletedView: ${Queries.DELETE_VIEW}(id: $id) {
         id
       }
     }
@@ -756,7 +934,7 @@ const gql = {
 
   DELETE_VIEWS: `#graphql
     mutation DeleteViews($ids: [Int!]!) {
-      delete_view(where: { id: { _in: $ids } }) {
+      ${Queries.DELETE_VIEWS}(where: { id: { _in: $ids } }) {
         returning {
           id
         }
@@ -766,7 +944,7 @@ const gql = {
 
   DUPLICATE_PLAN: `#graphql
     mutation DuplicatePlan($plan_id: Int!, $new_plan_name: String!) {
-      duplicate_plan(args: { new_plan_name: $new_plan_name, plan_id: $plan_id }) {
+      ${Queries.DUPLICATE_PLAN}(args: { new_plan_name: $new_plan_name, plan_id: $plan_id }) {
         new_plan_id
       }
     }
@@ -774,7 +952,7 @@ const gql = {
 
   EXPAND: `#graphql
     mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
-      expand: expandAllActivities(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
+      expand: ${Queries.EXPAND_ALL_ACTIVITIES}(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
         id
       }
     }
@@ -782,7 +960,7 @@ const gql = {
 
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: `#graphql
     query GetActivityTypesExpansionRules($activityId: Int!, $planId: Int!) {
-      activityDirectiveRevisions: activity_directive_changelog(
+      activityDirectiveRevisions: ${Queries.ACTIVITY_DIRECTIVE_CHANGELOG}(
         where: { plan_id: { _eq: $planId }, _and: { activity_directive_id: { _eq: $activityId }}},
         order_by: { revision: desc }
       ) {
@@ -801,7 +979,7 @@ const gql = {
 
   GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
     query GetActivityTypesExpansionRules($modelId: Int!) {
-      activity_types: activity_type(where: { model_id: { _eq: $modelId } }) {
+      activity_types: ${Queries.ACTIVITY_TYPES}(where: { model_id: { _eq: $modelId } }) {
         expansion_rules {
           activity_type
           authoring_command_dict_id
@@ -818,7 +996,7 @@ const gql = {
 
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS: `#graphql
     query GetEffectiveActivityArguments($modelId: ID!, $activityTypeName: String!, $arguments: ActivityArguments!) {
-      effectiveActivityArguments: getActivityEffectiveArguments(
+      effectiveActivityArguments: ${Queries.GET_ACTIVITY_EFFECTIVE_ARGUMENTS}(
         missionModelId: $modelId,
         activityTypeName: $activityTypeName,
         activityArguments: $arguments
@@ -832,7 +1010,7 @@ const gql = {
 
   GET_EFFECTIVE_MODEL_ARGUMENTS: `#graphql
     query GetEffectiveModelArguments($modelId: ID!, $arguments: ModelArguments!) {
-      effectiveModelArguments: getModelEffectiveArguments(
+      effectiveModelArguments: ${Queries.GET_MODEL_EFFECTIVE_ARGUMENTS}(
         missionModelId: $modelId,
         modelArguments: $arguments
       ) {
@@ -845,7 +1023,7 @@ const gql = {
 
   GET_EXPANSION_RULE: `#graphql
     query GetExpansionRule($id: Int!) {
-      expansionRule: expansion_rule_by_pk(id: $id) {
+      expansionRule: ${Queries.EXPANSION_RULE}(id: $id) {
         activity_type
         authoring_command_dict_id
         authoring_mission_model_id
@@ -870,7 +1048,7 @@ const gql = {
 
   GET_EXPANSION_RUNS: `#graphql
     query GetExpansionRuns {
-      expansionRuns: expansion_run(order_by: { id: desc }) {
+      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
         created_at
         expansion_set {
           command_dict_id
@@ -908,7 +1086,7 @@ const gql = {
 
   GET_EXPANSION_SEQUENCE_ID: `#graphql
     query GetExpansionSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
-      expansionSequence: sequence_to_simulated_activity_by_pk(
+      expansionSequence: ${Queries.SEQUENCE_TO_SIMULATED_ACTIVITY}(
         simulation_dataset_id: $simulation_dataset_id,
         simulated_activity_id: $simulated_activity_id
       ) {
@@ -919,7 +1097,7 @@ const gql = {
 
   GET_EXPANSION_SEQUENCE_SEQ_JSON: `#graphql
     query GetExpansionSequenceSeqJson($seqId: String!, $simulationDatasetId: Int!) {
-      getSequenceSeqJson(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
+      ${Queries.GET_SEQUENCE_SEQ_JSON}(seqId: $seqId, simulationDatasetId: $simulationDatasetId) {
         errors {
           location {
             column
@@ -936,7 +1114,7 @@ const gql = {
 
   GET_EXTENSIONS: `#graphql
     query GetExtensions {
-      extensions {
+      ${Queries.EXTENSIONS} {
         description
         extension_roles {
           extension_id
@@ -952,7 +1130,7 @@ const gql = {
 
   GET_MODELS: `#graphql
     query GetModels {
-      models: mission_model {
+      models: ${Queries.MISSION_MODELS} {
         created_at
         description
         id
@@ -969,7 +1147,7 @@ const gql = {
 
   GET_PARSED_COMMAND_DICTIONARY: `#graphql
     query GetParsedCommandDictionary($commandDictionaryId: Int!) {
-      command_dictionary(where: { id: { _eq: $commandDictionaryId } }) {
+      ${Queries.COMMAND_DICTIONARIES}(where: { id: { _eq: $commandDictionaryId } }) {
         parsed_json
       }
     }
@@ -994,7 +1172,7 @@ const gql = {
 
   GET_PLAN: `#graphql
     query GetPlan($id: Int!) {
-      plan: plan_by_pk(id: $id) {
+      plan: ${Queries.PLAN}(id: $id) {
         child_plans {
           id
           name
@@ -1054,7 +1232,7 @@ const gql = {
 
   GET_PLANS_AND_MODELS: `#graphql
     query GetPlansAndModels {
-      models: mission_model(order_by: { id: desc }) {
+      models: ${Queries.MISSION_MODELS}(order_by: { id: desc }) {
         id
         jar_id
         name
@@ -1063,7 +1241,7 @@ const gql = {
         }
         version
       }
-      plans: plan(order_by: { id: desc }) {
+      plans: ${Queries.PLANS}(order_by: { id: desc }) {
         collaborators {
           collaborator
         }
@@ -1088,35 +1266,9 @@ const gql = {
     }
   `,
 
-  GET_PLANS_AND_MODELS_FOR_SCHEDULING: `#graphql
-    query GetPlansAndSchedulingSpecifications {
-      models: mission_model(order_by: { id: desc }) {
-        id
-        jar_id
-        name
-        plans {
-          id
-        }
-        version
-      }
-      plans: plan(order_by: { id: desc }) {
-        collaborators {
-          collaborator
-        }
-        scheduling_specification {
-          id
-        }
-        model_id
-        name
-        owner
-        id
-      }
-    }
-  `,
-
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: `#graphql
     query GetPlanMergeNonConflictingActivities($merge_request_id: Int!) {
-      nonConflictingActivities: get_non_conflicting_activities(args: { _merge_request_id: $merge_request_id } ) {
+      nonConflictingActivities: ${Queries.GET_NON_CONFLICTING_ACTIVITIES}(args: { _merge_request_id: $merge_request_id } ) {
         activity_id,
         change_type,
         source,
@@ -1129,7 +1281,7 @@ const gql = {
 
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: `#graphql
     query GetPlanSnapshotActivityDirectives($planSnapshotId: Int!) {
-      plan_snapshot_activity_directives: plan_snapshot_activities(where: { snapshot_id: { _eq: $planSnapshotId } }, order_by: { start_offset: asc }) {
+      plan_snapshot_activity_directives: ${Queries.PLAN_SNAPSHOT_ACTIVITIES}(where: { snapshot_id: { _eq: $planSnapshotId } }, order_by: { start_offset: asc }) {
         anchor_id
         anchored_to_start
         arguments
@@ -1155,26 +1307,7 @@ const gql = {
 
   GET_PROFILE: `#graphql
     query GetProfile($datasetId: Int!, $name: String!) {
-      profile(where: { _and: { dataset_id: { _eq: $datasetId }, name: { _eq: $name } } }, limit: 1) {
-        dataset_id
-        duration
-        id
-        name
-        profile_segments(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
-          dataset_id
-          dynamics
-          is_gap
-          profile_id
-          start_offset
-        }
-        type
-      }
-    }
-  `,
-
-  GET_PROFILES: `#graphql
-    query GetProfiles($datasetId: Int!) {
-      profile(where: { dataset_id: { _eq: $datasetId } }) {
+      ${Queries.PROFILES}(where: { _and: { dataset_id: { _eq: $datasetId }, name: { _eq: $name } } }, limit: 1) {
         dataset_id
         duration
         id
@@ -1193,7 +1326,7 @@ const gql = {
 
   GET_PROFILES_EXTERNAL: `#graphql
     query GetProfilesExternal($planId: Int!, $simulationDatasetFilter: [plan_dataset_bool_exp!]) {
-      plan_dataset(where: { plan_id: { _eq: $planId }, _or: $simulationDatasetFilter }) {
+      ${Queries.PLAN_DATASETS}(where: { plan_id: { _eq: $planId }, _or: $simulationDatasetFilter }) {
         dataset {
           profiles {
             dataset_id
@@ -1215,21 +1348,9 @@ const gql = {
     }
   `,
 
-  GET_PROFILES_EXTERNAL_NAMES: `#graphql
-    query GetProfilesExternalNames($planId: Int!) {
-      plan_dataset(where: { plan_id: { _eq: $planId }}) {
-        dataset {
-          profiles {
-            name
-          }
-        }
-      }
-    }
-  `,
-
   GET_RESOURCE_TYPES: `#graphql
     query GetResourceTypes($model_id: Int!, $limit: Int) {
-      resource_types: resource_type(where: { model_id: { _eq: $model_id } }, order_by: { name: asc }, limit: $limit) {
+      resource_types: ${Queries.RESOURCE_TYPES}(where: { model_id: { _eq: $model_id } }, order_by: { name: asc }, limit: $limit) {
         name
         schema
       }
@@ -1238,7 +1359,7 @@ const gql = {
 
   GET_ROLE_PERMISSIONS: `#graphql
     query GetRolePermissions {
-      rolePermissions: user_role_permission {
+      rolePermissions: ${Queries.USER_ROLE_PERMISSION} {
         role
         action_permissions
         function_permissions
@@ -1248,7 +1369,7 @@ const gql = {
 
   GET_SCHEDULING_SPEC_CONDITIONS_FOR_CONDITION: `#graphql
     query GetSchedulingSpecConditionsForCondition($condition_id: Int!) {
-      scheduling_specification_conditions(where: { condition_id: { _eq: $condition_id } }) {
+      ${Queries.SCHEDULING_SPECIFICATION_CONDITIONS}(where: { condition_id: { _eq: $condition_id } }) {
         enabled
         condition_id
         specification_id
@@ -1258,7 +1379,7 @@ const gql = {
 
   GET_SCHEDULING_SPEC_GOALS_FOR_GOAL: `#graphql
     query GetSchedulingSpecGoalsForGoal($goal_id: Int!) {
-      scheduling_specification_goals(where: { goal_id: { _eq: $goal_id } }) {
+      ${Queries.SCHEDULING_SPECIFICATION_GOALS}(where: { goal_id: { _eq: $goal_id } }) {
         enabled
         goal_id
         priority
@@ -1269,7 +1390,7 @@ const gql = {
 
   GET_SIMULATION_DATASET_ID: `#graphql
     query GetSimulationDatasetId($datasetId: Int!) {
-      simulation_dataset(where: {dataset_id: {_eq: $datasetId}}) {
+      ${Queries.SIMULATION_DATASETS}(where: {dataset_id: {_eq: $datasetId}}) {
         id
       }
     }
@@ -1277,7 +1398,7 @@ const gql = {
 
   GET_SPANS: `#graphql
     query GetSpans($datasetId: Int!) {
-      span(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
+      ${Queries.SPANS}(where: { dataset_id: { _eq: $datasetId } }, order_by: { start_offset: asc }) {
         attributes
         dataset_id
         duration
@@ -1291,7 +1412,7 @@ const gql = {
 
   GET_TYPESCRIPT_ACTIVITY_TYPE: `#graphql
     query GetTypeScriptActivityType($activityTypeName: String!, $modelId: Int!) {
-      dslTypeScriptResponse: getActivityTypeScript(activityTypeName: $activityTypeName, missionModelId:$modelId) {
+      dslTypeScriptResponse: ${Queries.GET_ACTIVITY_TYPE_SCRIPT}(activityTypeName: $activityTypeName, missionModelId:$modelId) {
         reason
         status
         typescriptFiles {
@@ -1304,7 +1425,7 @@ const gql = {
 
   GET_TYPESCRIPT_COMMAND_DICTIONARY: `#graphql
     query GetTypeScriptCommandDictionary($commandDictionaryId: Int!) {
-      dslTypeScriptResponse: getCommandTypeScript(commandDictionaryId: $commandDictionaryId) {
+      dslTypeScriptResponse: ${Queries.GET_COMMAND_TYPE_SCRIPT}(commandDictionaryId: $commandDictionaryId) {
         reason
         status
         typescriptFiles {
@@ -1317,7 +1438,7 @@ const gql = {
 
   GET_TYPESCRIPT_CONSTRAINTS: `#graphql
     query GetTypeScriptConstraints($model_id: ID!) {
-      dslTypeScriptResponse: constraintsDslTypescript(missionModelId: $model_id) {
+      dslTypeScriptResponse: ${Queries.CONSTRAINTS_DSL_TYPESCRIPT}(missionModelId: $model_id) {
         reason
         status
         typescriptFiles {
@@ -1330,7 +1451,7 @@ const gql = {
 
   GET_TYPESCRIPT_SCHEDULING: `#graphql
     query GetTypeScriptScheduling($model_id: Int!) {
-      dslTypeScriptResponse: schedulingDslTypescript(missionModelId: $model_id) {
+      dslTypeScriptResponse: ${Queries.SCHEDULING_DSL_TYPESCRIPT}(missionModelId: $model_id) {
         reason
         status
         typescriptFiles {
@@ -1343,7 +1464,7 @@ const gql = {
 
   GET_UPLOADED_FILENAME: `#graphql
     query GetUploadedFileName($id: Int!) {
-      uploaded_file(where: { id: { _eq: $id }}) {
+      ${Queries.UPLOADED_FILES}(where: { id: { _eq: $id }}) {
         name
       }
     }
@@ -1351,7 +1472,7 @@ const gql = {
 
   GET_USER_SEQUENCE: `#graphql
     query GetUserSequence($id: Int!) {
-      userSequence: user_sequence_by_pk(id: $id) {
+      userSequence: ${Queries.USER_SEQUENCE}(id: $id) {
         authoring_command_dict_id
         created_at
         definition
@@ -1365,13 +1486,13 @@ const gql = {
 
   GET_USER_SEQUENCE_FROM_SEQ_JSON: `#graphql
     query GetUserSequenceFromSeqJson($seqJson: SequenceSeqJson!) {
-      sequence: getEdslForSeqJson(seqJson: $seqJson)
+      sequence: ${Queries.GET_EDSL_FOR_SEQ_JSON}(seqJson: $seqJson)
     }
   `,
 
   GET_USER_SEQUENCE_SEQ_JSON: `#graphql
     query GetUserSequenceSeqJson($commandDictionaryId: Int!, $sequenceDefinition: String!) {
-      getUserSequenceSeqJson(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {
+      ${Queries.GET_USER_SEQUENCE_SEQ_JSON}(commandDictionaryID: $commandDictionaryId, edslBody: $sequenceDefinition) {
         errors {
           location {
             column
@@ -1388,7 +1509,7 @@ const gql = {
 
   GET_VIEW: `#graphql
     query GetView($id: Int!) {
-      view: view_by_pk(id: $id) {
+      view: ${Queries.VIEW}(id: $id) {
         created_at
         definition
         id
@@ -1400,8 +1521,8 @@ const gql = {
   `,
 
   INITIAL_SIMULATION_UPDATE: `#graphql
-    mutation initialSimulationUpdate($plan_id: Int!, $simulation: simulation_set_input!) {
-      update_simulation(where: {plan_id: {_eq: $plan_id}}, _set: $simulation) {
+    mutation InitialSimulationUpdate($plan_id: Int!, $simulation: simulation_set_input!) {
+      ${Queries.UPDATE_SIMULATIONS}(where: {plan_id: {_eq: $plan_id}}, _set: $simulation) {
         returning {
           id
         }
@@ -1411,7 +1532,7 @@ const gql = {
 
   INSERT_EXPANSION_SEQUENCE_TO_ACTIVITY: `#graphql
     mutation InsertSequenceToActivity($input: sequence_to_simulated_activity_insert_input!) {
-      sequence: insert_sequence_to_simulated_activity_one(
+      sequence: ${Queries.INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY}(
         object: $input,
         on_conflict: {
           constraint: sequence_to_simulated_activity_primary_key,
@@ -1425,7 +1546,7 @@ const gql = {
 
   PLAN_MERGE_BEGIN: `#graphql
     mutation PlanMergeBegin($merge_request_id: Int!) {
-      begin_merge(args: { _merge_request_id: $merge_request_id } ) {
+      ${Queries.BEGIN_MERGE}(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1433,7 +1554,7 @@ const gql = {
 
   PLAN_MERGE_CANCEL: `#graphql
     mutation PlanMergeCancel($merge_request_id: Int!) {
-      cancel_merge(args: { _merge_request_id: $merge_request_id } ) {
+      ${Queries.CANCEL_MERGE}(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1441,7 +1562,7 @@ const gql = {
 
   PLAN_MERGE_COMMIT: `#graphql
     mutation PlanMergeCommit($merge_request_id: Int) {
-      commit_merge(args: { _merge_request_id: $merge_request_id } ) {
+      ${Queries.COMMIT_MERGE}(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1449,7 +1570,7 @@ const gql = {
 
   PLAN_MERGE_DENY: `#graphql
     mutation PlanMergeDeny($merge_request_id: Int) {
-      deny_merge(args: { merge_request_id: $merge_request_id } ) {
+      ${Queries.DENY_MERGE}(args: { merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1457,7 +1578,7 @@ const gql = {
 
   PLAN_MERGE_REQUEST_WITHDRAW: `#graphql
     mutation PlanMergeRequestWithdraw($merge_request_id: Int!) {
-      withdraw_merge_request(args: { _merge_request_id: $merge_request_id } ) {
+      ${Queries.WITHDRAW_MERGE_REQUEST}(args: { _merge_request_id: $merge_request_id } ) {
         merge_request_id
       }
     }
@@ -1465,7 +1586,7 @@ const gql = {
 
   PLAN_MERGE_RESOLVE_ALL_CONFLICTS: `#graphql
     mutation PlanMergeResolveAllConflicts($merge_request_id: Int!, $resolution: resolution_type!) {
-      set_resolution_bulk (
+      ${Queries.SET_RESOLUTIONS} (
         args: { _merge_request_id: $merge_request_id, _resolution: $resolution }
       ) {
         activity_id
@@ -1481,7 +1602,7 @@ const gql = {
 
   PLAN_MERGE_RESOLVE_CONFLICT: `#graphql
     mutation PlanMergeResolveConflict($merge_request_id: Int!, $activity_id: Int!, $resolution: resolution_type!) {
-      set_resolution(
+      ${Queries.SET_RESOLUTION}(
         args: { _merge_request_id: $merge_request_id, _activity_id: $activity_id, _resolution: $resolution }
       ) {
         activity_id
@@ -1497,7 +1618,7 @@ const gql = {
 
   RESTORE_ACTIVITY_FROM_CHANGELOG: `#graphql
     mutation RestoreActivityFromChangelog($activity_id: Int!, $plan_id: Int!, $revision: Int!) {
-      restoreActivityFromChangelog(args: { _plan_id: $plan_id, _activity_directive_id: $activity_id, _revision: $revision }) {
+      ${Queries.RESTORE_ACTIVITY_FROM_CHANGELOG}(args: { _plan_id: $plan_id, _activity_directive_id: $activity_id, _revision: $revision }) {
         id
       }
     }
@@ -1505,7 +1626,7 @@ const gql = {
 
   RESTORE_PLAN_SNAPSHOT: `#graphql
     mutation RestorePlanSnapshot($plan_id: Int!, $snapshot_id: Int!) {
-      restore_from_snapshot(args: { _plan_id: $plan_id, _snapshot_id: $snapshot_id }) {
+      ${Queries.RESTORE_FROM_SNAPSHOT}(args: { _plan_id: $plan_id, _snapshot_id: $snapshot_id }) {
         snapshot_id
       }
     }
@@ -1513,7 +1634,7 @@ const gql = {
 
   SCHEDULE: `#graphql
     query Schedule($specificationId: Int!) {
-      schedule(specificationId: $specificationId) {
+      ${Queries.SCHEDULE}(specificationId: $specificationId) {
         reason
         analysisId
       }
@@ -1522,7 +1643,7 @@ const gql = {
 
   SIMULATE: `#graphql
     query Simulate($planId: Int!, $force: Boolean!) {
-      simulate(planId: $planId, force: $force) {
+      ${Queries.SIMULATE}(planId: $planId, force: $force) {
         reason
         simulationDatasetId
         status
@@ -1532,7 +1653,7 @@ const gql = {
 
   SUB_ACTIVITY_DIRECTIVES: `#graphql
     subscription SubActivityDirectives($planId: Int!) {
-      activity_directives: activity_directive(where: { plan_id: { _eq: $planId } }, order_by: { start_offset: asc }) {
+      activity_directives: ${Queries.ACTIVITY_DIRECTIVES}(where: { plan_id: { _eq: $planId } }, order_by: { start_offset: asc }) {
         anchor_id
         anchor_validations {
           activity_id
@@ -1576,7 +1697,7 @@ const gql = {
 
   SUB_ACTIVITY_DIRECTIVE_METADATA_SCHEMAS: `#graphql
     subscription SubActivityDirectiveMetadataSchemas {
-      activity_directive_metadata_schema(order_by: { key: asc }) {
+      ${Queries.ACTIVITY_DIRECTIVE_METADATA_SCHEMAS}(order_by: { key: asc }) {
         key
         schema
       }
@@ -1585,7 +1706,7 @@ const gql = {
 
   SUB_ACTIVITY_DIRECTIVE_VALIDATIONS: `#graphql
     subscription SubActivityDirectiveValidationErrors($planId: Int!) {
-      activity_directive_validations(where: {
+      ${Queries.ACTIVITY_DIRECTIVE_VALIDATIONS}(where: {
         plan_id: {_eq: $planId}
       }) {
         directive_id
@@ -1598,7 +1719,7 @@ const gql = {
 
   SUB_ACTIVITY_PRESETS: `#graphql
     subscription SubActivityPresets($modelId: Int!, $activityTypeName: String!) {
-      activity_presets(where: {
+      ${Queries.ACTIVITY_PRESETS}(where: {
         model_id: { _eq: $modelId },
         associated_activity_type: { _eq: $activityTypeName }
       }) {
@@ -1614,7 +1735,7 @@ const gql = {
 
   SUB_ACTIVITY_TYPES: `#graphql
     subscription SubActivityTypes($modelId: Int!) {
-      activity_type(where: { model_id: { _eq: $modelId } }, order_by: { name: asc }) {
+      ${Queries.ACTIVITY_TYPES}(where: { model_id: { _eq: $modelId } }, order_by: { name: asc }) {
         computed_attributes_value_schema
         name
         parameters
@@ -1625,7 +1746,7 @@ const gql = {
 
   SUB_ANCHOR_VALIDATION_STATUS: `#graphql
     subscription SubAnchorValidationStatus($planId: Int!) {
-      anchor_validation_status: anchor_validation_status(where: { plan_id: { _eq: $planId } }) {
+      anchor_validation_status: ${Queries.ANCHOR_VALIDATION_STATUS}(where: { plan_id: { _eq: $planId } }) {
         activity_id,
         plan_id,
         reason_invalid
@@ -1635,7 +1756,7 @@ const gql = {
 
   SUB_COMMAND_DICTIONARIES: `#graphql
     subscription SubCommandDictionaries {
-      command_dictionary(order_by: { id: desc }) {
+      ${Queries.COMMAND_DICTIONARIES}(order_by: { id: desc }) {
         command_types_typescript_path
         created_at
         id
@@ -1647,7 +1768,7 @@ const gql = {
 
   SUB_CONSTRAINT: `#graphql
     subscription SubConstraint($id: Int!) {
-      constraint: constraint_metadata_by_pk(id: $id) {
+      constraint: ${Queries.CONSTRAINT_METADATA}(id: $id) {
         created_at
         description
         id
@@ -1687,7 +1808,7 @@ const gql = {
 
   SUB_CONSTRAINTS: `#graphql
     subscription SubConstraints {
-      constraints: constraint_metadata(order_by: { name: asc }) {
+      constraints: ${Queries.CONSTRAINT_METADATAS}(order_by: { name: asc }) {
         created_at
         description
         id
@@ -1720,7 +1841,7 @@ const gql = {
 
   SUB_CONSTRAINT_DEFINITION: `#graphql
     subscription SubConstraintDefinition($id: Int!, $revision: Int!) {
-      constraintDefinition: constraint_definition_by_pk(constraint_id: $id, revision: $revision) {
+      constraintDefinition: ${Queries.CONSTRAINT_DEFINITION}(constraint_id: $id, revision: $revision) {
         definition
         revision
         tags {
@@ -1736,7 +1857,7 @@ const gql = {
 
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     subscription SubConstraintPlanSpecifications($planId: Int!) {
-      constraintPlanSpecs: constraint_specification(
+      constraintPlanSpecs: ${Queries.CONSTRAINT_SPECIFICATIONS}(
         where: {plan_id: {_eq: $planId}},
         order_by: { constraint_id: desc }
       ) {
@@ -1758,7 +1879,7 @@ const gql = {
 
   SUB_EXPANSION_RULES: `#graphql
     subscription SubExpansionRules {
-      expansionRules: expansion_rule(order_by: { id: desc }) {
+      expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
         activity_type
         authoring_command_dict_id
         authoring_mission_model_id
@@ -1779,7 +1900,7 @@ const gql = {
 
   SUB_EXPANSION_RULE_TAGS: `#graphql
     subscription SubExpansionRuleTags {
-      expansionRuleTags: expansion_rule_tags(order_by: { rule_id: desc }) {
+      expansionRuleTags: ${Queries.EXPANSION_RULE_TAGS}(order_by: { rule_id: desc }) {
         rule_id
         tag_id
       }
@@ -1788,7 +1909,7 @@ const gql = {
 
   SUB_EXPANSION_SEQUENCES: `#graphql
     subscription SubExpansionSequences {
-      sequence {
+      ${Queries.SEQUENCE} {
         created_at
         metadata
         seq_id
@@ -1799,7 +1920,7 @@ const gql = {
 
   SUB_EXPANSION_SETS: `#graphql
     subscription SubExpansionSets {
-      expansionSets: expansion_set(order_by: { id: desc }) {
+      expansionSets: ${Queries.EXPANSION_SETS}(order_by: { id: desc }) {
         command_dict_id
         created_at
         description
@@ -1823,7 +1944,7 @@ const gql = {
 
   SUB_MODELS: `#graphql
     subscription SubModels {
-      models: mission_model(order_by: { name: asc }) {
+      models: ${Queries.MISSION_MODELS}(order_by: { name: asc }) {
         created_at
         description
         id
@@ -1840,7 +1961,7 @@ const gql = {
 
   SUB_PLAN_DATASET: `#graphql
     subscription SubPlanDatasets($planId: Int!) {
-      plan_dataset(where: {plan_id: {_eq: $planId}}) {
+      ${Queries.PLAN_DATASETS}(where: {plan_id: {_eq: $planId}}) {
         dataset_id
         simulation_dataset_id
         dataset {
@@ -1857,7 +1978,7 @@ const gql = {
 
   SUB_PLAN_LOCKED: `#graphql
     subscription SubPlanLocked($planId: Int!) {
-      planLocked: plan_by_pk(id: $planId) {
+      planLocked: ${Queries.PLAN}(id: $planId) {
         is_locked
       }
     }
@@ -1865,7 +1986,7 @@ const gql = {
 
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: `#graphql
     subscription SubPlanMergeConflictingActivities($merge_request_id: Int!) {
-      conflictingActivities: get_conflicting_activities(args: { _merge_request_id: $merge_request_id } ) {
+      conflictingActivities: ${Queries.GET_CONFLICTING_ACTIVITIES}(args: { _merge_request_id: $merge_request_id } ) {
         activity_id,
         change_type_source,
         change_type_target,
@@ -1881,7 +2002,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUESTS_INCOMING: `#graphql
     subscription SubPlanMergeRequestsIncoming($planId: Int!) {
-      merge_request(where: { plan_id_receiving_changes: { _eq: $planId } }, order_by: { id: desc }) {
+      ${Queries.MERGE_REQUESTS}(where: { plan_id_receiving_changes: { _eq: $planId } }, order_by: { id: desc }) {
         id
         plan_receiving_changes {
           id
@@ -1923,7 +2044,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUESTS_OUTGOING: `#graphql
     subscription SubPlanMergeRequestsOutgoing($planId: Int!) {
-      merge_request(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }, order_by: { id: desc }) {
+      ${Queries.MERGE_REQUESTS}(where: { plan_snapshot_supplying_changes: { plan_id: { _eq: $planId } } }, order_by: { id: desc }) {
         id
         plan_receiving_changes {
           id
@@ -1964,7 +2085,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUEST_IN_PROGRESS: `#graphql
     subscription SubPlanMergeRequestInProgress($planId: Int!) {
-      merge_requests: merge_request(where: { _and: [{ plan_id_receiving_changes: { _eq: $planId } }, { status: { _eq: "in-progress" } }] }, limit: 1 ) {
+      merge_requests: ${Queries.MERGE_REQUESTS}(where: { _and: [{ plan_id_receiving_changes: { _eq: $planId } }, { status: { _eq: "in-progress" } }] }, limit: 1 ) {
         id
         plan_receiving_changes {
           id
@@ -2006,7 +2127,7 @@ const gql = {
 
   SUB_PLAN_MERGE_REQUEST_STATUS: `#graphql
     subscription SubPlanMergeRequestStatus($mergeRequestId: Int!) {
-      merge_request: merge_request_by_pk(id: $mergeRequestId) {
+      merge_request: ${Queries.MERGE_REQUEST}(id: $mergeRequestId) {
         status
       }
     }
@@ -2014,7 +2135,7 @@ const gql = {
 
   SUB_PLAN_REVISION: `#graphql
     subscription SubPlanRevision($planId: Int!) {
-      plan: plan_by_pk(id: $planId) {
+      plan: ${Queries.PLAN}(id: $planId) {
         revision
       }
     }
@@ -2022,7 +2143,7 @@ const gql = {
 
   SUB_PLAN_SNAPSHOTS: `#graphql
     subscription SubPlanSnapshot($planId: Int!) {
-      plan_snapshots: plan_snapshot(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: desc }) {
+      plan_snapshots: ${Queries.PLAN_SNAPSHOTS}(where: { plan_id: { _eq: $planId } }, order_by: { taken_at: desc }) {
         snapshot_id
         plan_id
         revision
@@ -2043,7 +2164,7 @@ const gql = {
 
   SUB_PLAN_TAGS: `#graphql
     subscription SubPlanTags($planId: Int!) {
-      plan: plan_by_pk(id: $planId) {
+      plan: ${Queries.PLAN}(id: $planId) {
         tags {
           tag {
             color
@@ -2057,7 +2178,7 @@ const gql = {
 
   SUB_SCHEDULING_CONDITION: `#graphql
     subscription SubSchedulingCondition($id: Int!) {
-      condition: scheduling_condition_metadata_by_pk(id: $id) {
+      condition: ${Queries.SCHEDULING_CONDITION_METADATA}(id: $id) {
         created_at
         description
         id
@@ -2091,7 +2212,7 @@ const gql = {
 
   SUB_SCHEDULING_CONDITIONS: `#graphql
     subscription SubSchedulingConditions {
-      conditions: scheduling_condition_metadata(order_by: { name: asc }) {
+      conditions: ${Queries.SCHEDULING_CONDITION_METADATAS}(order_by: { name: asc }) {
         created_at
         description
         id
@@ -2125,7 +2246,7 @@ const gql = {
 
   SUB_SCHEDULING_GOAL: `#graphql
     subscription SubSchedulingGoal($id: Int!) {
-      goal: scheduling_goal_metadata_by_pk(id: $id) {
+      goal: ${Queries.SCHEDULING_GOAL_METADATA}(id: $id) {
         created_at
         description
         id
@@ -2159,7 +2280,7 @@ const gql = {
 
   SUB_SCHEDULING_GOALS: `#graphql
     subscription SubSchedulingGoals {
-      goals: scheduling_goal_metadata(order_by: { name: asc }) {
+      goals: ${Queries.SCHEDULING_GOAL_METADATAS}(order_by: { name: asc }) {
         analyses(order_by: { analysis_id: desc }) {
           analysis_id
           goal_id
@@ -2205,7 +2326,7 @@ const gql = {
 
   SUB_SCHEDULING_PLAN_SPECIFICATION: `#graphql
     subscription SubSchedulingPlanSpecification($specificationId: Int!) {
-      schedulingPlanSpec: scheduling_specification_by_pk(id: $specificationId) {
+      schedulingPlanSpec: ${Queries.SCHEDULING_SPECIFICATION}(id: $specificationId) {
         analysis_only
         horizon_end
         horizon_start
@@ -2276,7 +2397,7 @@ const gql = {
 
   SUB_SCHEDULING_REQUESTS: `#graphql
     subscription SubSchedulingRequests($specId: Int!) {
-      scheduling_request(where: { specification_id: { _eq: $specId } }, order_by: { analysis_id: desc }) {
+      ${Queries.SCHEDULING_REQUESTS}(where: { specification_id: { _eq: $specId } }, order_by: { analysis_id: desc }) {
         specification_id
         analysis_id
         requested_at
@@ -2292,7 +2413,7 @@ const gql = {
 
   SUB_SIMULATION: `#graphql
     subscription SubSimulation($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+      ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         arguments
         id
         revision
@@ -2310,7 +2431,7 @@ const gql = {
 
   SUB_SIMULATION_DATASET: `#graphql
     subscription SubSimulationDataset($simulationDatasetId: Int!) {
-      simulation_dataset_by_pk(id: $simulationDatasetId) {
+      ${Queries.SIMULATION_DATASET}(id: $simulationDatasetId) {
         dataset_id
         canceled
         id
@@ -2332,7 +2453,7 @@ const gql = {
 
   SUB_SIMULATION_DATASETS: `#graphql
     subscription SubSimulationDatasets($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
+      ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
         simulation_datasets(order_by: { id: desc }) {
           canceled
           id
@@ -2354,7 +2475,7 @@ const gql = {
 
   SUB_SIMULATION_DATASETS_ALL: `#graphql
     subscription SubSimulationDatasetsAll {
-      simulation_dataset(order_by: { id: desc }) {
+      ${Queries.SIMULATION_DATASETS}(order_by: { id: desc }) {
         canceled
         id
         status
@@ -2364,7 +2485,7 @@ const gql = {
 
   SUB_SIMULATION_DATASET_LATEST: `#graphql
     subscription SubSimulationDatasetLatest($planId: Int!) {
-      simulation(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
+      ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
         simulation_datasets(order_by: { id: desc }, limit: 1) {
           dataset_id
           canceled
@@ -2388,7 +2509,7 @@ const gql = {
 
   SUB_SIMULATION_TEMPLATES: `#graphql
     subscription SubSimTemplates($modelId: Int!) {
-      templates: simulation_template(where: { model_id: { _eq: $modelId } }) {
+      templates: ${Queries.SIMULATION_TEMPLATES}(where: { model_id: { _eq: $modelId } }) {
         arguments
         description
         id
@@ -2399,7 +2520,7 @@ const gql = {
 
   SUB_TAGS: `#graphql
     subscription SubTags {
-      tags(order_by: { name: desc })  {
+      ${Queries.TAGS}(order_by: { name: desc })  {
         color
         created_at
         id
@@ -2411,7 +2532,7 @@ const gql = {
 
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {
-      user_sequence(order_by: { id: desc }) {
+      ${Queries.USER_SEQUENCES}(order_by: { id: desc }) {
         authoring_command_dict_id
         created_at
         definition
@@ -2425,7 +2546,7 @@ const gql = {
 
   SUB_VIEWS: `#graphql
     subscription SubViews {
-      views: view {
+      views: ${Queries.VIEWS} {
         created_at
         id
         name
@@ -2437,7 +2558,7 @@ const gql = {
 
   UPDATE_ACTIVITY_DIRECTIVE: `#graphql
     mutation UpdateActivityDirective($id: Int!, $plan_id: Int!, $activityDirectiveSetInput: activity_directive_set_input!) {
-      update_activity_directive_by_pk(
+      ${Queries.UPDATE_ACTIVITY_DIRECTIVE}(
         pk_columns: { id: $id, plan_id: $plan_id }, _set: $activityDirectiveSetInput
       ) {
         anchor_id
@@ -2473,7 +2594,7 @@ const gql = {
 
   UPDATE_ACTIVITY_PRESET: `#graphql
     mutation UpdateActivityPreset($id: Int!, $activityPresetSetInput: activity_presets_set_input!) {
-      update_activity_presets_by_pk(
+      ${Queries.UPDATE_ACTIVITY_PRESET}(
         pk_columns: { id: $id }, _set: $activityPresetSetInput
       ) {
         id
@@ -2487,13 +2608,13 @@ const gql = {
 
   UPDATE_CONSTRAINT_DEFINITION_TAGS: `#graphql
     mutation UpdateConstraintTags($constraintId: Int!, $constraintRevision: Int!, $tags: [constraint_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      insertConstraintDefinitionTags: insert_constraint_definition_tags(objects: $tags, on_conflict: {
+      insertConstraintDefinitionTags: ${Queries.INSERT_CONSTRAINT_DEFINITION_TAGS}(objects: $tags, on_conflict: {
         constraint: constraint_definition_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteConstraintDefinitionTags: delete_constraint_definition_tags(
+      deleteConstraintDefinitionTags: ${Queries.DELETE_CONSTRAINT_DEFINITION_TAGS}(
         where: {
           tag_id: { _in: $tagIdsToDelete },
           _and: {
@@ -2509,18 +2630,18 @@ const gql = {
 
   UPDATE_CONSTRAINT_METADATA: `#graphql
     mutation UpdateConstraintMetadata($id: Int!, $constraintMetadata: constraint_metadata_set_input!, $tags: [constraint_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      updateConstraintMetadata: update_constraint_metadata_by_pk(
+      updateConstraintMetadata: ${Queries.UPDATE_CONSTRAINT_METADATA}(
         pk_columns: { id: $id }, _set: $constraintMetadata
       ) {
         id
       }
-      insertConstraintTags: insert_constraint_tags(objects: $tags, on_conflict: {
+      insertConstraintTags: ${Queries.INSERT_CONSTRAINT_TAGS}(objects: $tags, on_conflict: {
         constraint: constraint_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteConstraintTags: delete_constraint_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+      deleteConstraintTags: ${Queries.DELETE_CONSTRAINT_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
       }
     }
@@ -2528,7 +2649,7 @@ const gql = {
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
     mutation UpdateConstraintPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $planId: Int!) {
-      updateConstraintPlanSpecification: update_constraint_specification_by_pk(
+      updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
         pk_columns: { constraint_id: $id, plan_id: $planId },
         _set: {
           constraint_revision: $revision,
@@ -2543,7 +2664,7 @@ const gql = {
 
   UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: `#graphql
     mutation UpdateConstraintPlanSpecifications($constraintSpecsToUpdate: [constraint_specification_insert_input!]!, $constraintSpecIdsToDelete: [Int!]! = [], $planId: Int!) {
-      updateConstraintPlanSpecifications: insert_constraint_specification(
+      updateConstraintPlanSpecifications: ${Queries.INSERT_CONSTRAINT_SPECIFICATIONS}(
         objects: $constraintSpecsToUpdate,
         on_conflict: {
           constraint: constraint_specification_pkey,
@@ -2555,7 +2676,7 @@ const gql = {
           enabled
         }
       }
-      deleteConstraintPlanSpecifications: delete_constraint_specification(
+      deleteConstraintPlanSpecifications: ${Queries.DELETE_CONSTRAINT_SPECIFICATIONS}(
         where: {
           constraint_id: { _in: $constraintSpecIdsToDelete },
           _and: {
@@ -2570,7 +2691,7 @@ const gql = {
 
   UPDATE_EXPANSION_RULE: `#graphql
     mutation UpdateExpansionRule($id: Int!, $rule: expansion_rule_set_input!) {
-      updateExpansionRule: update_expansion_rule_by_pk(
+      updateExpansionRule: ${Queries.UPDATE_EXPANSION_RULE}(
         pk_columns: { id: $id }, _set: $rule
       ) {
         updated_at
@@ -2580,7 +2701,7 @@ const gql = {
 
   UPDATE_PLAN_SNAPSHOT: `#graphql
     mutation UpdatePlanSnapshot($snapshot_id: Int!, $planSnapshot: plan_snapshot_set_input!) {
-      updatePlanSnapshot: update_plan_snapshot_by_pk(
+      updatePlanSnapshot: ${Queries.UPDATE_PLAN_SNAPSHOT}(
         pk_columns: { snapshot_id: $snapshot_id }, _set: $planSnapshot
       ) {
         snapshot_id
@@ -2590,13 +2711,13 @@ const gql = {
 
   UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS: `#graphql
     mutation UpdateSchedulingConditionTags($conditionId: Int!, $conditionRevision: Int!, $tags: [scheduling_condition_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      insertSchedulingConditionDefinitionTags: insert_scheduling_condition_definition_tags(objects: $tags, on_conflict: {
+      insertSchedulingConditionDefinitionTags: ${Queries.INSERT_SCHEDULING_CONDITION_DEFINITION_TAGS}(objects: $tags, on_conflict: {
         constraint: scheduling_condition_definition_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteSchedulingConditionDefinitionTags: delete_scheduling_condition_definition_tags(
+      deleteSchedulingConditionDefinitionTags: ${Queries.DELETE_SCHEDULING_CONDITION_DEFINITION_TAGS}(
         where: {
           tag_id: { _in: $tagIdsToDelete },
           _and: {
@@ -2612,18 +2733,18 @@ const gql = {
 
   UPDATE_SCHEDULING_CONDITION_METADATA: `#graphql
     mutation UpdateSchedulingConditionMetadata($id: Int!, $conditionMetadata: scheduling_condition_metadata_set_input!, $tags: [scheduling_condition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      updateSchedulingConditionMetadata: update_scheduling_condition_metadata_by_pk(
+      updateSchedulingConditionMetadata: ${Queries.UPDATE_SCHEDULING_CONDITION_METADATA}(
         pk_columns: { id: $id }, _set: $conditionMetadata
       ) {
         id
       }
-      insertSchedulingConditionTags: insert_scheduling_condition_tags(objects: $tags, on_conflict: {
+      insertSchedulingConditionTags: ${Queries.INSERT_SCHEDULING_CONDITION_TAGS}(objects: $tags, on_conflict: {
         constraint: scheduling_condition_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteSchedulingConditionTags: delete_scheduling_condition_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+      deleteSchedulingConditionTags: ${Queries.DELETE_SCHEDULING_CONDITION_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
       }
     }
@@ -2631,7 +2752,7 @@ const gql = {
 
   UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: `#graphql
     mutation UpdateSchedulingConditionPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $specificationId: Int!) {
-      updateSchedulingConditionPlanSpecification: update_scheduling_specification_conditions_by_pk(
+      updateSchedulingConditionPlanSpecification: ${Queries.UPDATE_SCHEDULING_SPECIFICATION_CONDITION}(
         pk_columns: { condition_id: $id, specification_id: $specificationId },
         _set: {
           condition_revision: $revision,
@@ -2646,7 +2767,7 @@ const gql = {
 
   UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: `#graphql
     mutation UpdateSchedulingConditionPlanSpecifications($conditionSpecsToUpdate: [scheduling_specification_conditions_insert_input!]!, $conditionSpecIdsToDelete: [Int!]! = [], $specificationId: Int!) {
-      updateSchedulingConditionPlanSpecifications: insert_scheduling_specification_conditions(
+      updateSchedulingConditionPlanSpecifications: ${Queries.INSERT_SCHEDULING_SPECIFICATION_CONDITIONS}(
         objects: $conditionSpecsToUpdate,
         on_conflict: {
           constraint: scheduling_specification_conditions_primary_key,
@@ -2658,7 +2779,7 @@ const gql = {
           enabled
         }
       }
-      deleteSchedulingConditionPlanSpecifications: delete_scheduling_specification_conditions(
+      deleteSchedulingConditionPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS}(
         where: {
           condition_id: { _in: $conditionSpecIdsToDelete },
           _and: {
@@ -2673,13 +2794,13 @@ const gql = {
 
   UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS: `#graphql
     mutation UpdateSchedulingGoalTags($goalId: Int!, $goalRevision: Int!, $tags: [scheduling_goal_definition_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      insertSchedulingGoalDefinitionTags: insert_scheduling_goal_definition_tags(objects: $tags, on_conflict: {
+      insertSchedulingGoalDefinitionTags: ${Queries.INSERT_SCHEDULING_GOAL_DEFINITION_TAGS}(objects: $tags, on_conflict: {
         constraint: scheduling_goal_definition_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteSchedulingGoalDefinitionTags: delete_scheduling_goal_definition_tags(
+      deleteSchedulingGoalDefinitionTags: ${Queries.DELETE_SCHEDULING_GOAL_DEFINITION_TAGS}(
         where: {
           tag_id: { _in: $tagIdsToDelete },
           _and: {
@@ -2695,18 +2816,18 @@ const gql = {
 
   UPDATE_SCHEDULING_GOAL_METADATA: `#graphql
     mutation UpdateSchedulingGoalMetadata($id: Int!, $goalMetadata: scheduling_goal_metadata_set_input!, $tags: [scheduling_goal_tags_insert_input!]!, $tagIdsToDelete: [Int!]!) {
-      updateSchedulingGoalMetadata: update_scheduling_goal_metadata_by_pk(
+      updateSchedulingGoalMetadata: ${Queries.UPDATE_SCHEDULING_GOAL_METADATA}(
         pk_columns: { id: $id }, _set: $goalMetadata
       ) {
         id
       }
-      insertSchedulingGoalTags: insert_scheduling_goal_tags(objects: $tags, on_conflict: {
+      insertSchedulingGoalTags: ${Queries.INSERT_SCHEDULING_GOAL_TAGS}(objects: $tags, on_conflict: {
         constraint: scheduling_goal_tags_pkey,
         update_columns: []
       }) {
         affected_rows
       }
-      deleteSchedulingGoalTags: delete_scheduling_goal_tags(where: { tag_id: { _in: $tagIdsToDelete } }) {
+      deleteSchedulingGoalTags: ${Queries.DELETE_SCHEDULING_GOAL_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
       }
     }
@@ -2714,7 +2835,7 @@ const gql = {
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
     mutation UpdateSchedulingGoalPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!, $specificationId: Int!) {
-      updateSchedulingGoalPlanSpecification: update_scheduling_specification_goals_by_pk(
+      updateSchedulingGoalPlanSpecification: ${Queries.UPDATE_SCHEDULING_SPECIFICATION_GOAL}(
         pk_columns: { goal_id: $id, specification_id: $specificationId },
         _set: {
           goal_revision: $revision,
@@ -2731,7 +2852,7 @@ const gql = {
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
     mutation UpdateSchedulingGoalPlanSpecifications($goalSpecsToUpdate: [scheduling_specification_goals_insert_input!]!, $goalSpecIdsToDelete: [Int!]! = [], $specificationId: Int!) {
-      updateSchedulingGoalPlanSpecifications: insert_scheduling_specification_goals(
+      updateSchedulingGoalPlanSpecifications: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOALS}(
         objects: $goalSpecsToUpdate,
         on_conflict: {
           constraint: scheduling_specification_goals_primary_key,
@@ -2743,7 +2864,7 @@ const gql = {
           enabled
         }
       }
-      deleteSchedulingGoalPlanSpecifications: delete_scheduling_specification_goals(
+      deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
         where: {
           goal_id: { _in: $goalSpecIdsToDelete },
           _and: {
@@ -2756,9 +2877,9 @@ const gql = {
     }
   `,
 
-  UPDATE_SCHEDULING_SPEC: `#graphql
+  UPDATE_SCHEDULING_SPECIFICATION: `#graphql
     mutation UpdateSchedulingSpec($id: Int!, $spec: scheduling_specification_set_input!) {
-      updateSchedulingSpec: update_scheduling_specification_by_pk(
+      updateSchedulingSpec: ${Queries.UPDATE_SCHEDULING_SPECIFICATION}(
         pk_columns: { id: $id }, _set: $spec
       ) {
         id
@@ -2766,57 +2887,9 @@ const gql = {
     }
   `,
 
-  UPDATE_SCHEDULING_SPEC_CONDITION: `#graphql
-    mutation UpdateSchedulingSpecCondition(
-      $condition_id: Int!,
-      $specification_id: Int!,
-      $spec_condition: scheduling_specification_conditions_set_input!
-    ) {
-      updateSchedulingSpecCondition: update_scheduling_specification_conditions_by_pk(
-        pk_columns: { condition_id: $condition_id, specification_id: $specification_id },
-        _set: $spec_condition
-      ) {
-        condition_id
-        specification_id
-      }
-    }
-  `,
-
-  UPDATE_SCHEDULING_SPEC_CONDITION_ID: `#graphql
-    mutation UpdateSchedulingSpecConditionId(
-      $condition_id: Int!,
-      $specification_id: Int!,
-      $new_specification_id: Int!,
-    ) {
-      updateSchedulingSpecConditionId: update_scheduling_specification_conditions_by_pk(
-        pk_columns: { condition_id: $condition_id, specification_id: $specification_id },
-        _set: { specification_id: $new_specification_id },
-      ) {
-        condition_id
-        specification_id
-      }
-    }
-  `,
-
-  UPDATE_SCHEDULING_SPEC_GOAL: `#graphql
-    mutation UpdateSchedulingSpecGoal(
-      $goal_id: Int!,
-      $specification_id: Int!,
-      $spec_goal: scheduling_specification_goals_set_input!
-    ) {
-      updateSchedulingSpecGoal: update_scheduling_specification_goals_by_pk(
-        pk_columns: { goal_id: $goal_id, specification_id: $specification_id },
-        _set: $spec_goal
-      ) {
-        goal_id
-        specification_id
-      }
-    }
-  `,
-
   UPDATE_SIMULATION: `#graphql
     mutation UpdateSimulation($id: Int!, $simulation: simulation_set_input!) {
-      updateSimulation: update_simulation_by_pk(
+      updateSimulation: ${Queries.UPDATE_SIMULATION}(
         pk_columns: { id: $id }, _set: $simulation
       ) {
         id
@@ -2826,7 +2899,7 @@ const gql = {
 
   UPDATE_SIMULATION_TEMPLATE: `#graphql
     mutation UpdateSimulationTemplate($id: Int!, $simulationTemplateSetInput: simulation_template_set_input!) {
-      update_simulation_template_by_pk(pk_columns: {id: $id}, _set: $simulationTemplateSetInput) {
+      ${Queries.UPDATE_SIMULATION_TEMPLATE}(pk_columns: {id: $id}, _set: $simulationTemplateSetInput) {
         id
         description
         arguments
@@ -2836,7 +2909,7 @@ const gql = {
 
   UPDATE_TAG: `#graphql
     mutation UpdateTag($id: Int!, $tagSetInput: tags_set_input!) {
-      update_tags_by_pk(pk_columns: {id: $id}, _set: $tagSetInput) {
+      ${Queries.UPDATE_TAGS}(pk_columns: {id: $id}, _set: $tagSetInput) {
         color
         created_at
         id
@@ -2848,7 +2921,7 @@ const gql = {
 
   UPDATE_USER_SEQUENCE: `#graphql
     mutation UpdateUserSequence($id: Int!, $sequence: user_sequence_set_input!) {
-      updateUserSequence: update_user_sequence_by_pk(
+      updateUserSequence: ${Queries.UPDATE_USER_SEQUENCE}(
         pk_columns: { id: $id }, _set: $sequence
       ) {
         id
@@ -2859,7 +2932,7 @@ const gql = {
 
   UPDATE_VIEW: `#graphql
     mutation UpdateView($id: Int!, $view: view_set_input!) {
-      updatedView: update_view_by_pk(
+      updatedView: ${Queries.UPDATE_VIEW}(
         pk_columns: { id: $id }, _set: $view
       ) {
         created_at
@@ -2874,7 +2947,7 @@ const gql = {
 
   VALIDATE_ACTIVITY_ARGUMENTS: `#graphql
     query ValidateActivityArguments($arguments: ActivityArguments!, $activityTypeName: String!, $modelId: ID!) {
-      validateActivityArguments(
+      ${Queries.VALIDATE_ACTIVITY_ARGUMENTS}(
         activityArguments: $arguments,
         activityTypeName: $activityTypeName,
         missionModelId: $modelId

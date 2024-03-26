@@ -11,5 +11,5 @@
   },
   "stylelint.validate": ["css", "less", "postcss", "svelte"],
   "typescript.preferences.importModuleSpecifier": "relative",
-  "cSpell.words": ["unconstructable"]
+  "cSpell.words": ["metadatas", "unconstructable"]
 }

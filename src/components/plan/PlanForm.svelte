@@ -31,9 +31,13 @@
 
   let filteredPlanSnapshots: PlanSnapshotType[] = [];
   let isFilteredBySimulation: boolean = false;
+  let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
+  $: if (plan) {
+    hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
+  }
   $: {
     if (plan && user) {
       hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
@@ -56,7 +60,7 @@
     } = event;
     if (type === 'remove') {
       await effects.deletePlanTags([tag.id], user);
-    } else if (type === 'create' || type === 'select') {
+    } else if (plan && (type === 'create' || type === 'select')) {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {
         tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
@@ -65,7 +69,7 @@
         plan_id: plan?.id || -1,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, user, false);
+      await effects.createPlanTags(newPlanTags, plan, user, false);
     }
   }
 
@@ -187,8 +191,10 @@
           <button
             class="st-button secondary"
             use:permissionHandler={{
-              hasPermission: !$planReadOnly,
-              permissionError: PlanStatusMessages.READ_ONLY,
+              hasPermission: hasCreateSnapshotPermission,
+              permissionError: $planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : 'You do not have permission to create a plan snapshot',
             }}
             on:click={onCreatePlanSnapshot}>Take Snapshot</button
           >
