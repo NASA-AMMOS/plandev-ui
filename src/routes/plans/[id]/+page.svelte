@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
@@ -267,12 +268,6 @@
 
     activityTypes.updateValue(() => data.initialActivityTypes);
     planTags.updateValue(() => data.initialPlanTags);
-
-    // Asynchronously fetch resource types
-    effects.getResourceTypes($plan.model_id, data.user).then(initialResourceTypes => {
-      $resourceTypes = initialResourceTypes;
-      $resourceTypesLoading = false;
-    });
   }
   $: if (data.initialPlanSnapshotId !== null) {
     $planSnapshotId = data.initialPlanSnapshotId;
@@ -390,6 +385,14 @@
   $: numConstraintsWithErrors = Object.values($constraintResponseMap).filter(
     response => response.errors?.length,
   ).length;
+
+  $: if ($plan && browser) {
+    // Asynchronously fetch resource types
+    effects.getResourceTypes($plan.model_id, data.user).then(initialResourceTypes => {
+      $resourceTypes = initialResourceTypes;
+      $resourceTypesLoading = false;
+    });
+  }
 
   onDestroy(() => {
     resetActivityStores();

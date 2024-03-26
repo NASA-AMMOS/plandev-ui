@@ -386,11 +386,13 @@
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} class="timeline-time-row">
-    <TimelineTimeDisplay
-      planEndTimeDoy={plan?.end_time_doy}
-      planStartTimeDoy={plan?.start_time_doy}
-      width={timeline?.marginLeft}
-    />
+    {#if plan}
+      <TimelineTimeDisplay
+        planEndTimeDoy={plan?.end_time_doy}
+        planStartTimeDoy={plan?.start_time_doy}
+        width={timeline?.marginLeft}
+      />
+    {/if}
     <div class="timeline-histogram-container">
       <TimelineHistogram
         activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]

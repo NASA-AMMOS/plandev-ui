@@ -153,4 +153,8 @@ export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
   activityDirectivesMap.set({});
   selectedActivityDirectiveId.set(null);
+  activityDirectives.updateValue(() => []);
+  anchorValidationStatuses.updateValue(() => []);
+  activityMetadataDefinitions.updateValue(() => []);
+  activityDirectiveValidationStatuses.updateValue(() => []);
 }
