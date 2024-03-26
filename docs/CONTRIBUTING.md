@@ -38,7 +38,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```
 1. In GitHub, send a pull request to `aerie-ui:develop`.
 
-- If we suggest changes then:
+- If we suggest changes, then:
 
   - Make the required updates.
   - Follow our [Coding Rules](#rules).
@@ -48,6 +48,20 @@ Before you submit your Pull Request (PR) consider the following guidelines:
     git rebase develop -i
     git push -f
     ```
+
+- If your PR branch gets out of date, please rebase off of the latest on the `develop` branch using one of two following ways:
+
+  - Via git commands (this is no different from the above step), [rebase your branch][rebase] and force push to your branch to GitHub:
+
+    ```shell
+    git rebase develop -i
+    git push -f
+    ```
+
+  - Via github, there should be an "Update branch" button at the bottom of your PR. Select the dropdown arrow and choose "Update with rebase" instead.
+    After selecting it, then go ahead and click the "Update with rebase" button to rebase off of the latest on `develop`
+
+Once your PR has been approved, it is preferred to "Squash and merge" to keep the commits on `develop` a little cleaner and easier to search through ([commit message guideliness](#commit-message-guidelines)). Before, you squash, please remember to update the commit message body to only include what is relevant. (NOTE: Do **NOT** update the PR title as that will mess up some tracking)
 
 After your pull request is merged, you can safely delete your branch and pull the changes from the repository:
 
@@ -83,10 +97,7 @@ Run the following commands to execute formatting, linting, static analysis, and 
 1. `npm run lint`
 1. `npm run lint:css`
 1. `npm run check`
-1. `npm run test:unit`
-1. `npm run test:e2e`
-
-To setup your testing environment see the [testing documentation](./TESTING.md).
+1. Follow the testing procedures in the [testing documentation](./TESTING.md)
 
 ## <a name="commit"></a> Commit Message Guidelines
 
