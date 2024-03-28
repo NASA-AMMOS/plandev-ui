@@ -18,7 +18,10 @@
   import { convertUsToDurationString, getDoyTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    closeChangelog: void;
+    previewRevision: ActivityDirectiveRevision;
+  }>();
   const updatePermissionError = 'You do not have permission to update this activity';
 
   export let activityDirective: ActivityDirective;

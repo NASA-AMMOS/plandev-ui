@@ -21,7 +21,9 @@
     return !l.find(x => !(typeof x === 'number' || typeof x === 'string'));
   }
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { key: string; value: (string | number)[] | null };
+  }>();
 </script>
 
 <div class="activity-metadata-base-enum-multiselect" style="grid-template-columns: {columns}">

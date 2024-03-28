@@ -6,7 +6,9 @@
 
   export let disabled: boolean = true;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    mouseDownRowMove: void;
+  }>();
 </script>
 
 <div

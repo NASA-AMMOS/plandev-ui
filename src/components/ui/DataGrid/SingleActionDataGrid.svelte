@@ -3,7 +3,6 @@
 <script lang="ts">
   type RowData = $$Generic<TRowData>;
 
-  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<DataGrid<RowData>> {
     deleteItem: CustomEvent<RowId[]>;
     editItem: CustomEvent<RowId[]>;
@@ -12,6 +11,7 @@
   import type { ColDef, ColumnState, IRowNode, RedrawRowsParams } from 'ag-grid-community';
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import type { User } from '../../../types/app';
+  import type { Dispatcher } from '../../../types/component';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
@@ -38,7 +38,7 @@
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let deletePermission: boolean = true;
   let editPermission: boolean = true;

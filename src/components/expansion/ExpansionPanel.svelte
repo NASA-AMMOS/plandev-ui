@@ -280,7 +280,7 @@
                       items={$filteredExpansionSequences}
                       {user}
                       on:deleteItem={deleteExpansionSequenceContext}
-                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail, user)}
+                      on:rowDoubleClicked={event => showExpansionSequenceModal(event.detail.data, user)}
                     />
                   {:else}
                     <div class="st-typography-label">

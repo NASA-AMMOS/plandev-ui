@@ -10,7 +10,9 @@
   export let timelineLockStatus: TimelineLockStatus = TimelineLockStatus.Locked;
   export let planReadOnly: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    lock: TimelineLockStatus.Locked;
+  }>();
 
   $: lockTooltipContent = `${
     timelineLockStatus === TimelineLockStatus.Locked ? 'Enable' : 'Disable'

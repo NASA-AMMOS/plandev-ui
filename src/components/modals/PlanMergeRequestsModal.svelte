@@ -24,7 +24,9 @@
   export let user: User | null;
   export let width: number = 550;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
 
   let combinedPlanMergeRequests: PlanMergeRequest[] = [];
   let filteredPlanMergeRequests: PlanMergeRequest[] = [];

@@ -4,7 +4,9 @@
 
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    click: void;
+  }>();
 </script>
 
 <div

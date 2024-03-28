@@ -17,7 +17,6 @@
     ActivityDirectiveRevision,
     ActivityDirectivesMap,
     ActivityPreset,
-    ActivityPresetInsertInput,
     ActivityType,
   } from '../../types/activity';
   import type { ActivityMetadataDefinition } from '../../types/activity-metadata';
@@ -68,7 +67,10 @@
   export let user: User | null;
   export let revision: ActivityDirectiveRevision | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    closeRevisionPreview: void;
+    viewChangelog: void;
+  }>();
 
   let activityErrorRollup: ActivityErrorRollup | undefined;
   let editingActivityName: boolean = false;
@@ -194,7 +196,7 @@
     );
   }
 
-  function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId>) {
+  function updateAnchor({ detail: anchorId }: CustomEvent<ActivityDirectiveId | null>) {
     const { id } = activityDirective;
     if ($plan) {
       effects.updateActivityDirective($plan, id, { anchor_id: anchorId }, activityType, user);
@@ -308,7 +310,7 @@
     }
   }
 
-  async function onSaveNewPreset(event: CustomEvent<ActivityPresetInsertInput>) {
+  async function onSaveNewPreset(event: CustomEvent<{ name: string }>) {
     const {
       detail: { name },
     } = event;
@@ -324,7 +326,7 @@
     }
   }
 
-  async function onSavePreset(event: CustomEvent<ActivityPresetInsertInput>) {
+  async function onSavePreset(event: CustomEvent<{ name: string }>) {
     const {
       detail: { name },
     } = event;

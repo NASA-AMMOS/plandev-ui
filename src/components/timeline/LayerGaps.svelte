@@ -21,7 +21,13 @@
   export let resources: Resource[] = [];
   export let xScaleView: ScaleTime<number, number> | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    mouseOver: {
+      e: MouseEvent;
+      gaps: XRangePoint[];
+      layerId: number;
+    };
+  }>();
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;

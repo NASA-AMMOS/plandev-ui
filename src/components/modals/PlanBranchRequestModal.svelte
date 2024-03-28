@@ -15,7 +15,18 @@
   export let plan: Plan;
   export let width: number = 560;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    create:
+      | {
+          source_plan: Plan;
+          target_plan: PlanForMerging;
+        }
+      | {
+          source_plan: PlanForMerging;
+          target_plan: Plan;
+        };
+  }>();
 
   let actionHeader: string = '';
   let actionButtonText: string = '';
@@ -48,7 +59,7 @@
   }
 
   function create() {
-    if (!createButtonDisabled) {
+    if (!createButtonDisabled && selectedPlan !== null) {
       if (action === 'merge') {
         dispatch('create', { source_plan: plan, target_plan: selectedPlan });
       } else {

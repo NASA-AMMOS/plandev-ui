@@ -15,7 +15,13 @@
   export let height: number | string = 450;
   export let width: number | string = 550;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    upload: {
+      definition: ViewDefinition;
+      name: string;
+    };
+  }>();
 
   let fileInput: HTMLInputElement;
   let errors: string[] = [];
@@ -47,7 +53,7 @@
   }
 
   function upload() {
-    if (!errors.length) {
+    if (!errors.length && viewDefinition) {
       dispatch('upload', { definition: viewDefinition, name: viewName });
     }
   }

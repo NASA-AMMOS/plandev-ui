@@ -14,7 +14,9 @@
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    reset: void;
+  }>();
 
   let showButton: boolean = false;
   let status: string = '';

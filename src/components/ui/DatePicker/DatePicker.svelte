@@ -29,7 +29,9 @@
   export let minDate: Date = new Date(Date.UTC(currentYear - 20, 0)); // subtract 20 years
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { value: string };
+  }>();
 
   const [popperRef, popperContent] = createPopperActions({
     placement: 'bottom-start',

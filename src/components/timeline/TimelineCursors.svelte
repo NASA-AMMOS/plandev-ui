@@ -18,7 +18,9 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let verticalGuides: VerticalGuide[] = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateVerticalGuides: VerticalGuide[];
+  }>();
 
   $: onCursorEnableChange(cursorEnabled);
   $: if (mouseOver !== undefined || histogramCursorTime !== undefined) {

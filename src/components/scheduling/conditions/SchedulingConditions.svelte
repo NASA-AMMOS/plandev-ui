@@ -27,7 +27,10 @@
   };
   type SchedulingConditionsCellRendererParams = ICellRendererParams<SchedulingConditionMetadata> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    deleteCondition: number;
+    rowSelected: DataGridRowSelection<SchedulingConditionMetadata>;
+  }>();
 
   const baseColumnDefs: DataGridColumnDef<SchedulingConditionMetadata>[] = [
     {

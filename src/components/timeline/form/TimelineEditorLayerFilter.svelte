@@ -12,7 +12,9 @@
   export let values: string[];
   export let options: string[] = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { values: string[] };
+  }>();
 
   let filterMenu: Menu;
   let input: HTMLInputElement;

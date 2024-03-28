@@ -10,7 +10,9 @@
   export let disabled: boolean = false;
   export let labelColumnWidth: number = 200;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { key: string; value: boolean | null };
+  }>();
 
   $: columns = `${labelColumnWidth}px auto`;
 

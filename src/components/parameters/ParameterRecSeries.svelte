@@ -27,7 +27,10 @@
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: FormParameter;
+    reset: FormParameter;
+  }>();
 
   $: subFormParameters = getSubFormParameters(formParameter);
 

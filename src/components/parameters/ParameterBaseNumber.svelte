@@ -19,7 +19,10 @@
   export let parameterType: ParameterType = 'activity';
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: FormParameter;
+    reset: FormParameter;
+  }>();
 
   let debouncedOnChange = debounce(onChange, 350, {
     leading: true,

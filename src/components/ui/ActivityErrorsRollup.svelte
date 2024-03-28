@@ -30,7 +30,10 @@
   export let selectable: boolean = false;
   export let showTotalCount: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    resetCategory: ActivityErrorCategories;
+    selectCategory: ActivityErrorCategories;
+  }>();
 
   function generateCountText(mode: Mode, count: number, category: string, itemName?: string) {
     switch (mode) {
@@ -93,9 +96,9 @@
       }
 
       if (mode === 'minimal' && isMetaOrCtrlPressed(event)) {
-        dispatch('resetCategory', value);
+        dispatch('resetCategory', value as ActivityErrorCategories);
       } else {
-        dispatch('selectCategory', value);
+        dispatch('selectCategory', value as ActivityErrorCategories);
       }
     }
   }

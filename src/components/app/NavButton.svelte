@@ -7,7 +7,7 @@
   export let status: Status | null = null;
   export let title: string;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ click: void }>();
 </script>
 
 <div

@@ -19,7 +19,15 @@
   export let plan: Plan;
   export let user: User | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    create: {
+      description: string;
+      name: string;
+      plan: Plan;
+      tags: Tag[];
+    };
+  }>();
 
   let createButtonDisabled: boolean = true;
   let snapshotName: string = `${plan.name} – Snapshot ${$planSnapshots.length + 1}`;

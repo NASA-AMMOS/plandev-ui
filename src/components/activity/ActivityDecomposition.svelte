@@ -15,7 +15,9 @@
   export let spansMap: SpansMap = {};
   export let spanUtilityMaps: SpanUtilityMaps;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    select: number | null;
+  }>();
 
   let childIds: SpanId[] = [];
   let span: Span | null = null;

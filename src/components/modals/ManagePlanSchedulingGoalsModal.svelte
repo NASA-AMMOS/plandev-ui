@@ -34,7 +34,9 @@
   };
   type SchedulingGoalCellRendererParams = ICellRendererParams<SchedulingGoalMetadata> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
   const baseColumnDefs: DataGridColumnDef<SchedulingGoalMetadata>[] = [
     {
       field: 'id',

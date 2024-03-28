@@ -7,7 +7,11 @@
   export let rowHeaderWidth: number = 0;
   export let width: number = 2;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateRowHeaderWidth: {
+      newWidth: number;
+    };
+  }>();
 
   let dragElement: HTMLElement;
   let previousWidth: number = 0;

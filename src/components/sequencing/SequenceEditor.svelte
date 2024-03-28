@@ -24,7 +24,9 @@
   export let title: string = 'Sequence - Definition Editor';
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    generate: void;
+  }>();
 
   let commandDictionaryJson: AmpcsCommandDictionary | null = null;
   let commandDictionaryTsFiles: TypeScriptFile[] = [];

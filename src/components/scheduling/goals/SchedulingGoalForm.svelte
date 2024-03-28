@@ -33,7 +33,10 @@
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    selectReferenceModel: number | null;
+    selectRevision: number;
+  }>();
 
   const permissionError = `You do not have permission to ${
     mode === 'edit' ? 'edit this' : 'create a'

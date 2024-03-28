@@ -21,7 +21,9 @@
   export let width: number | string = 380;
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
 
   let userViews: ViewSlim[] = [];
 

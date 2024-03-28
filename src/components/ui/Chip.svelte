@@ -14,7 +14,9 @@
   let chipStyle: string = '';
   let removeStyle: string = '';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    click: void;
+  }>();
 
   $: rootClasses = classNames('st-chip st-typography-body', {
     'chip-removable': removable,

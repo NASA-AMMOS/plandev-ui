@@ -17,7 +17,9 @@
   export let readOnly: boolean = false;
   export let title: string = 'Constraint - Definition Editor';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    selectReferenceModel: number | null;
+  }>();
 
   let modelOptions: DropdownOptions = [];
   let monaco: Monaco;
@@ -58,7 +60,11 @@
 
   function onSelectReferenceModel(event: CustomEvent<SelectedDropdownOptionValue>) {
     const { detail: modelId } = event;
-    dispatch('selectReferenceModel', modelId);
+    if (modelId === null) {
+      dispatch('selectReferenceModel', modelId);
+    } else {
+      dispatch('selectReferenceModel', parseInt(`${modelId}`));
+    }
   }
 </script>
 

@@ -20,7 +20,12 @@
   };
   type ViewCellRendererParams = ICellRendererParams<ViewSlim> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    deleteView: number;
+    deleteViews: number[];
+    downloadView: number;
+    openView: number;
+  }>();
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -123,7 +128,7 @@
     return featurePermissions.view.canDelete(user, view);
   }
 
-  function openView({ id: viewId }: Partial<ViewSlim>) {
+  function openView({ id: viewId }: Pick<ViewSlim, 'id'>) {
     dispatch('openView', viewId);
   }
 </script>
@@ -136,5 +141,5 @@
   singleItemDisplayText="View"
   {user}
   on:bulkDeleteItems={deleteViews}
-  on:rowDoubleClicked={event => openView(event.detail)}
+  on:rowDoubleClicked={event => openView(event.detail.data)}
 />

@@ -17,7 +17,9 @@
 
   let axisMenu: Menu;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    delete: void;
+  }>();
 
   function onDeleteAxis() {
     dispatch('delete');

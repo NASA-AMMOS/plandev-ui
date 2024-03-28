@@ -82,7 +82,17 @@
   export let showTimelineTooltip: boolean = false;
   export let limitTooltipToLine: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    mouseDown: MouseDown;
+    toggleRowExpansion: { expanded: boolean; rowId: number };
+    updateRowHeight: {
+      newHeight: number;
+      rowId: number;
+      wasAutoAdjusted?: boolean;
+    };
+    updateRows: Row[];
+    viewTimeRangeChanged: TimeRange;
+  }>();
 
   let timelineZoomTransform: ZoomTransform | null = null;
   let clientWidth: number = 0;
@@ -296,7 +306,7 @@
     histogramCursorTime = null;
   }
 
-  function onHistogramCursorTimeChanged(event: CustomEvent<Date>) {
+  function onHistogramCursorTimeChanged(event: CustomEvent<Date | null>) {
     histogramCursorTime = event.detail;
   }
 

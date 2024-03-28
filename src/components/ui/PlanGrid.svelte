@@ -36,7 +36,12 @@
   export let rightSplit: boolean = false;
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    changeColumnSizes: string;
+    changeLeftRowSizes: string;
+    changeMiddleRowSizes: string;
+    changeRightRowSizes: string;
+  }>();
 
   const gridComponentsByName: Record<ViewGridComponent, any> = {
     ActivityDirectivesTablePanel,

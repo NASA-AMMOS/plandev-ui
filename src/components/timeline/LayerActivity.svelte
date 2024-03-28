@@ -15,8 +15,11 @@
   import type {
     ActivityLayerFilter,
     BoundingBox,
+    MouseDown,
+    MouseOver,
     PointBounds,
     QuadtreeRect,
+    RowMouseOverEvent,
     SpanTimeBounds,
     TimeRange,
   } from '../../types/timeline';
@@ -75,7 +78,17 @@
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    contextMenu: MouseOver;
+    dblClick: MouseOver;
+    deleteActivityDirective: number;
+    mouseDown: MouseDown;
+    mouseOver: RowMouseOverEvent;
+    updateRowHeight: {
+      layerId: number;
+      newHeight: number;
+    };
+  }>();
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -374,8 +387,8 @@
         e,
         layerId: id,
         origin: 'layer-activity',
-        selectedActivityDirectiveId: newSelectedActivityDirectiveId,
-        selectedSpanId: newSelectedSpanId,
+        selectedActivityDirectiveId: newSelectedActivityDirectiveId ?? undefined,
+        selectedSpanId: newSelectedSpanId ?? undefined,
       });
     }
   }
@@ -385,8 +398,8 @@
       dispatch('dblClick', {
         e,
         layerId: id,
-        selectedActivityDirectiveId,
-        selectedSpanId,
+        selectedActivityDirectiveId: selectedActivityDirectiveId ?? undefined,
+        selectedSpanId: selectedSpanId ?? undefined,
       });
     }
   }

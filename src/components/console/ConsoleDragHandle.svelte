@@ -8,7 +8,9 @@
   export let maxHeight: number | string = Infinity;
   export let rowHeight: number = 0;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateRowHeight: { newHeight: number };
+  }>();
 
   let dragElement: HTMLElement;
   let previousHeight: number = 0;

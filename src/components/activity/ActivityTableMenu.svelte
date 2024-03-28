@@ -21,7 +21,10 @@
     name: string;
   };
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    'show-hide-all-columns': { hide: boolean };
+    'toggle-column': { field: keyof T; isHidden: boolean };
+  }>();
 
   let columnMenuItems: ColumnMenuItem[] = [];
   let displayedColumnMenuItems: ColumnMenuItem[] = [];

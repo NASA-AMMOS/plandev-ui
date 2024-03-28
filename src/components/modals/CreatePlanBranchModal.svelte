@@ -13,7 +13,10 @@
   export let width: number = 280;
   export let plan: Plan;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    create: { name: string; plan: Plan };
+  }>();
 
   let newBranchName: string = '';
   let createButtonDisabled: boolean = true;

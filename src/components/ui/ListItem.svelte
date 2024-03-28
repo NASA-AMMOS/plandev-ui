@@ -8,7 +8,11 @@
   export let hasPermission: boolean | undefined = undefined;
   export let permissionError: string | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    click: MouseEvent;
+    dragend: DragEvent;
+    dragstart: DragEvent;
+  }>();
 
   let className: string = '';
   let styleName: string = '';

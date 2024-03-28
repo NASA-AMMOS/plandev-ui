@@ -13,6 +13,7 @@
   import { createEventDispatcher, onDestroy, type ComponentEvents } from 'svelte';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import type { User } from '../../../types/app';
+  import type { Dispatcher } from '../../../types/component';
   import type { RowId, TRowData } from '../../../types/data-grid';
   import type { PermissionCheck } from '../../../types/permissions';
   import { isDeleteEvent } from '../../../utilities/keyboardEvents';
@@ -43,7 +44,7 @@
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
   export let redrawRows: ((params?: RedrawRowsParams<RowData> | undefined) => void) | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let isFiltered: boolean = false;
   let deletePermission: boolean = true;

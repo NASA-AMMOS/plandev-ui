@@ -29,7 +29,11 @@
   export let xScaleMax: ScaleTime<number, number> | null = null;
   export let xScaleView: ScaleTime<number, number> | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    cursorTimeChange: Date | null;
+    viewTimeRangeChanged: TimeRange;
+    zoom: D3ZoomEvent<HTMLCanvasElement, any>;
+  }>();
 
   let activityHistValues: number[] = [];
   let activityHistMax = 0;

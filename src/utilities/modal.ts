@@ -355,7 +355,7 @@ export async function showCreatePlanSnapshotModal(
 /**
  * Shows a CreateViewModal component.
  */
-export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId: number; name: string }>> {
+export async function showCreateViewModal(): Promise<ModalElementValue<{ name: string }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -371,7 +371,7 @@ export async function showCreateViewModal(): Promise<ModalElementValue<{ modelId
           createViewModal.$destroy();
         });
 
-        createViewModal.$on('create', (e: CustomEvent<{ modelId: number; name: string }>) => {
+        createViewModal.$on('create', (e: CustomEvent<{ name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
@@ -424,7 +424,7 @@ export async function showDeleteActivitiesModal(
 /**
  * Shows an EditViewModal component.
  */
-export async function showEditViewModal(): Promise<ModalElementValue<{ id: number; modelId: number; name: string }>> {
+export async function showEditViewModal(): Promise<ModalElementValue<{ id?: number; name: string }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -440,7 +440,7 @@ export async function showEditViewModal(): Promise<ModalElementValue<{ id: numbe
           editViewModal.$destroy();
         });
 
-        editViewModal.$on('save', (e: CustomEvent<{ id: number; modelId: number; name: string }>) => {
+        editViewModal.$on('save', (e: CustomEvent<{ id?: number; name: string }>) => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });

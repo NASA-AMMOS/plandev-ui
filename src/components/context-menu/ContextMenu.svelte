@@ -4,7 +4,9 @@
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    hide: void;
+  }>();
 
   export let hideAfterClick: boolean = true;
 

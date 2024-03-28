@@ -19,7 +19,12 @@
 
   let className: string = '';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    'select-radio-button': {
+      id: RadioButtonId;
+      index: number;
+    };
+  }>();
 
   const radioButtons: RadioButtonId[] = [];
   const selectedRadioButton = writable<RadioButtonId>();

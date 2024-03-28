@@ -55,7 +55,11 @@
     }
   }
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    hideMenu: void;
+    openMenu: void;
+    selectOption: SelectedDropdownOptionValue;
+  }>();
 
   let displayedOptions: DisplayOptions = [];
   let presetMenu: Menu | undefined;

@@ -25,7 +25,11 @@
       ? planSnapshot.tags.map(tag => tag.tag)
       : planSnapshot.tags.map(tag => tag.tag).slice(0, maxVisibleTags);
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    click: void;
+    delete: void;
+    restore: void;
+  }>();
 
   function onShowMoreClick(event: MouseEvent) {
     event.stopPropagation();

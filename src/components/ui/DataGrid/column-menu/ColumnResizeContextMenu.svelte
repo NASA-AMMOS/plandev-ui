@@ -7,7 +7,10 @@
   import ContextMenuHeader from '../../../context-menu/ContextMenuHeader.svelte';
   import ContextMenuItem from '../../../context-menu/ContextMenuItem.svelte';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    autoSizeContent: void;
+    autoSizeSpace: void;
+  }>();
 
   function onAutoSizeContent() {
     dispatch('autoSizeContent');

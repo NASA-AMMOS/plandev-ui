@@ -20,7 +20,10 @@
 
   let durationStringFormatError: string | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: FormParameter;
+    reset: FormParameter;
+  }>();
 
   $: columns = `calc(${labelColumnWidth}px - ${level * levelPadding}px) auto`;
 

@@ -13,7 +13,9 @@
   export let planId: number = -1;
   export let status: PlanMergeRequestStatus = 'pending';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
 
   $: statusVerb = status === 'pending' ? 'canceled' : status;
 

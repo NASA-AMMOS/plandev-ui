@@ -28,7 +28,10 @@
   };
   type SchedulingGoalsCellRendererParams = ICellRendererParams<SchedulingGoalMetadata> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    deleteGoal: number;
+    rowSelected: DataGridRowSelection<SchedulingGoalMetadata>;
+  }>();
 
   const baseColumnDefs: DataGridColumnDef<SchedulingGoalMetadata>[] = [
     {

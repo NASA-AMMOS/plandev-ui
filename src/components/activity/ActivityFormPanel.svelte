@@ -61,7 +61,7 @@
     previewRevision = undefined;
   }
 
-  function onSelectSpan(event: CustomEvent<SpanId>) {
+  function onSelectSpan(event: CustomEvent<SpanId | null>) {
     const { detail: spanId } = event;
     selectActivity(null, spanId);
   }

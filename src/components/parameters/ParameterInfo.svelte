@@ -9,7 +9,9 @@
 
   export let formParameter: FormParameter;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    reset: FormParameter;
+  }>();
 
   let contextMenu: ContextMenu;
   let isIconHovered: boolean = false;

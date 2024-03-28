@@ -5,7 +5,14 @@
   import { curveLinear, line as d3Line } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
-  import type { Axis, LinePoint, ResourceLayerFilter, TimeRange } from '../../types/timeline';
+  import type {
+    Axis,
+    LinePoint,
+    MouseOver,
+    ResourceLayerFilter,
+    RowMouseOverEvent,
+    TimeRange,
+  } from '../../types/timeline';
   import { filterEmpty } from '../../utilities/generic';
   import { CANVAS_PADDING_Y, getYScale, minMaxDecimation } from '../../utilities/timeline';
 
@@ -31,7 +38,10 @@
   export let yAxes: Axis[] = [];
   export let yAxisId: number | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    contextMenu: MouseOver;
+    mouseOver: RowMouseOverEvent;
+  }>();
   const WORK_TIME_THRESHOLD = 32; // ms to allow for processing time, beyond which remaining work will be split to a new frame
 
   let canvas: HTMLCanvasElement;

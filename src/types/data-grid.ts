@@ -6,6 +6,9 @@ export interface DataGridRowSelection<TRowData> {
   data: TRowData;
   isSelected: boolean;
 }
+export interface DataGridRowDoubleClick<TRowData> {
+  data: TRowData;
+}
 
 export type DataGridRowsSelection<TRowData> = TRowData[];
 

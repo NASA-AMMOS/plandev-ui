@@ -31,7 +31,10 @@
   export let totalViolationCount: number = 0;
   export let visible: boolean = true;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    toggleVisibility: { id: number; visible: boolean };
+    updateConstraintPlanSpec: ConstraintPlanSpec;
+  }>();
 
   let revisions: number[] = [];
 
@@ -45,7 +48,7 @@
     const { value: enabled } = getTarget(event);
     dispatch('updateConstraintPlanSpec', {
       ...constraintPlanSpec,
-      enabled,
+      enabled: enabled as boolean,
     });
   }
 

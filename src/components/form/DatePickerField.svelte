@@ -18,7 +18,9 @@
   export let minDate: Date | undefined = undefined;
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { valid: boolean };
+  }>();
 
   async function onChange({ detail: event }: CustomEvent) {
     const { value } = event;

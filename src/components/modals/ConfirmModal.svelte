@@ -15,7 +15,10 @@
   export let title: string = 'Confirm';
   export let width: number = 380;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    confirm: void;
+  }>();
 
   function onKeydown(event: KeyboardEvent) {
     const { key } = event;

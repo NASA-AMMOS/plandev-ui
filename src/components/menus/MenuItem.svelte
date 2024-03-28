@@ -9,7 +9,9 @@
   export let disabled: boolean = false;
   export let selected: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    click: MouseEvent;
+  }>();
 
   function onClick(event: MouseEvent) {
     if (disabled) {

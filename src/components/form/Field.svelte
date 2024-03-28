@@ -8,7 +8,9 @@
 
   export let field: FieldStore<any>;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { valid: boolean };
+  }>();
 
   let container: HTMLFieldSetElement | null = null;
   let input: HTMLInputElement | null = null;

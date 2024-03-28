@@ -24,7 +24,11 @@
   export let startOffset: string | null = null;
   export let planReadOnly: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateAnchor: number | null;
+    updateAnchorEdge: boolean;
+    updateStartOffset: string;
+  }>();
   const anchorTextDelimiter = ' - ';
 
   let anchorableActivityDirectives: ActivityDirective[] = [];

@@ -48,7 +48,21 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    deleteActivityDirective: number;
+    deleteRow: Row;
+    duplicateRow: Row;
+    editRow: Row;
+    insertRow: Row;
+    jumpToActivityDirective: number;
+    jumpToSpan: number;
+    moveRow: { direction: 'up' | 'down'; row: Row };
+    toggleDirectiveVisibility: { row: Row; show: boolean };
+    toggleSpanVisibility: { row: Row; show: boolean };
+    updateVerticalGuides: VerticalGuide[];
+    viewTimeRangeChanged: TimeRange;
+    viewTimeRangeReset: void;
+  }>();
   let contextMenuComponent: ContextMenu;
   let activityDirective: ActivityDirective | null;
   let activityDirectiveSpans: Span[] | null = [];
@@ -172,35 +186,49 @@
   }
 
   function onEditRow() {
-    dispatch('editRow', row);
+    if (row) {
+      dispatch('editRow', row);
+    }
   }
 
   function onDeleteRow() {
-    dispatch('deleteRow', row);
+    if (row) {
+      dispatch('deleteRow', row);
+    }
   }
 
   function onMoveRowUp() {
-    dispatch('moveRow', { direction: 'up', row });
+    if (row) {
+      dispatch('moveRow', { direction: 'up', row });
+    }
   }
 
   function onMoveRowDown() {
-    dispatch('moveRow', { direction: 'down', row });
+    if (row) {
+      dispatch('moveRow', { direction: 'down', row });
+    }
   }
 
   function onInsertRow() {
-    dispatch('insertRow', row);
+    if (row) {
+      dispatch('insertRow', row);
+    }
   }
 
   function onDuplicateRow() {
-    dispatch('duplicateRow', row);
+    if (row) {
+      dispatch('duplicateRow', row);
+    }
   }
 
   function onShowDirectivesAndActivitiesChange(event: Event) {
     const { value } = getTarget(event);
     const newShowDirectives = value !== 'show-spans';
     const newShowSpans = value !== 'show-directives';
-    dispatch('toggleDirectiveVisibility', { row, show: newShowDirectives });
-    dispatch('toggleSpanVisibility', { row, show: newShowSpans });
+    if (row) {
+      dispatch('toggleDirectiveVisibility', { row, show: newShowDirectives });
+      dispatch('toggleSpanVisibility', { row, show: newShowSpans });
+    }
   }
 
   export function hide() {
@@ -229,7 +257,7 @@
       {#if activityDirective.anchor_id !== null}
         <ContextMenuItem
           on:click={() => {
-            if (activityDirective !== null) {
+            if (activityDirective !== null && activityDirective.anchor_id !== null) {
               dispatch('jumpToActivityDirective', activityDirective.anchor_id);
             }
           }}

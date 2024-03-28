@@ -4,7 +4,7 @@
   import type { ModifierPhases, State } from '@popperjs/core';
   import { createEventDispatcher } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
-  import type { Tag } from '../../../types/tags';
+  import type { Tag, TagChangeType } from '../../../types/tags';
   import { generateRandomPastelColor } from '../../../utilities/color';
   import { useActions, type ActionArray } from '../../../utilities/useActions';
   import TagChip from './Tag.svelte';
@@ -23,7 +23,12 @@
   export let options: Tag[] = [];
   export let use: ActionArray = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: {
+      tag: Tag;
+      type: TagChangeType;
+    };
+  }>();
   const [popperRef, popperContent, getInstance] = createPopperActions({
     placement: 'bottom-start',
     strategy: 'fixed',
@@ -90,7 +95,7 @@
     activeTag = activeIndex > -1 ? filteredOptions.at(activeIndex) || null : null;
   }
 
-  function addTag(tag: Tag, changeType: string = 'select') {
+  function addTag(tag: Tag, changeType: TagChangeType = 'select') {
     selectedTags = selectedTags.concat(tag);
     searchText = '';
     dispatch('change', { tag, type: changeType });

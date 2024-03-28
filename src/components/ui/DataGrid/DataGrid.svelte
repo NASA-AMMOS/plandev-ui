@@ -3,7 +3,6 @@
 <script lang="ts">
   type RowData = $$Generic<TRowData>;
 
-  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<SvelteComponent> {
     cellContextMenu: CustomEvent<CellContextMenuEvent<RowData>>;
     cellEditingStarted: CustomEvent<CellEditingStartedEvent<RowData>>;
@@ -18,7 +17,7 @@
     filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
     gridSizeChanged: CustomEvent<GridSizeChangedEvent<RowData>>;
     rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
-    rowDoubleClicked: CustomEvent<RowData>;
+    rowDoubleClicked: CustomEvent<DataGridRowDoubleClick<RowData>>;
     rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
     selectionChanged: CustomEvent<RowData[]>;
     sortChanged: CustomEvent<SortChangedEvent<RowData>>;
@@ -54,7 +53,8 @@
   } from 'ag-grid-community';
   import { debounce } from 'lodash-es';
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
-  import type { DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
+  import type { Dispatcher } from '../../../types/component';
+  import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
   import { filterEmpty } from '../../../utilities/generic';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
@@ -114,7 +114,7 @@
   };
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let contextMenu: ContextMenu;
   let gridOptions: GridOptions<RowData>;
@@ -331,7 +331,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       },
       onRowDoubleClicked(event: RowDoubleClickedEvent<RowData>) {
         if (event.data) {
-          dispatch('rowDoubleClicked', event.data);
+          dispatch('rowDoubleClicked', { data: event.data });
         }
       },
       onRowSelected({ data, node }: RowSelectedEvent<RowData>) {

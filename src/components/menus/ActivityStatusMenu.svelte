@@ -14,7 +14,9 @@
   export let invalidActivityCount: number = 0;
   export let compactNavMode: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    viewActivityValidations: void;
+  }>();
 
   let totalActivitiesCheckedCount: number = 0;
 

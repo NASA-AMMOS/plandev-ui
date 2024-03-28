@@ -28,7 +28,12 @@
   export let plan: Plan | null;
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    applyPreset: ActivityPreset | null;
+    deletePreset: ActivityPreset;
+    saveNewPreset: { name: string };
+    savePreset: { name: string };
+  }>();
 
   let activityPresets: GqlSubscribable<ActivityPreset[]> = gqlSubscribable<ActivityPreset[]>(
     gql.SUB_ACTIVITY_PRESETS,
@@ -73,7 +78,9 @@
     const { detail: activityPresetId } = event;
     const deletedActivityPreset = $activityPresets.find(activityPreset => activityPreset.id === activityPresetId);
 
-    dispatch('deletePreset', deletedActivityPreset);
+    if (deletedActivityPreset) {
+      dispatch('deletePreset', deletedActivityPreset);
+    }
   }
 
   function onSaveNewPreset(event: CustomEvent<string>) {

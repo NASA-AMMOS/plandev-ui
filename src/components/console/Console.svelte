@@ -20,7 +20,9 @@
   }
 
   const consoleHeaderHeight: number = 36;
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    resize: string;
+  }>();
 
   let consoleHeight: number = 0;
   let consoleHeightString: string;

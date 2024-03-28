@@ -2,16 +2,16 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { tags } from '../../stores/tags';
+  import type { User } from '../../types/app';
   import type { PlanSnapshot } from '../../types/plan-snapshot';
+  import type { Tag, TagsChangeEvent } from '../../types/tags';
+  import effects from '../../utilities/effects';
+  import TagsInput from '../ui/Tags/TagsInput.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
-  import { tags } from '../../stores/tags';
-  import type { Tag, TagsChangeEvent } from '../../types/tags';
-  import effects from '../../utilities/effects';
-  import TagsInput from '../ui/Tags/TagsInput.svelte';
-  import type { User } from '../../types/app';
 
   export let height: number | string = 'unset';
   export let width: number = 280;
@@ -19,7 +19,16 @@
   export let snapshot: PlanSnapshot;
   export let user: User | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    restore: {
+      description: string;
+      name: string;
+      shouldCreateSnapshot: boolean;
+      snapshot: PlanSnapshot;
+      tags: Tag[];
+    };
+  }>();
 
   let shouldCreateSnapshot: boolean = false;
   let newSnapshotName: string = '';

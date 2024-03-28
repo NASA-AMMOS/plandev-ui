@@ -17,7 +17,9 @@
 
   $: colorIsCustom = presetColors.indexOf(value) < 0;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    input: { value: string };
+  }>();
 
   function onInput(value: string) {
     dispatch('input', { value });

@@ -7,7 +7,7 @@
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { Resource } from '../../types/simulation';
-  import type { Axis, Layer, LineLayer } from '../../types/timeline';
+  import type { Axis, Layer, LineLayer, MouseOver } from '../../types/timeline';
   import { filterResourcesByLayer } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import RowHeaderMenu from './RowHeaderMenu.svelte';
@@ -27,7 +27,15 @@
   let resourceLabels: { color: string; label: string; resource: Resource; unit: string; yAxisId: number }[] = [];
   let yAxesWidth = 0;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    contextMenu: MouseOver;
+    mouseDownRowMove: void;
+    mouseUpRowMove: void;
+    toggleRowExpansion: {
+      expanded: boolean;
+      rowId: number;
+    };
+  }>();
 
   function toggleExpansion() {
     dispatch('toggleRowExpansion', { expanded: !expanded, rowId });

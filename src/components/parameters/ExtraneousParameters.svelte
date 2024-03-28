@@ -4,6 +4,7 @@
   import WarningExtraIcon from '@nasa-jpl/stellar/icons/warning_extra.svg?component';
   import CopyIcon from 'bootstrap-icons/icons/copy.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { ActivityErrorCategories } from '../../types/errors';
   import type { ArgumentsMap } from '../../types/parameter';
   import { isMacOs } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
@@ -18,7 +19,9 @@
   export let extraArguments: string[];
   export let permissionError: string | undefined = undefined;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    reset: Extract<ActivityErrorCategories, 'extra'>;
+  }>();
 
   async function onCopy(event: MouseEvent) {
     const { value } = event.currentTarget as HTMLButtonElement;

@@ -22,7 +22,9 @@
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let xTicksView: XAxisTick[] = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    zoom: D3ZoomEvent<HTMLCanvasElement, any>;
+  }>();
   const userTimeZone = getTimeZoneName();
 
   let axisOffset = 12;

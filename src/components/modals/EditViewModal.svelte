@@ -11,7 +11,13 @@
   export let height: number = 150;
   export let width: number = 380;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    save: {
+      id?: number;
+      name: string;
+    };
+  }>();
 
   let viewName: string = '';
   let saveButtonDisabled: boolean = true;

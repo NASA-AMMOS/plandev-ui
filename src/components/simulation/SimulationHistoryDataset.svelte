@@ -27,7 +27,10 @@
   export let planEndTimeMs: number;
   export let queuePosition: number = -1;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    cancel: { id: number };
+    click: void;
+  }>();
   const planDuration = planEndTimeMs - planStartTimeMs;
 
   let simulationBoundsVizRangeLeft = 0;

@@ -38,7 +38,9 @@
   };
   type SchedulingConditionCellRendererParams = ICellRendererParams<SchedulingConditionMetadata> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
   const baseColumnDefs: DataGridColumnDef<SchedulingConditionMetadata>[] = [
     {
       field: 'id',

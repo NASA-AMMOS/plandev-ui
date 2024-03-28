@@ -30,7 +30,9 @@
   };
   type ConstraintsCellRendererParams = ICellRendererParams<ConstraintMetadata> & CellRendererParams;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
   const baseColumnDefs: DataGridColumnDef<ConstraintMetadata>[] = [
     {
       field: 'id',

@@ -7,7 +7,12 @@
   import { upperFirst } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import type { DropdownOption, DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
+  import type {
+    DropdownOption,
+    DropdownOptionValue,
+    DropdownOptions,
+    SelectedDropdownOptionValue,
+  } from '../../types/dropdown';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
@@ -30,7 +35,11 @@
   export let settingsIconTooltip: string = `Set ${upperFirst(optionLabel)}`;
   export let settingsIconTooltipPlacement: string = 'top';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    deleteOption: DropdownOptionValue;
+    saveNewOption: string;
+    saveOption: DropdownOption;
+  }>();
 
   let deletePermission: boolean = true;
   let isOptionNameChanged: boolean = false;

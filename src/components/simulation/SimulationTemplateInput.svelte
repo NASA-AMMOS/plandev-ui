@@ -23,7 +23,12 @@
   export let plan: Plan | null;
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    applyTemplate: SimulationTemplate | null;
+    deleteTemplate: SimulationTemplate;
+    saveNewTemplate: Pick<SimulationTemplate, 'description'>;
+    saveTemplate: Pick<SimulationTemplate, 'description'>;
+  }>();
 
   let hasAssignPermission: boolean = false;
   let hasCreatePermission: boolean = false;
@@ -60,7 +65,9 @@
     const deletedSimulationTemplate = $simulationTemplates.find(
       simulationTemplate => simulationTemplate.id === templateId,
     );
-    dispatch('deleteTemplate', deletedSimulationTemplate);
+    if (deletedSimulationTemplate) {
+      dispatch('deleteTemplate', deletedSimulationTemplate);
+    }
   }
 
   function onSaveNewTemplate(event: CustomEvent<string>) {

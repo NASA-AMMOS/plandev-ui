@@ -3,9 +3,12 @@
 <script lang="ts">
   import ThreeDotsIcon from '@nasa-jpl/stellar/icons/three_dot_horizontal.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import type { MouseOver } from '../../types/timeline';
   import { tooltip } from '../../utilities/tooltip';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    contextMenu: MouseOver;
+  }>();
 
   let button: HTMLElement;
 

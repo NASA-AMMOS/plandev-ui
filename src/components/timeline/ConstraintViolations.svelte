@@ -5,7 +5,7 @@
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
   import type { ConstraintResultWithName } from '../../types/constraint';
-  import type { TimeRange } from '../../types/timeline';
+  import type { RowMouseOverEvent, TimeRange } from '../../types/timeline';
 
   export let constraintResults: ConstraintResultWithName[] = [];
   export let drawHeight: number = 0;
@@ -15,7 +15,9 @@
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    mouseOver: Pick<RowMouseOverEvent, 'constraintResults' | 'e'>;
+  }>();
 
   let g: SVGGElement;
   let mounted = false;

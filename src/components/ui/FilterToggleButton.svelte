@@ -12,7 +12,9 @@
   export let onTooltipContent: string = '';
   export let tooltipPlacement: string = 'top';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    toggle: void;
+  }>();
 
   function onClick() {
     dispatch('toggle');

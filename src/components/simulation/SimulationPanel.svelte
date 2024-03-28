@@ -208,7 +208,7 @@
     }
   }
 
-  async function onSaveNewSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
+  async function onSaveNewSimulationTemplate(event: CustomEvent<Pick<SimulationTemplateInsertInput, 'description'>>) {
     if ($plan && $simulation !== null) {
       const {
         detail: { description: templateName },
@@ -226,7 +226,7 @@
     }
   }
 
-  async function onSaveSimulationTemplate(event: CustomEvent<SimulationTemplateInsertInput>) {
+  async function onSaveSimulationTemplate(event: CustomEvent<Pick<SimulationTemplateInsertInput, 'description'>>) {
     if ($simulation?.template && $plan) {
       const {
         detail: { description: templateName },

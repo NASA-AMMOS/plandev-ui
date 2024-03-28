@@ -1,6 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import type { RadioButtonId } from '../../../types/radio-buttons';
+
+  import type { Dispatcher } from '../../../types/component';
+
   type FormDefinition = $$Generic<BaseDefinition>;
   type FormMetadata = $$Generic<BaseMetadata<FormDefinition>>;
 
@@ -86,7 +90,7 @@
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let defintionAuthor: UserId | null = initialDefinitionAuthor ?? user?.id ?? null;
   let definitionCode: string = initialDefinitionCode;
@@ -232,7 +236,7 @@
     }
   }
 
-  function onSetPublic(event: CustomEvent<{ id: 'public' | 'private' }>) {
+  function onSetPublic(event: CustomEvent<{ id: RadioButtonId }>) {
     const {
       detail: { id },
     } = event;

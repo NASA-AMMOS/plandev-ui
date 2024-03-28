@@ -24,7 +24,9 @@
   export let permissionError: string = '';
   export let readOnly: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateGoalPlanSpec: SchedulingGoalPlanSpecification;
+  }>();
 
   let enabled: boolean;
   let priority: number;
@@ -53,7 +55,7 @@
     const { value: enabled } = getTarget(event);
     dispatch('updateGoalPlanSpec', {
       ...goalPlanSpec,
-      enabled,
+      enabled: enabled as boolean,
     });
   }
 

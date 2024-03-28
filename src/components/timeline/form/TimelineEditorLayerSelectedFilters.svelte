@@ -28,7 +28,9 @@
     }
   }
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    remove: { filter: string };
+  }>();
 </script>
 
 <div class="st-typography-medium timeline-editor-layer-selected-filters">

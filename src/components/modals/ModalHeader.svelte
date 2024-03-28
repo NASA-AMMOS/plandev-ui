@@ -4,7 +4,9 @@
 
   export let showClose: boolean = true;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+  }>();
 </script>
 
 <div class="modal-header st-typography-header">

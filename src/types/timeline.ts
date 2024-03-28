@@ -92,9 +92,9 @@ export type MouseDown = {
   activityDirectives: ActivityDirective[];
   e: MouseEvent;
   layerId: number;
-  rowId: number;
+  rowId?: number;
   spans: Span[];
-  timelineId: number;
+  timelineId?: number;
 };
 
 export type MouseOver = {
@@ -102,7 +102,7 @@ export type MouseOver = {
   constraintResults?: ConstraintResultWithName[];
   e: MouseEvent;
   gapsByLayer?: Record<number, Point[]>;
-  layerId: number; //TODO not relevant since we sometimes have multiple layers per click
+  layerId?: number; //TODO not relevant since we sometimes have multiple layers per click
   origin?: MouseOverOrigin; //TODO perhaps remove this
   pointsByLayer?: Record<number, Point[]>;
   row?: Row;

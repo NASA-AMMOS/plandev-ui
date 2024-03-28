@@ -57,7 +57,14 @@
   let pickerMenu: Menu;
   let viewURL: URL | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    toggleDecimation: boolean;
+    toggleDirectiveVisibility: boolean;
+    toggleInterpolateHoverValue: boolean;
+    toggleLimitTooltipToLine: boolean;
+    toggleTimelineTooltip: boolean;
+    viewTimeRangeChanged: TimeRange;
+  }>();
 
   $: maxDuration = maxTimeRange.end - maxTimeRange.start;
   $: viewDuration = viewTimeRange.end - viewTimeRange.start;

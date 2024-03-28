@@ -10,7 +10,10 @@
   export let gap: string = '0';
   export let rows: string = 'none';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    changeColumnSizes: string;
+    changeRowSizes: string;
+  }>();
 
   let className: string = '';
   let div: HTMLDivElement;
@@ -30,12 +33,12 @@
     if (div) {
       if (columns !== 'none') {
         const newSizes = div.style['grid-template-columns' as keyof CSSStyleDeclaration];
-        dispatch('changeColumnSizes', newSizes);
         columns = `${newSizes}`;
+        dispatch('changeColumnSizes', columns);
       } else if (rows !== 'none') {
         const newSizes = div.style['grid-template-rows' as keyof CSSStyleDeclaration];
         rows = `${newSizes}`;
-        dispatch('changeRowSizes', newSizes);
+        dispatch('changeRowSizes', rows);
       }
     }
   }

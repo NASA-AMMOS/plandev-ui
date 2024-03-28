@@ -28,7 +28,13 @@
     }
   }
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    delete: void;
+    input: {
+      name: string;
+      value: string | number | boolean | null;
+    };
+  }>();
 
   function onInput(event: Event) {
     const { name, value } = getTarget(event);

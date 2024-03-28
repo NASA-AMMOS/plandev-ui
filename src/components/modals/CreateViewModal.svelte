@@ -10,7 +10,10 @@
   export let height: number = 150;
   export let width: number = 380;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    create: { name: string };
+  }>();
 
   let newViewName: string = '';
   let createButtonDisabled: boolean = true;

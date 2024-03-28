@@ -8,7 +8,10 @@
   export let snapshot: PlanSnapshot;
   export let numOfDirectives: number;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    restore: PlanSnapshot;
+  }>();
 </script>
 
 <div class="snapshot-bar">

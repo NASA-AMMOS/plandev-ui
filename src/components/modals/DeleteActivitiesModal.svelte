@@ -31,7 +31,10 @@
   let isHelpOpen: boolean = false;
   let numberOfDependentActivities: number = 0;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    close: void;
+    delete: ActivityDirectiveDeletionMap;
+  }>();
 
   $: if ($activityDirectivesList.length) {
     anchoredActivitiesMap = $activityDirectivesList.reduce(

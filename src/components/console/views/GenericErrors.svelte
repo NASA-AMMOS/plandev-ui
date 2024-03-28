@@ -12,7 +12,7 @@
   export let title: string;
   export let isClearable: boolean = true;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ clearMessages: void }>();
 
   function onClear() {
     dispatch('clearMessages');

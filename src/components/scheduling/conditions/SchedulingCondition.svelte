@@ -19,7 +19,9 @@
   export let permissionError: string = '';
   export let readOnly: boolean = false;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateConditionPlanSpec: SchedulingConditionPlanSpecification;
+  }>();
 
   let revisions: number[] = [];
 
@@ -31,7 +33,7 @@
     const { value: enabled } = getTarget(event);
     dispatch('updateConditionPlanSpec', {
       ...conditionPlanSpec,
-      enabled,
+      enabled: enabled as boolean,
     });
   }
 

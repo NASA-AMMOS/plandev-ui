@@ -25,7 +25,9 @@
 
   let pickerMenu: Menu;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    input: { value: XRangeLayerColorScheme };
+  }>();
 
   const schemeMap: Record<XRangeLayerColorScheme, readonly string[]> = {
     schemeAccent,

@@ -8,7 +8,9 @@
   export let month: number;
   export let selectedDate: Date | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    select: Date;
+  }>();
 
   let isSelected: boolean = false;
   let isOutsideBounds: boolean = false;

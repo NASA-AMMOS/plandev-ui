@@ -15,7 +15,9 @@
   export let layers: Layer[] = [];
   export let yAxes: Axis[] = [];
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    updateYAxesWidth: number;
+  }>();
 
   let g: SVGGElement;
 

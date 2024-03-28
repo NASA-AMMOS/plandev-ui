@@ -17,7 +17,9 @@
   // Check that the incoming value is a number or a string to handle cases of changed metadata schema.
   $: enumValue = typeof value === 'number' || typeof value === 'string' ? value : null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: { key: string; value: string | number | null };
+  }>();
 </script>
 
 <div class="activity-metadata-base-enum" style="grid-template-columns: {columns}">

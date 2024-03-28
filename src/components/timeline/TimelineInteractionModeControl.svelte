@@ -9,7 +9,9 @@
 
   export let timelineInteractionMode: TimelineInteractionMode = TimelineInteractionMode.Interact;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    change: TimelineInteractionMode;
+  }>();
 
   $: tooltipContent = `${
     timelineInteractionMode === TimelineInteractionMode.Interact

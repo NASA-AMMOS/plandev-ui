@@ -78,7 +78,9 @@
     }
   }
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    hide: void;
+  }>();
 
   const [popperRef, popperContent] = createPopperActions({
     placement,

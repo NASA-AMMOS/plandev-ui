@@ -16,7 +16,7 @@
   import { Status } from '../../enums/status';
   import { view, viewIsModified } from '../../stores/views';
   import type { User } from '../../types/app';
-  import type { ViewToggleType } from '../../types/view';
+  import type { View, ViewToggleType } from '../../types/view';
   import { showSavedViewsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { downloadView } from '../../utilities/view';
@@ -29,7 +29,14 @@
   export let user: User | null;
 
   const defaultViewName = 'Default View';
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    createView: Pick<View, 'definition' | 'owner'>;
+    editView: View;
+    resetView: void;
+    saveView: Pick<View, 'definition' | 'id' | 'name' | 'owner'>;
+    toggleView: { state: boolean; type: ViewToggleType };
+    uploadView: void;
+  }>();
 
   let leftPanelIsOn: boolean = false;
   let leftSplitPanelIsOn: boolean = false;

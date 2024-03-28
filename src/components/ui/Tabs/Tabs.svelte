@@ -19,7 +19,12 @@
 
   let className: string = '';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    'select-tab': {
+      id: TabId;
+      index: number;
+    };
+  }>();
 
   const tabs: TabId[] = [];
   const panels: PanelId[] = [];

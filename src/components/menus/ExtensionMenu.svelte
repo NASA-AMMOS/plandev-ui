@@ -14,7 +14,9 @@
   export let user: User | null;
 
   const DESCRIPTION_MAX_LENGTH = 50;
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    callExtension: Extension;
+  }>();
 
   function callExtension(extension: Extension) {
     dispatch('callExtension', extension);

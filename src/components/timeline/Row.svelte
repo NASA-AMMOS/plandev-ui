@@ -38,6 +38,7 @@
     HorizontalGuide,
     Layer,
     MouseDown,
+    MouseOver,
     Point,
     RowMouseOverEvent,
     TimeRange,
@@ -104,7 +105,20 @@
   export let yAxes: Axis[] = [];
   export let user: User | null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{
+    mouseDown: MouseDown;
+    mouseOver: MouseOver;
+    updateRowHeight: {
+      newHeight: number;
+      rowId: number;
+      wasAutoAdjusted?: boolean;
+    };
+    updateYAxes: {
+      axes: Axis[];
+      id: number;
+    };
+    zoom: D3ZoomEvent<HTMLCanvasElement, any>;
+  }>();
 
   let blur: FocusEvent;
   let contextmenu: MouseEvent;
@@ -367,37 +381,41 @@
     }
   }
 
-  function onMouseDown(event: CustomEvent<MouseDown>) {
+  function onMouseDown(event: CustomEvent<RowMouseOverEvent>) {
     const { detail } = event;
     const { layerId } = detail;
 
-    mouseDownActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
-    mouseDownSpansByLayer[layerId] = detail?.spans ?? [];
+    if (layerId != null) {
+      mouseDownActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
+      mouseDownSpansByLayer[layerId] = detail?.spans ?? [];
 
-    const activityDirectives = Object.values(mouseDownActivityDirectivesByLayer).flat();
-    const spans = Object.values(mouseDownSpansByLayer).flat();
+      const activityDirectives = Object.values(mouseDownActivityDirectivesByLayer).flat();
+      const spans = Object.values(mouseDownSpansByLayer).flat();
 
-    dispatch('mouseDown', { ...detail, activityDirectives, rowId: id, spans });
+      dispatch('mouseDown', { ...detail, activityDirectives, layerId, rowId: id, spans });
+    }
   }
 
   function onMouseOver(event: CustomEvent<RowMouseOverEvent>) {
     const { detail } = event;
     const { layerId } = detail;
 
-    mouseOverActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
-    mouseOverConstraintResults = detail?.constraintResults ?? mouseOverConstraintResults;
-    mouseOverPointsByLayer[layerId] = detail?.points ?? [];
-    mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
-    mouseOverGapsByLayer[layerId] = detail?.gaps ?? mouseOverGapsByLayer[layerId] ?? [];
+    if (layerId != null) {
+      mouseOverActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
+      mouseOverConstraintResults = detail?.constraintResults ?? mouseOverConstraintResults;
+      mouseOverPointsByLayer[layerId] = detail?.points ?? [];
+      mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
+      mouseOverGapsByLayer[layerId] = detail?.gaps ?? mouseOverGapsByLayer[layerId] ?? [];
 
-    dispatch('mouseOver', {
-      ...detail,
-      activityDirectivesByLayer: mouseOverActivityDirectivesByLayer,
-      constraintResults: mouseOverConstraintResults,
-      gapsByLayer: mouseOverGapsByLayer,
-      pointsByLayer: mouseOverPointsByLayer,
-      spansByLayer: mouseOverSpansByLayer,
-    });
+      dispatch('mouseOver', {
+        ...detail,
+        activityDirectivesByLayer: mouseOverActivityDirectivesByLayer,
+        constraintResults: mouseOverConstraintResults,
+        gapsByLayer: mouseOverGapsByLayer,
+        pointsByLayer: mouseOverPointsByLayer,
+        spansByLayer: mouseOverSpansByLayer,
+      });
+    }
   }
 
   function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
