@@ -23,8 +23,8 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
-<div class="menu-item" class:disabled class:selected role="menuitem" use:useActions={use} on:click={onClick}>
+<!-- svelte-ignore a11y-interactive-supports-focus -->
+<div class="menu-item" class:disabled class:selected role="menuitem" use:useActions={use} on:mouseup={onClick}>
   <slot />
 </div>
 
