@@ -17,6 +17,7 @@ import type {
 } from '../types/scheduling';
 import gql from '../utilities/gql';
 import { convertResponseToMetadata } from '../utilities/scheduling';
+import { derivedDeeply } from './derivedDeeply';
 import { simulationDatasetsPlan } from './simulation';
 import { gqlSubscribable } from './subscribable';
 import { tags } from './tags';
@@ -77,7 +78,7 @@ export const schedulingPlanSpecification = gqlSubscribable<SchedulingPlanSpecifi
 );
 
 /* Derived. */
-export const schedulingConditions = derived(
+export const schedulingConditions = derivedDeeply(
   [schedulingConditionResponses, tags],
   ([$schedulingConditionResponses, $tags]) => {
     return $schedulingConditionResponses.map(schedulingConditionResponse =>
@@ -89,13 +90,13 @@ export const schedulingConditions = derived(
   },
 );
 
-export const schedulingGoals = derived([schedulingGoalResponses, tags], ([$schedulingGoalResponses, $tags]) => {
+export const schedulingGoals = derivedDeeply([schedulingGoalResponses, tags], ([$schedulingGoalResponses, $tags]) => {
   return $schedulingGoalResponses.map(schedulingGoalResponse =>
     convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(schedulingGoalResponse, $tags),
   );
 });
 
-export const schedulingConditionMetadata = derived(
+export const schedulingConditionMetadata = derivedDeeply(
   [schedulingConditionResponse, tags],
   ([$schedulingConditionResponse, $tags]) => {
     if ($schedulingConditionResponse) {
@@ -108,12 +109,18 @@ export const schedulingConditionMetadata = derived(
   },
 );
 
-export const schedulingGoalMetadata = derived([schedulingGoalResponse, tags], ([$schedulingGoalResponse, $tags]) => {
-  if ($schedulingGoalResponse) {
-    return convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>($schedulingGoalResponse, $tags);
-  }
-  return null;
-});
+export const schedulingGoalMetadata = derivedDeeply(
+  [schedulingGoalResponse, tags],
+  ([$schedulingGoalResponse, $tags]) => {
+    if ($schedulingGoalResponse) {
+      return convertResponseToMetadata<SchedulingGoalMetadata, SchedulingGoalDefinition>(
+        $schedulingGoalResponse,
+        $tags,
+      );
+    }
+    return null;
+  },
+);
 
 export const schedulingConditionsMap: Readable<Record<string, SchedulingConditionMetadata>> = derived(
   [schedulingConditions],

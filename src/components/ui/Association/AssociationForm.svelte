@@ -110,19 +110,10 @@
   let saveButtonEnabled: boolean = false;
   let saveButtonText: string = 'Save';
 
-  let prevMetadataTags: Tag[] = initialMetadataTags;
-  let prevDefinitionTags: Tag[] = initialDefinitionTags;
-
-  $: if (diffTags(prevMetadataTags, initialMetadataTags)) {
-    metadataTags = initialMetadataTags;
-    prevMetadataTags = initialMetadataTags;
-  }
+  $: metadataTags = initialMetadataTags;
+  $: definitionTags = initialDefinitionTags;
   $: defintionAuthor = initialDefinitionAuthor ?? user?.id ?? null;
   $: definitionCode = initialDefinitionCode;
-  $: if (diffTags(prevDefinitionTags, initialDefinitionTags)) {
-    definitionTags = initialDefinitionTags;
-    prevDefinitionTags = initialDefinitionTags;
-  }
 
   $: isMetadataModified = diffMetadata(
     {
