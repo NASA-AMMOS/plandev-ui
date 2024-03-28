@@ -44,9 +44,15 @@
 
   let goalsTsFiles: TypeScriptFile[] = [];
   let hasCreateDefinitionCodePermission: boolean = false;
+  let hasWriteDefinitionTagsPermission: boolean = false;
   let hasWriteMetadataPermission: boolean = false;
 
   $: hasCreateDefinitionCodePermission = featurePermissions.schedulingGoals.canCreate(user);
+  $: if (user) {
+    hasWriteDefinitionTagsPermission = featurePermissions.schedulingGoals.canUpdateDefinition(user, {
+      author: mode === 'create' ? user.id : initialGoalDefinitionAuthor ?? user.id,
+    });
+  }
   $: hasWriteMetadataPermission =
     mode === 'create'
       ? featurePermissions.schedulingGoals.canCreate(user)
@@ -186,7 +192,7 @@
       tagsToUpdate: Tag[];
     }>,
   ) {
-    if (initialGoalId !== null && initialGoalRevision !== null) {
+    if (initialGoalId !== null && initialGoalRevision !== null && initialGoalDefinitionAuthor !== undefined) {
       const {
         detail: { tagIdsToDelete, tagsToUpdate },
       } = event;
@@ -199,6 +205,7 @@
       await effects.updateSchedulingGoalDefinitionTags(
         initialGoalId,
         initialGoalRevision,
+        initialGoalDefinitionAuthor,
         goalDefinitionTagsToUpdate,
         tagIdsToDelete,
         user,
@@ -211,6 +218,7 @@
   allMetadata={$schedulingGoals}
   displayName="Scheduling Goal"
   {hasCreateDefinitionCodePermission}
+  {hasWriteDefinitionTagsPermission}
   {hasWriteMetadataPermission}
   initialDefinitionAuthor={initialGoalDefinitionAuthor}
   initialDefinitionCode={initialGoalDefinitionCode}

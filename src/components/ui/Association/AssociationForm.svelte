@@ -72,6 +72,7 @@
   export let formColumns: string = '1fr 3px 2fr';
   export let hasCreateDefinitionCodePermission: boolean = false;
   export let hasWriteMetadataPermission: boolean = false;
+  export let hasWriteDefinitionTagsPermission: boolean = false;
   export let initialDefinitionAuthor: UserId | undefined = undefined;
   export let initialDefinitionCode: string = 'export default ():  => {\n\n}\n';
   export let initialDescription: string = '';
@@ -104,7 +105,7 @@
   let owner: UserId = initialOwner ?? user?.id ?? null;
   let isPublic: boolean = initialPublic;
   let isDefinitionModified: boolean = false;
-  let isDefinitionDataModified: boolean = false;
+  let isDefinitionTagsModified: boolean = false;
   let isMetadataModified: boolean = false;
   let referenceModelId: number | null = initialReferenceModelId;
   let saveButtonEnabled: boolean = false;
@@ -132,8 +133,8 @@
     },
   );
   $: isDefinitionModified = diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode });
-  $: isDefinitionDataModified = diffTags(initialDefinitionTags || [], definitionTags);
-  $: hasUpdateDefinitionPermission = user?.id === defintionAuthor || user?.id === initialOwner || isDefinitionModified;
+  $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
+  $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
   $: pageTitle = mode === 'edit' ? 's' : 'New ';
   $: pageSubtitle = mode === 'edit' ? initialName : '';
   $: referenceModelId = initialReferenceModelId;
@@ -142,11 +143,11 @@
     owner !== '' &&
     definitionCode !== '' &&
     name !== '' &&
-    (isMetadataModified || isDefinitionDataModified || isDefinitionModified);
+    (isMetadataModified || (isDefinitionTagsModified && hasUpdateDefinitionPermission) || isDefinitionModified);
   $: saveButtonClass = saveButtonEnabled ? 'primary' : 'secondary';
   $: if (mode === 'edit' && (isMetadataModified || isDefinitionModified)) {
     saveButtonText = 'Saved';
-    if ((isMetadataModified || isDefinitionDataModified) && !isDefinitionModified) {
+    if ((isMetadataModified || isDefinitionTagsModified) && !isDefinitionModified) {
       saveButtonText = 'Save';
     } else if (isDefinitionModified) {
       saveButtonText = 'Save as new version';
@@ -284,7 +285,7 @@
       if (isMetadataModified) {
         await saveMetadata();
       }
-      if (isDefinitionDataModified && !isDefinitionModified) {
+      if (isDefinitionTagsModified && !isDefinitionModified) {
         await saveDefinitionRevisionTags();
       } else if (isDefinitionModified) {
         await createNewDefinition();
@@ -352,7 +353,7 @@
         <button class="st-button secondary ellipsis" on:click={onClose}>
           {mode === 'create' ? 'Cancel' : 'Close'}
         </button>
-        {#if mode === 'edit' && saveButtonEnabled}
+        {#if mode === 'edit' && (isMetadataModified || isDefinitionModified || isDefinitionTagsModified)}
           <button class="st-button secondary ellipsis" on:click={revert}> Revert </button>
         {/if}
         <button

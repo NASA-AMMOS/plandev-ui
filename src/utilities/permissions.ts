@@ -2,10 +2,11 @@ import { base } from '$app/paths';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
-import type { ConstraintMetadata } from '../types/constraint';
+import type { ConstraintDefinition, ConstraintMetadata } from '../types/constraint';
 import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import type { Model } from '../types/model';
 import type {
+  AssetWithAuthor,
   AssetWithOwner,
   CreatePermissionCheck,
   ModelWithOwner,
@@ -15,7 +16,12 @@ import type {
   UpdatePermissionCheck,
 } from '../types/permissions';
 import type { PlanSnapshot } from '../types/plan-snapshot';
-import type { SchedulingConditionMetadata, SchedulingGoalMetadata } from '../types/scheduling';
+import type {
+  SchedulingConditionDefinition,
+  SchedulingConditionMetadata,
+  SchedulingGoalDefinition,
+  SchedulingGoalMetadata,
+} from '../types/scheduling';
 import type { UserSequence } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
@@ -40,6 +46,15 @@ function isUserOwner(user: User | null, thingWithOwner?: AssetWithOwner | null):
   if (thingWithOwner !== null) {
     if (thingWithOwner && user) {
       return thingWithOwner.owner === user.id;
+    }
+  }
+  return false;
+}
+
+function isUserAuthor(user: User | null, thingWithAuthor?: AssetWithAuthor | null): boolean {
+  if (thingWithAuthor !== null) {
+    if (thingWithAuthor && user) {
+      return thingWithAuthor.author === user.id;
     }
   }
   return false;
@@ -775,10 +790,14 @@ const queryPermissions = {
   UPDATE_ACTIVITY_PRESET: (user: User | null, preset: AssetWithOwner<ActivityPreset>): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.UPDATE_ACTIVITY_PRESET], user) && isUserOwner(user, preset));
   },
-  UPDATE_CONSTRAINT_DEFINITION_TAGS: (user: User | null): boolean => {
+  UPDATE_CONSTRAINT_DEFINITION_TAGS: (
+    user: User | null,
+    definition: AssetWithAuthor<ConstraintDefinition>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
-      getPermission([Queries.INSERT_CONSTRAINT_DEFINITION_TAGS, Queries.DELETE_CONSTRAINT_DEFINITION_TAGS], user)
+      (getPermission([Queries.INSERT_CONSTRAINT_DEFINITION_TAGS, Queries.DELETE_CONSTRAINT_DEFINITION_TAGS], user) &&
+        isUserAuthor(user, definition))
     );
   },
   UPDATE_CONSTRAINT_METADATA: (user: User | null, constraintMetadata: AssetWithOwner<ConstraintMetadata>): boolean => {
@@ -807,13 +826,17 @@ const queryPermissions = {
   UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission([Queries.UPDATE_PLAN_SNAPSHOT], user);
   },
-  UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS: (user: User | null): boolean => {
+  UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS: (
+    user: User | null,
+    definition: AssetWithAuthor<SchedulingConditionDefinition>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
-      getPermission(
+      (getPermission(
         [Queries.INSERT_SCHEDULING_CONDITION_DEFINITION_TAGS, Queries.DELETE_SCHEDULING_CONDITION_DEFINITION_TAGS],
         user,
-      )
+      ) &&
+        isUserAuthor(user, definition))
     );
   },
   UPDATE_SCHEDULING_CONDITION_METADATA: (
@@ -852,13 +875,17 @@ const queryPermissions = {
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
-  UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS: (user: User | null): boolean => {
+  UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS: (
+    user: User | null,
+    definition: AssetWithAuthor<SchedulingGoalDefinition>,
+  ): boolean => {
     return (
       isUserAdmin(user) ||
-      getPermission(
+      (getPermission(
         [Queries.INSERT_SCHEDULING_GOAL_DEFINITION_TAGS, Queries.DELETE_SCHEDULING_GOAL_DEFINITION_TAGS],
         user,
-      )
+      ) &&
+        isUserAuthor(user, definition))
     );
   },
   UPDATE_SCHEDULING_GOAL_METADATA: (user: User | null, goal?: AssetWithOwner<SchedulingGoalMetadata>): boolean => {
@@ -983,8 +1010,6 @@ interface PlanAssetCRUDPermission<T = null> {
 }
 
 interface PlanSpecificationCRUDPermission<T = null> {
-  canCreate: PlanAssetCreatePermissionCheck;
-  canDelete: (user: User | null, asset: T) => boolean;
   canRead: ReadPermissionCheck<T>;
   canUpdate: (user: User | null, plan: PlanWithOwners) => boolean;
 }
@@ -1015,12 +1040,8 @@ interface PlanSnapshotCRUDPermission extends Omit<PlanAssetCRUDPermission<PlanSn
   canRestore: RolePlanPermissionCheck;
 }
 
-interface ConstraintPlanSpecCRUDPermission {
+interface ConstraintPlanSpecCRUDPermission extends PlanSpecificationCRUDPermission {
   canCheck: RolePlanPermissionCheck;
-  canCreate: (user: User | null, plan: PlanWithOwners) => boolean;
-  canDelete: (user: User | null, plan: PlanWithOwners) => boolean;
-  canRead: (user: User | null) => boolean;
-  canUpdate: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
 interface ExpansionSetsCRUDPermission<T = null> extends Omit<CRUDPermission<T>, 'canCreate'> {
@@ -1034,7 +1055,10 @@ interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
 
 interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPermission<T> {
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner) => boolean;
-  canUpdateSpecification: (user: User | null, plan: PlanWithOwners) => boolean;
+}
+
+interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<M>> {
+  canUpdateDefinition: (user: User | null, definition: AssetWithAuthor<D>) => boolean;
 }
 
 interface FeaturePermissions {
@@ -1042,7 +1066,7 @@ interface FeaturePermissions {
   activityPresets: PlanActivityPresetsCRUDPermission;
   commandDictionary: CRUDPermission<void>;
   constraintPlanSpec: ConstraintPlanSpecCRUDPermission;
-  constraints: CRUDPermission<AssetWithOwner<ConstraintMetadata>>;
+  constraints: AssociationCRUDPermission<ConstraintMetadata, ConstraintDefinition>;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
@@ -1050,9 +1074,9 @@ interface FeaturePermissions {
   plan: CRUDPermission<PlanWithOwners>;
   planBranch: PlanBranchCRUDPermission;
   planSnapshot: PlanSnapshotCRUDPermission;
-  schedulingConditions: CRUDPermission<AssetWithOwner<SchedulingConditionMetadata>>;
+  schedulingConditions: AssociationCRUDPermission<SchedulingConditionMetadata, SchedulingConditionDefinition>;
   schedulingConditionsPlanSpec: PlanSpecificationCRUDPermission<AssetWithOwner<SchedulingConditionMetadata>>;
-  schedulingGoals: CRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
+  schedulingGoals: AssociationCRUDPermission<SchedulingGoalMetadata, SchedulingGoalDefinition>;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
@@ -1084,8 +1108,6 @@ const featurePermissions: FeaturePermissions = {
   },
   constraintPlanSpec: {
     canCheck: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
-    canCreate: (user, plan) => queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
-    canDelete: (user, plan) => queryPermissions.DELETE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
     canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
   },
@@ -1094,6 +1116,7 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, constraintMetadata) => queryPermissions.DELETE_CONSTRAINT_METADATA(user, constraintMetadata),
     canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
     canUpdate: (user, constraintMetadata) => queryPermissions.UPDATE_CONSTRAINT_METADATA(user, constraintMetadata),
+    canUpdateDefinition: (user, definition) => queryPermissions.UPDATE_CONSTRAINT_DEFINITION_TAGS(user, definition),
   },
   expansionRules: {
     canCreate: user => queryPermissions.CREATE_EXPANSION_RULE(user),
@@ -1153,11 +1176,11 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, condition) => queryPermissions.DELETE_SCHEDULING_CONDITION_METADATA(user, condition),
     canRead: user => queryPermissions.SUB_SCHEDULING_CONDITIONS(user),
     canUpdate: (user, condition) => queryPermissions.UPDATE_SCHEDULING_CONDITION_METADATA(user, condition),
+    canUpdateDefinition: (user, definition) =>
+      queryPermissions.UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS(user, definition),
   },
   schedulingConditionsPlanSpec: {
-    canCreate: user => queryPermissions.CREATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION(user),
-    canDelete: user => queryPermissions.DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS(user),
-    canRead: () => false,
+    canRead: user => queryPermissions.SUB_SCHEDULING_PLAN_SPECIFICATION(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS(user, plan),
   },
   schedulingGoals: {
@@ -1165,17 +1188,16 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, goal) => queryPermissions.DELETE_SCHEDULING_GOAL_METADATA(user, goal),
     canRead: user => queryPermissions.SUB_SCHEDULING_GOALS(user),
     canUpdate: (user, goal) => queryPermissions.UPDATE_SCHEDULING_GOAL_METADATA(user, goal),
+    canUpdateDefinition: (user, definition) =>
+      queryPermissions.UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS(user, definition),
   },
   schedulingGoalsPlanSpec: {
     canAnalyze: (user, plan, model) =>
       queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
-    canCreate: user => queryPermissions.CREATE_SCHEDULING_GOAL(user),
-    canDelete: (user, goal) => queryPermissions.DELETE_SCHEDULING_GOAL_METADATA(user, goal),
-    canRead: () => false,
+    canRead: user => queryPermissions.SUB_SCHEDULING_PLAN_SPECIFICATION(user),
     canRun: (user, plan, model) =>
       queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
-    canUpdate: (user, goal) => queryPermissions.UPDATE_SCHEDULING_GOAL_METADATA(user, goal),
-    canUpdateSpecification: (user, plan) => queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan),
+    canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan),
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

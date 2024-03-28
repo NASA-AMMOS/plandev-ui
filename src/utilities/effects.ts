@@ -4092,12 +4092,13 @@ const effects = {
   async updateConstraintDefinitionTags(
     constraintId: number,
     constraintRevision: number,
+    constraintAuthor: UserId,
     tags: ConstraintDefinitionTagsInsertInput[],
     tagIdsToDelete: number[],
     user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.UPDATE_CONSTRAINT_DEFINITION_TAGS(user)) {
+      if (!queryPermissions.UPDATE_CONSTRAINT_DEFINITION_TAGS(user, { author: constraintAuthor })) {
         throwPermissionError('create constraint definition tags');
       }
 
@@ -4267,12 +4268,13 @@ const effects = {
   async updateSchedulingConditionDefinitionTags(
     conditionId: number,
     conditionRevision: number,
+    conditionAuthor: UserId,
     tags: SchedulingConditionDefinitionTagsInsertInput[],
     tagIdsToDelete: number[],
     user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS(user)) {
+      if (!queryPermissions.UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS(user, { author: conditionAuthor })) {
         throwPermissionError('create scheduling condition definition tags');
       }
 
@@ -4397,12 +4399,13 @@ const effects = {
   async updateSchedulingGoalDefinitionTags(
     goalId: number,
     goalRevision: number,
+    goalAuthor: UserId,
     tags: SchedulingGoalDefinitionTagsInsertInput[],
     tagIdsToDelete: number[],
     user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS(user)) {
+      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS(user, { author: goalAuthor })) {
         throwPermissionError('create scheduling condition definition tags');
       }
 

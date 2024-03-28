@@ -67,8 +67,7 @@
   $: if ($plan) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
-    hasSpecEditPermission =
-      featurePermissions.schedulingGoalsPlanSpec.canUpdateSpecification(user, $plan) && !$planReadOnly;
+    hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
     hasRunPermission = featurePermissions.schedulingGoalsPlanSpec.canRun(user, $plan, $plan.model) && !$planReadOnly;
   }
 

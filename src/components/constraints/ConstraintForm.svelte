@@ -38,12 +38,18 @@
   const permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create a'} constraint.`;
 
   let hasCreateDefinitionCodePermission: boolean = false;
+  let hasWriteDefinitionTagsPermission: boolean = false;
   let hasWriteMetadataPermission: boolean = false;
   let pageTitle = mode === 'edit' ? 'Constraints' : 'New Constraint';
   let pageSubtitle = mode === 'edit' ? initialConstraintName : '';
   let constraintsTsFiles: TypeScriptFile[] = [];
 
   $: hasCreateDefinitionCodePermission = featurePermissions.constraints.canCreate(user);
+  $: if (user) {
+    hasWriteDefinitionTagsPermission = featurePermissions.constraints.canUpdateDefinition(user, {
+      author: mode === 'create' ? user.id : initialConstraintDefinitionAuthor ?? user.id,
+    });
+  }
   $: hasWriteMetadataPermission =
     mode === 'create'
       ? featurePermissions.constraints.canCreate(user)
@@ -186,7 +192,11 @@
       tagsToUpdate: Tag[];
     }>,
   ) {
-    if (initialConstraintId !== null && initialConstraintRevision !== null) {
+    if (
+      initialConstraintId !== null &&
+      initialConstraintRevision !== null &&
+      initialConstraintDefinitionAuthor !== undefined
+    ) {
       const {
         detail: { tagIdsToDelete, tagsToUpdate },
       } = event;
@@ -201,6 +211,7 @@
       await effects.updateConstraintDefinitionTags(
         initialConstraintId,
         initialConstraintRevision,
+        initialConstraintDefinitionAuthor,
         constraintDefinitionTagsToUpdate,
         tagIdsToDelete,
         user,
@@ -216,6 +227,7 @@
   displayName="Constraint"
   {hasCreateDefinitionCodePermission}
   {hasWriteMetadataPermission}
+  {hasWriteDefinitionTagsPermission}
   initialDefinitionAuthor={initialConstraintDefinitionAuthor}
   initialDefinitionCode={initialConstraintDefinitionCode}
   initialDescription={initialConstraintDescription}

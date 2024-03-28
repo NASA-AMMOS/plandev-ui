@@ -43,10 +43,16 @@
   } scheduling condition.`;
 
   let hasCreateDefinitionCodePermission: boolean = false;
+  let hasWriteDefinitionTagsPermission: boolean = false;
   let hasWriteMetadataPermission: boolean = false;
 
   let conditionsTsFiles: TypeScriptFile[] = [];
   $: hasCreateDefinitionCodePermission = featurePermissions.schedulingConditions.canCreate(user);
+  $: if (user) {
+    hasWriteDefinitionTagsPermission = featurePermissions.schedulingConditions.canUpdateDefinition(user, {
+      author: mode === 'create' ? user.id : initialConditionDefinitionAuthor ?? user.id,
+    });
+  }
   $: hasWriteMetadataPermission =
     mode === 'create'
       ? featurePermissions.schedulingConditions.canCreate(user)
@@ -188,7 +194,11 @@
       tagsToUpdate: Tag[];
     }>,
   ) {
-    if (initialConditionId !== null && initialConditionRevision !== null) {
+    if (
+      initialConditionId !== null &&
+      initialConditionRevision !== null &&
+      initialConditionDefinitionAuthor !== undefined
+    ) {
       const {
         detail: { tagIdsToDelete, tagsToUpdate },
       } = event;
@@ -203,6 +213,7 @@
       await effects.updateSchedulingConditionDefinitionTags(
         initialConditionId,
         initialConditionRevision,
+        initialConditionDefinitionAuthor,
         conditionDefinitionTagsToUpdate,
         tagIdsToDelete,
         user,
@@ -215,6 +226,7 @@
   allMetadata={$schedulingConditions}
   displayName="Scheduling Condition"
   {hasCreateDefinitionCodePermission}
+  {hasWriteDefinitionTagsPermission}
   {hasWriteMetadataPermission}
   initialDefinitionAuthor={initialConditionDefinitionAuthor}
   initialDefinitionCode={initialConditionDefinitionCode}
