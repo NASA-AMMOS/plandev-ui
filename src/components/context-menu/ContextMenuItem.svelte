@@ -15,7 +15,7 @@
   on:mouseenter
   on:mouseleave
   use:useActions={use}
-  on:click|preventDefault={() => dispatch('click')}
+  on:mouseup|preventDefault={() => dispatch('click')}
 >
   <slot />
 </div>
