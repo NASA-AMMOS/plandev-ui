@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import DataGrid from './DataGrid.svelte';
 
 const numOfRows = 10;
@@ -15,6 +15,15 @@ vi.stubGlobal(
 );
 
 describe('DataGrid Component', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -94,8 +103,7 @@ describe('DataGrid Component', () => {
 
     expect(container.querySelectorAll('.ag-center-cols-container .ag-row.ag-row-selected')).toHaveLength(3);
 
-    // need to wait for the component to fully update
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await vi.runOnlyPendingTimers();
 
     expect(
       container.querySelector('.ag-center-cols-container .ag-row.ag-row-selected.ag-current-row-selected'),
