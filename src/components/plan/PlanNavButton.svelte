@@ -1,3 +1,10 @@
+<script context="module" lang="ts">
+  let isNavHovered: boolean = false;
+
+  let showTimeout: number | undefined;
+  let hideTimeout: number | undefined;
+</script>
+
 <script lang="ts">
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import type { Status } from '../../enums/status';
@@ -23,13 +30,60 @@
   export let title: string;
 
   let menu: Menu;
+
+  function delayedShow() {
+    // Clear any existing hide timeout to prevent hiding if we're showing again
+    if (hideTimeout !== undefined) {
+      clearTimeout(hideTimeout);
+    }
+
+    // If no other nav button is currently hovered, apply the delay
+    if (!isNavHovered) {
+      showTimeout = window.setTimeout(() => {
+        isNavHovered = true;
+        menu.show();
+      }, 500); // Show delay in milliseconds
+    } else {
+      // If another nav button is already hovered, show the menu immediately
+      menu.show();
+    }
+  }
+
+  function delayedHide() {
+    if (showTimeout !== undefined) {
+      clearTimeout(showTimeout);
+    }
+
+    hideTimeout = window.setTimeout(() => {
+      // Check if the mouse is not over any nav button
+      if (isNavHovered) {
+        menu.hide();
+        isNavHovered = false;
+      }
+    }, 500); // Hide delay in milliseconds
+  }
+
+  function instantShow() {
+    // Clear any existing hide timeout to prevent hiding if we're showing again
+    if (hideTimeout !== undefined) {
+      clearTimeout(hideTimeout);
+    }
+
+    if (showTimeout !== undefined) {
+      clearTimeout(showTimeout);
+    }
+
+    isNavHovered = true;
+    menu.show();
+  }
 </script>
 
 <div
   class="nav-button st-typography-medium"
   role="none"
-  on:mouseenter={() => menu.show()}
-  on:mouseleave={() => menu.hide()}
+  on:mouseenter={delayedShow}
+  on:mouseleave={delayedHide}
+  on:click|stopPropagation={instantShow}
 >
   <div class="nav-button-icon-container">
     <slot />

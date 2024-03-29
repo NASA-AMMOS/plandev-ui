@@ -50,6 +50,7 @@ export const permissionHandler: Action<HTMLElement, PermissionHandlerProps> = (
   const tip: any = tippy(node, {
     ...params,
     ...(permissionError !== null ? { content: permissionError } : {}),
+    delay: 500,
     plugins: [permission],
   });
 

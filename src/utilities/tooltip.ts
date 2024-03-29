@@ -58,6 +58,7 @@ export function tooltip(node: Element, params: any = {}): any {
   // https://atomiks.github.io/tippyjs/v6/all-props/
   const tip: any = tippy(node, {
     ...processedParams,
+    delay: 500,
     plugins: [disabled],
   });
 
