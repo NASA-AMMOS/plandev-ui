@@ -475,10 +475,6 @@
     margin-top: 8px;
   }
 
-  .simulation-template {
-    margin-left: -7px;
-  }
-
   :global(.simulation-collapse.collapse .content) {
     margin: 0;
   }

@@ -82,12 +82,16 @@
   }
 
   .parameters-container :global(> div.highlight) {
+    border: 1px solid transparent;
     box-sizing: border-box;
+    margin-bottom: -1px;
+    margin-top: -1px;
     padding: 4px 0;
   }
 
   .parameters-container :global(> div.highlight:hover) {
-    box-shadow: 0px 0px 0px 1px var(--st-gray-20);
+    border-bottom: 1px solid var(--st-gray-20);
+    border-top: 1px solid var(--st-gray-20);
   }
 
   .parameter-info {
