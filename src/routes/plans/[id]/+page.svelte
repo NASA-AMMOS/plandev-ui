@@ -610,35 +610,41 @@
         <svelte:fragment slot="metadata">
           <div class="st-typography-body">
             <div class="simulation-header">
-              {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
-              {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
-                <div style="color: var(--st-gray-50)">
-                  {formatSimulationQueuePosition(
-                    getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
-                  )}
-                </div>
+              {#if typeof $simulationDatasetLatest?.id !== 'number'}
+                <div>Simulation not run</div>
               {:else}
-                {getSimulationProgress($simulationDatasetLatest).toFixed()}%
-                {#if simulationExtent && $simulationDatasetLatest}
-                  <div
-                    use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
-                    style={`color: ${
-                      selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
-                    }`}
-                  >
-                    {getSimulationTimestamp($simulationDatasetLatest)}
+                {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
+                {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
+                  <div style="color: var(--st-gray-50)">
+                    {formatSimulationQueuePosition(
+                      getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
+                    )}
                   </div>
+                {:else}
+                  {getSimulationProgress($simulationDatasetLatest).toFixed()}%
+                  {#if simulationExtent && $simulationDatasetLatest}
+                    <div
+                      use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
+                      style={`color: ${
+                        selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
+                      }`}
+                    >
+                      {getSimulationTimestamp($simulationDatasetLatest)}
+                    </div>
+                  {/if}
                 {/if}
               {/if}
             </div>
           </div>
-          <div style="width: 240px;">
-            <ProgressLinear
-              color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
-              progress={getSimulationProgress($simulationDatasetLatest)}
-            />
-          </div>
-          <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
+          {#if typeof $simulationDatasetLatest?.id === 'number'}
+            <div style="width: 240px;">
+              <ProgressLinear
+                color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
+                progress={getSimulationProgress($simulationDatasetLatest)}
+              />
+            </div>
+            <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
+          {/if}
           {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
             <button
               on:click={() => effects.cancelSimulation($simulationDatasetId, data.user)}

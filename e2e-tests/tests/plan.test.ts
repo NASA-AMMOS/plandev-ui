@@ -97,6 +97,14 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelTimelineEditor).toBeVisible();
   });
 
+  test(`Hovering on 'Activites' in the top navigation bar should show the activity checking menu`, async () => {
+    await expect(plan.navButtonActivityCheckingMenu).not.toBeVisible();
+    plan.navButtonActivityChecking.hover();
+    await expect(plan.navButtonActivityCheckingMenu).toBeVisible();
+    plan.planTitle.hover();
+    await expect(plan.navButtonActivityCheckingMenu).not.toBeVisible();
+  });
+
   test(`Hovering on 'Constraints' in the top navigation bar should show the constraints menu`, async () => {
     await expect(plan.navButtonConstraintsMenu).not.toBeVisible();
     plan.navButtonConstraints.hover();

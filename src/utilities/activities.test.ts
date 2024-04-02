@@ -16,6 +16,18 @@ const testSpans: Span[] = [
     attributes: {
       arguments: {},
       computedAttributes: {},
+    },
+    dataset_id: 1,
+    duration: '03:00:00',
+    id: 2,
+    parent_id: 1,
+    start_offset: '00:10:00',
+    type: 'Child',
+  },
+  {
+    attributes: {
+      arguments: {},
+      computedAttributes: {},
       directiveId: 2,
     },
     dataset_id: 1,
@@ -24,18 +36,6 @@ const testSpans: Span[] = [
     parent_id: null,
     start_offset: '00:00:00',
     type: 'Parent',
-  },
-  {
-    attributes: {
-      arguments: {},
-      computedAttributes: {},
-    },
-    dataset_id: 1,
-    duration: '03:00:00',
-    id: 2,
-    parent_id: 1,
-    start_offset: '00:10:00',
-    type: 'Child',
   },
   {
     attributes: {
@@ -87,6 +87,10 @@ describe('getActivityMetadata', () => {
 });
 
 describe('getSpanRootParent', () => {
+  test('Should return null for a null span id', () => {
+    expect(getSpanRootParent(testSpansMap, null)).toEqual(null);
+  });
+
   test('Should return null for an ID that does not exist', () => {
     expect(getSpanRootParent(testSpansMap, 42)).toEqual(null);
   });
@@ -179,7 +183,7 @@ describe('sortActivityDirectivesOrSpans', () => {
       },
       dataset_id: 1,
       duration: '02:00:00',
-      id: 1,
+      id: 2,
       parent_id: null,
       start_offset: '09:00:00',
       type: 'Parent',
@@ -192,9 +196,9 @@ describe('sortActivityDirectivesOrSpans', () => {
       },
       dataset_id: 1,
       duration: '02:00:00',
-      id: 2,
+      id: 1,
       parent_id: null,
-      start_offset: '08:00:00',
+      start_offset: '09:00:00',
       type: 'Parent',
     },
   ];

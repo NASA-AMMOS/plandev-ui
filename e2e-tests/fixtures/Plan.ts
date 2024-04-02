@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { Status } from '../../src/enums/status';
 import { Constraints } from './Constraints.js';
 import { Plans } from './Plans.js';
 import { SchedulingConditions } from './SchedulingConditions.js';
@@ -9,14 +10,18 @@ import { SchedulingGoals } from './SchedulingGoals.js';
 export class Plan {
   activitiesTable: Locator;
   activitiesTableFirstRow: Locator;
+  activityCheckingStatusSelector: (status: string) => string;
   analyzeButton: Locator;
   appError: Locator;
+  consoleContainer: Locator;
   constraintListItemSelector: string;
   constraintManageButton: Locator;
   constraintNewButton: Locator;
   gridMenu: Locator;
   gridMenuButton: Locator;
   gridMenuItem: (name: string) => Locator;
+  navButtonActivityChecking: Locator;
+  navButtonActivityCheckingMenu: Locator;
   navButtonConstraints: Locator;
   navButtonConstraintsMenu: Locator;
   navButtonExpansion: Locator;
@@ -25,6 +30,7 @@ export class Plan {
   navButtonSchedulingMenu: Locator;
   navButtonSimulation: Locator;
   navButtonSimulationMenu: Locator;
+  navButtonSimulationMenuStatus: Locator;
   panelActivityDirectivesTable: Locator;
   panelActivityForm: Locator;
   panelActivityTypes: Locator;
@@ -33,10 +39,12 @@ export class Plan {
   panelPlanMetadata: Locator;
   panelSchedulingConditions: Locator;
   panelSchedulingGoals: Locator;
+  panelSimulatedActivitiesTable: Locator;
   panelSimulation: Locator;
   panelTimeline: Locator;
   panelTimelineEditor: Locator;
   planTitle: Locator;
+  reSimulateButton: Locator;
   roleSelector: Locator;
   scheduleButton: Locator;
   schedulingConditionEnabledCheckbox: Locator;
@@ -52,6 +60,9 @@ export class Plan {
   schedulingGoalNewButton: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  simulateButton: Locator;
+  simulationHistoryList: Locator;
+  simulationStatusSelector: (status: string) => string;
 
   constructor(
     public page: Page,
@@ -63,8 +74,17 @@ export class Plan {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
     this.schedulingConditionListItemSelector = `.scheduling-condition:has-text("${schedulingConditions.conditionName}")`;
     this.schedulingGoalListItemSelector = (goalName: string) => `.scheduling-goal:has-text("${goalName}")`;
-    this.schedulingStatusSelector = (status: string) => `.header-actions > .status-badge.${status.toLowerCase()}`;
+    this.schedulingStatusSelector = (status: string) =>
+      `div[data-component-name="SchedulingGoalsPanel"] .header-actions > .status-badge.${status.toLowerCase()}`;
+    this.simulationStatusSelector = (status: string) =>
+      `.nav-button:has-text("Simulation") .status-badge[aria-label=${status}]`;
+    this.activityCheckingStatusSelector = (status: string) =>
+      `.nav-button:has-text("Activities") .status-badge[aria-label=${status}]`;
     this.updatePage(page);
+  }
+
+  async addActivity(name: string = 'GrowBanana') {
+    await this.page.getByRole('button', { name: `CreateActivity-${name}` }).click();
   }
 
   async createBranch(name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })) {
@@ -154,6 +174,11 @@ export class Plan {
     await this.panelSimulation.getByPlaceholder('Enter template name').blur();
   }
 
+  async getSimulationHistoryListLength() {
+    const elements = await this.simulationHistoryList.locator(`button:has-text("Simulation ID")`).all();
+    return elements.length;
+  }
+
   /**
    * Wait for Hasura events to finish seeding the database after a model is created.
    * If we do not wait then navigation to the plan will fail because the data is not there yet.
@@ -164,6 +189,11 @@ export class Plan {
     await this.page.waitForTimeout(1200);
     await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
+  }
+
+  async reRunSimulation(expectedFinalState = Status.Complete) {
+    await this.reSimulateButton.click();
+    await this.waitForSimulationStatus(expectedFinalState);
   }
 
   async removeConstraint() {
@@ -182,14 +212,19 @@ export class Plan {
 
   async runAnalysis() {
     await this.analyzeButton.click();
-    await this.waitForSchedulingStatus('Incomplete');
-    await this.waitForSchedulingStatus('Complete');
+    await this.waitForSchedulingStatus(Status.Incomplete);
+    await this.waitForSchedulingStatus(Status.Complete);
   }
 
-  async runScheduling(expectedFinalState = 'Complete') {
+  async runScheduling(expectedFinalState = Status.Complete) {
     await this.scheduleButton.click();
-    await this.waitForSchedulingStatus('Incomplete');
+    await this.waitForSchedulingStatus(Status.Incomplete);
     await this.waitForSchedulingStatus(expectedFinalState);
+  }
+
+  async runSimulation(expectedFinalState = Status.Complete) {
+    await this.simulateButton.click();
+    await this.waitForSimulationStatus(expectedFinalState);
   }
 
   async selectActivityAnchorByIndex(index: number) {
@@ -317,10 +352,13 @@ export class Plan {
       .nth(0);
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
-    this.gridMenu = page.locator('.grid-menu > .menu > .menu-slot');
-    this.gridMenuButton = page.locator('.grid-menu');
+    this.consoleContainer = page.locator(`.console-container`);
+    this.gridMenu = page.locator('.header > .grid-menu > .menu > .menu-slot');
+    this.gridMenuButton = page.locator('.header > .grid-menu');
     this.gridMenuItem = (name: string) =>
-      page.locator(`.grid-menu > .menu > .menu-slot > .menu-item:has-text("${name}")`);
+      page.locator(`.header > .grid-menu > .menu > .menu-slot > .menu-item:has-text("${name}")`);
+    this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
+    this.navButtonActivityCheckingMenu = page.locator(`.nav-button:has-text("Activities") .menu`);
     this.navButtonExpansion = page.locator(`.nav-button:has-text("Expansion")`);
     this.navButtonExpansionMenu = page.locator(`.nav-button:has-text("Expansion") .menu`);
     this.navButtonConstraints = page.locator(`.nav-button:has-text("Constraints")`);
@@ -329,6 +367,7 @@ export class Plan {
     this.navButtonSchedulingMenu = page.locator(`.nav-button:has-text("Scheduling") .menu`);
     this.navButtonSimulation = page.locator(`.nav-button:has-text("Simulation")`);
     this.navButtonSimulationMenu = page.locator(`.nav-button:has-text("Simulation") .menu`);
+    this.navButtonSimulationMenuStatus = page.locator(`.nav-button:has-text("Simulation") .status-badge`);
     this.page = page;
     this.panelActivityDirectivesTable = page.locator('[data-component-name="ActivityDirectivesTablePanel"]');
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
@@ -338,12 +377,16 @@ export class Plan {
     this.panelPlanMetadata = page.locator('[data-component-name="PlanMetadataPanel"]');
     this.panelSchedulingConditions = page.locator('[data-component-name="SchedulingConditionsPanel"]');
     this.panelSchedulingGoals = page.locator('[data-component-name="SchedulingGoalsPanel"]');
+    this.panelSimulatedActivitiesTable = page.locator('[data-component-name="ActivitySpansTablePanel"]');
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
     this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);
     this.roleSelector = page.locator(`.nav select`);
+    this.reSimulateButton = page.locator('.header-actions button:has-text("Re-Run")');
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
+    this.simulateButton = page.locator('.header-actions button:has-text("Simulate")');
+    this.simulationHistoryList = page.locator('.simulation-history');
     this.analyzeButton = page.locator('.header-actions button[aria-label="Analyze"]');
     this.schedulingGoalManageButton = page.locator(`button[name="manage-goals"]`);
     this.schedulingConditionManageButton = page.locator(`button[name="manage-conditions"]`);
@@ -360,8 +403,18 @@ export class Plan {
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
   }
 
-  async waitForSchedulingStatus(status: string) {
+  async waitForActivityCheckingStatus(status: Status) {
+    await this.page.waitForSelector(this.activityCheckingStatusSelector(status), { state: 'attached', strict: true });
+    await this.page.waitForSelector(this.activityCheckingStatusSelector(status), { state: 'visible', strict: true });
+  }
+
+  async waitForSchedulingStatus(status: Status) {
     await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'attached', strict: true });
     await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'visible', strict: true });
+  }
+
+  async waitForSimulationStatus(status: Status) {
+    await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'attached', strict: true });
+    await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'visible', strict: true });
   }
 }

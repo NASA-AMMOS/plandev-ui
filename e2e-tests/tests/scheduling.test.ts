@@ -1,5 +1,6 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import { Status } from '../../src/enums/status.js';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { Plan } from '../fixtures/Plan.js';
@@ -66,14 +67,14 @@ test.describe.serial('Scheduling', () => {
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).uncheck();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).not.toBeChecked();
-    await plan.runScheduling('Failed');
+    await plan.runScheduling(Status.Failed);
     await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).check();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
   });
 
   test('The condition should prevent showing +10 in the goals badge', async () => {
-    await plan.runScheduling('Failed');
+    await plan.runScheduling(Status.Failed);
     await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
   });
 
@@ -113,7 +114,7 @@ test.describe.serial('Scheduling', () => {
     await plan.showPanel('Activity Types');
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
     await plan.showPanel('Scheduling Goals');
-    await plan.waitForSchedulingStatus('Modified');
+    await plan.waitForSchedulingStatus(Status.Modified);
   });
 
   test('Delete scheduling goal', async () => {
