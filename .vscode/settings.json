@@ -12,5 +12,16 @@
   },
   "stylelint.validate": ["css", "postcss", "svelte"],
   "typescript.preferences.importModuleSpecifier": "relative",
-  "cSpell.words": ["metadatas", "unconstructable"]
+  "cSpell.words": ["metadatas", "unconstructable"],
+  "terminal.integrated.profiles.osx": {
+    "bash": {
+      "args": ["--login"],
+      "icon": "terminal-bash",
+      "path": "bash"
+    },
+    "zsh": {
+      "args": ["--login", "--interactive"],
+      "path": "zsh"
+    }
+  }
 }

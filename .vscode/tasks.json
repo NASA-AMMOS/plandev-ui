@@ -1,0 +1,141 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Aerie UI",
+      "type": "shell",
+      "command": "nvm use && npm run dev",
+      "detail": "Task to run the Aerie UI in development mode.",
+      "problemMatcher": [
+        {
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "  VITE",
+            "endsPattern": "➜  press h to show help"
+          },
+          "pattern": {
+            "regexp": ""
+          }
+        }
+      ],
+      "presentation": {
+        "group": "groupA"
+      }
+    },
+    {
+      "label": "Svelte Check",
+      "type": "shell",
+      "command": "nvm use && npm run check:watch",
+      "detail": "Task to run the svelte static analysis.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupA"
+      }
+    },
+    {
+      "label": "Unit Tests",
+      "type": "shell",
+      "command": "nvm use && npm run test",
+      "detail": "Task to run the unit tests with watch enabled.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupA"
+      }
+    },
+    {
+      "label": "Update Aerie",
+      "type": "shell",
+      "command": "cd ../aerie && git pull && ./gradlew assemble",
+      "detail": "Task to update your local Aerie repo and rebuild it.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupB"
+      }
+    },
+    {
+      "label": "Build Aerie",
+      "type": "shell",
+      "command": "cd ../aerie && ./gradlew assemble",
+      "detail": "Task to just rebuild Aerie without updating the repo.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupB"
+      }
+    },
+    {
+      "label": "Clean Aerie",
+      "type": "shell",
+      "command": "cd ../aerie && docker compose down && docker compose rm -f && docker compose down -v && docker compose down --rmi all && ./gradlew clean",
+      "detail": "Task to completely clean Aerie.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupB"
+      }
+    },
+    {
+      "label": "Aerie Backend",
+      "type": "shell",
+      "command": "cd ../aerie && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres",
+      "detail": "Task to start up Aerie containers.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupB"
+      }
+    },
+    {
+      "label": "Clear Aerie DB",
+      "type": "shell",
+      "command": "cd ../aerie && docker compose down -v",
+      "detail": "Task to clear the Aerie DB.",
+      "problemMatcher": [],
+      "presentation": {
+        "group": "groupB"
+      }
+    },
+    {
+      "label": "Reset Aerie DB",
+      "type": "shell",
+      "dependsOn": ["Clear Aerie DB", "Aerie Backend"],
+      "dependsOrder": "sequence",
+      "detail": "Task to clear and restart the Aerie DB."
+    },
+    {
+      "label": "Run Development",
+      "dependsOn": ["Aerie Backend", "Aerie UI", "Svelte Check", "Unit Tests"],
+      "dependsOrder": "parallel",
+      "detail": "Task to start up local development.",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build UI",
+      "type": "shell",
+      "command": "nvm use && npm run build",
+      "detail": "Task to do a production build of the UI"
+    },
+    {
+      "label": "e2e Debug",
+      "type": "shell",
+      "command": "nvm use && npm run test:e2e:debug",
+      "detail": "Task to run the e2e tests in debug mode."
+    },
+    {
+      "label": "e2e Codegen",
+      "type": "shell",
+      "command": "nvm use && npm run test:e2e:codegen",
+      "detail": "Task to run Playwright codegen"
+    },
+    {
+      "label": "e2e Tests",
+      "type": "shell",
+      "dependsOn": ["Build UI"],
+      "command": "nvm use && npm run test:e2e",
+      "detail": "Task to run e2e tests"
+    },
+    {
+      "label": "e2e Rerun",
+      "type": "shell",
+      "command": "nvm use && npm run test:e2e",
+      "detail": "Task to rerun e2e tests without rebuilding the UI."
+    }
+  ]
+}

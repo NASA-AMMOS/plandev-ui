@@ -49,6 +49,8 @@ Before you can run aerie-ui you must install and configure the following product
 
 - [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download, build, and run Aerie:
 
+  (NOTE: For compatibility with VSCode tasks, ensure that both Aerie UI and Aerie repos share the same parent directory and that NVM is installed for node version management)
+
   ```sh
   git clone https://github.com/NASA-AMMOS/aerie.git
   cd aerie
@@ -68,6 +70,13 @@ Before you can run aerie-ui you must install and configure the following product
 
   Next build Aerie, and start the services via Docker:
 
+  Via VSCode tasks: (refer to to the [development section](#development))
+
+  - Run the `Build Aerie` task to build Aerie
+  - Run the `Aerie Containers` task, to bring up all the containers
+
+  Via CLI:
+
   ```sh
   ./gradlew assemble
 
@@ -75,7 +84,11 @@ Before you can run aerie-ui you must install and configure the following product
   docker-compose up --build --detach aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres
   ```
 
-  To stop and clean the Aerie services do:
+  To stop and clean the Aerie services:
+
+  Via VSCode task:
+
+  Run the `Clean Aerie` task
 
   ```sh
   cd aerie
@@ -105,6 +118,7 @@ Your editor should follow the same settings found in [.vscode/settings.json](../
 1. [GraphQL](https://marketplace.visualstudio.com/items?itemName=GraphQL.vscode-graphql)
 1. [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense)
 1. [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
+1. [Task Explorer](https://marketplace.visualstudio.com/items?itemName=spmeesseman.vscode-taskexplorer)
 
 ## Getting the Sources
 
@@ -123,11 +137,30 @@ Install the JavaScript modules needed to build aerie-ui:
 npm install
 ```
 
-## Start Development Server
+## Development
+
+Via VSCode task:
+
+Run the `Development` task to start everything including the Aerie containers.
+
+The `Development` task runs the following tasks:
+
+- `Aerie UI`
+- `Aerie Containers`
+- `Svelte Check`
+- `Unit Tests`
+
+Via CLI:
 
 Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The app will automatically reload if you change any of the source files. Since we have observed some issues using [monaco-editor](https://microsoft.github.io/monaco-editor/) with the dev server on Firefox, we recommend using Chrome for development.
 
 ## Building For Production
+
+Via VSCode task:
+
+Run the `UI Build` task
+
+Via CLI:
 
 Run `npm run build` to build a production version of the project. The build artifacts will be stored in the `build/` directory.
 
