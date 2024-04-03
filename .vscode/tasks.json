@@ -6,15 +6,16 @@
       "type": "shell",
       "command": "nvm use && npm run dev",
       "detail": "Task to run the Aerie UI in development mode.",
+      "isBackground": true,
       "problemMatcher": [
         {
           "background": {
             "activeOnStart": true,
-            "beginsPattern": "  VITE",
-            "endsPattern": "➜  press h to show help"
+            "beginsPattern": "\\s*VITE v",
+            "endsPattern": ".*to show help"
           },
           "pattern": {
-            "regexp": ""
+            "regexp": "."
           }
         }
       ],
@@ -77,6 +78,7 @@
       "type": "shell",
       "command": "cd ../aerie && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres",
       "detail": "Task to start up Aerie containers.",
+      "isBackground": true,
       "problemMatcher": [],
       "presentation": {
         "group": "groupB"
@@ -121,6 +123,8 @@
     {
       "label": "e2e Codegen",
       "type": "shell",
+      "dependsOn": ["Aerie UI"],
+      "dependsOrder": "sequence",
       "command": "nvm use && npm run test:e2e:codegen",
       "detail": "Task to run Playwright codegen"
     },
