@@ -450,9 +450,6 @@ const queryPermissions = {
       (getPermission([Queries.DELETE_CONSTRAINT_METADATA], user) && isUserOwner(user, constraintMetadata))
     );
   },
-  DELETE_CONSTRAINT_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_TAGS], user);
-  },
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS], user);
   },
@@ -513,9 +510,6 @@ const queryPermissions = {
       (getPermission([Queries.DELETE_SCHEDULING_CONDITION_METADATA], user) && isUserOwner(user, conditionMetadata))
     );
   },
-  DELETE_SCHEDULING_CONDITION_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS], user);
-  },
   DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: () => true,
   DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS], user);
@@ -528,9 +522,6 @@ const queryPermissions = {
       isUserAdmin(user) ||
       (getPermission([Queries.DELETE_SCHEDULING_GOAL_METADATA], user) && isUserOwner(user, goalMetadata))
     );
-  },
-  DELETE_SCHEDULING_GOAL_METADATA_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS], user);
   },
   DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: () => true,
   DELETE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: (user: User | null): boolean => {

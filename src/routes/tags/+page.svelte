@@ -239,14 +239,7 @@
       'Delete Tag',
     );
     if (confirm) {
-      // TODO how should we handle partial success?
-      const constraintTagDeletionSuccess = await effects.deleteConstraintMetadataTags([tag.id], user);
-      const expansionRuleTagDeletionSuccess = await effects.deleteExpansionRuleTags([tag.id], user);
-      const tagDeletionSuccess = await effects.deleteTag(tag, user);
-
-      if (constraintTagDeletionSuccess && expansionRuleTagDeletionSuccess && tagDeletionSuccess) {
-        tags = tags.filter(t => t.id !== tag.id);
-      }
+      await effects.deleteTag(tag, user);
       // Stop editing if the selected tag is the one being deleted
       if (selectedTag?.id === tag.id) {
         exitEditing(false);

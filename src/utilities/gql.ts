@@ -680,14 +680,6 @@ const gql = {
     }
   `,
 
-  DELETE_CONSTRAINT_METADATA_TAGS: `#graphql
-    mutation DeleteConstraintMetadataTags($ids: [Int!]!) {
-      ${Queries.DELETE_CONSTRAINT_TAGS}(where: { tag_id: { _in: $ids } }) {
-          affected_rows
-      }
-    }
-  `,
-
   DELETE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
     mutation DeleteConstraintModelSpecification($constraintIds: [Int!]!, $modelId: Int!) {
       ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
@@ -814,14 +806,6 @@ const gql = {
     }
   `,
 
-  DELETE_SCHEDULING_CONDITION_METADATA_TAGS: `#graphql
-    mutation DeleteSchedulingConditionMetadataTags($ids: [Int!]!) {
-      ${Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS}(where: { tag_id: { _in: $ids } }) {
-          affected_rows
-      }
-    }
-  `,
-
   DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: `#graphql
     mutation DeleteSchedulingConditionModelSpecification($conditionIds: [Int!]!, $modelId: Int!) {
       ${Queries.DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS}(
@@ -856,14 +840,6 @@ const gql = {
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoalMetadata: ${Queries.DELETE_SCHEDULING_GOAL_METADATA}(id: $id) {
         id
-      }
-    }
-  `,
-
-  DELETE_SCHEDULING_GOAL_METADATA_TAGS: `#graphql
-    mutation DeleteSchedulingGoalMetadataTags($ids: [Int!]!) {
-      ${Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS}(where: { tag_id: { _in: $ids } }) {
-          affected_rows
       }
     }
   `,
