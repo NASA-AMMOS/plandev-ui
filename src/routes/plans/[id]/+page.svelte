@@ -62,6 +62,7 @@
   import { planExpansionStatus, resetExpansionStores, selectedExpansionSetId } from '../../../stores/expansion';
   import {
     activityTypes,
+    initialPlan,
     maxTimeRange,
     plan,
     planDatasets,
@@ -217,17 +218,19 @@
   ));
   $: hasCreateViewPermission = featurePermissions.view.canCreate(data.user);
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
-  $: if ($plan) {
+  $: if ($initialPlan) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintPlanSpec.canCheck(data.user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.constraintPlanSpec.canCheck(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
-      featurePermissions.expansionSequences.canExpand(data.user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.expansionSequences.canExpand(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
-      featurePermissions.schedulingGoalsPlanSpec.canAnalyze(data.user, $plan, $plan.model) && !$planReadOnly;
-    hasSimulatePermission = featurePermissions.simulation.canRun(data.user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.schedulingGoalsPlanSpec.canAnalyze(data.user, $initialPlan, $initialPlan.model) &&
+      !$planReadOnly;
+    hasSimulatePermission =
+      featurePermissions.simulation.canRun(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
   }
   $: if (data.initialPlan) {
-    $plan = data.initialPlan;
+    $initialPlan = data.initialPlan;
     $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
     $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
     $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
@@ -297,7 +300,7 @@
     initializeView({ ...data.initialView });
   }
 
-  $: if ($plan && $planDatasets) {
+  $: if ($initialPlan && $planDatasets) {
     let datasetNames = [];
 
     for (const dataset of $planDatasets) {
@@ -314,9 +317,9 @@
     $externalResources = [];
     effects
       .getResourcesExternal(
-        $plan.id,
+        $initialPlan.id,
         $simulationDatasetId > -1 ? $simulationDatasetId : null,
-        $plan.start_time,
+        $initialPlan.start_time,
         data.user,
         resourcesExternalAbortController.signal,
       )
@@ -386,9 +389,9 @@
     response => response.errors?.length,
   ).length;
 
-  $: if ($plan && browser) {
+  $: if ($initialPlan && browser) {
     // Asynchronously fetch resource types
-    effects.getResourceTypes($plan.model_id, data.user).then(initialResourceTypes => {
+    effects.getResourceTypes($initialPlan.model_id, data.user).then(initialResourceTypes => {
       $resourceTypes = initialResourceTypes;
       $resourceTypesLoading = false;
     });

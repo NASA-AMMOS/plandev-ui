@@ -37,6 +37,7 @@ export enum Queries {
   DELETE_EXPANSION_SET = 'delete_expansion_set_by_pk',
   DELETE_MISSION_MODEL = 'delete_mission_model_by_pk',
   DELETE_PLAN = 'delete_plan_by_pk',
+  DELETE_PLAN_COLLABORATOR = 'delete_plan_collaborators_by_pk',
   DELETE_PLAN_SNAPSHOT = 'delete_plan_snapshot_by_pk',
   DELETE_PLAN_TAGS = 'delete_plan_tags',
   DELETE_PRESET_TO_DIRECTIVE = 'delete_preset_to_directive_by_pk',
@@ -90,6 +91,7 @@ export enum Queries {
   INSERT_MISSION_MODEL = 'insert_mission_model_one',
   INSERT_PLAN = 'insert_plan_one',
   INSERT_PLAN_SNAPSHOT_TAGS = 'insert_plan_snapshot_tags',
+  INSERT_PLAN_COLLABORATORS = 'insert_plan_collaborators',
   INSERT_PLAN_TAGS = 'insert_plan_tags',
   INSERT_SCHEDULING_CONDITION_DEFINITION = 'insert_scheduling_condition_definition_one',
   INSERT_SCHEDULING_CONDITION_DEFINITION_TAGS = 'insert_scheduling_condition_definition_tags',
@@ -168,6 +170,7 @@ export enum Queries {
   USER_ROLE_PERMISSION = 'user_role_permission',
   USER_SEQUENCE = 'user_sequence_by_pk',
   USER_SEQUENCES = 'user_sequence',
+  USERS = 'users',
   VALIDATE_ACTIVITY_ARGUMENTS = 'validateActivityArguments',
   VIEW = 'view_by_pk',
   VIEWS = 'view',
@@ -416,6 +419,14 @@ const gql = {
       }
     }
   `,
+
+  CREATE_PLAN_COLLABORATORS: `#graphql
+    mutation CreatePlanCollaborators($collaborators: [plan_collaborators_insert_input!]!) {
+      ${Queries.INSERT_PLAN_COLLABORATORS}(objects: $collaborators){
+        affected_rows
+      }
+    }
+`,
 
   CREATE_PLAN_MERGE_REQUEST: `#graphql
     mutation CreatePlanMergeRequest($source_plan_id: Int!, $target_plan_id: Int!) {
@@ -770,6 +781,14 @@ const gql = {
         returning {
           id
         }
+      }
+    }
+  `,
+
+  DELETE_PLAN_COLLABORATOR: `#graphql
+    mutation DeletePlanCollaborator($collaborator: String!, $planId: Int!) {
+      deletePlanCollaborator: ${Queries.DELETE_PLAN_COLLABORATOR}(collaborator: $collaborator, plan_id: $planId) {
+        collaborator
       }
     }
   `,
@@ -1933,6 +1952,21 @@ const gql = {
     }
   `,
 
+  SUB_PLANS_USER_WRITABLE: `#graphql
+    subscription SubPlansUserWritable($userId: String!) {
+      ${Queries.PLANS}(where: {_or: [{owner: {_eq: $userId}}, {collaborators: {collaborator: {_eq: $userId}}}]}, order_by: {id: desc}) {
+        collaborators {
+          collaborator
+        }
+        id
+        name
+        owner
+        updated_at
+        updated_by
+      }
+    }
+  `,
+
   SUB_PLAN_DATASET: `#graphql
     subscription SubPlanDatasets($planId: Int!) {
       ${Queries.PLAN_DATASETS}(where: {plan_id: {_eq: $planId}}) {
@@ -2103,6 +2137,22 @@ const gql = {
     subscription SubPlanMergeRequestStatus($mergeRequestId: Int!) {
       merge_request: ${Queries.MERGE_REQUEST}(id: $mergeRequestId) {
         status
+      }
+    }
+  `,
+
+  SUB_PLAN_METADATA: `#graphql
+    subscription SubPlanMetadata($planId: Int!) {
+      merge_request: ${Queries.PLAN}(id: $planId) {
+        id
+        name
+        owner
+        updated_at
+        updated_by
+        created_at
+        collaborators {
+          collaborator
+        }
       }
     }
   `,
@@ -2500,6 +2550,14 @@ const gql = {
         id
         name
         owner
+      }
+    }
+  `,
+
+  SUB_USERS: `#graphql
+    subscription SubUsers {
+      ${Queries.USERS}(order_by: { username: desc }) {
+        username
       }
     }
   `,

@@ -18,7 +18,9 @@
   label={tag.name}
   {removable}
   on:click
-/>
+>
+  <slot />
+</Chip>
 
 <style>
   :global(.tag.st-chip) {

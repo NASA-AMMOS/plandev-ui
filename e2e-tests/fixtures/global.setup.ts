@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test';
 import { STORAGE_STATE } from '../../playwright.config';
 import playwrightConfig from '../../playwright.config.js';
+import { performLogin } from './User.js';
 
 /**
  * Global setup
@@ -11,13 +12,6 @@ import playwrightConfig from '../../playwright.config.js';
 
 setup('login', async ({ page }) => {
   const baseURL = playwrightConfig.use?.baseURL ?? '';
-
-  await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1000);
-  await page.locator('input[name="username"]').fill('test');
-  await page.locator('input[name="password"]').fill('test');
-  await page.getByRole('button', { name: 'Login' }).click();
-  await page.waitForURL(`${baseURL}/plans`);
-
+  await performLogin(page, baseURL);
   await page.context().storageState({ path: STORAGE_STATE });
 });

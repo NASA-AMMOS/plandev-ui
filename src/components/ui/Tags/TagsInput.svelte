@@ -1,4 +1,4 @@
-<svelte:options immutable={true} />
+<svelte:options immutable={true} accessors={true} />
 
 <script lang="ts">
   import type { ModifierPhases, State } from '@popperjs/core';
@@ -9,15 +9,31 @@
   import { useActions, type ActionArray } from '../../../utilities/useActions';
   import TagChip from './Tag.svelte';
 
+  export let addTag: (tag: Tag, changeType: TagChangeType) => void = (
+    tag: Tag,
+    changeType: TagChangeType = 'select',
+  ) => {
+    selectedTags = selectedTags.concat(tag);
+    searchText = '';
+    dispatch('change', { tag, type: changeType });
+    updatePopperPosition();
+    closeSuggestions();
+  };
   export let createTagObject: (name: string) => Tag = (name: string) => {
     return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   };
+  export let creatable: boolean = true;
+  export let compareTags = (tagA: Tag, tagB: Tag) => tagA.id === tagB.id;
   export let disabled: boolean = false;
+  export let getTagName = (tag: Tag) => tag.name;
   export let id: string = '';
+  export let ignoreCase: boolean = true;
   export let inputRef: HTMLInputElement | null = null;
+  export let minWidth: number = 82;
   export let name: string = '';
   export let placeholder: string = 'Enter a tag...';
   export let selected: Tag[] = [];
+  export let tagDisplayName: string = 'tag';
   export let suggestionsLimit: number = 8;
   export let tagsRef: HTMLDivElement | null = null;
   export let options: Tag[] = [];
@@ -61,20 +77,27 @@
   $: selectedTags = [...selected]; // copy of selected prop for internal reference and temporary modification
   $: if (options && searchText !== null) {
     // Determine if searchText exactly matches any of the available options
-    exactMatchFound = options.findIndex(tag => compareTagNames(tag.name, searchText || '')) > -1;
+    exactMatchFound = options.findIndex(tag => compareTagNames(getTagName(tag), searchText || '', ignoreCase)) > -1;
 
     filteredOptions = [];
     options.forEach(option => {
       // Filter out already selected options
-      if (findTag(option.name, selectedTags)) {
+      if (findTag(getTagName(option), selectedTags, ignoreCase)) {
         activeTag = option;
         return;
       }
 
       // Filter to match searchText, case insensitive, true if there's an empty string
-      let matchesSubstring = searchText
-        ? option.name.toLocaleLowerCase().indexOf(searchText.toLocaleLowerCase()) > -1
-        : true;
+      let matchesSubstring = false;
+      if (!searchText) {
+        matchesSubstring = true;
+      } else {
+        if (ignoreCase) {
+          matchesSubstring = getTagName(option).indexOf(searchText) > -1;
+        } else {
+          matchesSubstring = getTagName(option).toLocaleLowerCase().indexOf(searchText.toLocaleLowerCase()) > -1;
+        }
+      }
 
       if (matchesSubstring) {
         filteredOptions.push(option);
@@ -82,7 +105,7 @@
     });
 
     // If searchText matches one of the filtered options, bring this option to the top
-    const optionMatchIndex = filteredOptions.findIndex(tag => compareTagNames(tag.name, searchText || ''));
+    const optionMatchIndex = filteredOptions.findIndex(tag => compareTagNames(tag.name, searchText || '', ignoreCase));
     if (optionMatchIndex > -1) {
       filteredOptions.unshift(filteredOptions.splice(optionMatchIndex, 1)[0]);
     }
@@ -93,14 +116,6 @@
 
   $: if (typeof activeIndex === 'number' && filteredOptions) {
     activeTag = activeIndex > -1 ? filteredOptions.at(activeIndex) || null : null;
-  }
-
-  function addTag(tag: Tag, changeType: TagChangeType = 'select') {
-    selectedTags = selectedTags.concat(tag);
-    searchText = '';
-    dispatch('change', { tag, type: changeType });
-    updatePopperPosition();
-    closeSuggestions();
   }
 
   function removeTag(tag: Tag) {
@@ -115,18 +130,21 @@
     suggestionsVisible = true;
   }
 
-  function closeSuggestions() {
+  export function closeSuggestions() {
     suggestionsVisible = false;
     activeIndex = -1;
     searchText = '';
   }
 
-  function compareTagNames(name1: Tag['name'], name2: Tag['name']) {
-    return name1.toLocaleLowerCase() === name2.toLocaleLowerCase();
+  function compareTagNames(name1: Tag['name'], name2: Tag['name'], ignoreCase: boolean) {
+    if (ignoreCase) {
+      return name1.toLocaleLowerCase() === name2.toLocaleLowerCase();
+    }
+    return name1 === name2;
   }
 
-  function findTag(name: string, tags: Tag[]) {
-    return tags.find(t => compareTagNames(t.name, name));
+  function findTag(name: string, tags: Tag[], ignoreCase: boolean) {
+    return tags.find(t => compareTagNames(getTagName(t), name, ignoreCase));
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -142,14 +160,18 @@
       closeSuggestions();
     } else if (key === 'Enter' && (searchText || activeTag)) {
       // prevent add if searchText matches tag name that is already selected
-      if (searchText && !activeTag && findTag(searchText, selectedTags)) {
+      if (searchText && !activeTag && findTag(searchText, selectedTags, ignoreCase)) {
         return;
       }
 
       // Use active tag or create a placeholder tag if needed
-      const existingTag = activeTag || findTag(searchText || '', filteredOptions);
+      const existingTag = activeTag || findTag(searchText || '', filteredOptions, ignoreCase);
       const changeEvent = existingTag ? 'select' : 'create';
-      addTag(existingTag || createTagObject(searchText || ''), changeEvent);
+      if (existingTag) {
+        addTag(existingTag, changeEvent);
+      } else if (creatable) {
+        addTag(createTagObject(searchText || ''), changeEvent);
+      }
     } else if (key === 'Backspace' && searchText === '' && selectedTags.length) {
       const lastTag = selectedTags.at(-1);
       selectedTags = selectedTags.slice(0, -1);
@@ -187,7 +209,7 @@
 
   function onTagRemove(tag: Tag) {
     // Find the tag by name since it may not have an ID yet
-    selectedTags = selectedTags.filter(t => t.name !== tag.name);
+    selectedTags = selectedTags.filter(t => getTagName(t) !== getTagName(tag));
     removeTag(tag);
   }
 
@@ -197,7 +219,7 @@
     }
   }
 
-  function updatePopperPosition() {
+  export function updatePopperPosition() {
     getInstance()?.update();
   }
 </script>
@@ -223,6 +245,7 @@
         {disabled}
         placeholder={disabled ? '' : placeholder}
         class="st-input"
+        style:min-width={`${minWidth}px`}
         on:mouseup={openSuggestions}
         on:focus={openSuggestions}
         on:keydown|stopPropagation={onKeydown}
@@ -242,29 +265,37 @@
               class="tags-input-option"
               on:mousedown|stopPropagation
               on:mouseup|stopPropagation={() => addTag(tag, 'select')}
-              aria-selected={activeTag?.id === tag.id}
-              class:active={activeTag?.id === tag.id}
+              aria-selected={activeTag ? compareTags(activeTag, tag) : false}
+              class:active={activeTag ? compareTags(activeTag, tag) : false}
             >
-              <TagChip {disabled} {tag} removable={false} />
+              {#if $$slots.default}
+                <slot prop={tag} />
+              {:else}
+                <TagChip {disabled} {tag} removable={false} />
+              {/if}
             </li>
           {/each}
         {/if}
         {#if !exactMatchFound && searchText}
-          <div
-            on:mousedown|stopPropagation
-            on:mouseup|stopPropagation={() => addTag(createTagObject(searchText || ''), 'create')}
-            class="tags-input-option"
-            role="button"
-            tabindex={0}
-          >
-            Add "{searchText}" (enter)
-          </div>
+          {#if creatable}
+            <div
+              on:mousedown|stopPropagation
+              on:mouseup|stopPropagation={() => addTag(createTagObject(searchText || ''), 'create')}
+              class="tags-input-option"
+              role="button"
+              tabindex={0}
+            >
+              Add "{searchText}" (enter)
+            </div>
+          {:else if !filteredOptions.length}
+            <div class="tags-input-option tags-input-option-message">No matching {tagDisplayName} found</div>
+          {/if}
         {/if}
         {#if !filteredOptions.length && exactMatchFound && searchText}
           <div class="tags-input-option tags-input-option-message">{searchText} already added</div>
         {/if}
         {#if !filteredOptions.length && !exactMatchFound && !searchText}
-          <div class="tags-input-option tags-input-option-message">No other tags found</div>
+          <div class="tags-input-option tags-input-option-message">No other {tagDisplayName}s found</div>
         {/if}
       </ul>
     </div>
@@ -309,9 +340,12 @@
     border: none;
     flex: 1;
     height: 20px;
-    min-width: 82px;
     outline: none;
     width: 100%;
+  }
+
+  .tags-input input[placeholder] {
+    text-overflow: ellipsis;
   }
 
   .tags-input-portal {

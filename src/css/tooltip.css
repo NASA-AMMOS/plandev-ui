@@ -95,10 +95,6 @@
   gap: 4px;
 }
 
-.tippy-box {
-  max-width: none !important;
-}
-
 .tippy-box[data-theme~='error'] {
   background-color: #f8d7da;
   box-shadow:

@@ -57,6 +57,7 @@
     }
   }}
 >
+  <slot />
   <div class="chip-label">{label}</div>
   {#if removable}
     <div style={removeStyle} class="chip-remove-button">

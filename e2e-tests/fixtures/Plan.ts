@@ -43,6 +43,9 @@ export class Plan {
   panelSimulation: Locator;
   panelTimeline: Locator;
   panelTimelineEditor: Locator;
+  planCollaboratorInput: Locator;
+  planCollaboratorInputContainer: Locator;
+  planCollaboratorLoadingInput: Locator;
   planTitle: Locator;
   reSimulateButton: Locator;
   roleSelector: Locator;
@@ -70,6 +73,7 @@ export class Plan {
     public constraints: Constraints,
     public schedulingGoals: SchedulingGoals,
     public schedulingConditions: SchedulingConditions,
+    public planName = plans.planName,
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
     this.schedulingConditionListItemSelector = `.scheduling-condition:has-text("${schedulingConditions.conditionName}")`;
@@ -87,8 +91,23 @@ export class Plan {
     await this.page.getByRole('button', { name: `CreateActivity-${name}` }).click();
   }
 
+  async addPlanCollaborator(name: string, isUsername = true) {
+    await this.showPanel('Plan Metadata');
+    await this.waitForPlanCollaboratorLoad();
+    await this.planCollaboratorInput.fill(name);
+    await this.planCollaboratorInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+    // If the name is a username then check for the existence of the username in selected items
+    // Otherwise it is a plan option and will add an unspecified amount of users
+    if (isUsername) {
+      await expect(
+        this.planCollaboratorInputContainer.locator('.tags-input-selected-items').getByRole('option', { name }),
+      ).not.toBeUndefined();
+    }
+    await this.waitForToast('Plan Collaborators Updated');
+  }
+
   async createBranch(name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })) {
-    await this.page.getByText(this.plans.planName).first().click();
+    await this.page.getByText(this.planName).first().click();
     await this.page.getByText('Create branch').click();
     await this.page.getByPlaceholder('Name of branch').click();
     await this.page.getByPlaceholder('Name of branch').fill(name);
@@ -185,9 +204,9 @@ export class Plan {
    * If your tests fail then the timeout might be too short.
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
-  async goto() {
+  async goto(planId = this.plans.planId) {
     await this.page.waitForTimeout(1200);
-    await this.page.goto(`/plans/${this.plans.planId}`, { waitUntil: 'networkidle' });
+    await this.page.goto(`/plans/${planId}`, { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
   }
 
@@ -201,6 +220,16 @@ export class Plan {
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
+  }
+
+  async removePlanCollaborator(name: string) {
+    await this.showPanel('Plan Metadata');
+    await this.waitForPlanCollaboratorLoad();
+    await this.planCollaboratorInputContainer
+      .locator('.tags-input-selected-items')
+      .getByRole('option', { name })
+      .click();
+    await this.waitForToast('Plan Collaborator Removed Successfully');
   }
 
   async removeSchedulingGoal(goalName: string) {
@@ -381,7 +410,10 @@ export class Plan {
     this.panelSimulation = page.locator('[data-component-name="SimulationPanel"]');
     this.panelTimeline = page.locator('[data-component-name="TimelinePanel"]');
     this.panelTimelineEditor = page.locator('[data-component-name="TimelineEditorPanel"]');
-    this.planTitle = page.locator(`.plan-title:has-text("${this.plans.planName}")`);
+    this.planTitle = page.locator(`.plan-title:has-text("${this.planName}")`);
+    this.planCollaboratorInputContainer = this.panelPlanMetadata.locator('.input:has-text("Collaborators")');
+    this.planCollaboratorInput = this.planCollaboratorInputContainer.getByPlaceholder('Search collaborators or plans');
+    this.planCollaboratorLoadingInput = this.planCollaboratorInputContainer.getByPlaceholder('Loading...');
     this.roleSelector = page.locator(`.nav select`);
     this.reSimulateButton = page.locator('.header-actions button:has-text("Re-Run")');
     this.scheduleButton = page.locator('.header-actions button[aria-label="Schedule"]');
@@ -408,6 +440,10 @@ export class Plan {
     await this.page.waitForSelector(this.activityCheckingStatusSelector(status), { state: 'visible', strict: true });
   }
 
+  async waitForPlanCollaboratorLoad() {
+    await expect(this.planCollaboratorLoadingInput).not.toBeVisible({ timeout: 10000 });
+  }
+
   async waitForSchedulingStatus(status: Status) {
     await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'attached', strict: true });
     await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'visible', strict: true });
@@ -416,5 +452,9 @@ export class Plan {
   async waitForSimulationStatus(status: Status) {
     await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'attached', strict: true });
     await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'visible', strict: true });
+  }
+
+  async waitForToast(message: string) {
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 3000 });
   }
 }

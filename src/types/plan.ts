@@ -9,9 +9,9 @@ export type Plan = PlanSchema & { end_time_doy: string; start_time_doy: string }
 
 export type PlanBranchRequestAction = 'merge' | 'pull';
 
-export type PlanCollaborator = {
-  collaborator: UserId;
-};
+export type PlanCollaborator = { collaborator: UserId; plan_id: number };
+
+export type PlanCollaboratorSlim = Pick<PlanCollaborator, 'collaborator'>;
 
 export type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' | 'start_time'>;
 
@@ -72,7 +72,7 @@ export type PlanMergeResolution = 'none' | 'source' | 'target';
 
 export type PlanSchema = {
   child_plans: Pick<PlanSchema, 'id' | 'name'>[];
-  collaborators: PlanCollaborator[];
+  collaborators: PlanCollaboratorSlim[];
   constraint_specification: ConstraintPlanSpec[];
   created_at: string;
   duration: string;
@@ -92,6 +92,11 @@ export type PlanSchema = {
   updated_by: UserId;
 };
 
+export type PlanMetadata = Pick<
+  PlanSchema,
+  'id' | 'updated_at' | 'updated_by' | 'name' | 'owner' | 'created_at' | 'collaborators' | 'model'
+>;
+
 export type PlanSlim = Pick<
   Plan,
   | 'created_at'
@@ -110,7 +115,7 @@ export type PlanSlim = Pick<
   | 'updated_by'
 >;
 
-export type PlanSlimmer = Pick<PlanSlim, 'id' | 'start_time' | 'end_time_doy'>;
+export type PlanSlimmer = Pick<PlanSlim, 'id' | 'name' | 'owner' | 'collaborators' | 'updated_at' | 'updated_by'>;
 
 export type PlanSchedulingSpec = Pick<
   Plan,

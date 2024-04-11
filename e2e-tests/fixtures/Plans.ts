@@ -19,55 +19,56 @@ export class Plans {
   planId: string;
   planName: string;
   startTime: string = '2022-001T00:00:00';
-  tableRow: Locator;
-  tableRowDeleteButton: Locator;
-  tableRowPlanId: Locator;
+  tableRow: (planName: string) => Locator;
+  tableRowDeleteButton: (planName: string) => Locator;
+  tableRowPlanId: (planName: string) => Locator;
 
   constructor(
     public page: Page,
     public models: Models,
   ) {
-    this.planName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    this.planName = this.createPlanName();
     this.updatePage(page);
   }
 
-  async createPlan() {
-    await expect(this.tableRow).not.toBeVisible();
+  async createPlan(planName = this.planName) {
+    await expect(this.tableRow(planName)).not.toBeVisible();
     await this.selectInputModel();
-    await this.fillInputName();
+    await this.fillInputName(planName);
     await this.fillInputStartTime();
     await this.fillInputEndTime();
     await this.createButton.click();
-    await this.tableRow.waitFor({ state: 'attached' });
-    await this.tableRow.waitFor({ state: 'visible' });
-    await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowPlanId).toBeVisible();
-    const el = await this.tableRowPlanId.elementHandle();
-    if (el) {
-      this.planId = (await el.textContent()) as string;
-    }
+    await this.tableRow(planName).waitFor({ state: 'attached' });
+    await this.tableRow(planName).waitFor({ state: 'visible' });
+    const planId = await this.getPlanId(planName);
+    this.planId = planId;
+    return planId;
   }
 
-  async deletePlan() {
-    await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
+  createPlanName() {
+    return uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  }
 
-    await this.tableRow.hover();
-    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
-    await this.tableRowDeleteButton.waitFor({ state: 'visible' });
-    await expect(this.tableRowDeleteButton).toBeVisible();
+  async deletePlan(planName: string = this.planName) {
+    await expect(this.tableRow(planName)).toBeVisible();
+    await expect(this.tableRowDeleteButton(planName)).not.toBeVisible();
+
+    await this.tableRow(planName).hover();
+    await this.tableRowDeleteButton(planName).waitFor({ state: 'attached' });
+    await this.tableRowDeleteButton(planName).waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButton(planName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButton(planName).click();
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRow.waitFor({ state: 'detached' });
-    await this.tableRow.waitFor({ state: 'hidden' });
-    await expect(this.tableRow).not.toBeVisible();
+    await this.tableRow(planName).waitFor({ state: 'detached' });
+    await this.tableRow(planName).waitFor({ state: 'hidden' });
+    await expect(this.tableRow(planName)).not.toBeVisible();
   }
 
   async fillInputEndTime() {
@@ -77,9 +78,9 @@ export class Plans {
     await this.inputEndTime.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
   }
 
-  async fillInputName() {
+  async fillInputName(planName = this.planName) {
     await this.inputName.focus();
-    await this.inputName.fill(this.planName);
+    await this.inputName.fill(planName);
     await this.inputName.evaluate(e => e.blur());
   }
 
@@ -88,6 +89,16 @@ export class Plans {
     await this.inputStartTime.fill(this.startTime);
     await this.inputStartTime.evaluate(e => e.dispatchEvent(new Event('change')));
     await this.inputStartTime.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+  }
+
+  async getPlanId(planName = this.planName) {
+    await expect(this.tableRow(planName)).toBeVisible();
+    await expect(this.tableRowPlanId(planName)).toBeVisible();
+    const el = await this.tableRowPlanId(planName).elementHandle();
+    if (el) {
+      return (await el.textContent()) as string;
+    }
+    return '';
   }
 
   async goto() {
@@ -117,10 +128,9 @@ export class Plans {
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');
     this.page = page;
-    this.tableRow = page.locator(`.ag-row:has-text("${this.planName}")`);
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.planName}") >> button[aria-label="Delete Plan"]`,
-    );
-    this.tableRowPlanId = page.locator(`.ag-row:has-text("${this.planName}") > div >> nth=0`);
+    this.tableRow = (planName: string) => page.locator(`.ag-row:has-text("${planName}")`);
+    this.tableRowDeleteButton = (planName: string) =>
+      page.locator(`.ag-row:has-text("${planName}") >> button[aria-label="Delete Plan"]`);
+    this.tableRowPlanId = (planName: string) => page.locator(`.ag-row:has-text("${planName}") > div >> nth=0`);
   }
 }

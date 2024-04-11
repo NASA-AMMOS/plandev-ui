@@ -350,6 +350,13 @@ const queryPermissions = {
   CREATE_PLAN: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_PLAN], user);
   },
+  CREATE_PLAN_COLLABORATORS: (user: User | null, plan: PlanWithOwners): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.INSERT_PLAN_COLLABORATORS], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   CREATE_PLAN_MERGE_REQUEST: (
     user: User | null,
     sourcePlan: PlanWithOwners,
@@ -486,6 +493,13 @@ const queryPermissions = {
     return (
       isUserAdmin(user) ||
       (getPermission([Queries.DELETE_PLAN, Queries.DELETE_SCHEDULING_SPECIFICATION], user) && isPlanOwner(user, plan))
+    );
+  },
+  DELETE_PLAN_COLLABORATOR: (user: User | null, plan: PlanWithOwners): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.DELETE_PLAN_COLLABORATOR], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
   DELETE_PLAN_SNAPSHOT: (user: User | null): boolean => {
@@ -728,6 +742,7 @@ const queryPermissions = {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_SETS], user);
   },
   SUB_MODELS: () => true,
+  SUB_PLANS_USER_WRITABLE: () => true,
   SUB_PLAN_DATASET: () => true,
   SUB_PLAN_LOCKED: () => true,
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: () => true,
@@ -735,6 +750,7 @@ const queryPermissions = {
   SUB_PLAN_MERGE_REQUESTS_OUTGOING: () => true,
   SUB_PLAN_MERGE_REQUEST_IN_PROGRESS: () => true,
   SUB_PLAN_MERGE_REQUEST_STATUS: () => true,
+  SUB_PLAN_METADATA: () => true,
   SUB_PLAN_REVISION: () => true,
   SUB_PLAN_SNAPSHOTS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOTS], user);
@@ -765,6 +781,7 @@ const queryPermissions = {
   SUB_TAGS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.TAGS], user);
   },
+  SUB_USERS: () => true,
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.USER_SEQUENCES], user);
   },
@@ -993,6 +1010,11 @@ interface PlanBranchCRUDPermission {
   canReviewRequest: RolePlanBranchPermissionCheck;
 }
 
+interface PlanCollaboratorsCRUDPermission {
+  canCreate: PlanAssetCreatePermissionCheck;
+  canDelete: PlanAssetCreatePermissionCheck;
+}
+
 interface PlanAssetCRUDPermission<T = null> {
   canCreate: PlanAssetCreatePermissionCheck;
   canDelete: PlanAssetUpdatePermissionCheck<T>;
@@ -1064,6 +1086,7 @@ interface FeaturePermissions {
   model: CRUDPermission<void>;
   plan: CRUDPermission<PlanWithOwners>;
   planBranch: PlanBranchCRUDPermission;
+  planCollaborators: PlanCollaboratorsCRUDPermission;
   planSnapshot: PlanSnapshotCRUDPermission;
   schedulingConditions: AssociationCRUDPermission<SchedulingConditionMetadata, SchedulingConditionDefinition>;
   schedulingConditionsPlanSpec: PlanSpecificationCRUDPermission<AssetWithOwner<SchedulingConditionMetadata>>;
@@ -1153,6 +1176,10 @@ const featurePermissions: FeaturePermissions = {
       queryPermissions.PLAN_MERGE_DENY(user, sourcePlan, targetPlan, model) &&
       queryPermissions.PLAN_MERGE_RESOLVE_CONFLICT(user, sourcePlan, targetPlan, model) &&
       queryPermissions.PLAN_MERGE_RESOLVE_ALL_CONFLICTS(user, sourcePlan, targetPlan, model),
+  },
+  planCollaborators: {
+    canCreate: (user, plan) => queryPermissions.CREATE_PLAN_COLLABORATORS(user, plan),
+    canDelete: (user, plan) => queryPermissions.DELETE_PLAN_COLLABORATOR(user, plan),
   },
   planSnapshot: {
     canCreate: (user, plan, model) => queryPermissions.CREATE_PLAN_SNAPSHOT(user, plan, model),

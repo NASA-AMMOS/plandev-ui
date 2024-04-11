@@ -85,6 +85,7 @@ import type {
 import type {
   Plan,
   PlanBranchRequestAction,
+  PlanCollaborator,
   PlanForMerging,
   PlanInsertInput,
   PlanMergeConflictingActivity,
@@ -972,6 +973,33 @@ const effects = {
       }
     } catch (e) {
       catchError(e as Error);
+    }
+  },
+
+  async createPlanCollaborators(plan: Plan, collaborators: PlanCollaborator[], user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_PLAN_COLLABORATORS(user, plan)) {
+        throwPermissionError('update this plan');
+      }
+
+      const data = await reqHasura(gql.CREATE_PLAN_COLLABORATORS, { collaborators }, user);
+      const { insert_plan_collaborators } = data;
+
+      if (insert_plan_collaborators != null) {
+        const { affected_rows } = insert_plan_collaborators;
+
+        if (affected_rows !== collaborators.length) {
+          throw Error('Some plan collaborators were not successfully added');
+        }
+        showSuccessToast('Plan Collaborators Updated');
+        return affected_rows;
+      } else {
+        throw Error('Unable to create plan collaborators');
+      }
+    } catch (e) {
+      catchError('Plan Collaborator Create Failed', e as Error);
+      showFailureToast('Plan Collaborator Create Failed');
+      return;
     }
   },
 
@@ -2079,6 +2107,26 @@ const effects = {
     } catch (e) {
       catchError('Plan Delete Failed', e as Error);
       showFailureToast('Plan Delete Failed');
+      return false;
+    }
+  },
+
+  async deletePlanCollaborator(plan: Plan, collaborator: string, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_PLAN_COLLABORATOR(user, plan)) {
+        throwPermissionError('delete plan snapshot');
+      }
+
+      const data = await reqHasura(gql.DELETE_PLAN_COLLABORATOR, { collaborator, planId: plan.id }, user);
+      if (data.deletePlanCollaborator != null) {
+        showSuccessToast('Plan Collaborator Removed Successfully');
+        return true;
+      } else {
+        throw Error('Unable to remove plan collaborator');
+      }
+    } catch (e) {
+      catchError('Remove Plan Collaborator Failed', e as Error);
+      showFailureToast('Remove Plan Collaborator Failed');
       return false;
     }
   },

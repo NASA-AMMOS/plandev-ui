@@ -7,8 +7,8 @@
   import { planSnapshotId, planSnapshotsWithSimulations } from '../../stores/planSnapshots';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
-  import type { User } from '../../types/app';
-  import type { Plan } from '../../types/plan';
+  import type { User, UserId } from '../../types/app';
+  import type { Plan, PlanCollaborator, PlanSlimmer } from '../../types/plan';
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
@@ -21,6 +21,7 @@
   import Input from '../form/Input.svelte';
   import CardList from '../ui/CardList.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
+  import PlanCollaboratorInput from '../ui/Tags/PlanCollaboratorInput.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
 
@@ -28,11 +29,14 @@
   export let planTags: Tag[];
   export let tags: Tag[] = [];
   export let user: User | null;
+  export let users: UserId[] | null = null;
+  export let userWriteablePlans: PlanSlimmer[] | null = null;
 
   let filteredPlanSnapshots: PlanSnapshotType[] = [];
   let isFilteredBySimulation: boolean = false;
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
+  let hasPlanCollaboratorsUpdatePermission: boolean = false;
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan) {
@@ -41,8 +45,11 @@
   $: {
     if (plan && user) {
       hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
+      hasPlanCollaboratorsUpdatePermission =
+        featurePermissions.planCollaborators.canCreate(user, plan) && !$planReadOnly;
     } else {
       hasPlanUpdatePermission = false;
+      hasPlanCollaboratorsUpdatePermission = false;
     }
   }
 
@@ -63,13 +70,25 @@
     } else if (plan && (type === 'create' || type === 'select')) {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {
-        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user)) || [];
+        tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user, false)) || [];
       }
       const newPlanTags: PlanTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
         plan_id: plan?.id || -1,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, plan, user, false);
+      await effects.createPlanTags(newPlanTags, plan, user, true);
+    }
+  }
+
+  function onPlanCollaboratorsCreate(event: CustomEvent<PlanCollaborator[]>) {
+    if (plan) {
+      effects.createPlanCollaborators(plan, event.detail, user);
+    }
+  }
+
+  function onPlanCollaboratorCreate(event: CustomEvent<string>) {
+    if (plan) {
+      effects.deletePlanCollaborator(plan, event.detail, user);
     }
   }
 
@@ -150,12 +169,28 @@
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">Collaborators</label>
-          <input
-            class="st-input w-100"
-            disabled
-            name="collaborators"
-            value={plan.collaborators.map(c => c.collaborator).join(', ')}
-          />
+          {#if users === null || userWriteablePlans === null}
+            <input class="st-input w-100" disabled name="collaborators" value="Loading..." />
+          {:else}
+            <PlanCollaboratorInput
+              collaborators={plan.collaborators}
+              {users}
+              plans={userWriteablePlans}
+              {plan}
+              {user}
+              on:create={onPlanCollaboratorsCreate}
+              on:delete={onPlanCollaboratorCreate}
+              use={[
+                [
+                  permissionHandler,
+                  {
+                    hasPermission: hasPlanCollaboratorsUpdatePermission,
+                    permissionError,
+                  },
+                ],
+              ]}
+            />
+          {/if}
         </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="tags">Tags</label>

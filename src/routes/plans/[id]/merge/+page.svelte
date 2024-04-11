@@ -2,13 +2,13 @@
 
 <script lang="ts">
   import PlanMergeReview from '../../../../components/plan/PlanMergeReview.svelte';
-  import { plan } from '../../../../stores/plan';
+  import { initialPlan } from '../../../../stores/plan';
   import type { PageData } from './$types';
 
   export let data: PageData;
 
   $: if (data.initialPlan) {
-    $plan = data.initialPlan;
+    $initialPlan = data.initialPlan;
   }
 </script>
 
