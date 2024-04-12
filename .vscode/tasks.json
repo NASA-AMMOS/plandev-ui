@@ -140,6 +140,13 @@
       "type": "shell",
       "command": "nvm use && npm run test:e2e",
       "detail": "Task to rerun e2e tests without rebuilding the UI."
+    },
+    {
+      "label": "e2e Tests - With UI",
+      "type": "shell",
+      "dependsOn": ["Build UI"],
+      "command": "nvm use && npm run test:e2e:with-ui",
+      "detail": "Task to run e2e tests with Playwright UI."
     }
   ]
 }

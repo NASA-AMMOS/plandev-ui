@@ -36,6 +36,14 @@ If you continue to get unexplained failures another thing you can try is [limit 
 }
 ```
 
+### UI
+
+The ui test script runs the [Playwright UI](https://playwright.dev/docs/test-ui-mode), which allows you to choose which e2e tests to run and visually observe the state of the UI as the test progresses.
+
+```sh
+npm run test:e2e:with-ui
+```
+
 ### Debug
 
 The debug test script runs the [Playwright inspector](https://playwright.dev/docs/inspector), which runs in headed debug mode so you can step through tests and watch them as they execute.
