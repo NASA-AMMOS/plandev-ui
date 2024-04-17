@@ -863,22 +863,6 @@ const effects = {
           throw Error('Failed to update simulation.');
         }
 
-        if (
-          !(await effects.createSchedulingPlanSpecification(
-            {
-              analysis_only: false,
-              horizon_end: end_time_doy,
-              horizon_start: start_time_doy,
-              plan_id: id,
-              plan_revision: revision,
-              simulation_arguments: {},
-            },
-            user,
-          ))
-        ) {
-          throw Error('Failed to create scheduling spec.');
-        }
-
         const plan: PlanSlim = {
           collaborators,
           created_at,
@@ -927,18 +911,6 @@ const effects = {
         const data = await reqHasura(gql.DUPLICATE_PLAN, { new_plan_name: name, plan_id: plan.id }, user);
         const { duplicate_plan } = data;
         if (duplicate_plan != null) {
-          const { new_plan_id } = duplicate_plan;
-          await effects.createSchedulingPlanSpecification(
-            {
-              analysis_only: false,
-              horizon_end: plan.end_time_doy,
-              horizon_start: plan.start_time_doy,
-              plan_id: new_plan_id,
-              plan_revision: 0,
-              simulation_arguments: {},
-            },
-            user,
-          );
           goto(`${base}/plans/${duplicate_plan.new_plan_id}`);
           showSuccessToast('Branch Created Successfully');
         } else {

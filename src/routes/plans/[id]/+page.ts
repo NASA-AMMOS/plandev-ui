@@ -21,6 +21,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
       }
 
       // if plan doesn't have a scheduling spec, create one at this point
+      // this code only runs if a user manually deletes their scheduling specification somehow
       if (!initialPlan.scheduling_specification) {
         const { start_time_doy, end_time_doy, revision } = initialPlan;
         const schedulingSpec = await effects.createSchedulingPlanSpecification(

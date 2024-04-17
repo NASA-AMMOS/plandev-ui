@@ -212,6 +212,7 @@ export class Plan {
 
   async reRunSimulation(expectedFinalState = Status.Complete) {
     await this.reSimulateButton.click();
+    await this.page.waitForTimeout(1000);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
@@ -253,6 +254,7 @@ export class Plan {
 
   async runSimulation(expectedFinalState = Status.Complete) {
     await this.simulateButton.click();
+    await this.page.waitForTimeout(1000);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
