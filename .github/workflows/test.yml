@@ -29,7 +29,30 @@ env:
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
 
 jobs:
-  test:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo (UI)
+        uses: actions/checkout@v4
+      - name: Setup Node (UI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: npm
+      - name: Install Dependencies (UI)
+        run: npm ci
+      - name: Build (UI)
+        run: npm run build
+      - name: Test (unit)
+        run: npm run test:unit:coverage
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unit Test Results
+          path: |
+            **/unit-test-results
+  e2e-test:
     runs-on: ubuntu-latest
     environment: test-workflow
     steps:
@@ -53,16 +76,13 @@ jobs:
         run: npx playwright install chromium --with-deps
       - name: Test (e2e)
         run: npm run test:e2e
-      - name: Test (unit)
-        run: npm run test:unit:coverage
       - name: Upload Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results
+          name: E2E Test Results
           path: |
             **/e2e-test-results
-            **/unit-test-results
       - name: Print Logs for Services (Aerie)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t
