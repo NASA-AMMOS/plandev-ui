@@ -64,7 +64,6 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
   );
 
   if (!validationData.success) {
-    console.log('Invalid SSO token, redirecting to SSO login UI page');
     return new Response(null, {
       headers: {
         // redirectURL field from gateway response will contain our login UI URL
@@ -84,8 +83,6 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
   const roles = await computeRolesFromJWT(user, activeRoleCookie);
 
   if (roles) {
-    console.log(`successfully SSO'd for user ${user.id}`);
-
     // create and set cookies
     const userStr = JSON.stringify(user);
     const userCookie = Buffer.from(userStr).toString('base64');
