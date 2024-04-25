@@ -1,6 +1,6 @@
 import { cleanup, getByText, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
+import type { SpanUtilityMaps, SpansMap } from '../../types/simulation';
 import ActivityDecomposition from './ActivityDecomposition.svelte';
 
 const spanUtilityMaps: SpanUtilityMaps = {
@@ -183,5 +183,18 @@ describe('Activity Decomposition component', () => {
 
     // Should see a message warning about the missing activity
     expect(getByText(container, `Activity not found`)).to.exist;
+  });
+
+  it('Should display "show more" button to load more child spans', () => {
+    const { container } = render(ActivityDecomposition, {
+      childPageSize: 1,
+      rootSpanId: 12,
+      selectedSpanId: 12,
+      spanUtilityMaps,
+      spansMap,
+    });
+
+    // Should display a "show more" button
+    expect(getByText(container, `Show more (1)`)).to.exist;
   });
 });

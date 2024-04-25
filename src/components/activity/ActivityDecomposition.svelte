@@ -14,6 +14,7 @@
   export let selectedSpanId: SpanId | null = null;
   export let spansMap: SpansMap = {};
   export let spanUtilityMaps: SpanUtilityMaps;
+  export let childPageSize: number = 25;
 
   const dispatch = createEventDispatcher<{
     select: number | null;
@@ -21,17 +22,26 @@
 
   let childIds: SpanId[] = [];
   let span: Span | null = null;
+  let childLimit = childPageSize;
+  let isRoot: boolean = true;
+  let type: string;
+  let hasChildren: boolean = false;
+  let role: 'tree' | 'treeitem' = 'tree';
+  let nodeClass: string = '';
+  let buttonClass: string = '';
+  let childIdsInView: SpanId[] = [];
 
   $: span = rootSpanId !== null ? spansMap[rootSpanId] : null;
   $: isRoot = span ? !span.parent_id : true;
   $: type = span?.type || '';
-  $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.id] : [];
+  $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.id] || [] : [];
   $: hasChildren = childIds ? childIds.length > 0 : false;
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =
     'activity-decomposition-node activity-decomposition-' +
     (rootSpanId === selectedSpanId ? 'selected st-typography-medium' : 'unselected st-typography-body');
   $: buttonClass = 'st-button icon' + (!hasChildren ? ' st-button-no-hover' : '');
+  $: childIdsInView = childIds.slice(0, childLimit);
 
   function toggle() {
     expanded = !expanded;
@@ -68,11 +78,16 @@
 
   {#if hasChildren && expanded}
     <ul>
-      {#each childIds as childId}
+      {#each childIdsInView as childId}
         <li>
           <svelte:self {spansMap} rootSpanId={spansMap[childId]?.id} {selectedSpanId} {spanUtilityMaps} on:select />
         </li>
       {/each}
+      {#if childIds.length !== childIdsInView.length}
+        <button on:click={() => (childLimit += childPageSize)} class="st-button tertiary show-more">
+          Show more ({childIds.length - childIdsInView.length})
+        </button>
+      {/if}
     </ul>
   {/if}
 {/if}
@@ -136,5 +151,10 @@
   .st-button-no-hover:hover {
     background: none;
     cursor: default;
+  }
+
+  .st-button.show-more {
+    border-radius: 2px;
+    margin-left: 20px;
   }
 </style>
