@@ -59,15 +59,18 @@ test.describe.serial('Plan Merge', () => {
     await page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
     await page.waitForSelector('button:has-text("BiteBanana")', { state: 'visible' });
     await page.locator('input[name="start-time"]').click();
+    // Wait for date input to be open before inputting a date
+    await page.waitForTimeout(500);
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').press('Enter');
-    await page.waitForTimeout(250);
+    await plan.waitForToast('Activity Directive Updated Successfully');
   });
 
   test('Create a merge request from branch to parent plan', async () => {
     await page.getByText(planBranchName).first().click();
     await page.getByText('Create merge request').click();
     await page.getByRole('button', { name: 'Create Merge Request' }).click();
+    await plan.waitForToast('Merge Request Created Successfully');
   });
 
   test('Switch to parent plan', async () => {
