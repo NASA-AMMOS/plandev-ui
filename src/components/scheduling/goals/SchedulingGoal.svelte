@@ -35,7 +35,7 @@
   let simulateGoal: boolean = false;
   let upButtonHidden: boolean = false;
 
-  $: revisions = goal.versions.map(({ revision }) => revision).sort((revisionA, revisionB) => revisionB - revisionA);
+  $: revisions = goal.versions.map(({ revision }) => revision);
   $: {
     enabled = goalPlanSpec.enabled;
     priority = goalPlanSpec.priority;

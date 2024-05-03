@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { fillEditorText } from '../utilities/editor.js';
-import { Models } from './Models.js';
 
 export class SchedulingGoals {
   closeButton: Locator;
@@ -18,10 +17,7 @@ export class SchedulingGoals {
   tableRowDeleteButtonSelector: (goalName: string) => Locator;
   tableRowSelector: (goalName: string) => Locator;
 
-  constructor(
-    public page: Page,
-    public models: Models,
-  ) {
+  constructor(public page: Page) {
     this.updatePage(page);
   }
 
@@ -81,6 +77,10 @@ export class SchedulingGoals {
     await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await this.page.waitForSelector(`input[placeholder="Filter goals"]`, { state: 'attached' });
+  }
+
+  async gotoNew() {
+    await this.page.goto('/scheduling/goals/new', { waitUntil: 'networkidle' });
   }
 
   updatePage(page: Page): void {

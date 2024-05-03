@@ -75,7 +75,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<SchedulingGoalMetadata>) => {
-        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+        return params?.data?.versions[0].revision;
       },
       width: 80,
     },
@@ -164,6 +164,7 @@
         cellDataType: 'boolean',
         editable: hasEditSpecPermission,
         headerName: '',
+        resizable: false,
         suppressAutoSize: true,
         suppressSizeToFit: true,
         valueGetter: (params: ValueGetterParams<SchedulingGoalMetadata>) => {
@@ -184,9 +185,7 @@
   function viewGoal({ id }: Pick<SchedulingGoalMetadata, 'id'>) {
     const goal = $schedulingGoals.find(c => c.id === id);
     window.open(
-      `${base}/scheduling/goals/edit/${goal?.id}?${SearchParameters.REVISION}=${
-        goal?.versions[goal?.versions.length - 1].revision
-      }&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/scheduling/goals/edit/${goal?.id}?${SearchParameters.REVISION}=${goal?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
     );
   }
 

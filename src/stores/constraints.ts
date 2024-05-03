@@ -150,6 +150,10 @@ export function setAllConstraintsVisible(visible: boolean) {
   );
 }
 
+export function resetPlanConstraintStores() {
+  constraintPlanSpecs.updateValue(() => []);
+}
+
 export function resetConstraintStores(): void {
   checkConstraintsStatus.set(null);
   rawConstraintResponses.set([]);

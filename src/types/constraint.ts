@@ -18,8 +18,8 @@ export type ConstraintMetadataSlim = Omit<ConstraintMetadata, 'models_using' | '
 
 export type ConstraintModelSpec = {
   constraint_id: number;
-  constraint_metadata: ConstraintMetadata | null;
-  constraint_revision: number;
+  constraint_metadata: Pick<ConstraintMetadata, 'id' | 'name'> | null;
+  constraint_revision: number | null;
   model_id: number;
   // constraint_definition: ConstraintDefinition;
   // model: Model;
@@ -37,6 +37,7 @@ export type ConstraintPlanSpec = {
   // plan: Plan;
 };
 
+export type ConstraintModelSpecInsertInput = Omit<ConstraintModelSpec, 'constraint_metadata'>;
 export type ConstraintPlanSpecInsertInput = Omit<ConstraintPlanSpec, 'constraint_metadata'>;
 
 export type ConstraintDefinitionInsertInput = Pick<ConstraintDefinition, 'constraint_id' | 'definition'> & {

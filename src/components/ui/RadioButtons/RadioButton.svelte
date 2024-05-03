@@ -48,7 +48,6 @@
     color: var(--st-gray-70);
   }
   button.radio-button.st-button:hover {
-    background: none;
     color: var(--st-text-color);
   }
   button.radio-button.st-button.selected {

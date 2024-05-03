@@ -741,6 +741,7 @@ const queryPermissions = {
   SUB_EXPANSION_SETS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_SETS], user);
   },
+  SUB_MODEL: () => true,
   SUB_MODELS: () => true,
   SUB_PLANS_USER_WRITABLE: () => true,
   SUB_PLAN_DATASET: () => true,
@@ -818,7 +819,22 @@ const queryPermissions = {
         (constraintMetadata?.public || isUserOwner(user, constraintMetadata)))
     );
   },
-  UPDATE_CONSTRAINT_PLAN_SPECIFICATION: () => true,
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: (user: User | null) => {
+    return (
+      isUserAdmin(user) &&
+      getPermission(
+        [Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS, Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS],
+        user,
+      )
+    );
+  },
+  UPDATE_CONSTRAINT_PLAN_SPECIFICATION: (user: User | null, plan: PlanWithOwners) => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.UPDATE_CONSTRAINT_SPECIFICATION], user) &&
+        (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -830,6 +846,9 @@ const queryPermissions = {
     return (
       isUserAdmin(user) || (getPermission([Queries.UPDATE_EXPANSION_RULE], user) && isUserOwner(user, expansionRule))
     );
+  },
+  UPDATE_MODEL: (user: User | null) => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_MISSION_MODEL], user);
   },
   UPDATE_PLAN_SNAPSHOT: (user: User | null): boolean => {
     return getPermission([Queries.UPDATE_PLAN_SNAPSHOT], user);
@@ -864,6 +883,18 @@ const queryPermissions = {
         // If there is a plan, ensure user is the plan owner or is a collaborator
         // Otherwise if no plan, user may update if they are condition author since associated plan may have been deleted
         (condition?.public || isUserOwner(user, condition)))
+    );
+  },
+  UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
+    return (
+      isUserAdmin(user) &&
+      getPermission(
+        [
+          Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_CONDITIONS,
+          Queries.DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS,
+        ],
+        user,
+      )
     );
   },
   UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATION: (user: User | null, plan: PlanWithOwners): boolean => {
@@ -910,6 +941,18 @@ const queryPermissions = {
         // If there is a plan, ensure user is the plan owner or is a collaborator
         // Otherwise if no plan, user may update if they are goal author since associated plan may have been deleted
         (goal?.public || isUserOwner(user, goal)))
+    );
+  },
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: (user: User | null): boolean => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION], user);
+  },
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: (user: User | null): boolean => {
+    return (
+      isUserAdmin(user) &&
+      getPermission(
+        [Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS, Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS],
+        user,
+      )
     );
   },
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: (user: User | null, plan: PlanWithOwners): boolean => {
@@ -1027,6 +1070,10 @@ interface PlanSpecificationCRUDPermission<T = null> {
   canUpdate: (user: User | null, plan: PlanWithOwners) => boolean;
 }
 
+interface ModelSpecificationCRUDPermission {
+  canUpdate: (user: User | null) => boolean;
+}
+
 interface PlanActivityPresetsCRUDPermission
   extends Omit<PlanAssetCRUDPermission<ActivityPreset>, 'canDelete' | 'canUpdate'> {
   canAssign: RolePlanPermissionCheckWithAsset<ActivityPreset>;
@@ -1078,8 +1125,9 @@ interface FeaturePermissions {
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: PlanActivityPresetsCRUDPermission;
   commandDictionary: CRUDPermission<void>;
-  constraintPlanSpec: ConstraintPlanSpecCRUDPermission;
   constraints: AssociationCRUDPermission<ConstraintMetadata, ConstraintDefinition>;
+  constraintsModelSpec: ModelSpecificationCRUDPermission;
+  constraintsPlanSpec: ConstraintPlanSpecCRUDPermission;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
@@ -1089,8 +1137,10 @@ interface FeaturePermissions {
   planCollaborators: PlanCollaboratorsCRUDPermission;
   planSnapshot: PlanSnapshotCRUDPermission;
   schedulingConditions: AssociationCRUDPermission<SchedulingConditionMetadata, SchedulingConditionDefinition>;
+  schedulingConditionsModelSpec: ModelSpecificationCRUDPermission;
   schedulingConditionsPlanSpec: PlanSpecificationCRUDPermission<AssetWithOwner<SchedulingConditionMetadata>>;
   schedulingGoals: AssociationCRUDPermission<SchedulingGoalMetadata, SchedulingGoalDefinition>;
+  schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
@@ -1120,17 +1170,20 @@ const featurePermissions: FeaturePermissions = {
     canRead: () => false, // Not implemented
     canUpdate: () => false, // Not implemented
   },
-  constraintPlanSpec: {
-    canCheck: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
-    canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
-    canUpdate: (user, plan) => queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
-  },
   constraints: {
     canCreate: user => queryPermissions.CREATE_CONSTRAINT(user),
     canDelete: (user, constraintMetadata) => queryPermissions.DELETE_CONSTRAINT_METADATA(user, constraintMetadata),
     canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
     canUpdate: (user, constraintMetadata) => queryPermissions.UPDATE_CONSTRAINT_METADATA(user, constraintMetadata),
     canUpdateDefinition: (user, definition) => queryPermissions.UPDATE_CONSTRAINT_DEFINITION_TAGS(user, definition),
+  },
+  constraintsModelSpec: {
+    canUpdate: user => queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS(user),
+  },
+  constraintsPlanSpec: {
+    canCheck: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
+    canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
+    canUpdate: (user, plan) => queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
   },
   expansionRules: {
     canCreate: user => queryPermissions.CREATE_EXPANSION_RULE(user),
@@ -1155,7 +1208,7 @@ const featurePermissions: FeaturePermissions = {
     canCreate: user => queryPermissions.CREATE_MODEL(user),
     canDelete: user => queryPermissions.DELETE_MODEL(user),
     canRead: user => queryPermissions.GET_PLANS_AND_MODELS(user),
-    canUpdate: () => false, // no feature to update models exists
+    canUpdate: user => queryPermissions.UPDATE_MODEL(user),
   },
   plan: {
     canCreate: user => queryPermissions.CREATE_PLAN(user),
@@ -1197,6 +1250,9 @@ const featurePermissions: FeaturePermissions = {
     canUpdateDefinition: (user, definition) =>
       queryPermissions.UPDATE_SCHEDULING_CONDITION_DEFINITION_TAGS(user, definition),
   },
+  schedulingConditionsModelSpec: {
+    canUpdate: user => queryPermissions.UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS(user),
+  },
   schedulingConditionsPlanSpec: {
     canRead: user => queryPermissions.SUB_SCHEDULING_PLAN_SPECIFICATION(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS(user, plan),
@@ -1208,6 +1264,9 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: (user, goal) => queryPermissions.UPDATE_SCHEDULING_GOAL_METADATA(user, goal),
     canUpdateDefinition: (user, definition) =>
       queryPermissions.UPDATE_SCHEDULING_GOAL_DEFINITION_TAGS(user, definition),
+  },
+  schedulingGoalsModelSpec: {
+    canUpdate: user => queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS(user),
   },
   schedulingGoalsPlanSpec: {
     canAnalyze: (user, plan, model) =>

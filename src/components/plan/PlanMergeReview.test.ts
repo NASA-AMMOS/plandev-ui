@@ -66,6 +66,8 @@ const mockInitialPlan: Plan = {
       parameters: {},
     },
     plans: [{ id: 1 }],
+    scheduling_specification_conditions: [],
+    scheduling_specification_goals: [],
     version: '1.0.0',
   },
   model_id: 1,

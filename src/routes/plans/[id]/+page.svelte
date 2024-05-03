@@ -48,6 +48,7 @@
     constraintsStatus,
     constraintsViolationStatus,
     resetConstraintStores,
+    resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import {
@@ -80,6 +81,7 @@
   import {
     enableScheduling,
     latestSchedulingRequest,
+    resetPlanSchedulingStores,
     satisfiedSchedulingGoalCount,
     schedulingAnalysisStatus,
     schedulingGoalCount,
@@ -220,7 +222,7 @@
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($initialPlan) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintPlanSpec.canCheck(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.constraintsPlanSpec.canCheck(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
       featurePermissions.expansionSequences.canExpand(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
@@ -399,7 +401,9 @@
 
   onDestroy(() => {
     resetActivityStores();
+    resetPlanConstraintStores();
     resetConstraintStores();
+    resetPlanSchedulingStores();
     resetExpansionStores();
     resetPlanStores();
     resetSimulationStores();
@@ -651,7 +655,7 @@
           {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
             <button
               on:click={() => effects.cancelSimulation($simulationDatasetId, data.user)}
-              class="st-button cancel-button"
+              class="st-button danger"
               disabled={$planReadOnly}>Cancel</button
             >
           {/if}
@@ -868,16 +872,6 @@
   .simulation-header {
     display: flex;
     justify-content: space-between;
-  }
-
-  .cancel-button {
-    background: rgba(219, 81, 57, 0.04);
-    border: 1px solid var(--st-utility-red);
-    color: var(--st-utility-red);
-  }
-
-  .cancel-button:hover {
-    background: rgba(219, 81, 57, 0.08);
   }
 
   .constraints-status {

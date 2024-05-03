@@ -71,7 +71,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<ConstraintMetadata>) => {
-        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+        return params?.data?.versions[0].revision;
       },
       width: 80,
     },
@@ -115,7 +115,7 @@
     {},
   );
   $: hasCreatePermission = featurePermissions.constraints.canCreate(user);
-  $: hasEditSpecPermission = $plan ? featurePermissions.constraintPlanSpec.canUpdate(user, $plan) : false;
+  $: hasEditSpecPermission = $plan ? featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) : false;
   $: {
     columnDefs = [
       ...baseColumnDefs,
@@ -152,6 +152,7 @@
         cellDataType: 'boolean',
         editable: hasEditSpecPermission,
         headerName: '',
+        resizable: false,
         suppressAutoSize: true,
         suppressSizeToFit: true,
         valueGetter: (params: ValueGetterParams<ConstraintMetadata>) => {
@@ -172,9 +173,7 @@
   function viewConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
     const constraint = $constraints.find(c => c.id === id);
     window.open(
-      `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${
-        constraint?.versions[constraint?.versions.length - 1].revision
-      }&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
     );
   }
 

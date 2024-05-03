@@ -155,9 +155,7 @@
   <CssGridGutter track={1} type="column" />
 
   <DefinitionEditor
-    definition={selectedItem
-      ? selectedItem?.versions[selectedItem.versions.length - 1].definition
-      : 'No Scheduling Goal or Condition Selected'}
+    definition={selectedItem ? selectedItem?.versions[0].definition : 'No Scheduling Goal or Condition Selected'}
     readOnly={true}
     title={editorTitle}
   />

@@ -84,6 +84,7 @@ export enum Queries {
   INSERT_CONSTRAINT_DEFINITION_TAGS = 'insert_constraint_definition_tags',
   INSERT_CONSTRAINT_METADATA = 'insert_constraint_metadata_one',
   INSERT_CONSTRAINT_MODEL_SPECIFICATION = 'insert_constraint_model_specification_one',
+  INSERT_CONSTRAINT_MODEL_SPECIFICATIONS = 'insert_constraint_model_specification',
   INSERT_CONSTRAINT_SPECIFICATIONS = 'insert_constraint_specification',
   INSERT_CONSTRAINT_TAGS = 'insert_constraint_tags',
   INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',
@@ -101,6 +102,8 @@ export enum Queries {
   INSERT_SCHEDULING_GOAL_DEFINITION_TAGS = 'insert_scheduling_goal_definition_tags',
   INSERT_SCHEDULING_GOAL_METADATA = 'insert_scheduling_goal_metadata_one',
   INSERT_SCHEDULING_GOAL_TAGS = 'insert_scheduling_goal_tags',
+  INSERT_SCHEDULING_MODEL_SPECIFICATION_CONDITIONS = 'insert_scheduling_model_specification_conditions',
+  INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS = 'insert_scheduling_model_specification_goals',
   INSERT_SCHEDULING_SPECIFICATION = 'insert_scheduling_specification_one',
   INSERT_SCHEDULING_SPECIFICATION_CONDITION = 'insert_scheduling_specification_conditions_one',
   INSERT_SCHEDULING_SPECIFICATION_CONDITIONS = 'insert_scheduling_specification_conditions',
@@ -115,6 +118,7 @@ export enum Queries {
   INSERT_VIEW = 'insert_view_one',
   MERGE_REQUEST = 'merge_request_by_pk',
   MERGE_REQUESTS = 'merge_request',
+  MISSION_MODEL = 'mission_model_by_pk',
   MISSION_MODELS = 'mission_model',
   PLAN = 'plan_by_pk',
   PLANS = 'plan',
@@ -150,7 +154,9 @@ export enum Queries {
   UPDATE_ACTIVITY_PRESET = 'update_activity_presets_by_pk',
   UPDATE_CONSTRAINT_METADATA = 'update_constraint_metadata_by_pk',
   UPDATE_CONSTRAINT_SPECIFICATION = 'update_constraint_specification_by_pk',
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATION = 'update_constraint_model_specification_by_pk',
   UPDATE_EXPANSION_RULE = 'update_expansion_rule_by_pk',
+  UPDATE_MISSION_MODEL = 'update_mission_model_by_pk',
   UPDATE_PLAN_SNAPSHOT = 'update_plan_snapshot_by_pk',
   UPDATE_SCHEDULING_CONDITION_METADATA = 'update_scheduling_condition_metadata_by_pk',
   UPDATE_SCHEDULING_GOAL_METADATA = 'update_scheduling_goal_metadata_by_pk',
@@ -158,6 +164,10 @@ export enum Queries {
   UPDATE_SCHEDULING_SPECIFICATION = 'update_scheduling_specification_by_pk',
   UPDATE_SCHEDULING_SPECIFICATION_CONDITION = 'update_scheduling_specification_conditions_by_pk',
   UPDATE_SCHEDULING_SPECIFICATION_GOAL = 'update_scheduling_specification_goals_by_pk',
+  UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATION = 'update_scheduling_model_specification_conditions_by_pk',
+  UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS = 'update_scheduling_model_specification_conditions',
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION = 'update_scheduling_model_specification_goals_by_pk',
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS = 'update_scheduling_model_specification_goals',
   UPDATE_SIMULATION = 'update_simulation_by_pk',
   UPDATE_SIMULATIONS = 'update_simulation',
   UPDATE_SIMULATION_DATASET = 'update_simulation_dataset_by_pk',
@@ -768,6 +778,21 @@ const gql = {
     mutation DeleteModel($id: Int!) {
       deleteModel: ${Queries.DELETE_MISSION_MODEL}(id: $id) {
         id
+      }
+      deleteConstraintModelSpec: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(where: { model_id: { _eq: $id } }) {
+        returning {
+          model_id
+        }
+      }
+      deleteSchedulingConditionModelSpec: ${Queries.DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS}(where: { model_id: { _eq: $id } }) {
+        returning {
+          model_id
+        }
+      }
+      deleteSchedulingGoalModelSpec: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(where: { model_id: { _eq: $id } }) {
+        returning {
+          model_id
+        }
       }
     }
   `,
@@ -1783,7 +1808,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -1823,7 +1848,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -1931,6 +1956,67 @@ const gql = {
         owner
         updated_at
         updated_by
+      }
+    }
+  `,
+
+  SUB_MODEL: `#graphql
+    subscription SubModel($id: Int!) {
+      model: ${Queries.MISSION_MODEL}(id: $id) {
+        constraint_specification {
+          constraint_id
+          constraint_revision
+          constraint_definition {
+            definition
+            tags {
+              tag_id
+            }
+          }
+          constraint_metadata {
+            id
+            name
+          }
+        }
+        created_at
+        description
+        jar_id
+        id
+        mission
+        name
+        owner
+        plans {
+          id
+        }
+        scheduling_specification_conditions {
+          condition_id
+          condition_revision
+          condition_definition {
+            definition
+            tags {
+              tag_id
+            }
+          }
+          condition_metadata {
+            id
+            name
+          }
+        }
+        scheduling_specification_goals {
+          goal_id
+          goal_revision
+          goal_definition {
+            definition
+            tags {
+              tag_id
+            }
+          }
+          goal_metadata {
+            id
+            name
+          }
+          priority
+        }
+        version
       }
     }
   `,
@@ -2222,7 +2308,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -2256,7 +2342,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -2290,7 +2376,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -2336,7 +2422,7 @@ const gql = {
         }
         updated_at
         updated_by
-        versions {
+        versions(order_by: {revision: desc}) {
           author
           definition
           revision
@@ -2679,6 +2765,32 @@ const gql = {
     }
   `,
 
+  UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS: `#graphql
+    mutation UpdateConstraintModelSpecifications($constraintSpecsToUpdate: [constraint_model_specification_insert_input!]!, $constraintIdsToDelete: [Int!]! = [], $modelId: Int!) {
+      updateConstraintModelSpecifications: ${Queries.INSERT_CONSTRAINT_MODEL_SPECIFICATIONS}(
+        objects: $constraintSpecsToUpdate,
+        on_conflict: {
+          constraint: constraint_model_spec_pkey,
+          update_columns: [constraint_revision]
+        },
+      ) {
+        returning {
+          constraint_revision
+        }
+      }
+      deleteConstraintModelSpecifications: ${Queries.DELETE_CONSTRAINT_MODEL_SPECIFICATIONS}(
+        where: {
+          constraint_id: { _in: $constraintIdsToDelete },
+          _and: {
+            model_id: { _eq: $modelId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
   UPDATE_CONSTRAINT_PLAN_SPECIFICATION: `#graphql
     mutation UpdateConstraintPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $planId: Int!) {
       updateConstraintPlanSpecification: ${Queries.UPDATE_CONSTRAINT_SPECIFICATION}(
@@ -2731,6 +2843,20 @@ const gql = {
     }
   `,
 
+  UPDATE_MODEL: `#graphql
+    mutation UpdateModel($id: Int!, $model: mission_model_set_input!) {
+      updateModel: ${Queries.UPDATE_MISSION_MODEL}(
+        pk_columns: { id: $id }, _set: $model
+      ) {
+        id
+        description
+        name
+        version
+        owner
+      }
+    }
+  `,
+
   UPDATE_PLAN_SNAPSHOT: `#graphql
     mutation UpdatePlanSnapshot($snapshot_id: Int!, $planSnapshot: plan_snapshot_set_input!) {
       updatePlanSnapshot: ${Queries.UPDATE_PLAN_SNAPSHOT}(
@@ -2778,6 +2904,32 @@ const gql = {
       }
       deleteSchedulingConditionTags: ${Queries.DELETE_SCHEDULING_CONDITION_METADATA_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS: `#graphql
+    mutation UpdateSchedulingConditionModelSpecifications($conditionSpecsToUpdate: [scheduling_model_specification_conditions_insert_input!]!, $conditionIdsToDelete: [Int!]! = [], $modelId: Int!) {
+      updateSchedulingConditionModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_CONDITIONS}(
+        objects: $conditionSpecsToUpdate,
+        on_conflict: {
+          constraint: scheduling_model_specification_conditions_pkey,
+          update_columns: [condition_revision]
+        },
+      ) {
+        returning {
+          condition_revision
+        }
+      }
+      deleteSchedulingConditionModelSpecifications: ${Queries.DELETE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS}(
+        where: {
+          condition_id: { _in: $conditionIdsToDelete },
+          _and: {
+            model_id: { _eq: $modelId }
+          }
+        }
+      ) {
+        affected_rows
       }
     }
   `,
@@ -2861,6 +3013,45 @@ const gql = {
       }
       deleteSchedulingGoalTags: ${Queries.DELETE_SCHEDULING_GOAL_METADATA_TAGS}(where: { tag_id: { _in: $tagIdsToDelete } }) {
           affected_rows
+      }
+    }
+  `,
+
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION: `#graphql
+    mutation UpdateSchedulingGoalModelSpecification($id: Int!, $revision: Int!, $priority: Int!, $modelId: Int!) {
+      updateSchedulingGoalModelSpecification: ${Queries.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION}(
+        pk_columns: { goal_id: $id, model_id: $modelId },
+        _set: {
+          goal_revision: $revision,
+          priority: $priority,
+        }
+      ) {
+        goal_revision
+      }
+    }
+  `,
+  UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS: `#graphql
+    mutation UpdateSchedulingGoalModelSpecifications($goalSpecsToUpdate: [scheduling_model_specification_goals_insert_input!]!, $goalIdsToDelete: [Int!]! = [], $modelId: Int!) {
+      updateSchedulingGoalModelSpecifications: ${Queries.INSERT_SCHEDULING_MODEL_SPECIFICATION_GOALS}(
+        objects: $goalSpecsToUpdate,
+        on_conflict: {
+          constraint: scheduling_model_specification_goals_pkey,
+          update_columns: [goal_revision]
+        },
+      ) {
+        returning {
+          goal_revision
+        }
+      }
+      deleteSchedulingGoalModelSpecifications: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(
+        where: {
+          goal_id: { _in: $goalIdsToDelete },
+          _and: {
+            model_id: { _eq: $modelId }
+          }
+        }
+      ) {
+        affected_rows
       }
     }
   `,

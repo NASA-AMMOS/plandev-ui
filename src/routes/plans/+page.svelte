@@ -6,7 +6,7 @@
   import { page } from '$app/stores';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
@@ -22,7 +22,7 @@
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { createPlanError, creatingPlan } from '../../stores/plan';
+  import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
@@ -243,6 +243,10 @@
         nameInputField.focus();
       }
     }
+  });
+
+  onDestroy(() => {
+    resetPlanStores();
   });
 
   async function createPlan() {

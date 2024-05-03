@@ -25,9 +25,7 @@
 
   let revisions: number[] = [];
 
-  $: revisions = condition.versions
-    .map(({ revision }) => revision)
-    .sort((revisionA, revisionB) => revisionB - revisionA);
+  $: revisions = condition.versions.map(({ revision }) => revision);
 
   function onEnable(event: Event) {
     const { value: enabled } = getTarget(event);

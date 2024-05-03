@@ -16,7 +16,7 @@
 
   let constraintRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
-    data.initialConstraint.versions[data.initialConstraint.versions.length - 1].revision;
+    data.initialConstraint.versions[0].revision;
 
   let constraintDefinition: Pick<ConstraintDefinition, 'author' | 'definition' | 'revision' | 'tags'> =
     data.initialConstraint.versions.find(

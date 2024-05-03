@@ -21,9 +21,9 @@ test.beforeAll(async ({ browser }) => {
 
   models = new Models(page);
   plans = new Plans(page, models);
-  constraints = new Constraints(page, models);
-  schedulingConditions = new SchedulingConditions(page, models);
-  schedulingGoals = new SchedulingGoals(page, models);
+  constraints = new Constraints(page);
+  schedulingConditions = new SchedulingConditions(page);
+  schedulingGoals = new SchedulingGoals(page);
   plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
@@ -97,7 +97,7 @@ test.describe.serial('Plan', () => {
     await expect(plan.panelTimelineEditor).toBeVisible();
   });
 
-  test(`Hovering on 'Activites' in the top navigation bar should show the activity checking menu`, async () => {
+  test(`Hovering on 'Activities' in the top navigation bar should show the activity checking menu`, async () => {
     await expect(plan.navButtonActivityCheckingMenu).not.toBeVisible();
     plan.navButtonActivityChecking.hover();
     await expect(plan.navButtonActivityCheckingMenu).toBeVisible();

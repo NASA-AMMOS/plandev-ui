@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
-import { Models } from './Models.js';
 
 export class SchedulingConditions {
   closeButton: Locator;
@@ -20,10 +19,7 @@ export class SchedulingConditions {
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
-  constructor(
-    public page: Page,
-    public models: Models,
-  ) {
+  constructor(public page: Page) {
     this.conditionName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
@@ -83,6 +79,10 @@ export class SchedulingConditions {
     await this.page.goto('/scheduling/conditions', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
     await this.page.waitForSelector(`input[placeholder="Filter conditions"]`, { state: 'attached' });
+  }
+
+  async gotoNew() {
+    await this.page.goto('/scheduling/conditions/new', { waitUntil: 'networkidle' });
   }
 
   updatePage(page: Page): void {

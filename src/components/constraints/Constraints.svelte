@@ -68,7 +68,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<ConstraintMetadata>) => {
-        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+        return params?.data?.versions[0].revision;
       },
       width: 125,
     },
@@ -174,11 +174,7 @@
 
   function editConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
     const constraint = $constraints.find(c => c.id === id);
-    goto(
-      `${base}/constraints/edit/${id}?${SearchParameters.REVISION}=${
-        constraint?.versions[constraint?.versions.length - 1].revision
-      }`,
-    );
+    goto(`${base}/constraints/edit/${id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}`);
   }
 
   function editConstraintContext(event: CustomEvent<RowId[]>) {
@@ -256,9 +252,7 @@
   <CssGridGutter track={1} type="column" />
 
   <DefinitionEditor
-    definition={selectedConstraint
-      ? selectedConstraint.versions[selectedConstraint.versions.length - 1].definition
-      : 'No Constraint Selected'}
+    definition={selectedConstraint ? selectedConstraint.versions[0].definition : 'No Constraint Selected'}
     readOnly={true}
     title="Constraint - Definition Editor (Read-only)"
   />

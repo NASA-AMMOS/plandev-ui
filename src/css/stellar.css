@@ -16,7 +16,7 @@
   --st-primary-text-color: var(--st-black);
   /* TODO add to stellar */
   --st-utility-blue: #2f80ed;
-  --st-utility-red: #db5139;
+  --st-utility-red: var(--st-error-red);
   --st-shadow-popover: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
 }
 
@@ -25,4 +25,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.st-button.danger {
+  background: rgba(219, 81, 57, 0.04);
+  border: 1px solid var(--st-utility-red);
+  color: var(--st-utility-red);
+}
+.st-button.danger:hover {
+  background: rgba(219, 81, 57, 0.08);
+  border-color: var(--st-error-red);
+  color: var(--st-utility-red);
 }

@@ -76,7 +76,7 @@
       <svelte:fragment slot="tab-list">
         <div class="console-tabs-container">
           <div class="console-tabs">
-            <slot name="console-tabs" foo="hi" />
+            <slot name="console-tabs" />
           </div>
           <div class="console-toggle" role="none" on:click={onToggle}>
             {#if isOpen}

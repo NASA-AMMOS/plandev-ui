@@ -7,15 +7,18 @@ export class Models {
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
   createButton: Locator;
+  createPlanButton: Locator;
   creatingButton: Locator;
   inputFile: Locator;
   inputName: Locator;
   inputVersion: Locator;
   jarPath: string = 'e2e-tests/data/banananation-develop.jar'; // TODO: Pull .jar from aerie project.
+  modelId: string;
   modelName: string;
   modelVersion: string = '1.0.0';
   tableRow: Locator;
   tableRowDeleteButton: Locator;
+  tableRowModelId: Locator;
 
   constructor(public page: Page) {
     this.modelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -32,9 +35,16 @@ export class Models {
     await this.fillInputVersion();
     await this.fillInputFile();
     await this.createButton.click();
+    await expect(this.page).toHaveURL(/.*\/models\/\d+/);
+    await this.goto();
     await this.tableRow.waitFor({ state: 'attached' });
     await this.tableRow.waitFor({ state: 'visible' });
     await expect(this.tableRow).toBeVisible();
+    await expect(this.tableRowModelId).toBeVisible();
+    const el = await this.tableRowModelId.elementHandle();
+    if (el) {
+      this.modelId = (await el.textContent()) as string;
+    }
   }
 
   async deleteModel() {
@@ -88,6 +98,7 @@ export class Models {
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
     this.createButton = page.getByRole('button', { name: 'Create' });
     this.creatingButton = page.getByRole('button', { name: 'Creating...' });
+    this.createPlanButton = page.getByRole('button', { name: 'New plan with model' });
     this.inputFile = page.locator('input[name="file"]');
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
@@ -96,5 +107,6 @@ export class Models {
     this.tableRowDeleteButton = page.locator(
       `.ag-row:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`,
     );
+    this.tableRowModelId = page.locator(`.ag-row:has-text("${this.modelName}") > div >> nth=0`);
   }
 }

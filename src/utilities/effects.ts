@@ -47,6 +47,7 @@ import type {
   ConstraintInsertInput,
   ConstraintMetadata,
   ConstraintMetadataSetInput,
+  ConstraintModelSpecInsertInput,
   ConstraintPlanSpec,
   ConstraintPlanSpecInsertInput,
   ConstraintResponse,
@@ -64,7 +65,7 @@ import type {
   SeqId,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
-import type { Model, ModelInsertInput, ModelSchema, ModelSlim } from '../types/model';
+import type { Model, ModelInsertInput, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
@@ -103,6 +104,7 @@ import type {
   SchedulingConditionMetadata,
   SchedulingConditionMetadataResponse,
   SchedulingConditionMetadataSetInput,
+  SchedulingConditionModelSpecificationInsertInput,
   SchedulingConditionPlanSpecInsertInput,
   SchedulingConditionPlanSpecification,
   SchedulingGoalDefinition,
@@ -111,6 +113,8 @@ import type {
   SchedulingGoalMetadata,
   SchedulingGoalMetadataResponse,
   SchedulingGoalMetadataSetInput,
+  SchedulingGoalModelSpecificationInsertInput,
+  SchedulingGoalModelSpecificationSetInput,
   SchedulingGoalPlanSpecInsertInput,
   SchedulingGoalPlanSpecification,
   SchedulingPlanSpecification,
@@ -772,7 +776,7 @@ const effects = {
     files: FileList,
     user: User | null,
     description?: string,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       createModelError.set(null);
 
@@ -812,6 +816,7 @@ const effects = {
           createModelError.set(null);
           creatingModel.set(false);
           models.updateValue((currentModels: ModelSlim[]) => [...currentModels, model]);
+          return id;
         } else {
           throw Error(`Unable to create model "${name}"`);
         }
@@ -822,6 +827,8 @@ const effects = {
       createModelError.set((e as Error).message);
       creatingModel.set(false);
     }
+
+    return null;
   },
 
   async createPlan(
@@ -2718,6 +2725,22 @@ const effects = {
     }
   },
 
+  async getModel(modelId: number, user: User | null): Promise<Model | null> {
+    try {
+      const query = convertToQuery(gql.SUB_MODEL);
+      const data = await reqHasura<Model>(query, { id: modelId }, user);
+      const { model } = data;
+      if (model != null) {
+        return model;
+      } else {
+        throw Error('Unable to retrieve model');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
   async getModels(user: User | null): Promise<ModelSlim[]> {
     try {
       const data = await reqHasura<ModelSlim[]>(gql.GET_MODELS, {}, user);
@@ -4103,13 +4126,41 @@ const effects = {
     }
   },
 
+  async updateConstraintModelSpecifications(
+    model: Model,
+    constraintSpecsToUpdate: ConstraintModelSpecInsertInput[],
+    constraintIdsToDelete: number[],
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS(user)) {
+        throwPermissionError('update this constraint model specification');
+      }
+
+      const { deleteConstraintModelSpecifications, updateConstraintModelSpecifications } = await reqHasura(
+        gql.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS,
+        { constraintIdsToDelete, constraintSpecsToUpdate, modelId: model.id },
+        user,
+      );
+
+      if (updateConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+        showSuccessToast(`Constraint Model Specifications Updated Successfully`);
+      } else {
+        throw Error('Unable to update the constraint specifications for the model');
+      }
+    } catch (e) {
+      catchError('Constraint Model Specifications Update Failed', e as Error);
+      showFailureToast('Constraint Model Specifications Update Failed');
+    }
+  },
+
   async updateConstraintPlanSpecification(
     plan: Plan,
     constraintPlanSpecification: Omit<ConstraintPlanSpec, 'constraint_metadata'>,
     user: User | null,
   ) {
     try {
-      if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan)) {
+      if (!queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATION(user, plan)) {
         throwPermissionError('update this constraint plan specification');
       }
       const { enabled, constraint_id: constraintId, constraint_revision: revision } = constraintPlanSpecification;
@@ -4183,6 +4234,35 @@ const effects = {
       showFailureToast('Expansion Rule Update Failed');
       savingExpansionRule.set(false);
       createExpansionRuleError.set((e as Error).message);
+      return null;
+    }
+  },
+
+  async updateModel(
+    id: number,
+    model: Partial<ModelSetInput>,
+    user: User | null,
+  ): Promise<Pick<Model, 'description' | 'name' | 'owner' | 'version'> | null> {
+    try {
+      if (!queryPermissions.UPDATE_MODEL(user)) {
+        throwPermissionError('update this model');
+      }
+
+      const data = await reqHasura<Pick<Model, 'description' | 'name' | 'owner' | 'version'>>(
+        gql.UPDATE_MODEL,
+        { id, model },
+        user,
+      );
+
+      if (data != null) {
+        showSuccessToast('Model Updated Successfully');
+        return data.updateModel;
+      } else {
+        throw Error(`Unable to update model with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Model Update Failed', e as Error);
+      showFailureToast('Model Update Failed');
       return null;
     }
   },
@@ -4276,6 +4356,37 @@ const effects = {
       catchError('Scheduling Condition Metadata Update Failed', e as Error);
       showFailureToast('Scheduling Condition Metadata Update Failed');
       return false;
+    }
+  },
+
+  async updateSchedulingConditionModelSpecifications(
+    model: Model,
+    conditionSpecsToUpdate: SchedulingConditionModelSpecificationInsertInput[],
+    conditionIdsToDelete: number[],
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS(user)) {
+        throwPermissionError('update this scheduling condition model specification');
+      }
+      const { deleteConstraintModelSpecifications, updateSchedulingConditionModelSpecifications } = await reqHasura(
+        gql.UPDATE_SCHEDULING_CONDITION_MODEL_SPECIFICATIONS,
+        {
+          conditionIdsToDelete,
+          conditionSpecsToUpdate,
+          modelId: model.id,
+        },
+        user,
+      );
+
+      if (updateSchedulingConditionModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+        showSuccessToast(`Scheduling Conditions Updated Successfully`);
+      } else {
+        throw Error('Unable to update the scheduling condition specifications for the model');
+      }
+    } catch (e) {
+      catchError('Scheduling Condition Model Specifications Update Failed', e as Error);
+      showFailureToast('Scheduling Condition Model Specifications Update Failed');
     }
   },
 
@@ -4405,6 +4516,65 @@ const effects = {
     } catch (e) {
       catchError('Scheduling Goal Metadata Update Failed', e as Error);
       showFailureToast('Scheduling Goal Metadata Update Failed');
+    }
+  },
+
+  async updateSchedulingGoalModelSpecification(
+    model: Model,
+    schedulingGoalModelSpecification: SchedulingGoalModelSpecificationSetInput,
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION(user)) {
+        throwPermissionError('update this scheduling goal plan specification');
+      }
+      const { goal_id: goalId, goal_revision: revision, priority } = schedulingGoalModelSpecification;
+
+      const { updateSchedulingGoalModelSpecification } = await reqHasura(
+        gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATION,
+        { id: goalId, modelId: model.id, priority, revision },
+        user,
+      );
+
+      if (updateSchedulingGoalModelSpecification !== null) {
+        showSuccessToast(`Scheduling Goal Model Specification Updated Successfully`);
+      } else {
+        throw Error('Unable to update the scheduling goal specification for the model');
+      }
+    } catch (e) {
+      catchError('Scheduling Goal Model Specification Update Failed', e as Error);
+      showFailureToast('Scheduling Goal Model Specification Update Failed');
+    }
+  },
+
+  async updateSchedulingGoalModelSpecifications(
+    model: Model,
+    goalSpecsToUpdate: SchedulingGoalModelSpecificationInsertInput[],
+    goalIdsToDelete: number[],
+    user: User | null,
+  ) {
+    try {
+      if (!queryPermissions.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS(user)) {
+        throwPermissionError('update this scheduling goal model specification');
+      }
+      const { deleteConstraintModelSpecifications, updateSchedulingGoalModelSpecifications } = await reqHasura(
+        gql.UPDATE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS,
+        {
+          goalIdsToDelete,
+          goalSpecsToUpdate,
+          modelId: model.id,
+        },
+        user,
+      );
+
+      if (updateSchedulingGoalModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
+        showSuccessToast(`Scheduling Goals Updated Successfully`);
+      } else {
+        throw Error('Unable to update the scheduling goal specifications for the model');
+      }
+    } catch (e) {
+      catchError('Scheduling Goal Model Specifications Update Failed', e as Error);
+      showFailureToast('Scheduling Goal Model Specifications Update Failed');
     }
   },
 

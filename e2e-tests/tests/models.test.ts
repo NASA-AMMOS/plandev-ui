@@ -10,7 +10,7 @@ test.beforeAll(async ({ browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
   models = new Models(page);
-  constraints = new Constraints(page, models);
+  constraints = new Constraints(page);
   await models.goto();
 });
 
@@ -54,10 +54,11 @@ test.describe.serial('Models', () => {
   });
 
   test('Delete model', async () => {
+    await models.goto();
     await models.deleteModel();
   });
 
-  test('Create button should be disabled after submitting once', async () => {
+  test('Successfully creating a model should navigate to the model edit page', async () => {
     // Setup the test
     await expect(models.tableRow).not.toBeVisible();
     await models.fillInputName();
@@ -69,6 +70,10 @@ test.describe.serial('Models', () => {
     // Instead, the creating button should be present and disabled
     await expect(models.creatingButton).toBeVisible();
     await expect(models.creatingButton).toBeDisabled();
+
+    // App now navigates away after model creation
+    await models.goto();
+
     await expect(models.createButton).toBeVisible();
 
     await expect(models.inputFile).toBeEmpty();

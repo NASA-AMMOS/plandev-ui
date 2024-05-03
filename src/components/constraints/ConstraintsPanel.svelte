@@ -211,7 +211,7 @@
             permissionHandler,
             {
               hasPermission: $plan
-                ? featurePermissions.constraintPlanSpec.canCheck(user, $plan, $plan.model) && !$planReadOnly
+                ? featurePermissions.constraintsPlanSpec.canCheck(user, $plan, $plan.model) && !$planReadOnly
                 : false,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
@@ -337,7 +337,7 @@
               constraintPlanSpec={$allowedConstraintPlanSpecMap[constraint.constraint_id]}
               constraintResponse={constraintToConstraintResponseMap[constraint.constraint_id]}
               hasReadPermission={featurePermissions.constraints.canRead(user)}
-              hasEditPermission={$plan ? featurePermissions.constraintPlanSpec.canUpdate(user, $plan) : false}
+              hasEditPermission={$plan ? featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) : false}
               modelId={$plan?.model.id}
               totalViolationCount={$constraintResponseMap[constraint.constraint_id]?.results.violations?.length || 0}
               visible={$constraintVisibilityMap[constraint.constraint_id]}

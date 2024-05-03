@@ -79,7 +79,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<SchedulingConditionMetadata>) => {
-        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+        return params?.data?.versions[0].revision;
       },
       width: 80,
     },
@@ -168,6 +168,7 @@
         cellDataType: 'boolean',
         editable: hasEditSpecPermission,
         headerName: '',
+        resizable: false,
         suppressAutoSize: true,
         suppressSizeToFit: true,
         valueGetter: (params: ValueGetterParams<SchedulingConditionMetadata>) => {
@@ -188,9 +189,7 @@
   function viewCondition({ id }: Pick<SchedulingConditionMetadata, 'id'>) {
     const condition = $schedulingConditions.find(c => c.id === id);
     window.open(
-      `${base}/scheduling/conditions/edit/${condition?.id}?${SearchParameters.REVISION}=${
-        condition?.versions[condition?.versions.length - 1].revision
-      }&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
+      `${base}/scheduling/conditions/edit/${condition?.id}?${SearchParameters.REVISION}=${condition?.versions[0].revision}&${SearchParameters.MODEL_ID}=${$plan?.model.id}`,
     );
   }
 

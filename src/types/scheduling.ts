@@ -116,6 +116,23 @@ export type SchedulingResponse = {
   reason: SchedulingError;
 };
 
+export type SchedulingGoalModelSpecification = {
+  goal_id: number;
+  goal_metadata: Pick<SchedulingGoalMetadata, 'id' | 'name'> | null;
+  goal_revision: number | null;
+  model_id: number;
+  priority: number;
+  // goal_definition: SchedulingGoalDefinition;
+};
+
+export type SchedulingConditionModelSpecification = {
+  condition_id: number;
+  condition_metadata: Pick<SchedulingConditionMetadata, 'id' | 'name'> | null;
+  condition_revision: number | null;
+  model_id: number;
+  // condition_definition: SchedulingConditionDefinition;
+};
+
 export type SchedulingPlanSpecification = {
   analysis_only: boolean;
   conditions?: SchedulingConditionPlanSpecification[];
@@ -129,8 +146,17 @@ export type SchedulingPlanSpecification = {
   simulation_arguments: ArgumentsMap;
 };
 
+export type SchedulingConditionModelSpecificationInsertInput = Omit<
+  SchedulingConditionModelSpecification,
+  'condition_metadata'
+>;
+export type SchedulingGoalModelSpecificationInsertInput = Omit<SchedulingGoalModelSpecification, 'goal_metadata'>;
 export type SchedulingPlanSpecificationInsertInput = Omit<SchedulingPlanSpecification, 'id' | 'revision'>;
 
+export type SchedulingGoalModelSpecificationSetInput = Pick<
+  SchedulingGoalModelSpecification,
+  'goal_id' | 'goal_revision' | 'priority'
+>;
 export type SchedulingConditionPlanSpecification = {
   // condition_definition: SchedulingConditionDefinition;
   condition_id: number;

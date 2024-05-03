@@ -38,9 +38,7 @@
 
   let revisions: number[] = [];
 
-  $: revisions = constraint.versions
-    .map(({ revision }) => revision)
-    .sort((revisionA, revisionB) => revisionB - revisionA);
+  $: revisions = constraint.versions.map(({ revision }) => revision);
   $: violationCount = constraintResponse?.results?.violations?.length;
   $: success = constraintResponse?.success;
 

@@ -88,6 +88,7 @@
   .radio-buttons {
     align-items: center;
     background-color: var(--st-gray-15);
+    border-radius: 4px;
     display: grid;
     grid-auto-columns: 1fr;
     grid-auto-flow: column;

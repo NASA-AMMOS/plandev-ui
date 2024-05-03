@@ -70,7 +70,7 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       valueGetter: (params: ValueGetterParams<SchedulingConditionMetadata>) => {
-        return params?.data?.versions[params?.data?.versions.length - 1].revision;
+        return params?.data?.versions[0].revision;
       },
       width: 125,
     },

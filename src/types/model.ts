@@ -1,10 +1,12 @@
 import type { UserId } from './app';
 import type { ConstraintModelSpec } from './constraint';
 import type { ParametersMap } from './parameter';
+import type { SchedulingConditionModelSpecification, SchedulingGoalModelSpecification } from './scheduling';
 
 export type Model = ModelSchema;
 
 export type ModelInsertInput = Pick<Model, 'description' | 'jar_id' | 'mission' | 'name' | 'version'>;
+export type ModelSetInput = Pick<Model, 'description' | 'mission' | 'name' | 'owner' | 'version'>;
 
 export type ModelSchema = {
   constraint_specification: ConstraintModelSpec[];
@@ -17,6 +19,8 @@ export type ModelSchema = {
   owner: UserId;
   parameters: { parameters: ParametersMap };
   plans: { id: number }[];
+  scheduling_specification_conditions: SchedulingConditionModelSpecification[];
+  scheduling_specification_goals: SchedulingGoalModelSpecification[];
   version: string;
 };
 

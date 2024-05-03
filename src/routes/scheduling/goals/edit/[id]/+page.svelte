@@ -20,7 +20,7 @@
 
   let goalRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
-    data.initialGoal.versions[data.initialGoal.versions.length - 1].revision;
+    data.initialGoal.versions[0].revision;
 
   let goalDefinition: Pick<SchedulingGoalDefinition, 'author' | 'definition' | 'revision' | 'tags'> =
     data.initialGoal.versions.find(

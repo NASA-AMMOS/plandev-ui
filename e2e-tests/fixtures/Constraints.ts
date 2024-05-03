@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
-import { Models } from './Models.js';
 
 export class Constraints {
   closeButton: Locator;
@@ -19,10 +18,7 @@ export class Constraints {
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
-  constructor(
-    public page: Page,
-    public models: Models,
-  ) {
+  constructor(public page: Page) {
     this.constraintName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
@@ -81,6 +77,10 @@ export class Constraints {
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
+  }
+
+  async gotoNew() {
+    await this.page.goto('/constraints/new', { waitUntil: 'networkidle' });
   }
 
   updatePage(page: Page): void {

@@ -489,8 +489,8 @@
             </select>
           {:else}
             <select disabled class="st-select w-100" name="versions">
-              <option value={revisions[revisions.length - 1] + 1}>
-                {revisions[revisions.length - 1] + 1} (Next version)
+              <option value={revisions[0] + 1}>
+                {revisions[0] + 1} (Next version)
               </option>
             </select>
           {/if}

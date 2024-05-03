@@ -20,7 +20,7 @@
 
   let conditionRevision: number =
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
-    data.initialCondition.versions[data.initialCondition.versions.length - 1].revision;
+    data.initialCondition.versions[0].revision;
 
   let conditionDefinition: Pick<SchedulingConditionDefinition, 'author' | 'definition' | 'revision' | 'tags'> =
     data.initialCondition.versions.find(

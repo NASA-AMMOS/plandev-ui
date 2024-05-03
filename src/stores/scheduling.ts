@@ -279,3 +279,7 @@ export const enableScheduling: Readable<boolean> = derived(
     return $schedulingGoalSpecifications.filter(schedulingSpecGoal => schedulingSpecGoal.enabled).length > 0;
   },
 );
+
+export function resetPlanSchedulingStores() {
+  schedulingPlanSpecification.updateValue(() => null);
+}
