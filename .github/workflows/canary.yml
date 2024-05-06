@@ -1,0 +1,13 @@
+name: Mission Model Canary
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # every hour at the top of the hour
+
+jobs:
+  canary:
+    uses: ./.github/workflows/test.yml
+    with:
+      env: 'canary'
+    secrets: inherit

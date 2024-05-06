@@ -11,6 +11,12 @@ on:
     tags:
       - v*
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      env:
+        description: 'Github Actions environment that the test workflow should run under'
+        type: string
+        required: false
 
 env:
   AERIE_PASSWORD: '${{secrets.AERIE_PASSWORD}}'
@@ -54,7 +60,7 @@ jobs:
             **/unit-test-results
   e2e-test:
     runs-on: ubuntu-latest
-    environment: test-workflow
+    environment: ${{ inputs***REMOVED*** || 'test-workflow' }}
     steps:
       - name: Checkout Repo (UI)
         uses: actions/checkout@v4
