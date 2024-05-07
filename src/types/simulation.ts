@@ -64,6 +64,22 @@ export type ResourceValue = {
   y: number | string | null;
 };
 
+export type RawSimulationEvent = {
+  causal_time: string;
+  real_time: string;
+  topic_index: number;
+  transaction_index: number;
+  value: any;
+};
+
+export type SimulationEvent = {
+  dense_time: string;
+  id: number;
+  start_offset: string;
+  topic: string;
+  value: string;
+};
+
 export type SimulateResponse = {
   reason: SimulationDatasetError;
   simulationDatasetId: number;
@@ -155,4 +171,10 @@ export type Span = {
   parent_id: number | null;
   start_offset: string;
   type: string;
+};
+
+export type Topic = {
+  name: string;
+  topic_index: number;
+  value_schema: ValueSchema;
 };

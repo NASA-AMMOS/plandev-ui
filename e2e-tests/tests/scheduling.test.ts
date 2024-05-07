@@ -3,7 +3,7 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 import { Status } from '../../src/enums/status.js';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -111,9 +111,9 @@ test.describe.serial('Scheduling', () => {
   });
 
   test('Modifying the plan should result in scheduling status marked as out of date', async () => {
-    await plan.showPanel('Activity Types');
+    await plan.showPanel(PanelNames.ACTIVITY_TYPES);
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
-    await plan.showPanel('Scheduling Goals');
+    await plan.showPanel(PanelNames.SCHEDULING_GOALS);
     await plan.waitForSchedulingStatus(Status.Modified);
   });
 

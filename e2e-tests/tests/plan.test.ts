@@ -1,7 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -57,43 +57,43 @@ test.describe.serial('Plan', () => {
 
   test(`Clicking on 'Constraints' in the grid menu should show the constraints panel`, async () => {
     await expect(plan.panelConstraints).not.toBeVisible();
-    await plan.showPanel('Constraints');
+    await plan.showPanel(PanelNames.CONSTRAINTS);
     await expect(plan.panelConstraints).toBeVisible();
   });
 
   test(`Clicking on 'Expansion' in the grid menu should show the expansion panel`, async () => {
     await expect(plan.panelExpansion).not.toBeVisible();
-    await plan.showPanel('Expansion');
+    await plan.showPanel(PanelNames.EXPANSION);
     await expect(plan.panelExpansion).toBeVisible();
   });
 
   test(`Clicking on 'Plan Metadata' in the grid menu should show the plan metadata panel`, async () => {
     await expect(plan.panelPlanMetadata).not.toBeVisible();
-    await plan.showPanel('Plan Metadata');
+    await plan.showPanel(PanelNames.PLAN_METADATA);
     await expect(plan.panelPlanMetadata).toBeVisible();
   });
 
   test(`Clicking on 'Scheduling Goals' in the grid menu should show the scheduling goals panel`, async () => {
     await expect(plan.panelSchedulingGoals).not.toBeVisible();
-    await plan.showPanel('Scheduling Goals');
+    await plan.showPanel(PanelNames.SCHEDULING_GOALS);
     await expect(plan.panelSchedulingGoals).toBeVisible();
   });
 
   test(`Clicking on 'Scheduling Conditions' in the grid menu should show the scheduling conditions panel`, async () => {
     await expect(plan.panelSchedulingConditions).not.toBeVisible();
-    await plan.showPanel('Scheduling Conditions');
+    await plan.showPanel(PanelNames.SCHEDULING_CONDITIONS);
     await expect(plan.panelSchedulingConditions).toBeVisible();
   });
 
   test(`Clicking on 'Simulation' in the grid menu should show the simulation panel`, async () => {
     await expect(plan.panelSimulation).not.toBeVisible();
-    await plan.showPanel('Simulation');
+    await plan.showPanel(PanelNames.SIMULATION);
     await expect(plan.panelSimulation).toBeVisible();
   });
 
   test(`Clicking on 'Timeline Editor' in the grid menu should show the timeline editor panel`, async () => {
     await expect(plan.panelTimelineEditor).not.toBeVisible();
-    await plan.showPanel('Timeline Editor');
+    await plan.showPanel(PanelNames.TIMELINE_EDITOR);
     await expect(plan.panelTimelineEditor).toBeVisible();
   });
 
@@ -138,7 +138,7 @@ test.describe.serial('Plan', () => {
   });
 
   test(`Changing to a new plan should clear the selected activity`, async () => {
-    await plan.showPanel('Activity Types');
+    await plan.showPanel(PanelNames.ACTIVITY_TYPES);
 
     // Create an activity which will be auto selected
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();

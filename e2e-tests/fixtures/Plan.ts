@@ -92,7 +92,7 @@ export class Plan {
   }
 
   async addPlanCollaborator(name: string, isUsername = true) {
-    await this.showPanel('Plan Metadata');
+    await this.showPanel(PanelNames.PLAN_METADATA);
     await this.waitForPlanCollaboratorLoad();
     await this.planCollaboratorInput.fill(name);
     await this.planCollaboratorInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
@@ -224,7 +224,7 @@ export class Plan {
   }
 
   async removePlanCollaborator(name: string) {
-    await this.showPanel('Plan Metadata');
+    await this.showPanel(PanelNames.PLAN_METADATA);
     await this.waitForPlanCollaboratorLoad();
     await this.planCollaboratorInputContainer
       .locator('.tags-input-selected-items')
@@ -335,7 +335,7 @@ export class Plan {
   }
 
   async showConstraintsLayout() {
-    await this.showPanel('Constraints');
+    await this.showPanel(PanelNames.CONSTRAINTS);
     await this.panelConstraints.waitFor({ state: 'attached' });
     await this.panelConstraints.waitFor({ state: 'visible' });
     await this.panelActivityDirectivesTable.waitFor({ state: 'attached' });
@@ -347,7 +347,7 @@ export class Plan {
     await expect(this.panelTimeline).toBeVisible();
   }
 
-  async showPanel(name: string, pickLastMenu: boolean = false) {
+  async showPanel(name: PanelNames, pickLastMenu: boolean = false) {
     await expect(this.gridMenu).not.toBeVisible();
     if (pickLastMenu) {
       await this.gridMenuButton.last().click();
@@ -360,8 +360,8 @@ export class Plan {
   }
 
   async showSchedulingLayout() {
-    await this.showPanel('Scheduling Goals');
-    await this.showPanel('Scheduling Conditions', true);
+    await this.showPanel(PanelNames.SCHEDULING_GOALS);
+    await this.showPanel(PanelNames.SCHEDULING_CONDITIONS, true);
     await this.panelSchedulingGoals.waitFor({ state: 'attached' });
     await this.panelSchedulingGoals.waitFor({ state: 'visible' });
     await this.panelSchedulingConditions.waitFor({ state: 'attached' });
@@ -387,7 +387,7 @@ export class Plan {
     this.gridMenu = page.locator('.header > .grid-menu > .menu > .menu-slot');
     this.gridMenuButton = page.locator('.header > .grid-menu');
     this.gridMenuItem = (name: string) =>
-      page.locator(`.header > .grid-menu > .menu > .menu-slot > .menu-item:has-text("${name}")`);
+      page.locator(`.header > .grid-menu > .menu > .menu-slot > .menu-item:text-is("${name}")`);
     this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
     this.navButtonActivityCheckingMenu = page.locator(`.nav-button:has-text("Activities") .menu`);
     this.navButtonExpansion = page.locator(`.nav-button:has-text("Expansion")`);
@@ -459,4 +459,19 @@ export class Plan {
   async waitForToast(message: string) {
     await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 3000 });
   }
+}
+
+export enum PanelNames {
+  ACTIVITY_DIRECTIVES_TABLE = 'Activity Directives Table',
+  SIMULATED_ACTIVITIES_TABLE = 'Simulated Activities Table',
+  ACTIVITY_TYPES = 'Activity Types',
+  CONSTRAINTS = 'Constraints',
+  EXPANSION = 'Expansion',
+  EXTERNAL_APPLICATION = 'External Application',
+  PLAN_METADATA = 'Plan Metadata',
+  SCHEDULING_GOALS = 'Scheduling Goals',
+  SCHEDULING_CONDITIONS = 'Scheduling Conditions',
+  SELECTED_ACTIVITY = 'Selected Activity',
+  SIMULATION = 'Simulation',
+  TIMELINE_EDITOR = 'Timeline Editor',
 }

@@ -1,7 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -63,7 +63,7 @@ test.afterAll(async ({ baseURL }) => {
 
 test.describe.serial('Plan Metadata', () => {
   test('Plan owner should be userA', async () => {
-    await planA.showPanel('Plan Metadata');
+    await planA.showPanel(PanelNames.PLAN_METADATA);
     await expect(planA.panelPlanMetadata.locator('input[name="owner"]')).toHaveValue(userA.username);
   });
 
@@ -82,7 +82,7 @@ test.describe.serial('Plan Metadata', () => {
     await userB.login(baseURL);
     await planA.goto();
     await userB.switchRole('user');
-    await planA.showPanel('Plan Metadata');
+    await planA.showPanel(PanelNames.PLAN_METADATA);
     await expect(planA.planCollaboratorInputContainer.locator('.tags-input')).toHaveAttribute('readonly', 'readonly');
   });
 
@@ -98,7 +98,7 @@ test.describe.serial('Plan Metadata', () => {
     await userB.login(baseURL);
     await planA.goto();
     await userB.switchRole('user');
-    await planA.showPanel('Plan Metadata');
+    await planA.showPanel(PanelNames.PLAN_METADATA);
     await planA.addPlanCollaborator(userA.username);
   });
 
@@ -108,7 +108,7 @@ test.describe.serial('Plan Metadata', () => {
     await plans.goto();
     const planBId = await plans.getPlanId(planB.planName);
     await planB.goto(planBId);
-    await planB.showPanel('Plan Metadata');
+    await planB.showPanel(PanelNames.PLAN_METADATA);
     await planA.removePlanCollaborator(userA.username);
     await planA.removePlanCollaborator(userB.username);
     // Wait for plan to be an option in the input (via socket update which can take at least half a second)

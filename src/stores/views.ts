@@ -265,6 +265,27 @@ export function viewUpdateActivitySpansTable(update: Partial<ViewTable>): void {
   });
 }
 
+export function viewUpdateSimulationEventsTable(update: Partial<ViewTable>): void {
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            simulationEventsTable: {
+              ...currentView.definition.plan.simulationEventsTable,
+              ...update,
+            },
+          },
+        },
+      };
+    }
+    return currentView;
+  });
+}
+
 export function viewUpdateIFrame(prop: string, value: any, iFrameId?: number) {
   if (iFrameId !== undefined) {
     view.update(currentView => {

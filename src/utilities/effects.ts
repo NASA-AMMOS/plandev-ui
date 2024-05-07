@@ -137,11 +137,13 @@ import type {
   ResourceType,
   SimulateResponse,
   Simulation,
+  SimulationEvent,
   SimulationInitialUpdateInput,
   SimulationTemplate,
   SimulationTemplateInsertInput,
   SimulationTemplateSetInput,
   Span,
+  Topic,
 } from '../types/simulation';
 import type {
   ActivityDirectiveTagsInsertInput,
@@ -183,6 +185,7 @@ import { queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
+import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from './time';
 import { createRow, duplicateRow } from './timeline';
@@ -2612,6 +2615,41 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return null;
+    }
+  },
+
+  async getEvents(
+    datasetId: number,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<SimulationEvent[]> {
+    try {
+      const data = await reqHasura<any>(gql.GET_EVENTS, { datasetId }, user, signal);
+      const { topic: topics, event: events } = data;
+      if (topics === null || events === null) {
+        throw Error('Unable to get events');
+      }
+      const topicById: Record<number, Topic> = {};
+      for (const topic of topics) {
+        topicById[topic.topic_index] = topic;
+      }
+
+      events.sort(compareEvents);
+
+      const simulationEvents: SimulationEvent[] = [];
+      for (const event of events) {
+        simulationEvents.push({
+          dense_time: event.transaction_index + '.0' + event.causal_time,
+          id: simulationEvents.length,
+          start_offset: event.real_time,
+          topic: topicById[event.topic_index].name,
+          value: typeof event.value === 'string' ? event.value : JSON.stringify(event.value),
+        });
+      }
+      return simulationEvents;
+    } catch (e) {
+      catchError(e as Error);
+      return [];
     }
   },
 

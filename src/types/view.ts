@@ -42,6 +42,7 @@ export type ViewGridComponent =
   | 'SchedulingConditionsPanel'
   | 'SchedulingGoalsPanel'
   | 'SimulationPanel'
+  | 'SimulationEventsPanel'
   | 'TimelineEditorPanel';
 
 export type ViewGridSection = 'LeftBottom' | 'LeftTop' | 'MiddleBottom' | 'RightBottom' | 'RightTop';
@@ -80,6 +81,7 @@ export type ViewDefinition = {
     activitySpansTable: ViewTable;
     grid: ViewGrid;
     iFrames: ViewIFrame[];
+    simulationEventsTable: ViewTable;
     timelines: Timeline[];
   };
 };

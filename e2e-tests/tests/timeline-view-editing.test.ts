@@ -1,7 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -46,20 +46,20 @@ test.describe.serial('Timeline View Editing', () => {
   const newActivityStartTime: string = '2022-005T00:00:00.000';
 
   test('Add an activity to the parent plan', async () => {
-    await plan.showPanel('Activity Types');
+    await plan.showPanel(PanelNames.ACTIVITY_TYPES);
     await page.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
   });
 
   test('Change the start time of the activity', async () => {
     await page.getByRole('gridcell', { name: 'PickBanana' }).first().click();
-    await plan.showPanel('Selected Activity');
+    await plan.showPanel(PanelNames.SELECTED_ACTIVITY);
     await page.locator('input[name="start-time"]').first().click();
     await page.locator('input[name="start-time"]').first().fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').first().press('Enter');
   });
 
   test('Add a vertical guide', async () => {
-    await plan.showPanel('Timeline Editor');
+    await plan.showPanel(PanelNames.TIMELINE_EDITOR);
     const existingGuideCount = await page.locator('.guide').count();
     await page.getByRole('button', { name: 'New Vertical Guide' }).click();
     const newGuideCount = await page.locator('.guide').count();

@@ -90,6 +90,10 @@
       <GearWideConnectedIcon />
       Simulation
     </MenuItem>
+    <MenuItem on:click={() => onClickMenuItem('SimulationEventsPanel')}>
+      <TableWithHeaderIcon />
+      Simulation Events Table
+    </MenuItem>
     <MenuItem on:click={() => onClickMenuItem('TimelineEditorPanel')}>
       <ChecklistOnPageIcon />
       Timeline Editor

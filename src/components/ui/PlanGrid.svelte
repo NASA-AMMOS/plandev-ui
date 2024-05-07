@@ -13,6 +13,7 @@
   import PlanMetadataPanel from '../plan/PlanMetadataPanel.svelte';
   import SchedulingConditionsPanel from '../scheduling/SchedulingConditionsPanel.svelte';
   import SchedulingGoalsPanel from '../scheduling/SchedulingGoalsPanel.svelte';
+  import SimulationEventsPanel from '../simulation/SimulationEventsPanel.svelte';
   import SimulationPanel from '../simulation/SimulationPanel.svelte';
   import TimelinePanel from '../timeline/TimelinePanel.svelte';
   import TimelineEditorPanel from '../timeline/form/TimelineEditorPanel.svelte';
@@ -54,6 +55,7 @@
     PlanMetadataPanel,
     SchedulingConditionsPanel,
     SchedulingGoalsPanel,
+    SimulationEventsPanel,
     SimulationPanel,
     TimelineEditorPanel,
   };

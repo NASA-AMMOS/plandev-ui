@@ -1,7 +1,7 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -32,7 +32,7 @@ test.beforeAll(async ({ browser }) => {
   await plans.createPlan();
   await plan.goto();
 
-  await plan.showPanel('Simulation', true);
+  await plan.showPanel(PanelNames.SIMULATION, true);
 
   await page.getByRole('button', { name: 'CreateActivity-child' }).click();
   await page.getByRole('button', { name: 'Simulate' }).click();

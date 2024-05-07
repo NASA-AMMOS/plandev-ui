@@ -2,7 +2,7 @@ import test, { expect, type BrowserContext, type Page } from '@playwright/test';
 import { Status } from '../../src/enums/status.js';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
-import { Plan } from '../fixtures/Plan.js';
+import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { Plans } from '../fixtures/Plans.js';
 import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
@@ -33,7 +33,7 @@ test.beforeAll(async ({ browser }) => {
   await plans.createPlan();
   await plan.goto();
 
-  await plan.showPanel('Simulation', true);
+  await plan.showPanel(PanelNames.SIMULATION, true);
 });
 
 test.afterAll(async () => {
@@ -83,15 +83,15 @@ test.describe.serial('Simulation', async () => {
   });
 
   test(`Plans with activities should simulate and result in simulated activities`, async () => {
-    await plan.showPanel('Simulated Activities Table', true);
+    await plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
     await expect(plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).not.toBeVisible();
-    await plan.showPanel('Simulation', true);
+    await plan.showPanel(PanelNames.SIMULATION, true);
     await plan.addActivity('GrowBanana');
     await plan.runSimulation();
     await page.waitForTimeout(1000); // wait for sim results
-    await plan.showPanel('Simulated Activities Table', true);
+    await plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
     await expect(plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).toBeVisible();
-    await plan.showPanel('Simulation', true);
+    await plan.showPanel(PanelNames.SIMULATION, true);
   });
 
   test(`Plans with an invalid activity should fail simulation`, async () => {

@@ -98,6 +98,7 @@
     simulationDatasetId,
     simulationDatasetLatest,
     simulationDatasetsAll,
+    simulationEvents,
     simulationProgress,
     simulationStatus,
     spans,
@@ -348,9 +349,13 @@
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
     effects.getSpans(datasetId, data.user, simulationDataAbortController.signal).then(newSpans => ($spans = newSpans));
+    effects
+      .getEvents(datasetId, data.user, simulationDataAbortController.signal)
+      .then(newEvents => ($simulationEvents = newEvents));
   } else {
     simulationDataAbortController?.abort();
     $spans = [];
+    $simulationEvents = [];
   }
 
   $: {

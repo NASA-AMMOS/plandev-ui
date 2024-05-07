@@ -89,6 +89,7 @@
         "PlanMetadataPanel",
         "SchedulingConditionsPanel",
         "SchedulingGoalsPanel",
+        "SimulationEventsPanel",
         "SimulationPanel",
         "TimelineEditorPanel"
       ]
@@ -108,6 +109,9 @@
           "$ref": "#/definitions/table"
         },
         "activitySpansTable": {
+          "$ref": "#/definitions/table"
+        },
+        "simulationEventsTable": {
           "$ref": "#/definitions/table"
         },
         "grid": {

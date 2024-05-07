@@ -1,8 +1,8 @@
 import { Status } from '../enums/status';
-import type { SimulationDataset, SimulationDatasetSlim } from '../types/simulation';
+import type { RawSimulationEvent, SimulationDataset, SimulationDatasetSlim } from '../types/simulation';
 import { compare, getNumberWithOrdinal } from './generic';
 import { statusColors } from './status';
-import { getDoyTime, getUnixEpochTimeFromInterval } from './time';
+import { getDoyTime, getIntervalInMs, getUnixEpochTimeFromInterval } from './time';
 
 /**
  * Returns the string version of an object of unknown type or returns null if this operation fails.
@@ -149,4 +149,42 @@ export function formatSimulationQueuePosition(position: number): string {
     return 'Next in Queue';
   }
   return `${getNumberWithOrdinal(position)} in Queue`;
+}
+
+/**
+ * Sort events using their dense time markings
+ */
+export function compareEvents(a: RawSimulationEvent, b: RawSimulationEvent) {
+  const aMs = getIntervalInMs(a.real_time);
+  const bMs = getIntervalInMs(b.real_time);
+  if (aMs !== bMs) {
+    return aMs - bMs;
+  }
+
+  if (a.transaction_index !== b.transaction_index) {
+    return a.transaction_index - b.transaction_index;
+  }
+
+  const aDenseTime = a.causal_time.slice(1).split('.');
+  const bDenseTime = b.causal_time.slice(1).split('.');
+
+  let i = 0;
+  let isSequential = true;
+  while (i < Math.min(aDenseTime.length, bDenseTime.length)) {
+    const aVal = parseInt(aDenseTime[i]);
+    const bVal = parseInt(bDenseTime[i]);
+
+    if (aVal === bVal) {
+      i = i + 1;
+      isSequential = !isSequential;
+    } else if (!isSequential) {
+      return 0;
+    } else if (aVal < bVal) {
+      return -1;
+    } else {
+      return 1;
+    }
+  }
+
+  return 0;
 }

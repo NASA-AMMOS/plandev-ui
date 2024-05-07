@@ -61,6 +61,7 @@ export enum Queries {
   DELETE_VIEWS = 'delete_view',
   DENY_MERGE = 'deny_merge',
   DUPLICATE_PLAN = 'duplicate_plan',
+  EVENT = 'event',
   EXPAND_ALL_ACTIVITIES = 'expandAllActivities',
   EXPANSION_RULE = 'expansion_rule_by_pk',
   EXPANSION_RULES = 'expansion_rule',
@@ -150,6 +151,7 @@ export enum Queries {
   SIMULATION_TEMPLATES = 'simulation_template',
   SPANS = 'span',
   TAGS = 'tags',
+  TOPIC = 'topic',
   UPDATE_ACTIVITY_DIRECTIVE = 'update_activity_directive_by_pk',
   UPDATE_ACTIVITY_PRESET = 'update_activity_presets_by_pk',
   UPDATE_CONSTRAINT_METADATA = 'update_constraint_metadata_by_pk',
@@ -1035,6 +1037,23 @@ const gql = {
         arguments
         errors
         success
+      }
+    }
+  `,
+
+  GET_EVENTS: `#graphql
+    query GetEvents($datasetId: Int!) {
+      topic(where: { dataset_id: { _eq: $datasetId }}) {
+        name
+        value_schema
+        topic_index
+      }
+      event(where: { dataset_id: { _eq: $datasetId }}) {
+        causal_time
+        real_time
+        topic_index
+        transaction_index
+        value
       }
     }
   `,
