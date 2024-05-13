@@ -3,31 +3,37 @@
 <script lang="ts">
   import PersonIcon from '@nasa-jpl/stellar/icons/person.svg?component';
   import type { UserId } from '../../../types/app';
-  import type { PlanCollaboratorSlim } from '../../../types/plan';
-  import type { PlanCollaboratorTag } from '../../../types/tags';
+  import type { Tag, TagGroup } from '../../../types/tags';
   import { tooltip } from '../../../utilities/tooltip';
   import TagChip from './Tag.svelte';
 
-  export let tag: PlanCollaboratorTag;
+  export let tag: Tag | TagGroup;
   export let disabled: boolean = false;
-  export let collaborators: PlanCollaboratorSlim[];
+  export let selectedUsers: UserId[];
 
-  let planUsers: UserId[] = [];
-  $: if (tag && tag.plan && collaborators) {
-    planUsers = Array.from(new Set(tag.plan.collaborators.map(c => c.collaborator).concat(tag.plan.owner)));
+  let users: UserId[] = [];
+  let tagGroup: TagGroup | null;
+  let userGroupTooltip: string = '';
+
+  $: if (tag && (tag as TagGroup).members !== undefined && selectedUsers) {
+    const group: TagGroup = tag as TagGroup;
+    users = Array.from(new Set(group.members.map(user => user)));
+    tagGroup = group;
+  } else {
+    tagGroup = null;
   }
-  $: collaboratorTooltipContent = planUsers.join(', ');
+  $: userGroupTooltip = users.join(', ');
 </script>
 
-{#if tag.plan}
-  <div class="as-plan" style="position: relative">
-    <div class="plan">
-      {tag.plan.name}
+{#if tagGroup}
+  <div class="as-group">
+    <div class="group">
+      {tagGroup.name}
     </div>
-    <div class="as-plan-tags">
-      {#if planUsers.length > 0}
-        <div use:tooltip={{ content: collaboratorTooltipContent, maxWidth: 320, placement: 'right', zIndex: 99999 }}>
-          <TagChip {disabled} tag={{ ...tag, name: `${planUsers.length}` }} removable={false}>
+    <div class="as-group-tags">
+      {#if users.length > 0}
+        <div use:tooltip={{ content: userGroupTooltip, maxWidth: 320, placement: 'right', zIndex: 99999 }}>
+          <TagChip {disabled} tag={{ ...tag, name: `${users.length}` }} removable={false}>
             <div class="tag-chip-icon">
               <PersonIcon />
             </div>
@@ -45,20 +51,21 @@
 {/if}
 
 <style>
-  .as-plan {
+  .as-group {
     align-items: center;
     display: flex;
     flex: 1;
     justify-content: space-between;
     overflow: hidden;
+    position: relative;
   }
 
-  .as-plan-tags {
+  .as-group-tags {
     display: flex;
     gap: 4px;
   }
 
-  .plan {
+  .group {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

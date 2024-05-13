@@ -76,6 +76,8 @@ export type Tag = {
   owner: UserId;
 };
 
+export type TagGroup = Tag & { members: string[] };
+
 export type PlanCollaboratorTag = Tag & { plan?: PlanSlimmer };
 
 export type TagsMap = Record<Tag['id'], Tag>;

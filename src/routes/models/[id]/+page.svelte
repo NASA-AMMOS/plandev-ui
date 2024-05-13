@@ -88,6 +88,7 @@
   import { constraints } from '../../../stores/constraints';
   import { initialModel, model } from '../../../stores/model';
   import { schedulingConditions, schedulingGoals } from '../../../stores/scheduling';
+  import { users } from '../../../stores/user';
   import type { User, UserId } from '../../../types/app';
   import type { ConstraintModelSpec, ConstraintModelSpecInsertInput } from '../../../types/constraint';
   import type {
@@ -665,6 +666,7 @@
         modelId={$model?.id}
         createdAt={$model?.created_at}
         user={data.user}
+        users={$users ?? []}
         on:createPlan={onCreatePlanWithModel}
         on:deleteModel={onDeleteModel}
         on:hasModelChanged={onModelMetadataChange}

@@ -9,6 +9,7 @@
   import { getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
+  import UserInput from '../ui/Tags/UserInput.svelte';
 
   export let initialModelDescription: string = '';
   export let initialModelName: string = '';
@@ -17,6 +18,7 @@
   export let modelId: number | undefined;
   export let createdAt: string | undefined;
   export let user: User | null;
+  export let users: UserId[] = [];
 
   const dispatch = createEventDispatcher<{
     createPlan: number;
@@ -67,6 +69,14 @@
 
   function onDeleteModel() {
     dispatch('deleteModel');
+  }
+
+  function onSetOwner(event: CustomEvent<UserId[]>) {
+    owner = event.detail[0];
+  }
+
+  function onClearOwner() {
+    owner = null;
   }
 
   onDestroy(() => {
@@ -120,14 +130,22 @@
     </Input>
     <Input layout="inline">
       <label for="owner">Owner</label>
-      <input
-        class="st-input w-100"
-        name="owner"
-        bind:value={owner}
-        use:permissionHandler={{
-          hasPermission: hasUpdateModelPermission,
-          permissionError: updateModelPermissionError,
-        }}
+      <UserInput
+        allowMultiple={false}
+        {users}
+        {user}
+        selectedUsers={owner ? [owner] : []}
+        use={[
+          [
+            permissionHandler,
+            {
+              hasPermission: hasUpdateModelPermission,
+              permissionError: updateModelPermissionError,
+            },
+          ],
+        ]}
+        on:create={onSetOwner}
+        on:delete={onClearOwner}
       />
     </Input>
     {#if createdAt}

@@ -19,6 +19,7 @@
     updatePopperPosition();
     closeSuggestions();
   };
+  export let allowMultiple: boolean = true;
   export let createTagObject: (name: string) => Tag = (name: string) => {
     return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   };
@@ -239,19 +240,21 @@
       <TagChip {tag} removable={!disabled} on:click={() => onTagRemove(tag)} {disabled} ariaRole="option" />
     {/each}
     {#if !disabled || (disabled && !selectedTags.length)}
-      <input
-        {id}
-        {name}
-        {disabled}
-        placeholder={disabled ? '' : placeholder}
-        class="st-input"
-        style:min-width={`${minWidth}px`}
-        on:mouseup={openSuggestions}
-        on:focus={openSuggestions}
-        on:keydown|stopPropagation={onKeydown}
-        bind:value={searchText}
-        bind:this={inputRef}
-      />
+      {#if !(!allowMultiple && selectedTags.length)}
+        <input
+          {id}
+          {name}
+          {disabled}
+          placeholder={disabled ? '' : placeholder}
+          class="st-input"
+          style:min-width={`${minWidth}px`}
+          on:mouseup={openSuggestions}
+          on:focus={openSuggestions}
+          on:keydown|stopPropagation={onKeydown}
+          bind:value={searchText}
+          bind:this={inputRef}
+        />
+      {/if}
     {/if}
   </div>
   {#if suggestionsVisible}
@@ -311,6 +314,7 @@
     display: flex;
     gap: 8px;
     max-height: 40vh;
+    overflow: hidden;
     padding: 2px;
   }
 
