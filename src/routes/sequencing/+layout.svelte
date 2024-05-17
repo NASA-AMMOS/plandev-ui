@@ -11,10 +11,17 @@
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
-    <span class="sequencing-title" slot="title"
-      ><span class="app-icon"><PhoenixIcon height={16} /></span>
-      Phoenix Sequencing</span
-    >
+    <div class="sequencing-title" slot="title">
+      <span class="app-icon"><PhoenixIcon height={16} /></span>
+      Phoenix Sequencing
+    </div>
   </Nav>
   <slot />
 </CssGrid>
+
+<style>
+  .sequencing-title {
+    align-items: center;
+    display: flex;
+  }
+</style>

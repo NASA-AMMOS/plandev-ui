@@ -212,14 +212,14 @@
   function downloadSeqJson() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([editorSeqJsonView.state.doc.toString()], { type: 'application/json' }));
-    a.download = sequenceName + '.json';
+    a.download = `${sequenceName}.json`;
     a.click();
   }
 
   function downloadSeqN() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }));
-    a.download = sequenceName + '.txt';
+    a.download = `${sequenceName}.txt`;
     a.click();
   }
 
