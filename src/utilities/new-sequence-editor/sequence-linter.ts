@@ -103,13 +103,10 @@ export function sequenceLinter(
     variables.push(...parameterValidation.variables);
     diagnostics.push(...parameterValidation.diagnostics);
 
-    const variableMap = variables.reduce(
-      (vMap: VariableMap, variable: VariableDeclaration) => ({
-        ...vMap,
-        [variable.name]: variable,
-      }),
-      {},
-    );
+    const variableMap: VariableMap = {};
+    for (const variable of variables) {
+      variableMap[variable.name] = variable;
+    }
 
     // Validate command type mixing
     diagnostics.push(...validateCommandTypeMixing(treeNode));
@@ -995,11 +992,21 @@ export function sequenceLinter(
 
     switch (dictArgType) {
       case 'enum':
-        if (argType !== 'String' && argType !== 'Enum') {
+        if (argType === 'Enum') {
+          if (!variables[argText]) {
+            // TODO -- potentially check that variable types match usage
+            diagnostics.push({
+              from: argNode.from,
+              message: `Unrecognized variable name ${argText}`,
+              severity: 'error',
+              to: argNode.to,
+            });
+          }
+        } else if (argType !== 'String') {
           diagnostics.push({
             actions: [],
             from: argNode.from,
-            message: `Incorrect type - expected 'enum' but got ${argType}`,
+            message: `Incorrect type - expected double quoted 'enum' but got ${argType}`,
             severity: 'error',
             to: argNode.to,
           });
@@ -1025,22 +1032,6 @@ export function sequenceLinter(
               });
               break;
             }
-          }
-          if (argType === 'Enum') {
-            diagnostics.push({
-              actions: [
-                {
-                  apply(view, from, to) {
-                    view.dispatch({ changes: { from, insert: `"${argText}"`, to } });
-                  },
-                  name: `Add quotes around ${argText}`,
-                },
-              ],
-              from: argNode.from,
-              message: `Enum should be a "string"`,
-              severity: 'error',
-              to: argNode.to,
-            });
           }
         }
         break;
@@ -1078,13 +1069,15 @@ export function sequenceLinter(
               to: argNode.to,
             });
           }
-        } else if (argType === 'Enum' && !variables[argText]) {
-          diagnostics.push({
-            from: argNode.from,
-            message: `Unrecognized variable name ${argType}`,
-            severity: 'error',
-            to: argNode.to,
-          });
+        } else if (argType === 'Enum') {
+          if (!variables[argText]) {
+            diagnostics.push({
+              from: argNode.from,
+              message: `Unrecognized variable name ${argText}`,
+              severity: 'error',
+              to: argNode.to,
+            });
+          }
         } else {
           diagnostics.push({
             from: argNode.from,

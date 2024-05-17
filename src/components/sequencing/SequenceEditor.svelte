@@ -212,14 +212,14 @@
   function downloadSeqJson() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([editorSeqJsonView.state.doc.toString()], { type: 'application/json' }));
-    a.download = sequenceName;
+    a.download = sequenceName + '.json';
     a.click();
   }
 
   function downloadSeqN() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }));
-    a.download = sequenceName;
+    a.download = sequenceName + '.txt';
     a.click();
   }
 
@@ -254,27 +254,23 @@
 
         <div class="right">
           <button
-            use:tooltip={{ content: `Copy to clipboard`, placement: 'top' }}
+            use:tooltip={{ content: `Copy sequence contents as SeqN to clipboard`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            style={' margin-right: 5px; '}
             on:click={copySeqNClipboard}><ClipboardIcon /> SeqN</button
           >
           <button
-            use:tooltip={{ content: `Copy to clipboard`, placement: 'top' }}
+            use:tooltip={{ content: `Copy sequence contents as JSON to clipboard`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            style={'margin-left: 5px; margin-right: 15px; '}
             on:click={copySeqJsonToClipboard}><ClipboardIcon /> JSON</button
           >
           <button
-            use:tooltip={{ content: `Download Seq.json`, placement: 'top' }}
+            use:tooltip={{ content: `Download sequence contents as SeqN`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            style={' margin-left: 15px; margin-right: 2px;'}
             on:click|stopPropagation={downloadSeqN}><SaveIcon /> SeqN</button
           >
           <button
-            use:tooltip={{ content: `Download Seq.json`, placement: 'top' }}
+            use:tooltip={{ content: `Download sequence contents as Seq.json`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            style={' margin-left: 2px; margin-right: 10px;'}
             on:click|stopPropagation={downloadSeqJson}><SaveIcon /> JSON</button
           >
         </div>
@@ -336,5 +332,6 @@
     align-items: center;
     column-gap: 5px;
     display: flex;
+    margin: 2px;
   }
 </style>

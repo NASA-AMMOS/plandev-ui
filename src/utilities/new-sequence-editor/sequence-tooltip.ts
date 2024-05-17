@@ -11,7 +11,9 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
+import { isFswCommandArgumentRepeat } from '../../components/sequencing/form/utils';
 import { getCustomArgDef } from './extension-points';
+import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 
 /**
  * Searches up through a node's ancestors to find a node by the given name.
@@ -112,12 +114,31 @@ export function sequenceTooltip(
 
         let i = 0;
         argNode = argsNode.firstChild;
-        // TODO tooltips in repeats
         while (argNode) {
-          // if (argNode.name === TOKEN_REPEAT_ARG) {
-          //   let repeatArg = argNode.firstChild;
-
-          // }
+          const argDef = fswCommand.arguments[i];
+          if (argNode.name === TOKEN_REPEAT_ARG && isFswCommandArgumentRepeat(argDef) && argDef.repeat) {
+            let repeatArgNode = argNode.firstChild;
+            let j = 0;
+            while (repeatArgNode) {
+              if (repeatArgNode.from === from && repeatArgNode.to === to) {
+                const arg = argDef.repeat.arguments[j % argDef.repeat.arguments.length];
+                if (arg) {
+                  return {
+                    above: true,
+                    create() {
+                      const dom = document.createElement('div');
+                      new ArgumentTooltip({ props: { arg, commandDictionary }, target: dom });
+                      return { dom };
+                    },
+                    end: to,
+                    pos: from,
+                  };
+                }
+              }
+              repeatArgNode = repeatArgNode.nextSibling;
+              ++j;
+            }
+          }
 
           if (argNode.from === from && argNode.to === to) {
             const arg = getCustomArgDef(
@@ -128,7 +149,6 @@ export function sequenceTooltip(
               channelDictionary,
             );
 
-            // TODO. Type check arg for type found in AST so we do not show tooltips incorrectly.
             if (arg) {
               return {
                 above: true,

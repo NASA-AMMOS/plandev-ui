@@ -2,21 +2,48 @@
 
 <script lang="ts">
   import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-  import { isFswCommandArgumentRepeat } from './utils';
+  import {
+    isFswCommandArgumentFloat,
+    isFswCommandArgumentInteger,
+    isFswCommandArgumentRepeat,
+    isFswCommandArgumentUnsigned,
+    isFswCommandArgumentVarString,
+  } from './utils';
 
   export let argDef: FswCommandArgument;
 
+  function compactType(argDef: FswCommandArgument) {
+    if (isFswCommandArgumentUnsigned(argDef)) {
+      return `U${argDef.bit_length}`;
+    } else if (isFswCommandArgumentInteger(argDef)) {
+      return `I${argDef.bit_length}`;
+    } else if (isFswCommandArgumentFloat(argDef)) {
+      return `F${argDef.bit_length}`;
+    } else if (isFswCommandArgumentVarString(argDef)) {
+      return `String`;
+    }
+
+    return '';
+  }
+
   function getArgTitle(argDef: FswCommandArgument) {
-    if ('units' in argDef) {
-      return `${argDef.name} - (${argDef.units})`;
-    } else if (
+    if (
       isFswCommandArgumentRepeat(argDef) &&
       typeof argDef.repeat?.max === 'number' &&
       typeof argDef.repeat?.min === 'number'
     ) {
       return `${argDef.name} - [${argDef.repeat?.min}, ${argDef.repeat?.max}] sets`;
     }
-    return argDef.name;
+
+    let compactTypeInfo = compactType(argDef);
+    if (compactTypeInfo) {
+      compactTypeInfo = ` [${compactTypeInfo}]`;
+    }
+    const base = `${argDef.name}${compactTypeInfo}`;
+    if ('units' in argDef) {
+      return `${base} - (${argDef.units})`;
+    }
+    return base;
   }
 </script>
 
