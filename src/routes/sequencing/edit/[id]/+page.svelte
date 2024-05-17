@@ -8,11 +8,11 @@
 </script>
 
 <SequenceForm
-  initialSequenceCommandDictionaryId={data.initialSequence.authoring_command_dict_id}
   initialSequenceCreatedAt={data.initialSequence.created_at}
   initialSequenceDefinition={data.initialSequence.definition}
   initialSequenceName={data.initialSequence.name}
   initialSequenceOwner={data.initialSequence.owner}
+  initialSequenceParcelId={data.initialSequence.parcel_id}
   initialSequenceId={data.initialSequence.id}
   initialSequenceUpdatedAt={data.initialSequence.updated_at}
   mode="edit"

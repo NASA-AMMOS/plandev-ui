@@ -3,14 +3,23 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { onMount } from 'svelte';
-  import { commandDictionaries, userSequenceFormColumns } from '../../stores/sequencing';
+  import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import { onDestroy } from 'svelte';
+  import {
+    parameterDictionaries as parameterDictionariesStore,
+    parcel,
+    parcelToParameterDictionaries,
+    parcels,
+    userSequenceFormColumns,
+  } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { UserSequence, UserSequenceInsertInput } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { isSaveEvent } from '../../utilities/keyboardEvents';
+  import { parseSeqJsonFromFile, seqJsonToSequence } from '../../utilities/new-sequence-editor/from-seq-json';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { showFailureToast } from '../../utilities/toast';
   import PageTitle from '../app/PageTitle.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -18,12 +27,12 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import SequenceEditor from './SequenceEditor.svelte';
 
-  export let initialSequenceCommandDictionaryId: number | null = null;
   export let initialSequenceCreatedAt: string | null = null;
-  export let initialSequenceDefinition: string = `export default () =>\n  Sequence.new({\n    seqId: '',\n    metadata: {},\n    steps: []\n  });\n`;
+  export let initialSequenceDefinition: string = ``;
   export let initialSequenceId: number | null = null;
   export let initialSequenceName: string = '';
   export let initialSequenceOwner: UserId = '';
+  export let initialSequenceParcelId: number | null = null;
   export let initialSequenceUpdatedAt: string | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
@@ -37,11 +46,11 @@
   let seqJsonFiles: FileList;
   let sequenceCreatedAt: string | null = initialSequenceCreatedAt;
   let sequenceDefinition: string = initialSequenceDefinition;
-  let sequenceCommandDictionaryId: number | null = initialSequenceCommandDictionaryId;
   let sequenceId: number | null = initialSequenceId;
   let sequenceModified: boolean = false;
   let sequenceName: string = initialSequenceName;
   let sequenceOwner: UserId = initialSequenceOwner;
+  let sequenceParcelId: number | null = initialSequenceParcelId;
   let savedSequenceName: string = sequenceName;
   let sequenceSeqJson: string = 'Seq JSON has not been generated yet';
   let sequenceUpdatedAt: string | null = initialSequenceUpdatedAt;
@@ -50,7 +59,7 @@
   let savingSequence: boolean = false;
 
   $: saveButtonClass = sequenceModified && saveButtonEnabled ? 'primary' : 'secondary';
-  $: saveButtonEnabled = sequenceCommandDictionaryId !== null && sequenceDefinition !== '' && sequenceName !== '';
+  $: saveButtonEnabled = sequenceParcelId !== null && sequenceDefinition !== '' && sequenceName !== '';
   $: sequenceModified = sequenceDefinition !== savedSequenceDefinition || sequenceName !== savedSequenceName;
   $: {
     hasPermission =
@@ -62,25 +71,79 @@
     pageSubtitle = mode === 'edit' ? savedSequenceName : '';
     saveButtonText = mode === 'edit' && !sequenceModified ? 'Saved' : 'Save';
   }
+  $: {
+    if (sequenceParcelId) {
+      $parcel = $parcels.find(p => p.id === sequenceParcelId) ?? null;
 
-  onMount(() => {
-    if (mode === 'edit') {
-      getUserSequenceSeqJson();
+      loadSequenceAdaptation($parcel?.sequence_adaptation_id);
     }
-  });
-
-  async function getUserSequenceFromSeqJson() {
-    const file: File = seqJsonFiles[0];
-    const text = await file.text();
-    const seqJson = JSON.parse(text);
-    const sequence = await effects.getUserSequenceFromSeqJson(seqJson, user);
-    sequenceDefinition = sequence;
-    sequenceSeqJson = text;
   }
 
-  async function getUserSequenceSeqJson(): Promise<void> {
-    sequenceSeqJson = 'Generating Seq JSON...';
-    sequenceSeqJson = await effects.getUserSequenceSeqJson(sequenceCommandDictionaryId, sequenceDefinition, user);
+  onDestroy(() => {
+    resetSequenceAdaptation();
+  });
+
+  function resetSequenceAdaptation(): void {
+    globalThis.CONDITIONAL_KEYWORDS = undefined;
+    globalThis.LOOP_KEYWORDS = undefined;
+    globalThis.GLOBALS = undefined;
+    globalThis.ARG_DELEGATOR = undefined;
+    globalThis.LINT = () => undefined;
+    globalThis.TO_SEQ_JSON = () => undefined;
+  }
+
+  async function loadSequenceAdaptation(id: number | null | undefined): Promise<void> {
+    if (id) {
+      const adaptation = await effects.getSequenceAdaptation(id, user);
+
+      if (adaptation) {
+        try {
+          // This evaluates the custom sequence adaptation that is optionally provided by the user.
+          Function(adaptation.adaptation)();
+        } catch (e) {
+          console.error(e);
+          showFailureToast('Invalid sequence adaptation');
+        }
+      }
+    } else {
+      resetSequenceAdaptation();
+    }
+  }
+
+  async function onSeqJsonInput(e: Event & { currentTarget: EventTarget & HTMLInputElement }) {
+    const unparsedParameterDictionaries = $parameterDictionariesStore.filter(pd => {
+      const parameterDictionary = $parcelToParameterDictionaries.find(p => p.parameter_dictionary_id === pd.id);
+
+      if (parameterDictionary) {
+        return pd;
+      }
+    });
+
+    const [seqJson, parsedChannelDictionary, ...parsedParameterDictionaries] = await Promise.all([
+      parseSeqJsonFromFile(e.currentTarget.files),
+      $parcel?.channel_dictionary_id
+        ? effects.getParsedAmpcsChannelDictionary($parcel?.channel_dictionary_id, user)
+        : null,
+      ...unparsedParameterDictionaries.map(unparsedParameterDictionary => {
+        return effects.getParsedAmpcsParameterDictionary(unparsedParameterDictionary.id, user);
+      }),
+    ]);
+
+    const sequence = seqJsonToSequence(
+      seqJson,
+      parsedParameterDictionaries.filter((pd): pd is ParameterDictionary => pd !== null),
+      parsedChannelDictionary,
+    );
+
+    initialSequenceDefinition = sequence;
+    sequenceSeqJson = '';
+  }
+
+  function onSequenceChange(event: CustomEvent<{ seqJson: string; sequence: string }>) {
+    const { detail } = event;
+    const { seqJson, sequence } = detail;
+    sequenceDefinition = sequence;
+    sequenceSeqJson = seqJson;
   }
 
   function onDidChangeModelContent(event: CustomEvent<{ value: string }>) {
@@ -100,12 +163,13 @@
     if (saveButtonEnabled) {
       savingSequence = true;
 
-      if (sequenceCommandDictionaryId !== null) {
+      if (sequenceParcelId !== null) {
         if (mode === 'create') {
           const newSequence: UserSequenceInsertInput = {
-            authoring_command_dict_id: sequenceCommandDictionaryId,
             definition: sequenceDefinition,
             name: sequenceName,
+            parcel_id: sequenceParcelId,
+            seq_json: sequenceSeqJson,
           };
           const newSequenceId = await effects.createUserSequence(newSequence, user);
 
@@ -114,15 +178,15 @@
           }
         } else if (mode === 'edit' && sequenceId !== null) {
           const updatedSequence: Partial<UserSequence> = {
-            authoring_command_dict_id: sequenceCommandDictionaryId,
             definition: sequenceDefinition,
             name: sequenceName,
+            parcel_id: sequenceParcelId,
+            seq_json: sequenceSeqJson,
           };
           const updated_at = await effects.updateUserSequence(sequenceId, updatedSequence, sequenceOwner, user);
           if (updated_at !== null) {
             sequenceUpdatedAt = updated_at;
           }
-          await getUserSequenceSeqJson();
           savedSequenceDefinition = sequenceDefinition;
           savedSequenceName = sequenceName;
         }
@@ -178,21 +242,20 @@
       {/if}
 
       <fieldset>
-        <label for="commandDictionary">Command Dictionary (required)</label>
+        <label for="commandDictionary">Parcel (required)</label>
         <select
-          bind:value={sequenceCommandDictionaryId}
+          bind:value={sequenceParcelId}
           class="st-select w-100"
-          name="commandDictionary"
+          name="parcel"
           use:permissionHandler={{
             hasPermission,
             permissionError,
           }}
         >
           <option value={null} />
-          {#each $commandDictionaries as commandDictionary}
-            <option value={commandDictionary.id}>
-              {commandDictionary.mission} -
-              {commandDictionary.version}
+          {#each $parcels as parcel}
+            <option value={parcel.id}>
+              {parcel.name}
             </option>
           {/each}
         </select>
@@ -221,7 +284,7 @@
           class="w-100"
           name="seqJsonFile"
           type="file"
-          on:change={getUserSequenceFromSeqJson}
+          on:change={onSeqJsonInput}
           use:permissionHandler={{
             hasPermission,
             permissionError,
@@ -234,14 +297,14 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
-    {sequenceCommandDictionaryId}
-    {sequenceDefinition}
+    showCommandFormBuilder={true}
+    sequenceDefinition={initialSequenceDefinition}
     {sequenceName}
     {sequenceSeqJson}
     title="{mode === 'create' ? 'New' : 'Edit'} Sequence - Definition Editor"
     {user}
     readOnly={!hasPermission}
+    on:sequence={onSequenceChange}
     on:didChangeModelContent={onDidChangeModelContent}
-    on:generate={getUserSequenceSeqJson}
   />
 </CssGrid>

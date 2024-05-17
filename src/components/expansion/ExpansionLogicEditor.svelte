@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
+  import { parcelBundles } from '../../stores/sequencing';
   import type { User } from '../../types/app';
   import type { Monaco, TypeScriptFile } from '../../types/monaco';
   import effects from '../../utilities/effects';
@@ -13,7 +14,7 @@
 
   export let readOnly: boolean = false;
   export let ruleActivityType: string | null = null;
-  export let ruleDictionaryId: number | null = null;
+  export let parcelId: number | null = null;
   export let ruleLogic: string = '';
   export let ruleModelId: number | null = null;
   export let title: string = 'Expansion Rule - Logic Editor';
@@ -25,14 +26,18 @@
   let editorModel: Editor.ITextModel;
   let monaco: Monaco;
 
-  $: effects.getTsFilesCommandDictionary(ruleDictionaryId, user).then(tsFiles => (commandDictionaryTsFiles = tsFiles));
+  $: effects
+    .getTsFilesCommandDictionary($parcelBundles.find(bundle => bundle.id === parcelId)?.command_dictionary_id, user)
+    .then(tsFiles => {
+      commandDictionaryTsFiles = tsFiles;
+    });
 
   $: effects
     .getTsFilesActivityType(ruleActivityType, ruleModelId, user)
     .then(tsFiles => (activityTypeTsFiles = tsFiles));
 
   $: effects
-    .getParsedAmpcsCommandDictionary(ruleDictionaryId, user)
+    .getParsedAmpcsCommandDictionary($parcelBundles.find(bundle => bundle.id === parcelId)?.command_dictionary_id, user)
     .then(parsedDictionary => (commandDictionaryJson = parsedDictionary));
 
   $: if (monaco !== undefined) {

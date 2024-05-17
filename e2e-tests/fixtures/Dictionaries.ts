@@ -24,13 +24,15 @@ export class Dictionaries {
     this.updatePage(page);
   }
 
-  async createDictionary() {
+  async createDictionary(): Promise<string> {
     await expect(this.tableRow).not.toBeVisible();
     await this.fillInputFile();
     await this.createButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
     await this.tableRow.waitFor({ state: 'visible' });
     await expect(this.tableRow).toBeVisible();
+
+    return this.dictionaryName;
   }
 
   /**

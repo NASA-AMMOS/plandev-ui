@@ -7,6 +7,7 @@
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection } from '../../types/data-grid';
   import type { ActivityInstanceJoin, ExpandedSequence, ExpansionRun } from '../../types/expansion';
+  import { seqJsonToSequence } from '../../utilities/new-sequence-editor/from-seq-json';
   import SequenceEditor from '../sequencing/SequenceEditor.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -172,9 +173,7 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
-    disableSeqJSONGeneration
-    sequenceDefinition={selectedSequence?.edsl_string ?? 'No Sequence Selected'}
-    sequenceCommandDictionaryId={selectedExpansionRun?.expansion_set?.command_dict_id}
+    sequenceDefinition={seqJsonToSequence(selectedSequence?.expanded_sequence, [], null) ?? 'No Sequence Selected'}
     sequenceName={selectedSequence?.seq_id}
     sequenceSeqJson={selectedSequence ? JSON.stringify(selectedSequence.expanded_sequence, null, 2) : undefined}
     readOnly={true}

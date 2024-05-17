@@ -10,3 +10,7 @@ node_modules
 test-results
 unit-test-results
 *.local
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

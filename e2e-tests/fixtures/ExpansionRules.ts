@@ -2,8 +2,8 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
 import { getOptionValueFromText } from '../utilities/selectors.js';
-import { Dictionaries } from './Dictionaries.js';
 import { Models } from './Models.js';
+import { Parcels } from './Parcels.js';
 
 export class ExpansionRules {
   cancelButton: Locator;
@@ -12,13 +12,13 @@ export class ExpansionRules {
   confirmModalDeleteButton: Locator;
   inputActivityType: Locator;
   inputActivityTypeSelector: string = 'select[name="activityType"]';
-  inputCommandDictionary: Locator;
-  inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   inputEditor: Locator;
   inputModel: Locator;
   inputModelSelector: string = 'select[name="modelId"]';
   inputName: Locator;
   inputNameSelector: string = 'input[name="name"]';
+  inputParcel: Locator;
+  inputParcelSelector: string = 'select[name="parcel"]';
   newButton: Locator;
   ruleActivityType = 'PeelBanana';
   ruleLogic: string = `export default function({ activityInstance: ActivityType }): ExpansionReturn { return [C.FSW_CMD_0({ boolean_arg_0: true, enum_arg_0: "OFF", float_arg_0: 0.0 })]; }`;
@@ -29,7 +29,7 @@ export class ExpansionRules {
 
   constructor(
     public page: Page,
-    public dictionaries: Dictionaries,
+    public parcels: Parcels,
     public models: Models,
   ) {
     this.updatePage(page);
@@ -41,7 +41,7 @@ export class ExpansionRules {
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/rules/new`);
     await expect(this.saveButton).toBeDisabled();
-    await this.selectCommandDictionary();
+    await this.selectParcel();
     await this.selectModel();
     await this.selectActivityType();
     await this.fillInputName();
@@ -103,15 +103,6 @@ export class ExpansionRules {
     await this.inputActivityType.evaluate(e => e.blur());
   }
 
-  async selectCommandDictionary() {
-    const { dictionaryName } = this.dictionaries;
-    await this.page.waitForSelector(`option:has-text("${dictionaryName} - 1.0.0")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, dictionaryName);
-    await this.inputCommandDictionary.focus();
-    await this.inputCommandDictionary.selectOption(value);
-    await this.inputCommandDictionary.evaluate(e => e.blur());
-  }
-
   async selectModel() {
     const { modelName } = this.models;
     await this.page.waitForSelector(`option:has-text("${modelName}")`, { state: 'attached' });
@@ -119,6 +110,15 @@ export class ExpansionRules {
     await this.inputModel.focus();
     await this.inputModel.selectOption(value);
     await this.inputModel.evaluate(e => e.blur());
+  }
+
+  async selectParcel() {
+    const { parcelName } = this.parcels;
+    await this.page.waitForSelector(`option:has-text("${parcelName}")`, { state: 'attached' });
+    const value = await getOptionValueFromText(this.page, this.inputParcelSelector, parcelName);
+    await this.inputParcel.focus();
+    await this.inputParcel.selectOption(value);
+    await this.inputParcel.evaluate(e => e.blur());
   }
 
   updatePage(page: Page): void {
@@ -129,7 +129,7 @@ export class ExpansionRules {
       `.modal:has-text("Delete Expansion Rule") >> button:has-text("Delete")`,
     );
     this.inputActivityType = page.locator(this.inputActivityTypeSelector);
-    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
+    this.inputParcel = page.locator(this.inputParcelSelector);
     this.inputEditor = page.locator('.panel >> textarea.inputarea');
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator(this.inputNameSelector);

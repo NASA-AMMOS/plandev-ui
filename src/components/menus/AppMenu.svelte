@@ -9,6 +9,7 @@
   import GraphQLIcon from '@nasa-jpl/stellar/icons/graphql.svg?component';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import TagIcon from '@nasa-jpl/stellar/icons/tag.svg?component';
+  import ArchiveIcon from 'bootstrap-icons/icons/archive.svg?component';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import BoxArrowRightIcon from 'bootstrap-icons/icons/box-arrow-right.svg?component';
   import BracesAsteriskIcon from 'bootstrap-icons/icons/braces-asterisk.svg?component';
@@ -50,7 +51,11 @@
     </MenuItem>
     <MenuItem on:click={() => goto(`${base}/dictionaries`)} on:pointerenter={() => preloadData(`${base}/dictionaries`)}>
       <JournalTextIcon />
-      Command Dictionaries
+      Dictionaries
+    </MenuItem>
+    <MenuItem on:click={() => goto(`${base}/parcels`)} on:pointerenter={() => preloadData(`${base}/parcels`)}>
+      <ArchiveIcon />
+      Parcels
     </MenuItem>
     <MenuItem
       on:click={() => goto(`${base}/expansion/rules`)}

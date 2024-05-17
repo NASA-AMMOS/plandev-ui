@@ -1,0 +1,12 @@
+
+# standalone comment
+CMD_1 "strarg" 0 # inline comment
+
+# standalone comment
+
+
+
+
+CMD_2 "strarg" 0 # inline comment
+
+@METADATA "key" "val"

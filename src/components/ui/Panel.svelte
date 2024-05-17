@@ -21,6 +21,8 @@
   .panel {
     display: grid;
     grid-template-rows: var(--nav-header-height) calc(100% - var(--nav-header-height));
+    min-height: 80px;
+    min-width: 80px;
     overflow: hidden;
     width: 100%;
   }

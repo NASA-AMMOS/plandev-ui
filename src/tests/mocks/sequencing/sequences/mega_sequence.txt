@@ -1,0 +1,36 @@
+
+
+     @ID "big test"
+
+# Welcome
+
+
+        @INPUT_PARAMS PARM1
+
+
+    # Bingo
+
+  @LOCALS FOO    BAR     BIZ
+
+
+
+
+
+
+
+@METADATA "foo" "val foo"
+
+
+
+@LOAD_AND_GO
+
+    # indented 4 spaces
+    CMD_1 1 2 3
+    @METADATA "foo" "val\" foo2"
+    @METADATA "bar" "val bar"
+
+
+        # indented 8 spaces
+        CMD_2 "hello, it's me"
+        @MODEL "a" "b" "c"
+        @MODEL  "d" "e" "f"

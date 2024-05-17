@@ -4,11 +4,12 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
-  import { userSequences, userSequencesColumns } from '../../stores/sequencing';
-  import type { User } from '../../types/app';
+  import { parcel, parcels, userSequences, userSequencesColumns } from '../../stores/sequencing';
+  import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
   import type { UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
+  import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import Input from '../form/Input.svelte';
@@ -28,7 +29,33 @@
   };
   type SequencesCellRendererParams = ICellRendererParams<UserSequence> & CellRendererParams;
 
-  const baseColumnDefs: DataGridColumnDef[] = [
+  /**
+   * Sort the sequence table with the current users sequences at the top.
+   * @param valueA
+   * @param valueB
+   */
+  function usernameComparator(valueA: UserId, valueB: UserId): number {
+    if (valueA === null && valueB === null) {
+      return 0;
+    }
+    if (valueA === null) {
+      return -1;
+    }
+    if (valueB === null) {
+      return 1;
+    }
+
+    return valueA === user?.id ? 1 : -1;
+  }
+
+  let baseColumnDefs: DataGridColumnDef[] = [];
+  let columnDefs = baseColumnDefs;
+  let filterText: string = '';
+  let filteredSequences: UserSequence[] = [];
+  let selectedSequence: UserSequence | null = null;
+  let selectedSequenceSeqJson: string = '';
+
+  $: baseColumnDefs = [
     {
       field: 'id',
       filter: 'text',
@@ -41,20 +68,26 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
-      field: 'authoring_command_dict_id',
-      filter: 'number',
-      headerName: 'Command Dictionary ID',
+      field: 'parcel',
+      filter: 'text',
+      headerName: 'Parcel',
       resizable: true,
       sortable: true,
+      valueGetter: ({ data }) => {
+        return $parcels.find(p => data.parcel_id === p.id)?.name;
+      },
+    },
+    {
+      comparator: usernameComparator,
+      field: 'owner',
+      filter: 'string',
+      headerName: 'Owner',
+      sort: 'desc',
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
     },
   ];
-
-  let abortController: AbortController;
-  let columnDefs = baseColumnDefs;
-  let filterText: string = '';
-  let filteredSequences: UserSequence[] = [];
-  let selectedSequence: UserSequence | null = null;
-  let selectedSequenceSeqJson: string = 'No Sequence Selected';
 
   $: filteredSequences = $userSequences.filter(sequence => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -62,12 +95,23 @@
     const includesName = sequence.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesId || includesName;
   });
+
   $: if (selectedSequence !== null) {
     const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
+
     if (found === -1) {
       selectedSequence = null;
     }
+
+    setParcel();
   }
+
+  async function setParcel(): Promise<void> {
+    if (selectedSequence !== null) {
+      $parcel = await effects.getParcel(selectedSequence.parcel_id, user);
+    }
+  }
+
   $: columnDefs = [
     ...baseColumnDefs,
     {
@@ -118,7 +162,7 @@
 
       if (sequence.id === selectedSequence?.id) {
         selectedSequence = null;
-        selectedSequenceSeqJson = 'No Sequence Selected';
+        selectedSequenceSeqJson = '';
       }
     }
   }
@@ -139,29 +183,6 @@
     editSequence({ id: event.detail[0] as number });
   }
 
-  async function getUserSequenceSeqJson(): Promise<void> {
-    if (selectedSequence !== null) {
-      abortController?.abort();
-      abortController = new AbortController();
-      selectedSequenceSeqJson = 'Generating Seq JSON...';
-
-      const responseMessage = await effects.getUserSequenceSeqJson(
-        selectedSequence.authoring_command_dict_id,
-        selectedSequence.definition,
-        user,
-        abortController.signal,
-      );
-
-      if (selectedSequence === null) {
-        selectedSequenceSeqJson = 'No Sequence Selected';
-      } else if (responseMessage === 'The user aborted a request.') {
-        selectedSequenceSeqJson = 'Generating Seq JSON...';
-      } else {
-        selectedSequenceSeqJson = responseMessage;
-      }
-    }
-  }
-
   function hasDeletePermission(user: User | null, sequence: UserSequence) {
     return featurePermissions.sequences.canDelete(user, sequence);
   }
@@ -170,13 +191,24 @@
     return featurePermissions.sequences.canUpdate(user, sequence);
   }
 
+  function onFilterToUsersSequences(event: Event) {
+    const { value: enabled } = getTarget(event);
+
+    if (enabled as boolean) {
+      filteredSequences = $userSequences.filter(sequence => {
+        return sequence.owner === user?.id;
+      });
+    } else {
+      filteredSequences = $userSequences;
+    }
+  }
+
   async function toggleSequence(event: CustomEvent<DataGridRowSelection<UserSequence>>) {
     const { detail } = event;
     const { data: clickedSequence, isSelected } = detail;
 
     if (isSelected) {
       selectedSequence = clickedSequence;
-      await getUserSequenceSeqJson();
     }
   }
 </script>
@@ -205,6 +237,11 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
+      <div class="filter-container">
+        <input type="checkbox" on:change={onFilterToUsersSequences} />
+        <span class=" st-typography-body">Filter to my sequences</span>
+      </div>
+
       {#if filteredSequences.length}
         <SingleActionDataGrid
           {columnDefs}
@@ -227,13 +264,18 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
-    sequenceDefinition={selectedSequence?.definition ?? 'No Sequence Selected'}
-    sequenceCommandDictionaryId={selectedSequence?.authoring_command_dict_id}
+    showCommandFormBuilder={false}
+    sequenceDefinition={selectedSequence?.definition ?? ''}
     sequenceName={selectedSequence?.name}
     sequenceSeqJson={selectedSequenceSeqJson}
-    readOnly={true}
     title="Sequence - Definition Editor (Read-only)"
+    readOnly={true}
     {user}
-    on:generate={getUserSequenceSeqJson}
   />
 </CssGrid>
+
+<style>
+  .filter-container {
+    margin-bottom: 8px;
+  }
+</style>

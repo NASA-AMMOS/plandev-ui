@@ -6,7 +6,7 @@
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { expansionSetsFormColumns, savingExpansionSet } from '../../stores/expansion';
   import { models } from '../../stores/model';
-  import { commandDictionaries } from '../../stores/sequencing';
+  import { parcelBundles } from '../../stores/sequencing';
   import type { ActivityTypeExpansionRules } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -44,7 +44,7 @@
   let saveButtonEnabled: boolean = false;
   let selectedExpansionRules: Record<string, number> = {};
   let setExpansionRuleIds: number[] = [];
-  let setDictionaryId: number | null = null;
+  let setParcelId: number | null = null;
   let setModelId: number | null = null;
   let setName: string = '';
   let setDescription: string = '';
@@ -61,7 +61,7 @@
     : 'Expansion Rule - Logic Editor (Read-only)';
   $: setExpansionRuleIds = Object.values(selectedExpansionRules) ?? [];
   $: selectedModel = $models.find(model => model.id === setModelId);
-  $: saveButtonEnabled = setDictionaryId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
+  $: saveButtonEnabled = setParcelId !== null && setModelId !== null && setExpansionRuleIds.length > 0;
   $: {
     if (mode === 'edit') {
       hasPermission = featurePermissions.expansionSets.canUpdate();
@@ -81,9 +81,9 @@
   }
 
   async function saveSet() {
-    if (mode === 'create' && setDictionaryId && selectedModel) {
+    if (mode === 'create' && setParcelId && selectedModel) {
       const newSetId = await effects.createExpansionSet(
-        setDictionaryId,
+        setParcelId,
         selectedModel,
         setExpansionRuleIds,
         user,
@@ -172,13 +172,12 @@
 
     <svelte:fragment slot="body">
       <fieldset>
-        <label for="commandDictionary">Command Dictionary</label>
-        <select bind:value={setDictionaryId} class="st-select w-100" name="commandDictionary">
+        <label for="Parcel">Parcels</label>
+        <select bind:value={setParcelId} class="st-select w-100" name="Parcel">
           <option value={null} />
-          {#each $commandDictionaries as commandDictionary}
-            <option value={commandDictionary.id}>
-              {commandDictionary.mission} -
-              {commandDictionary.version}
+          {#each $parcelBundles as parcel}
+            <option value={parcel.id}>
+              {parcel.name}
             </option>
           {/each}
         </select>
@@ -261,7 +260,7 @@
   <ExpansionLogicEditor
     readOnly={true}
     ruleActivityType={logicEditorActivityType}
-    ruleDictionaryId={setDictionaryId}
+    parcelId={setParcelId}
     ruleLogic={logicEditorRuleLogic}
     ruleModelId={setModelId}
     title={logicEditorTitle}

@@ -3,6 +3,7 @@ import svg from '@poppanator/sveltekit-svg';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { defineConfig, loadEnv } from 'vite';
 import { WorkerBuildPlugin } from './vite.worker-build-plugin';
+import { lezer } from '@lezer/generator/rollup';
 
 const config = ({ mode }) => {
   const viteEnvVars = loadEnv(mode, process.cwd());
@@ -15,6 +16,7 @@ const config = ({ mode }) => {
     },
     plugins: [
       ...(viteEnvVars.VITE_HTTPS === 'true' ? [basicSsl()] : []),
+      lezer(),
       sveltekit(),
       svg({
         svgoOptions: {

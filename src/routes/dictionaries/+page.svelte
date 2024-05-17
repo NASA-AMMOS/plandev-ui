@@ -1,18 +1,21 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ICellRendererParams } from 'ag-grid-community';
+  import HourglassIcon from 'bootstrap-icons/icons/hourglass-top.svg?component';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
+  import DictionaryTable from '../../components/parcels/DictionaryTable.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
-  import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
-  import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { commandDictionaries } from '../../stores/sequencing';
-  import type { DataGridColumnDef, RowId } from '../../types/data-grid';
-  import type { CommandDictionary } from '../../types/sequencing';
+  import { DictionaryTypes } from '../../enums/dictionaryTypes';
+  import {
+    channelDictionaries,
+    commandDictionaries,
+    parameterDictionaries,
+    sequenceAdaptations,
+  } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -20,66 +23,6 @@
   import type { PageData } from './$types';
 
   export let data: PageData;
-
-  type CellRendererParams = {
-    deleteCommandDictionary: (dictionary: CommandDictionary) => void;
-  };
-  type CommandDictionaryCellRendererParams = ICellRendererParams<CommandDictionary> & CellRendererParams;
-
-  const columnDefs: DataGridColumnDef[] = [
-    {
-      field: 'id',
-      filter: 'number',
-      headerName: 'ID',
-      resizable: true,
-      sortable: true,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 60,
-    },
-    { field: 'mission', filter: 'text', headerName: 'Mission', sortable: true, width: 100 },
-    { field: 'version', filter: 'text', headerName: 'Version', sortable: true, suppressAutoSize: true, width: 100 },
-    {
-      field: 'command_types_typescript_path',
-      filter: 'text',
-      headerName: 'Types Path',
-      resizable: true,
-      sortable: true,
-      width: 220,
-    },
-    { field: 'created_at', filter: 'text', headerName: 'Created At', resizable: true, sortable: true },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: CommandDictionaryCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            deleteCallback: params.deleteCommandDictionary,
-            deleteTooltip: {
-              content: 'Delete Command Dictionary',
-              placement: 'bottom',
-            },
-            hasDeletePermission,
-            rowData: params.data,
-          },
-          target: actionsDiv,
-        });
-
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        deleteCommandDictionary,
-      } as CellRendererParams,
-      field: 'actions',
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 25,
-    },
-  ];
 
   const createPermissionError = 'You do not have permission to create Command Dictionaries';
 
@@ -89,28 +32,36 @@
   let files: FileList;
 
   $: hasCreatePermission = featurePermissions.commandDictionary.canCreate(data.user);
-  $: hasDeletePermission = featurePermissions.commandDictionary.canDelete(data.user);
   $: createButtonDisabled = !files;
 
-  async function createCommandDictionary(files: FileList) {
+  async function uploadDictionaryOrAdaptation(files: FileList) {
     createDictionaryError = null;
     creatingDictionary = true;
 
     try {
-      const newCommandDictionary = await effects.createCommandDictionary(files, data.user);
-      if (newCommandDictionary !== null) {
-        const seenSet = new Set<number>();
-        commandDictionaries.updateValue((dictionaries: CommandDictionary[]) =>
-          [newCommandDictionary, ...dictionaries].filter(val => {
-            if (!seenSet.has(val.id)) {
-              seenSet.add(val.id);
-              return true;
-            } else {
-              return false;
-            }
-          }),
-        );
-        showSuccessToast('Command Dictionary Created Successfully');
+      const uploadedDictionaryOrAdaptation = await effects.uploadDictionaryOrAdaptation(files, data.user);
+
+      if (uploadedDictionaryOrAdaptation === null) {
+        throw Error('Failed to upload file');
+      }
+
+      switch (uploadedDictionaryOrAdaptation.type) {
+        case DictionaryTypes.COMMAND: {
+          showSuccessToast('Command Dictionary Created Successfully');
+          break;
+        }
+        case DictionaryTypes.CHANNEL: {
+          showSuccessToast('Channel Dictionary Created Successfully');
+          break;
+        }
+        case DictionaryTypes.PARAMETER: {
+          showSuccessToast('Parameter Dictionary Created Successfully');
+          break;
+        }
+        case 'ADAPTATION': {
+          showSuccessToast('Sequence Adaptation Created Successfully');
+          break;
+        }
       }
     } catch (e) {
       createDictionaryError = (e as Error).message;
@@ -120,34 +71,42 @@
     creatingDictionary = false;
   }
 
-  function deleteCommandDictionary({ id }: Pick<CommandDictionary, 'id'>) {
-    effects.deleteCommandDictionary(id, data.user);
+  function deleteChannelDictionary(event: CustomEvent) {
+    effects.deleteCommandDictionary(event.detail.id, data.user);
   }
 
-  function deleteCommandDictionaryContext(event: CustomEvent<RowId[]>) {
-    deleteCommandDictionary({ id: event.detail[0] as number });
+  function deleteCommandDictionary(event: CustomEvent) {
+    effects.deleteCommandDictionary(event.detail.id, data.user);
+  }
+
+  function deleteParameterDictionary(event: CustomEvent) {
+    effects.deleteParameterDictionary(event.detail.id, data.user);
+  }
+
+  function deleteSequenceAdaptation(event: CustomEvent) {
+    effects.deleteSequenceAdaptation(event.detail.id, data.user);
   }
 </script>
 
-<PageTitle title="Command Dictionaries" />
+<PageTitle title="Dictionaries" />
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav user={data.user}>
-    <span slot="title">Command Dictionaries</span>
+    <span slot="title">Dictionaries</span>
   </Nav>
 
   <CssGrid columns="20% auto">
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
-        <SectionTitle>New Command Dictionary</SectionTitle>
+        <SectionTitle>New Dictionary</SectionTitle>
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <form on:submit|preventDefault={() => createCommandDictionary(files)}>
+        <form on:submit|preventDefault={() => uploadDictionaryOrAdaptation(files)}>
           <AlertError class="m-2" error={createDictionaryError} />
 
           <fieldset>
-            <label for="file">AMPCS Command Dictionary XML File</label>
+            <label for="file">AMPCS XML File or Sequence Adaptation</label>
             <input
               class="w-100 st-typography-body"
               name="file"
@@ -171,32 +130,52 @@
                 permissionError: createPermissionError,
               }}
             >
-              {creatingDictionary ? 'Creating...' : 'Create'}
+              {#if creatingDictionary}
+                Creating...
+                <HourglassIcon />
+              {:else}
+                Create
+              {/if}
             </button>
           </fieldset>
         </form>
       </svelte:fragment>
     </Panel>
 
-    <Panel>
-      <svelte:fragment slot="header">
-        <SectionTitle>Command Dictionaries</SectionTitle>
-      </svelte:fragment>
+    <div class="table-container">
+      <DictionaryTable
+        dictionaries={$commandDictionaries}
+        type={'Command'}
+        user={data.user}
+        on:delete={deleteCommandDictionary}
+      />
 
-      <svelte:fragment slot="body">
-        {#if $commandDictionaries.length}
-          <SingleActionDataGrid
-            {columnDefs}
-            {hasDeletePermission}
-            itemDisplayText="Command Dictionary"
-            items={$commandDictionaries}
-            user={data.user}
-            on:deleteItem={deleteCommandDictionaryContext}
-          />
-        {:else}
-          No Command Dictionaries Found
-        {/if}
-      </svelte:fragment>
-    </Panel>
+      <DictionaryTable
+        dictionaries={$channelDictionaries}
+        type={'Channel'}
+        user={data.user}
+        on:delete={deleteChannelDictionary}
+      />
+
+      <DictionaryTable
+        dictionaries={$parameterDictionaries}
+        type={'Parameter'}
+        user={data.user}
+        on:delete={deleteParameterDictionary}
+      />
+
+      <DictionaryTable
+        dictionaries={$sequenceAdaptations}
+        type={'Sequence'}
+        user={data.user}
+        on:delete={deleteSequenceAdaptation}
+      />
+    </div>
   </CssGrid>
 </CssGrid>
+
+<style>
+  .table-container {
+    display: grid;
+  }
+</style>

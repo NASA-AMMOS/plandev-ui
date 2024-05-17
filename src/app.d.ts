@@ -1,4 +1,9 @@
+/* eslint-disable no-var */
 /* eslint @typescript-eslint/no-unused-vars: 0 */
+import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
+import type { GlobalType } from './types/global-type';
+import type { ArgDelegator } from './utilities/new-sequence-editor/extension-points';
 
 declare global {
   namespace App {
@@ -43,6 +48,29 @@ declare global {
     const content: string;
     export default content;
   }
+
+  var CONDITIONAL_KEYWORDS: { ELSE: string; ELSE_IF?: string[]; END_IF: string; IF: string[] } | undefined;
+  var LOOP_KEYWORDS:
+    | {
+        BREAK: string;
+        CONTINUE: string;
+        END_WHILE_LOOP: string;
+        WHILE_LOOP: string[];
+      }
+    | undefined;
+  var GLOBALS: GlobalType[] | undefined;
+  var ARG_DELEGATOR: ArgDelegator | undefined;
+  function LINT(commandDictionary, view, node);
+  function TO_SEQ_JSON(
+    seqJson: SeqJson,
+    parameterDictionaries: ParameterDictionary[],
+    channelDictionary: ChannelDictionary | null,
+  );
+  function FROM_SEQ_JSON(
+    seqJson: SeqJson,
+    parameterDictionaries: ParameterDictionary[],
+    channelDictionary: ChannelDictionary | null,
+  );
 }
 
 export {};

@@ -1,0 +1,329 @@
+# Command with no args
+
+FSW_CMD
+
+==>
+Sequence(
+  Commands(
+    Command(Stem,Args)
+  )
+)
+
+# Hardware commands
+
+@HARDWARE
+HARDWARE_COMMAND_1
+HDW_2
+
+==>
+Sequence(
+  HardwareCommands(
+    Command(Stem,Args),
+    Command(Stem,Args)
+  )
+)
+
+# Generic directive
+
+@WRONG_LOAD_AND_GO
+
+C CMD_1
+
+==>
+
+Sequence(
+  GenericDirective,
+  Commands(
+    Command(TimeTag(TimeComplete),Stem,Args)
+  )
+)
+
+
+# Command with two string args
+
+FSW_CMD "hello" "world"
+==>
+Sequence(
+  Commands(
+    Command(Stem,Args(String,String))
+  )
+)
+
+# Command with mixed args
+
+FSW_CMD "hello" 10
+==>
+Sequence(Commands(
+  Command(Stem,Args(String,Number))
+))
+
+# Command with mixed args and comment
+
+FSW_CMD "hello" 10# yay comment
+==>
+Sequence(Commands(
+  Command(Stem,Args(String,Number),LineComment)
+))
+
+# Command with two sting args wrapped by comments
+
+# full line comment
+FSW_CMD "TRUE" "FALSE" # end of line
+# full line comment
+==>
+Sequence(Commands(
+  LineComment,
+  Command(Stem,Args(String,String),LineComment),
+  LineComment
+))
+
+# Command with enum args (disallowed in linter)
+
+FSW_CMD TRUE FALSE
+==>
+
+Sequence(Commands(Command(Stem,Args(Enum,Enum))))
+
+# Command with enum args and comments
+
+# Com
+FSW_CMD TRUE FALSE # Com 1
+# Com
+==>
+
+Sequence(Commands(
+  LineComment,
+  Command(Stem,Args(Enum,Enum),LineComment),
+  LineComment
+))
+
+# Command with repeat args
+
+C CMD_1 ["asd"] [] ["asdf" 2] [   4      4]
+
+==>
+
+Sequence(Commands(
+  Command(TimeTag(TimeComplete),Stem,Args(
+    RepeatArg(String),
+    RepeatArg,
+    RepeatArg(String,Number),
+    RepeatArg(Number,Number)
+  ))
+))
+
+# Locals and commands
+
+# comment before parameter
+@INPUT_PARAMS L02INT
+# declare my local variables, types are defined in adaptation
+# comment before directive
+@LOCALS L01STRING L02INT
+# before metadata comment
+@METADATA "foo" "val foo"
+# before commands comment
+FSW_CMD 1 2
+FSW_CMD2
+==>
+
+Sequence(
+  LineComment,
+  ParameterDeclaration(Enum),
+  LineComment,
+  LineComment,
+  LocalDeclaration(Enum,Enum),
+  LineComment,
+  Metadata(
+    MetaEntry(Key(String),Value(String))
+  ),
+  Commands(
+    LineComment,
+    Command(Stem,Args(Number,Number)),
+    Command(Stem,Args)
+  )
+)
+
+
+# Parameters, locals, and commands
+
+@INPUT_PARAMS L01STRING L02INT
+@LOCALS L01STRING L02INT
+FSW_CMD 1 2
+FSW_CMD2
+==>
+
+Sequence(
+  ParameterDeclaration(Enum,Enum),
+  LocalDeclaration(Enum,Enum),
+  Commands(
+    Command(Stem,Args(Number,Number)),
+    Command(Stem,Args)
+  )
+)
+
+# Parameters, locals, and indented commands
+
+@INPUT_PARAMS L01STRING L02INT
+@LOCALS L01STRING L02INT
+      FSW_CMD 1 2
+      FSW_CMD2 "string val"
+==>
+
+Sequence(
+  ParameterDeclaration(Enum,Enum),
+  LocalDeclaration(Enum,Enum),
+  Commands(
+    Command(Stem,Args(Number,Number)),
+    Command(Stem,Args(String))
+  )
+)
+
+# Commands with models and metadata
+
+@ID "big test"
+
+@METADATA "foo" "val foo"
+
+
+CMD_1 1 2 3
+@METADATA "foo" "val\" foo2"
+@METADATA "bar" "val bar"
+
+CMD_2 "hello, it's me"
+@METADATA "bar" "{ \"foo\": 5}"
+@MODEL "a" 5 "c"
+@MODEL "d" true "f"
+==>
+
+Sequence(
+  IdDeclaration(String),
+  Metadata(
+    MetaEntry(Key(String),Value(String))
+  ),
+  Commands(
+    Command(
+      Stem,
+      Args(Number,Number,Number),
+      Metadata(
+        MetaEntry(Key(String),Value(String)),
+        MetaEntry(Key(String),Value(String))
+      )
+    ),
+    Command(
+      Stem,
+      Args(String),
+      Metadata(
+        MetaEntry(Key(String),Value(String))
+      ),
+      Models(
+        Model(Variable(String),Value(Number),Offset(String)),
+        Model(Variable(String),Value(Boolean),Offset(String))
+      )
+    )
+  )
+)
+
+# Commands with models and metadata, with mixed indentation
+
+@ID "big test"
+
+@METADATA "foo" "val foo"
+
+    # indented 4 spaces
+    CMD_1 1 2 3
+    @METADATA "foo" "val\" foo2"
+    @METADATA "bar" "val bar"
+
+
+        # indented 8 spaces
+        CMD_2 "hello, it's me"
+        @METADATA "bar" "val bar2"
+        @MODEL "a" "b" "c"
+        @MODEL  "d" "e" "f"
+
+==>
+
+Sequence(
+  IdDeclaration(String),
+  Metadata(
+    MetaEntry(Key(String),Value(String))
+  ),
+  Commands(
+    LineComment,
+    Command(
+      Stem,
+      Args(Number,Number,Number),
+      Metadata(
+        MetaEntry(Key(String),Value(String)),
+        MetaEntry(Key(String),Value(String))
+      )
+    ),
+    LineComment,
+    Command(
+      Stem,
+      Args(String),
+      Metadata(
+        MetaEntry(Key(String),Value(String))
+      ),
+      Models(
+        Model(Variable(String),Value(String),Offset(String)),
+        Model(Variable(String),Value(String),Offset(String))
+      )
+    )
+  )
+)
+
+# Mega Sequence
+
+     @ID "big test"
+
+# Welcome
+
+
+        @INPUT_PARAMS PARM1
+
+
+    # Bingo
+
+  @LOCALS FOO    BAR     BIZ
+
+
+
+
+
+
+
+@METADATA "foo" "val foo"
+
+
+
+@LOAD_AND_GO
+
+    # indented 4 spaces
+    CMD_1 1 2 3
+    @METADATA "foo" "val\" foo2"
+    @METADATA "bar" "val bar"
+
+
+        # indented 8 spaces
+        CMD_2 "hello, it's me"
+        @MODEL "a" "b" "c"
+        @MODEL  "d" "e" "f"
+
+==>
+
+Sequence(
+  IdDeclaration(String),
+  LineComment,
+  ParameterDeclaration(Enum),
+  LineComment,
+  LocalDeclaration(Enum,Enum,Enum),
+  Metadata(MetaEntry(Key(String),Value(String))),
+  Commands(
+    LoadAndGoDirective,
+    LineComment,
+    Command(Stem,Args(Number,Number,Number),Metadata(MetaEntry(Key(String),Value(String)),MetaEntry(Key(String),Value(String)))),
+    LineComment,
+    Command(Stem,Args(String),Models(Model(Variable(String),Value(String),Offset(String)),Model(Variable(String),Value(String),Offset(String))))
+  )
+)

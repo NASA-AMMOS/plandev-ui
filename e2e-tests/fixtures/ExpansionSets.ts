@@ -1,17 +1,17 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { getOptionValueFromText } from '../utilities/selectors.js';
-import { Dictionaries } from './Dictionaries.js';
 import { ExpansionRules } from './ExpansionRules.js';
 import { Models } from './Models.js';
+import { Parcels } from './Parcels.js';
 
 export class ExpansionSets {
-  inputCommandDictionary: Locator;
-  inputCommandDictionarySelector: string = 'select[name="commandDictionary"]';
   inputModel: Locator;
   inputModelSelector: string = 'select[name="modelId"]';
   inputName: Locator;
   inputNameSelector: string = 'input[name="name"]';
+  inputParcel: Locator;
+  inputParcelSelector: string = 'select[name="Parcel"]';
   inputRule: Locator;
   inputRuleSelector: string;
   newButton: Locator;
@@ -20,7 +20,7 @@ export class ExpansionSets {
 
   constructor(
     public page: Page,
-    public dictionaries: Dictionaries,
+    public parcels: Parcels,
     public models: Models,
     public expansionRules: ExpansionRules,
   ) {
@@ -34,7 +34,7 @@ export class ExpansionSets {
     await this.newButton.click();
     await this.page.waitForURL(`${baseURL}/expansion/sets/new`);
     await expect(this.saveButton).toBeDisabled();
-    await this.selectCommandDictionary();
+    await this.selectParcel();
     await this.selectModel();
     await this.selectRule();
     await this.fillInputName();
@@ -56,15 +56,6 @@ export class ExpansionSets {
     await expect(this.setsNavButton).toHaveClass(/selected/);
   }
 
-  async selectCommandDictionary() {
-    const { dictionaryName } = this.dictionaries;
-    await this.page.waitForSelector(`option:has-text("${dictionaryName} - 1.0.0")`, { state: 'attached' });
-    const value = await getOptionValueFromText(this.page, this.inputCommandDictionarySelector, dictionaryName);
-    await this.inputCommandDictionary.focus();
-    await this.inputCommandDictionary.selectOption(value);
-    await this.inputCommandDictionary.evaluate(e => e.blur());
-  }
-
   async selectModel() {
     const { modelName } = this.models;
     await this.page.waitForSelector(`option:has-text("${modelName}")`, { state: 'attached' });
@@ -74,15 +65,24 @@ export class ExpansionSets {
     await this.inputModel.evaluate(e => e.blur());
   }
 
+  async selectParcel() {
+    const { parcelName } = this.parcels;
+    await this.page.waitForSelector(`option:has-text("${parcelName}")`, { state: 'attached' });
+    const value = await getOptionValueFromText(this.page, this.inputParcelSelector, parcelName);
+    await this.inputParcel.focus();
+    await this.inputParcel.selectOption(value);
+    await this.inputParcel.evaluate(e => e.blur());
+  }
+
   async selectRule() {
     await this.page.waitForSelector(this.inputRuleSelector, { state: 'attached' });
     await this.inputRule.first().click();
   }
 
   updatePage(page: Page): void {
-    this.inputCommandDictionary = page.locator(this.inputCommandDictionarySelector);
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator(this.inputNameSelector);
+    this.inputParcel = page.locator(this.inputParcelSelector);
     this.inputRule = page.locator(this.inputRuleSelector);
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;

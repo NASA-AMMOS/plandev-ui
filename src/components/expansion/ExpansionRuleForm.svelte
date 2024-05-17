@@ -7,7 +7,7 @@
   import { createExpansionRuleError, expansionRulesFormColumns, savingExpansionRule } from '../../stores/expansion';
   import { models } from '../../stores/model';
   import { activityTypes } from '../../stores/plan';
-  import { commandDictionaries } from '../../stores/sequencing';
+  import { parcelBundles } from '../../stores/sequencing';
   import { tags } from '../../stores/tags';
   import type { User, UserId } from '../../types/app';
   import type { ExpansionRule, ExpansionRuleInsertInput, ExpansionRuleSetInput } from '../../types/expansion';
@@ -29,10 +29,10 @@
   export let initialRuleActivityType: string | null = null;
   export let initialRuleDescription: string | null = null;
   export let initialRuleCreatedAt: string | null = null;
-  export let initialRuleDictionaryId: number | null = null;
+  export let initialParcelId: number | null = null;
   export let initialRuleId: number | null = null;
   export let initialRuleLogic: string =
-    'export default function MyExpansion(props: {\n  activityInstance: ActivityType\n}): ExpansionReturn {\n  const { activityInstance } = props;\n  return [];\n}\n';
+    'export default function MyExpansion(props: {\n  activityInstance: ActivityType,\n  channelDictionary: ChannelDictionary | null\n  parameterDictionaries : ParameterDictionary[]\n}): ExpansionReturn {\n  const { activityInstance, channelDictionary, parameterDictionaries } = props;\n  return [];\n}\n';
   export let initialRuleModelId: number | null = null;
   export let initialRuleName: string = '';
   export let initialRuleOwner: UserId = null;
@@ -50,10 +50,11 @@
   let ruleActivityType: string | null = initialRuleActivityType;
   let ruleCreatedAt: string | null = initialRuleCreatedAt;
   let ruleDescription: string | null = initialRuleDescription;
-  let ruleDictionaryId: number | null = initialRuleDictionaryId;
+  let parcelId: number | null = initialParcelId;
   let ruleId: number | null = initialRuleId;
   let ruleLogic: string = initialRuleLogic;
   let ruleModelId: number | null = initialRuleModelId;
+  let ruleModified: boolean = false;
   let ruleName: string = initialRuleName;
   let ruleOwner: UserId = initialRuleOwner;
   let ruleTags: Tag[] | null = initialRuleTags;
@@ -63,7 +64,7 @@
   let saveButtonText: string = 'Save';
   let savedRule: Partial<ExpansionRule> = {
     ...(ruleActivityType !== null ? { activity_type: ruleActivityType } : {}),
-    ...(ruleDictionaryId !== null ? { authoring_command_dict_id: ruleDictionaryId } : {}),
+    ...(parcelId !== null ? { parcelId: parcelId } : {}),
     ...(ruleModelId !== null ? { authoring_mission_model_id: ruleModelId } : {}),
     ...(ruleDescription !== null ? { description: ruleDescription } : {}),
     expansion_logic: ruleLogic,
@@ -75,7 +76,7 @@
   $: hasPermission = hasExpansionPermission(ruleOwner, mode, user);
   $: ruleModified = diffRule(savedRule, {
     ...(ruleActivityType !== null ? { activity_type: ruleActivityType } : {}),
-    ...(ruleDictionaryId !== null ? { authoring_command_dict_id: ruleDictionaryId } : {}),
+    ...(parcelId !== null ? { parcelId: parcelId } : {}),
     ...(ruleModelId !== null ? { authoring_mission_model_id: ruleModelId } : {}),
     ...(ruleDescription !== null ? { description: ruleDescription } : {}),
     expansion_logic: ruleLogic,
@@ -150,14 +151,14 @@
   async function saveRule() {
     if (saveButtonEnabled) {
       if (mode === 'create') {
-        if (ruleActivityType !== null && ruleDictionaryId !== null && ruleModelId !== null) {
+        if (ruleActivityType !== null && parcelId !== null && ruleModelId !== null) {
           const newRule: ExpansionRuleInsertInput = {
             activity_type: ruleActivityType,
-            authoring_command_dict_id: ruleDictionaryId,
             authoring_mission_model_id: ruleModelId,
             description: ruleDescription ?? '',
             expansion_logic: ruleLogic,
             name: ruleName,
+            parcel_id: parcelId,
           };
           const newRuleId = await effects.createExpansionRule(newRule, user);
 
@@ -175,9 +176,7 @@
         if (ruleId !== null && ruleCreatedAt !== null && ruleTags !== null) {
           const updatedRule: ExpansionRuleSetInput = {
             ...(hasAuthoringPermission && ruleActivityType !== null ? { activity_type: ruleActivityType } : {}),
-            ...(hasAuthoringPermission && ruleDictionaryId !== null
-              ? { authoring_command_dict_id: ruleDictionaryId }
-              : {}),
+            ...(hasAuthoringPermission && parcelId !== null ? { parcel_id: parcelId } : {}),
             ...(hasAuthoringPermission && ruleModelId !== null ? { authoring_mission_model_id: ruleModelId } : {}),
             ...(ruleDescription !== null ? { description: ruleDescription } : {}),
             expansion_logic: ruleLogic,
@@ -256,21 +255,20 @@
       {/if}
 
       <fieldset>
-        <label for="commandDictionary">Command Dictionary</label>
+        <label for="parcel">Parcel</label>
         <select
-          bind:value={ruleDictionaryId}
+          bind:value={parcelId}
           class="st-select w-100"
-          name="commandDictionary"
+          name="parcel"
           use:permissionHandler={{
             hasPermission: hasAuthoringPermission,
             permissionError: authoringPermissionError,
           }}
         >
           <option value={null} />
-          {#each $commandDictionaries as commandDictionary}
-            <option value={commandDictionary.id}>
-              {commandDictionary.mission} -
-              {commandDictionary.version}
+          {#each $parcelBundles as parcelBundle}
+            <option value={parcelBundle.id}>
+              {parcelBundle.name}
             </option>
           {/each}
         </select>
@@ -374,7 +372,7 @@
 
   <ExpansionLogicEditor
     {ruleActivityType}
-    {ruleDictionaryId}
+    {parcelId}
     {ruleLogic}
     {ruleModelId}
     readOnly={!hasPermission}

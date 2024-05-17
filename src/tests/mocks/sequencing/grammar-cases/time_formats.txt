@@ -1,0 +1,111 @@
+# Different absolute time tags
+
+C CMD_1
+A2030-001T12:34:56 CMD_2 "hello" "world"
+A2030-001T12:34:56.789 CMD_3 "subseconds"
+==>
+Sequence(Commands(
+  Command(
+    TimeTag(TimeComplete),
+    Stem,
+    Args
+  ),
+  Command(
+    TimeTag(TimeAbsolute),
+    Stem,
+    Args(String,String)
+  ),
+  Command(
+    TimeTag(TimeAbsolute),
+    Stem,
+    Args(String)
+  ),
+))
+
+# Different relative times
+
+R010T01:00:00.000 CMD_4 "hello" 10
+R00:10:00.000 CMD_5
+R00:00:01 CMD_6
+R00:00:01.123 CMD_7
+R10 CMD_8 10
+R10.123 CMD_9 10
+
+==>
+
+Sequence(Commands(
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args(String,Number)
+  ),
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args
+  ),
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args
+  ),
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args
+  ),
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args(Number)
+  ),
+  Command(
+    TimeTag(TimeRelative),
+    Stem,
+    Args(Number)
+  )
+))
+
+# Different epoch times
+
+E123T12:34:56.789 CMD_3
+E-123T12:34:56.789 CMD_3
+E+123T12:34:56.789 CMD_3
+E12:34:56.789 CMD_3
+E-12:34:56.789 CMD_3
+E+12:34:56.789 CMD_3
+E123T12:34:56 CMD_3
+E-123T12:34:56 CMD_3
+E+123T12:34:56 CMD_3
+E12:34:56 CMD_3
+E-12:34:56 CMD_3
+E+12:34:56 CMD_3
+E123 CMD_3
+E-123 CMD_3
+E+123 CMD_3
+E123.456 CMD_3
+E-123.456 CMD_3
+E+123.456 CMD_3
+
+==>
+
+Sequence(Commands(
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args),
+  Command(TimeTag(TimeEpoch),Stem,Args)
+))

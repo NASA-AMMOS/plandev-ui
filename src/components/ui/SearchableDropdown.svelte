@@ -31,6 +31,7 @@
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
   export let options: DropdownOptions = [];
+  export let maxItems: number | undefined = undefined;
   export let maxListHeight: string = '300px';
   export let name: string | undefined = undefined;
   export let updatePermissionError: string = 'You do not have permission to update this';
@@ -83,6 +84,9 @@
       : options.filter(option => {
           return new RegExp(searchFilter, 'i').test(option.display);
         });
+    if (maxItems !== undefined) {
+      displayedOptions = displayedOptions.slice(0, maxItems);
+    }
   }
   $: if (disabled) {
     hideMenu();

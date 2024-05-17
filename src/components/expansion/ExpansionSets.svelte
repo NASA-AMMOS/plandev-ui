@@ -42,9 +42,9 @@
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
-      field: 'command_dict_id',
+      field: 'parcel_id',
       filter: 'number',
-      headerName: 'Command Dictionary ID',
+      headerName: 'Parcel ID',
       resizable: true,
       sortable: true,
     },
@@ -266,7 +266,7 @@
   <ExpansionLogicEditor
     readOnly={true}
     ruleActivityType={selectedExpansionRule?.activity_type}
-    ruleDictionaryId={selectedExpansionRule?.authoring_command_dict_id}
+    parcelId={selectedExpansionRule?.parcel_id}
     ruleLogic={selectedExpansionRule?.expansion_logic ?? 'No Expansion Rule Selected'}
     ruleModelId={selectedExpansionRule?.authoring_mission_model_id}
     title="Expansion Rule - Logic Editor (Read-only)"

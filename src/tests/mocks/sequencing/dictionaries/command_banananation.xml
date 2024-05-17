@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<command_dictionary>
+    <header mission_name="Banana Nation" version="1.0.0.0" schema_version="1.0">
+        <spacecraft_ids>
+            <spacecraft_id value="62" />
+        </spacecraft_ids>
+    </header>
+    <uplink_file_types>
+        <file_type name="generic" id="0" extension="dat" file_format_spec="None" />
+    </uplink_file_types>
+    <enum_definitions>
+        <enum_table name="boolean">
+            <values>
+                <enum symbol="FALSE" numeric="0" />
+                <enum symbol="TRUE" numeric="1" />
+            </values>
+        </enum_table>
+        <enum_table name="string">
+            <values>
+                <enum symbol="fromStem" numeric="0" />
+                <enum symbol="fromTip" numeric="1" />
+            </values>
+        </enum_table>
+    </enum_definitions>
+    <command_definitions>
+        <fsw_command opcode="0xFFFF" stem="ECHO" class="FSW">
+          <arguments>
+            <var_string_arg name="echo_string" prefix_bit_length="8" max_bit_length="1024" cts_item_type="dynamic_arg">
+              <description>String to echo back</description>
+            </var_string_arg>
+          </arguments>
+          <categories>
+            <module>shell_ctl</module>
+            <ops_category>FSW</ops_category>
+          </categories>
+          <description>This command will echo back a string</description>
+          <completion>String is echoed back</completion>
+          <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+          <restricted_modes>
+            <prime_string_restriction prime_string_only="No" />
+          </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="PREHEAT_OVEN" class="FSW">
+            <arguments>
+                <unsigned_arg name="temperature" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>Set the oven temperature</description>
+                </unsigned_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command will turn on the oven</description>
+            <completion>Oven is preheated</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="THROW_BANANA" class="FSW">
+            <arguments>
+                <unsigned_arg name="distance" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>The distance you throw the bananan</description>
+                </unsigned_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command will throw a banana</description>
+            <completion>A single banana was thrown</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="GROW_BANANA" class="FSW">
+            <arguments>
+                <unsigned_arg name="quantity" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>Number of bananas to grow</description>
+                </unsigned_arg>
+                <unsigned_arg name="durationSecs" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>How many seconds will it take to grow</description>
+                </unsigned_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command will grow bananas</description>
+            <completion>Bananas are grown</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="GrowBanana" class="FSW">
+            <arguments>
+                <unsigned_arg name="quantity" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>Number of bananas to grow</description>
+                </unsigned_arg>
+                <unsigned_arg name="durationSecs" bit_length="8" units="none">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>How many seconds will it take to grow</description>
+                </unsigned_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command will grow bananas, it's a duplicate to clash with an activity type of the same name</description>
+            <completion>Bananas are grown</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="PREPARE_LOAF" class="FSW">
+            <arguments>
+                <unsigned_arg name="tb_sugar" bit_length="8" units="priority">
+                    <range_of_values>
+                        <include min="0" max="100" />
+                    </range_of_values>
+                    <description>How much sugar is needed</description>
+                </unsigned_arg>
+                <enum_arg name="gluten_free" bit_length="8" enum_name="boolean">
+                    <description>Do you hate flavor</description>
+                </enum_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command make the banana bread dough</description>
+            <completion>The dough mixture is created</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFF" stem="PEEL_BANANA" class="FSW">
+            <arguments>
+                <enum_arg name="peelDirection" bit_length="8" enum_name="string">
+                    <description>Which way do you peel the banana</description>
+                </enum_arg>
+            </arguments>
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command peels a single banana</description>
+            <completion>The banana is peeled</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFE" stem="BAKE_BREAD" class="FSW">
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command bakes a banana bread</description>
+            <completion>Banana bread is done baking</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFE" stem="ADD_WATER" class="FSW">
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>This command waters the banana tree</description>
+            <completion>Done watering the banana tree</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFE" stem="PACKAGE_BANANA" class="FSW">
+        <arguments>
+          <unsigned_arg name="lot_number" bit_length="16" units="Opcode">
+            <description>Identification number assigned to a particular quantity</description>
+          </unsigned_arg>
+          <repeat_arg name="bundle" prefix_bit_length="8" cts_encoding="chunked_hexed">
+            <description>A repeated set of strings and integer containing the arguments to the lot</description>
+            <repeat min="1" max="7">
+              <arguments>
+                <var_string_arg name="bundle_name" prefix_bit_length="8" max_bit_length="1024" cts_item_type="dynamic_arg">
+                  <description>Name of the banana bundle</description>
+                </var_string_arg>
+                <unsigned_arg name="number_of_bananas" bit_length="8" units="priority">
+                  <range_of_values>
+                    <include min="0" max="100" />
+                  </range_of_values>
+                  <description>How many banana in a bundle</description>
+                </unsigned_arg>
+              </arguments>
+            </repeat>
+          </repeat_arg>
+        </arguments>
+        <description>Dynamically bundle bananas into lots</description>
+        <completion>The bananas are packaged up</completion>
+        <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+        <restricted_modes>
+          <prime_string_restriction prime_string_only="No"/>
+        </restricted_modes>
+      </fsw_command>
+        <fsw_command opcode="0xFFFE" stem="PICK_BANANA" class="FSW">
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>Pick a banana</description>
+            <completion>You have a single banana</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <fsw_command opcode="0xFFFE" stem="EAT_BANANA" class="FSW">
+            <categories>
+                <module>shell_ctl</module>
+                <ops_category>FSW</ops_category>
+            </categories>
+            <description>Eat a banana</description>
+            <completion>You ate a single banana</completion>
+            <fsw_specification custom_validation_required="No" command_priority="Nominal" />
+            <restricted_modes>
+                <prime_string_restriction prime_string_only="No" />
+            </restricted_modes>
+        </fsw_command>
+        <hw_command opcode="0x0000" stem="HDW_BLENDER_DUMP">
+          <categories>
+            <ops_category>UPL</ops_category>
+          </categories>
+          <description>Dump the blender configuration file.</description>
+        </hw_command>
+    </command_definitions>
+</command_dictionary>

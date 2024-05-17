@@ -200,8 +200,8 @@
                 <span>{selectedExpansionSet.mission_model_id}</span>
               </div>
               <div class="expansion-set-detail">
-                <span class="st-typography-label">Command Dictionary ID:</span>
-                <span>{selectedExpansionSet.command_dict_id}</span>
+                <span class="st-typography-label">Parcel ID:</span>
+                <span>{selectedExpansionSet.parcel_id}</span>
               </div>
               <div class="expansion-set-detail">
                 <span class="st-typography-label">Name:</span>

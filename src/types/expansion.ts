@@ -5,7 +5,6 @@ import type { Tag } from './tags';
 
 export type ExpansionRule = {
   activity_type: string;
-  authoring_command_dict_id: number;
   authoring_mission_model_id: number;
   created_at: string;
   description: string;
@@ -13,6 +12,7 @@ export type ExpansionRule = {
   id: number;
   name: string;
   owner: UserId;
+  parcel_id: number;
   tags: { tag: Tag }[];
   updated_at: string;
   updated_by: UserId;
@@ -42,7 +42,6 @@ export type ExpansionSequence = {
 export type ExpansionSequenceInsertInput = Omit<ExpansionSequence, 'created_at' | 'updated_at'>;
 
 export type ExpansionSet = {
-  command_dict_id: number;
   created_at: string;
   description: string;
   expansion_rules: ExpansionRuleSlim[];
@@ -50,6 +49,7 @@ export type ExpansionSet = {
   mission_model_id: number;
   name: string;
   owner: UserId;
+  parcel_id: number;
   updated_at: string;
   updated_by: UserId;
 };
@@ -65,7 +65,6 @@ export type ActivityInstanceJoin = {
 
 export type ExpandedSequence = {
   created_at: string;
-  edsl_string: string;
   expanded_sequence: SeqJson;
   id: number;
   seq_id: string;

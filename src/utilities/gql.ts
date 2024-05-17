@@ -9,6 +9,7 @@ export enum Queries {
   APPLY_PRESET_TO_ACTIVITY = 'apply_preset_to_activity',
   BEGIN_MERGE = 'begin_merge',
   CANCEL_MERGE = 'cancel_merge',
+  CHANNEL_DICTIONARIES = 'channel_dictionary',
   COMMAND_DICTIONARIES = 'command_dictionary',
   COMMIT_MERGE = 'commit_merge',
   CONSTRAINTS_DSL_TYPESCRIPT = 'constraintsDslTypescript',
@@ -26,6 +27,7 @@ export enum Queries {
   DELETE_ACTIVITY_PRESET = 'delete_activity_presets_by_pk',
   DELETE_ACTIVITY_REANCHOR_PLAN_START_BULK = 'delete_activity_by_pk_reanchor_plan_start_bulk',
   DELETE_ACTIVITY_REANCHOR_TO_ANCHOR_BULK = 'delete_activity_by_pk_reanchor_to_anchor_bulk',
+  DELETE_CHANNEL_DICTIONARY = 'delete_channel_dictionary_by_pk',
   DELETE_COMMAND_DICTIONARY = 'delete_command_dictionary_by_pk',
   DELETE_CONSTRAINT_DEFINITION_TAGS = 'delete_constraint_definition_tags',
   DELETE_CONSTRAINT_METADATA = 'delete_constraint_metadata_by_pk',
@@ -36,6 +38,9 @@ export enum Queries {
   DELETE_EXPANSION_RULE_TAGS = 'delete_expansion_rule_tags',
   DELETE_EXPANSION_SET = 'delete_expansion_set_by_pk',
   DELETE_MISSION_MODEL = 'delete_mission_model_by_pk',
+  DELETE_PARAMETER_DICTIONARY = 'delete_parameter_dictionary_by_pk',
+  DELETE_PARCEL = 'delete_parcel_by_pk',
+  DELETE_PARCEL_TO_PARAMETER_DICTIONARY = 'delete_parcel_to_parameter_dictionary',
   DELETE_PLAN = 'delete_plan_by_pk',
   DELETE_PLAN_COLLABORATOR = 'delete_plan_collaborators_by_pk',
   DELETE_PLAN_SNAPSHOT = 'delete_plan_snapshot_by_pk',
@@ -53,6 +58,7 @@ export enum Queries {
   DELETE_SCHEDULING_SPECIFICATION_CONDITIONS = 'delete_scheduling_specification_conditions',
   DELETE_SCHEDULING_SPECIFICATION_GOALS = 'delete_scheduling_specification_goals',
   DELETE_SEQUENCE = 'delete_sequence_by_pk',
+  DELETE_SEQUENCE_ADAPTATION = 'delete_sequence_adaptation_by_pk',
   DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY = 'delete_sequence_to_simulated_activity_by_pk',
   DELETE_SIMULATION_TEMPLATE = 'delete_simulation_template_by_pk',
   DELETE_TAG = 'delete_tags_by_pk',
@@ -81,6 +87,8 @@ export enum Queries {
   INSERT_ACTIVITY_DIRECTIVE = 'insert_activity_directive_one',
   INSERT_ACTIVITY_DIRECTIVE_TAGS = 'insert_activity_directive_tags',
   INSERT_ACTIVITY_PRESET = 'insert_activity_presets_one',
+  INSERT_CHANNEL_DICTIONARY = 'insert_channel_dictionary_one',
+  INSERT_DICTIONARY = 'insert_dictionary_one',
   INSERT_CONSTRAINT_DEFINITION = 'insert_constraint_definition_one',
   INSERT_CONSTRAINT_DEFINITION_TAGS = 'insert_constraint_definition_tags',
   INSERT_CONSTRAINT_METADATA = 'insert_constraint_metadata_one',
@@ -91,6 +99,9 @@ export enum Queries {
   INSERT_EXPANSION_RULE = 'insert_expansion_rule_one',
   INSERT_EXPANSION_RULE_TAGS = 'insert_expansion_rule_tags',
   INSERT_MISSION_MODEL = 'insert_mission_model_one',
+  INSERT_PARAMETER_DICTIONARY = 'insert_parameter_dictionary_one',
+  INSERT_PARCEL = 'insert_parcel_one',
+  INSERT_PARCEL_TO_PARAMETER_DICTIONARY = 'insert_parcel_to_parameter_dictionary',
   INSERT_PLAN = 'insert_plan_one',
   INSERT_PLAN_SNAPSHOT_TAGS = 'insert_plan_snapshot_tags',
   INSERT_PLAN_COLLABORATORS = 'insert_plan_collaborators',
@@ -111,6 +122,7 @@ export enum Queries {
   INSERT_SCHEDULING_SPECIFICATION_GOAL = 'insert_scheduling_specification_goals_one',
   INSERT_SCHEDULING_SPECIFICATION_GOALS = 'insert_scheduling_specification_goals',
   INSERT_SEQUENCE = 'insert_sequence_one',
+  INSERT_SEQUENCE_ADAPTATION = 'insert_sequence_adaptation_one',
   INSERT_SEQUENCE_TO_SIMULATED_ACTIVITY = 'insert_sequence_to_simulated_activity_one',
   INSERT_SIMULATION_TEMPLATE = 'insert_simulation_template_one',
   INSERT_TAG = 'insert_tags_one',
@@ -121,6 +133,10 @@ export enum Queries {
   MERGE_REQUESTS = 'merge_request',
   MISSION_MODEL = 'mission_model_by_pk',
   MISSION_MODELS = 'mission_model',
+  PARAMETER_DICTIONARIES = 'parameter_dictionary',
+  PARCEL = 'parcel_by_pk',
+  PARCELS = 'parcel',
+  PARCEL_TO_PARAMETER_DICTIONARY = 'parcel_to_parameter_dictionary',
   PLAN = 'plan_by_pk',
   PLANS = 'plan',
   PLAN_DATASETS = 'plan_dataset',
@@ -141,6 +157,7 @@ export enum Queries {
   SCHEDULING_SPECIFICATION_CONDITIONS = 'scheduling_specification_conditions',
   SCHEDULING_SPECIFICATION_GOALS = 'scheduling_specification_goals',
   SEQUENCE = 'sequence',
+  SEQUENCE_ADAPTATION = 'sequence_adaptation',
   SEQUENCE_TO_SIMULATED_ACTIVITY = 'sequence_to_simulated_activity_by_pk',
   SET_RESOLUTION = 'set_resolution',
   SET_RESOLUTIONS = 'set_resolution_bulk',
@@ -159,6 +176,7 @@ export enum Queries {
   UPDATE_CONSTRAINT_MODEL_SPECIFICATION = 'update_constraint_model_specification_by_pk',
   UPDATE_EXPANSION_RULE = 'update_expansion_rule_by_pk',
   UPDATE_MISSION_MODEL = 'update_mission_model_by_pk',
+  UPDATE_PARCEL = 'update_parcel_by_pk',
   UPDATE_PLAN_SNAPSHOT = 'update_plan_snapshot_by_pk',
   UPDATE_SCHEDULING_CONDITION_METADATA = 'update_scheduling_condition_metadata_by_pk',
   UPDATE_SCHEDULING_GOAL_METADATA = 'update_scheduling_goal_metadata_by_pk',
@@ -309,13 +327,13 @@ const gql = {
     }
   `,
 
-  CREATE_COMMAND_DICTIONARY: `#graphql
-    mutation CreateCommandDictionary($dictionary: String!) {
-      createCommandDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary) {
-        command_types_typescript_path
+  CREATE_CHANNEL_DICTIONARY: `#graphql
+    mutation CreateChannelDictionary($channelDictionary: channel_dictionary_insert_input!) {
+      createChannelDictionary: ${Queries.INSERT_CHANNEL_DICTIONARY}(object: $channelDictionary) {
         created_at
         id
         mission
+        parsed_json
         version
       }
     }
@@ -363,6 +381,20 @@ const gql = {
     }
   `,
 
+  CREATE_DICTIONARY: `#graphql
+    mutation CreateDictionary($dictionary: String!, $type: String!) {
+      createDictionary: ${Queries.UPLOAD_DICTIONARY}(dictionary: $dictionary, type : $type) {
+        dictionary_path
+        created_at
+        id
+        mission
+        parsed_json
+        version
+        type
+      }
+    }
+  `,
+
   CREATE_EXPANSION_RULE: `#graphql
     mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
       createExpansionRule: ${Queries.INSERT_EXPANSION_RULE}(object: $rule) {
@@ -391,13 +423,13 @@ const gql = {
   `,
 
   CREATE_EXPANSION_SET: `#graphql
-    mutation CreateExpansionSet($dictionaryId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
+    mutation CreateExpansionSet($parcelId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
       ${Queries.CREATE_EXPANSION_SET}(
-        commandDictionaryId: $dictionaryId,
         missionModelId: $modelId,
         expansionIds: $expansionRuleIds,
         name: $name,
         description: $description
+        parcelId : $parcelId
       ) {
         id
       }
@@ -410,6 +442,38 @@ const gql = {
         id
         created_at
         owner
+      }
+    }
+  `,
+
+  CREATE_PARAMETER_DICTIONARY: `#graphql
+    mutation CreateParameterDictionary($parameterDictionary: parameter_dictionary_insert_input!) {
+      createParameterDictionary: ${Queries.INSERT_PARAMETER_DICTIONARY}(object: $parameterDictionary) {
+        created_at
+        id
+        mission
+        parsed_json
+        version
+      }
+    }
+  `,
+
+  CREATE_PARCEL: `#graphql
+    mutation CreateParcel($parcel: parcel_insert_input!) {
+      createParcel: ${Queries.INSERT_PARCEL}(object: $parcel) {
+        id
+      }
+    }
+  `,
+
+  CREATE_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
+    mutation CreateParcelToParameterDictionaries($parcelToParameterDictionaries : [parcel_to_parameter_dictionary_insert_input!]!) {
+      ${Queries.INSERT_PARCEL_TO_PARAMETER_DICTIONARY}(objects: $parcelToParameterDictionaries) {
+        affected_rows
+        returning {
+          parcel_id
+          parameter_dictionary_id
+        }
       }
     }
   `,
@@ -571,6 +635,15 @@ const gql = {
     }
   `,
 
+  CREATE_SEQUENCE_ADAPTATION: `#graphql
+    mutation CreateCustomAdaptation($adaptation: sequence_adaptation_insert_input!) {
+      createSequenceAdaptation: ${Queries.INSERT_SEQUENCE_ADAPTATION}(object: $adaptation) {
+        adaptation
+        created_at
+      }
+    }
+  `,
+
   CREATE_SIMULATION_TEMPLATE: `#graphql
     mutation CreateSimulationTemplate($simulationTemplateInsertInput: simulation_template_insert_input!) {
       ${Queries.INSERT_SIMULATION_TEMPLATE}(object: $simulationTemplateInsertInput) {
@@ -687,6 +760,14 @@ const gql = {
     }
   `,
 
+  DELETE_CHANNEL_DICTIONARY: `#graphql
+    mutation DeleteChannelDictionary($id: Int!) {
+      deleteChannelDictionary: ${Queries.DELETE_CHANNEL_DICTIONARY}(id: $id) {
+        id
+      }
+    }
+  `,
+
   DELETE_COMMAND_DICTIONARY: `#graphql
     mutation DeleteCommandDictionary($id: Int!) {
       deleteCommandDictionary: ${Queries.DELETE_COMMAND_DICTIONARY}(id: $id) {
@@ -795,6 +876,30 @@ const gql = {
         returning {
           model_id
         }
+      }
+    }
+  `,
+
+  DELETE_PARAMETER_DICTIONARY: `#graphql
+    mutation DeleteParameterDictionary($id: Int!) {
+      deleteParameterDictionary: ${Queries.DELETE_PARAMETER_DICTIONARY}(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_PARCEL: `#graphql
+    mutation DeleteParcel($id: Int!) {
+      deleteParcel: ${Queries.DELETE_PARCEL}(id: $id) {
+        id
+      }
+    }
+  `,
+
+  DELETE_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
+    mutation deleteParcelToParameterDictionaries($ids: [Int!]!) {
+        ${Queries.DELETE_PARCEL_TO_PARAMETER_DICTIONARY}(where: { id: { _in: $ids } }) {
+          affected_rows
       }
     }
   `,
@@ -918,6 +1023,14 @@ const gql = {
         affected_rows
       }
     }
+`,
+
+  DELETE_SEQUENCE_ADAPTATION: `#graphql
+    mutation DeleteSequenceAdaptation($id: Int!) {
+      deleteSequenceAdaptation: ${Queries.DELETE_SEQUENCE_ADAPTATION}(id: $id) {
+        id
+      }
+    }
   `,
 
   DELETE_SIMULATION_TEMPLATE: `#graphql
@@ -1002,11 +1115,11 @@ const gql = {
       activity_types: ${Queries.ACTIVITY_TYPES}(where: { model_id: { _eq: $modelId } }) {
         expansion_rules {
           activity_type
-          authoring_command_dict_id
           authoring_mission_model_id
           created_at
           expansion_logic
           id
+          parcel_id
           updated_at
         }
         name
@@ -1062,7 +1175,6 @@ const gql = {
     query GetExpansionRule($id: Int!) {
       expansionRule: ${Queries.EXPANSION_RULE}(id: $id) {
         activity_type
-        authoring_command_dict_id
         authoring_mission_model_id
         created_at
         description
@@ -1070,6 +1182,7 @@ const gql = {
         id
         name
         owner
+        parcel_id
         updated_at
         updated_by
         tags {
@@ -1088,13 +1201,12 @@ const gql = {
       expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
         created_at
         expansion_set {
-          command_dict_id
           created_at
           id
           name
+          parcel_id
         }
         expanded_sequences {
-          edsl_string
           expanded_sequence
           id
           seq_id
@@ -1182,9 +1294,40 @@ const gql = {
     }
   `,
 
+  GET_PARCEL: `#graphql
+    query GetParcel($id: Int!) {
+      parcel: ${Queries.PARCEL}(id: $id) {
+        channel_dictionary_id
+        command_dictionary_id
+        created_at
+        id
+        name
+        owner
+        sequence_adaptation_id
+        updated_at
+      }
+    }
+  `,
+
+  GET_PARSED_CHANNEL_DICTIONARY: `#graphql
+    query GetParsedChannelDictionary($channelDictionaryId: Int!) {
+      ${Queries.CHANNEL_DICTIONARIES}(where: { id: { _eq: $channelDictionaryId } }) {
+        parsed_json
+      }
+    }
+  `,
+
   GET_PARSED_COMMAND_DICTIONARY: `#graphql
     query GetParsedCommandDictionary($commandDictionaryId: Int!) {
       ${Queries.COMMAND_DICTIONARIES}(where: { id: { _eq: $commandDictionaryId } }) {
+        parsed_json
+      }
+    }
+  `,
+
+  GET_PARSED_PARAMETER_DICTIONARY: `#graphql
+    query GetParsedParameterDictionary($parameterDictionaryId: Int!) {
+      ${Queries.PARAMETER_DICTIONARIES}(where: { id: { _eq: $parameterDictionaryId } }) {
         parsed_json
       }
     }
@@ -1425,6 +1568,14 @@ const gql = {
     }
   `,
 
+  GET_SEQUENCE_ADAPTATION: `#graphql
+    query GetSequenceAdaptation($sequence_adaptation_id: Int!) {
+      ${Queries.SEQUENCE_ADAPTATION}(where: { id: { _eq: $sequence_adaptation_id }}) {
+        adaptation
+      }
+    }
+  `,
+
   GET_SIMULATION_DATASET_ID: `#graphql
     query GetSimulationDatasetId($datasetId: Int!) {
       ${Queries.SIMULATION_DATASETS}(where: {dataset_id: {_eq: $datasetId}}) {
@@ -1510,12 +1661,12 @@ const gql = {
   GET_USER_SEQUENCE: `#graphql
     query GetUserSequence($id: Int!) {
       userSequence: ${Queries.USER_SEQUENCE}(id: $id) {
-        authoring_command_dict_id
         created_at
         definition
         id
         name
         owner
+        parcel_id
         updated_at
       }
     }
@@ -1791,10 +1942,22 @@ const gql = {
     }
   `,
 
+  SUB_CHANNEL_DICTIONARIES: `#graphql
+    subscription SubChannelDictionaries {
+      ${Queries.CHANNEL_DICTIONARIES}(order_by: { id: desc }) {
+        created_at
+        id
+        mission
+        version
+        created_at
+        updated_at
+      }
+    }
+  `,
+
   SUB_COMMAND_DICTIONARIES: `#graphql
     subscription SubCommandDictionaries {
       ${Queries.COMMAND_DICTIONARIES}(order_by: { id: desc }) {
-        command_types_typescript_path
         created_at
         id
         mission
@@ -1918,7 +2081,6 @@ const gql = {
     subscription SubExpansionRules {
       expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
         activity_type
-        authoring_command_dict_id
         authoring_mission_model_id
         created_at
         description
@@ -1926,6 +2088,7 @@ const gql = {
         id
         name
         owner
+        parcel_id
         updated_at
         updated_by
         tags {
@@ -1958,21 +2121,21 @@ const gql = {
   SUB_EXPANSION_SETS: `#graphql
     subscription SubExpansionSets {
       expansionSets: ${Queries.EXPANSION_SETS}(order_by: { id: desc }) {
-        command_dict_id
         created_at
         description
         expansion_rules {
           activity_type
-          authoring_command_dict_id
           authoring_mission_model_id
           expansion_logic
           id
           owner
+          parcel_id
         }
         id
         mission_model_id
         name
         owner
+        parcel_id
         updated_at
         updated_by
       }
@@ -2053,6 +2216,41 @@ const gql = {
         }
         owner
         version
+      }
+    }
+  `,
+
+  SUB_PARAMETER_DICTIONARIES: `#graphql
+    subscription SubParameterDictionaries {
+      ${Queries.PARAMETER_DICTIONARIES}(order_by: { id: desc }) {
+        created_at
+        id
+        mission
+        updated_at
+        version
+      }
+    }
+  `,
+
+  SUB_PARCELS: `#graphql
+    subscription SubParcels {
+      ${Queries.PARCELS}(order_by: { id: desc }) {
+        channel_dictionary_id
+        command_dictionary_id
+        created_at
+        id
+        name
+        sequence_adaptation_id
+        updated_at
+      }
+    }
+  `,
+
+  SUB_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
+    subscription SubParcelsToParameterDictionaries($parcelId: Int!) {
+      ${Queries.PARCEL_TO_PARAMETER_DICTIONARY}(where: {parcel_id: {_eq: $parcelId }}) {
+        parameter_dictionary_id
+        parcel_id
       }
     }
   `,
@@ -2540,6 +2738,17 @@ const gql = {
     }
   `,
 
+  SUB_SEQUENCE_ADAPTATIONS: `#graphql
+    subscription SubSequenceAdaptations {
+      ${Queries.SEQUENCE_ADAPTATION}(order_by: { id: desc }) {
+        adaptation
+        created_at
+        id
+        updated_by
+      }
+    }
+  `,
+
   SUB_SIMULATION: `#graphql
     subscription SubSimulation($planId: Int!) {
       ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }, limit: 1) {
@@ -2670,12 +2879,12 @@ const gql = {
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {
       ${Queries.USER_SEQUENCES}(order_by: { id: desc }) {
-        authoring_command_dict_id
         created_at
         definition
         id
         name
         owner
+        parcel_id
         updated_at
       }
     }
@@ -2872,6 +3081,16 @@ const gql = {
         name
         version
         owner
+      }
+    }
+  `,
+
+  UPDATE_PARCEL: `#graphql
+    mutation UpdateParcel($id: Int!, $parcel: parcel_set_input!) {
+      updateParcel: ${Queries.UPDATE_PARCEL}(
+        pk_columns: { id: $id }, _set: $parcel
+      ) {
+        id
       }
     }
   `,

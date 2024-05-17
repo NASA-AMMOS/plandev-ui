@@ -9,6 +9,7 @@
   export let columns: string = 'none';
   export let gap: string = '0';
   export let rows: string = 'none';
+  export let minHeight: string = 'unset';
 
   const dispatch = createEventDispatcher<{
     changeColumnSizes: string;
@@ -77,7 +78,7 @@
 <div
   bind:this={div}
   class={className}
-  style="gap: {gap}; grid-template-columns: {columns}; grid-template-rows: {rows}; padding: {padding}"
+  style="gap: {gap}; grid-template-columns: {columns}; grid-template-rows: {rows}; min-height: {minHeight}; padding: {padding}"
 >
   <slot />
 </div>
