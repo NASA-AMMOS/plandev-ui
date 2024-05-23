@@ -5,21 +5,15 @@
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
   import type { ColDef, ColumnResizedEvent, ColumnState, ValueGetterParams } from 'ag-grid-community';
   import { debounce } from 'lodash-es';
-  import {
-    activityDirectivesList,
-    activityDirectivesMap,
-    selectActivity,
-    selectedActivityDirectiveId,
-  } from '../../stores/activities';
+  import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
   import { plan, planReadOnly } from '../../stores/plan';
-  import { spanUtilityMaps, spansMap } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { getActivityDirectiveStartTimeMs, getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -31,7 +25,7 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
-  type ActivityDirectiveColumns = keyof ActivityDirective | 'derived_start_time';
+  type ActivityDirectiveColumns = keyof ActivityDirective;
   type ActivityDirectiveColDef = ColDef<ActivityDirective>;
 
   let activityDirectivesTable: ViewTable | undefined;
@@ -100,32 +94,6 @@
       resizable: true,
       sortable: true,
     },
-    derived_start_time: {
-      filter: 'text',
-      headerName: 'Absolute Start Time (UTC)',
-      hide: true,
-      resizable: true,
-      sortable: true,
-      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
-        if ($plan && params && params.data) {
-          return getDoyTime(
-            new Date(
-              getActivityDirectiveStartTimeMs(
-                params.data.id,
-                $plan.start_time,
-                $plan.end_time_doy,
-                $activityDirectivesMap,
-                $spansMap,
-                $spanUtilityMaps,
-              ),
-            ),
-            false,
-          );
-        }
-
-        return '';
-      },
-    },
     id: {
       field: 'id',
       filter: 'text',
@@ -193,6 +161,19 @@
       hide: false,
       resizable: true,
       sortable: true,
+    },
+    start_time_ms: {
+      filter: 'text',
+      headerName: 'Absolute Start Time (UTC)',
+      hide: true,
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
+        if ($plan && params && params.data && typeof params.data.start_time_ms === 'number') {
+          return getDoyTime(new Date(params.data.start_time_ms), false);
+        }
+        return '';
+      },
     },
     tags: {
       autoHeight: true,
@@ -397,7 +378,7 @@
     <ActivityDirectivesTable
       bind:dataGrid
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
-      activityDirectives={$activityDirectivesList}
+      activityDirectives={Object.values($activityDirectivesMap)}
       activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}

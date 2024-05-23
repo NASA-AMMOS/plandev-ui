@@ -1,23 +1,23 @@
-import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { derived, writable, type Writable } from 'svelte/store';
 import type {
-  ActivityDirective,
+  ActivityDirectiveDB,
   ActivityDirectiveId,
   ActivityDirectiveValidationStatus,
-  ActivityDirectivesByView,
-  ActivityDirectivesMap,
   AnchorValidationStatus,
 } from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
 import type { SpanId } from '../types/simulation';
+import { computeActivityDirectivesMap } from '../utilities/activities';
 import gql from '../utilities/gql';
-import { planId } from './plan';
-import { selectedSpanId } from './simulation';
+import { initialPlan, planId } from './plan';
+import { planSnapshotActivityDirectives, planSnapshotId } from './planSnapshots';
+import { selectedSpanId, spansMap, spanUtilityMaps } from './simulation';
 import { gqlSubscribable } from './subscribable';
-import { view, viewUpdateGrid } from './views';
+import { viewUpdateGrid } from './views';
 
 /* Subscriptions. */
 
-export const activityDirectives = gqlSubscribable<ActivityDirective[]>(
+export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[]>(
   gql.SUB_ACTIVITY_DIRECTIVES,
   { planId },
   [],
@@ -47,63 +47,29 @@ export const activityDirectiveValidationStatuses = gqlSubscribable<ActivityDirec
 
 /* Writeable. */
 
-export const activityDirectivesMap: Writable<ActivityDirectivesMap> = writable({});
-
 export const selectedActivityDirectiveId: Writable<ActivityDirectiveId | null> = writable(null);
 
 /* Derived. */
 
-export const activityDirectivesList: Readable<ActivityDirective[]> = derived(
-  activityDirectivesMap,
-  $activityDirectivesMap => Object.values($activityDirectivesMap),
-);
-
-export const activityDirectivesByView: Readable<ActivityDirectivesByView> = derived(
-  [activityDirectivesList, view],
-  ([$activityDirectivesList, $view]) => {
-    const byLayerId: Record<number, ActivityDirective[]> = {};
-    const byTimelineId: Record<number, ActivityDirective[]> = {};
-
-    if ($view) {
-      const { definition } = $view;
-      const { plan } = definition;
-      const { timelines } = plan;
-      for (const activityDirective of $activityDirectivesList) {
-        for (const timeline of timelines) {
-          const { rows } = timeline;
-
-          for (const row of rows) {
-            const { layers } = row;
-
-            for (const layer of layers) {
-              const { filter } = layer;
-
-              if (filter.activity !== undefined) {
-                const { activity: activityFilter } = filter;
-                const { types } = activityFilter;
-                const includeActivity = types.indexOf(activityDirective.type) > -1;
-
-                if (includeActivity) {
-                  if (byLayerId[layer.id] === undefined) {
-                    byLayerId[layer.id] = [activityDirective];
-                  } else {
-                    byLayerId[layer.id].push(activityDirective);
-                  }
-
-                  if (byTimelineId[timeline.id] === undefined) {
-                    byTimelineId[timeline.id] = [activityDirective];
-                  } else {
-                    byTimelineId[timeline.id].push(activityDirective);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+export const activityDirectivesMap = derived(
+  [activityDirectivesDB, planSnapshotId, planSnapshotActivityDirectives, initialPlan, spansMap, spanUtilityMaps],
+  ([
+    $activityDirectivesDB,
+    $planSnapshotId,
+    $planSnapshotActivityDirectives,
+    $initialPlan,
+    $spansMap,
+    $spanUtilityMaps,
+  ]) => {
+    if ($initialPlan === null) {
+      return {};
     }
-
-    return { byLayerId, byTimelineId };
+    return computeActivityDirectivesMap(
+      $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB,
+      $initialPlan,
+      $spansMap,
+      $spanUtilityMaps,
+    );
   },
 );
 
@@ -151,9 +117,8 @@ export function selectActivity(
 
 export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
-  activityDirectivesMap.set({});
   selectedActivityDirectiveId.set(null);
-  activityDirectives.updateValue(() => []);
+  activityDirectivesDB.updateValue(() => []);
   anchorValidationStatuses.updateValue(() => []);
   activityMetadataDefinitions.updateValue(() => []);
   activityDirectiveValidationStatuses.updateValue(() => []);

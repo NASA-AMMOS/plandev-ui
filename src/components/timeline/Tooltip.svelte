@@ -2,6 +2,9 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
+  import { groupBy } from 'lodash-es';
+  import DirectiveIcon from '../../assets/timeline-directive.svg?raw';
+  import SpanIcon from '../../assets/timeline-span.svg?raw';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { ResourceType, Span } from '../../types/simulation';
@@ -28,14 +31,12 @@
 
   function onMouseOver(event: MouseOver | undefined) {
     if (event && !hidden) {
-      activityDirectives = event?.activityDirectivesByLayer
-        ? Object.values(event.activityDirectivesByLayer).flat()
-        : [];
+      activityDirectives = event.activityDirectives || [];
       constraintResults = event?.constraintResults ?? [];
       gaps = event?.gapsByLayer ? Object.values(event.gapsByLayer).flat() : [];
       points = event?.pointsByLayer ? Object.values(event.pointsByLayer).flat() : [];
       row = event?.row ?? null;
-      spans = event?.spansByLayer ? Object.values(event.spansByLayer).flat() : [];
+      spans = event.spans || [];
 
       show(event.e);
     }
@@ -116,7 +117,32 @@
       }
     }
 
-    activityDirectives.forEach((activityDirective: ActivityDirective, i: number) => {
+    // Limit total number of directives and spans displayed to 2 to prevent visual overflow
+    // Aggregate the remaining items by directive vs span and then by type
+    const activityDisplayLimit = 2;
+    let count = 0;
+    const activityDirectivesToDisplay: ActivityDirective[] = [];
+    const overflowingActivityDirectives: ActivityDirective[] = [];
+    const spansToDisplay: Span[] = [];
+    const overflowingSpans: Span[] = [];
+    activityDirectives.forEach(directive => {
+      if (count < activityDisplayLimit) {
+        activityDirectivesToDisplay.push(directive);
+        count++;
+      } else {
+        overflowingActivityDirectives.push(directive);
+      }
+    });
+    spans.forEach(span => {
+      if (count < activityDisplayLimit) {
+        spansToDisplay.push(span);
+        count++;
+      } else {
+        overflowingSpans.push(span);
+      }
+    });
+
+    activityDirectivesToDisplay.forEach((activityDirective: ActivityDirective, i: number) => {
       const text = textForActivityDirective(activityDirective);
       tooltipText = `${tooltipText} ${text}`;
 
@@ -124,6 +150,43 @@
         tooltipText = `${tooltipText}<hr>`;
       }
     });
+
+    if (spansToDisplay.length && activityDirectivesToDisplay.length) {
+      tooltipText = `${tooltipText}<hr>`;
+    }
+    spansToDisplay.forEach((span: Span, i: number) => {
+      const text = textForSpan(span);
+      tooltipText = `${tooltipText} ${text}`;
+
+      if (i !== spans.length - 1) {
+        tooltipText = `${tooltipText}<hr>`;
+      }
+    });
+
+    if (overflowingActivityDirectives.length) {
+      const groups = groupBy(overflowingActivityDirectives, 'type');
+      tooltipText += `<div class='tooltip-row-container'>
+        ${Object.entries(groups)
+          .map(([key, members]) => {
+            return `<div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${DirectiveIcon} +${members.length} ${key}</div>`;
+          })
+          .join('')}
+      </div>`;
+    }
+
+    if (overflowingSpans.length) {
+      if (overflowingActivityDirectives.length) {
+        tooltipText += '<hr>';
+      }
+      const groups = groupBy(overflowingSpans, 'type');
+      tooltipText += `<div class='tooltip-row-container'>
+        ${Object.entries(groups)
+          .map(([key, members]) => {
+            return `<div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${SpanIcon} +${members.length} ${key}</div>`;
+          })
+          .join('')}
+      </div>`;
+    }
 
     if (constraintResults.length && activityDirectives.length) {
       tooltipText = `${tooltipText}<hr>`;
@@ -138,7 +201,7 @@
       }
     });
 
-    if (points.length && (constraintResults.length || activityDirectives.length)) {
+    if (points.length && (constraintResults.length || activityDirectives.length || spans.length)) {
       tooltipText = `${tooltipText}<hr>`;
     }
 
@@ -165,27 +228,15 @@
       }
     });
 
-    if (spans.length && (points.length || constraintResults.length || activityDirectives.length)) {
-      tooltipText = `${tooltipText}<hr>`;
-    }
-
-    spans.forEach((span: Span, i: number) => {
-      const text = textForSpan(span);
-      tooltipText = `${tooltipText} ${text}`;
-
-      if (i !== spans.length - 1) {
-        tooltipText = `${tooltipText}<hr>`;
-      }
-    });
-
     return tooltipText;
   }
 
   function textForActivityDirective(activityDirective: ActivityDirective): string {
-    const { anchor_id, id, name, start_offset, type } = activityDirective;
+    const { anchor_id, id, name, start_time_ms, type } = activityDirective;
+    const startTimeYmd = typeof start_time_ms === 'number' ? getDoyTime(new Date(start_time_ms)) : 'Unknown';
     return `
       <div class='tooltip-row-container'>
-        <div class='st-typography-bold' style='color: var(--st-gray-10)'>Activity Directive</div>
+        <div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${DirectiveIcon} Activity Directive</div>
         <div class='tooltip-row'>
           <span>Name:</span>
           <span class='tooltip-value-row'>
@@ -193,16 +244,16 @@
           </span>
         </div>
         <div class='tooltip-row'>
-          <span>Id:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
-        </div>
-        <div class='tooltip-row'>
           <span>Type:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
         </div>
         <div class='tooltip-row'>
-          <span>Start Offset:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${start_offset}</span>
+          <span>Start Time (UTC):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${startTimeYmd}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Id:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
         </div>
         <div class='tooltip-row'>
           <span>Anchored To ID:</span>
@@ -269,25 +320,31 @@
   }
 
   function textForSpan(span: Span): string {
-    const { id, duration, start_offset, type } = span;
+    const { id, duration, startMs, endMs, type } = span;
+    const startTimeYmd = getDoyTime(new Date(startMs));
+    const endTimeYmd = getDoyTime(new Date(endMs));
     return `
       <div class='tooltip-row-container'>
-        <div class='st-typography-bold' style='color: var(--st-gray-10)'>Simulated Activity (Span)</div>
-        <div class='tooltip-row'>
-          <span>Id:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
-        </div>
+        <div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${SpanIcon} Simulated Activity (Span)</div>
         <div class='tooltip-row'>
           <span>Type:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
         </div>
         <div class='tooltip-row'>
-          <span>Start Offset:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${start_offset}</span>
+          <span>Start Time (UTC):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${startTimeYmd}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>End Time (UTC):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${endTimeYmd}</span>
         </div>
         <div class='tooltip-row'>
           <span>Duration:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${duration}</span>
+        </div>
+        <div class='tooltip-row'>
+          <span>Id:</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
         </div>
       </div>
     `;

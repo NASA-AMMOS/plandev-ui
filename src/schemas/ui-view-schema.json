@@ -234,6 +234,34 @@
                 "items": {
                   "additionalProperties": false,
                   "properties": {
+                    "activityOptions": {
+                      "additionalProperties": false,
+                      "description": "Defines the options used for rendering activities on the timeline",
+                      "properties": {
+                        "activityHeight": {
+                          "description": "Height of activity subrows",
+                          "type": "number",
+                          "minimum": 12
+                        },
+                        "composition": {
+                          "description": "Whether or not to display only directives, only spans, or both in the row",
+                          "enum": ["directives", "spans", "both"]
+                        },
+                        "displayMode": {
+                          "description": "Describes the primary method in which activities are visualized within this row",
+                          "enum": ["grouped", "compact"]
+                        },
+                        "hierarchyMode": {
+                          "description": "If 'directive' the activities are grouped starting with directive types, if 'flat' activities are grouped by type regardless of hierarchy",
+                          "enum": ["directive", "flat"]
+                        },
+                        "labelVisibility": {
+                          "description": "Activity text label behavior",
+                          "enum": ["on", "off", "auto"]
+                        }
+                      },
+                      "required": ["composition", "displayMode", "hierarchyMode", "labelVisibility"]
+                    },
                     "autoAdjustHeight": {
                       "description": "If true the row height is set automatically to fit the row content",
                       "type": "boolean"
@@ -287,7 +315,8 @@
                               },
                               "activityHeight": {
                                 "description": "Height of each activity",
-                                "type": "number"
+                                "type": "number",
+                                "$comment": "deprecated"
                               },
                               "chartType": {
                                 "const": "activity",

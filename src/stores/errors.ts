@@ -13,7 +13,7 @@ import type {
 } from '../types/errors';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
 import { compare } from '../utilities/generic';
-import { activityDirectiveValidationStatuses, activityDirectives, anchorValidationStatuses } from './activities';
+import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
 import { simulationDataset } from './simulation';
 
 export function parseErrorReason(error: string) {
@@ -51,9 +51,8 @@ export const anchorValidationErrors: Readable<AnchorValidationError[]> = derived
 );
 
 export const activityValidationErrors: Readable<ActivityValidationErrors[]> = derived(
-  [activityDirectiveValidationFailures, anchorValidationErrors, activityDirectives],
-  ([$activityDirectiveValidationFailures, $anchorValidationErrors, $activityDirectives]) => {
-    const activityDirectivesMap = keyBy($activityDirectives, 'id');
+  [activityDirectiveValidationFailures, anchorValidationErrors, activityDirectivesMap],
+  ([$activityDirectiveValidationFailures, $anchorValidationErrors, $activityDirectivesMap]) => {
     const activityValidationsErrorMap: Record<string, ActivityValidationErrors> = {};
 
     $activityDirectiveValidationFailures.forEach(({ validations, directive_id: directiveId, status }) => {
@@ -62,7 +61,7 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
           activityId: directiveId,
           errors: [validations],
           status,
-          type: activityDirectivesMap[directiveId]?.type,
+          type: $activityDirectivesMap[directiveId]?.type,
         };
       } else {
         activityValidationsErrorMap[directiveId].errors.push(validations);
@@ -76,7 +75,7 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
           activityId: activityId,
           errors: [anchorValidationError],
           status: 'complete',
-          type: activityDirectivesMap[activityId]?.type,
+          type: $activityDirectivesMap[activityId]?.type,
         };
       } else {
         activityValidationsErrorMap[activityId].errors.push(anchorValidationError);

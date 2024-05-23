@@ -3,6 +3,7 @@
 <script lang="ts">
   import CaretDownIcon from '@nasa-jpl/stellar/icons/caret_down.svg?component';
   import CaretRightIcon from '@nasa-jpl/stellar/icons/caret_right.svg?component';
+  import { createEventDispatcher } from 'svelte';
   import { classNames } from '../utilities/generic';
   import { tooltip } from '../utilities/tooltip';
   import ContextMenu from './context-menu/ContextMenu.svelte';
@@ -10,11 +11,16 @@
   export let className: string = '';
   export let collapsible: boolean = true;
   export let defaultExpanded: boolean = true;
+  export let headerHeight: number = 32;
   export let error: boolean = false;
   export let padContent: boolean = true;
   export let title: string = '';
   export let titleClassName: string = '';
   export let tooltipContent: string = '';
+
+  const dispatch = createEventDispatcher<{
+    collapse: boolean;
+  }>();
 
   let contextMenu: ContextMenu;
 
@@ -33,9 +39,11 @@
     class="collapse-header st-button st-typography-medium tertiary"
     class:static={!collapsible}
     class:expanded
+    style:height={`${headerHeight}px`}
     on:click={() => {
       if (collapsible) {
         expanded = !expanded;
+        dispatch('collapse', !expanded);
       }
     }}
   >
@@ -52,12 +60,14 @@
       <slot name="left" />
     </div>
     <div class={titleClasses} use:tooltip={{ content: tooltipContent, placement: 'top' }}>
+      <slot name="title" />
       {title}
     </div>
     <div class="right">
       <slot name="right" />
     </div>
   </button>
+  <slot name="action-row" />
   <div class="content" class:pad-content={padContent} class:expanded aria-hidden={collapsible ? !expanded : false}>
     <slot />
   </div>
@@ -80,7 +90,6 @@
     display: flex;
     flex-direction: row;
     gap: 3px;
-    height: 32px;
     justify-content: flex-start;
     padding: 8px 0px 8px 0px;
   }

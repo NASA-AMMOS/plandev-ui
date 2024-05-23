@@ -6,7 +6,7 @@
   import DeleteAnchoredActivitiesIcon from '../../assets/delete-anchored-activities.svg?component';
   import ReanchorToNearestParentIcon from '../../assets/reanchor-to-nearest-parent.svg?component';
   import ReanchorToPlanStartIcon from '../../assets/reanchor-to-plan-start.svg?component';
-  import { activityDirectivesList, activityDirectivesMap } from '../../stores/activities';
+  import { activityDirectivesMap } from '../../stores/activities';
   import type {
     ActivityDirective,
     ActivityDirectiveDeletionMap,
@@ -36,8 +36,8 @@
     delete: ActivityDirectiveDeletionMap;
   }>();
 
-  $: if ($activityDirectivesList.length) {
-    anchoredActivitiesMap = $activityDirectivesList.reduce(
+  $: if (Object.keys($activityDirectivesMap).length) {
+    anchoredActivitiesMap = Object.values($activityDirectivesMap).reduce(
       (previousValue: AnchoredActivityDirectivesMap, directive: ActivityDirective) => {
         if (!activityIds.includes(directive.id)) {
           if (directive.anchor_id !== null) {

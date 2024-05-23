@@ -287,7 +287,7 @@ export function getActivityDirectiveStartTimeMs(
     }
 
     const startTimeFromPlanMs = getUnixEpochTimeFromInterval(
-      anchored_to_start ? planStartTimeYmd : `${new Date(getUnixEpochTime(planEndTimeDoy))}`,
+      anchored_to_start ? planStartTimeYmd : `${new Date(getUnixEpochTime(planEndTimeDoy))}`, // TODO pass this in as a date instead of converting every time
       activityDirective.start_offset,
     );
 

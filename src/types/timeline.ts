@@ -3,9 +3,27 @@ import type { ActivityDirective } from './activity';
 import type { ConstraintResultWithName } from './constraint';
 import type { Span } from './simulation';
 
+export type ActivityTree = ActivityTreeNode[];
+
+export type ActivityTreeNode = {
+  children: ActivityTreeNode[]; // Child nodes of this directive/span/aggregation
+  expanded: boolean;
+  id: string;
+  isLeaf: boolean;
+  items: ActivityTreeNodeItem[]; // Directives and/or spans to render on the timeline at this level of the tree
+  label: string;
+  type: 'aggregation' | 'directive' | 'span';
+};
+
+export type ActivityTreeNodeItem = { directive?: ActivityDirective; span?: Span };
+
+export type ActivityTreeNodeDrawItem = ActivityTreeNodeItem & { startX: number };
+
+export type ActivityTreeExpansionMap = Record<string, boolean>;
+
 export interface ActivityLayer extends Layer {
   activityColor: string;
-  activityHeight: number;
+  activityHeight: number; // @deprecated TODO how should we deprecate view properties?
 }
 
 export type ActivityLayerFilter = {
@@ -91,14 +109,14 @@ export interface LinePoint extends Point {
 export type MouseDown = {
   activityDirectives: ActivityDirective[];
   e: MouseEvent;
-  layerId: number;
+  layerId?: number;
   rowId?: number;
   spans: Span[];
   timelineId?: number;
 };
 
 export type MouseOver = {
-  activityDirectivesByLayer?: Record<number, ActivityDirective[]>;
+  activityDirectives?: ActivityDirective[];
   constraintResults?: ConstraintResultWithName[];
   e: MouseEvent;
   gapsByLayer?: Record<number, Point[]>;
@@ -108,7 +126,7 @@ export type MouseOver = {
   row?: Row;
   selectedActivityDirectiveId?: number;
   selectedSpanId?: number;
-  spansByLayer?: Record<number, Span[]>;
+  spans?: Span[];
 };
 
 export type RowMouseOverEvent = Omit<
@@ -148,7 +166,25 @@ export type ResourceLayerFilter = {
   names: string[];
 };
 
+export type ActivityOptions = {
+  // Height of activity subrows
+  activityHeight: number;
+
+  // Whether or not to display only directives, only spans, or both in the row
+  composition: 'directives' | 'spans' | 'both';
+
+  // Describes the primary method in which activities are visualized within this row
+  displayMode: 'grouped' | 'compact';
+
+  // If 'directive' the activities are grouped starting with directive types, if 'flat' activities are grouped by type regardless of hierarchy
+  hierarchyMode: 'directive' | 'flat';
+
+  // Activity text label behavior
+  labelVisibility: 'on' | 'off' | 'auto';
+};
+
 export type Row = {
+  activityOptions?: ActivityOptions;
   autoAdjustHeight: boolean;
   expanded: boolean;
   height: number;
@@ -216,7 +252,3 @@ export interface XRangePoint extends Point {
   is_null?: boolean;
   label: Label;
 }
-
-export type DirectiveVisibilityToggleMap = Record<string, boolean>;
-
-export type SpanVisibilityToggleMap = Record<string, boolean>;

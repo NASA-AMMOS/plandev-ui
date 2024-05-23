@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import type { ActivityDirectiveDB } from '../types/activity';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import gql from '../utilities/gql';
 import { planId } from './plan';
@@ -10,6 +11,8 @@ import { gqlSubscribable } from './subscribable';
 export const planSnapshots = gqlSubscribable<PlanSnapshot[]>(gql.SUB_PLAN_SNAPSHOTS, { planId }, [], null);
 
 /* Writeable. */
+
+export const planSnapshotActivityDirectives: Writable<ActivityDirectiveDB[]> = writable([]);
 
 export const planSnapshotId: Writable<number | null> = writable(null);
 
@@ -37,3 +40,11 @@ export const planSnapshotsWithSimulations: Readable<PlanSnapshot[]> = derived(
     });
   },
 );
+
+/* Helper Functions. */
+
+export function resetPlanSnapshotStores() {
+  planSnapshots.updateValue(() => []);
+  planSnapshotActivityDirectives.set([]);
+  planSnapshotId.set(null);
+}

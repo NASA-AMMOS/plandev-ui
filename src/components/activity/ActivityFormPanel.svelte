@@ -4,6 +4,8 @@
   import LockIcon from '@nasa-jpl/stellar/icons/lock.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import UnlockIcon from '@nasa-jpl/stellar/icons/unlock.svg?component';
+  import DirectiveIcon from '../../assets/timeline-directive.svg?component';
+  import SpanIcon from '../../assets/timeline-span.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import {
     activityDirectivesMap,
@@ -27,6 +29,7 @@
   import type { User } from '../../types/app';
   import type { SpanId } from '../../types/simulation';
   import type { ViewGridSection } from '../../types/view';
+  import { getSpanRootParent } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -41,6 +44,8 @@
   export let gridSection: ViewGridSection;
   export let user: User | null;
 
+  let directiveRootSpanId: number | null;
+  let spanDirectiveId: number | null;
   let hasDeletePermission: boolean = false;
   let viewingActivityDirectiveChangelog: boolean = false;
   let highlightKeys: string[] = [];
@@ -59,6 +64,23 @@
     viewingActivityDirectiveChangelog = false;
     highlightKeys = [];
     previewRevision = undefined;
+  }
+
+  $: if ($selectedActivityDirective) {
+    directiveRootSpanId = $spansMap[$spanUtilityMaps.directiveIdToSpanIdMap[$selectedActivityDirective.id]]?.id ?? null;
+  } else {
+    directiveRootSpanId = null;
+  }
+
+  $: if ($selectedSpan) {
+    const rootSpan = getSpanRootParent($spansMap, $selectedSpan.id);
+    if (rootSpan) {
+      spanDirectiveId = $spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.id] ?? null;
+    } else {
+      spanDirectiveId = null;
+    }
+  } else {
+    spanDirectiveId = null;
   }
 
   function onSelectSpan(event: CustomEvent<SpanId | null>) {
@@ -116,40 +138,63 @@
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Selected Activity" />
     <PanelHeaderActions>
-      {#if $selectedActivityDirective}
-        <button
-          class="st-button icon activity-header-lock"
-          on:click={() => {
-            setActivityEditingLocked(!$activityEditingLocked);
-          }}
-          use:tooltip={{
-            content: `${$activityEditingLocked ? 'Unlock' : 'Lock'} activity editing`,
-            placement: 'bottom',
-          }}
-        >
-          {#if $activityEditingLocked}
-            <LockIcon />
-          {:else}
-            <UnlockIcon />
+      <div class="activity-header-buttons">
+        {#if $selectedActivityDirective}
+          {#if directiveRootSpanId !== null}
+            <button
+              class="st-button icon activity-header-button"
+              on:click|stopPropagation={() => selectActivity(null, directiveRootSpanId)}
+              use:tooltip={{ content: 'Jump to Simulated Activity', placement: 'top' }}
+            >
+              <SpanIcon />
+            </button>
           {/if}
-        </button>
 
-        <button
-          class="st-button icon activity-header-delete"
-          use:permissionHandler={{
-            hasPermission: hasDeletePermission,
-            permissionError: deletePermissionError,
-          }}
-          on:click|stopPropagation={() => {
-            if ($selectedActivityDirective !== null && $plan !== null && hasDeletePermission) {
-              effects.deleteActivityDirective($selectedActivityDirective.id, $plan, user);
-            }
-          }}
-          use:tooltip={{ content: 'Delete Activity', disabled: !hasDeletePermission, placement: 'top' }}
-        >
-          <TrashIcon />
-        </button>
-      {/if}
+          <button
+            class="st-button icon activity-header-button"
+            on:click={() => {
+              setActivityEditingLocked(!$activityEditingLocked);
+            }}
+            use:tooltip={{
+              content: `${$activityEditingLocked ? 'Unlock' : 'Lock'} activity editing`,
+              placement: 'bottom',
+            }}
+          >
+            {#if $activityEditingLocked}
+              <LockIcon />
+            {:else}
+              <UnlockIcon />
+            {/if}
+          </button>
+
+          <button
+            class="st-button icon activity-header-button"
+            use:permissionHandler={{
+              hasPermission: hasDeletePermission,
+              permissionError: deletePermissionError,
+            }}
+            on:click|stopPropagation={() => {
+              if ($selectedActivityDirective !== null && $plan !== null && hasDeletePermission) {
+                effects.deleteActivityDirective($selectedActivityDirective.id, $plan, user);
+              }
+            }}
+            use:tooltip={{ content: 'Delete Activity', disabled: !hasDeletePermission, placement: 'top' }}
+          >
+            <TrashIcon />
+          </button>
+        {/if}
+        {#if $selectedSpan && spanDirectiveId !== null}
+          <button
+            class="st-button icon activity-header-button"
+            on:click|stopPropagation={() => {
+              selectActivity(spanDirectiveId, null);
+            }}
+            use:tooltip={{ content: 'Jump to Directive', placement: 'top' }}
+          >
+            <DirectiveIcon />
+          </button>
+        {/if}
+      </div>
     </PanelHeaderActions>
   </svelte:fragment>
 
@@ -201,12 +246,11 @@
 </Panel>
 
 <style>
-  .activity-header-delete,
-  .activity-header-lock {
-    border: 1px solid var(--st-gray-30);
+  .activity-header-buttons {
+    display: flex;
+    gap: 8px;
   }
-
-  .activity-header-delete {
-    margin-left: 0.5rem;
+  .activity-header-button {
+    border: 1px solid var(--st-gray-30);
   }
 </style>

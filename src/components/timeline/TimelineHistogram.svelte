@@ -151,7 +151,7 @@
     activityHistValues = Array(numBins).fill(0);
 
     activityDirectives.forEach(activityDirective => {
-      const activityX = getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
+      const activityX = activityDirective.start_time_ms ?? 0;
 
       // Filter out directives that do not fall within the plan bounds at all
       if (activityX > windowEndTime || activityX < windowStartTime) {

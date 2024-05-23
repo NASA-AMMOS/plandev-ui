@@ -163,14 +163,23 @@ export type SpanUtilityMaps = {
   spanIdToDirectiveIdMap: SpanIdToDirectiveIdMap;
 };
 
-export type Span = {
+export type SpanDB = {
   attributes: SpanAttributes;
   dataset_id: number;
   duration: string;
+  durationMs: number;
+  endMs: number;
   id: SpanId;
   parent_id: number | null;
+  startMs: number;
   start_offset: string;
   type: string;
+};
+
+export type Span = SpanDB & {
+  durationMs: number;
+  endMs: number;
+  startMs: number;
 };
 
 export type Topic = {

@@ -109,14 +109,13 @@ export class Model {
 
   async updatePage(page: Page): Promise<Promise<void>> {
     this.closeButton = page.getByRole('button', { name: 'Close' });
-    this.conditionRadioButton = page.getByRole('button', { name: 'Conditions' });
-    this.constraintRadioButton = page.getByRole('button', { name: 'Constraints' });
+    this.conditionRadioButton = page.getByRole('radio', { name: 'Conditions' });
+    this.constraintRadioButton = page.getByRole('radio', { name: 'Constraints' });
     this.deleteButton = page.getByRole('button', { name: 'Delete model' });
     this.descriptionInput = page.locator('textarea[name="description"]');
-    this.goalRadioButton = page.getByRole('button', { name: 'Goals' });
-    this.goalRadioButton = page.getByRole('button', { name: 'Goals' });
-    this.libraryRadioButton = page.getByRole('button', { name: 'Library' });
-    this.modelRadioButton = page.getByRole('button', { exact: true, name: 'Model' });
+    this.goalRadioButton = page.getByRole('radio', { name: 'Goals' });
+    this.libraryRadioButton = page.getByRole('radio', { name: 'Library' });
+    this.modelRadioButton = page.getByRole('radio', { exact: true, name: 'Model' });
     this.nameInput = page.locator('input[name="name"]');
     this.newPlanButton = page.getByRole('button', { name: 'New plan with model' });
     this.versionInput = page.locator('input[name="version"]');

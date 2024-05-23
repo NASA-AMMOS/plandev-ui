@@ -26,7 +26,7 @@
     spansMap,
   } from '../../stores/simulation';
   import { timelineInteractionMode, timelineLockStatus, viewIsModified } from '../../stores/views';
-  import type { DirectiveVisibilityToggleMap, TimeRange } from '../../types/timeline';
+  import type { TimeRange } from '../../types/timeline';
   import {
     getActivityDirectiveStartTimeMs,
     getDoyTimeFromInterval,
@@ -38,7 +38,6 @@
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Menu from '../menus/Menu.svelte';
-  import ActivityDirectiveIcon from '../ui/ActivityDirectiveIcon.svelte';
   import TimelineInteractionModeControl from './TimelineInteractionModeControl.svelte';
   import TimelineLockControl from './TimelineLockControl.svelte';
 
@@ -49,17 +48,14 @@
   export let showTimelineTooltip = true;
   export let interpolateHoverValue = false;
   export let limitTooltipToLine = false;
-  export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
 
-  let allDirectivesVisible: boolean = true;
   let followSelection: boolean = false;
   let pickerMenu: Menu;
   let viewURL: URL | null = null;
 
   const dispatch = createEventDispatcher<{
     toggleDecimation: boolean;
-    toggleDirectiveVisibility: boolean;
     toggleInterpolateHoverValue: boolean;
     toggleLimitTooltipToLine: boolean;
     toggleTimelineTooltip: boolean;
@@ -69,13 +65,6 @@
   $: maxDuration = maxTimeRange.end - maxTimeRange.start;
   $: viewDuration = viewTimeRange.end - viewTimeRange.start;
 
-  $: {
-    const rowVisibilities = Object.values(timelineDirectiveVisibilityToggles);
-    const allSame = rowVisibilities.every(val => val === rowVisibilities[0]);
-    if (allSame) {
-      allDirectivesVisible = rowVisibilities[0];
-    }
-  }
   $: if (followSelection && ($selectedActivityDirective || $selectedSpan)) {
     scrollIfOffscreen();
   }
@@ -168,10 +157,6 @@
 
   function onResetViewTimeRange() {
     dispatch('viewTimeRangeChanged', maxTimeRange);
-  }
-
-  function onToggleDirectiveVisibility() {
-    dispatch('toggleDirectiveVisibility', !allDirectivesVisible);
   }
 
   function onToggleDecimation() {
@@ -293,19 +278,6 @@
 >
   <InterpolateIcon />
 </button>
-{#if Object.keys(timelineDirectiveVisibilityToggles).length > 0}
-  <button
-    class="st-button icon toggle-button"
-    class:active={allDirectivesVisible}
-    on:click={onToggleDirectiveVisibility}
-    use:tooltip={{
-      content: `${allDirectivesVisible ? 'Hide' : 'Show'} directives on all timeline rows`,
-      placement: 'bottom',
-    }}
-  >
-    <ActivityDirectiveIcon backgroundColor="#ccc" size="12px" />
-  </button>
-{/if}
 <button
   class="st-button icon toggle-button"
   class:active={limitTooltipToLine}

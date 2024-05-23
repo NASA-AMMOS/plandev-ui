@@ -7,11 +7,6 @@ import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { ValueSchema } from './schema';
 import type { Tag } from './tags';
 
-export type ActivityDirectivesByView = {
-  byLayerId: Record<number, ActivityDirective[]>;
-  byTimelineId: Record<number, ActivityDirective[]>;
-};
-
 export type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
   name: string;
@@ -32,7 +27,7 @@ export type AnchoredActivityDirectivesMap = Record<ActivityDirectiveId, Activity
 
 export type ActivityDirectiveDeletionMap = Record<ActivityDirectiveId, ActivityDeletionAction>;
 
-export type ActivityDirective = {
+export type ActivityDirectiveDB = {
   anchor_id: number | null;
   anchor_validations?: AnchorValidationStatus;
   anchored_to_start: boolean;
@@ -51,6 +46,10 @@ export type ActivityDirective = {
   start_offset: string;
   tags: { tag: Tag }[];
   type: string;
+};
+
+export type ActivityDirective = ActivityDirectiveDB & {
+  start_time_ms: number | null;
 };
 
 export type ActivityDirectiveInsertInput = {
@@ -119,5 +118,9 @@ export interface ActivityDirectiveValidationSuccess {
 }
 
 export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
+  snapshot_id: number;
+};
+
+export type PlanSnapshotActivityDB = Omit<ActivityDirectiveDB, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
   snapshot_id: number;
 };

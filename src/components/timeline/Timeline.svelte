@@ -7,7 +7,7 @@
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { viewUpdateTimeline } from '../../stores/views';
-  import type { ActivityDirectiveId, ActivityDirectivesByView, ActivityDirectivesMap } from '../../types/activity';
+  import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
@@ -21,11 +21,10 @@
     SpansMap,
   } from '../../types/simulation';
   import type {
-    DirectiveVisibilityToggleMap,
+    ActivityTreeExpansionMap,
     MouseDown,
     MouseOver,
     Row,
-    SpanVisibilityToggleMap,
     TimeRange,
     Timeline,
     XAxisTick,
@@ -52,7 +51,6 @@
   import Tooltip from './Tooltip.svelte';
   import TimelineXAxis from './XAxis.svelte';
 
-  export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
   export let activityDirectivesMap: ActivityDirectivesMap = {};
   export let constraintResults: ConstraintResultWithName[] = [];
   export let hasUpdateDirectivePermission: boolean = false;
@@ -70,9 +68,7 @@
   export let spansMap: SpansMap = {};
   export let spans: Span[] = [];
   export let timeline: Timeline | null = null;
-  export let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
   export let timelineInteractionMode: TimelineInteractionMode;
-  export let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
   export let timelineLockStatus: TimelineLockStatus;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let user: User | null;
@@ -94,6 +90,7 @@
     viewTimeRangeChanged: TimeRange;
   }>();
 
+  let activityTreeExpansionMapByRow: Record<string, ActivityTreeExpansionMap> = {};
   let timelineZoomTransform: ZoomTransform | null = null;
   let clientWidth: number = 0;
   let contextMenu: MouseOver | null;
@@ -127,6 +124,8 @@
     leading: true,
     trailing: true,
   });
+
+  $: activityDirectives = Object.values(activityDirectivesMap);
 
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
@@ -306,6 +305,11 @@
     histogramCursorTime = null;
   }
 
+  function onCollapseActivityTree(event: CustomEvent<Row>) {
+    const row = event.detail;
+    activityTreeExpansionMapByRow = { ...activityTreeExpansionMapByRow, [row.id]: {} };
+  }
+
   function onHistogramCursorTimeChanged(event: CustomEvent<Date | null>) {
     histogramCursorTime = event.detail;
   }
@@ -405,9 +409,7 @@
     {/if}
     <div class="timeline-histogram-container">
       <TimelineHistogram
-        activityDirectives={timeline && activityDirectivesByView?.byTimelineId[timeline.id]
-          ? activityDirectivesByView.byTimelineId[timeline.id]
-          : []}
+        {activityDirectives}
         {constraintResults}
         {cursorEnabled}
         drawHeight={timelineHistogramDrawHeight}
@@ -476,8 +478,13 @@
       {#each rows as row (row.id)}
         <div class="timeline-row-wrapper">
           <TimelineRow
-            {activityDirectivesByView}
+            {activityDirectives}
             {activityDirectivesMap}
+            activityTreeExpansionMap={activityTreeExpansionMapByRow[row.id]}
+            on:activityTreeExpansionChange={e => {
+              activityTreeExpansionMapByRow = { ...activityTreeExpansionMapByRow, [row.id]: e.detail };
+            }}
+            {...row.activityOptions ? { activityOptions: row.activityOptions } : null}
             autoAdjustHeight={row.autoAdjustHeight}
             {constraintResults}
             {dpr}
@@ -500,8 +507,6 @@
             {rowHeaderDragHandleWidthPx}
             {selectedActivityDirectiveId}
             {selectedSpanId}
-            showDirectives={timelineDirectiveVisibilityToggles[row.id]}
-            showSpans={timelineSpanVisibilityToggles[row.id]}
             {simulationDataset}
             {spanUtilityMaps}
             {spansMap}
@@ -541,6 +546,7 @@
     {hasUpdateDirectivePermission}
     {hasUpdateSimulationPermission}
     {maxTimeRange}
+    on:collapseActivityTree={onCollapseActivityTree}
     on:deleteActivityDirective
     on:jumpToActivityDirective
     on:jumpToSpan
@@ -553,14 +559,11 @@
     {spansMap}
     {spanUtilityMaps}
     {plan}
-    {timelineDirectiveVisibilityToggles}
-    {timelineSpanVisibilityToggles}
     {planStartTimeYmd}
     verticalGuides={timeline?.verticalGuides ?? []}
     {xScaleView}
     {user}
-    on:toggleDirectiveVisibility
-    on:toggleSpanVisibility
+    on:toggleActivityComposition
     on:editRow
     on:deleteRow
     on:moveRow={onMoveRow}
@@ -584,11 +587,12 @@
     overflow-x: hidden;
     overflow-y: hidden;
     width: 100%;
+    --timeline-divider-color: rgba(210, 210, 210, 1);
   }
 
   .timeline-time-row {
     background: white;
-    border-bottom: 1px solid var(--st-gray-20);
+    border-bottom: 1px solid var(--timeline-divider-color);
     display: flex;
   }
 

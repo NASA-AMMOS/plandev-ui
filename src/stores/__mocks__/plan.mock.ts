@@ -1,7 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../../types/activity';
 import type { ModelSlim } from '../../types/model';
-import type { Plan, PlanMergeRequest } from '../../types/plan';
+import type { Plan, PlanMergeRequest, PlanMetadata } from '../../types/plan';
 import type { Tag } from '../../types/tags';
 import type { TimeRange } from '../../types/timeline';
 
@@ -17,8 +17,6 @@ export const createPlanError: Writable<string | null> = writable(null);
 
 export const creatingPlan: Writable<boolean> = writable(false);
 
-export const plan: Writable<Plan | null> = writable(null);
-
 export const planEndTimeMs: Writable<number> = writable(0);
 
 export const planStartTimeMs: Writable<number> = writable(0);
@@ -27,11 +25,26 @@ export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
 export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
+/* "plan" store dependencies */
+export const initialPlan: Writable<Plan | null> = writable(null);
+
+export const planId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
+
+export const planMetadata = writable<PlanMetadata | null>(null);
+
 /* Derived. */
 
-export const modelId: Readable<number> = derived(plan, $plan => ($plan ? $plan.model.id : -1));
+export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], ([$initialPlan, $planMetadata]) => {
+  if (!$initialPlan) {
+    return null;
+  }
+  return {
+    ...$initialPlan,
+    ...($planMetadata || {}),
+  };
+});
 
-export const planId: Readable<number> = derived(plan, $plan => ($plan ? $plan.id : -1));
+export const modelId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.model.id : -1));
 
 /* Subscriptions. */
 
@@ -57,7 +70,7 @@ export function resetPlanStores() {
   createModelError.set(null);
   createPlanError.set(null);
   creatingPlan.set(false);
-  plan.set(null);
+  initialPlan.set(null);
   planEndTimeMs.set(0);
   planStartTimeMs.set(0);
   maxTimeRange.set({ end: 0, start: 0 });

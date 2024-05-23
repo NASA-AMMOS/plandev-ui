@@ -46,6 +46,11 @@
     mouseOver: RowMouseOverEvent;
   }>();
   const textMeasurementCache: Record<string, { textHeight: number; textWidth: number }> = {};
+  // TODO maybe dynamically compute this number by looking at how much work there is to do for
+  // all layers and dividing the time between them all?
+  // TODO consider moving to GPU and/or offscreen canvas but would need to consider how to efficiently
+  // transfer these points to a web worker
+  const WORK_TIME_THRESHOLD = 16; // ms to allow for processing time, beyond which remaining work will be split to a new frame
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
@@ -53,6 +58,7 @@
   let maxXWidth: number;
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
+  let drawPointsRequest: number;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, XRangePoint> = {};
 
@@ -87,6 +93,7 @@
 
   async function draw(): Promise<void> {
     if (ctx && xScaleView) {
+      window.cancelAnimationFrame(drawPointsRequest);
       await tick();
 
       ctx.resetTransform();
@@ -104,75 +111,99 @@
       visiblePointsById = {};
 
       maxXWidth = Number.MIN_SAFE_INTEGER;
-      const colorScale = getColorScale();
+      drawPoints(points, 0);
+    }
+  }
 
-      for (let i = 0; i < points.length; ++i) {
-        const point = points[i];
-        if (point.is_gap || point.is_null) {
-          continue;
+  function drawPoints(points: XRangePoint[], pointsStartIndex = 0) {
+    if (!xScaleView) {
+      return;
+    }
+    const startTime = performance.now();
+
+    const colorScale = getColorScale();
+
+    const [viewStart, viewEnd] = xScaleView.domain().map(x => x.getTime());
+
+    for (let i = pointsStartIndex; i < points.length; ++i) {
+      if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
+        drawPointsRequest = window.requestAnimationFrame(() => drawPoints(points, i));
+        return;
+      }
+
+      const point = points[i];
+      if (point.is_gap || point.is_null) {
+        continue;
+      }
+
+      // Scan to the next point with a different label than the current point.
+      let j = i + 1;
+      let nextPoint = points[j];
+      while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
+        j = j + 1;
+        nextPoint = points[j];
+      }
+      i = j - 1; // Minus since the loop auto increments i at the end of the block.
+
+      const startMs = point.x;
+      const endMs = nextPoint ? nextPoint.x : points[i].x;
+
+      // Do not draw if box is out of view
+      if (startMs > viewEnd || endMs < viewStart) {
+        continue;
+      }
+
+      const xStart = clamp(xScaleView(point.x), 0, drawWidth);
+      const xEnd = clamp(xScaleView(endMs), 0, drawWidth);
+
+      const xWidth = xEnd - xStart;
+      const y = 0;
+
+      if (xWidth > 0 && ctx) {
+        const { id } = point;
+        visiblePointsById[id] = point;
+
+        const labelText = point.label.text;
+        ctx.fillStyle = colorScale(labelText);
+        const rect = new Path2D();
+        rect.rect(xStart, y, xWidth, drawHeight);
+        ctx.fill(rect);
+
+        quadtree.add({
+          height: drawHeight,
+          id,
+          width: xWidth,
+          x: xStart,
+          y,
+        });
+
+        if (xWidth > maxXWidth) {
+          maxXWidth = xWidth;
         }
 
-        // Scan to the next point with a different label than the current point.
-        let j = i + 1;
-        let nextPoint = points[j];
-        while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
-          j = j + 1;
-          nextPoint = points[j];
-        }
-        i = j - 1; // Minus since the loop auto increments i at the end of the block.
+        const { textHeight, textWidth } = setLabelContext(point);
+        if (textWidth < xWidth) {
+          ctx.fillText(labelText, xStart + xWidth / 2 - textWidth / 2, drawHeight / 2 + textHeight / 2, textWidth);
+        } else {
+          const extraLabelPadding = 8;
+          let newLabelText = labelText;
+          let newTextWidth = textWidth;
 
-        const xStart = clamp(xScaleView(point.x), 0, drawWidth);
-        const xEnd = clamp(xScaleView(nextPoint ? nextPoint.x : points[i].x), 0, drawWidth);
-
-        const xWidth = xEnd - xStart;
-        const y = 0;
-
-        if (xWidth > 0) {
-          const { id } = point;
-          visiblePointsById[id] = point;
-
-          const labelText = point.label.text;
-          ctx.fillStyle = colorScale(labelText);
-          const rect = new Path2D();
-          rect.rect(xStart, y, xWidth, drawHeight);
-          ctx.fill(rect);
-
-          quadtree.add({
-            height: drawHeight,
-            id,
-            width: xWidth,
-            x: xStart,
-            y,
-          });
-
-          if (xWidth > maxXWidth) {
-            maxXWidth = xWidth;
+          // Remove characters from label until it is small enough to fit in x-range point.
+          while (newTextWidth > 0 && newTextWidth > xWidth - extraLabelPadding) {
+            newLabelText = newLabelText.slice(0, -1);
+            const textMeasurement = measureText(newLabelText);
+            newTextWidth = textMeasurement.textWidth;
           }
 
-          const { textHeight, textWidth } = setLabelContext(point);
-          if (textWidth < xWidth) {
-            ctx.fillText(labelText, xStart + xWidth / 2 - textWidth / 2, drawHeight / 2 + textHeight / 2, textWidth);
-          } else {
-            const extraLabelPadding = 8;
-            let newLabelText = labelText;
-            let newTextWidth = textWidth;
-
-            // Remove characters from label until it is small enough to fit in x-range point.
-            while (newTextWidth > 0 && newTextWidth > xWidth - extraLabelPadding) {
-              newLabelText = newLabelText.slice(0, -1);
-              const textMeasurement = measureText(newLabelText);
-              newTextWidth = textMeasurement.textWidth;
-            }
-
-            // Only draw if text will be visible
-            if (newTextWidth > 0) {
-              ctx.fillText(
-                `${newLabelText}...`,
-                xStart + xWidth / 2 - newTextWidth / 2,
-                drawHeight / 2 + textHeight / 2,
-                newTextWidth,
-              );
-            }
+          // Only draw if text will be visible
+          if (newTextWidth > 0) {
+            ctx.fillText(
+              `${newLabelText}...`,
+              xStart + xWidth / 2 - newTextWidth / 2,
+              drawHeight / 2 + textHeight / 2,
+              newTextWidth,
+            );
           }
         }
       }

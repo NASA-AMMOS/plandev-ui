@@ -29,6 +29,8 @@
 </script>
 
 <button
+  aria-checked={$selectedRadioButton === id}
+  role="radio"
   class={className}
   class:radio-button={true}
   class:st-button={true}
@@ -42,17 +44,16 @@
 
 <style>
   button.radio-button.st-button {
-    background: var(--st-gray-15);
-    border: 0;
-    border: 1px solid var(--st-gray-15);
-    color: var(--st-gray-70);
+    background: var(--st-gray-10);
+    border: 1px solid transparent;
+    color: var(--st-gray-60);
   }
   button.radio-button.st-button:hover {
     color: var(--st-text-color);
   }
   button.radio-button.st-button.selected {
-    background-color: var(--st-gray-10);
-    border: var(--st-button-primary-border);
+    background-color: white;
+    border: 1px solid var(--st-gray-20);
     color: var(--st-text-color);
     font-weight: var(--st-typography-medium-font-weight);
   }

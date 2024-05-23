@@ -1,4 +1,5 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
 import { Models } from '../fixtures/Models.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
@@ -44,6 +45,7 @@ test.afterAll(async () => {
 
 test.describe.serial('Timeline View Editing', () => {
   const newActivityStartTime: string = '2022-005T00:00:00.000';
+  const rowName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
     await plan.showPanel(PanelNames.ACTIVITY_TYPES);
@@ -105,6 +107,10 @@ test.describe.serial('Timeline View Editing', () => {
 
     const existingLayerCount = await page.locator('.timeline-layer').count();
 
+    // Give the row a name
+    await page.locator('input[name="name"]').first().fill(rowName);
+    await page.locator('input[name="name"]').first().blur();
+
     // Add a layer
     await page.getByRole('button', { name: 'New Layer' }).click();
     const newLayerCount = await page.locator('.timeline-layer').count();
@@ -117,7 +123,24 @@ test.describe.serial('Timeline View Editing', () => {
     await page.getByPlaceholder('Search').last().click();
     expect(await page.locator('.menu-slot > .header')).toBeDefined();
 
-    // Delete an activity
+    // Add all activities
+    await page.locator('button', { hasText: /Select [0-9]* activit/ }).click();
+
+    // Expect to not see an activity tree group in this row
+    expect(await page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.activity-tree').count()).toBe(0);
+
+    // Switch to grouped display mode
+    await page.locator('button', { hasText: 'Grouped' }).click();
+
+    // Expect to see an activity tree group for this activity in this row
+    expect(
+      await page
+        .locator('.timeline-row-wrapper', { hasText: rowName })
+        .locator('.collapse', { hasText: 'PickBanana' })
+        .count(),
+    ).toBe(1);
+
+    // Delete an activity layer
     await page.getByRole('button', { name: 'Layer Settings' }).last().click();
     await page.getByText('Delete Layer').click();
     const finalLayerCount = await page.locator('.timeline-layer').count();

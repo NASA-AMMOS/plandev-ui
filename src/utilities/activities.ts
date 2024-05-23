@@ -1,9 +1,10 @@
-import { omitBy } from 'lodash-es';
-import type { ActivityDirective } from '../types/activity';
+import { keyBy, omitBy } from 'lodash-es';
+import type { ActivityDirective, ActivityDirectiveDB, ActivityDirectivesMap } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
+import type { Plan } from '../types/plan';
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import { compare, isEmpty } from './generic';
-import { getIntervalInMs } from './time';
+import { getActivityDirectiveStartTimeMs, getIntervalInMs } from './time';
 
 /**
  * Updates activity metadata with a new key/value and removes any empty values.
@@ -108,4 +109,52 @@ export enum ActivityDeletionAction {
   ANCHOR_ROOT = 'anchor-root',
   DELETE_CHAIN = 'delete-chain',
   NORMAL = 'regular-directive-delete',
+}
+
+export function computeActivityDirectivesMap(
+  activityDirectiveDBs: ActivityDirectiveDB[],
+  plan: Plan,
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+) {
+  // Compute initial map
+  const directiveDBMap = keyBy(
+    activityDirectiveDBs.map(d => ({ ...d, start_time_ms: null })),
+    'id',
+  );
+  const cachedStartTimes = {};
+  const activityDirectives = activityDirectiveDBs.map(activityDirectiveDB =>
+    preprocessActivityDirectiveDB(
+      activityDirectiveDB,
+      directiveDBMap,
+      plan,
+      spansMap,
+      spanUtilityMaps,
+      cachedStartTimes,
+    ),
+  );
+  return keyBy(activityDirectives, 'id');
+}
+
+export function preprocessActivityDirectiveDB(
+  activityDirectiveDB: ActivityDirectiveDB,
+  activityDirectivesMap: ActivityDirectivesMap,
+  plan: Plan,
+  spansMap: SpansMap,
+  spanUtilityMaps: SpanUtilityMaps,
+  cachedStartTimes = {},
+): ActivityDirective {
+  let start_time_ms = null;
+  if (plan && typeof plan.start_time === 'string') {
+    start_time_ms = getActivityDirectiveStartTimeMs(
+      activityDirectiveDB.id,
+      plan.start_time,
+      plan.end_time_doy,
+      activityDirectivesMap,
+      spansMap,
+      spanUtilityMaps,
+      cachedStartTimes,
+    );
+  }
+  return { ...activityDirectiveDB, start_time_ms };
 }

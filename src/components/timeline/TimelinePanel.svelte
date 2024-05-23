@@ -1,12 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    activityDirectivesByView,
-    activityDirectivesMap,
-    selectActivity,
-    selectedActivityDirectiveId,
-  } from '../../stores/activities';
+  import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { visibleConstraintResults } from '../../stores/constraints';
   import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
   import {
@@ -30,14 +25,7 @@
   } from '../../stores/views';
   import type { ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type {
-    Axis,
-    DirectiveVisibilityToggleMap,
-    MouseDown,
-    Row,
-    SpanVisibilityToggleMap,
-    Timeline as TimelineType,
-  } from '../../types/timeline';
+  import type { ActivityOptions, Axis, MouseDown, Row, Timeline as TimelineType } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import { featurePermissions } from '../../utilities/permissions';
   import Panel from '../ui/Panel.svelte';
@@ -52,8 +40,6 @@
   let timelineId: number = 0;
   let timeline: TimelineType | undefined;
   let timelineRef: Timeline;
-  let timelineDirectiveVisibilityToggles: DirectiveVisibilityToggleMap = {};
-  let timelineSpanVisibilityToggles: SpanVisibilityToggleMap = {};
   let decimate = true;
   let interpolateHoverValue = false;
   let limitTooltipToLine = false;
@@ -68,14 +54,6 @@
   $: timeline = timelines.find(timeline => {
     return timeline.id === timelineId;
   });
-
-  $: timelineDirectiveVisibilityToggles = timeline
-    ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles)
-    : {};
-
-  $: timelineSpanVisibilityToggles = timeline
-    ? generateSpanVisibilityToggles(timeline, timelineSpanVisibilityToggles)
-    : {};
 
   function deleteActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
@@ -93,42 +71,6 @@
     }
   }
 
-  function generateDirectiveVisibilityToggles(
-    timeline: TimelineType,
-    currentVisibilityMap: DirectiveVisibilityToggleMap,
-    visible?: boolean,
-  ): DirectiveVisibilityToggleMap {
-    return (timeline?.rows ?? []).reduce((prevToggles: DirectiveVisibilityToggleMap, row: Row) => {
-      const { id, layers } = row;
-      const containsActivityLayer: boolean = layers.find(layer => layer.chartType === 'activity') !== undefined;
-      if (containsActivityLayer) {
-        return {
-          ...prevToggles,
-          ...toggleDirectiveVisibility(id, visible ?? currentVisibilityMap[id] ?? true),
-        };
-      }
-      return prevToggles;
-    }, {});
-  }
-
-  function generateSpanVisibilityToggles(
-    timeline: TimelineType,
-    currentVisibilityMap: SpanVisibilityToggleMap,
-    visible?: boolean,
-  ): SpanVisibilityToggleMap {
-    return (timeline?.rows ?? []).reduce((prevToggles: SpanVisibilityToggleMap, row: Row) => {
-      const { id, layers } = row;
-      const containsActivityLayer: boolean = layers.find(layer => layer.chartType === 'activity') !== undefined;
-      if (containsActivityLayer) {
-        return {
-          ...prevToggles,
-          ...toggleSpanVisibility(id, visible ?? currentVisibilityMap[id] ?? true),
-        };
-      }
-      return prevToggles;
-    }, {});
-  }
-
   function jumpToActivityDirective(event: CustomEvent<ActivityDirectiveId>) {
     const { detail: activityDirectiveId } = event;
     selectActivity(activityDirectiveId, null);
@@ -142,53 +84,20 @@
   function onMouseDown(event: CustomEvent<MouseDown>) {
     const { detail } = event;
     const { activityDirectives, spans } = detail;
-    if (activityDirectives.length) {
-      selectActivity(activityDirectives[0].id, null);
-    } else if (spans.length) {
+    if (spans.length) {
       selectActivity(null, spans[0].id);
+    } else if (activityDirectives.length) {
+      selectActivity(activityDirectives[0].id, null);
     } else {
       selectActivity(null, null);
     }
   }
 
-  function onToggleAllDirectiveVisibility(visible: boolean) {
-    timelineDirectiveVisibilityToggles = timeline
-      ? generateDirectiveVisibilityToggles(timeline, timelineDirectiveVisibilityToggles, visible)
-      : {};
-  }
-
-  function onToggleDirectiveVisibility(event: CustomEvent<{ row: Row; show: boolean }>) {
+  function onToggleActivityComposition(event: CustomEvent<{ composition: ActivityOptions['composition']; row: Row }>) {
     const {
-      detail: { row, show },
+      detail: { row, composition },
     } = event;
-    timelineDirectiveVisibilityToggles = {
-      ...timelineDirectiveVisibilityToggles,
-      ...toggleDirectiveVisibility(row.id, show),
-    };
-  }
-
-  function toggleDirectiveVisibility(rowId: number, visible: boolean) {
-    return { [rowId]: visible };
-  }
-
-  // function onToggleAllSpanVisibility(visible: boolean) {
-  //   timelineSpanVisibilityToggles = timeline
-  //     ? generateSpanVisibilityToggles(timeline, timelineSpanVisibilityToggles, visible)
-  //     : {};
-  // }
-
-  function onToggleSpanVisibility(event: CustomEvent<{ row: Row; show: boolean }>) {
-    const {
-      detail: { row, show },
-    } = event;
-    timelineSpanVisibilityToggles = {
-      ...timelineSpanVisibilityToggles,
-      ...toggleSpanVisibility(row.id, show),
-    };
-  }
-
-  function toggleSpanVisibility(rowId: number, visible: boolean) {
-    return { [rowId]: visible };
+    viewUpdateRow('activityOptions', { ...row.activityOptions, composition }, timelineId, row.id);
   }
 
   function editRow(row: Row) {
@@ -244,14 +153,12 @@
       <div class="header-actions timeline-icon-tray">
         <TimelineViewControls
           maxTimeRange={$maxTimeRange}
-          {timelineDirectiveVisibilityToggles}
           viewTimeRange={$viewTimeRange}
           {decimate}
           {hasUpdateDirectivePermission}
           {interpolateHoverValue}
           {limitTooltipToLine}
           {showTimelineTooltip}
-          on:toggleDirectiveVisibility={({ detail }) => onToggleAllDirectiveVisibility(detail)}
           on:toggleDecimation={({ detail }) => {
             decimate = detail;
           }}
@@ -283,7 +190,6 @@
       {interpolateHoverValue}
       {limitTooltipToLine}
       {showTimelineTooltip}
-      activityDirectivesByView={$activityDirectivesByView}
       activityDirectivesMap={$activityDirectivesMap}
       constraintResults={$visibleConstraintResults}
       {hasUpdateDirectivePermission}
@@ -295,8 +201,6 @@
       resourceTypes={$resourceTypes}
       {timeline}
       timelineInteractionMode={$timelineInteractionMode}
-      {timelineDirectiveVisibilityToggles}
-      {timelineSpanVisibilityToggles}
       selectedActivityDirectiveId={$selectedActivityDirectiveId}
       selectedSpanId={$selectedSpanId}
       simulation={$simulation}
@@ -312,8 +216,7 @@
       on:jumpToActivityDirective={jumpToActivityDirective}
       on:jumpToSpan={jumpToSpan}
       on:mouseDown={onMouseDown}
-      on:toggleDirectiveVisibility={onToggleDirectiveVisibility}
-      on:toggleSpanVisibility={onToggleSpanVisibility}
+      on:toggleActivityComposition={onToggleActivityComposition}
       on:toggleRowExpansion={({ detail: { expanded, rowId } }) => {
         viewUpdateRow('expanded', expanded, timelineId, rowId);
       }}

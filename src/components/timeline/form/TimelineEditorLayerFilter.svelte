@@ -4,6 +4,7 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { Layer } from '../../../types/timeline';
+  import { isActivityLayer, isLineLayer, isXRangeLayer } from '../../../utilities/timeline';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
@@ -25,11 +26,11 @@
 
   $: if (layer) {
     selectedValuesMap = listToMap(values);
-    if (layer.chartType === 'activity') {
+    if (isActivityLayer(layer)) {
       menuTitle = 'Activity Dictionary';
-    } else if (layer.chartType === 'line') {
+    } else if (isLineLayer(layer)) {
       menuTitle = 'Resource Types';
-    } else if (layer.chartType === 'x-range') {
+    } else if (isXRangeLayer(layer)) {
       menuTitle = 'Resource Types';
     }
   }
@@ -87,7 +88,7 @@
       autocomplete="off"
       class="st-input w-100"
       name="filter"
-      placeholder={layer.chartType === 'activity' ? 'Search activities' : 'Search resources'}
+      placeholder={isActivityLayer(layer) ? 'Search activities' : 'Search resources'}
     />
     <div class="filter-search-icon" slot="left"><SearchIcon /></div>
   </Input>
@@ -115,9 +116,9 @@
         <button class="st-button secondary list-button" on:click={selectFilteredValues}>
           Select {filteredValues.length}
           {#if filteredValues.length === 1}
-            {layer.chartType === 'activity' ? 'activity' : 'resource'}
+            {isActivityLayer(layer) ? 'activity' : 'resource'}
           {:else}
-            {layer.chartType === 'activity' ? 'activities' : 'resources'}
+            {isActivityLayer(layer) ? 'activities' : 'resources'}
           {/if}
         </button>
         <button class="st-button secondary list-button" on:click={unselectFilteredValues}>Unselect all</button>

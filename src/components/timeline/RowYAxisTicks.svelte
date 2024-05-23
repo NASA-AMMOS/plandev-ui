@@ -4,7 +4,7 @@
   import { axisLeft as d3AxisLeft } from 'd3-axis';
   import type { Axis, Layer, LineLayer } from '../../types/timeline';
   import { hexToRgba } from '../../utilities/color';
-  import { getYScale } from '../../utilities/timeline';
+  import { getYScale, isLineLayer } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -31,9 +31,9 @@
         const tickValues = (axisLeft.scale() as any).ticks(tickCount) as number[];
         const scaledTickValues = tickValues.map(tick => scale(tick));
 
-        let color = 'rgba(210, 210, 210, 1)';
+        let color = 'var(--timeline-divider-color)';
         if (yAxes.length > 1) {
-          const yAxisLayers = layers.filter(layer => layer.yAxisId === axis.id && layer.chartType === 'line');
+          const yAxisLayers = layers.filter(layer => layer.yAxisId === axis.id && isLineLayer(layer));
           if (yAxisLayers.length === 1) {
             color = hexToRgba((yAxisLayers[0] as LineLayer).lineColor, 0.3);
           }

@@ -4,8 +4,10 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
-  import { pick } from 'lodash-es';
+  import { groupBy } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
+  import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
+  import { ViewDefaultActivityOptions } from '../../constants/view';
   import { Status } from '../../enums/status';
   import { catchError } from '../../stores/errors';
   import {
@@ -15,12 +17,7 @@
     resourceTypesLoading,
   } from '../../stores/simulation';
   import { selectedRow } from '../../stores/views';
-  import type {
-    ActivityDirective,
-    ActivityDirectiveId,
-    ActivityDirectivesByView,
-    ActivityDirectivesMap,
-  } from '../../types/activity';
+  import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
@@ -34,6 +31,10 @@
     SpanUtilityMaps,
   } from '../../types/simulation';
   import type {
+    ActivityOptions,
+    ActivityTree,
+    ActivityTreeExpansionMap,
+    ActivityTreeNode,
     Axis,
     HorizontalGuide,
     Layer,
@@ -51,13 +52,19 @@
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
   import {
+    directiveInView,
+    generateActivityTree as generateActivityTreeUtil,
     getYAxesWithScaleDomains,
+    isActivityLayer,
+    isLineLayer,
     isXRangeLayer,
+    spanInView,
     TimelineInteractionMode,
     type TimelineLockStatus,
   } from '../../utilities/timeline';
+  import { tooltip } from '../../utilities/tooltip';
   import ConstraintViolations from './ConstraintViolations.svelte';
-  import LayerActivity from './LayerActivity.svelte';
+  import LayerActivities from './LayerActivities.svelte';
   import LayerGaps from './LayerGaps.svelte';
   import LayerLine from './LayerLine.svelte';
   import LayerXRange from './LayerXRange.svelte';
@@ -67,8 +74,10 @@
   import RowXAxisTicks from './RowXAxisTicks.svelte';
   import RowYAxisTicks from './RowYAxisTicks.svelte';
 
-  export let activityDirectivesByView: ActivityDirectivesByView = { byLayerId: {}, byTimelineId: {} };
+  export let activityDirectives: ActivityDirective[] = [];
   export let activityDirectivesMap: ActivityDirectivesMap = {};
+  export let activityTreeExpansionMap: ActivityTreeExpansionMap | undefined = {};
+  export let activityOptions: ActivityOptions | undefined = undefined;
   export let autoAdjustHeight: boolean = false;
   export let constraintResults: ConstraintResultWithName[] = [];
   export let decimate: boolean = false;
@@ -91,8 +100,6 @@
   export let rowHeaderDragHandleWidthPx: number = 2;
   export let selectedActivityDirectiveId: ActivityDirectiveId | null = null;
   export let selectedSpanId: SpanId | null = null;
-  export let showDirectives: boolean = true;
-  export let showSpans: boolean = true;
   export let simulationDataset: SimulationDataset | null = null;
   export let spanUtilityMaps: SpanUtilityMaps;
   export let spansMap: SpansMap = {};
@@ -106,6 +113,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
+    activityTreeExpansionChange: ActivityTreeExpansionMap;
     mouseDown: MouseDown;
     mouseOver: MouseOver;
     updateRowHeight: {
@@ -128,17 +136,14 @@
   let dragover: DragEvent;
   let drop: DragEvent;
   let focus: FocusEvent;
-  let heightsByLayer: Record<number, number> = {};
   let mousedown: MouseEvent;
   let mousemove: MouseEvent;
   let mouseout: MouseEvent;
   let mouseup: MouseEvent;
-  let mouseDownActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
-  let mouseDownSpansByLayer: Record<number, Span[]> = {};
-  let mouseOverActivityDirectivesByLayer: Record<number, ActivityDirective[]> = {};
+  let mouseOverActivityDirectives: ActivityDirective[] = [];
   let mouseOverConstraintResults: ConstraintResultWithName[] = []; // For this row.
   let mouseOverPointsByLayer: Record<number, Point[]> = {};
-  let mouseOverSpansByLayer: Record<number, Span[]> = {};
+  let mouseOverSpans: Span[] = [];
   let mouseOverGapsByLayer: Record<number, Point[]> = {};
   let overlaySvg: SVGElement;
   let yAxesWithScaleDomains: Axis[];
@@ -148,6 +153,16 @@
   let loadedResources: Resource[];
   let loadingErrors: string[];
   let anyResourcesLoading: boolean = true;
+  let activityTree: ActivityTree = [];
+  let filteredActivityDirectives: ActivityDirective[] = [];
+  let filteredSpans: Span[] = [];
+  let timeFilteredActivityDirectives: ActivityDirective[] = [];
+  let timeFilteredSpans: Span[] = [];
+  let idToColorMaps: { directives: Record<number, string>; spans: Record<number, string> } = {
+    directives: {},
+    spans: {},
+  };
+  let filterActivitiesByTime = false;
 
   $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
@@ -267,15 +282,20 @@
   $: onDragover(dragover);
   $: onDrop(drop);
   $: computedDrawHeight = expanded ? drawHeight : 24;
-
-  $: heightsByLayer = pick(
-    heightsByLayer,
-    layers.map(({ id }) => id),
-  );
   $: overlaySvgSelection = select(overlaySvg) as Selection<SVGElement, unknown, any, any>;
   $: rowClasses = classNames('row', { 'row-collapsed': !expanded });
-  $: hasActivityLayer = !!layers.find(layer => layer.chartType === 'activity');
-  $: hasResourceLayer = !!layers.find(layer => layer.chartType === 'line' || layer.chartType === 'x-range');
+  $: activityOptions = activityOptions || { ...ViewDefaultActivityOptions };
+  $: activityLayers = layers.filter(isActivityLayer);
+  $: lineLayers = layers.filter(l => isLineLayer(l) || (isXRangeLayer(l) && l.showAsLinePlot));
+  $: xRangeLayers = layers.filter(l => isXRangeLayer(l) && !l.showAsLinePlot);
+  $: hasActivityLayer = activityLayers.length > 0;
+  $: hasResourceLayer = lineLayers.length + xRangeLayers.length > 0;
+  $: showSpans = activityOptions?.composition === 'both' || activityOptions?.composition === 'spans';
+  $: showDirectives = activityOptions?.composition === 'both' || activityOptions?.composition === 'directives';
+
+  $: if (activityTreeExpansionMap === undefined) {
+    activityTreeExpansionMap = {};
+  }
 
   // Track resource loading status for this Row
   $: if (resourceRequestMap) {
@@ -326,6 +346,141 @@
   $: if (timelineZoomTransform && overlaySvgSelection) {
     // Set transform if it has changed (from other rows or elsewhere), causes zoomed event to fire
     overlaySvgSelection.call(zoom.transform, timelineZoomTransform);
+  }
+
+  $: if (activityLayers && spansMap && activityDirectives && typeof filterActivitiesByTime === 'boolean') {
+    activityTree = [];
+    idToColorMaps = { directives: {}, spans: {} };
+
+    let spansList = Object.values(spansMap);
+    const directivesByType = groupBy(activityDirectives, 'type');
+    const spansByType = groupBy(spansList, 'type');
+    if (activityLayers.length) {
+      let directives: ActivityDirective[] = [];
+      let spans: Span[] = [];
+
+      // track directives and spans that have been seen to avoid double counting
+      // if more than one layer matches a type
+      let seenDirectiveIds: Record<number, boolean> = {};
+      let seenSpanIds: Record<number, boolean> = {};
+      activityLayers.forEach(layer => {
+        if (layer.filter && layer.filter.activity !== undefined) {
+          const types = layer.filter.activity.types || [];
+          types.forEach(type => {
+            const matchingDirectives = directivesByType[type];
+            if (matchingDirectives) {
+              const uniqueDirectives: ActivityDirective[] = [];
+              matchingDirectives.forEach(directive => {
+                if (!seenDirectiveIds[directive.id]) {
+                  idToColorMaps.directives[directive.id] = layer.activityColor;
+                  seenDirectiveIds[directive.id] = true;
+                  uniqueDirectives.push(directive);
+                }
+              });
+              directives = directives.concat(uniqueDirectives);
+            }
+            const matchingSpans = spansByType[type];
+            if (matchingSpans) {
+              const uniqueSpans: Span[] = [];
+              matchingSpans.forEach(span => {
+                if (!seenSpanIds[span.id]) {
+                  idToColorMaps.spans[span.id] = layer.activityColor;
+                  seenSpanIds[span.id] = true;
+                  uniqueSpans.push(span);
+                }
+              });
+              spans = spans.concat(uniqueSpans);
+            }
+          });
+        }
+      });
+      directives.sort((a, b) => ((a.start_time_ms ?? 0) < (b.start_time_ms ?? 0) ? -1 : 1));
+      spans.sort((a, b) => (a.startMs < b.startMs ? -1 : 1));
+      if (directives.length || spans.length) {
+        // Populate both sets of directive and span lists in order to more precisely
+        // react to the filterActivitiesByTime variable later and avoid unnecessary activity tree
+        // regeneration upon viewTimeRange change when not in filterActivitiesByTime mode.
+        filteredActivityDirectives = directives;
+        filteredSpans = spans;
+        timeFilteredActivityDirectives = directives;
+        timeFilteredSpans = spans;
+      } else {
+        filteredActivityDirectives = [];
+        filteredSpans = [];
+        timeFilteredActivityDirectives = [];
+        timeFilteredSpans = [];
+      }
+    }
+  }
+
+  $: if (hasActivityLayer && filterActivitiesByTime && filteredActivityDirectives && filteredSpans && viewTimeRange) {
+    timeFilteredSpans = filteredSpans.filter(span => spanInView(span, viewTimeRange));
+    timeFilteredActivityDirectives = filteredActivityDirectives.filter(directive => {
+      let inView = directiveInView(directive, viewTimeRange);
+      if (inView && showSpans) {
+        // Get max span bounds
+        const rootSpanId = spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
+        const rootSpan = spansMap[rootSpanId];
+        if (rootSpan) {
+          return spanInView(rootSpan, viewTimeRange);
+        }
+      }
+      return inView;
+    });
+  }
+
+  $: if (
+    hasActivityLayer &&
+    timeFilteredActivityDirectives &&
+    timeFilteredSpans &&
+    activityOptions &&
+    activityTreeExpansionMap &&
+    typeof showSpans === 'boolean' &&
+    typeof showDirectives === 'boolean'
+  ) {
+    if (activityOptions.displayMode === 'grouped') {
+      /*  Note: here we only pass in a few variables in order to
+       *  limit the scope of what is reacted to in order to avoid unnecessary re-rendering.
+       *  A wrapper function is used to provide the other props needed to generate the tree.
+       */
+      activityTree = generateActivityTree(
+        timeFilteredActivityDirectives,
+        timeFilteredSpans,
+        activityTreeExpansionMap,
+        activityOptions.hierarchyMode,
+      );
+    } else {
+      activityTree = [];
+    }
+  }
+
+  function generateActivityTree(
+    directives: ActivityDirective[],
+    spans: Span[],
+    activityTreeExpansionMap: ActivityTreeExpansionMap,
+    hierarchyMode: ActivityOptions['hierarchyMode'] = 'flat',
+  ) {
+    return generateActivityTreeUtil(
+      directives,
+      spans,
+      activityTreeExpansionMap,
+      hierarchyMode,
+      filterActivitiesByTime,
+      spanUtilityMaps,
+      spansMap,
+      showSpans,
+      showDirectives,
+      viewTimeRange,
+    );
+  }
+
+  function onActivityTreeNodeChange(e: { detail: ActivityTreeNode }) {
+    const node = e.detail;
+    dispatch('activityTreeExpansionChange', { ...(activityTreeExpansionMap || {}), [node.id]: !node.expanded });
+  }
+
+  function onActivityTimeFilterChange() {
+    filterActivitiesByTime = !filterActivitiesByTime;
   }
 
   function zoomed(e: D3ZoomEvent<HTMLCanvasElement, any>) {
@@ -383,39 +538,33 @@
 
   function onMouseDown(event: CustomEvent<RowMouseOverEvent>) {
     const { detail } = event;
-    const { layerId } = detail;
-
-    if (layerId != null) {
-      mouseDownActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
-      mouseDownSpansByLayer[layerId] = detail?.spans ?? [];
-
-      const activityDirectives = Object.values(mouseDownActivityDirectivesByLayer).flat();
-      const spans = Object.values(mouseDownSpansByLayer).flat();
-
-      dispatch('mouseDown', { ...detail, activityDirectives, layerId, rowId: id, spans });
-    }
+    dispatch('mouseDown', {
+      ...detail,
+      activityDirectives: detail?.activityDirectives ?? [],
+      rowId: id,
+      spans: detail?.spans ?? [],
+    });
   }
 
   function onMouseOver(event: CustomEvent<RowMouseOverEvent>) {
     const { detail } = event;
     const { layerId } = detail;
-
-    if (layerId != null) {
-      mouseOverActivityDirectivesByLayer[layerId] = detail?.activityDirectives ?? [];
-      mouseOverConstraintResults = detail?.constraintResults ?? mouseOverConstraintResults;
+    mouseOverActivityDirectives = detail?.activityDirectives ?? mouseOverActivityDirectives;
+    mouseOverConstraintResults = detail?.constraintResults ?? mouseOverConstraintResults;
+    mouseOverSpans = detail?.spans ?? mouseOverSpans;
+    if (typeof layerId === 'number') {
       mouseOverPointsByLayer[layerId] = detail?.points ?? [];
-      mouseOverSpansByLayer[layerId] = detail?.spans ?? [];
       mouseOverGapsByLayer[layerId] = detail?.gaps ?? mouseOverGapsByLayer[layerId] ?? [];
-
-      dispatch('mouseOver', {
-        ...detail,
-        activityDirectivesByLayer: mouseOverActivityDirectivesByLayer,
-        constraintResults: mouseOverConstraintResults,
-        gapsByLayer: mouseOverGapsByLayer,
-        pointsByLayer: mouseOverPointsByLayer,
-        spansByLayer: mouseOverSpansByLayer,
-      });
     }
+
+    dispatch('mouseOver', {
+      ...detail,
+      activityDirectives: mouseOverActivityDirectives,
+      constraintResults: mouseOverConstraintResults,
+      gapsByLayer: mouseOverGapsByLayer,
+      pointsByLayer: mouseOverPointsByLayer,
+      spans: mouseOverSpans,
+    });
   }
 
   function onUpdateRowHeightDrag(event: CustomEvent<{ newHeight: number }>) {
@@ -423,13 +572,11 @@
     dispatch('updateRowHeight', { newHeight, rowId: id });
   }
 
-  function onUpdateRowHeightLayer(event: CustomEvent<{ layerId: number; newHeight: number }>) {
+  function onUpdateRowHeightLayer(event: CustomEvent<{ newHeight: number }>) {
+    const {
+      detail: { newHeight },
+    } = event;
     if (autoAdjustHeight) {
-      const { detail } = event;
-      heightsByLayer[detail.layerId] = detail.newHeight;
-      const heights = Object.values(heightsByLayer);
-      const newHeight = Math.max(...heights);
-
       // Only update row height if a change has occurred to avoid loopback
       if (newHeight !== computedDrawHeight) {
         dispatch('updateRowHeight', { newHeight, rowId: id, wasAutoAdjusted: true });
@@ -462,6 +609,11 @@
   <div class="row-content">
     <!-- Row Header. -->
     <RowHeader
+      {activityOptions}
+      on:activity-tree-node-change={onActivityTreeNodeChange}
+      on:mouseDown={onMouseDown}
+      on:dblClick
+      {activityTree}
       width={marginLeft}
       height={computedDrawHeight}
       {expanded}
@@ -476,7 +628,20 @@
       on:mouseUpRowMove
       on:toggleRowExpansion
       on:contextMenu
-    />
+      {selectedActivityDirectiveId}
+      {selectedSpanId}
+    >
+      {#if hasActivityLayer && activityOptions?.displayMode === 'grouped'}
+        <button
+          class="st-button icon row-action"
+          class:row-action-active={filterActivitiesByTime}
+          on:click|stopPropagation={onActivityTimeFilterChange}
+          use:tooltip={{ content: 'Filter Activities by Time Window', placement: 'top' }}
+        >
+          <FilterWithXIcon />
+        </button>
+      {/if}
+    </RowHeader>
 
     <div
       class={rowClasses}
@@ -536,7 +701,11 @@
       {#if hasResourceLayer && anyResourcesLoading}
         <div class="layer-message loading st-typography-label">Loading</div>
       {/if}
-      <!-- Loading indicator -->
+      <!-- Empty state -->
+      {#if !layers.length}
+        <div class="layer-message st-typography-label">No layers added to this row</div>
+      {/if}
+      <!-- Resource error indicator -->
       {#if hasResourceLayer && loadingErrors.length}
         <div class="layer-message error st-typography-label">
           Failed to load profiles for {loadingErrors.length} layer{pluralize(loadingErrors.length)}
@@ -544,101 +713,109 @@
       {/if}
       <!-- Layers of Canvas Visualizations. -->
       <div class="layers" style="width: {drawWidth}px">
-        {#each layers as layer (layer.id)}
-          {#if layer.chartType === 'activity'}
-            <LayerActivity
-              {...layer}
-              activityDirectives={activityDirectivesByView?.byLayerId[layer.id] ?? []}
-              {activityDirectivesMap}
-              {hasUpdateDirectivePermission}
-              {showDirectives}
-              {showSpans}
-              {blur}
-              {contextmenu}
-              {dpr}
-              drawHeight={computedDrawHeight}
-              {drawWidth}
-              filter={layer.filter.activity}
-              {focus}
-              {dblclick}
-              {mousedown}
-              {mousemove}
-              {mouseout}
-              {mouseup}
-              mode={expanded ? 'packed' : 'heatmap'}
-              {planEndTimeDoy}
-              {plan}
-              {planStartTimeYmd}
-              {selectedActivityDirectiveId}
-              {selectedSpanId}
-              {simulationDataset}
-              {spanUtilityMaps}
-              {spansMap}
-              {timelineInteractionMode}
-              {timelineLockStatus}
-              {user}
-              {viewTimeRange}
-              {xScaleView}
-              on:contextMenu
-              on:deleteActivityDirective
-              on:dblClick
-              on:mouseDown={onMouseDown}
-              on:mouseOver={onMouseOver}
-              on:updateRowHeight={onUpdateRowHeightLayer}
-            />
-          {/if}
-          {#if layer.chartType === 'line' || layer.chartType === 'x-range'}
-            <LayerGaps
-              {...layer}
-              {dpr}
-              drawHeight={computedDrawHeight}
-              {drawWidth}
-              filter={layer.filter.resource}
-              {mousemove}
-              {mouseout}
-              resources={getResourcesForLayer(layer, resourceRequestMap)}
-              {xScaleView}
-              on:mouseOver={onMouseOver}
-            />
-          {/if}
-          {#if layer.chartType === 'line' || (isXRangeLayer(layer) && layer.showAsLinePlot)}
-            <LayerLine
-              {...layer}
-              ordinalScale={isXRangeLayer(layer) && layer.showAsLinePlot}
-              {decimate}
-              {interpolateHoverValue}
-              {limitTooltipToLine}
-              {contextmenu}
-              {dpr}
-              drawHeight={computedDrawHeight}
-              {drawWidth}
-              filter={layer.filter.resource}
-              {mousemove}
-              {mouseout}
-              resources={getResourcesForLayer(layer, resourceRequestMap)}
-              {viewTimeRange}
-              {xScaleView}
-              yAxes={yAxesWithScaleDomains}
-              on:mouseOver={onMouseOver}
-              on:contextMenu
-            />
-          {/if}
-          {#if isXRangeLayer(layer) && !layer.showAsLinePlot}
-            <LayerXRange
-              {...layer}
-              {contextmenu}
-              {dpr}
-              drawHeight={computedDrawHeight}
-              {drawWidth}
-              filter={layer.filter.resource}
-              {mousemove}
-              {mouseout}
-              resources={getResourcesForLayer(layer, resourceRequestMap)}
-              {xScaleView}
-              on:mouseOver={onMouseOver}
-              on:contextMenu
-            />
-          {/if}
+        {#each xRangeLayers as layer (layer.id)}
+          <LayerGaps
+            {...layer}
+            {dpr}
+            drawHeight={computedDrawHeight}
+            {drawWidth}
+            filter={layer.filter.resource}
+            {mousemove}
+            {mouseout}
+            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            {xScaleView}
+            on:mouseOver={onMouseOver}
+          />
+          <LayerXRange
+            {...layer}
+            {contextmenu}
+            {dpr}
+            drawHeight={computedDrawHeight}
+            {drawWidth}
+            filter={layer.filter.resource}
+            {mousemove}
+            {mouseout}
+            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            {xScaleView}
+            on:mouseOver={onMouseOver}
+            on:contextMenu
+          />
+        {/each}
+        {#if hasActivityLayer}
+          <LayerActivities
+            {activityOptions}
+            {idToColorMaps}
+            {activityTree}
+            activityDirectives={filteredActivityDirectives}
+            spans={filteredSpans}
+            {activityDirectivesMap}
+            {hasUpdateDirectivePermission}
+            {showDirectives}
+            {showSpans}
+            {blur}
+            {contextmenu}
+            {dpr}
+            drawHeight={computedDrawHeight}
+            {drawWidth}
+            {focus}
+            {dblclick}
+            {mousedown}
+            {mousemove}
+            {mouseout}
+            {mouseup}
+            {planEndTimeDoy}
+            {plan}
+            {planStartTimeYmd}
+            {selectedActivityDirectiveId}
+            {selectedSpanId}
+            {spanUtilityMaps}
+            {spansMap}
+            {timelineInteractionMode}
+            {timelineLockStatus}
+            {user}
+            {viewTimeRange}
+            {xScaleView}
+            on:contextMenu
+            on:deleteActivityDirective
+            on:dblClick
+            on:mouseDown={onMouseDown}
+            on:mouseOver={onMouseOver}
+            on:updateRowHeight={onUpdateRowHeightLayer}
+          />
+        {/if}
+        {#each lineLayers as layer (layer.id)}
+          <LayerGaps
+            {...layer}
+            {dpr}
+            drawHeight={computedDrawHeight}
+            {drawWidth}
+            filter={layer.filter.resource}
+            {mousemove}
+            {mouseout}
+            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            {xScaleView}
+            on:mouseOver={onMouseOver}
+          />
+          <LayerLine
+            {...layer}
+            ordinalScale={isXRangeLayer(layer) && layer.showAsLinePlot}
+            {decimate}
+            {interpolateHoverValue}
+            {limitTooltipToLine}
+            {contextmenu}
+            {dpr}
+            drawHeight={computedDrawHeight}
+            {drawWidth}
+            filter={layer.filter.resource}
+            {mousemove}
+            {mouseout}
+            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            {viewTimeRange}
+            {xScaleView}
+            yAxes={yAxesWithScaleDomains}
+            on:mouseOver={onMouseOver}
+            on:contextMenu
+          />
         {/each}
       </div>
     </div>
@@ -693,16 +870,16 @@
     z-index: 0;
   }
 
-  .row-edit-button {
-    display: flex;
-  }
-
-  :global(.row-edit-button.st-button.icon svg) {
+  :global(.row-action.st-button.icon svg) {
     color: var(--st-gray-50);
   }
 
-  :global(.row-edit-button.st-button.icon:hover svg) {
+  :global(.row-action.st-button.icon:hover svg) {
     color: var(--st-gray-70);
+  }
+
+  :global(.row-action.row-action-active.st-button.icon svg) {
+    color: var(--st-utility-blue);
   }
 
   .row-root {
@@ -733,15 +910,13 @@
     z-index: 9;
   }
 
-  .active-row .row-content {
-    background: rgba(47, 128, 237, 0.06);
-  }
   .active-row :global(.row-header) {
     background: rgba(47, 128, 237, 0.06);
   }
 
   .layer-message {
     align-items: center;
+    color: var(--st-gray-50);
     display: flex;
     font-size: 10px;
     height: 100%;
@@ -754,7 +929,6 @@
 
   .loading {
     animation: 1s delayVisibility;
-    color: var(--st-gray-50);
   }
 
   .error {
