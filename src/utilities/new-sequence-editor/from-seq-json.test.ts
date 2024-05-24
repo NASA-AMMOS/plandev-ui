@@ -476,4 +476,64 @@ E-00:00:01.000 FSE_CMD 10 "ENUM"
 `;
     expect(sequence).toEqual(expectedSequence);
   });
+
+  it('converts a seq json empty repeat args to sequence', () => {
+    const seqJson: SeqJson = {
+      id: 'testRepeat',
+      metadata: {},
+      steps: [
+        {
+          args: [
+            {
+              name: 'lot_number',
+              type: 'number',
+              value: 10,
+            },
+            {
+              name: 'bundle',
+              type: 'repeat',
+              value: [],
+            },
+            {
+              name: 'country_origin',
+              type: 'string',
+              value: 'USA',
+            },
+            {
+              name: 'postal_code',
+              type: 'repeat',
+              value: [
+                [
+                  {
+                    name: 'region',
+                    type: 'string',
+                    value: '96707-898',
+                  },
+                ],
+                [
+                  {
+                    name: 'region',
+                    type: 'string',
+                    value: '92604-623',
+                  },
+                ],
+              ],
+            },
+          ],
+          stem: 'FSA_CMD',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+
+    const sequence = seqJsonToSequence(seqJson, [], null);
+    const expectedSequence = `@ID "testRepeat"
+
+C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
+`;
+    expect(sequence).toEqual(expectedSequence);
+  });
 });

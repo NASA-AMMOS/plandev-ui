@@ -58,7 +58,7 @@ export function seqJsonArgsToSequence(args: Args): string {
   for (const arg of args) {
     result += ' ';
     if (arg.type === 'repeat') {
-      if (Array.isArray(arg.value) && arg.value.length) {
+      if (Array.isArray(arg.value)) {
         let repeatResult = '';
         for (const repeatArgSet of arg.value) {
           if (Array.isArray(repeatArgSet)) {
