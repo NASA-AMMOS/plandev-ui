@@ -43,7 +43,6 @@ export function seqJsonBaseArgToSequence(
 ): string {
   switch (arg.type) {
     case 'string':
-    case 'symbol':
       return `"${arg.value}"`;
     case 'boolean':
       return arg.value ? 'TRUE' : 'FALSE';
@@ -195,7 +194,14 @@ export function seqJsonToSequence(
         const args = seqJsonArgsToSequence(icmd.args);
         const description = icmd.description ? seqJsonDescriptionToSequence(icmd.description) : '';
         const metadata = icmd.metadata ? seqJsonMetadataToSequence(icmd.metadata) : '';
-        sequence.push(`${icmd.stem}${args}${description}${metadata}`);
+        let immediateString = `${icmd.stem}${args}${description}`;
+        // add a new line if on doesn't exit at the end of the immediateString
+        if (!immediateString.endsWith('\n')) {
+          immediateString += '\n';
+        }
+        // Add metadata data if it exists
+        immediateString += metadata;
+        sequence.push(immediateString);
       }
     }
 
@@ -206,7 +212,14 @@ export function seqJsonToSequence(
       for (const hdw of seqJson.hardware_commands) {
         const description = hdw.description ? seqJsonDescriptionToSequence(hdw.description) : '';
         const metadata = hdw.metadata ? seqJsonMetadataToSequence(hdw.metadata) : '';
-        sequence.push(`${hdw.stem}${description}${metadata}`);
+        let hardwareString = `${hdw.stem}${description}`;
+        // add a new line if on doesn't exit at the end of the immediateString
+        if (!hardwareString.endsWith('\n')) {
+          hardwareString += '\n';
+        }
+        // Add metadata data if it exists
+        hardwareString += metadata;
+        sequence.push(hardwareString);
       }
     }
   }

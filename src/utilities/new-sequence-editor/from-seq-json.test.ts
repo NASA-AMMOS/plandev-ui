@@ -21,6 +21,74 @@ describe('from-seq-json.ts', () => {
     expect(sequence).toEqual(expectedSequence);
   });
 
+  it('Symbols should not be quoted', () => {
+    const seqJson: SeqJson = {
+      id: 'testSymbol',
+      locals: [
+        {
+          name: 'L00UINT',
+          type: 'UINT',
+        },
+        {
+          name: 'L00INT',
+          type: 'INT',
+        },
+        {
+          name: 'L01INT',
+          type: 'INT',
+        },
+      ],
+      metadata: {},
+
+      steps: [
+        {
+          args: [
+            {
+              type: 'symbol',
+              value: 'L00UINT',
+            },
+            {
+              type: 'number',
+              value: 10,
+            },
+          ],
+          description: 'line argument',
+          stem: 'PYRO_FIRE',
+
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+        {
+          args: [
+            {
+              type: 'symbol',
+              value: 'L00INT',
+            },
+            {
+              type: 'symbol',
+              value: 'L01INT',
+            },
+          ],
+          stem: 'DDM_BANANA',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+    const sequence = seqJsonToSequence(seqJson, [], null);
+    const expectedSequence = `@ID "testSymbol"
+@LOCALS L00UINT L00INT L01INT
+
+C PYRO_FIRE L00UINT 10 # line argument
+C DDM_BANANA L00INT L01INT
+`;
+    expect(sequence).toEqual(expectedSequence);
+  });
+
   it('converts a seq json LGO to sequence', () => {
     const seqJson: SeqJson = {
       id: 'test',
@@ -216,7 +284,7 @@ C FSW_CMD_3
     const sequence = seqJsonToSequence(seqJson, [], null);
     const expectedSequence = `@ID "42"
 
-A2024-001T00:00:00 FSW_CMD_0 TRUE 0xFF "Hello" "World" [FALSE 0xAA "Foo" "BAR" TRUE 0xBB "Baz" "BAT"]
+A2024-001T00:00:00 FSW_CMD_0 TRUE 0xFF "Hello" World [FALSE 0xAA "Foo" BAR TRUE 0xBB "Baz" BAT]
 R00:01:00 FSW_CMD_1 22
 E15:00:00 FSW_CMD_2 "Fab"
 C FSW_CMD_3
@@ -380,6 +448,10 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
         },
         {
           args: [],
+          stem: 'IC2',
+        },
+        {
+          args: [],
           description: 'noop command, no arguments',
           metadata: { processor: 'VC1A' },
           stem: 'NOOP',
@@ -393,6 +465,7 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
 
 @IMMEDIATE
 IC "1" 2 3 # immediate command
+IC2
 NOOP # noop command, no arguments
 @METADATA "processor" "VC1A"
 `;
@@ -413,6 +486,9 @@ NOOP # noop command, no arguments
         {
           stem: 'HWC2',
         },
+        {
+          stem: 'HWC3',
+        },
       ],
       id: 'testHardware',
       metadata: {},
@@ -425,7 +501,9 @@ NOOP # noop command, no arguments
 HWC # hardware command
 @METADATA "foo" "bar"
 @METADATA "hardware" "HWC"
-HWC2`;
+HWC2
+HWC3
+`;
     expect(sequence).toEqual(expectedSequence);
   });
 
