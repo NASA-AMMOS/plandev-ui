@@ -126,7 +126,6 @@ test.describe.serial('Plan Activities', () => {
     await expect(plan.navButtonActivityCheckingMenu).toContainText('1 activity has problems');
     await expect(plan.navButtonActivityCheckingMenu).toContainText('2 missing parameters');
     await plan.navButtonActivityCheckingMenu.getByRole('button', { name: 'View in console' }).click();
-    await page.pause();
     await plan.consoleContainer.getByRole('gridcell', { name: 'BakeBananaBread' }).first().click();
     const tbSugar = await plan.panelActivityForm.locator('.parameter', { hasText: 'tbSugar' }).locator('input');
     await tbSugar.fill('100');

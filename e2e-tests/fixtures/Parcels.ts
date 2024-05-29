@@ -18,10 +18,30 @@ export class Parcels {
     this.updatePage(page);
   }
 
+  async changeSelectedCommandDictionary(firstCommandDictionaryName: string, secondCommandDictionaryName: string) {
+    const parcelTableRow = this.page.locator(`.ag-row:has-text("${this.parcelName}")`);
+    const parcelTableRowEditButton = await this.page.locator(
+      `.ag-row:has-text("${this.parcelName}") >> button[aria-label="Edit Parcel"]`,
+    );
+
+    parcelTableRow.hover();
+    await parcelTableRowEditButton.waitFor({ state: 'attached' });
+    await parcelTableRowEditButton.waitFor({ state: 'visible' });
+    await expect(parcelTableRowEditButton).toBeVisible();
+    parcelTableRowEditButton.click();
+
+    this.updatePage(this.page);
+    await expect(this.tableRow).toBeVisible();
+    await expect(this.page.locator(`.ag-row:has-text("${firstCommandDictionaryName}") >> input`)).toBeChecked();
+
+    await this.page.locator(`.ag-row:has-text("${secondCommandDictionaryName}") >> input`).click();
+    await expect(this.page.locator(`.ag-row:has-text("${secondCommandDictionaryName}") >> input`)).toBeChecked();
+  }
+
   async createParcel(dictionaryName: string) {
     await this.newButton.click();
     await this.page.getByText(dictionaryName).click();
-    await this.updatePage(this.page);
+    this.updatePage(this.page);
     await expect(this.tableRow).not.toBeVisible();
     await this.nameField.fill(this.parcelName);
     await this.createButton.click();
@@ -59,13 +79,14 @@ export class Parcels {
   }
 
   updatePage(page: Page): void {
+    this.page = page;
+
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Parcel")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Parcel") >> button:has-text("Delete")`);
     this.createButton = page.locator(`button:has-text("Save")`);
     this.nameField = page.locator(`input[name="parcelName"]`);
     this.newButton = page.locator(`button:has-text("New")`);
-    this.page = page;
     this.tableRow = page.locator(`.ag-row:has-text("${this.parcelName}")`);
     this.tableRowDeleteButton = page.locator(
       `.ag-row:has-text("${this.parcelName}") >> button[aria-label="Delete Parcel"]`,

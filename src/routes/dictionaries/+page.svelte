@@ -72,7 +72,7 @@
   }
 
   function deleteChannelDictionary(event: CustomEvent) {
-    effects.deleteCommandDictionary(event.detail.id, data.user);
+    effects.deleteChannelDictionary(event.detail.id, data.user);
   }
 
   function deleteCommandDictionary(event: CustomEvent) {
