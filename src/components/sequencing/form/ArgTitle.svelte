@@ -12,6 +12,8 @@
 
   export let argDef: FswCommandArgument;
 
+  $: title = getArgTitle(argDef);
+
   function compactType(argDef: FswCommandArgument) {
     if (isFswCommandArgumentUnsigned(argDef)) {
       return `U${argDef.bit_length}`;
@@ -48,6 +50,6 @@
 </script>
 
 <details>
-  <summary>{getArgTitle(argDef)}</summary>
+  <summary>{title}</summary>
   {argDef.description}
 </details>
