@@ -8,6 +8,7 @@
   import {
     parameterDictionaries as parameterDictionariesStore,
     parcel,
+    parcelId,
     parcelToParameterDictionaries,
     parcels,
     userSequenceFormColumns,
@@ -73,7 +74,7 @@
   }
   $: {
     if (sequenceParcelId) {
-      $parcel = $parcels.find(p => p.id === sequenceParcelId) ?? null;
+      $parcelId = sequenceParcelId;
 
       loadSequenceAdaptation($parcel?.sequence_adaptation_id);
     }

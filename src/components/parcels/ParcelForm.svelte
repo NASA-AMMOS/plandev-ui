@@ -23,13 +23,6 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import DictionaryTable from './DictionaryTable.svelte';
 
-  export let initialParcelChannelDictionaryId: number | null = null;
-  export let initialParcelCommandDictionaryId: number | null = null;
-  export let initialParcelCreatedAt: string | null = null;
-  export let initialParcelName: string = '';
-  export let initialParcelId: number | null = null;
-  export let initialParcelOwner: UserId = '';
-  export let initialSequenceAdaptationId: number | null = null;
   export let mode: 'create' | 'edit' = 'create';
   export let user: User | null;
 
@@ -37,28 +30,45 @@
   let pageSubtitle: string = '';
   let pageTitle: string = '';
   let parcelModified: boolean = false;
-  let parcelChannelDictionaryId: number | null = initialParcelChannelDictionaryId;
-  let parcelCommandDictionaryId: number | null = initialParcelCommandDictionaryId;
-  let parcelCreatedAt: string | null = initialParcelCreatedAt;
-  let parcelName: string = initialParcelName;
-  let parcelId: number | null = initialParcelId;
-  let parcelOwner: UserId = initialParcelOwner;
-  let parcelSequenceAdaptationId: number | null = initialSequenceAdaptationId;
+  let parcelChannelDictionaryId: number | null;
+  let parcelCommandDictionaryId: number | null;
+  let parcelCreatedAt: string | null;
+  let parcelName: string;
+  let parcelId: number | null;
+  let parcelOwner: UserId;
+  let parcelSequenceAdaptationId: number | null;
   let permissionError = 'You do not have permission to edit this parcel.';
   let saveButtonClass: 'primary' | 'secondary' = 'primary';
   let saveButtonText: string = '';
   let saveButtonEnabled: boolean = false;
-  let savedParcelChannelDictionaryId: number | null = parcelChannelDictionaryId;
-  let savedParcelCommandDictionaryId: number | null = parcelCommandDictionaryId;
-  let savedParcelName: string = parcelName;
+  let savedParcelChannelDictionaryId: number | null;
+  let savedParcelCommandDictionaryId: number | null;
+  let savedParcelName: string;
   let savedParameterDictionaryIds: Record<number, boolean> = {};
-  let savedSequenceAdaptationId: number | null = parcelSequenceAdaptationId;
+  let savedSequenceAdaptationId: number | null;
   let savingParcel: boolean = false;
   let selectedParmeterDictionaries: Record<number, boolean> = {};
 
   const dispatch = createEventDispatcher<{
     save: { parcelId: number };
   }>();
+
+  $: {
+    if ($parcel !== null && $parcel !== undefined) {
+      parcelChannelDictionaryId = $parcel.channel_dictionary_id;
+      parcelCommandDictionaryId = $parcel.command_dictionary_id;
+      parcelCreatedAt = $parcel.created_at;
+      parcelName = $parcel.name;
+      parcelId = $parcel.id;
+      parcelOwner = $parcel.owner;
+      parcelSequenceAdaptationId = $parcel.sequence_adaptation_id;
+
+      savedParcelChannelDictionaryId = $parcel.channel_dictionary_id;
+      savedParcelCommandDictionaryId = $parcel.command_dictionary_id;
+      savedParcelName = $parcel.name;
+      savedSequenceAdaptationId = $parcel.sequence_adaptation_id;
+    }
+  }
 
   $: selectedParmeterDictionaries = savedParameterDictionaryIds = $parcelToParameterDictionaries.reduce(
     (prevBooleanMap: Record<number, boolean>, parcelToParameterDictionary: ParcelToParameterDictionary) => {
@@ -120,6 +130,7 @@
 
   function onToggleParameterDictionary(event: CustomEvent<{ ids: Record<number, boolean> }>) {
     selectedParmeterDictionaries = event.detail.ids;
+    console.log(selectedParmeterDictionaries);
   }
 
   function onToggleSequenceAdaptation(event: CustomEvent<{ id: number | null }>) {
@@ -151,20 +162,21 @@
     }
 
     if (parcelToParameterDictionaryIdsToDelete.length > 0) {
-      const idsToDelete = [];
+      const parcelToParameterDictionariesToDelete: ParcelToParameterDictionary[] = [];
 
       for (const paramDictionaryId of parcelToParameterDictionaryIdsToDelete) {
-        const parcelId: number | undefined = $parcelToParameterDictionaries.find(
-          p => p.parameter_dictionary_id === paramDictionaryId && p.parcel_id === initialParcelId,
-        )?.id;
+        const parcelToParameterDictionary: ParcelToParameterDictionary | undefined =
+          $parcelToParameterDictionaries.find(
+            p => p.parameter_dictionary_id === paramDictionaryId && p.parcel_id === $parcel?.id,
+          );
 
-        if (parcelId) {
-          idsToDelete.push(parcelId);
+        if (parcelToParameterDictionary) {
+          parcelToParameterDictionariesToDelete.push(parcelToParameterDictionary);
         }
+      }
 
-        if (idsToDelete.length > 0 && $parcel) {
-          await effects.deleteParcelToParameterDictionaries(idsToDelete, user);
-        }
+      if (parcelToParameterDictionariesToDelete.length > 0) {
+        await effects.deleteParcelToParameterDictionaries(parcelToParameterDictionariesToDelete, user);
       }
     }
   }

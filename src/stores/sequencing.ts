@@ -27,9 +27,7 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
-export const parcel: Writable<Parcel | null> = writable(null);
-
-export const parcelId: Readable<number> = derived(parcel, $parcel => ($parcel ? $parcel.id : -1));
+export const parcelId: Writable<number | null> = writable(null);
 
 /* Subscriptions. */
 
@@ -52,6 +50,14 @@ export const parcelToParameterDictionaries = gqlSubscribable<ParcelToParameterDi
 );
 
 export const parcels = gqlSubscribable<Parcel[]>(gql.SUB_PARCELS, {}, [], null);
+
+export const parcel: Readable<Parcel | null> = derived([parcels, parcelId], ([$parcels, $parcelId]) => {
+  if (!$parcels || !$parcelId) {
+    return null;
+  }
+
+  return $parcels.filter(parcel => parcel.id === $parcelId)[0];
+});
 
 export const parcelBundles: Readable<ParcelBundle[]> = derived(
   [parcels, parcelToParameterDictionaries, commandDictionaries],

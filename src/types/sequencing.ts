@@ -43,7 +43,6 @@ export type ParcelBundle = {
 } & Omit<Parcel, 'command_dictionary_id' | 'updated_at'>;
 
 export type ParcelToParameterDictionary = {
-  id: number;
   parameter_dictionary_id: number;
   parcel_id: number;
 };

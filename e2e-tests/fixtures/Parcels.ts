@@ -2,6 +2,7 @@ import { Locator, Page, expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Parcels {
+  cancelButton: Locator;
   closeButton: Locator;
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
@@ -45,7 +46,7 @@ export class Parcels {
     await expect(this.tableRow).not.toBeVisible();
     await this.nameField.fill(this.parcelName);
     await this.createButton.click();
-    await this.closeButton.click();
+    await this.cancelButton.click();
     await this.tableRow.waitFor({ state: 'attached' });
     await this.tableRow.waitFor({ state: 'visible' });
     await expect(this.tableRow).toBeVisible();
@@ -81,6 +82,7 @@ export class Parcels {
   updatePage(page: Page): void {
     this.page = page;
 
+    this.cancelButton = page.locator(`button:has-text("Cancel")`);
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Parcel")`);
     this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Parcel") >> button:has-text("Delete")`);

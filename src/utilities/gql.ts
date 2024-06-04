@@ -898,8 +898,8 @@ const gql = {
   `,
 
   DELETE_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
-    mutation deleteParcelToParameterDictionaries($ids: [Int!]!) {
-        ${Queries.DELETE_PARCEL_TO_PARAMETER_DICTIONARY}(where: { id: { _in: $ids } }) {
+    mutation deleteParcelToParameterDictionary($parameterDictionaryIds: [Int!]!, $parcelIds: [Int!]!) {
+        ${Queries.DELETE_PARCEL_TO_PARAMETER_DICTIONARY}(where: { parcel_id: { _in: $parcelIds }, _and: { parameter_dictionary_id: { _in: $parameterDictionaryIds}}} ) {
           affected_rows
       }
     }

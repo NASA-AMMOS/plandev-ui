@@ -34,7 +34,6 @@ export class Dictionaries {
   sequenceAdaptationBuffer: Buffer;
   sequenceAdaptationPath: string = 'e2e-tests/data/sequence-adaptation.js';
   sequenceAdaptationTableRow: Locator;
-  sequenceAdaptationTableRowCount: number;
   sequenceAdaptationTableRowDeleteButton: Locator;
   sequenceAdaptationTableRows: Locator;
 
@@ -72,7 +71,7 @@ export class Dictionaries {
     );
   }
 
-  private async createDictionary(
+  async createDictionary(
     dictionaryBuffer: Buffer,
     dictionaryName: string,
     tableRow: Locator,
@@ -104,7 +103,7 @@ export class Dictionaries {
   async createSequenceAdaptation(): Promise<void> {
     await this.updatePage(this.page, DictionaryType.SequenceAdaptation);
 
-    this.createDictionary(
+    await this.createDictionary(
       this.sequenceAdaptationBuffer,
       'Sequence Adaptation',
       this.sequenceAdaptationTableRow,
@@ -159,9 +158,11 @@ export class Dictionaries {
       await tableRow.waitFor({ state: 'hidden' });
       await expect(tableRow).not.toBeVisible();
     } else {
+      await this.updatePage(this.page, type);
+
       // This will never go below 0.
-      expect(Math.max(0, (await this.sequenceAdaptationTableRows.count()) - 1)).toEqual(
-        this.sequenceAdaptationTableRowCount,
+      expect(Math.max(0, (await this.sequenceAdaptationTableRows.count()) - 1)).toBe(
+        await this.sequenceAdaptationTableRows.count(),
       );
     }
   }
@@ -201,7 +202,7 @@ export class Dictionaries {
     await this.page.waitForTimeout(250);
   }
 
-  private readDictionary(dictionaryName: string, dictionaryPath: string): Buffer {
+  readDictionary(dictionaryName: string, dictionaryPath: string): Buffer {
     const dictionaryFile = readFileSync(dictionaryPath)
       .toString()
       .replace(/GENERIC/, dictionaryName);
@@ -210,11 +211,7 @@ export class Dictionaries {
     return Buffer.from(dictionary);
   }
 
-  private async updatePage(
-    page: Page,
-    dictionaryType: DictionaryType,
-    dictionaryName?: string | undefined,
-  ): Promise<void> {
+  async updatePage(page: Page, dictionaryType: DictionaryType, dictionaryName?: string | undefined): Promise<void> {
     this.page = page;
 
     this.confirmModal = this.page.locator(`.modal:has-text("Delete ${dictionaryType}")`);
@@ -244,7 +241,6 @@ export class Dictionaries {
       this.sequenceAdaptationTableRows = this.page
         .locator('.panel', { hasText: 'Sequence Adaptations' })
         .locator('.body .ag-row');
-      this.sequenceAdaptationTableRowCount = await this.sequenceAdaptationTableRows.count();
       this.sequenceAdaptationTableRow = this.sequenceAdaptationTableRows.first();
       this.sequenceAdaptationTableRowDeleteButton = this.sequenceAdaptationTableRow.locator(
         `button[aria-label="Delete ${DictionaryType.SequenceAdaptation}"]`,

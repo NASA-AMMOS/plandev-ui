@@ -2239,22 +2239,30 @@ const effects = {
     }
   },
 
-  async deleteParcelToParameterDictionaries(ids: number[], user: User | null): Promise<number | null> {
+  async deleteParcelToParameterDictionaries(
+    parcelToParameterDictionariesToDelete: ParcelToParameterDictionary[],
+    user: User | null,
+  ): Promise<number | null> {
     try {
       if (!queryPermissions.DELETE_PARCEL_TO_PARAMETER_DICTIONARIES(user)) {
         throwPermissionError('delete parcel to parameter dictionaries');
       }
 
+      const parcelIds = parcelToParameterDictionariesToDelete.map(p => p.parcel_id);
+      const parameterDictionaryIds = parcelToParameterDictionariesToDelete.map(p => p.parameter_dictionary_id);
+
       const data = await reqHasura<{ affected_rows: number }>(
         gql.DELETE_PARCEL_TO_PARAMETER_DICTIONARIES,
-        { ids },
+        { parameterDictionaryIds, parcelIds },
         user,
       );
+
       const { delete_parcel_to_parameter_dictionary } = data;
+
       if (delete_parcel_to_parameter_dictionary != null) {
         const { affected_rows } = delete_parcel_to_parameter_dictionary;
 
-        if (affected_rows !== ids.length) {
+        if (affected_rows !== parameterDictionaryIds.length) {
           throw Error('Some parcel to parameter dictionaries were not successfully deleted');
         }
 
