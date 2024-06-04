@@ -27,9 +27,9 @@ test.beforeAll(async ({ browser, baseURL }) => {
   userB = new User(page, 'userB');
   models = new Models(page);
   plans = new Plans(page, models);
-  constraints = new Constraints(page, models);
-  schedulingConditions = new SchedulingConditions(page, models);
-  schedulingGoals = new SchedulingGoals(page, models);
+  constraints = new Constraints(page);
+  schedulingConditions = new SchedulingConditions(page);
+  schedulingGoals = new SchedulingGoals(page);
   planA = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
   planB = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
 
@@ -44,6 +44,7 @@ test.beforeAll(async ({ browser, baseURL }) => {
   await userA.login(baseURL);
   await plans.goto();
   const planAId = await plans.createPlan(planA.planName);
+  await page.waitForTimeout(500); // Give plan page a moment to reset the input fields after plan creation success
   await plans.createPlan(planB.planName);
   await planA.goto(planAId);
 });
@@ -62,6 +63,21 @@ test.afterAll(async ({ baseURL }) => {
 });
 
 test.describe.serial('Plan Metadata', () => {
+  test('Plan should be re-nameable', async () => {
+    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.renamePlan(planA.planName + '_renamed');
+
+    // Give the input form a moment to react before immediately performing another rename
+    await page.waitForTimeout(250);
+    await planA.renamePlan(planA.planName);
+  });
+
+  test('Plan name uniqueness validation enforced', async () => {
+    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.fillPlanName(planB.planName);
+    await expect(page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
+  });
+
   test('Plan owner should be userA', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA);
     await expect(planA.panelPlanMetadata.locator('input[name="owner"]')).toHaveValue(userA.username);

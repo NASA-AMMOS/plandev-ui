@@ -46,6 +46,7 @@ export class Plan {
   planCollaboratorInput: Locator;
   planCollaboratorInputContainer: Locator;
   planCollaboratorLoadingInput: Locator;
+  planNameInput: Locator;
   planTitle: Locator;
   reSimulateButton: Locator;
   roleSelector: Locator;
@@ -185,6 +186,13 @@ export class Plan {
     await this.panelActivityForm.getByPlaceholder('Enter preset name').blur();
   }
 
+  async fillPlanName(name: string) {
+    await this.planNameInput.fill(name);
+    await this.planNameInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+    await this.planNameInput.evaluate(e => e.dispatchEvent(new Event('change')));
+    await this.planNameInput.blur();
+  }
+
   async fillSimulationTemplateName(templateName: string) {
     await this.panelSimulation.getByRole('button', { name: 'Set Template' }).click();
     await this.panelSimulation.locator('.dropdown-header').waitFor({ state: 'attached' });
@@ -238,6 +246,11 @@ export class Plan {
     await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
+  }
+
+  async renamePlan(name: string) {
+    await this.fillPlanName(name);
+    await this.waitForToast('Plan Updated Successfully');
   }
 
   async runAnalysis() {
@@ -415,6 +428,7 @@ export class Plan {
     this.planTitle = page.locator(`.plan-title:has-text("${this.planName}")`);
     this.planCollaboratorInputContainer = this.panelPlanMetadata.locator('.input:has-text("Collaborators")');
     this.planCollaboratorInput = this.planCollaboratorInputContainer.getByPlaceholder('Search collaborators or plans');
+    this.planNameInput = page.locator('input[name="plan-name"]');
     this.planCollaboratorLoadingInput = this.planCollaboratorInputContainer.getByPlaceholder('Loading...');
     this.roleSelector = page.locator(`.nav select`);
     this.reSimulateButton = page.locator('.header-actions button:has-text("Re-Run")');

@@ -23,6 +23,7 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
+  import { plans } from '../../stores/plans';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
@@ -35,7 +36,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { convertUsToDurationString, getDoyTime, getShortISOForDate, getUnixEpochTime } from '../../utilities/time';
-  import { min, required, timestamp } from '../../utilities/validators';
+  import { min, required, timestamp, unique } from '../../utilities/validators';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -167,16 +168,20 @@
   let models: ModelSlim[];
   let nameInputField: HTMLInputElement;
   let planTags: Tag[] = [];
-  let plans: PlanSlim[];
   let user: User | null = null;
 
   let endTimeDoyField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
-  let nameField = field<string>('', [required]);
+  $: nameField = field<string>('', [
+    required,
+    unique(
+      $plans.map(plan => plan.name),
+      'Plan name already exists',
+    ),
+  ]);
   let simTemplateField = field<number | null>(null);
   let startTimeDoyField = field<string>('', [required, timestamp]);
 
-  $: plans = data.plans;
   $: models = data.models;
   $: {
     user = data.user;
@@ -221,7 +226,7 @@
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
     $startTimeDoyField.dirtyAndValid;
-  $: filteredPlans = plans.filter(plan => {
+  $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
       plan.end_time_doy.includes(filterTextLowerCase) ||
@@ -267,7 +272,7 @@
       }));
       await effects.createPlanTags(newPlanTags, newPlan, user);
       newPlan.tags = planTags.map(tag => ({ tag }));
-      plans = [...plans, newPlan];
+      plans.updateValue(storePlans => [...storePlans, newPlan]);
     }
   }
 
@@ -275,7 +280,7 @@
     const success = await effects.deletePlan(plan, user);
 
     if (success) {
-      plans = plans.filter(p => plan.id !== p.id);
+      plans.updateValue(storePlans => storePlans.filter(p => plan.id !== p.id));
     }
   }
 
@@ -294,7 +299,7 @@
     }
   }
 
-  function deletePlanContext(event: CustomEvent<RowId[]>) {
+  function deletePlanContext(event: CustomEvent<RowId[]>, plans: PlanSlim[]) {
     const id = event.detail[0] as number;
     const plan = plans.find(t => t.id === id);
     if (plan) {
@@ -500,14 +505,14 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if filteredPlans.length}
+        {#if filteredPlans && filteredPlans.length}
           <SingleActionDataGrid
             {columnDefs}
             hasDeletePermission={featurePermissions.plan.canDelete}
             itemDisplayText="Plan"
             items={filteredPlans}
             {user}
-            on:deleteItem={deletePlanContext}
+            on:deleteItem={event => deletePlanContext(event, filteredPlans)}
             on:rowClicked={({ detail }) => showPlan(detail.data)}
           />
         {:else}

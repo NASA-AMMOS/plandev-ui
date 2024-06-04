@@ -340,7 +340,7 @@
   }
 
   $: if (
-    $plan &&
+    $initialPlan &&
     $simulationDataset !== null &&
     (getSimulationStatus($simulationDataset) === Status.Complete ||
       getSimulationStatus($simulationDataset) === Status.Complete)
@@ -351,7 +351,7 @@
     effects
       .getSpans(
         datasetId,
-        $simulationDataset.simulation_start_time ?? $plan.start_time,
+        $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
         data.user,
         simulationDataAbortController.signal,
       )
@@ -545,7 +545,7 @@
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
-<PageTitle subTitle={data.initialPlan.name} title="Plans" />
+<PageTitle subTitle={$plan?.name} title="Plans" />
 <CssGrid
   class="plan-container"
   rows={$planSnapshot
@@ -554,7 +554,9 @@
 >
   <Nav user={data.user}>
     <div class="title" slot="title">
-      <PlanMenu plan={data.initialPlan} user={data.user} />
+      {#if $plan}
+        <PlanMenu plan={$plan} user={data.user} />
+      {/if}
 
       {#if $planReadOnlyMergeRequest || data.initialPlan.parent_plan?.is_locked}
         <button

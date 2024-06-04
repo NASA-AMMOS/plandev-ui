@@ -178,6 +178,7 @@ export enum Queries {
   UPDATE_MISSION_MODEL = 'update_mission_model_by_pk',
   UPDATE_PARCEL = 'update_parcel_by_pk',
   UPDATE_PLAN_SNAPSHOT = 'update_plan_snapshot_by_pk',
+  UPDATE_PLAN = 'update_plan_by_pk',
   UPDATE_SCHEDULING_CONDITION_METADATA = 'update_scheduling_condition_metadata_by_pk',
   UPDATE_SCHEDULING_GOAL_METADATA = 'update_scheduling_goal_metadata_by_pk',
   UPDATE_SCHEDULING_REQUEST = 'update_scheduling_request',
@@ -2255,6 +2256,33 @@ const gql = {
     }
   `,
 
+  SUB_PLANS: `#graphql
+    subscription SubPlans {
+      plans: ${Queries.PLANS}(order_by: { id: desc }) {
+        collaborators {
+          collaborator
+        }
+        created_at
+        duration
+        id
+        model_id
+        name
+        owner
+        revision
+        start_time
+        updated_at
+        updated_by
+        tags {
+          tag {
+            color
+            id
+            name
+          }
+        }
+      }
+    }
+`,
+
   SUB_PLANS_USER_WRITABLE: `#graphql
     subscription SubPlansUserWritable($userId: String!) {
       ${Queries.PLANS}(where: {_or: [{owner: {_eq: $userId}}, {collaborators: {collaborator: {_eq: $userId}}}]}, order_by: {id: desc}) {
@@ -3089,6 +3117,16 @@ const gql = {
     mutation UpdateParcel($id: Int!, $parcel: parcel_set_input!) {
       updateParcel: ${Queries.UPDATE_PARCEL}(
         pk_columns: { id: $id }, _set: $parcel
+      ) {
+        id
+      }
+    }
+  `,
+
+  UPDATE_PLAN: `#graphql
+    mutation UpdatePlan($plan_id: Int!, $plan: plan_set_input!) {
+      updatePlan: ${Queries.UPDATE_PLAN}(
+        pk_columns: { id: $plan_id }, _set: $plan
       ) {
         id
       }

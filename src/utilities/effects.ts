@@ -103,6 +103,7 @@ import type {
   PlanMergeNonConflictingActivity,
   PlanMergeRequestSchema,
   PlanMergeResolution,
+  PlanMetadata,
   PlanSchema,
   PlanSlim,
 } from '../types/plan';
@@ -4668,6 +4669,28 @@ const effects = {
       catchError('Parcel Update Failed', e as Error);
       showFailureToast('Parcel Update Failed');
       return null;
+    }
+  },
+
+  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<void> {
+    try {
+      if (!queryPermissions.UPDATE_PLAN(user, plan)) {
+        throwPermissionError('update plan');
+      }
+
+      const data = await reqHasura(gql.UPDATE_PLAN, { plan: planMetadata, plan_id: plan.id }, user);
+      const { updatePlan } = data;
+
+      if (updatePlan.id != null) {
+        showSuccessToast('Plan Updated Successfully');
+        return;
+      } else {
+        throw Error(`Unable to update plan with ID: "${plan.id}"`);
+      }
+    } catch (e) {
+      catchError('Plan Update Failed', e as Error);
+      showFailureToast('Plan Update Failed');
+      return;
     }
   },
 

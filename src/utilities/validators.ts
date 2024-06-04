@@ -24,11 +24,11 @@ export function required(value: number | string): Promise<ValidationResult> {
   });
 }
 
-export function unique(existingValues: string[]): (value: string) => Promise<ValidationResult> {
+export function unique(existingValues: string[], message?: string): (value: string) => Promise<ValidationResult> {
   return (value: string): Promise<ValidationResult> =>
     new Promise(resolve => {
       if (existingValues.indexOf(value) > -1) {
-        return resolve('Value already exists');
+        return resolve(message || 'Value already exists');
       } else {
         return resolve(null);
       }
