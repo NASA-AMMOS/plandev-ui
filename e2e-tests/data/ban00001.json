@@ -1,0 +1,63 @@
+{
+  "id": "testDescription",
+  "metadata": {},
+  "steps": [
+    {
+      "args": [
+        {
+          "type": "string",
+          "value": "TEST1"
+        }
+      ],
+      "stem": "ECHO",
+      "time": {
+        "type": "COMMAND_COMPLETE"
+      },
+      "type": "command",
+      "description": "a description"
+    },
+    {
+      "args": [],
+      "stem": "FSW_CMD",
+      "time": {
+        "tag": "00:00:01",
+        "type": "COMMAND_RELATIVE"
+      },
+      "type": "command",
+      "description": "fsw command description",
+      "models": [
+        {
+          "offset": "00:00:00",
+          "value": true,
+          "variable": "cmd"
+        }
+      ]
+    },
+    {
+      "args": [],
+      "stem": "FSW_CMD_1",
+      "time": {
+        "type": "COMMAND_COMPLETE"
+      },
+      "type": "command"
+    },
+    {
+      "args": [
+        {
+          "type": "number",
+          "value": 10
+        },
+        {
+          "type": "string",
+          "value": "ENUM"
+        }
+      ],
+      "stem": "FSW_CMD_2",
+      "time": {
+        "type": "COMMAND_COMPLETE"
+      },
+      "type": "command",
+      "description": "fsw cmd 2 description"
+    }
+  ]
+}
