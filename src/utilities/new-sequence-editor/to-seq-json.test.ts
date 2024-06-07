@@ -400,4 +400,32 @@ C ECHO L01STR
       expect(actual).toEqual(expected);
     });
   });
+
+  it('Convert quoted strings', () => {
+    const seq = `@ID "escaped_quotes"
+
+    R1 ECHO "Can this handle \\"Escaped\\" quotes??" # and this "too"`;
+    const id = 'escaped_quotes';
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, [], null, id);
+    const expected = {
+      id,
+      metadata: {},
+      steps: [
+        {
+          args: [
+            {
+              name: 'echo_string',
+              type: 'string',
+              value: `Can this handle "Escaped" quotes??`,
+            },
+          ],
+          description: `and this "too"`,
+          stem: 'ECHO',
+          time: { tag: '00:00:01', type: 'COMMAND_RELATIVE' },
+          type: 'command',
+        },
+      ],
+    };
+    expect(actual).toEqual(expected);
+  });
 });

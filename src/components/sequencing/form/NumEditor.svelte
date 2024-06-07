@@ -7,7 +7,7 @@
   // (("e" | "E") ("+" | "-")? ("_" | @digit)+)? |
   // @digit ("_" | @digit)* "n" |
 
-  import { isFswCommandArgumentUnsigned, type NumberArg } from './utils';
+  import { isFswCommandArgumentUnsigned, type NumberArg } from '../../../utilities/codemirror/codemirror-utils';
 
   // const PAT_INT = "^[-+]?\\d+$";
   // const PAT_FLOAT = "^[-+]?\\d+\.?\\d*$";

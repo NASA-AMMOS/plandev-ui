@@ -13,7 +13,7 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
-import { quoteEscape } from '../../components/sequencing/form/utils';
+import { quoteEscape } from '../codemirror/codemirror-utils';
 import { customizeSeqJsonParsing } from './extension-points';
 import { logError } from './logger';
 
@@ -43,7 +43,7 @@ export function seqJsonBaseArgToSequence(
 ): string {
   switch (arg.type) {
     case 'string':
-      return `"${arg.value}"`;
+      return `${quoteEscape(arg.value)}`;
     case 'boolean':
       return arg.value ? 'TRUE' : 'FALSE';
     default:

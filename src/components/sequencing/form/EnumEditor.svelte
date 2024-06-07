@@ -3,8 +3,8 @@
 <script lang="ts">
   import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
   import type { SelectedDropdownOptionValue } from '../../../types/dropdown';
+  import { quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
-  import { quoteEscape, unquoteUnescape } from './utils';
 
   const SEARCH_THRESHOLD = 100;
   const MAX_SEARCH_ITEMS = 1_000;

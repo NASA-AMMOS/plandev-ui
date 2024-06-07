@@ -8,7 +8,7 @@
     isFswCommandArgumentRepeat,
     isFswCommandArgumentUnsigned,
     isFswCommandArgumentVarString,
-  } from './utils';
+  } from '../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: FswCommandArgument;
 

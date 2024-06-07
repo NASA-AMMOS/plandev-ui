@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
-  import { isQuoted, quoteEscape, unquoteUnescape } from './utils';
+  import { isQuoted, quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: FswCommandArgumentVarString;
   export let initVal: string;

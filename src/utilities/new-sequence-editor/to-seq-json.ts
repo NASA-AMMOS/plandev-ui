@@ -23,6 +23,7 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
+import { removeEscapedQuotes } from '../codemirror/codemirror-utils';
 import { customizeSeqJson } from './extension-points';
 import { logInfo } from './logger';
 import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
@@ -375,7 +376,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
     const offsetNode = modelNode.getChild('Offset');
 
     const variable = variableNode
-      ? (removeQuotes(text.slice(variableNode.from, variableNode.to)) as string)
+      ? (removeEscapedQuotes(text.slice(variableNode.from, variableNode.to)) as string)
       : 'UNKNOWN';
 
     // Value can be string, number or boolean
@@ -385,7 +386,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
       if (valueChild) {
         const valueText = text.slice(valueChild.from, valueChild.to);
         if (valueChild.name === 'String') {
-          value = removeQuotes(valueText);
+          value = removeEscapedQuotes(valueText);
         } else if (valueChild.name === 'Boolean') {
           value = !/^FALSE$/i.test(valueText);
         } else if (valueChild.name === 'Number') {
@@ -393,7 +394,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
         }
       }
     }
-    const offset = offsetNode ? (removeQuotes(text.slice(offsetNode.from, offsetNode.to)) as string) : 'UNKNOWN';
+    const offset = offsetNode ? (removeEscapedQuotes(text.slice(offsetNode.from, offsetNode.to)) as string) : 'UNKNOWN';
 
     models.push({ offset, value, variable });
   }
@@ -407,14 +408,7 @@ function parseDescription(node: SyntaxNode, text: string): string | undefined {
     return undefined;
   }
   const description = text.slice(descriptionNode.from + 1, descriptionNode.to).trim();
-  return removeQuotes(description) as string;
-}
-
-function removeQuotes(text: string | number | boolean): string | number | boolean {
-  if (typeof text === 'string') {
-    return text.replace(/^"|"$/g, '').replaceAll('\\"', '"');
-  }
-  return text;
+  return removeEscapedQuotes(description) as string;
 }
 
 export function parseCommand(
@@ -518,7 +512,7 @@ function parseMetadata(node: SyntaxNode, text: string): Metadata | undefined {
       return; // Skip this entry if either the key or value is missing
     }
 
-    const keyText = removeQuotes(text.slice(keyNode.from, keyNode.to)) as string;
+    const keyText = removeEscapedQuotes(text.slice(keyNode.from, keyNode.to)) as string;
 
     let value = text.slice(valueNode.from, valueNode.to);
     try {

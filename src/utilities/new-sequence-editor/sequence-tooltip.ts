@@ -11,7 +11,7 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import ArgumentTooltip from '../../components/sequencing/ArgumentTooltip.svelte';
 import CommandTooltip from '../../components/sequencing/CommandTooltip.svelte';
-import { isFswCommandArgumentRepeat } from '../../components/sequencing/form/utils';
+import { isFswCommandArgumentRepeat } from '../codemirror/codemirror-utils';
 import { getCustomArgDef } from './extension-points';
 import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 

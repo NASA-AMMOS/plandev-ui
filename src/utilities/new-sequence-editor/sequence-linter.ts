@@ -12,10 +12,10 @@ import type {
   ParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { closest, distance } from 'fastest-levenshtein';
-import { addDefaultArgs, quoteEscape } from '../../components/sequencing/form/utils';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
+import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
 import { getCustomArgDef } from './extension-points';
 import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 import {
