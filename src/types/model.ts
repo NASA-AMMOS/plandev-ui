@@ -2,6 +2,7 @@ import type { UserId } from './app';
 import type { ConstraintModelSpec } from './constraint';
 import type { ParametersMap } from './parameter';
 import type { SchedulingConditionModelSpecification, SchedulingGoalModelSpecification } from './scheduling';
+import type { View } from './view';
 
 export type Model = ModelSchema;
 
@@ -22,6 +23,7 @@ export type ModelSchema = {
   scheduling_specification_conditions: SchedulingConditionModelSpecification[];
   scheduling_specification_goals: SchedulingGoalModelSpecification[];
   version: string;
+  view: View | null;
 };
 
 export type ModelSlim = Pick<

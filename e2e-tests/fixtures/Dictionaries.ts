@@ -114,27 +114,19 @@ export class Dictionaries {
   async deleteChannelDictionary(): Promise<void> {
     await this.updatePage(this.page, DictionaryType.ChannelDictionary, this.channelDictionaryName);
 
-    await this.deleteDictionary(
-      this.channelDictionaryTableRow,
-      this.channelDictionaryTableRowDeleteButton,
-      DictionaryType.ChannelDictionary,
-    );
+    await this.deleteDictionary(this.channelDictionaryTableRow, this.channelDictionaryTableRowDeleteButton);
   }
 
   async deleteCommandDictionary(): Promise<void> {
     await this.updatePage(this.page, DictionaryType.CommandDictionary, this.commandDictionaryName);
 
-    await this.deleteDictionary(
-      this.commandDictionaryTableRow,
-      this.commandDictionaryTableRowDeleteButton,
-      DictionaryType.CommandDictionary,
-    );
+    await this.deleteDictionary(this.commandDictionaryTableRow, this.commandDictionaryTableRowDeleteButton);
   }
 
   /**
    * @note Automatically cascade deletes any dependent expansion rules and expansion sets.
    */
-  private async deleteDictionary(tableRow: Locator, tableRowDeleteButton: Locator, type: DictionaryType) {
+  private async deleteDictionary(tableRow: Locator, tableRowDeleteButton: Locator) {
     await expect(tableRow).toBeVisible();
     await expect(tableRowDeleteButton).not.toBeVisible();
 
@@ -152,39 +144,21 @@ export class Dictionaries {
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
 
-    // TODO: Remove this conditional when we add Sequence Adaptation names and we can tie to a specific row.
-    if (type !== DictionaryType.SequenceAdaptation) {
-      await tableRow.waitFor({ state: 'detached' });
-      await tableRow.waitFor({ state: 'hidden' });
-      await expect(tableRow).not.toBeVisible();
-    } else {
-      await this.updatePage(this.page, type);
-
-      // This will never go below 0.
-      expect(Math.max(0, (await this.sequenceAdaptationTableRows.count()) - 1)).toBe(
-        await this.sequenceAdaptationTableRows.count(),
-      );
-    }
+    await tableRow.waitFor({ state: 'detached' });
+    await tableRow.waitFor({ state: 'hidden' });
+    await expect(tableRow).not.toBeVisible();
   }
 
   async deleteParameterDictionary(): Promise<void> {
     await this.updatePage(this.page, DictionaryType.ParameterDictionary, this.parameterDictionaryName);
 
-    await this.deleteDictionary(
-      this.parameterDictionaryTableRow,
-      this.parameterDictionaryTableRowDeleteButton,
-      DictionaryType.ParameterDictionary,
-    );
+    await this.deleteDictionary(this.parameterDictionaryTableRow, this.parameterDictionaryTableRowDeleteButton);
   }
 
   async deleteSequenceAdaptation(): Promise<void> {
     await this.updatePage(this.page, DictionaryType.SequenceAdaptation);
 
-    await this.deleteDictionary(
-      this.sequenceAdaptationTableRow,
-      this.sequenceAdaptationTableRowDeleteButton,
-      DictionaryType.SequenceAdaptation,
-    );
+    await this.deleteDictionary(this.sequenceAdaptationTableRow, this.sequenceAdaptationTableRowDeleteButton);
   }
 
   private async fillInputFile(dictionaryBuffer: Buffer, dictionaryName: string) {
@@ -212,8 +186,6 @@ export class Dictionaries {
   }
 
   async updatePage(page: Page, dictionaryType: DictionaryType, dictionaryName?: string | undefined): Promise<void> {
-    this.page = page;
-
     this.confirmModal = this.page.locator(`.modal:has-text("Delete ${dictionaryType}")`);
     this.confirmModalDeleteButton = this.page.locator(
       `.modal:has-text("Delete ${dictionaryType}") >> button:has-text("Delete")`,

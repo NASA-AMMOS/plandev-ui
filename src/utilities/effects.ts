@@ -3762,11 +3762,16 @@ const effects = {
     }
   },
 
+  /**
+   * Try and get the view from the query parameters, otherwise check if there's a default view set at the
+   * mission model level, otherwise just return a generated default view.
+   */
   async getView(
     query: URLSearchParams | null,
     user: User | null,
     activityTypes: ActivityType[] = [],
     resourceTypes: ResourceType[] = [],
+    defaultView?: View | null,
   ): Promise<View | null> {
     try {
       if (query !== null) {
@@ -3779,6 +3784,8 @@ const effects = {
           if (view !== null) {
             return view;
           }
+        } else if (defaultView !== null && defaultView !== undefined) {
+          return defaultView;
         }
       }
       return generateDefaultView(activityTypes, resourceTypes);

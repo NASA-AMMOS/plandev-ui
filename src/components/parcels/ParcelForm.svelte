@@ -130,7 +130,6 @@
 
   function onToggleParameterDictionary(event: CustomEvent<{ ids: Record<number, boolean> }>) {
     selectedParmeterDictionaries = event.detail.ids;
-    console.log(selectedParmeterDictionaries);
   }
 
   function onToggleSequenceAdaptation(event: CustomEvent<{ id: number | null }>) {

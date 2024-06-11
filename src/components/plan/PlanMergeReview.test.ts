@@ -69,6 +69,7 @@ const mockInitialPlan: Plan = {
     scheduling_specification_conditions: [],
     scheduling_specification_goals: [],
     version: '1.0.0',
+    view: null,
   },
   model_id: 1,
   name: 'Demo Plan',

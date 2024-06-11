@@ -1374,6 +1374,14 @@ const gql = {
             parameters
           }
           version
+          view {
+            created_at
+            definition
+            id
+            name
+            owner
+            updated_at
+          }
         }
         model_id
         name
