@@ -275,9 +275,7 @@ export function parseTime(commandNode: SyntaxNode, text: string): Time {
     if (match) {
       RELATIVE_TIME.lastIndex = 0;
       const [, doy, hh, mm, ss, ms] = match;
-      tag = `${doy !== undefined ? doy : ''}${doy !== undefined ? doy : ''}${hh ? hh : '00'}:${mm ? mm : '00'}:${
-        ss ? ss : '00'
-      }${ms ? ms : ''}`;
+      tag = `${doy !== undefined ? doy : ''}${hh ? hh : '00'}:${mm ? mm : '00'}:${ss ? ss : '00'}${ms ? ms : ''}`;
       return { tag, type: 'COMMAND_RELATIVE' };
     }
     match = testTime(timeTagRelativeText, RELATIVE_SIMPLE);
