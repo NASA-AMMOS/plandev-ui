@@ -13,7 +13,7 @@ let models: Models;
 let page: Page;
 let parcels: Parcels;
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
 
@@ -27,7 +27,7 @@ test.beforeAll(async ({ browser }) => {
   const dictionaryBuffer = dictionaries.readDictionary(dictionaryName, COMMAND_DICTIONARY_PATH);
 
   await models.goto();
-  await models.createModel();
+  await models.createModel('', baseURL);
   await dictionaries.goto();
   await dictionaries.updatePage(page, DictionaryType.CommandDictionary, dictionaryName);
   await dictionaries.createDictionary(

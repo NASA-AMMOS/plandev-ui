@@ -43,7 +43,7 @@
           {#if error.data || error.trace}
             <div class="trace">
               {#if error.data && JSON.stringify(error.data) !== '{}'}
-                <pre>{JSON.stringify(error.data)}</pre>
+                <pre>{JSON.stringify(error.data, undefined, 2)}</pre>
               {/if}
               {#if error.trace}
                 <pre>{error.trace}</pre>

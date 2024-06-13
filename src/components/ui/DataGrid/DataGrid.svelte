@@ -44,6 +44,7 @@
     type ISizeColumnsToFitParams,
     type IsExternalFilterPresentParams,
     type RedrawRowsParams,
+    type RefreshCellsParams,
     type RowClassParams,
     type RowClickedEvent,
     type RowDoubleClickedEvent,
@@ -78,6 +79,9 @@
   export function redrawRows(params?: RedrawRowsParams<RowData>) {
     gridApi?.redrawRows(params);
   }
+  export function refreshCells(params?: RefreshCellsParams<RowData>) {
+    gridApi?.refreshCells(params);
+  }
   export function sizeColumnsToFit(params?: ISizeColumnsToFitParams) {
     gridApi?.sizeColumnsToFit(params);
   }
@@ -88,6 +92,7 @@
 
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
+  export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let columnShiftResize: boolean = false;
   export let columnStates: ColumnState[] = [];
   export let currentSelectedRowId: RowId | null = null;
@@ -177,6 +182,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       const selectedRow = gridApi?.getRowNode(`${selectedRowId}`);
       selectedRow?.setSelected(true);
     });
+
+    if (columnsToForceRefreshOnDataUpdate.length) {
+      gridApi?.refreshCells({
+        columns: columnsToForceRefreshOnDataUpdate as string[],
+        force: true,
+      });
+    }
   }
   $: gridApi?.sizeColumnsToFit();
   $: gridApi?.applyColumnState({ applyOrder: true, state: columnStates });

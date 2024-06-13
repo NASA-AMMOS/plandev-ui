@@ -18,7 +18,7 @@ let constraints: Constraints;
 let schedulingConditions: SchedulingConditions;
 let schedulingGoals: SchedulingGoals;
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
 
@@ -31,7 +31,7 @@ test.beforeAll(async ({ browser }) => {
   view = new View(page);
 
   await models.goto();
-  await models.createModel();
+  await models.createModel('', baseURL);
   await plans.goto();
   await plans.createPlan();
   await plan.goto();

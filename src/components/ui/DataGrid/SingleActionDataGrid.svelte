@@ -23,6 +23,7 @@
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
+  export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasEdit: boolean = false;
@@ -109,6 +110,7 @@
   {autoSizeColumnsToFit}
   {columnDefs}
   {columnStates}
+  {columnsToForceRefreshOnDataUpdate}
   {getRowId}
   {isRowSelectable}
   useCustomContextMenu

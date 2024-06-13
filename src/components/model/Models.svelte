@@ -24,6 +24,8 @@
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import AlertError from '../ui/AlertError.svelte';
+  import ModelId from './ModelId.svelte';
+  import ModelStatusRollup from './ModelStatusRollup.svelte';
 
   export let user: User | null;
 
@@ -32,22 +34,13 @@
     editModel: (model: ModelSlim) => void;
   };
   type ModelCellRendererParams = ICellRendererParams<ModelSlim> & CellRendererParams;
+  type ModelIdCellRendererParams = ICellRendererParams<ModelSlim>;
 
   const createModelPermissionError: string = 'You do not have permission to upload a model';
   const updateModelPermissionError: string = 'You do not have permission to update this model';
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
 
   const baseColumnDefs: DataGridColumnDef[] = [
-    {
-      field: 'id',
-      filter: 'number',
-      headerName: 'ID',
-      resizable: true,
-      sortable: true,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 60,
-    },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
     {
@@ -85,6 +78,29 @@
     hasDeleteModelPermission = featurePermissions.model.canDelete(user);
     hasUpdateModelPermission = featurePermissions.model.canUpdate(user);
     columnDefs = [
+      {
+        cellClass: 'action-cell-container',
+        cellRenderer: (params: ModelIdCellRendererParams) => {
+          const modelIdDiv = document.createElement('div');
+          modelIdDiv.className = 'model-id-cell';
+          new ModelId({
+            props: {
+              model: params.data,
+            },
+            target: modelIdDiv,
+          });
+
+          return modelIdDiv;
+        },
+        field: 'id',
+        filter: 'number',
+        headerName: 'ID',
+        resizable: true,
+        sortable: true,
+        suppressAutoSize: true,
+        suppressSizeToFit: true,
+        width: 75,
+      },
       ...baseColumnDefs,
       {
         cellClass: 'action-cell-container',
@@ -240,6 +256,11 @@
                 value={getShortISOForDate(new Date(selectedModel.created_at))}
               />
             </Input>
+            <Input layout="inline">
+              <label class="model-metadata-item-label" for="status">Jar file status</label>
+              <ModelStatusRollup mode="rollup" model={selectedModel} />
+            </Input>
+            <div class="model-status-full"><ModelStatusRollup mode="full" model={selectedModel} /></div>
           </fieldset>
         </div>
         <div class="model-buttons">
@@ -355,6 +376,7 @@
       {#if $models.length}
         <SingleActionDataGrid
           {columnDefs}
+          columnsToForceRefreshOnDataUpdate={['id']}
           hasEdit={hasUpdateModelPermission}
           hasEditPermission={hasUpdateModelPermission}
           hasDeletePermission={hasDeleteModelPermission}
@@ -388,5 +410,9 @@
     flex-flow: column;
     padding: 8px;
     row-gap: 8px;
+  }
+
+  .model-status-full {
+    margin: 8px 0;
   }
 </style>

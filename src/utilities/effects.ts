@@ -823,6 +823,7 @@ const effects = {
 
       const file: File = files[0];
       const jar_id = await effects.uploadFile(file, user);
+      showSuccessToast('Model Uploaded Successfully. Processing model...');
 
       if (jar_id !== null) {
         const modelInsertInput: ModelInsertInput = {
@@ -843,6 +844,9 @@ const effects = {
             name,
             owner,
             plans: [],
+            refresh_activity_type_logs: [],
+            refresh_model_parameter_logs: [],
+            refresh_resource_type_logs: [],
             version,
             ...(description && { description }),
           };

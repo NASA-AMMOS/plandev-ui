@@ -1,20 +1,24 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher, onDestroy } from 'svelte';
-  import { resetModelStores } from '../../stores/model';
+  import { createEventDispatcher } from 'svelte';
   import type { User, UserId } from '../../types/app';
+  import type { ModelLog, ModelSlim } from '../../types/model';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import UserInput from '../ui/Tags/UserInput.svelte';
+  import ModelStatusRollup from './ModelStatusRollup.svelte';
 
   export let initialModelDescription: string = '';
   export let initialModelName: string = '';
   export let initialModelOwner: UserId | undefined;
   export let initialModelVersion: string | undefined;
+  export let activityTypeLogs: ModelLog[] | undefined;
+  export let modelParameterLogs: ModelLog[] | undefined;
+  export let resourceTypeLogs: ModelLog[] | undefined;
   export let modelId: number | undefined;
   export let createdAt: string | undefined;
   export let user: User | null;
@@ -42,11 +46,20 @@
   let owner: UserId | null = null;
   let version: string = '';
   let description: string = '';
+  let modelLogs: Pick<
+    ModelSlim,
+    'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'
+  > | null = null;
 
   $: description = initialModelDescription;
   $: name = initialModelName;
   $: owner = initialModelOwner ?? null;
   $: version = initialModelVersion ?? '';
+  $: modelLogs = {
+    refresh_activity_type_logs: activityTypeLogs ?? [],
+    refresh_model_parameter_logs: modelParameterLogs ?? [],
+    refresh_resource_type_logs: resourceTypeLogs ?? [],
+  };
 
   $: if (user) {
     hasUpdateModelPermission = featurePermissions.model.canUpdate(user);
@@ -78,10 +91,6 @@
   function onClearOwner() {
     owner = null;
   }
-
-  onDestroy(() => {
-    resetModelStores();
-  });
 </script>
 
 <div class="model-form-container">
@@ -154,6 +163,15 @@
         <input class="st-input w-100" disabled name="createdAt" value={getShortISOForDate(new Date(createdAt))} />
       </Input>
     {/if}
+    {#if modelId}
+      <Input layout="inline">
+        <label class="model-metadata-item-label" for="status">Jar file status</label>
+        <ModelStatusRollup mode="rollup" model={modelLogs} />
+      </Input>
+      <div class="model-status-full">
+        <ModelStatusRollup mode="full" model={modelLogs} />
+      </div>
+    {/if}
   </div>
   <div class="buttons">
     <button
@@ -188,5 +206,9 @@
     display: grid;
     padding: 8px;
     row-gap: 8px;
+  }
+
+  .model-status-full {
+    margin: 8px 0;
   }
 </style>

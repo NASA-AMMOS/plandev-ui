@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  // eslint-disable-next-line
   interface $$Events extends ComponentEvents<SvelteComponent> {
     resetCategory: CustomEvent<ActivityErrorCategories>;
     selectCategory: CustomEvent<ActivityErrorCategories>;
@@ -14,6 +13,7 @@
   import WarningUnknownIcon from '@nasa-jpl/stellar/icons/warning_unknown.svg?component';
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
   import OutsideBoundsIcon from '../../assets/out-of-bounds.svg?component';
+  import type { Dispatcher } from '../../types/component';
   import type { ActivityErrorCategories, ActivityErrorCounts } from '../../types/errors';
   import { isMacOs } from '../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
@@ -30,10 +30,7 @@
   export let selectable: boolean = false;
   export let showTotalCount: boolean = false;
 
-  const dispatch = createEventDispatcher<{
-    resetCategory: ActivityErrorCategories;
-    selectCategory: ActivityErrorCategories;
-  }>();
+  const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   function generateCountText(mode: Mode, count: number, category: string, itemName?: string) {
     switch (mode) {

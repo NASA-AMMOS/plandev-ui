@@ -25,7 +25,7 @@ export class Models {
     this.updatePage(page);
   }
 
-  async createModel(modelName = '') {
+  async createModel(modelName = '', baseURL: string | undefined) {
     await expect(this.tableRow).not.toBeVisible();
     if (modelName) {
       await this.fillInputName(modelName);
@@ -35,16 +35,22 @@ export class Models {
     await this.fillInputVersion();
     await this.fillInputFile();
     await this.createButton.click();
-    await expect(this.page).toHaveURL(/.*\/models\/\d+/);
-    await this.goto();
-    await this.tableRow.waitFor({ state: 'attached' });
-    await this.tableRow.waitFor({ state: 'visible' });
-    await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowModelId).toBeVisible();
-    const el = await this.tableRowModelId.elementHandle();
-    if (el) {
-      this.modelId = (await el.textContent()) as string;
+
+    const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
+    await this.page.waitForURL(editModelUrlRegex);
+    const matches = this.page.url().match(editModelUrlRegex);
+
+    expect(matches).not.toBeNull();
+
+    if (matches) {
+      const { groups: { modelId } = {} } = matches;
+      this.modelId = modelId;
+      expect(modelId).toBeDefined();
     }
+
+    const modelStatusLocator = this.page.getByText('Jar file status Extracted');
+    await modelStatusLocator.waitFor({ state: 'attached' });
+    await modelStatusLocator.waitFor({ state: 'visible' });
   }
 
   async deleteModel() {

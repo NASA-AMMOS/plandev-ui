@@ -34,7 +34,7 @@ test.beforeAll(async ({ browser, baseURL }) => {
   planB = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
 
   await models.goto();
-  await models.createModel();
+  await models.createModel('', baseURL);
   await userB.logout(baseURL);
   // TODO find a way to delete these test users. Cannot import the reqHasura into playwright due
   // to svelte runtime libraries that there is no solution or mock for as of 4/3/24.

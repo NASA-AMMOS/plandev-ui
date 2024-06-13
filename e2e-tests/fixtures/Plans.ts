@@ -16,6 +16,7 @@ export class Plans {
   inputModelSelector: string = 'select[name="model"]';
   inputName: Locator;
   inputStartTime: Locator;
+  modelStatus: Locator;
   planId: string;
   planName: string;
   startTime: string = '2022-001T00:00:00';
@@ -37,6 +38,7 @@ export class Plans {
     await this.fillInputName(planName);
     await this.fillInputStartTime();
     await this.fillInputEndTime();
+    await this.modelStatus.getByText('Extracted', { exact: true }).waitFor({ state: 'visible' });
     await this.createButton.click();
     await this.tableRow(planName).waitFor({ state: 'attached' });
     await this.tableRow(planName).waitFor({ state: 'visible' });
@@ -127,6 +129,7 @@ export class Plans {
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');
+    this.modelStatus = page.locator('.model-status-container');
     this.page = page;
     this.tableRow = (planName: string) => page.locator(`.ag-row:has-text("${planName}")`);
     this.tableRowDeleteButton = (planName: string) =>

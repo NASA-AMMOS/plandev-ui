@@ -49,8 +49,8 @@ test.describe.serial('Models', () => {
     await expect(models.createButton).not.toBeDisabled();
   });
 
-  test('Create model', async () => {
-    await models.createModel();
+  test('Create model', async ({ baseURL }) => {
+    await models.createModel('', baseURL);
   });
 
   test('Delete model', async () => {
@@ -84,9 +84,11 @@ test.describe.serial('Models', () => {
     await models.deleteModel();
   });
 
-  test('Model creation errors should clear on page destroy', async () => {
+  test('Model creation errors should clear on page destroy', async ({ baseURL }) => {
     // Create model
-    await models.createModel(models.modelName);
+    await models.createModel(models.modelName, baseURL);
+
+    await models.goto();
 
     // Create model again with the same name
     await models.fillInputName(models.modelName);

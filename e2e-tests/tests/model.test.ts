@@ -34,7 +34,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await schedulingGoals.gotoNew();
   await schedulingGoals.createSchedulingGoal(baseURL, schedulingGoalName);
   await models.goto();
-  await models.createModel();
+  await models.createModel('', baseURL);
   await model.goto();
 });
 
