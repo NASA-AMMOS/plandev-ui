@@ -27,7 +27,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
@@ -137,21 +137,36 @@ test.describe.serial('Plan', () => {
     await expect(plan.navButtonSchedulingMenu).not.toBeVisible();
   });
 
-  test(`Changing to a new plan should clear the selected activity`, async () => {
+  test(`Changing to a new plan should clear the selected activity`, async ({ baseURL }) => {
     await plan.showPanel(PanelNames.ACTIVITY_TYPES);
 
     // Create an activity which will be auto selected
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
 
     // Switch to a new branch and ensure no activity is selected
-    await plan.createBranch();
+    await plan.createBranch(baseURL);
     await expect(plan.panelActivityForm.getByText('No Activity Selected')).toBeVisible();
 
     // Re-select the activity
     await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
 
+    const branchPlanUrlRegex = new RegExp(`${baseURL}/plans/(?<planId>\\d+)`);
+    const matches = page.url().match(branchPlanUrlRegex);
+    expect(matches).not.toBeNull();
+
+    let currentPlanId = 'foo';
+    if (matches) {
+      const { groups: { planId } = {} } = matches;
+      currentPlanId = planId;
+    }
+
     // Switch to parent plan and ensure no activity is selected
     await page.getByRole('link', { name: plans.planName }).click();
+
+    // wait for page to navigate to parent plan
+    const parentPlanUrlRegex = new RegExp(`${baseURL}/plans/((?!${currentPlanId}).)*`);
+    await page.waitForURL(parentPlanUrlRegex);
+
     await expect(plan.panelActivityForm.getByText('No Activity Selected')).toBeVisible();
 
     // Cleanup

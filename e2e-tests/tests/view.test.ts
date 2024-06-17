@@ -31,7 +31,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   view = new View(page);
 
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await plans.goto();
   await plans.createPlan();
   await plan.goto();

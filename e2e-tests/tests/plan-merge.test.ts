@@ -28,7 +28,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
@@ -51,8 +51,8 @@ test.describe.serial('Plan Merge', () => {
     await page.getByRole('button', { name: 'CreateActivity-BiteBanana' }).click();
   });
 
-  test('Create a branch', async () => {
-    await plan.createBranch(planBranchName);
+  test('Create a branch', async ({ baseURL }) => {
+    await plan.createBranch(baseURL, planBranchName);
   });
 
   test('Change the start time of the activity on the branch', async () => {

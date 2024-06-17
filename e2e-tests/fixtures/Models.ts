@@ -16,17 +16,18 @@ export class Models {
   modelId: string;
   modelName: string;
   modelVersion: string = '1.0.0';
-  tableRow: Locator;
-  tableRowDeleteButton: Locator;
-  tableRowModelId: Locator;
+  table: Locator;
+  tableRow: (modelName?: string) => Locator;
+  tableRowDeleteButton: (modelName?: string) => Locator;
+  tableRowModelId: (modelName?: string) => Locator;
 
   constructor(public page: Page) {
     this.modelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 
-  async createModel(modelName = '', baseURL: string | undefined) {
-    await expect(this.tableRow).not.toBeVisible();
+  async createModel(baseURL: string | undefined, modelName = this.modelName) {
+    await expect(this.tableRow(modelName)).not.toBeVisible();
     if (modelName) {
       await this.fillInputName(modelName);
     } else {
@@ -35,7 +36,6 @@ export class Models {
     await this.fillInputVersion();
     await this.fillInputFile();
     await this.createButton.click();
-
     const editModelUrlRegex = new RegExp(`${baseURL}/models/(?<modelId>\\d+)`);
     await this.page.waitForURL(editModelUrlRegex);
     const matches = this.page.url().match(editModelUrlRegex);
@@ -53,26 +53,29 @@ export class Models {
     await modelStatusLocator.waitFor({ state: 'visible' });
   }
 
-  async deleteModel() {
-    await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
+  async deleteModel(modelName: string = this.modelName) {
+    await this.filterTable(modelName);
+    await expect(this.tableRow(modelName)).toBeVisible();
 
-    await this.tableRow.hover();
-    await this.tableRowDeleteButton.waitFor({ state: 'attached' });
-    await this.tableRowDeleteButton.waitFor({ state: 'visible' });
-    await expect(this.tableRowDeleteButton).toBeVisible();
+    await this.tableRow(modelName).hover();
+    await expect(this.tableRow(modelName).locator('.actions-cell')).toBeVisible();
+    await this.tableRowDeleteButton(modelName).waitFor({ state: 'attached' });
+    await this.tableRowDeleteButton(modelName).waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButton(modelName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRow(modelName).locator('.actions-cell').waitFor({ state: 'visible' });
+
+    await this.tableRowDeleteButton(modelName).click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRow.waitFor({ state: 'detached' });
-    await this.tableRow.waitFor({ state: 'hidden' });
-    await expect(this.tableRow).not.toBeVisible();
+    await this.tableRow(modelName).waitFor({ state: 'detached' });
+    await this.tableRow(modelName).waitFor({ state: 'hidden' });
+    await expect(this.tableRow(modelName)).not.toBeVisible();
   }
 
   async fillInputFile(jarPath: string = this.jarPath) {
@@ -93,6 +96,21 @@ export class Models {
     await this.inputVersion.evaluate(e => e.blur());
   }
 
+  async filterTable(modelName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(modelName);
+    await expect(this.table.getByRole('row', { name: modelName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
+  }
+
   async goto() {
     await this.page.goto('/models', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -101,7 +119,7 @@ export class Models {
   updatePage(page: Page): void {
     this.alertError = page.locator('.alert-error');
     this.confirmModal = page.locator(`.modal:has-text("Delete Model")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Model") >> button:has-text("Delete")`);
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.createButton = page.getByRole('button', { name: 'Create' });
     this.creatingButton = page.getByRole('button', { name: 'Creating...' });
     this.createPlanButton = page.getByRole('button', { name: 'New plan with model' });
@@ -109,10 +127,11 @@ export class Models {
     this.inputName = page.locator('input[name="name"]');
     this.inputVersion = page.locator('input[name="version"]');
     this.page = page;
-    this.tableRow = page.locator(`.ag-row:has-text("${this.modelName}")`);
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.modelName}") >> button[aria-label="Delete Model"]`,
-    );
-    this.tableRowModelId = page.locator(`.ag-row:has-text("${this.modelName}") > div >> nth=0`);
+    this.table = page.getByRole('treegrid');
+    this.tableRow = (modelName: string = this.modelName) => this.table.getByRole('row', { name: modelName });
+    this.tableRowDeleteButton = (modelName: string = this.modelName) =>
+      this.tableRow(modelName).getByRole('gridcell').getByRole('button', { name: 'Delete Model' });
+    this.tableRowModelId = (modelName: string = this.modelName) =>
+      this.tableRow(modelName).getByRole('gridcell').first();
   }
 }

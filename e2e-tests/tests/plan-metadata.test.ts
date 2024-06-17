@@ -34,7 +34,7 @@ test.beforeAll(async ({ browser, baseURL }) => {
   planB = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions, plans.createPlanName());
 
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await userB.logout(baseURL);
   // TODO find a way to delete these test users. Cannot import the reqHasura into playwright due
   // to svelte runtime libraries that there is no solution or mock for as of 4/3/24.
@@ -42,16 +42,20 @@ test.beforeAll(async ({ browser, baseURL }) => {
   await userB.login(baseURL);
   await userA.logout(baseURL);
   await userA.login(baseURL);
+
   await plans.goto();
+
   const planAId = await plans.createPlan(planA.planName);
-  await page.waitForTimeout(500); // Give plan page a moment to reset the input fields after plan creation success
+  await plans.filterTable(planA.planName);
+  await expect(plans.table.getByRole('row', { name: planA.planName })).toBeVisible();
+
   await plans.createPlan(planB.planName);
   await planA.goto(planAId);
 });
 
 test.afterAll(async ({ baseURL }) => {
-  await userA.switchRole('aerie_admin');
   await plans.goto();
+  await userA.switchRole('aerie_admin');
   await plans.deletePlan(planA.planName);
   await plans.deletePlan(planB.planName);
   await models.goto();
@@ -64,22 +68,22 @@ test.afterAll(async ({ baseURL }) => {
 
 test.describe.serial('Plan Metadata', () => {
   test('Plan should be re-nameable', async () => {
-    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.renamePlan(planA.planName + '_renamed');
 
     // Give the input form a moment to react before immediately performing another rename
-    await page.waitForTimeout(250);
+    await expect(planA.planNameInput).toHaveValue(planA.planName + '_renamed');
     await planA.renamePlan(planA.planName);
   });
 
   test('Plan name uniqueness validation enforced', async () => {
-    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.fillPlanName(planB.planName);
     await expect(page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
   });
 
   test('Plan owner should be userA', async () => {
-    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(planA.panelPlanMetadata.locator('input[name="owner"]')).toHaveValue(userA.username);
   });
 
@@ -96,37 +100,50 @@ test.describe.serial('Plan Metadata', () => {
   }) => {
     await userA.logout(baseURL);
     await userB.login(baseURL);
-    await planA.goto();
+
+    await plans.goto();
+    const planAId = await plans.getPlanId(planA.planName);
+    await planA.goto(planAId);
+
     await userB.switchRole('user');
-    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(planA.planCollaboratorInputContainer.locator('.tags-input')).toHaveAttribute('readonly', 'readonly');
   });
 
   test(`userB can be added as a plan collaborator to userA's plan`, async ({ baseURL }) => {
     await userB.logout(baseURL);
     await userA.login(baseURL);
-    await planA.goto();
+
+    await plans.goto();
+    const planAId = await plans.getPlanId(planA.planName);
+    await planA.goto(planAId);
+
     await planA.addPlanCollaborator(userB.username);
   });
 
   test(`Collaborator userB in "user" role should be able to edit userA's plan collaborators`, async ({ baseURL }) => {
     await userA.logout(baseURL);
     await userB.login(baseURL);
-    await planA.goto();
+
+    await plans.goto();
+    const planAId = await plans.getPlanId(planA.planName);
+    await planA.goto(planAId);
+
     await userB.switchRole('user');
-    await planA.showPanel(PanelNames.PLAN_METADATA);
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.addPlanCollaborator(userA.username);
   });
 
   test(`Sets of collaborators can be added from other plans`, async ({ baseURL }) => {
     await userB.logout(baseURL);
     await userA.login(baseURL);
+
     await plans.goto();
     const planBId = await plans.getPlanId(planB.planName);
     await planB.goto(planBId);
-    await planB.showPanel(PanelNames.PLAN_METADATA);
-    await planA.removePlanCollaborator(userA.username);
-    await planA.removePlanCollaborator(userB.username);
+
+    await planB.showPanel(PanelNames.PLAN_METADATA, true);
+
     // Wait for plan to be an option in the input (via socket update which can take at least half a second)
     await page.waitForTimeout(1000);
     await planB.addPlanCollaborator(planA.planName, false);

@@ -43,7 +43,7 @@
         if (p.id !== plan.id) {
           newGroupOptions.push({
             name: p.name,
-            users: [p.owner, ...p.collaborators.map(({ collaborator }) => `${collaborator}`)],
+            users: [...new Set([p.owner, ...p.collaborators.map(({ collaborator }) => `${collaborator}`)])],
           });
         }
       });

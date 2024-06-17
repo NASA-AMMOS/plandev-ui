@@ -15,6 +15,7 @@ export class Constraints {
   inputConstraintModelSelector: string = 'select[name="model"]';
   inputConstraintName: Locator;
   saveButton: Locator;
+  table: Locator;
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
@@ -38,15 +39,17 @@ export class Constraints {
 
   async deleteConstraint() {
     await this.goto();
+    await this.filterTable(this.constraintName);
     await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
+
     await this.tableRow.hover();
+    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
@@ -74,6 +77,21 @@ export class Constraints {
     await this.inputConstraintName.evaluate(e => e.blur());
   }
 
+  private async filterTable(constraintName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(constraintName);
+    await expect(this.table.getByRole('row', { name: constraintName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
+  }
+
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -86,16 +104,15 @@ export class Constraints {
   updatePage(page: Page): void {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Constraint")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete Constraint") >> button:has-text("Delete")`);
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.inputConstraintDefinition = page.locator('.monaco-editor >> textarea.inputarea');
     this.inputConstraintDescription = page.locator('textarea[name="metadata-description"]');
     this.inputConstraintModel = page.locator(this.inputConstraintModelSelector);
     this.inputConstraintName = page.locator('input[name="metadata-name"]');
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`.ag-row:has-text("${this.constraintName}")`);
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.constraintName}") >> button[aria-label="Delete Constraint"]`,
-    );
+    this.table = page.getByRole('treegrid');
+    this.tableRow = this.table.getByRole('row', { name: this.constraintName });
+    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Constraint' });
   }
 }

@@ -14,6 +14,7 @@ export class View {
   navButtonViewUploadViewMenuButton: Locator;
   renameViewMenuSaveViewButton: Locator;
   saveAsMenuSaveAsButton: Locator;
+  table: Locator;
   tableRowDeleteButtonSelector: (viewName: string) => Locator;
   tableRowSelector: (viewName: string) => Locator;
   validViewFilePath: string = 'e2e-tests/data/valid-view.json';
@@ -34,16 +35,17 @@ export class View {
 
   async deleteView(viewName: string) {
     await this.openSavedViews();
+    await this.filterTable(viewName);
     await expect(this.tableRowSelector(viewName)).toBeVisible();
-    await expect(this.tableRowDeleteButtonSelector(viewName)).not.toBeVisible();
 
-    await this.tableRowSelector(viewName).hover();
+    await this.tableRowSelector(viewName).hover({ position: { x: 2, y: 2 } });
+    await expect(this.tableRowSelector(viewName).locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButtonSelector(viewName).waitFor({ state: 'attached' });
     await this.tableRowDeleteButtonSelector(viewName).waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButtonSelector(viewName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButtonSelector(viewName).click();
+    await this.tableRowDeleteButtonSelector(viewName).click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
@@ -69,6 +71,22 @@ export class View {
     await viewNameInput.evaluate(e => e.blur());
   }
 
+  private async filterTable(viewName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(viewName);
+    await expect(this.table.getByRole('row', { name: viewName })).toBeVisible();
+    // dismiss the table filter
+    await this.page.locator('.modal-header').click();
+  }
+
   async openRenameView() {
     await expect(this.navButtonViewRenameViewMenuButton).not.toBeVisible();
     await this.openViewMenu();
@@ -92,6 +110,7 @@ export class View {
   async openViewMenu() {
     this.navButtonView.hover();
     await expect(this.navButtonViewMenu).toBeVisible();
+    await this.page.waitForTimeout(100);
   }
 
   async renameView(viewName: string) {
@@ -102,7 +121,7 @@ export class View {
 
   updatePage(page: Page): void {
     this.confirmModal = page.locator(`.modal:has-text("Delete View")`);
-    this.confirmModalDeleteButton = page.locator(`.modal:has-text("Delete View") >> button:has-text("Delete")`);
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.navButtonView = page.locator('.view-menu-button');
     this.navButtonViewMenu = page.locator(`.view-menu`);
     this.navButtonViewMenuTitle = page.locator(`.view-menu-button .nav-button-title`);
@@ -112,8 +131,9 @@ export class View {
     this.navButtonViewRenameViewMenuButton = page.locator(`.view-menu .menu-item:has-text("Rename view")`);
     this.renameViewMenuSaveViewButton = page.locator('.modal .st-button:has-text("Save View")');
     this.saveAsMenuSaveAsButton = page.locator('.modal .st-button:has-text("Save View")');
-    this.tableRowSelector = (viewName: string) => page.locator(`.ag-row:has-text("${viewName}")`);
+    this.table = page.locator('.modal:has-text("Saved Views")').getByRole('treegrid');
+    this.tableRowSelector = (viewName: string) => this.table.getByRole('row', { name: viewName });
     this.tableRowDeleteButtonSelector = (viewName: string) =>
-      page.locator(`.ag-row:has-text("${viewName}") >> button[aria-label="Delete View"]`);
+      this.tableRowSelector(viewName).getByRole('gridcell').getByRole('button', { name: 'Delete View' });
   }
 }

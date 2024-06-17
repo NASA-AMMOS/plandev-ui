@@ -34,7 +34,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await schedulingGoals.gotoNew();
   await schedulingGoals.createSchedulingGoal(baseURL, schedulingGoalName);
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await model.goto();
 });
 
@@ -66,11 +66,11 @@ test.describe.serial('Model', () => {
   test('Should be able to add a constraint to the model and specify a version', async () => {
     await model.switchToConstraints();
     await model.switchToLibraryView();
-    await model.switchToLibraryView();
+    await model.filterTable(model.constraints.constraintName);
     await model.associationTable
       .getByRole('row', { name: model.constraints.constraintName })
       .getByLabel(checkboxSelector)
-      .check();
+      .click();
     await model.switchToModelView();
     await expect(page.getByRole('button', { name: model.constraints.constraintName })).toBeVisible();
     await expect(
@@ -85,10 +85,11 @@ test.describe.serial('Model', () => {
   test('Should be able to add a scheduling condition to the model and specify a version', async () => {
     await model.switchToConditions();
     await model.switchToLibraryView();
+    await model.filterTable(model.schedulingConditions.conditionName);
     await model.associationTable
       .getByRole('row', { name: model.schedulingConditions.conditionName })
       .getByLabel(checkboxSelector)
-      .check();
+      .click();
     await model.switchToModelView();
     await expect(page.getByRole('button', { name: model.schedulingConditions.conditionName })).toBeVisible();
     await expect(
@@ -106,7 +107,8 @@ test.describe.serial('Model', () => {
   test('Should be able to add a scheduling goal to the model and specify a version', async () => {
     await model.switchToGoals();
     await model.switchToLibraryView();
-    await model.associationTable.getByRole('row', { name: schedulingGoalName }).getByLabel(checkboxSelector).check();
+    await model.filterTable(schedulingGoalName);
+    await model.associationTable.getByRole('row', { name: schedulingGoalName }).getByLabel(checkboxSelector).click();
     await model.switchToModelView();
     await expect(page.getByRole('button', { name: schedulingGoalName })).toBeVisible();
     await expect(page.getByRole('button', { name: schedulingGoalName }).getByRole('combobox')).toHaveValue('');

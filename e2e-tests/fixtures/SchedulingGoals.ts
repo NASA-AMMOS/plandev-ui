@@ -14,6 +14,7 @@ export class SchedulingGoals {
   inputGoalName: Locator;
   newButton: Locator;
   saveButton: Locator;
+  table: Locator;
   tableRowDeleteButtonSelector: (goalName: string) => Locator;
   tableRowSelector: (goalName: string) => Locator;
 
@@ -35,26 +36,28 @@ export class SchedulingGoals {
   }
 
   async deleteSchedulingGoal(goalName: string) {
+    const tableRow = this.tableRowSelector(goalName);
     await this.goto();
-    await expect(this.tableRowSelector(goalName)).toBeVisible();
-    await expect(this.tableRowDeleteButtonSelector(goalName)).not.toBeVisible();
+    await this.filterTable(goalName);
+    await expect(tableRow).toBeVisible();
 
-    await this.tableRowSelector(goalName).hover();
+    await tableRow.hover();
+    await expect(tableRow.locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButtonSelector(goalName).waitFor({ state: 'attached' });
     await this.tableRowDeleteButtonSelector(goalName).waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButtonSelector(goalName)).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButtonSelector(goalName).click();
+    await this.tableRowDeleteButtonSelector(goalName).click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRowSelector(goalName).waitFor({ state: 'detached' });
-    await this.tableRowSelector(goalName).waitFor({ state: 'hidden' });
-    await expect(this.tableRowSelector(goalName)).not.toBeVisible();
+    await tableRow.waitFor({ state: 'detached' });
+    await tableRow.waitFor({ state: 'hidden' });
+    await expect(tableRow).not.toBeVisible();
   }
 
   async fillGoalDefinition() {
@@ -73,6 +76,21 @@ export class SchedulingGoals {
     await this.inputGoalName.evaluate(e => e.blur());
   }
 
+  private async filterTable(goalName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(goalName);
+    await expect(this.table.getByRole('row', { name: goalName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
+  }
+
   async goto() {
     await this.page.goto('/scheduling/goals', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -86,9 +104,7 @@ export class SchedulingGoals {
   updatePage(page: Page): void {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Scheduling Goal")`);
-    this.confirmModalDeleteButton = page.locator(
-      `.modal:has-text("Delete Scheduling Goal") >> button:has-text("Delete")`,
-    );
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.inputGoalDefinition = page.locator('.monaco-editor >> textarea.inputarea');
     this.inputGoalDescription = page.locator('textarea[name="metadata-description"]');
     this.inputGoalModel = page.locator(this.inputGoalModelSelector);
@@ -96,8 +112,9 @@ export class SchedulingGoals {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRowSelector = (goalName: string) => page.locator(`.ag-row:has-text("${goalName}")`);
+    this.table = page.locator('.panel:has-text("Scheduling Goals")').getByRole('treegrid');
+    this.tableRowSelector = (goalName: string) => this.table.getByRole('row', { name: goalName });
     this.tableRowDeleteButtonSelector = (goalName: string) =>
-      page.locator(`.ag-row:has-text("${goalName}") >> button[aria-label="Delete Goal"]`);
+      this.tableRowSelector(goalName).getByRole('gridcell').getByRole('button', { name: 'Delete Goal' });
   }
 }

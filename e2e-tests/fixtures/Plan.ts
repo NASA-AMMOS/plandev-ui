@@ -16,6 +16,7 @@ export class Plan {
   consoleContainer: Locator;
   constraintListItemSelector: string;
   constraintManageButton: Locator;
+  constraintModalFilter: Locator;
   constraintNewButton: Locator;
   gridMenu: Locator;
   gridMenuButton: Locator;
@@ -51,17 +52,19 @@ export class Plan {
   reSimulateButton: Locator;
   roleSelector: Locator;
   scheduleButton: Locator;
-  schedulingConditionEnabledCheckbox: Locator;
-  schedulingConditionListItemSelector: string;
+  schedulingConditionEnabledCheckboxSelector: (conditionName: string) => Locator;
+  schedulingConditionListItemSelector: (conditionName: string) => string;
   schedulingConditionManageButton: Locator;
   schedulingConditionNewButton: Locator;
-  schedulingGoal: Locator;
-  schedulingGoalDifferenceBadge: Locator;
+  schedulingConditionsModalFilter: Locator;
+  schedulingGoal: (goalName: string) => Locator;
+  schedulingGoalDifferenceBadge: (goalName: string) => Locator;
   schedulingGoalEnabledCheckboxSelector: (goalName: string) => Locator;
-  schedulingGoalExpand: Locator;
+  schedulingGoalExpand: (goalName: string) => Locator;
   schedulingGoalListItemSelector: (goalName: string) => string;
   schedulingGoalManageButton: Locator;
   schedulingGoalNewButton: Locator;
+  schedulingGoalsModalFilter: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
   simulateButton: Locator;
@@ -77,7 +80,8 @@ export class Plan {
     public planName = plans.planName,
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
-    this.schedulingConditionListItemSelector = `.scheduling-condition:has-text("${schedulingConditions.conditionName}")`;
+    this.schedulingConditionListItemSelector = (conditionName: string) =>
+      `.scheduling-condition:has-text("${conditionName}")`;
     this.schedulingGoalListItemSelector = (goalName: string) => `.scheduling-goal:has-text("${goalName}")`;
     this.schedulingStatusSelector = (status: string) =>
       `div[data-component-name="SchedulingGoalsPanel"] .header-actions > .status-badge.${status.toLowerCase()}`;
@@ -89,14 +93,18 @@ export class Plan {
   }
 
   async addActivity(name: string = 'GrowBanana') {
+    const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
     await this.page.getByRole('button', { name: `CreateActivity-${name}` }).click();
+    await expect(this.panelActivityDirectivesTable.getByRole('row', { name })).toHaveCount(
+      currentNumOfActivitiesWithName + 1,
+    );
   }
 
   async addPlanCollaborator(name: string, isUsername = true) {
-    await this.showPanel(PanelNames.PLAN_METADATA);
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
     await this.planCollaboratorInput.fill(name);
-    await this.planCollaboratorInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+    await this.page.getByRole('option', { name }).click();
     // If the name is a username then check for the existence of the username in selected items
     // Otherwise it is a plan option and will add an unspecified amount of users
     if (isUsername) {
@@ -107,13 +115,29 @@ export class Plan {
     await this.waitForToast('Plan Collaborators Updated');
   }
 
-  async createBranch(name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] })) {
+  async createBranch(
+    baseURL?: string,
+    name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
+  ) {
+    const branchPlanUrlRegex = new RegExp(`${baseURL}/plans/(?<planId>\\d+)`);
+    await this.page.waitForURL(branchPlanUrlRegex);
+    const matches = this.page.url().match(branchPlanUrlRegex);
+    expect(matches).not.toBeNull();
+
+    let currentPlanId = 'foo';
+    if (matches) {
+      const { groups: { planId } = {} } = matches;
+      currentPlanId = planId;
+    }
+
     await this.page.getByText(this.planName).first().click();
     await this.page.getByText('Create branch').click();
     await this.page.getByPlaceholder('Name of branch').click();
     await this.page.getByPlaceholder('Name of branch').fill(name);
     await this.page.getByRole('button', { name: 'Create Branch' }).click();
-    await this.page.waitForTimeout(500);
+
+    const parentPlanUrlRegex = new RegExp(`${baseURL}/plans/((?!${currentPlanId}).)*`);
+    await this.page.waitForURL(parentPlanUrlRegex);
   }
 
   async createConstraint(baseURL: string | undefined) {
@@ -127,6 +151,9 @@ export class Plan {
     await this.constraints.createConstraint(baseURL);
     await newConstraintPage.close();
     this.constraints.updatePage(this.page);
+    await this.constraintModalFilter.fill(this.constraints.constraintName);
+    // wait for table to filter
+    await this.page.waitForTimeout(100);
     await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.constraintListItemSelector, { state: 'visible', strict: true });
@@ -143,9 +170,18 @@ export class Plan {
     await this.schedulingConditions.createSchedulingCondition(baseURL);
     await newSchedulingConditionPage.close();
     this.schedulingConditions.updatePage(this.page);
-    await this.page.getByRole('row', { name: this.schedulingConditions.conditionName }).getByRole('checkbox').click();
+    await this.schedulingConditionsModalFilter.fill(this.schedulingConditions.conditionName);
+    // wait for table to filter
+    await this.page.waitForTimeout(100);
+    await this.page
+      .getByRole('row', { name: this.schedulingConditions.conditionName })
+      .getByRole('checkbox')
+      .click({ position: { x: 2, y: 2 } });
     await this.page.getByRole('button', { name: 'Update' }).click();
-    await this.page.waitForSelector(this.schedulingConditionListItemSelector, { state: 'visible', strict: true });
+    await this.page.waitForSelector(this.schedulingConditionListItemSelector(this.schedulingConditions.conditionName), {
+      state: 'visible',
+      strict: true,
+    });
   }
 
   async createSchedulingGoal(baseURL: string | undefined, goalName: string) {
@@ -159,7 +195,13 @@ export class Plan {
     await this.schedulingGoals.createSchedulingGoal(baseURL, goalName);
     await newSchedulingGoalPage.close();
     this.schedulingGoals.updatePage(this.page);
-    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').click();
+    await this.schedulingGoalsModalFilter.fill(goalName);
+    // wait for table to filter
+    await this.page.waitForTimeout(100);
+    await this.page
+      .getByRole('row', { name: goalName })
+      .getByRole('checkbox')
+      .click({ position: { x: 2, y: 2 } });
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.waitForSelector(this.schedulingGoalListItemSelector(goalName), { state: 'visible', strict: true });
   }
@@ -172,7 +214,7 @@ export class Plan {
       await this.panelActivityDirectivesTable.getByRole('gridcell').first().click({ button: 'right' });
       await this.page.getByText(/Delete \d+ Activit(y|ies) Directives?/).click();
 
-      const confirmDeletionButton = this.page.getByRole('button', { name: 'Confirm' });
+      const confirmDeletionButton = await this.page.getByRole('button', { name: 'Confirm' });
       await confirmDeletionButton.waitFor({ state: 'attached', timeout: 1000 });
       await confirmDeletionButton.click();
     }
@@ -213,9 +255,16 @@ export class Plan {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto(planId = this.plans.planId) {
-    await this.page.waitForTimeout(1200);
-    await this.page.goto(`/plans/${planId}`, { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await this.page.goto(`/plans/${planId}`);
+    await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'networkidle' });
+    await expect(this.page.locator('.nav-button-title:has-text("Activities")')).toBeVisible();
+  }
+
+  async hoverMenu(menuButton: Locator) {
+    await menuButton.hover();
+    const menu = menuButton.getByRole('menu');
+    await menu.waitFor({ state: 'attached' });
+    await menu.waitFor({ state: 'visible' });
   }
 
   async reRunSimulation(expectedFinalState = Status.Complete) {
@@ -226,13 +275,16 @@ export class Plan {
 
   async removeConstraint() {
     await this.constraintManageButton.click();
-    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').click();
+    await this.constraintModalFilter.fill(this.constraints.constraintName);
+    // wait for table to filter
+    await this.page.waitForTimeout(100);
+    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
   }
 
   async removePlanCollaborator(name: string) {
-    await this.showPanel(PanelNames.PLAN_METADATA);
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
     await this.waitForPlanCollaboratorLoad();
     await this.planCollaboratorInputContainer
       .locator('.tags-input-selected-items')
@@ -243,7 +295,10 @@ export class Plan {
 
   async removeSchedulingGoal(goalName: string) {
     await this.schedulingGoalManageButton.click();
-    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').click();
+    await this.schedulingGoalsModalFilter.fill(goalName);
+    // wait for table to filter
+    await this.page.waitForTimeout(100);
+    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').uncheck();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
   }
@@ -255,19 +310,31 @@ export class Plan {
 
   async runAnalysis() {
     await this.analyzeButton.click();
-    await this.waitForSchedulingStatus(Status.Incomplete);
+    /**
+     * wait for UI to update with pending status, but don't explicitly check because
+     * the final state of the status might update before the check occurs
+     **/
+    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(Status.Complete);
   }
 
   async runScheduling(expectedFinalState = Status.Complete) {
     await this.scheduleButton.click();
-    await this.waitForSchedulingStatus(Status.Incomplete);
+    /**
+     * wait for UI to update with pending status, but don't explicitly check because
+     * the final state of the status might update before the check occurs
+     **/
+    await this.page.waitForTimeout(300);
     await this.waitForSchedulingStatus(expectedFinalState);
   }
 
   async runSimulation(expectedFinalState = Status.Complete) {
     await this.simulateButton.click();
-    await this.page.waitForTimeout(1000);
+    /**
+     * wait for UI to update with pending status, but don't explicitly check because
+     * the final state of the status might update before the check occurs
+     **/
+    await this.page.waitForTimeout(300);
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
@@ -283,7 +350,7 @@ export class Plan {
       anchorMenuName => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === anchorMenuName,
       anchorMenuName,
     );
-    expect(await this.panelActivityForm.getByRole('textbox', { name: anchorMenuName })).toBeVisible();
+    await expect(this.panelActivityForm.getByRole('textbox', { name: anchorMenuName })).toBeVisible();
   }
 
   async selectActivityPresetByName(presetName: string) {
@@ -294,7 +361,7 @@ export class Plan {
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'detached' });
 
     try {
-      const applyPresetButton = this.page.getByRole('button', { name: 'Apply Preset' });
+      const applyPresetButton = await this.page.getByRole('button', { name: 'Apply Preset' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
@@ -313,7 +380,7 @@ export class Plan {
         document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === presetName,
       presetName,
     );
-    expect(await this.panelActivityForm.getByRole('textbox', { name: presetName })).toBeVisible();
+    await expect(this.panelActivityForm.getByRole('textbox', { name: presetName })).toBeVisible();
   }
 
   async selectSimulationTemplateByName(templateName: string) {
@@ -324,7 +391,7 @@ export class Plan {
     await this.panelSimulation.getByRole('menuitem', { name: templateName }).waitFor({ state: 'detached' });
 
     try {
-      const applyTemplateButton = this.page.getByRole('button', { name: 'Apply Simulation Template' });
+      const applyTemplateButton = await this.page.getByRole('button', { name: 'Apply Simulation Template' });
 
       // allow time for modal to apply the preset to show up if applicable
       await applyTemplateButton.waitFor({ state: 'attached', timeout: 1000 });
@@ -344,7 +411,7 @@ export class Plan {
         templateName,
       templateName,
     );
-    expect(await this.panelSimulation.getByRole('textbox', { name: templateName })).toBeVisible();
+    await expect(this.panelSimulation.getByRole('textbox', { name: templateName })).toBeVisible();
   }
 
   async showConstraintsLayout() {
@@ -362,11 +429,18 @@ export class Plan {
 
   async showPanel(name: PanelNames, pickLastMenu: boolean = false) {
     await expect(this.gridMenu).not.toBeVisible();
+    let gridMenuButton: Locator;
     if (pickLastMenu) {
-      await this.gridMenuButton.last().click();
+      gridMenuButton = await this.gridMenuButton.last();
     } else {
-      await this.gridMenuButton.first().click();
+      gridMenuButton = await this.gridMenuButton.first();
     }
+
+    await expect(gridMenuButton).toBeVisible();
+    await expect(gridMenuButton).toBeEnabled();
+    await this.page.waitForTimeout(1000);
+    await gridMenuButton.click();
+
     await this.gridMenu.waitFor({ state: 'attached' });
     await this.gridMenu.waitFor({ state: 'visible' });
     await this.gridMenuItem(name).click();
@@ -395,23 +469,23 @@ export class Plan {
       .locator(`div.ag-theme-stellar.table .ag-center-cols-container > .ag-row`)
       .nth(0);
     this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
+    this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.locator(`.console-container`);
-    this.gridMenu = page.locator('.header > .grid-menu > .menu > .menu-slot');
     this.gridMenuButton = page.locator('.header > .grid-menu');
-    this.gridMenuItem = (name: string) =>
-      page.locator(`.header > .grid-menu > .menu > .menu-slot > .menu-item:text-is("${name}")`);
+    this.gridMenu = this.gridMenuButton.getByRole('menu');
+    this.gridMenuItem = (name: string) => this.gridMenu.getByRole('menuitem', { exact: true, name });
     this.navButtonActivityChecking = page.locator(`.nav-button:has-text("Activities")`);
-    this.navButtonActivityCheckingMenu = page.locator(`.nav-button:has-text("Activities") .menu`);
+    this.navButtonActivityCheckingMenu = this.navButtonActivityChecking.getByRole('menu');
     this.navButtonExpansion = page.locator(`.nav-button:has-text("Expansion")`);
-    this.navButtonExpansionMenu = page.locator(`.nav-button:has-text("Expansion") .menu`);
+    this.navButtonExpansionMenu = this.navButtonExpansion.getByRole('menu');
     this.navButtonConstraints = page.locator(`.nav-button:has-text("Constraints")`);
-    this.navButtonConstraintsMenu = page.locator(`.nav-button:has-text("Constraints") .menu`);
+    this.navButtonConstraintsMenu = this.navButtonConstraints.getByRole('menu');
     this.navButtonScheduling = page.locator(`.nav-button:has-text("Scheduling")`);
-    this.navButtonSchedulingMenu = page.locator(`.nav-button:has-text("Scheduling") .menu`);
+    this.navButtonSchedulingMenu = this.navButtonScheduling.getByRole('menu');
     this.navButtonSimulation = page.locator(`.nav-button:has-text("Simulation")`);
-    this.navButtonSimulationMenu = page.locator(`.nav-button:has-text("Simulation") .menu`);
-    this.navButtonSimulationMenuStatus = page.locator(`.nav-button:has-text("Simulation") .status-badge`);
+    this.navButtonSimulationMenu = this.navButtonSimulation.getByRole('menu');
+    this.navButtonSimulationMenuStatus = this.navButtonSimulation.locator(`.status-badge`);
     this.page = page;
     this.panelActivityDirectivesTable = page.locator('[data-component-name="ActivityDirectivesTablePanel"]');
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
@@ -438,22 +512,25 @@ export class Plan {
     this.analyzeButton = page.locator('.header-actions button[aria-label="Analyze"]');
     this.schedulingGoalManageButton = page.locator(`button[name="manage-goals"]`);
     this.schedulingConditionManageButton = page.locator(`button[name="manage-conditions"]`);
-    this.schedulingGoal = page.locator('.scheduling-goal').first();
-    this.schedulingGoalDifferenceBadge = this.schedulingGoal.locator('.difference-badge');
+    this.schedulingGoal = (goalName: string) => page.locator(`.scheduling-goal:has-text("${goalName}")`);
+    this.schedulingGoalDifferenceBadge = (goalName: string) =>
+      this.schedulingGoal(goalName).locator('.difference-badge');
     this.schedulingGoalEnabledCheckboxSelector = (goalName: string) =>
-      page.locator(`.scheduling-goal:has-text("${goalName}") >> input[type="checkbox"]`).first();
-    this.schedulingConditionEnabledCheckbox = page
-      .locator(`.scheduling-condition:has-text("${this.schedulingConditions.conditionName}") >> input[type="checkbox"]`)
-      .first();
-    this.schedulingGoalExpand = page.locator('.scheduling-goal > .collapse > button').first();
+      this.schedulingGoal(goalName).getByRole('checkbox');
+    this.schedulingGoalsModalFilter = this.page.locator('.modal').getByPlaceholder('Filter goals');
+    this.schedulingConditionsModalFilter = this.page.locator('.modal').getByPlaceholder('Filter conditions');
+    this.schedulingConditionEnabledCheckboxSelector = (conditionName: string) =>
+      page.locator(`.scheduling-condition:has-text("${conditionName}")`).getByRole('checkbox');
+    this.schedulingGoalExpand = (goalName: string) =>
+      this.schedulingGoal(goalName).locator('.collapse > button').first();
     this.schedulingGoalNewButton = page.locator(`button[name="new-scheduling-goal"]`);
     this.schedulingConditionNewButton = page.locator(`button[name="new-scheduling-condition"]`);
     this.schedulingSatisfiedActivity = page.locator('.scheduling-goal-analysis-activities-list > .satisfied-activity');
   }
 
   async waitForActivityCheckingStatus(status: Status) {
-    await this.page.waitForSelector(this.activityCheckingStatusSelector(status), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.activityCheckingStatusSelector(status), { state: 'visible', strict: true });
+    await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeVisible();
   }
 
   async waitForPlanCollaboratorLoad() {
@@ -461,13 +538,13 @@ export class Plan {
   }
 
   async waitForSchedulingStatus(status: Status) {
-    await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.schedulingStatusSelector(status), { state: 'visible', strict: true });
+    await expect(this.page.locator(this.schedulingStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.schedulingStatusSelector(status))).toBeVisible();
   }
 
   async waitForSimulationStatus(status: Status) {
-    await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'attached', strict: true });
-    await this.page.waitForSelector(this.simulationStatusSelector(status), { state: 'visible', strict: true });
+    await expect(this.page.locator(this.simulationStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.simulationStatusSelector(status))).toBeVisible();
   }
 
   async waitForToast(message: string) {

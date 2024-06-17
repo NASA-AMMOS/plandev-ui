@@ -98,7 +98,7 @@
     }
   }
 
-  function onPlanCollaboratorCreate(event: CustomEvent<string>) {
+  function onPlanCollaboratorsDelete(event: CustomEvent<string>) {
     if (plan) {
       effects.deletePlanCollaborator(plan, event.detail, user);
     }
@@ -212,7 +212,7 @@
               {plan}
               {user}
               on:create={onPlanCollaboratorsCreate}
-              on:delete={onPlanCollaboratorCreate}
+              on:delete={onPlanCollaboratorsDelete}
               use={[
                 [
                   permissionHandler,
@@ -264,8 +264,10 @@
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to create a plan snapshot',
             }}
-            on:click={onCreatePlanSnapshot}>Take Snapshot</button
+            on:click={onCreatePlanSnapshot}
           >
+            Take Snapshot
+          </button>
         </div>
         <div style="margin-top: 8px">
           <CardList>

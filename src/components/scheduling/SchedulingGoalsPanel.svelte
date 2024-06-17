@@ -4,6 +4,7 @@
   import ChecklistIcon from '@nasa-jpl/stellar/icons/checklist.svg?component';
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { Status } from '../../enums/status';
   import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingGoalSpecs,
@@ -35,6 +36,7 @@
   let hasSpecEditPermission: boolean = false;
   let hasRunPermission: boolean = false;
   let numOfPrivateGoals: number = 0;
+  let status: Status | null = null;
   let visibleSchedulingGoalSpecs: SchedulingGoalPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
@@ -70,6 +72,7 @@
     hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
     hasRunPermission = featurePermissions.schedulingGoalsPlanSpec.canRun(user, $plan, $plan.model) && !$planReadOnly;
   }
+  $: status = $schedulingAnalysisStatus;
 
   function onManageGoals() {
     effects.managePlanSchedulingGoals(user);
@@ -93,6 +96,16 @@
     }
   }
 
+  function onAnalyze() {
+    status = Status.Pending;
+    effects.schedule(true, $plan, user);
+  }
+
+  function onSchedule() {
+    status = Status.Pending;
+    effects.schedule(false, $plan, user);
+  }
+
   // Manually keep focus as scheduling goal elements are re-ordered.
   // Svelte currently does not retain focus as elements are moved, even when keyed.
   // See discussion here: https://github.com/sveltejs/svelte/issues/3973
@@ -110,10 +123,10 @@
 <Panel>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Scheduling Goals" />
-    <PanelHeaderActions status={$schedulingAnalysisStatus} indeterminate>
+    <PanelHeaderActions {status} indeterminate>
       <PanelHeaderActionButton
         title="Analyze"
-        on:click={() => effects.schedule(true, $plan, user)}
+        on:click={onAnalyze}
         disabled={!$enableScheduling}
         use={[
           [
@@ -131,7 +144,7 @@
       </PanelHeaderActionButton>
       <PanelHeaderActionButton
         title="Schedule"
-        on:click={() => effects.schedule(false, $plan, user)}
+        on:click={onSchedule}
         disabled={!$enableScheduling}
         use={[
           [

@@ -9,6 +9,7 @@ export class Tags {
   createButton: Locator;
   inputColor: Locator;
   inputName: Locator;
+  table: Locator;
   tableRow: Locator;
   tableRowDeleteButton: Locator;
   tableRowTagId: Locator;
@@ -36,16 +37,17 @@ export class Tags {
   }
 
   async deleteTag() {
+    await this.filterTable(this.tagName);
     await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
 
     await this.tableRow.hover();
+    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
@@ -69,6 +71,14 @@ export class Tags {
     await this.inputName.blur();
   }
 
+  private async filterTable(tagName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    await this.page.getByPlaceholder('Filter tags').fill(tagName);
+    await expect(this.table.getByRole('row', { name: tagName })).toBeVisible();
+  }
+
   async goto() {
     await this.page.goto('/tags', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -82,8 +92,9 @@ export class Tags {
     this.inputName = page.locator('input[name="name"]');
     this.inputColor = page.locator('input[name="color"]');
     this.page = page;
-    this.tableRow = page.locator(`.ag-row:has-text("${this.tagName}")`);
-    this.tableRowDeleteButton = page.locator(`.ag-row:has-text("${this.tagName}") >> button[aria-label="Delete Tag"]`);
-    this.tableRowTagId = page.locator(`.ag-row:has-text("${this.tagName}") > div >> nth=0`);
+    this.table = page.getByRole('treegrid');
+    this.tableRow = this.table.getByRole('row', { name: this.tagName });
+    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Tag' });
+    this.tableRowTagId = this.tableRow.getByRole('gridcell').first();
   }
 }

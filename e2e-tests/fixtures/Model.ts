@@ -47,6 +47,21 @@ export class Model {
     await this.confirmModalDeleteButton.click();
   }
 
+  async filterTable(associationName: string) {
+    await this.associationTable.waitFor({ state: 'attached' });
+    await this.associationTable.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.associationTable.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(associationName);
+    await expect(this.associationTable.getByRole('row', { name: associationName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
+  }
+
   /**
    * Wait for Hasura events to finish seeding the database after a model is created.
    * If we do not wait then navigation to the plan will fail because the data is not there yet.
@@ -54,9 +69,8 @@ export class Model {
    * Re-run the tests and increase the timeout if you get consistent failures.
    */
   async goto() {
-    await this.page.waitForTimeout(1200);
     await this.page.goto(`/models/${this.models.modelId}`, { waitUntil: 'networkidle' });
-    await this.page.waitForTimeout(250);
+    await expect(this.page.getByText('Jar file status')).toBeVisible();
   }
 
   async saveModel() {

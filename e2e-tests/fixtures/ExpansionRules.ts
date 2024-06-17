@@ -10,6 +10,7 @@ export class ExpansionRules {
   closeButton: Locator;
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
+  expansionRuleName: string;
   inputActivityType: Locator;
   inputActivityTypeSelector: string = 'select[name="activityType"]';
   inputEditor: Locator;
@@ -24,6 +25,7 @@ export class ExpansionRules {
   ruleLogic: string = `export default function({ activityInstance: ActivityType }): ExpansionReturn { return [C.FSW_CMD_0({ boolean_arg_0: true, enum_arg_0: "OFF", float_arg_0: 0.0 })]; }`;
   rulesNavButton: Locator;
   saveButton: Locator;
+  table: Locator;
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
@@ -32,10 +34,11 @@ export class ExpansionRules {
     public parcels: Parcels,
     public models: Models,
   ) {
+    this.expansionRuleName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
     this.updatePage(page);
   }
 
-  async createExpansionRule(baseURL: string | undefined) {
+  async createExpansionRule(baseURL: string | undefined, expansionRuleName = this.expansionRuleName) {
     await this.goto();
     await expect(this.newButton).not.toBeDisabled();
     await this.newButton.click();
@@ -44,7 +47,7 @@ export class ExpansionRules {
     await this.selectParcel();
     await this.selectModel();
     await this.selectActivityType();
-    await this.fillInputName();
+    await this.fillInputName(expansionRuleName);
     await this.fillInputEditor();
     await expect(this.saveButton).not.toBeDisabled();
     await this.saveButton.click();
@@ -57,16 +60,17 @@ export class ExpansionRules {
 
   async deleteExpansionRule() {
     await this.goto();
+    await this.filterTable(this.expansionRuleName);
     await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
 
     await this.tableRow.hover();
+    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
@@ -82,11 +86,25 @@ export class ExpansionRules {
     await fillEditorText(this.inputEditor, this.ruleLogic);
   }
 
-  async fillInputName() {
-    const expansionRuleName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  async fillInputName(expansionRuleName = this.expansionRuleName) {
     await this.inputName.focus();
     await this.inputName.fill(expansionRuleName);
     await this.inputName.evaluate(e => e.blur());
+  }
+
+  private async filterTable(expansionRuleName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(expansionRuleName);
+    await expect(this.table.getByRole('row', { name: expansionRuleName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
   }
 
   async goto() {
@@ -125,9 +143,7 @@ export class ExpansionRules {
     this.cancelButton = page.locator(`button:has-text("Cancel")`);
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Expansion Rule")`);
-    this.confirmModalDeleteButton = page.locator(
-      `.modal:has-text("Delete Expansion Rule") >> button:has-text("Delete")`,
-    );
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.inputActivityType = page.locator(this.inputActivityTypeSelector);
     this.inputParcel = page.locator(this.inputParcelSelector);
     this.inputEditor = page.locator('.panel >> textarea.inputarea');
@@ -137,9 +153,8 @@ export class ExpansionRules {
     this.page = page;
     this.rulesNavButton = page.locator(`.nav-button:has-text("Rules")`);
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`.ag-row:has-text("${this.ruleActivityType}")`); // TODO: This row might not be unique.
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.ruleActivityType}") >> button[aria-label="Delete Rule"]`,
-    );
+    this.table = page.locator('.panel:has-text("Expansion Rules")').getByRole('treegrid');
+    this.tableRow = this.table.getByRole('row', { name: this.expansionRuleName });
+    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Rule' });
   }
 }

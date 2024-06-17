@@ -9,7 +9,7 @@ let dictionaryName: string;
 let parcels: Parcels;
 let page: Page;
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ baseURL, browser }) => {
   context = await browser.newContext();
   page = await context.newPage();
 
@@ -20,7 +20,7 @@ test.beforeAll(async ({ browser }) => {
 
   parcels = new Parcels(page);
   await parcels.goto();
-  await parcels.createParcel(dictionaryName);
+  await parcels.createParcel(dictionaryName, baseURL);
 
   sequence = new Sequence(page);
   await sequence.goto();

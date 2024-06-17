@@ -31,7 +31,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   plan = new Plan(page, plans, constraints, schedulingGoals, schedulingConditions);
 
   await models.goto();
-  await models.createModel('', baseURL);
+  await models.createModel(baseURL);
   await plans.goto();
   await plans.createPlan();
 });
@@ -63,27 +63,31 @@ test.describe.serial('Scheduling', () => {
   test('Disabling a scheduling goal should not include that goal in a scheduling run ', async ({ baseURL }) => {
     // Create a second scheduling goal so that when the first goal is disabled, analysis and scheduling buttons are still enabled
     await plan.createSchedulingGoal(baseURL, goalName2);
-    await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).not.toBeVisible();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).uncheck();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).not.toBeChecked();
     await plan.runScheduling(Status.Failed);
-    await expect(plan.schedulingGoalDifferenceBadge).not.toBeVisible();
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).not.toBeVisible();
     await plan.schedulingGoalEnabledCheckboxSelector(goalName1).check();
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
   });
 
   test('The condition should prevent showing +10 in the goals badge', async () => {
     await plan.runScheduling(Status.Failed);
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+0');
   });
 
   test('Disabling a scheduling condition should not include that condition in a scheduling run ', async () => {
-    await expect(plan.schedulingConditionEnabledCheckbox).toBeChecked();
-    await plan.schedulingConditionEnabledCheckbox.uncheck();
-    await expect(plan.schedulingConditionEnabledCheckbox).not.toBeChecked();
+    await expect(
+      plan.schedulingConditionEnabledCheckboxSelector(plan.schedulingConditions.conditionName),
+    ).toBeChecked();
+    await plan.schedulingConditionEnabledCheckboxSelector(plan.schedulingConditions.conditionName).uncheck();
+    await expect(
+      plan.schedulingConditionEnabledCheckboxSelector(plan.schedulingConditions.conditionName),
+    ).not.toBeChecked();
     await plan.runScheduling();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+10');
     await plan.deleteAllActivities();
     await plan.showSchedulingLayout();
   });
@@ -91,13 +95,13 @@ test.describe.serial('Scheduling', () => {
   test('Running the same scheduling goal twice in a row should show +0 in that goals badge', async () => {
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
     await plan.runScheduling();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+10');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+10');
     await plan.runScheduling();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+0');
   });
 
   test('The list of satisfied activities should not be empty', async () => {
-    await plan.schedulingGoalExpand.click();
+    await plan.schedulingGoalExpand(goalName1).click();
     const satisfiedActivitiesCount = await plan.schedulingSatisfiedActivity.count();
     expect(satisfiedActivitiesCount).toBeGreaterThan(0);
   });
@@ -105,9 +109,9 @@ test.describe.serial('Scheduling', () => {
   test('Running analyze-only should show +0 in that goals badge', async () => {
     await expect(plan.schedulingGoalEnabledCheckboxSelector(goalName1)).toBeChecked();
     await plan.runAnalysis();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+0');
     await plan.runAnalysis();
-    await expect(plan.schedulingGoalDifferenceBadge).toHaveText('+0');
+    await expect(plan.schedulingGoalDifferenceBadge(goalName1)).toHaveText('+0');
   });
 
   test('Modifying the plan should result in scheduling status marked as out of date', async () => {

@@ -1,4 +1,4 @@
-import { type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { adjectives, names, uniqueNamesGenerator } from 'unique-names-generator';
 import { AppNav } from './AppNav.js';
 
@@ -39,7 +39,8 @@ export class User {
   }
 
   async switchRole(role: string = 'aerie_admin') {
-    await this.page.locator('.nav select').selectOption(role);
-    await this.page.waitForTimeout(500);
+    await this.page.locator('.nav').getByRole('combobox').selectOption(role);
+    await this.page.waitForLoadState('networkidle');
+    await expect(this.page.locator('.nav').getByRole('combobox')).toHaveValue(role);
   }
 }

@@ -15,6 +15,7 @@ export type Field<T> = {
 
 export type FieldStore<T> = Writable<Field<T>> & {
   reset(value: T): void;
+  updateValidators(validators: ValidatorFn<T>[]): void;
   validateAndSet(value?: T): Promise<boolean>;
 };
 

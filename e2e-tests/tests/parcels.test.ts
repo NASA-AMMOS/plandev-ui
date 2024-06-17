@@ -28,6 +28,7 @@ test.beforeAll(async ({ browser }) => {
   await dictionaries.createDictionary(
     firstCommandDictionaryBuffer,
     firstCommandDictionaryName,
+    dictionaries.commandDictionaryTable,
     dictionaries.commandDictionaryTableRow,
     DictionaryType.CommandDictionary,
   );
@@ -35,6 +36,7 @@ test.beforeAll(async ({ browser }) => {
   await dictionaries.createDictionary(
     secondCommandDictionaryBuffer,
     secondCommandDictionaryName,
+    dictionaries.commandDictionaryTable,
     dictionaries.commandDictionaryTableRow,
     DictionaryType.CommandDictionary,
   );
@@ -47,8 +49,8 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Parcels', () => {
-  test('Create parcel', async () => {
-    await parcels.createParcel(firstCommandDictionaryName);
+  test('Create parcel', async ({ baseURL }) => {
+    await parcels.createParcel(firstCommandDictionaryName, baseURL);
   });
 
   test('Only one command dictionary can be selected at a time', async () => {

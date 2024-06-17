@@ -4,6 +4,8 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 
 export class Sequence {
   command: Locator;
+  confirmModal: Locator;
+  confirmModalDeleteButton: Locator;
   detailPane: Locator;
   editor: Locator;
   jsonEditor: Locator;
@@ -13,7 +15,9 @@ export class Sequence {
   parcel: Locator;
   sequenceName: string;
   sequenceNameTextbox: Locator;
+  table: Locator;
   tableRow: Locator;
+  tableRowDeleteButton: Locator;
 
   constructor(public page: Page) {}
 
@@ -45,9 +49,36 @@ export class Sequence {
   }
 
   async deleteSequence() {
+    await this.filterTable(this.sequenceName);
+
     await this.tableRow.hover();
-    await this.page.getByRole('button', { name: 'Delete' }).click();
-    await this.page.getByRole('button', { name: 'Delete' }).click();
+    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
+    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
+
+    await this.confirmModal.waitFor({ state: 'attached' });
+    await this.confirmModal.waitFor({ state: 'visible' });
+    await expect(this.confirmModal).toBeVisible();
+
+    await expect(this.confirmModalDeleteButton).toBeVisible();
+    await this.confirmModalDeleteButton.click();
+    await this.tableRow.waitFor({ state: 'detached' });
+    await this.tableRow.waitFor({ state: 'hidden' });
+    await expect(this.tableRow).not.toBeVisible();
+  }
+
+  private async filterTable(sequenceName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(sequenceName);
+    await expect(this.table.getByRole('row', { name: sequenceName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
   }
 
   async goto() {
@@ -76,7 +107,7 @@ export class Sequence {
     await this.jsonImport.evaluate(e => e.blur());
 
     // verify import worked
-    this.page
+    await this.page
       .getByText(
         `@ID "testDescription"
 
@@ -130,15 +161,19 @@ export class Sequence {
   }
 
   updatePage(page: Page) {
-    this.parcel = page.locator('select[name="parcel"]');
-    this.sequenceNameTextbox = page.getByPlaceholder('Enter Sequence Name');
-    this.tableRow = page.locator(`.ag-row:has-text("${this.sequenceName}")`);
+    this.confirmModal = page.locator(`.modal:has-text("Delete User Sequence")`);
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
+    this.detailPane = page.locator('#ID_COMMAND_DETAIL_PANE');
     this.editor = page.locator('.cm-activeLine').first();
+    this.command = this.editor.getByText(/C\s+FSW_CMD_0.*/);
     this.jsonEditor = page.getByText(`{ "id": "${this.sequenceName}`);
     this.jsonImport = page.locator('input[name="seqJsonFile"]');
-    this.detailPane = page.locator('#ID_COMMAND_DETAIL_PANE');
-    this.command = this.editor.getByText(/C\s+FSW_CMD_0.*/);
     this.linter = page.locator('.cm-lint-marker');
     this.page = page;
+    this.parcel = page.locator('select[name="parcel"]');
+    this.sequenceNameTextbox = page.getByPlaceholder('Enter Sequence Name');
+    this.table = page.locator('.panel:has-text("Sequences")').getByRole('treegrid');
+    this.tableRow = this.table.getByRole('row', { name: this.sequenceName });
+    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Sequence' });
   }
 }

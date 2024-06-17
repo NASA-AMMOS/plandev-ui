@@ -16,6 +16,7 @@ export class SchedulingConditions {
   inputConditionName: Locator;
   newButton: Locator;
   saveButton: Locator;
+  table: Locator;
   tableRow: Locator;
   tableRowDeleteButton: Locator;
 
@@ -39,15 +40,17 @@ export class SchedulingConditions {
 
   async deleteSchedulingCondition() {
     await this.goto();
+    await this.filterTable(this.conditionName);
     await expect(this.tableRow).toBeVisible();
-    await expect(this.tableRowDeleteButton).not.toBeVisible();
+
     await this.tableRow.hover();
+    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
     await this.tableRowDeleteButton.waitFor({ state: 'attached' });
     await this.tableRowDeleteButton.waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton).toBeVisible();
 
     await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton.click();
+    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
     await expect(this.confirmModal).toBeVisible();
@@ -75,6 +78,21 @@ export class SchedulingConditions {
     await this.inputConditionName.evaluate(e => e.blur());
   }
 
+  private async filterTable(goalName: string) {
+    await this.table.waitFor({ state: 'attached' });
+    await this.table.waitFor({ state: 'visible' });
+
+    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    await nameColumnHeader.hover();
+
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    await expect(filterIcon).toBeVisible();
+    await filterIcon.click();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(goalName);
+    await expect(this.table.getByRole('row', { name: goalName })).toBeVisible();
+    await this.page.keyboard.press('Escape');
+  }
+
   async goto() {
     await this.page.goto('/scheduling/conditions', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
@@ -88,9 +106,7 @@ export class SchedulingConditions {
   updatePage(page: Page): void {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Scheduling Condition")`);
-    this.confirmModalDeleteButton = page.locator(
-      `.modal:has-text("Delete Scheduling Condition") >> button:has-text("Delete")`,
-    );
+    this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.inputConditionDefinition = page.locator('.monaco-editor >> textarea.inputarea');
     this.inputConditionDescription = page.locator('textarea[name="metadata-description"]');
     this.inputConditionModel = page.locator(this.inputConditionModelSelector);
@@ -98,9 +114,8 @@ export class SchedulingConditions {
     this.newButton = page.locator(`button:has-text("New")`);
     this.page = page;
     this.saveButton = page.locator(`button:has-text("Save")`);
-    this.tableRow = page.locator(`.ag-row:has-text("${this.conditionName}")`);
-    this.tableRowDeleteButton = page.locator(
-      `.ag-row:has-text("${this.conditionName}") >> button[aria-label="Delete Condition"]`,
-    );
+    this.table = page.locator('.panel:has-text("Scheduling Conditions")').getByRole('treegrid');
+    this.tableRow = this.table.getByRole('row', { name: this.conditionName });
+    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Condition' });
   }
 }
