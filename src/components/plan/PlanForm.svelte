@@ -41,6 +41,13 @@
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
   let hasPlanCollaboratorsUpdatePermission: boolean = false;
+  let planNameField = field<string>('', [
+    required,
+    unique(
+      $plans.filter(p => p.id !== plan?.id).map(p => p.name),
+      'Plan name already exists',
+    ),
+  ]);
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan) {
@@ -64,14 +71,15 @@
   } else {
     filteredPlanSnapshots = $planSnapshotsWithSimulations;
   }
-
-  $: planNameField = field<string>(plan?.name ?? '', [
-    required,
-    unique(
-      $plans.filter(p => p.id !== plan?.id).map(p => p.name),
-      'Plan name already exists',
-    ),
-  ]);
+  $: if ($plans) {
+    planNameField.updateValidators([
+      required,
+      unique(
+        $plans.filter(p => p.id !== plan?.id).map(p => p.name),
+        'Plan name already exists',
+      ),
+    ]);
+  }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
     const {

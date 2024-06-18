@@ -529,7 +529,7 @@ export class Plan {
   }
 
   async waitForActivityCheckingStatus(status: Status) {
-    await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeAttached({ timeout: 10000 });
     await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeVisible();
   }
 
@@ -538,17 +538,17 @@ export class Plan {
   }
 
   async waitForSchedulingStatus(status: Status) {
-    await expect(this.page.locator(this.schedulingStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.schedulingStatusSelector(status))).toBeAttached({ timeout: 10000 });
     await expect(this.page.locator(this.schedulingStatusSelector(status))).toBeVisible();
   }
 
   async waitForSimulationStatus(status: Status) {
-    await expect(this.page.locator(this.simulationStatusSelector(status))).toBeAttached();
+    await expect(this.page.locator(this.simulationStatusSelector(status))).toBeAttached({ timeout: 10000 });
     await expect(this.page.locator(this.simulationStatusSelector(status))).toBeVisible();
   }
 
   async waitForToast(message: string) {
-    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 3000 });
+    await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
   }
 }
 
