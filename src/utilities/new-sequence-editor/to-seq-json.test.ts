@@ -428,4 +428,64 @@ C ECHO L01STR
     };
     expect(actual).toEqual(expected);
   });
+
+  it('Convert quoted metadata and models', () => {
+    const seq = `@ID "escaped_metadata"
+
+R00:00:01 ECHO "Can this handle \\"Escaped\\" quotes??" # and this "too"
+@METADATA "key" "value"
+@METADATA "home" " \\"world\\""
+@METADATA "array" [ "\\" quoted ", 1, true, null, "seq" ]
+@METADATA "object" { "\\"earth\\"" : "green", "array" : [ "\\" quoted ", 1, true, null, "seq" ]}
+@METADATA "this_\\"is\\"_my_key" "This is the value"
+@MODEL "Variable" 0 "Offset"
+@MODEL "Variable \\"Escaped\\"" 0 "Offset \\" \\" \\"\\""`;
+    const id = 'escaped_metadata';
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, [], null, id);
+    const expected = {
+      id,
+      metadata: {},
+      steps: [
+        {
+          args: [
+            {
+              name: 'echo_string',
+              type: 'string',
+              value: 'Can this handle "Escaped" quotes??',
+            },
+          ],
+          description: 'and this "too"',
+          metadata: {
+            array: ['" quoted ', 1, true, null, 'seq'],
+            home: ' "world"',
+            key: 'value',
+            object: {
+              '"earth"': 'green',
+              array: ['" quoted ', 1, true, null, 'seq'],
+            },
+            'this_"is"_my_key': 'This is the value',
+          },
+          models: [
+            {
+              offset: 'Offset',
+              value: 0,
+              variable: 'Variable',
+            },
+            {
+              offset: 'Offset " " ""',
+              value: 0,
+              variable: 'Variable "Escaped"',
+            },
+          ],
+          stem: 'ECHO',
+          time: {
+            tag: '00:00:01',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+    expect(actual).toEqual(expected);
+  });
 });

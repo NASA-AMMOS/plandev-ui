@@ -183,6 +183,9 @@ Sequence(
 @ID "big test"
 
 @METADATA "foo" "val foo"
+@METADATA "empty_object" {}
+@METADATA "empty_object_with_space" { }
+@METADATA "level0" { "level1": { "l2obj": { }, "l2empty_arr": [ ], "l2arr": [ 1, 2, 3 ] } }
 
 
 CMD_1 1 2 3
@@ -198,8 +201,18 @@ CMD_2 "hello, it's me"
 Sequence(
   IdDeclaration(String),
   Metadata(
-    MetaEntry(Key(String),Value(String))
+    MetaEntry(Key(String),Value(String)),
+    MetaEntry(Key(String),Value(Object)),
+    MetaEntry(Key(String),Value(Object)),
+    MetaEntry(Key(String),Value(
+      Object(Property(PropertyName(String),Object(
+        Property(PropertyName(String),Object),
+        Property(PropertyName(String),Array),
+        Property(PropertyName(String),Array(Number,Number,Number))
+      ))
+    )))
   ),
+
   Commands(
     Command(
       Stem,

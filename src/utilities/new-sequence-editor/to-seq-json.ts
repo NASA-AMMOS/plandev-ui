@@ -23,7 +23,7 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
-import { removeEscapedQuotes } from '../codemirror/codemirror-utils';
+import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
 import { customizeSeqJson } from './extension-points';
 import { logInfo } from './logger';
 import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
@@ -374,7 +374,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
     const offsetNode = modelNode.getChild('Offset');
 
     const variable = variableNode
-      ? (removeEscapedQuotes(text.slice(variableNode.from, variableNode.to)) as string)
+      ? (unquoteUnescape(text.slice(variableNode.from, variableNode.to)) as string)
       : 'UNKNOWN';
 
     // Value can be string, number or boolean
@@ -384,7 +384,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
       if (valueChild) {
         const valueText = text.slice(valueChild.from, valueChild.to);
         if (valueChild.name === 'String') {
-          value = removeEscapedQuotes(valueText);
+          value = unquoteUnescape(valueText);
         } else if (valueChild.name === 'Boolean') {
           value = !/^FALSE$/i.test(valueText);
         } else if (valueChild.name === 'Number') {
@@ -392,7 +392,7 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
         }
       }
     }
-    const offset = offsetNode ? (removeEscapedQuotes(text.slice(offsetNode.from, offsetNode.to)) as string) : 'UNKNOWN';
+    const offset = offsetNode ? (unquoteUnescape(text.slice(offsetNode.from, offsetNode.to)) as string) : 'UNKNOWN';
 
     models.push({ offset, value, variable });
   }
@@ -510,7 +510,7 @@ function parseMetadata(node: SyntaxNode, text: string): Metadata | undefined {
       return; // Skip this entry if either the key or value is missing
     }
 
-    const keyText = removeEscapedQuotes(text.slice(keyNode.from, keyNode.to)) as string;
+    const keyText = unquoteUnescape(text.slice(keyNode.from, keyNode.to)) as string;
 
     let value = text.slice(valueNode.from, valueNode.to);
     try {

@@ -97,8 +97,8 @@ metaValue {
   String | Number | Boolean | Null | Array | Object
 }
 
-Object { "{" list<Property>? "}" }
-Array  { "[" list<metaValue>? "]" }
+Object { "{" (optSpace | list<Property>) "}" }
+Array  { "[" (optSpace | list<metaValue>) "]" }
 
 Property { PropertyName optSpace ":" optSpace metaValue }
 PropertyName[isolate] { String }
