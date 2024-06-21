@@ -158,3 +158,8 @@ export function resetConstraintStores(): void {
   checkConstraintsStatus.set(null);
   rawConstraintResponses.set([]);
 }
+
+export function resetConstraintStoresForSimulation(): void {
+  checkConstraintsStatus.set(Status.Unchecked);
+  rawConstraintResponses.set([]);
+}

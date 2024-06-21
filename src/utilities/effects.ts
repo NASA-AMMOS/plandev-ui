@@ -11,7 +11,12 @@ import { DictionaryHeaders } from '../enums/dictionaryHeaders';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { activityDirectivesDB, selectedActivityDirectiveId } from '../stores/activities';
-import { checkConstraintsStatus, constraintsViolationStatus, rawConstraintResponses } from '../stores/constraints';
+import {
+  checkConstraintsStatus,
+  constraintsViolationStatus,
+  rawConstraintResponses,
+  resetConstraintStoresForSimulation,
+} from '../stores/constraints';
 import { catchError, catchSchedulingError } from '../stores/errors';
 import {
   createExpansionRuleError,
@@ -4334,6 +4339,9 @@ const effects = {
         if (!queryPermissions.SIMULATE(user, plan, plan.model)) {
           throwPermissionError('simulate this plan');
         }
+
+        resetConstraintStoresForSimulation();
+
         const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { force, planId: plan.id }, user);
         const { simulate } = data;
         if (simulate != null) {
