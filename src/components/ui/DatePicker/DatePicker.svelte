@@ -166,7 +166,7 @@
    * Converts a date string (YYYY-MM-DDTHH:mm:ss) or DOY string (YYYY-DDDDTHH:mm:ss) into a Date object
    */
   function getDateFromString(dateString: string): Date | null {
-    const parsedDate = parseDoyOrYmdTime(dateString);
+    const parsedDate = parseDoyOrYmdTime(dateString) as ParsedYmdString | ParsedDoyString;
     if (parsedDate !== null) {
       const { hour, min, ms, sec, year } = parsedDate;
 

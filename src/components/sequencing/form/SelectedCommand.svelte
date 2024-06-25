@@ -172,7 +172,7 @@
     }
   }
 
-  function hasAncestorWithId(element: Element | null, id: string) {
+  function hasAncestorWithId(element: Element | null, id: string): boolean {
     if (element === null) {
       return false;
     } else if (element.id === id) {

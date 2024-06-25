@@ -15,18 +15,20 @@ import { closest, distance } from 'fastest-levenshtein';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
+import { TimeTypes } from '../../enums/time';
+import { CustomErrorCodes } from '../../workers/customCodes';
 import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
+import {
+  getBalancedDuration,
+  getDoyTime,
+  getUnixEpochTime,
+  isTimeBalanced,
+  isTimeMax,
+  parseDurationString,
+  validateTime,
+} from '../time';
 import { getCustomArgDef } from './extension-points';
 import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
-import {
-  ABSOLUTE_TIME,
-  EPOCH_SIMPLE,
-  EPOCH_TIME,
-  RELATIVE_SIMPLE,
-  RELATIVE_TIME,
-  isTimeBalanced,
-  testTime,
-} from './time-utils';
 import { getChildrenNode, getDeepestNode, getFromAndTo } from './tree-utils';
 
 const KNOWN_DIRECTIVES = [
@@ -481,101 +483,103 @@ export function sequenceLinter(
         if (timeTagAbsoluteNode) {
           const absoluteText = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
 
-          if (!testTime(absoluteText, ABSOLUTE_TIME)) {
+          const isValid = validateTime(absoluteText, TimeTypes.ABSOLUTE);
+          if (!isValid) {
             diagnostics.push({
               actions: [],
               from: timeTagAbsoluteNode.from,
-              message: `Time Error: Incorrectly formatted 'Absolute' time.
-              Received : Malformed Absolute time.
-              Expected: YYYY-DOYThh:mm:ss[.sss]`,
+              message: CustomErrorCodes.InvalidAbsoluteTime().message,
               severity: 'error',
               to: timeTagAbsoluteNode.to,
             });
           } else {
-            const result = isTimeBalanced(absoluteText, ABSOLUTE_TIME);
-            if (result.error) {
+            if (isTimeMax(absoluteText, TimeTypes.ABSOLUTE)) {
               diagnostics.push({
                 actions: [],
                 from: timeTagAbsoluteNode.from,
-                message: result.error,
+                message: CustomErrorCodes.MaxAbsoluteTime().message,
                 severity: 'error',
                 to: timeTagAbsoluteNode.to,
               });
-            } else if (result.warning) {
-              diagnostics.push({
-                actions: [],
-                from: timeTagAbsoluteNode.from,
-                message: result.warning,
-                severity: 'warning',
-                to: timeTagAbsoluteNode.to,
-              });
+            } else {
+              if (!isTimeBalanced(absoluteText, TimeTypes.ABSOLUTE)) {
+                diagnostics.push({
+                  actions: [],
+                  from: timeTagAbsoluteNode.from,
+                  message: CustomErrorCodes.UnbalancedTime(getDoyTime(new Date(getUnixEpochTime(absoluteText))))
+                    .message,
+                  severity: 'warning',
+                  to: timeTagAbsoluteNode.to,
+                });
+              }
             }
           }
         } else if (timeTagEpochNode) {
           const epochText = text.slice(timeTagEpochNode.from + 1, timeTagEpochNode.to).trim();
-          if (!testTime(epochText, EPOCH_TIME) && !testTime(epochText, EPOCH_SIMPLE)) {
+          const isValid = validateTime(epochText, TimeTypes.EPOCH) || validateTime(epochText, TimeTypes.EPOCH_SIMPLE);
+          if (!isValid) {
             diagnostics.push({
               actions: [],
               from: timeTagEpochNode.from,
-              message: `Time Error: Incorrectly formatted 'Epoch' time.
-              Received : Malformed Epoch time.
-              Expected: YYYY-DOYThh:mm:ss[.sss] or [+/-]ss`,
+              message: CustomErrorCodes.InvalidEpochTime().message,
               severity: 'error',
               to: timeTagEpochNode.to,
             });
           } else {
-            if (testTime(epochText, EPOCH_TIME)) {
-              const result = isTimeBalanced(epochText, EPOCH_TIME);
-              if (result.error) {
+            if (validateTime(epochText, TimeTypes.EPOCH)) {
+              if (isTimeMax(epochText, TimeTypes.EPOCH)) {
                 diagnostics.push({
                   actions: [],
                   from: timeTagEpochNode.from,
-                  message: result.error,
+                  message: CustomErrorCodes.MaxEpochTime(parseDurationString(epochText, 'seconds').isNegative).message,
                   severity: 'error',
                   to: timeTagEpochNode.to,
                 });
-              } else if (result.warning) {
-                diagnostics.push({
-                  actions: [],
-                  from: timeTagEpochNode.from,
-                  message: result.warning,
-                  severity: 'warning',
-                  to: timeTagEpochNode.to,
-                });
+              } else {
+                if (!isTimeBalanced(epochText, TimeTypes.EPOCH)) {
+                  diagnostics.push({
+                    actions: [],
+                    from: timeTagEpochNode.from,
+                    message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(epochText)).message,
+                    severity: 'warning',
+                    to: timeTagEpochNode.to,
+                  });
+                }
               }
             }
           }
         } else if (timeTagRelativeNode) {
           const relativeText = text.slice(timeTagRelativeNode.from + 1, timeTagRelativeNode.to).trim();
-          if (!testTime(relativeText, RELATIVE_TIME) && !testTime(relativeText, RELATIVE_SIMPLE)) {
+          const isValid =
+            validateTime(relativeText, TimeTypes.RELATIVE) || validateTime(relativeText, TimeTypes.RELATIVE_SIMPLE);
+          if (!isValid) {
             diagnostics.push({
               actions: [],
               from: timeTagRelativeNode.from,
-              message: `Time Error: Incorrectly formatted 'Relative' time.
-              Received : Malformed Relative time.
-              Expected: [+/-]hh:mm:ss[.sss]`,
+              message: CustomErrorCodes.InvalidRelativeTime().message,
               severity: 'error',
               to: timeTagRelativeNode.to,
             });
           } else {
-            if (testTime(relativeText, RELATIVE_TIME)) {
-              const result = isTimeBalanced(relativeText, RELATIVE_TIME);
-              if (result.error) {
+            if (validateTime(relativeText, TimeTypes.RELATIVE)) {
+              if (isTimeMax(relativeText, TimeTypes.RELATIVE)) {
                 diagnostics.push({
                   actions: [],
                   from: timeTagRelativeNode.from,
-                  message: result.error,
+                  message: CustomErrorCodes.MaxRelativeTime().message,
                   severity: 'error',
                   to: timeTagRelativeNode.to,
                 });
-              } else if (result.warning) {
-                diagnostics.push({
-                  actions: [],
-                  from: timeTagRelativeNode.from,
-                  message: result.warning,
-                  severity: 'warning',
-                  to: timeTagRelativeNode.to,
-                });
+              } else {
+                if (!isTimeBalanced(relativeText, TimeTypes.EPOCH)) {
+                  diagnostics.push({
+                    actions: [],
+                    from: timeTagRelativeNode.from,
+                    message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(relativeText)).message,
+                    severity: 'error',
+                    to: timeTagRelativeNode.to,
+                  });
+                }
               }
             }
           }

@@ -18,6 +18,16 @@ export type ParsedDurationString = {
   seconds: number;
   years: number;
 };
+export type DurationTimeComponents = {
+  days: string;
+  hours: string;
+  isNegative: string;
+  microseconds: string;
+  milliseconds: string;
+  minutes: string;
+  seconds: string;
+  years: string;
+};
 
 export type ParsedYmdString = {
   day: number;

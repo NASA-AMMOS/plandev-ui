@@ -1056,7 +1056,7 @@ export function paginateNodes(
   activityTreeExpansionMap: ActivityTreeExpansionMap,
   depth = 1,
   binSize = 100,
-) {
+): ActivityTreeNode[] {
   if (nodes.length <= binSize) {
     return nodes;
   }

@@ -23,11 +23,12 @@ import type {
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
+import { TimeTypes } from '../../enums/time';
 import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
+import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../time';
 import { customizeSeqJson } from './extension-points';
 import { logInfo } from './logger';
 import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
-import { EPOCH_SIMPLE, EPOCH_TIME, RELATIVE_SIMPLE, RELATIVE_TIME, testTime } from './time-utils';
 
 /**
  * Returns a minimal valid Seq JSON object.
@@ -251,58 +252,43 @@ export function parseTime(commandNode: SyntaxNode, text: string): Time {
     const timeTagEpochText = text.slice(timeTagEpochNode.from + 1, timeTagEpochNode.to).trim();
 
     // a regex to determine if this string [+/-]####T##:##:##.###
-    let match = testTime(timeTagEpochText, EPOCH_TIME);
-    if (match) {
-      const [, sign, doy, hh, mm, ss, ms] = match;
-      tag = `${sign === '-' ? '-' : ''}${doy !== undefined ? doy : ''}${hh ? hh : '00'}:${mm ? mm : '00'}:${
-        ss ? ss : '00'
-      }${ms ? ms : ''}`;
+    if (validateTime(timeTagEpochText, TimeTypes.EPOCH)) {
+      const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
+        parseDurationString(timeTagEpochText, 'seconds'),
+      );
+      tag = `${isNegative}${days}${hours}:${minutes}:${seconds}${milliseconds}`;
       return { tag, type: 'EPOCH_RELATIVE' };
     }
 
     // a regex to determine if this string [+/-]###.###
-    match = testTime(timeTagEpochText, EPOCH_SIMPLE);
-    if (match) {
-      const [, sign, second, ms] = match;
-      tag = `${sign === '-' ? '-' : ''}${second ? secondsToHMS(Number(second)) : ''}${ms ? ms : ''}`;
+    if (validateTime(timeTagEpochText, TimeTypes.EPOCH_SIMPLE)) {
+      tag = getBalancedDuration(timeTagEpochText);
+      if (parseDurationString(tag, 'seconds').milliseconds === 0) {
+        tag = tag.slice(0, -4);
+      }
       return { tag, type: 'EPOCH_RELATIVE' };
     }
   } else if (timeTagRelativeNode) {
     const timeTagRelativeText = text.slice(timeTagRelativeNode.from + 1, timeTagRelativeNode.to).trim();
 
     // a regex to determine if this string ####T##:##:##.###
-    let match = testTime(timeTagRelativeText, RELATIVE_TIME);
-    if (match) {
-      RELATIVE_TIME.lastIndex = 0;
-      const [, doy, hh, mm, ss, ms] = match;
-      tag = `${doy !== undefined ? doy : ''}${hh ? hh : '00'}:${mm ? mm : '00'}:${ss ? ss : '00'}${ms ? ms : ''}`;
+    if (validateTime(timeTagRelativeText, TimeTypes.RELATIVE)) {
+      const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
+        parseDurationString(timeTagRelativeText, 'seconds'),
+      );
+      tag = `${isNegative}${days}${hours}:${minutes}:${seconds}${milliseconds}`;
       return { tag, type: 'COMMAND_RELATIVE' };
     }
-    match = testTime(timeTagRelativeText, RELATIVE_SIMPLE);
-    if (match) {
-      RELATIVE_SIMPLE.lastIndex = 0;
-      const [, second, ms] = match;
-      tag = `${second ? secondsToHMS(Number(second)) : ''}${ms ? ms : ''}`;
+
+    if (validateTime(timeTagRelativeText, TimeTypes.RELATIVE_SIMPLE)) {
+      tag = getBalancedDuration(timeTagRelativeText);
+      if (parseDurationString(tag).milliseconds === 0) {
+        tag = tag.slice(0, -4);
+      }
       return { tag, type: 'COMMAND_RELATIVE' };
     }
   }
   return { tag, type: 'ABSOLUTE' };
-}
-
-function secondsToHMS(seconds: number): string {
-  if (typeof seconds !== 'number' || isNaN(seconds)) {
-    throw new Error(`Expected a valid number for seconds, got ${seconds}`);
-  }
-
-  const hours: number = Math.floor(seconds / 3600);
-  const minutes: number = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds: number = seconds % 60;
-
-  const hoursString = hours.toString().padStart(2, '0');
-  const minutesString = minutes.toString().padStart(2, '0');
-  const remainingSecondsString = remainingSeconds.toString().padStart(2, '0');
-
-  return `${hoursString}:${minutesString}:${remainingSecondsString}`;
 }
 
 // min length of one

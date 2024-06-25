@@ -1,6 +1,7 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
 
@@ -103,9 +104,17 @@ export function sequenceCompletion(
         );
 
         if (!cursor.isTimeTagBefore) {
+          //get the first of the year date
+          const date = new Date();
+          date.setMonth(0);
+          date.setDate(1);
+          date.setHours(0);
+          date.setMinutes(0);
+          date.setSeconds(0);
+          date.setMilliseconds(0);
           timeTagCompletions.push(
             {
-              apply: 'A0000-000T00:00:00 ',
+              apply: `A${getDoyTime(date)} `,
               info: 'Execute command at an absolute time',
               label: `A (absolute)`,
               section: 'Time Tags',
@@ -119,7 +128,7 @@ export function sequenceCompletion(
               type: 'keyword',
             },
             {
-              apply: 'E+00:00:00 ',
+              apply: 'E1 ',
               info: 'Execute command at an offset from an epoch',
               label: 'E (epoch)',
               section: 'Time Tags',

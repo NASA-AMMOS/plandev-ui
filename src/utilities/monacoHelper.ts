@@ -13,7 +13,7 @@ export const sequenceProvideCodeActions = (
     .map(unbalancedTime => {
       const match = unbalancedTime.message.match(/Suggestion:\s*(.*)/);
       if (match) {
-        const extractSuggestedTime = match[1].replace(/\s+/g, '');
+        const extractSuggestedTime = match[1].replace(/\s+|[\\[|\]]/g, '');
         return generateQuickFixAction('Convert Unbalanced Time', extractSuggestedTime, unbalancedTime, model);
       }
       return undefined; // Return undefined when the match fails
@@ -42,7 +42,12 @@ function generateQuickFixAction(
         {
           resource: model.uri,
           textEdit: {
-            range: diagnostics,
+            range: {
+              endColumn: diagnostics.endColumn - 1,
+              endLineNumber: diagnostics.endLineNumber,
+              startColumn: diagnostics.startColumn + 2,
+              startLineNumber: diagnostics.startLineNumber,
+            },
             text: replaceText,
           },
           versionId: model.getVersionId(),

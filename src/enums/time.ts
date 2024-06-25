@@ -7,3 +7,10 @@ export enum TIME_MS {
   MONTH = 2629800000,
   YEAR = 31557600000,
 }
+export enum TimeTypes {
+  ABSOLUTE = 'absolute',
+  EPOCH = 'epoch',
+  EPOCH_SIMPLE = 'epoch_simple',
+  RELATIVE = 'relative',
+  RELATIVE_SIMPLE = 'relative_simple',
+}

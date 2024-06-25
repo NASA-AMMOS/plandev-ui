@@ -46,10 +46,9 @@
   let owner: UserId | null = null;
   let version: string = '';
   let description: string = '';
-  let modelLogs: Pick<
-    ModelSlim,
-    'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'
-  > | null = null;
+  let modelLogs:
+    | Pick<ModelSlim, 'refresh_activity_type_logs' | 'refresh_model_parameter_logs' | 'refresh_resource_type_logs'>
+    | undefined = undefined;
 
   $: description = initialModelDescription;
   $: name = initialModelName;

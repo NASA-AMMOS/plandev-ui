@@ -139,36 +139,36 @@ Expected: A signed value`,
   /**
    * MaxAbsolutTime error code and message.
    */
-  MaxAbsoluteTime: (balancedTime: string): ErrorCode => {
+  MaxAbsoluteTime: (): ErrorCode => {
     return {
       id: CustomErrorCodes.Type.MAX_ABSOLUTE,
-      message: `Time Error: Maximum time reached
-  Received: Balanced time - ${balancedTime}.
-  Expected: ${balancedTime} <= 9999-365T23:59:59.999`,
+      message: `Time Error: Maximum time greater than 9999-365T23:59:59.999`,
     };
   },
 
   /**
    * MaxEpochTime error code and message.
    */
-  MaxEpochTime: (balancedTime: string): ErrorCode => {
+  MaxEpochTime: (isNegative: boolean): ErrorCode => {
+    if (!isNegative) {
+      return {
+        id: CustomErrorCodes.Type.MAX_EPOCH,
+        message: `Time Error: Maximum time greater than 365T23:59:59.999`,
+      };
+    }
     return {
       id: CustomErrorCodes.Type.MAX_EPOCH,
-      message: `Time Error: Maximum time reached.
-Received: Balanced time - ${balancedTime}.
-Expected: ${balancedTime} <= 365T23:59:59.999`,
+      message: `Time Error: Maximum time less than -365T23:59:59.999`,
     };
   },
 
   /**
    * MaxRelativeTime error code and message.
    */
-  MaxRelativeTime: (balancedTime: string): ErrorCode => {
+  MaxRelativeTime: (): ErrorCode => {
     return {
       id: CustomErrorCodes.Type.MAX_RELATIVE,
-      message: `Time Error: Maximum time reached.
-  Received: Balanced time - ${balancedTime}.
-  Expected: ${balancedTime} <= 23:59:59.999`,
+      message: `Time Error: Maximum time greater than 365T23:59:59.999`,
     };
   },
   /**
