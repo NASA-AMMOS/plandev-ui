@@ -15,6 +15,7 @@ export type ParameterDictionary = {
 
 export type SequenceAdaptation = {
   adaptation: string;
+  name: string;
   type: DictionaryTypes.ADAPTATION;
 } & DictionaryType;
 

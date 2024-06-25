@@ -2,7 +2,6 @@ import { Locator, Page, expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 export class Parcels {
-  cancelButton: Locator;
   closeButton: Locator;
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
@@ -107,7 +106,6 @@ export class Parcels {
   updatePage(page: Page): void {
     this.page = page;
 
-    this.cancelButton = page.locator(`button:has-text("Cancel")`);
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Parcel")`);
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });

@@ -47,7 +47,7 @@ test.describe('Dictionaries', () => {
     });
   });
 
-  test.describe.skip('Sequence Adaptation', () => {
+  test.describe('Sequence Adaptation', () => {
     test('Create sequence adaptation', async () => {
       await dictionaries.createSequenceAdaptation();
     });

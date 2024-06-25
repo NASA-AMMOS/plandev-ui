@@ -8,6 +8,7 @@ import {
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
 import { DictionaryHeaders } from '../enums/dictionaryHeaders';
+import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { activityDirectivesDB, selectedActivityDirectiveId } from '../stores/activities';
@@ -663,7 +664,7 @@ const effects = {
   },
 
   async createCustomAdaptation(
-    adaptation: { adaptation: string },
+    adaptation: { adaptation: string; name: string },
     user: User | null,
   ): Promise<SequenceAdaptation | null> {
     try {
@@ -674,8 +675,9 @@ const effects = {
       if (adaptation?.adaptation) {
         const data = await reqHasura<SequenceAdaptation>(gql.CREATE_SEQUENCE_ADAPTATION, { adaptation }, user);
         const { createSequenceAdaptation: newSequenceAdaptation } = data;
+
         if (newSequenceAdaptation != null) {
-          return newSequenceAdaptation;
+          return { ...newSequenceAdaptation, type: DictionaryTypes.ADAPTATION };
         } else {
           throw Error('Unable to upload sequence adaptation');
         }
@@ -5274,7 +5276,7 @@ const effects = {
 
   async uploadDictionary(
     dictionary: string,
-    type: 'COMMAND' | 'CHANNEL' | 'PARAMETER',
+    type: DictionaryTypes,
     user: User | null,
   ): Promise<CommandDictionary | ChannelDictionary | ParameterDictionary | null> {
     try {
@@ -5289,6 +5291,7 @@ const effects = {
       );
 
       const { createDictionary: newDictionary } = data;
+
       if (newDictionary === null) {
         throw Error('Unable to upload command dictionary');
       }
@@ -5301,33 +5304,42 @@ const effects = {
   },
 
   async uploadDictionaryOrAdaptation(
-    files: FileList,
+    file: File,
     user: User | null,
+    sequenceAdaptationName?: string | undefined,
   ): Promise<CommandDictionary | ChannelDictionary | ParameterDictionary | SequenceAdaptation | null> {
-    const file: File = files[0];
     const text = await file.text();
     const splitLineDictionary = text.split('\n');
 
-    let type: 'COMMAND' | 'CHANNEL' | 'PARAMETER' = 'COMMAND';
+    let type: DictionaryTypes = DictionaryTypes.COMMAND;
+
     switch (splitLineDictionary[1]) {
       case `<${DictionaryHeaders.command_dictionary}>`: {
-        type = 'COMMAND';
+        type = DictionaryTypes.COMMAND;
         break;
       }
       case `<${DictionaryHeaders.telemetry_dictionary}>`: {
-        type = 'CHANNEL';
+        type = DictionaryTypes.CHANNEL;
         break;
       }
       case `<${DictionaryHeaders.param_def}>`: {
-        type = 'PARAMETER';
+        type = DictionaryTypes.PARAMETER;
         break;
       }
       default: {
-        const adaptation = await this.createCustomAdaptation({ adaptation: text }, user);
-        return adaptation;
+        if (sequenceAdaptationName) {
+          const adaptation = await this.createCustomAdaptation(
+            { adaptation: text, name: sequenceAdaptationName },
+            user,
+          );
+          return adaptation;
+        }
+        break;
       }
     }
+
     const dictionary = await this.uploadDictionary(text, type, user);
+
     return dictionary;
   },
 

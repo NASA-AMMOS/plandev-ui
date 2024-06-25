@@ -640,6 +640,7 @@ const gql = {
     mutation CreateCustomAdaptation($adaptation: sequence_adaptation_insert_input!) {
       createSequenceAdaptation: ${Queries.INSERT_SEQUENCE_ADAPTATION}(object: $adaptation) {
         adaptation
+        name
         created_at
       }
     }
@@ -1596,6 +1597,7 @@ const gql = {
     query GetSequenceAdaptation($sequence_adaptation_id: Int!) {
       ${Queries.SEQUENCE_ADAPTATION}(where: { id: { _eq: $sequence_adaptation_id }}) {
         adaptation
+        name
       }
     }
   `,
@@ -2825,6 +2827,7 @@ const gql = {
         adaptation
         created_at
         id
+        name
         updated_by
       }
     }

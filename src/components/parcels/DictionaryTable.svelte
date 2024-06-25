@@ -93,6 +93,7 @@
 
   $: sequenceAdaptationColumDefs = [
     ...(isEditingParcel ? editingColumnDefs : []),
+    { field: 'name', filter: 'text', headerName: 'Name', sortable: true, width: 100 },
     {
       field: 'id',
       filter: 'number',
