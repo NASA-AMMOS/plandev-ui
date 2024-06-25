@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { onDestroy } from 'svelte';
   import {
     parameterDictionaries as parameterDictionariesStore,
     parcel,
@@ -20,7 +19,6 @@
   import { parseSeqJsonFromFile, seqJsonToSequence } from '../../utilities/new-sequence-editor/from-seq-json';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { showFailureToast } from '../../utilities/toast';
   import PageTitle from '../app/PageTitle.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -75,39 +73,6 @@
   $: {
     if (sequenceParcelId) {
       $parcelId = sequenceParcelId;
-
-      loadSequenceAdaptation($parcel?.sequence_adaptation_id);
-    }
-  }
-
-  onDestroy(() => {
-    resetSequenceAdaptation();
-  });
-
-  function resetSequenceAdaptation(): void {
-    globalThis.CONDITIONAL_KEYWORDS = undefined;
-    globalThis.LOOP_KEYWORDS = undefined;
-    globalThis.GLOBALS = undefined;
-    globalThis.ARG_DELEGATOR = undefined;
-    globalThis.LINT = () => undefined;
-    globalThis.TO_SEQ_JSON = () => undefined;
-  }
-
-  async function loadSequenceAdaptation(id: number | null | undefined): Promise<void> {
-    if (id) {
-      const adaptation = await effects.getSequenceAdaptation(id, user);
-
-      if (adaptation) {
-        try {
-          // This evaluates the custom sequence adaptation that is optionally provided by the user.
-          Function(adaptation.adaptation)();
-        } catch (e) {
-          console.error(e);
-          showFailureToast('Invalid sequence adaptation');
-        }
-      }
-    } else {
-      resetSequenceAdaptation();
     }
   }
 
