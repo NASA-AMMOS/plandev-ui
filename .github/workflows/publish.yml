@@ -49,14 +49,6 @@ jobs:
           context: .
           load: true
           tags: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
-      - name: Scan aerie-ui Docker image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: 'CRITICAL'
       - name: Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -65,3 +57,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Scan aerie-ui Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL'
