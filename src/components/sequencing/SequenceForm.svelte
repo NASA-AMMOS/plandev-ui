@@ -263,6 +263,7 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
+    parcel={$parcel}
     showCommandFormBuilder={true}
     sequenceDefinition={initialSequenceDefinition}
     {sequenceName}
