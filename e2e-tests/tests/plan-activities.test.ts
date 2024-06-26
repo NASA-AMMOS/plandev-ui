@@ -132,7 +132,15 @@ test.describe.serial('Plan Activities', () => {
     const tbSugar = plan.panelActivityForm.locator('.parameter', { hasText: 'tbSugar' }).locator('input');
     await tbSugar.fill('100');
     await tbSugar.evaluate(e => e.blur());
+    await expect(
+      plan.panelActivityForm.locator('.parameter', { hasText: 'tbSugar' }).getByLabel('Parameter not explicitly set'),
+    ).not.toBeVisible();
     await plan.panelActivityForm.locator('.parameter', { hasText: 'glutenFree' }).getByRole('checkbox').click();
+    await expect(
+      plan.panelActivityForm
+        .locator('.parameter', { hasText: 'glutenFree' })
+        .getByLabel('Parameter not explicitly set'),
+    ).not.toBeVisible();
     await plan.waitForActivityCheckingStatus(Status.Complete);
     await plan.hoverMenu(plan.navButtonActivityChecking);
     await expect(plan.navButtonActivityCheckingMenu).toContainText('3/3 activities checked');

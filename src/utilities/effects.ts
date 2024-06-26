@@ -4367,6 +4367,7 @@ const effects = {
     activityType: ActivityType | null,
     user: User | null,
     newFiles: File[] = [],
+    signal?: AbortSignal,
   ): Promise<void> {
     try {
       if (!queryPermissions.UPDATE_ACTIVITY_DIRECTIVE(user, plan)) {
@@ -4413,6 +4414,7 @@ const effects = {
           plan_id: plan.id,
         },
         user,
+        signal,
       );
 
       if (data.update_activity_directive_by_pk) {

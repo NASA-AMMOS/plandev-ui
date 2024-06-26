@@ -73,16 +73,21 @@
   }>();
 
   let activityErrorRollup: ActivityErrorRollup | undefined;
+  let activityNameField = field<string>(activityDirective.name);
   let editingActivityName: boolean = false;
   let extraArguments: string[] = [];
   let formParameters: FormParameter[] = [];
+  let onChangeActivityArgumentsController: AbortController | null = null;
   let hasUpdatePermission: boolean = false;
   let highlightKeysMap: Record<string, boolean> = {};
   let numOfUserChanges: number = 0;
   let parameterErrorMap: Record<string, string[]> = {};
   let parametersWithErrorsCount: number = 0;
-  let startTimeDoy: string;
-  let startTimeDoyField: FieldStore<string>;
+  let startTimeDoy: string = getDoyTimeFromInterval(
+    planStartTimeYmd,
+    revision ? revision.start_offset : activityDirective.start_offset,
+  );
+  let startTimeDoyField: FieldStore<string> = field<string>(startTimeDoy, [required, timestamp]);
 
   $: if (user !== null && $plan !== null) {
     hasUpdatePermission =
@@ -98,8 +103,8 @@
     planStartTimeYmd,
     revision ? revision.start_offset : activityDirective.start_offset,
   );
-  $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp]);
-  $: activityNameField = field<string>(activityDirective.name);
+  $: startTimeDoyField.validateAndSet(startTimeDoy);
+  $: activityNameField.validateAndSet(activityDirective.name);
 
   $: if (activityType && activityDirective.arguments) {
     effects
@@ -231,19 +236,25 @@
     await applyPresetToActivity(selectedPreset, numOfUserChanges);
   }
 
-  function onChangeFormParameters(event: CustomEvent<FormParameter>) {
+  async function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const { arguments: argumentsMap, id } = activityDirective;
     const newArguments = getArguments(argumentsMap, formParameter);
     if ($plan) {
-      effects.updateActivityDirective(
+      if (onChangeActivityArgumentsController) {
+        onChangeActivityArgumentsController.abort();
+      }
+      onChangeActivityArgumentsController = new AbortController();
+      await effects.updateActivityDirective(
         $plan,
         id,
         { arguments: newArguments },
         activityType,
         user,
         formParameter.file ? [formParameter.file] : [],
+        onChangeActivityArgumentsController.signal,
       );
+      onChangeActivityArgumentsController = null;
     }
   }
 

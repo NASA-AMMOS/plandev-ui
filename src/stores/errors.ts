@@ -131,6 +131,11 @@ export const allErrors: Readable<BaseError[]> = derived(
 /* Helper Functions. */
 
 export function catchError(error: string | Error, details?: string | Error, shouldLog: boolean = true): void {
+  // ignore the error if it is an AbortError
+  if ((error as Error).name && (error as Error).name === 'AbortError') {
+    return;
+  }
+
   caughtErrors.update(errors => {
     errors.push({
       message: `${error}`,

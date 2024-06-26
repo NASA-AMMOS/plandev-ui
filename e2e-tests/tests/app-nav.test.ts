@@ -100,7 +100,7 @@ test.describe.serial('App Nav', () => {
     await appNav.appMenu.waitFor({ state: 'attached' });
     await appNav.appMenu.waitFor({ state: 'visible' });
     const [consolePage] = await Promise.all([page.waitForEvent('popup'), appNav.appMenuItemGraphQLPlayground.click()]);
-    expect(await consolePage.title()).toContain('Altair');
+    await expect(consolePage).toHaveURL(/\/api-playground\//);
     await consolePage.close();
   });
 
@@ -112,7 +112,7 @@ test.describe.serial('App Nav', () => {
       page.waitForEvent('popup'),
       appNav.appMenuItemDocumentation.click(),
     ]);
-    expect(await documentationPage.title()).toContain('Aerie Documentation');
+    await expect(documentationPage).toHaveURL(/\/aerie-docs\//);
     await documentationPage.close();
   });
 

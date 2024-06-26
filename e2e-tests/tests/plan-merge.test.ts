@@ -56,11 +56,9 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Change the start time of the activity on the branch', async () => {
-    await page.getByRole('gridcell', { name: 'BiteBanana' }).first().click();
+    await page.getByRole('row', { name: 'BiteBanana' }).first().click();
     await page.waitForSelector('button:has-text("BiteBanana")', { state: 'visible' });
-    await page.locator('input[name="start-time"]').click();
-    // Wait for date input to be open before inputting a date
-    await page.waitForTimeout(500);
+    await page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').press('Enter');
     await plan.waitForToast('Activity Directive Updated Successfully');

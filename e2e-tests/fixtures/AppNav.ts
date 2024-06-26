@@ -23,33 +23,26 @@ export class AppNav {
   }
 
   async goto() {
-    await this.page.goto('/plans');
-    await Promise.race([
-      this.pageLoadedLocatorWithData.waitFor({ state: 'visible' }),
-      this.pageLoadedLocatorNoData.waitFor({ state: 'visible' }),
-    ]);
+    await this.page.goto('/plans', { waitUntil: 'networkidle' });
+    await this.page.waitForURL('/plans', { waitUntil: 'networkidle' });
     await this.page.waitForTimeout(250);
   }
 
   updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
-    this.appMenu = page.locator('.app-menu > .menu > .menu-slot');
+    this.appMenu = page.locator('.app-menu').getByRole('menu');
     this.appMenuButton = page.locator('.app-menu');
-    this.appMenuItemAbout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("About")`);
-    this.appMenuItemDictionaries = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Dictionaries")`);
-    this.appMenuItemDocumentation = page.locator(
-      `.app-menu > .menu > .menu-slot > .menu-item:has-text("Documentation")`,
-    );
-    this.appMenuItemExpansion = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Expansion")`);
-    this.appMenuItemGateway = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Gateway")`);
-    this.appMenuItemGraphQLPlayground = page.locator(
-      `.app-menu > .menu > .menu-slot > .menu-item:has-text("GraphQL Playground")`,
-    );
-    this.appMenuItemLogout = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Logout")`);
-    this.appMenuItemModels = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Models")`);
-    this.appMenuItemPlans = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Plans")`);
-    this.appMenuItemScheduling = page.locator(`.app-menu > .menu > .menu-slot > .menu-item:has-text("Scheduling")`);
+    this.appMenuItemAbout = this.appMenu.getByRole('menuitem', { name: 'About' });
+    this.appMenuItemDictionaries = this.appMenu.getByRole('menuitem', { name: 'Dictionaries' });
+    this.appMenuItemDocumentation = this.appMenu.getByRole('menuitem', { name: 'Documentation' });
+    this.appMenuItemExpansion = this.appMenu.getByRole('menuitem', { name: 'Expansion' });
+    this.appMenuItemGateway = this.appMenu.getByRole('menuitem', { name: 'Gateway' });
+    this.appMenuItemGraphQLPlayground = this.appMenu.getByRole('menuitem', { name: 'GraphQL Playground' });
+    this.appMenuItemLogout = this.appMenu.getByRole('menuitem', { name: 'Logout' });
+    this.appMenuItemModels = this.appMenu.getByRole('menuitem', { name: 'Models' });
+    this.appMenuItemPlans = this.appMenu.getByRole('menuitem', { name: 'Plans' });
+    this.appMenuItemScheduling = this.appMenu.getByRole('menuitem', { name: 'Scheduling' });
     this.page = page;
     this.pageLoadedLocatorWithData = page.locator(`.ag-root`);
     this.pageLoadedLocatorNoData = page.locator(`.body:has-text("No Plans Found")`);
