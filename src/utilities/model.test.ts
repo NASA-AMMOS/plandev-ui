@@ -18,7 +18,7 @@ describe('Model util functions', () => {
       [
         'a activity log extracting',
         {
-          refresh_activity_type_logs: [],
+          refresh_activity_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
           refresh_model_parameter_logs: [],
           refresh_resource_type_logs: [],
         },
@@ -32,6 +32,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -48,6 +49,7 @@ describe('Model util functions', () => {
             {
               error: 'error',
               error_message: 'error',
+              pending: false,
               success: false,
             },
           ],
@@ -61,7 +63,7 @@ describe('Model util functions', () => {
         'a parameter log extracting',
         {
           refresh_activity_type_logs: [],
-          refresh_model_parameter_logs: [],
+          refresh_model_parameter_logs: [{ error: null, error_message: null, pending: true, success: false }],
           refresh_resource_type_logs: [],
         },
         'parameterLogStatus',
@@ -75,6 +77,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -91,6 +94,7 @@ describe('Model util functions', () => {
             {
               error: 'error',
               error_message: 'error',
+              pending: false,
               success: false,
             },
           ],
@@ -104,7 +108,7 @@ describe('Model util functions', () => {
         {
           refresh_activity_type_logs: [],
           refresh_model_parameter_logs: [],
-          refresh_resource_type_logs: [],
+          refresh_resource_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
         },
         'resourceLogStatus',
         'extracting',
@@ -118,6 +122,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -134,6 +139,7 @@ describe('Model util functions', () => {
             {
               error: 'error',
               error_message: 'error',
+              pending: false,
               success: false,
             },
           ],
@@ -148,7 +154,8 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
-              success: true,
+              pending: true,
+              success: false,
             },
           ],
           refresh_model_parameter_logs: [],
@@ -164,6 +171,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -171,6 +179,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -178,6 +187,7 @@ describe('Model util functions', () => {
             {
               error: null,
               error_message: null,
+              pending: false,
               success: true,
             },
           ],
@@ -194,6 +204,7 @@ describe('Model util functions', () => {
             {
               error: 'error',
               error_message: 'error',
+              pending: false,
               success: false,
             },
           ],

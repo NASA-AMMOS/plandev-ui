@@ -1375,19 +1375,22 @@ const gql = {
             parameters
           }
           refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
-            success
             error
             error_message
+            pending
+            success
           }
           refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
-            success
             error
             error_message
+            pending
+            success
           }
           refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
-            success
             error
             error_message
+            pending
+            success
           }
           version
           view {
@@ -2196,19 +2199,22 @@ const gql = {
           id
         }
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         scheduling_specification_conditions {
           condition_id
@@ -2257,19 +2263,22 @@ const gql = {
         }
         owner
         refresh_activity_type_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         refresh_resource_type_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         refresh_model_parameter_logs(order_by: { created_at: desc }, limit: 1) {
-          success
           error
           error_message
+          pending
+          success
         }
         version
       }

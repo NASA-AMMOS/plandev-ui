@@ -26,6 +26,7 @@ export type ModelLog = {
   error: string | null;
   error_message: string | null;
   // error_type: string | null;
+  pending: boolean;
   // status: string | null;
   success: boolean;
   // tries: number;

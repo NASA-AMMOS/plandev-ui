@@ -23,39 +23,39 @@ export function getModelStatusRollup(
     if (activityLogs) {
       activityLog = activityLogs[0] ?? null;
       if (activityLog) {
-        if (activityLog.success) {
+        if (activityLog.pending) {
+          activityLogStatus = 'extracting';
+        } else if (activityLog.success) {
           activityLogStatus = 'complete';
         } else {
           activityLogStatus = 'error';
         }
-      } else {
-        activityLogStatus = 'extracting';
       }
     }
 
     if (parameterLogs) {
       parameterLog = parameterLogs[0] ?? null;
       if (parameterLog) {
-        if (parameterLog.success) {
+        if (parameterLog.pending) {
+          parameterLogStatus = 'extracting';
+        } else if (parameterLog.success) {
           parameterLogStatus = 'complete';
         } else {
           parameterLogStatus = 'error';
         }
-      } else {
-        parameterLogStatus = 'extracting';
       }
     }
 
     if (resourceLogs) {
       resourceLog = resourceLogs[0] ?? null;
       if (resourceLog) {
-        if (resourceLog.success) {
+        if (resourceLog.pending) {
+          resourceLogStatus = 'extracting';
+        } else if (resourceLog.success) {
           resourceLogStatus = 'complete';
         } else {
           resourceLogStatus = 'error';
         }
-      } else {
-        resourceLogStatus = 'extracting';
       }
     }
 

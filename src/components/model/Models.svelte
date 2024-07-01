@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import BarChartIcon from 'bootstrap-icons/icons/bar-chart.svg?component';
   import XIcon from 'bootstrap-icons/icons/x.svg?component';
@@ -18,6 +19,7 @@
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import effects from '../../utilities/effects';
+  import { getModelStatusRollup } from '../../utilities/model';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getShortISOForDate } from '../../utilities/time';
@@ -39,6 +41,7 @@
   const createModelPermissionError: string = 'You do not have permission to upload a model';
   const updateModelPermissionError: string = 'You do not have permission to update this model';
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
+  const extractionPermissionError: string = 'You do not have permission to re-trigger a model extraction';
 
   const baseColumnDefs: DataGridColumnDef[] = [
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
@@ -67,8 +70,11 @@
   let hasCreatePlanPermission: boolean = false;
   let hasDeleteModelPermission: boolean = false;
   let hasUpdateModelPermission: boolean = false;
+  let hasExtractionPermission: boolean = false;
+  let modelHasExtractionError: boolean = false;
   let name = '';
   let selectedModel: ModelSlim | null = null;
+  let selectedModelId: number | null = null;
   let version = '';
 
   $: createButtonDisabled = !files || name === '' || version === '' || $creatingModel === true;
@@ -77,6 +83,7 @@
     hasCreatePlanPermission = featurePermissions.plan.canCreate(user);
     hasDeleteModelPermission = featurePermissions.model.canDelete(user);
     hasUpdateModelPermission = featurePermissions.model.canUpdate(user);
+    hasExtractionPermission = featurePermissions.model.canUpdate(user);
     columnDefs = [
       {
         cellClass: 'action-cell-container',
@@ -142,6 +149,18 @@
       },
     ];
   }
+  $: selectedModel = $models.find(({ id }) => id === selectedModelId) ?? null;
+  $: if (selectedModel) {
+    const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup(selectedModel);
+
+    if (activityLogStatus === 'error' || parameterLogStatus === 'error' || resourceLogStatus === 'error') {
+      modelHasExtractionError = true;
+    } else {
+      modelHasExtractionError = false;
+    }
+  } else {
+    modelHasExtractionError = false;
+  }
 
   onDestroy(() => {
     resetModelStores();
@@ -187,8 +206,38 @@
     }
   }
 
-  function selectModel(model: ModelSlim | null) {
-    selectedModel = model;
+  function onRetriggerModelExtraction() {
+    if (selectedModel != null) {
+      const prevLogs = {
+        refresh_activity_type_logs: selectedModel.refresh_activity_type_logs,
+        refresh_model_parameter_logs: selectedModel.refresh_model_parameter_logs,
+        refresh_resource_type_logs: selectedModel.refresh_resource_type_logs,
+      };
+      selectedModel = {
+        ...selectedModel,
+        refresh_activity_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
+        refresh_model_parameter_logs: [{ error: null, error_message: null, pending: true, success: false }],
+        refresh_resource_type_logs: [{ error: null, error_message: null, pending: true, success: false }],
+      };
+
+      // introduce delay to allow users to see a transition in case retriggering is instantaneous
+      setTimeout(async () => {
+        if (selectedModel) {
+          const extractionResponse = await effects.retriggerModelExtraction(selectedModel.id, user);
+
+          if (extractionResponse == null) {
+            selectedModel = {
+              ...selectedModel,
+              ...prevLogs,
+            };
+          }
+        }
+      }, 200);
+    }
+  }
+
+  function selectModel(modelId: number | null) {
+    selectedModelId = modelId;
   }
 
   async function submitForm(e: SubmitEvent) {
@@ -257,10 +306,30 @@
               />
             </Input>
             <Input layout="inline">
-              <label class="model-metadata-item-label" for="status">Jar file status</label>
+              <div class="model-jar-label">
+                <label class="model-metadata-item-label" for="status">Jar file status</label>
+                {#if modelHasExtractionError}
+                  <button
+                    class="icon-button"
+                    on:click={onRetriggerModelExtraction}
+                    use:permissionHandler={{
+                      hasPermission: hasExtractionPermission,
+                      permissionError: extractionPermissionError,
+                    }}
+                    use:tooltip={{
+                      content: 'Re-run extraction',
+                      disabled: !hasExtractionPermission,
+                    }}
+                  >
+                    <RefreshIcon />
+                  </button>
+                {/if}
+              </div>
               <ModelStatusRollup mode="rollup" model={selectedModel} />
             </Input>
-            <div class="model-status-full"><ModelStatusRollup mode="full" model={selectedModel} /></div>
+            <div class="model-status-full">
+              <ModelStatusRollup mode="full" model={selectedModel} />
+            </div>
           </fieldset>
         </div>
         <div class="model-buttons">
@@ -386,7 +455,7 @@
           selectedItemId={selectedModel?.id ?? null}
           on:deleteItem={deleteModelContext}
           on:editItem={editModelContext}
-          on:rowClicked={({ detail }) => selectModel(detail.data)}
+          on:rowClicked={({ detail }) => selectModel(detail.data.id)}
         />
       {:else}
         No Models Found
@@ -414,5 +483,23 @@
 
   .model-status-full {
     margin: 8px 0;
+  }
+
+  .model-jar-label {
+    display: grid;
+    grid-template-columns: auto min-content;
+  }
+
+  button.icon-button {
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--st-primary-70);
+    cursor: pointer;
+    display: flex;
+  }
+
+  button.icon-button:hover {
+    color: var(--st-primary-100);
   }
 </style>

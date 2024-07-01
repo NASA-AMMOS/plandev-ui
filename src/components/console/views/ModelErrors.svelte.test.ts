@@ -16,6 +16,7 @@ describe('Model Errors Console', () => {
             {
               error: JSON.stringify({ error: 'This is an error' }),
               error_message: 'This is a Test Error',
+              pending: false,
               success: false,
             },
           ],

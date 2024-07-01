@@ -81,7 +81,7 @@ import type {
   SeqId,
 } from '../types/expansion';
 import type { Extension, ExtensionPayload } from '../types/extension';
-import type { Model, ModelInsertInput, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
+import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
@@ -4239,6 +4239,49 @@ const effects = {
       return false;
     }
     return false;
+  },
+
+  async retriggerModelExtraction(
+    id: number,
+    user: User | null,
+  ): Promise<{
+    response: {
+      activity_types: ModelLog;
+      model_parameters: ModelLog;
+      resource_types: ModelLog;
+    };
+  } | null> {
+    try {
+      if (!queryPermissions.UPDATE_MODEL(user)) {
+        throwPermissionError('retrigger this model extraction');
+      }
+
+      const data = await reqGateway('/modelExtraction', 'POST', JSON.stringify({ missionModelId: id }), user, false);
+      if (data != null) {
+        const {
+          response: { activity_types, model_parameters, resource_types },
+        } = data;
+
+        if (activity_types.error) {
+          throw Error(activity_types.error);
+        }
+        if (model_parameters.error) {
+          throw Error(model_parameters.error);
+        }
+        if (resource_types.error) {
+          throw Error(resource_types.error);
+        }
+
+        showSuccessToast('Model Extraction Retriggered Successfully');
+        return data;
+      } else {
+        throw Error(`Unable to retrigger model extraction with ID: "${id}"`);
+      }
+    } catch (e) {
+      catchError('Model Extraction Failed', e as Error);
+      showFailureToast('Model Extraction Failed');
+    }
+    return null;
   },
 
   async schedule(analysis_only: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
