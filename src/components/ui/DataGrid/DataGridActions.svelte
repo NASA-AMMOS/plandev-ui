@@ -1,8 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { PlanStatusMessages } from '../../../enums/planStatusMessages';
-
   import { permissionHandler } from '../../../utilities/permissionHandler';
 
   import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
@@ -28,7 +26,6 @@
   export let hasDeletePermissionError: string | undefined = undefined;
   export let hasEditPermission: boolean = true;
   export let hasEditPermissionError: string | undefined = undefined;
-  export let planReadOnly: boolean = false;
   export let viewTooltip: Tooltip | undefined = undefined;
 
   export let editCallback: ((data: RowData) => void) | undefined = undefined;
@@ -74,9 +71,7 @@
     use:tooltip={hasEditPermission ? editTooltip : undefined}
     use:permissionHandler={{
       hasPermission: hasEditPermission,
-      permissionError: planReadOnly
-        ? PlanStatusMessages.READ_ONLY
-        : hasEditPermissionError || `You do not have permission to ${editTooltip?.content ?? 'edit'}.`,
+      permissionError: hasEditPermissionError || `You do not have permission to ${editTooltip?.content ?? 'edit'}.`,
     }}
   >
     <PenIcon />
@@ -93,9 +88,8 @@
     use:tooltip={hasDeletePermission ? deleteTooltip : undefined}
     use:permissionHandler={{
       hasPermission: hasDeletePermission,
-      permissionError: planReadOnly
-        ? PlanStatusMessages.READ_ONLY
-        : hasDeletePermissionError || `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
+      permissionError:
+        hasDeletePermissionError || `You do not have permission to ${deleteTooltip?.content ?? 'delete'}.`,
     }}
   >
     <TrashIcon />

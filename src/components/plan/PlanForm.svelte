@@ -80,6 +80,9 @@
       ),
     ]);
   }
+  $: if (plan) {
+    planNameField.validateAndSet(plan?.name ?? '');
+  }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
     const {

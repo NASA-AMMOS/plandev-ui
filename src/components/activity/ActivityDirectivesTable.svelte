@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState, ICellRendererParams } from 'ag-grid-community';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
@@ -58,7 +59,7 @@
               placement: 'bottom',
             },
             hasDeletePermission,
-            planReadOnly,
+            hasDeletePermissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
             rowData: params.data,
           },
           target: actionsDiv,
@@ -137,8 +138,8 @@
   columnDefs={completeColumnDefs}
   {columnStates}
   {getRowId}
-  {planReadOnly}
   {hasDeletePermission}
+  hasDeletePermissionError={planReadOnly ? PlanStatusMessages.READ_ONLY : undefined}
   items={activityDirectivesWithErrorCounts}
   pluralItemDisplayText="Activity Directives"
   scrollToSelection={true}
