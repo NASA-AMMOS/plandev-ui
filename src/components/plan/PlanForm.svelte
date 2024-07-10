@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
@@ -9,14 +11,16 @@
   import { plans } from '../../stores/plans';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
+  import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User, UserId } from '../../types/app';
-  import type { Plan, PlanCollaborator, PlanSlimmer } from '../../types/plan';
+  import type { Plan, PlanCollaborator, PlanSlimmer, PlanTransfer } from '../../types/plan';
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { removeQueryParam, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { getPlanForTransfer } from '../../utilities/plan';
   import { getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, unique } from '../../utilities/validators';
@@ -25,11 +29,13 @@
   import Input from '../form/Input.svelte';
   import CardList from '../ui/CardList.svelte';
   import FilterToggleButton from '../ui/FilterToggleButton.svelte';
+  import ProgressRadial from '../ui/ProgressRadial.svelte';
   import PlanCollaboratorInput from '../ui/Tags/PlanCollaboratorInput.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
 
   export let plan: Plan | null;
+  export let activityDirectivesMap: Record<ActivityDirectiveId, ActivityDirective> = {};
   export let planTags: Tag[];
   export let tags: Tag[] = [];
   export let user: User | null;
@@ -41,6 +47,7 @@
   let hasCreateSnapshotPermission: boolean = false;
   let hasPlanUpdatePermission: boolean = false;
   let hasPlanCollaboratorsUpdatePermission: boolean = false;
+  let planExportAbortController: AbortController | null = null;
   let planNameField = field<string>('', [
     required,
     unique(
@@ -48,6 +55,7 @@
       'Plan name already exists',
     ),
   ]);
+  let planExportProgress: number | null = null;
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan) {
@@ -133,12 +141,92 @@
       effects.updatePlan(plan, { name: $planNameField.value }, user);
     }
   }
+
+  async function exportPlan() {
+    if (plan) {
+      if (planExportAbortController) {
+        planExportAbortController.abort();
+      }
+
+      planExportAbortController = new AbortController();
+
+      let qualifiedActivityDirectives: ActivityDirective[] = [];
+      planExportProgress = 0;
+
+      let totalProgress = 0;
+      const numOfDirectives = Object.values(activityDirectivesMap).length;
+
+      qualifiedActivityDirectives = await Promise.all(
+        Object.values(activityDirectivesMap).map(async activityDirective => {
+          if (plan) {
+            const effectiveArguments = await effects.getEffectiveActivityArguments(
+              plan?.model_id,
+              activityDirective.type,
+              activityDirective.arguments,
+              user,
+              planExportAbortController?.signal,
+            );
+
+            totalProgress++;
+            planExportProgress = (totalProgress / numOfDirectives) * 100;
+
+            return {
+              ...activityDirective,
+              arguments: effectiveArguments?.arguments ?? activityDirective.arguments,
+            };
+          }
+
+          totalProgress++;
+          planExportProgress = (totalProgress / numOfDirectives) * 100;
+
+          return activityDirective;
+        }),
+      );
+
+      if (planExportAbortController && !planExportAbortController.signal.aborted) {
+        const planExport: PlanTransfer = getPlanForTransfer(plan, qualifiedActivityDirectives);
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(planExport, null, 2)], { type: 'application/json' }));
+        a.download = planExport.name;
+        a.click();
+      }
+      planExportProgress = null;
+    }
+  }
+
+  function cancelPlanExport() {
+    planExportAbortController?.abort();
+    planExportAbortController = null;
+  }
+
+  function onPlanExport() {
+    if (planExportProgress === null) {
+      exportPlan();
+    } else {
+      cancelPlanExport();
+    }
+  }
 </script>
 
 <div class="plan-form">
   {#if plan}
     <fieldset>
       <Collapse title="Details">
+        <svelte:fragment slot="right">
+          <button
+            class="st-button icon export"
+            on:click|stopPropagation={onPlanExport}
+            use:tooltip={{ content: planExportProgress === null ? 'Export Plan JSON' : 'Cancel Plan Export' }}
+          >
+            {#if planExportProgress !== null}
+              <ProgressRadial progress={planExportProgress} useBackground={false} />
+              <div class="cancel"><CloseIcon /></div>
+            {:else}
+              <DownloadIcon />
+            {/if}
+          </button>
+        </svelte:fragment>
         <div class="plan-form-field">
           <Field field={planNameField} on:change={onPlanNameChange}>
             <Input layout="inline">
@@ -331,5 +419,24 @@
 
   .plan-form-field :global(fieldset .error *) {
     padding-left: calc(40% + 8px);
+  }
+
+  .export {
+    border-radius: 50%;
+    position: relative;
+  }
+  .export .cancel {
+    display: none;
+  }
+
+  .export:hover .cancel {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
   }
 </style>

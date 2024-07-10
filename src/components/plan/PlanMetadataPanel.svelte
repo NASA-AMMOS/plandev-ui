@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { activityDirectivesMap } from '../../stores/activities';
   import { plan, planTags } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import { tags } from '../../stores/tags';
@@ -30,6 +31,7 @@
   </svelte:fragment>
   <svelte:fragment slot="body">
     <PlanForm
+      activityDirectivesMap={$activityDirectivesMap}
       plan={$plan}
       planTags={$planTags}
       tags={$tags}

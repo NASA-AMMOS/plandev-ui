@@ -1419,6 +1419,7 @@ const gql = {
           id
         }
         simulations(order_by: { id: desc }, limit: 1) {
+          id
           simulation_datasets(order_by: { id: desc }) {
             id
             plan_revision

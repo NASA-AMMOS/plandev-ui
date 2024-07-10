@@ -80,7 +80,7 @@ const mockInitialPlan: Plan = {
   parent_plan: null,
   revision: 3,
   scheduling_specification: { id: 1 },
-  simulations: [{ simulation_datasets: [{ id: 1, plan_revision: 3 }] }],
+  simulations: [{ id: 2, simulation_datasets: [{ id: 1, plan_revision: 3 }] }],
   start_time: '2023-02-16T00:00:00',
   start_time_doy: '2023-047T00:00:00',
   tags: [],

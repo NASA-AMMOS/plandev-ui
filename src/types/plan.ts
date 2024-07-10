@@ -85,11 +85,21 @@ export type PlanSchema = {
   parent_plan: Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked'> | null;
   revision: number;
   scheduling_specification: Pick<SchedulingPlanSpecification, 'id'> | null;
-  simulations: [{ simulation_datasets: [{ id: number; plan_revision: number }] }];
+  simulations: [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];
   start_time: string;
   tags: { tag: Tag }[];
   updated_at: string;
   updated_by: UserId;
+};
+
+export type PlanTransfer = Pick<PlanSchema, 'id' | 'model_id' | 'name' | 'start_time'> & {
+  activities: Pick<
+    ActivityDirective,
+    'anchor_id' | 'anchored_to_start' | 'arguments' | 'id' | 'metadata' | 'name' | 'start_offset' | 'type'
+  >[];
+  end_time: string;
+  sim_id: number;
+  tags: { tag: Pick<Tag, 'id' | 'name'> }[];
 };
 
 export type PlanMetadata = Pick<

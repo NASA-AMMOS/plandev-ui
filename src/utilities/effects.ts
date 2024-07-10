@@ -2830,6 +2830,7 @@ const effects = {
     activityTypeName: string,
     argumentsMap: ArgumentsMap,
     user: User | null,
+    signal?: AbortSignal,
   ): Promise<EffectiveArguments | null> {
     try {
       const data = await reqHasura<EffectiveArguments>(
@@ -2840,6 +2841,7 @@ const effects = {
           modelId,
         },
         user,
+        signal,
       );
       const { effectiveActivityArguments } = data;
       return effectiveActivityArguments;
