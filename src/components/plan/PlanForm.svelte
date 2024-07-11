@@ -216,6 +216,7 @@
         <svelte:fragment slot="right">
           <button
             class="st-button icon export"
+            style={'visibility:hidden;'}
             on:click|stopPropagation={onPlanExport}
             use:tooltip={{ content: planExportProgress === null ? 'Export Plan JSON' : 'Cancel Plan Export' }}
           >
