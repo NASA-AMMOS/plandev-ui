@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { EditorState } from '@codemirror/state';
   import type { SyntaxNode } from '@lezer/common';
   import type {
     ChannelDictionary,
@@ -9,6 +8,7 @@
     FswCommand,
     FswCommandArgument,
     FswCommandArgumentRepeat,
+    FswCommandArgumentVarString,
     ParameterDictionary,
   } from '@nasa-jpl/aerie-ampcs';
   import type { EditorView } from 'codemirror';
@@ -20,10 +20,19 @@
     type ArgTextDef,
   } from '../../../utilities/codemirror/codemirror-utils';
   import { getCustomArgDef } from '../../../utilities/new-sequence-editor/extension-points';
-  import { TOKEN_COMMAND, TOKEN_ERROR } from '../../../utilities/new-sequence-editor/sequencer-grammar-constants';
+  import {
+    getNameNode,
+    TOKEN_ACTIVATE,
+    TOKEN_COMMAND,
+    TOKEN_ERROR,
+    TOKEN_GROUND_BLOCK,
+    TOKEN_GROUND_EVENT,
+    TOKEN_LOAD,
+  } from '../../../utilities/new-sequence-editor/sequencer-grammar-constants';
   import { getAncestorNode } from '../../../utilities/new-sequence-editor/tree-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgEditor from './ArgEditor.svelte';
+  import StringEditor from './StringEditor.svelte';
 
   type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
 
@@ -42,8 +51,17 @@
   let missingArgDefArray: FswCommandArgument[] = [];
   let timeTagNode: TimeTagInfo = null;
 
-  $: commandNode = getAncestorNode(node, TOKEN_COMMAND);
-  $: commandDef = getCommandDef(commandDictionary, editorSequenceView.state, commandNode);
+  $: commandNode = getAncestorNode(
+    node,
+    TOKEN_COMMAND,
+    TOKEN_ACTIVATE,
+    TOKEN_GROUND_BLOCK,
+    TOKEN_GROUND_EVENT,
+    TOKEN_LOAD,
+  );
+  $: commandNameNode = getNameNode(commandNode);
+  $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
+  $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
   $: argInfoArray = getArgumentInfo(
     commandNode?.getChild('Args') ?? null,
     commandDef?.arguments,
@@ -132,23 +150,8 @@
     return argArray;
   }
 
-  function getCommandDef(
-    commandDictionary: CommandDictionary | null,
-    state: EditorState | undefined,
-    commandNode: SyntaxNode | null,
-  ) {
-    if (!commandDictionary || !state || !node) {
-      return null;
-    }
-
-    const stemNode = commandNode?.getChild('Stem');
-
-    if (stemNode) {
-      const stemName = state.sliceDoc(stemNode.from, stemNode.to);
-      return commandDictionary.fswCommandMap[stemName];
-    }
-
-    return null;
+  function getCommandDef(commandDictionary: CommandDictionary | null, stemName: string) {
+    return commandDictionary?.fswCommandMap[stemName] ?? null;
   }
 
   function setInEditor(token: SyntaxNode, val: string) {
@@ -181,6 +184,21 @@
     return hasAncestorWithId(element.parentElement, id);
   }
 
+  function formatTypeName(s: string) {
+    // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
+    return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
+  }
+
+  const nameArgumentDef: FswCommandArgumentVarString = {
+    arg_type: 'var_string',
+    default_value: null,
+    description: '',
+    max_bit_length: null,
+    name: '',
+    prefix_bit_length: null,
+    valid_regex: null,
+  };
+
   // When the type in the argument value is compatible with the argument definition,
   // provide a more restrictive editor to keep argument valid. Otherwise fall back on a string editor.
 
@@ -193,8 +211,9 @@
 
 <div class="select-command-detail" id={ID_COMMAND_DETAIL_PANE}>
   {#if !!commandNode}
-    <div>Selected Command</div>
     {#if !!commandDef}
+      <div>Selected {formatTypeName(commandNode.name)}</div>
+
       {#if !!timeTagNode}
         <div>Time Tag: {timeTagNode.text.trim()}</div>
       {/if}
@@ -224,6 +243,22 @@
             }}
           />
         {/if}
+      </div>
+    {:else}
+      <div>Selected {formatTypeName(commandNode.name)}</div>
+      {#if !!timeTagNode}
+        <div>Time Tag: {timeTagNode.text.trim()}</div>
+      {/if}
+      <div>
+        <StringEditor
+          argDef={nameArgumentDef}
+          initVal={commandName ?? ''}
+          setInEditor={val => {
+            if (commandNameNode) {
+              setInEditor(commandNameNode, val);
+            }
+          }}
+        />
       </div>
     {/if}
   {/if}

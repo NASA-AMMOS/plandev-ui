@@ -13,7 +13,6 @@
 
 // Potential Improvements
 // maintainability - use @specialize on directives
-// expressiveness - add activate, load and ground syntax
 
 @precedence {
   stemStart @cut
@@ -36,8 +35,14 @@ LocalDeclaration {
 }
 
 commandBlock {
-  (Command | commentLine ~maybeComments)+
+  (
+    step |
+    Request |
+    commentLine ~maybeComments
+  )+
 }
+
+step { Command | Activate | GroundBlock | GroundEvent | Load }
 
 commentLine {
   LineComment newLine
@@ -82,6 +87,57 @@ Command {
   newLine
   Metadata?
   Models?
+}
+
+Activate { TimeTag activateDirective commonLoadActivate }
+
+Load { TimeTag loadDirective commonLoadActivate }
+
+commonLoadActivate {
+  "(" SequenceName { String } ")"
+  Args
+  LineComment?
+  newLine
+  Engine { engineDirective whiteSpace Number newLine }?
+  Epoch { epochDirective whiteSpace String newLine }?
+  Metadata?
+  Models?
+}
+
+GroundBlock { TimeTag groundBlockDirective commonGround }
+
+GroundEvent { TimeTag groundEventDirective commonGround }
+
+commonGround {
+  "(" GroundName { String } ")"
+  Args
+  LineComment?
+  newLine
+  Metadata?
+  Models?
+}
+
+Request {
+  (TimeTag | GroundEpoch {
+    groundEpochDirective
+    "("
+      whiteSpace?
+      Name { String }
+      whiteSpace?
+    ","
+      whiteSpace?
+      Delta { String }
+      whiteSpace?
+    ")"
+    // Extra properties are allowed in schema, but not supported by tool chain
+    whiteSpace
+  })
+  requestStartDirective "(" RequestName { String } ")"
+  whiteSpace? LineComment? newLine
+  // json schema requires step+, catch error in linter for cleaner message
+  Steps { step* }
+  requestEndDirective newLine
+  Metadata?
 }
 
 Metadata {
@@ -164,6 +220,15 @@ Stem { !stemStart identifier }
   hardwareDirective { "@HARDWARE" }
   localsDirective { "@LOCALS" }
   parameterDirective { "@INPUT_PARAMS" }
+  activateDirective { "@ACTIVATE" }
+  loadDirective { "@LOAD" }
+  engineDirective { "@ENGINE" }
+  epochDirective { "@EPOCH" }
+  groundEpochDirective { "@GROUND_EPOCH" }
+  groundBlockDirective { "@GROUND_BLOCK" }
+  groundEventDirective { "@GROUND_EVENT" }
+  requestStartDirective { "@REQUEST_BEGIN" }
+  requestEndDirective { "@REQUEST_END" }
   metadataDirective { "@METADATA" }
   modelDirective { "@MODEL" }
   genericDirective { "@"identifier }
@@ -173,6 +238,7 @@ Stem { !stemStart identifier }
   @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, identifier }
 
   @precedence {
+    LoadAndGoDirective,
     idDirective,
     metadataDirective,
     modelDirective,
@@ -180,7 +246,15 @@ Stem { !stemStart identifier }
     hardwareDirective,
     localsDirective,
     parameterDirective,
-    LoadAndGoDirective,
+    activateDirective,
+    loadDirective,
+    groundBlockDirective,
+    groundEventDirective,
+    groundEpochDirective,
+    requestStartDirective,
+    requestEndDirective,
+    engineDirective,
+    epochDirective,
     genericDirective,
     identifier
   }

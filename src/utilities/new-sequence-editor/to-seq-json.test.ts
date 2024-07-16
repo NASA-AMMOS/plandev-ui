@@ -10,6 +10,7 @@ import {
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 import { SeqLanguage } from '../codemirror';
+import { seqJsonToSequence } from './from-seq-json';
 import { sequenceToSeqJson } from './to-seq-json';
 
 function argArrToMap(cmdArgs: FswCommandArgument[]): FswCommandArgumentMap {
@@ -339,7 +340,149 @@ C ECHO L01STR
     expect(actual).toEqual(expectedJson);
   });
 
-  it('header ordering', () => {
+  it('should generate loads, activates, ground blocks', () => {
+    const id = 'test.sequence';
+    const seq = `@ID "${id}"
+A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
+@ENGINE 10
+@EPOCH "epoch string"
+
+A2024-123T12:34:56 @GROUND_BLOCK("ground_block.name") # No Args
+
+A2024-123T12:34:56 @LOAD("load.name") # No Args
+@ENGINE 22
+@EPOCH "load epoch string"
+
+R123T12:34:56 @LOAD("load2.name") "foobar" 1 2
+@ENGINE 5
+
+R123T11:55:33 @GROUND_EVENT("ground_event.name") "foo" 1 2 3
+
+R123T12:34:56 @ACTIVATE("act2.name") "foo" 1 2 3  # Comment text
+@ENGINE -1
+    `;
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, [], null, '');
+    const expectedJson = {
+      id,
+      metadata: {},
+      steps: [
+        {
+          args: [],
+          description: 'No Args',
+          engine: 10,
+          epoch: 'epoch string',
+          sequence: 'activate.name',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'activate',
+        },
+        {
+          args: [],
+          description: 'No Args',
+          name: 'ground_block.name',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'ground_block',
+        },
+        {
+          args: [],
+          description: 'No Args',
+          engine: 22,
+          epoch: 'load epoch string',
+          sequence: 'load.name',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'load',
+        },
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'foobar',
+            },
+            {
+              type: 'number',
+              value: 1,
+            },
+            {
+              type: 'number',
+              value: 2,
+            },
+          ],
+          engine: 5,
+          sequence: 'load2.name',
+          time: {
+            tag: '123T12:34:56',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'load',
+        },
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'foo',
+            },
+            {
+              type: 'number',
+              value: 1,
+            },
+            {
+              type: 'number',
+              value: 2,
+            },
+            {
+              type: 'number',
+              value: 3,
+            },
+          ],
+          name: 'ground_event.name',
+          time: {
+            tag: '123T11:55:33',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'ground_event',
+        },
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'foo',
+            },
+            {
+              type: 'number',
+              value: 1,
+            },
+            {
+              type: 'number',
+              value: 2,
+            },
+            {
+              type: 'number',
+              value: 3,
+            },
+          ],
+          description: 'Comment text',
+          engine: -1,
+          sequence: 'act2.name',
+          time: {
+            tag: '123T12:34:56',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'activate',
+        },
+      ],
+    };
+    expect(actual).toEqual(expectedJson);
+  });
+
+  it('should allow any header ordering', () => {
     function allPermutations(inputArr: string[]) {
       const result: string[][] = [];
       function permute(arr: string[], m: string[] = []) {
@@ -401,91 +544,353 @@ C ECHO L01STR
     });
   });
 
-  it('Convert quoted strings', () => {
-    const seq = `@ID "escaped_quotes"
+  it('should serialize a request with nested metadata', () => {
+    const input = `
+A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
 
-    R1 ECHO "Can this handle \\"Escaped\\" quotes??" # and this "too"`;
-    const id = 'escaped_quotes';
-    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, [], null, id);
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "sub_object" {
+  "boolean": true
+}
+    `;
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandBanana, [], null, 'id');
     const expected = {
-      id,
+      id: 'id',
       metadata: {},
-      steps: [
+      requests: [
         {
-          args: [
+          description: 'Description Text',
+          metadata: {
+            sub_object: {
+              boolean: true,
+            },
+          },
+          name: 'request.name',
+          steps: [
             {
-              name: 'echo_string',
-              type: 'string',
-              value: `Can this handle "Escaped" quotes??`,
+              args: [
+                {
+                  type: 'number',
+                  value: 1,
+                },
+                {
+                  type: 'number',
+                  value: 2,
+                },
+                {
+                  type: 'number',
+                  value: 3,
+                },
+              ],
+              metadata: { foo: 'bar' },
+              models: [{ offset: '00:00:00', value: 1, variable: 'a' }],
+              stem: 'CMD_0',
+              time: {
+                type: 'COMMAND_COMPLETE',
+              },
+              type: 'command',
+            },
+
+            {
+              args: [
+                {
+                  type: 'string',
+                  value: '1 2 3',
+                },
+              ],
+              stem: 'CMD_1',
+              time: {
+                tag: '00:01:40',
+                type: 'COMMAND_RELATIVE',
+              },
+              type: 'command',
             },
           ],
-          description: `and this "too"`,
-          stem: 'ECHO',
-          time: { tag: '00:00:01', type: 'COMMAND_RELATIVE' },
-          type: 'command',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'request',
         },
       ],
     };
     expect(actual).toEqual(expected);
   });
 
-  it('Convert quoted metadata and models', () => {
-    const seq = `@ID "escaped_metadata"
+  it('should serialize a request with simple metadata', () => {
+    const input = `
+@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+  C CMD_0 1 2 3
+  @METADATA "cmd_0_meta_name_0" "cmd_0_meta_value_0"
+  @MODEL "a" 1 "00:00:00"
 
-R00:00:01 ECHO "Can this handle \\"Escaped\\" quotes??" # and this "too"
-@METADATA "key" "value"
-@METADATA "home" " \\"world\\""
-@METADATA "array" [ "\\" quoted ", 1, true, null, "seq" ]
-@METADATA "object" { "\\"earth\\"" : "green", "array" : [ "\\" quoted ", 1, true, null, "seq" ]}
-@METADATA "this_\\"is\\"_my_key" "This is the value"
-@MODEL "Variable" 0 "Offset"
-@MODEL "Variable \\"Escaped\\"" 0 "Offset \\" \\" \\"\\""`;
-    const id = 'escaped_metadata';
-    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(seq), seq, commandBanana, [], null, id);
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "req_0_meta_name" "req_0_meta_value"
+    `;
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandBanana, [], null, 'id');
     const expected = {
-      id,
+      id: 'id',
       metadata: {},
-      steps: [
+      requests: [
         {
-          args: [
-            {
-              name: 'echo_string',
-              type: 'string',
-              value: 'Can this handle "Escaped" quotes??',
-            },
-          ],
-          description: 'and this "too"',
+          ground_epoch: {
+            delta: '+3:00',
+            name: 'GroundEpochName',
+          },
           metadata: {
-            array: ['" quoted ', 1, true, null, 'seq'],
-            home: ' "world"',
-            key: 'value',
-            object: {
-              '"earth"': 'green',
-              array: ['" quoted ', 1, true, null, 'seq'],
-            },
-            'this_"is"_my_key': 'This is the value',
+            req_0_meta_name: 'req_0_meta_value',
           },
-          models: [
+          name: 'request2.name',
+          steps: [
             {
-              offset: 'Offset',
-              value: 0,
-              variable: 'Variable',
+              args: [
+                {
+                  type: 'number',
+                  value: 1,
+                },
+                {
+                  type: 'number',
+                  value: 2,
+                },
+                {
+                  type: 'number',
+                  value: 3,
+                },
+              ],
+              metadata: {
+                cmd_0_meta_name_0: 'cmd_0_meta_value_0',
+              },
+              models: [{ offset: '00:00:00', value: 1, variable: 'a' }],
+              stem: 'CMD_0',
+              time: {
+                type: 'COMMAND_COMPLETE',
+              },
+              type: 'command',
             },
+
             {
-              offset: 'Offset " " ""',
-              value: 0,
-              variable: 'Variable "Escaped"',
+              args: [
+                {
+                  type: 'string',
+                  value: '1 2 3',
+                },
+              ],
+              stem: 'CMD_1',
+              time: {
+                tag: '00:01:40',
+                type: 'COMMAND_RELATIVE',
+              },
+              type: 'command',
             },
           ],
-          stem: 'ECHO',
-          time: {
-            tag: '00:00:01',
-            type: 'COMMAND_RELATIVE',
-          },
-          type: 'command',
+          type: 'request',
         },
       ],
     };
     expect(actual).toEqual(expected);
+  });
+
+  it('should serialize multiple requests', () => {
+    const input = `
+A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "sub_object" {
+  "boolean": true
+}
+
+@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "foo" "bar"
+
+`;
+
+    const actual = sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandBanana, [], null, 'id');
+    const expected = {
+      id: 'id',
+      metadata: {},
+      requests: [
+        {
+          description: 'Description Text',
+          metadata: {
+            sub_object: {
+              boolean: true,
+            },
+          },
+          name: 'request.name',
+          steps: [
+            {
+              args: [
+                {
+                  type: 'number',
+                  value: 1,
+                },
+                {
+                  type: 'number',
+                  value: 2,
+                },
+                {
+                  type: 'number',
+                  value: 3,
+                },
+              ],
+              metadata: { foo: 'bar' },
+              models: [{ offset: '00:00:00', value: 1, variable: 'a' }],
+              stem: 'CMD_0',
+              time: {
+                type: 'COMMAND_COMPLETE',
+              },
+              type: 'command',
+            },
+
+            {
+              args: [
+                {
+                  type: 'string',
+                  value: '1 2 3',
+                },
+              ],
+              stem: 'CMD_1',
+              time: {
+                tag: '00:01:40',
+                type: 'COMMAND_RELATIVE',
+              },
+              type: 'command',
+            },
+          ],
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'request',
+        },
+
+        {
+          ground_epoch: {
+            delta: '+3:00',
+            name: 'GroundEpochName',
+          },
+          metadata: {
+            foo: 'bar',
+          },
+          name: 'request2.name',
+          steps: [
+            {
+              args: [
+                {
+                  type: 'number',
+                  value: 1,
+                },
+                {
+                  type: 'number',
+                  value: 2,
+                },
+                {
+                  type: 'number',
+                  value: 3,
+                },
+              ],
+              metadata: { foo: 'bar' },
+              models: [{ offset: '00:00:00', value: 1, variable: 'a' }],
+              stem: 'CMD_0',
+              time: {
+                type: 'COMMAND_COMPLETE',
+              },
+              type: 'command',
+            },
+
+            {
+              args: [
+                {
+                  type: 'string',
+                  value: '1 2 3',
+                },
+              ],
+              stem: 'CMD_1',
+              time: {
+                tag: '00:01:40',
+                type: 'COMMAND_RELATIVE',
+              },
+              type: 'command',
+            },
+          ],
+          type: 'request',
+        },
+      ],
+    };
+    expect(actual).toEqual(expected);
+  });
+
+  describe('round trip', () => {
+    it('should round trip commands', () => {
+      const input = `
+  @ID "test.seq"
+
+  C FSW_CMD_1 1e3 2.34
+  # comment
+  C FSW_CMD_1 0.123 -2.34 # inline description`;
+
+      const seqJson1 = sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandDictionary, [], null, 'id');
+      const seqN1 = seqJsonToSequence(seqJson1, [], null);
+      const seqJson2 = sequenceToSeqJson(SeqLanguage.parser.parse(seqN1), seqN1, commandDictionary, [], null, 'id');
+      expect(seqJson1).toEqual(seqJson2);
+    });
+
+    it('should round trip activates, loads, etc', () => {
+      const input = `
+@ID "test.seq"
+
+C FSW_CMD_1 1e3 2.34
+# comment
+C FSW_CMD_1 0.123 -2.34 # inline description
+
+A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "sub_object" {
+  "boolean": true
+}
+
+@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+
+  R100 CMD_1 "1 2 3"
+
+@REQUEST_END
+@METADATA "foo" "bar"
+  `;
+
+      const seqJson1 = sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandDictionary, [], null, 'id');
+      const seqN1 = seqJsonToSequence(seqJson1, [], null);
+      const seqJson2 = sequenceToSeqJson(SeqLanguage.parser.parse(seqN1), seqN1, commandDictionary, [], null, 'id');
+      // these should be deep copies
+      expect(seqJson1 === seqJson2).toBeFalsy();
+      expect(seqJson1).toEqual(seqJson2);
+    });
   });
 });

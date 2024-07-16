@@ -126,6 +126,9 @@ export function quoteEscape(s: string) {
   return `"${s.replaceAll('"', '\\"')}"`;
 }
 
+export function removeEscapedQuotes(text: string): string;
+export function removeEscapedQuotes(text: number): number;
+export function removeEscapedQuotes(text: boolean): boolean;
 export function removeEscapedQuotes(text: string | number | boolean): string | number | boolean {
   if (typeof text === 'string') {
     return text.replace(/\\"|"(?!\\")/g, '"').trim();
