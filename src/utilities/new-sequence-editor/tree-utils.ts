@@ -46,10 +46,9 @@ export function getFromAndTo(nodes: (SyntaxNode | null)[]): { from: number; to: 
   );
 }
 
-export function getAncestorNode(node: SyntaxNode | null, ...names: string[]) {
+export function getAncestorNode(node: SyntaxNode | null, name: string) {
   let ancestorNode: SyntaxNode | null = node;
-
-  while (ancestorNode && !names.includes(ancestorNode.name)) {
+  while (ancestorNode && ancestorNode.name !== name) {
     ancestorNode = ancestorNode.parent;
   }
   return ancestorNode;

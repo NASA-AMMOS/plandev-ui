@@ -71,7 +71,6 @@ declare global {
     parameterDictionaries: ParameterDictionary[],
     channelDictionary: ChannelDictionary | null,
   );
-  var ALLOW_NON_COMMAND_STEPS: boolean | undefined;
 }
 
 export {};
