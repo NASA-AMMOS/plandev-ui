@@ -12,8 +12,8 @@ import type {
   FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
-import { fswCommandArgDefault } from '../new-sequence-editor/command-dictionary';
-import { TOKEN_REPEAT_ARG } from '../new-sequence-editor/sequencer-grammar-constants';
+import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
+import { TOKEN_REPEAT_ARG } from '../sequence-editor/sequencer-grammar-constants';
 
 export function isFswCommandArgumentEnum(arg: FswCommandArgument): arg is FswCommandArgumentEnum {
   return arg.arg_type === 'enum';

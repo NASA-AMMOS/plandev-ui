@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import type { FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
-  import { isQuoted, quoteEscape, unquoteUnescape } from '../../../utilities/codemirror/codemirror-utils';
+  import { isQuoted, quoteEscape, unquoteUnescape } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: FswCommandArgumentVarString;
   export let initVal: string;
@@ -26,12 +26,4 @@
   }
 </script>
 
-<div>
-  <input class="st-input" spellcheck="false" bind:value title={argDef.description} />
-</div>
-
-<style>
-  input {
-    width: 90%;
-  }
-</style>
+<input class="st-input w-100" spellcheck="false" bind:value title={argDef.description} />

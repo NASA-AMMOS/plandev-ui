@@ -7,59 +7,37 @@
   // (("e" | "E") ("+" | "-")? ("_" | @digit)+)? |
   // @digit ("_" | @digit)* "n" |
 
-  import { isFswCommandArgumentUnsigned, type NumberArg } from '../../../utilities/codemirror/codemirror-utils';
-
-  // const PAT_INT = "^[-+]?\\d+$";
-  // const PAT_FLOAT = "^[-+]?\\d+\.?\\d*$";
+  import { isFswCommandArgumentUnsigned, type NumberArg } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: NumberArg;
-  export let initVal: string;
-  export let setInEditor: (val: string) => void;
+  export let initVal: number;
+  export let setInEditor: (val: number) => void;
 
   let max: number = Infinity;
   let min: number = -Infinity;
-  let value: string;
-
-  // $: pattern = isFswCommandArgumentUnsigned(argDef) ? PAT_INT : PAT_FLOAT;
+  let value: number;
 
   $: max = argDef.range?.max ?? Infinity;
   $: min = argDef.range?.min ?? (isFswCommandArgumentUnsigned(argDef) ? 0 : -Infinity);
   $: value = initVal;
   $: valFloat = Number(value);
   $: {
-    if (value && !isNaN(valFloat)) {
+    if (typeof value === 'number' && !isNaN(valFloat)) {
       setInEditor(value);
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function customValidate(e: Event & { currentTarget: EventTarget & HTMLInputElement }) {
-    // const val = (e.target as HTMLInputElement).value;
-    const numVal = Number(value);
-    if (numVal < min) {
-      (e.target as HTMLInputElement).setCustomValidity('value is too low');
-    } else if (numVal > max) {
-      (e.target as HTMLInputElement).setCustomValidity('value is too low');
-    } else {
-      (e.target as HTMLInputElement).setCustomValidity('');
     }
   }
 </script>
 
 <div>
-  <input class="st-input" type="string" bind:value required />
-  <!-- {pattern} -->
-  <!-- on:input={customValidate} -->
-  {#if typeof min === 'number' && typeof max === 'number' && min === max && valFloat !== max}
-    <button on:click={() => setInEditor(max.toString())} title="Set to allowed value">{max}</button>
+  <input class="st-input w-100" type="number" bind:value required {min} {max} step="any" />
+  {#if typeof min === 'number' && typeof max === 'number' && (valFloat < min || valFloat > max)}
+    <button style="margin-top: 4px" class="st-button" on:click={() => setInEditor(max)} title="Set to allowed value">
+      Set to maximum: {max}
+    </button>
   {/if}
 </div>
 
 <style>
-  input {
-    width: 90%;
-  }
-
   input:invalid {
     color: red;
   }

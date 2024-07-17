@@ -4,10 +4,10 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import type { ICellRendererParams } from 'ag-grid-community';
-  import { parcel, parcelId, parcels, userSequences, userSequencesColumns } from '../../stores/sequencing';
+  import { parcels, userSequences, userSequencesColumns } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { DataGridColumnDef, DataGridRowSelection, RowId } from '../../types/data-grid';
-  import type { UserSequence } from '../../types/sequencing';
+  import type { Parcel, UserSequence } from '../../types/sequencing';
   import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -52,8 +52,11 @@
   let columnDefs = baseColumnDefs;
   let filterText: string = '';
   let filteredSequences: UserSequence[] = [];
+  let parcel: Parcel | null;
   let selectedSequence: UserSequence | null = null;
   let selectedSequenceSeqJson: string = '';
+
+  $: parcel = $parcels.find(p => p.id === selectedSequence?.parcel_id) ?? null;
 
   $: baseColumnDefs = [
     {
@@ -101,14 +104,6 @@
 
     if (found === -1) {
       selectedSequence = null;
-    }
-
-    setParcel();
-  }
-
-  async function setParcel(): Promise<void> {
-    if (selectedSequence !== null) {
-      $parcelId = selectedSequence.parcel_id;
     }
   }
 
@@ -264,11 +259,11 @@
   <CssGridGutter track={1} type="column" />
 
   <SequenceEditor
-    parcel={$parcel}
+    {parcel}
     showCommandFormBuilder={false}
     sequenceDefinition={selectedSequence?.definition ?? ''}
     sequenceName={selectedSequence?.name}
-    sequenceSeqJson={selectedSequenceSeqJson}
+    sequenceOutput={selectedSequenceSeqJson}
     title="Sequence - Definition Editor (Read-only)"
     readOnly={true}
     {user}
@@ -277,6 +272,8 @@
 
 <style>
   .filter-container {
+    align-items: center;
+    display: flex;
     margin-bottom: 8px;
   }
 </style>

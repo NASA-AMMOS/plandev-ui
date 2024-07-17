@@ -1,11 +1,5 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
-import type {
-  ChannelDictionary,
-  CommandDictionary,
-  FswCommandArgument,
-  FswCommandArgumentRepeat,
-  ParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
+import type { CommandDictionary, FswCommandArgument, FswCommandArgumentRepeat } from '@nasa-jpl/aerie-ampcs';
 import type {
   Args,
   BooleanArgument,
@@ -26,7 +20,6 @@ import type {
 import { TimeTypes } from '../../enums/time';
 import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
 import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../time';
-import { customizeSeqJson } from './extension-points';
 import { logInfo } from './logger';
 import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 
@@ -34,21 +27,19 @@ import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
  * Returns a minimal valid Seq JSON object.
  * Use for getting a default Seq JSON throughout the application.
  */
-export function seqJsonDefault(): SeqJson {
+function seqJsonDefault(): SeqJson {
   return { id: '', metadata: {} };
 }
 
 /**
  * Walks the sequence parse tree and converts it to a valid Seq JSON object.
  */
-export function sequenceToSeqJson(
+export async function sequenceToSeqJson(
   node: Tree,
   text: string,
   commandDictionary: CommandDictionary | null,
-  parameterDictionaries: ParameterDictionary[],
-  channelDictionary: ChannelDictionary | null,
   sequenceName: string,
-): SeqJson {
+): Promise<string> {
   const baseNode = node.topNode;
   const seqJson: SeqJson = seqJsonDefault();
   const variableList: string[] = [];
@@ -78,8 +69,8 @@ export function sequenceToSeqJson(
       .getChild('HardwareCommands')
       ?.getChildren('Command')
       .map(command => parseHardwareCommand(command, text)) ?? undefined;
-  customizeSeqJson(seqJson, parameterDictionaries, channelDictionary);
-  return seqJson;
+
+  return JSON.stringify(seqJson, null, 2);
 }
 
 function parseLGO(node: SyntaxNode): Metadata | undefined {
@@ -139,7 +130,7 @@ function parseArg(
   }
 }
 
-export function parseRepeatArgs(
+function parseRepeatArgs(
   repeatArgsNode: SyntaxNode,
   text: string,
   dictRepeatArgument: FswCommandArgumentRepeat | null,
@@ -178,7 +169,7 @@ export function parseRepeatArgs(
   return repeatArg;
 }
 
-export function parseArgs(
+function parseArgs(
   argsNode: SyntaxNode,
   text: string,
   commandDictionary: CommandDictionary | null,
@@ -224,7 +215,7 @@ export function parseArgs(
  * Parses a time tag node and returns a Seq JSON time.
  * Defaults to an unknown absolute time if a command does not have a valid time tag.
  */
-export function parseTime(commandNode: SyntaxNode, text: string): Time {
+function parseTime(commandNode: SyntaxNode, text: string): Time {
   const timeTagNode = commandNode.getChild('TimeTag');
   let tag = 'UNKNOWN';
 
@@ -395,11 +386,7 @@ function parseDescription(node: SyntaxNode, text: string): string | undefined {
   return removeEscapedQuotes(description) as string;
 }
 
-export function parseCommand(
-  commandNode: SyntaxNode,
-  text: string,
-  commandDictionary: CommandDictionary | null,
-): Command {
+function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Command {
   const time = parseTime(commandNode, text);
 
   const stemNode = commandNode.getChild('Stem');
@@ -423,7 +410,7 @@ export function parseCommand(
   };
 }
 
-export function parseImmediateCommand(
+function parseImmediateCommand(
   commandNode: SyntaxNode,
   text: string,
   commandDictionary: CommandDictionary | null,
@@ -445,7 +432,7 @@ export function parseImmediateCommand(
   };
 }
 
-export function parseHardwareCommand(commandNode: SyntaxNode, text: string): HardwareCommand {
+function parseHardwareCommand(commandNode: SyntaxNode, text: string): HardwareCommand {
   const stemNode = commandNode.getChild('Stem');
   const stem = stemNode ? text.slice(stemNode.from, stemNode.to) : 'UNKNOWN';
   const description = parseDescription(commandNode, text);

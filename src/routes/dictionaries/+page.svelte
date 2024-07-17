@@ -10,12 +10,8 @@
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import { DictionaryTypes } from '../../enums/dictionaryTypes';
-  import {
-    channelDictionaries,
-    commandDictionaries,
-    parameterDictionaries,
-    sequenceAdaptations,
-  } from '../../stores/sequencing';
+  import { sequenceAdaptations } from '../../stores/sequence-adaptation';
+  import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../../stores/sequencing';
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -29,13 +25,17 @@
   let createButtonDisabled: boolean = false;
   let createDictionaryError: string | null = null;
   let creatingDictionary: boolean = false;
-  let files: FileList;
+  let files: FileList | undefined;
   let file: File;
   let fileInput: HTMLInputElement;
   let isSequenceAdaptation: boolean = false;
   let sequenceAdaptationName: string;
 
-  $: hasCreatePermission = featurePermissions.commandDictionary.canCreate(data.user);
+  $: hasCreatePermission =
+    featurePermissions.channelDictionary.canCreate(data.user) &&
+    featurePermissions.commandDictionary.canCreate(data.user) &&
+    featurePermissions.parameterDictionary.canCreate(data.user) &&
+    featurePermissions.sequenceAdaptation.canCreate(data.user);
   $: createButtonDisabled = !files || files?.length === 0 || (isSequenceAdaptation && sequenceAdaptationName === '');
   $: {
     if (files && files.length > 0) {
@@ -80,6 +80,8 @@
         }
       }
 
+      // Set files to undefined to reset the input form and set the value to empty string to clear the uploaded file.
+      files = undefined;
       fileInput.value = '';
       isSequenceAdaptation = false;
       sequenceAdaptationName = '';
@@ -158,7 +160,7 @@
           <fieldset>
             <button
               class="st-button w-100"
-              disabled={createButtonDisabled}
+              disabled={createButtonDisabled || creatingDictionary}
               type="submit"
               use:permissionHandler={{
                 hasPermission: hasCreatePermission,
@@ -180,6 +182,8 @@
     <div class="table-container">
       <DictionaryTable
         dictionaries={$commandDictionaries}
+        hasDeletePermission={featurePermissions.commandDictionary.canDelete(data.user)}
+        isEditingDictionaries={true}
         type={'Command'}
         user={data.user}
         on:delete={deleteCommandDictionary}
@@ -187,6 +191,8 @@
 
       <DictionaryTable
         dictionaries={$channelDictionaries}
+        hasDeletePermission={featurePermissions.channelDictionary.canDelete(data.user)}
+        isEditingDictionaries={true}
         type={'Channel'}
         user={data.user}
         on:delete={deleteChannelDictionary}
@@ -194,6 +200,8 @@
 
       <DictionaryTable
         dictionaries={$parameterDictionaries}
+        hasDeletePermission={featurePermissions.parameterDictionary.canDelete(data.user)}
+        isEditingDictionaries={true}
         type={'Parameter'}
         user={data.user}
         on:delete={deleteParameterDictionary}
@@ -201,6 +209,8 @@
 
       <DictionaryTable
         dictionaries={$sequenceAdaptations}
+        hasDeletePermission={featurePermissions.sequenceAdaptation.canDelete(data.user)}
+        isEditingDictionaries={true}
         type={'Sequence'}
         user={data.user}
         on:delete={deleteSequenceAdaptation}

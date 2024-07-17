@@ -3,14 +3,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { sequenceAdaptations } from '../../stores/sequence-adaptation';
   import {
     channelDictionaries,
     commandDictionaries,
     parameterDictionaries,
-    parcel,
     parcelToParameterDictionaries,
-    sequenceAdaptations,
   } from '../../stores/sequencing';
   import type { User, UserId } from '../../types/app';
   import type { Parcel, ParcelInsertInput, ParcelToParameterDictionary } from '../../types/sequencing';
@@ -24,64 +23,48 @@
   import DictionaryTable from './DictionaryTable.svelte';
 
   export let mode: 'create' | 'edit' = 'create';
+  export let parcelChannelDictionaryId: number | null = null;
+  export let parcelCommandDictionaryId: number | null = null;
+  export let parcelCreatedAt: string | undefined = undefined;
+  export let parcelId: number | null = null;
+  export let parcelName: string | undefined = undefined;
+  export let parcelOwner: UserId = null;
+  export let parcelSequenceAdaptationId: number | null = null;
   export let user: User | null;
 
   let hasPermission: boolean = false;
   let pageSubtitle: string = '';
   let pageTitle: string = '';
   let parcelModified: boolean = false;
-  let parcelChannelDictionaryId: number | null;
-  let parcelCommandDictionaryId: number | null;
-  let parcelCreatedAt: string | null;
-  let parcelName: string;
-  let parcelId: number | null;
-  let parcelOwner: UserId;
-  let parcelSequenceAdaptationId: number | null;
   let permissionError = 'You do not have permission to edit this parcel.';
   let saveButtonClass: 'primary' | 'secondary' = 'primary';
   let saveButtonText: string = '';
   let saveButtonEnabled: boolean = false;
   let savedParcelChannelDictionaryId: number | null;
   let savedParcelCommandDictionaryId: number | null;
-  let savedParcelName: string;
+  let savedParcelName: string | undefined;
   let savedParameterDictionaryIds: Record<number, boolean> = {};
   let savedSequenceAdaptationId: number | null;
-  let savingParcel: boolean = false;
   let selectedParmeterDictionaries: Record<number, boolean> = {};
 
   const dispatch = createEventDispatcher<{
     save: { parcelId: number };
   }>();
 
-  $: {
-    if ($parcel !== null && $parcel !== undefined) {
-      parcelChannelDictionaryId = $parcel.channel_dictionary_id;
-      parcelCommandDictionaryId = $parcel.command_dictionary_id;
-      parcelCreatedAt = $parcel.created_at;
-      parcelName = $parcel.name;
-      parcelId = $parcel.id;
-      parcelOwner = $parcel.owner;
-      parcelSequenceAdaptationId = $parcel.sequence_adaptation_id;
-
-      savedParcelChannelDictionaryId = $parcel.channel_dictionary_id;
-      savedParcelCommandDictionaryId = $parcel.command_dictionary_id;
-      savedParcelName = $parcel.name;
-      savedSequenceAdaptationId = $parcel.sequence_adaptation_id;
-    }
-  }
-
   $: selectedParmeterDictionaries = savedParameterDictionaryIds = $parcelToParameterDictionaries.reduce(
     (prevBooleanMap: Record<number, boolean>, parcelToParameterDictionary: ParcelToParameterDictionary) => {
-      return {
-        ...prevBooleanMap,
-        [parcelToParameterDictionary.parameter_dictionary_id]: true,
-      };
+      return parcelToParameterDictionary.parcel_id === parcelId
+        ? {
+            ...prevBooleanMap,
+            [parcelToParameterDictionary.parameter_dictionary_id]: true,
+          }
+        : {};
     },
     {},
   );
 
   $: saveButtonClass = parcelModified && saveButtonEnabled ? 'primary' : 'secondary';
-  $: saveButtonEnabled = parcelCommandDictionaryId !== null && parcelName !== '';
+  $: saveButtonEnabled = parcelCommandDictionaryId !== null && parcelName !== undefined && parcelName !== '';
   $: parcelModified =
     parcelChannelDictionaryId !== savedParcelChannelDictionaryId ||
     parcelCommandDictionaryId !== savedParcelCommandDictionaryId ||
@@ -96,9 +79,16 @@
         : featurePermissions.parcels.canCreate(user);
     permissionError = `You do not have permission to ${mode === 'edit' ? 'edit this' : 'create a'} parcel.`;
     pageTitle = mode === 'edit' ? 'Parcel' : 'New Parcel';
-    pageSubtitle = mode === 'edit' ? savedParcelName : '';
+    pageSubtitle = mode === 'edit' && savedParcelName !== undefined ? savedParcelName : '';
     saveButtonText = mode === 'edit' && !parcelModified ? 'Saved' : 'Save';
   }
+
+  onMount(() => {
+    savedParcelChannelDictionaryId = parcelChannelDictionaryId;
+    savedParcelCommandDictionaryId = parcelCommandDictionaryId;
+    savedParcelName = parcelName;
+    savedSequenceAdaptationId = parcelSequenceAdaptationId;
+  });
 
   /**
    * selectedParameterDictionaries keeps track of false values for the table while the saved list doesn't so
@@ -120,20 +110,23 @@
     return false;
   }
 
-  function onToggleChannelDictionary(event: CustomEvent<{ id: number | null }>) {
-    parcelChannelDictionaryId = event.detail.id;
+  function onToggleChannelDictionary(event: CustomEvent<{ id: number; value: boolean }>) {
+    parcelChannelDictionaryId = event.detail.value ? event.detail.id : null;
   }
 
-  function onToggleCommandDictionary(event: CustomEvent<{ id: number | null }>) {
-    parcelCommandDictionaryId = event.detail.id;
+  function onToggleCommandDictionary(event: CustomEvent<{ id: number; value: boolean }>) {
+    parcelCommandDictionaryId = event.detail.value ? event.detail.id : null;
   }
 
-  function onToggleParameterDictionary(event: CustomEvent<{ ids: Record<number, boolean> }>) {
-    selectedParmeterDictionaries = event.detail.ids;
+  function onToggleParameterDictionary(event: CustomEvent<{ id: number; value: boolean }>) {
+    selectedParmeterDictionaries = {
+      ...selectedParmeterDictionaries,
+      [event.detail.id]: event.detail.value,
+    };
   }
 
-  function onToggleSequenceAdaptation(event: CustomEvent<{ id: number | null }>) {
-    parcelSequenceAdaptationId = event.detail.id;
+  function onToggleSequenceAdaptation(event: CustomEvent<{ id: number; value: boolean }>) {
+    parcelSequenceAdaptationId = event.detail.value ? event.detail.id : null;
   }
 
   async function saveParcelToParameterDictionaries(): Promise<void> {
@@ -161,30 +154,28 @@
     }
 
     if (parcelToParameterDictionaryIdsToDelete.length > 0) {
-      const parcelToParameterDictionariesToDelete: ParcelToParameterDictionary[] = [];
+      const parcelToParameterDictionaryAssociationsToDelete: ParcelToParameterDictionary[] = [];
 
       for (const paramDictionaryId of parcelToParameterDictionaryIdsToDelete) {
         const parcelToParameterDictionary: ParcelToParameterDictionary | undefined =
           $parcelToParameterDictionaries.find(
-            p => p.parameter_dictionary_id === paramDictionaryId && p.parcel_id === $parcel?.id,
+            p => p.parameter_dictionary_id === paramDictionaryId && p.parcel_id === parcelId,
           );
 
         if (parcelToParameterDictionary) {
-          parcelToParameterDictionariesToDelete.push(parcelToParameterDictionary);
+          parcelToParameterDictionaryAssociationsToDelete.push(parcelToParameterDictionary);
         }
       }
 
-      if (parcelToParameterDictionariesToDelete.length > 0) {
-        await effects.deleteParcelToParameterDictionaries(parcelToParameterDictionariesToDelete, user);
+      if (parcelToParameterDictionaryAssociationsToDelete.length > 0) {
+        await effects.deleteParcelToDictionaryAssociations(parcelToParameterDictionaryAssociationsToDelete, user);
       }
     }
   }
 
   async function saveParcel() {
     if (saveButtonEnabled) {
-      savingParcel = true;
-
-      if (parcelCommandDictionaryId !== null && parcelName !== '') {
+      if (parcelCommandDictionaryId !== null && parcelName && parcelName !== '') {
         if (mode === 'create') {
           const newParcel: ParcelInsertInput = {
             channel_dictionary_id: parcelChannelDictionaryId,
@@ -207,17 +198,15 @@
             sequence_adaptation_id: parcelSequenceAdaptationId,
           };
 
-          saveParcelToParameterDictionaries();
-
+          await saveParcelToParameterDictionaries();
           await effects.updateParcel(parcelId, updatedParcel, parcelOwner, user);
         }
+
+        savedParcelChannelDictionaryId = parcelChannelDictionaryId;
+        savedParcelCommandDictionaryId = parcelCommandDictionaryId;
+        savedSequenceAdaptationId = parcelSequenceAdaptationId;
+        savedParcelName = parcelName;
       }
-
-      savedParcelChannelDictionaryId = parcelChannelDictionaryId;
-      savedParcelCommandDictionaryId = parcelCommandDictionaryId;
-      savedSequenceAdaptationId = parcelSequenceAdaptationId;
-
-      savingParcel = false;
     }
   }
 </script>
@@ -242,7 +231,7 @@
           }}
           on:click={saveParcel}
         >
-          {savingParcel ? 'Saving...' : saveButtonText}
+          {saveButtonText}
         </button>
       </div>
     </svelte:fragment>
@@ -281,7 +270,7 @@
   <div class="table-container">
     <DictionaryTable
       dictionaries={$commandDictionaries}
-      dictionaryId={parcelCommandDictionaryId}
+      selectedDictionaryIds={parcelCommandDictionaryId ? { [parcelCommandDictionaryId]: true } : {}}
       isEditingParcel={true}
       hasEditPermission={hasPermission}
       type="Command"
@@ -291,7 +280,7 @@
 
     <DictionaryTable
       dictionaries={$channelDictionaries}
-      dictionaryId={parcelChannelDictionaryId}
+      selectedDictionaryIds={parcelChannelDictionaryId ? { [parcelChannelDictionaryId]: true } : {}}
       isEditingParcel={true}
       hasEditPermission={hasPermission}
       type="Channel"
@@ -301,18 +290,18 @@
 
     <DictionaryTable
       dictionaries={$parameterDictionaries}
-      multiSelectDictionaryIds={selectedParmeterDictionaries}
+      selectedDictionaryIds={selectedParmeterDictionaries}
       isEditingParcel={true}
       isMultiselect={true}
       hasEditPermission={hasPermission}
       type="Parameter"
       {user}
-      on:multiSelect={onToggleParameterDictionary}
+      on:select={onToggleParameterDictionary}
     />
 
     <DictionaryTable
       dictionaries={$sequenceAdaptations}
-      dictionaryId={parcelSequenceAdaptationId}
+      selectedDictionaryIds={parcelSequenceAdaptationId ? { [parcelSequenceAdaptationId]: true } : {}}
       isEditingParcel={true}
       hasEditPermission={hasPermission}
       type="Sequence"

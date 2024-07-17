@@ -29,12 +29,8 @@ import {
 import { createModelError, creatingModel, models } from '../stores/model';
 import { createPlanError, creatingPlan, planId } from '../stores/plan';
 import { schedulingRequests, selectedSpecId } from '../stores/scheduling';
-import {
-  channelDictionaries,
-  commandDictionaries,
-  parameterDictionaries,
-  sequenceAdaptations,
-} from '../stores/sequencing';
+import { sequenceAdaptations } from '../stores/sequence-adaptation';
+import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../stores/sequencing';
 import { selectedSpanId, simulationDataset, simulationDatasetId } from '../stores/simulation';
 import { createTagError } from '../stores/tags';
 import { applyViewUpdate, view, viewUpdateTimeline } from '../stores/views';
@@ -2250,20 +2246,20 @@ const effects = {
     }
   },
 
-  async deleteParcelToParameterDictionaries(
+  async deleteParcelToDictionaryAssociations(
     parcelToParameterDictionariesToDelete: ParcelToParameterDictionary[],
     user: User | null,
   ): Promise<number | null> {
     try {
-      if (!queryPermissions.DELETE_PARCEL_TO_PARAMETER_DICTIONARIES(user)) {
-        throwPermissionError('delete parcel to parameter dictionaries');
+      if (!queryPermissions.DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION(user)) {
+        throwPermissionError('delete parcel to dictionary association');
       }
 
       const parcelIds = parcelToParameterDictionariesToDelete.map(p => p.parcel_id);
       const parameterDictionaryIds = parcelToParameterDictionariesToDelete.map(p => p.parameter_dictionary_id);
 
       const data = await reqHasura<{ affected_rows: number }>(
-        gql.DELETE_PARCEL_TO_PARAMETER_DICTIONARIES,
+        gql.DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION,
         { parameterDictionaryIds, parcelIds },
         user,
       );
@@ -2274,17 +2270,17 @@ const effects = {
         const { affected_rows } = delete_parcel_to_parameter_dictionary;
 
         if (affected_rows !== parameterDictionaryIds.length) {
-          throw Error('Some parcel to parameter dictionaries were not successfully deleted');
+          throw Error('Some parcel to dictionary associations were not successfully deleted');
         }
 
-        showSuccessToast('Parcel to parameter dictionaries updated Successfully');
+        showSuccessToast('Parcel to dictionary association deleted Successfully');
         return affected_rows;
       } else {
-        throw Error('Unable to delete parcel to parameter dictionaries');
+        throw Error('Unable to delete parcel to dictionary associations');
       }
     } catch (e) {
-      catchError('Delete parcel to parameter dictionaries failed', e as Error);
-      showFailureToast('Delete parcel to parameter dictionaries failed');
+      catchError('Delete parcel to dictionary associations failed', e as Error);
+      showFailureToast('Delete parcel to dictionary associations failed');
       return null;
     }
   },
@@ -5326,9 +5322,11 @@ const effects = {
     type: DictionaryTypes,
     user: User | null,
   ): Promise<CommandDictionary | ChannelDictionary | ParameterDictionary | null> {
+    const typeString = type.charAt(0).toUpperCase() + type.slice(1);
+
     try {
       if (!queryPermissions.CREATE_DICTIONARY(user)) {
-        throwPermissionError('upload a command dictionary');
+        throwPermissionError(`upload a ${typeString} dictionary`);
       }
 
       const data = await reqHasura<CommandDictionary | ChannelDictionary | ParameterDictionary>(
@@ -5340,12 +5338,12 @@ const effects = {
       const { createDictionary: newDictionary } = data;
 
       if (newDictionary === null) {
-        throw Error('Unable to upload command dictionary');
+        throw Error(`Unable to upload ${typeString} Dictionary`);
       }
 
       return newDictionary;
     } catch (e) {
-      catchError('Command Dictionary Upload Failed', e as Error);
+      catchError(`${typeString} Dictionary Upload Failed`, e as Error);
       return null;
     }
   },

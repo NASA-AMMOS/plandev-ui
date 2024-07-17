@@ -1,4 +1,3 @@
-import type { ChannelDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import type {
   Args,
   BooleanArgument,
@@ -7,20 +6,18 @@ import type {
   Metadata,
   Model,
   NumberArgument,
-  SeqJson,
   StringArgument,
   SymbolArgument,
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
 import { quoteEscape } from '../codemirror/codemirror-utils';
-import { customizeSeqJsonParsing } from './extension-points';
 import { logError } from './logger';
 
 /**
  * Transform a sequence JSON time to it's sequence string form.
  */
-export function seqJsonTimeToSequence(time: Time): string {
+function seqJsonTimeToSequence(time: Time): string {
   switch (time.type) {
     case 'ABSOLUTE':
       return `A${time?.tag ?? ''}`;
@@ -38,7 +35,7 @@ export function seqJsonTimeToSequence(time: Time): string {
 /**
  * Transform a base argument (non-repeat) into a string.
  */
-export function seqJsonBaseArgToSequence(
+function seqJsonBaseArgToSequence(
   arg: StringArgument | NumberArgument | BooleanArgument | SymbolArgument | HexArgument,
 ): string {
   switch (arg.type) {
@@ -51,7 +48,7 @@ export function seqJsonBaseArgToSequence(
   }
 }
 
-export function seqJsonArgsToSequence(args: Args): string {
+function seqJsonArgsToSequence(args: Args): string {
   let result = '';
 
   for (const arg of args) {
@@ -82,7 +79,7 @@ export function seqJsonArgsToSequence(args: Args): string {
   return result.trim().length > 0 ? ` ${result.trim()}` : '';
 }
 
-export function seqJsonModelsToSequence(models: Model[]): string {
+function seqJsonModelsToSequence(models: Model[]): string {
   // MODEL directives are one per line, the last new line is to start the next token
   const modelString = models
     .map(model => {
@@ -99,7 +96,7 @@ export function seqJsonModelsToSequence(models: Model[]): string {
   return modelString.length > 0 ? `${modelString}\n` : '';
 }
 
-export function seqJsonMetadataToSequence(metadata: Metadata): string {
+function seqJsonMetadataToSequence(metadata: Metadata): string {
   // METADATA directives are one per line, the last new line is to start the next token
   const metaDataString = Object.entries(metadata)
     .map(
@@ -124,15 +121,11 @@ function seqJsonDescriptionToSequence(description: Description): string {
 /**
  * Transforms a sequence JSON to a sequence string.
  */
-export function seqJsonToSequence(
-  seqJson: SeqJson | null,
-  parameterDictionaries: ParameterDictionary[],
-  channelDictionary: ChannelDictionary | null,
-): string {
+export async function seqJsonToSequence(input: string | null): Promise<string> {
   const sequence: string[] = [];
 
-  if (seqJson) {
-    customizeSeqJsonParsing(seqJson, parameterDictionaries, channelDictionary);
+  if (input !== null) {
+    const seqJson = JSON.parse(input);
 
     // ID
     sequence.push(`@ID "${seqJson.id}"\n`);
@@ -225,31 +218,4 @@ export function seqJsonToSequence(
   }
 
   return sequence.join('');
-}
-
-/**
- * Return a parsed sequence JSON from a file.
- */
-export async function parseSeqJsonFromFile(files: FileList | null | undefined): Promise<SeqJson | null> {
-  if (files) {
-    const file = files.item(0);
-
-    if (file) {
-      try {
-        const fileText = await file.text();
-        const seqJson = JSON.parse(fileText);
-        return seqJson;
-      } catch (e) {
-        const errorMessage = (e as Error).message;
-        logError(errorMessage);
-        return null;
-      }
-    } else {
-      logError('No file provided');
-      return null;
-    }
-  } else {
-    logError('No file provided');
-    return null;
-  }
 }

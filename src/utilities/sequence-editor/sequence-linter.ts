@@ -15,7 +15,9 @@ import { closest, distance } from 'fastest-levenshtein';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
+import { get } from 'svelte/store';
 import { TimeTypes } from '../../enums/time';
+import { getGlobals, sequenceAdaptation } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
 import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
 import {
@@ -89,7 +91,7 @@ export function sequenceLinter(
 
     // TODO: Get identify type mapping to use
     const variables: VariableDeclaration[] = [
-      ...(globalThis.GLOBALS?.map(g => ({ name: g.name, type: 'STRING' }) as const) ?? []),
+      ...(getGlobals().map(g => ({ name: g.name, type: 'STRING' }) as const) ?? []),
     ];
 
     // Validate top level metadata
@@ -135,8 +137,10 @@ export function sequenceLinter(
       ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], docText),
     );
 
-    if (globalThis.LINT !== undefined && globalThis.LINT(commandDictionary, view, treeNode) !== undefined) {
-      diagnostics = [...diagnostics, ...globalThis.LINT(commandDictionary, view, treeNode)];
+    const lint = get(sequenceAdaptation)?.lint;
+
+    if (lint !== undefined && commandDictionary !== null) {
+      diagnostics = [...diagnostics, ...lint(commandDictionary, view, treeNode)];
     }
 
     return diagnostics;
@@ -173,18 +177,18 @@ export function sequenceLinter(
     const loopStack: WhileOpener[] = [];
     const conditionalKeywords = [];
     const loopKeywords = [];
-    const conditionalStartingKeywords = globalThis.CONDITIONAL_KEYWORDS?.IF ?? ['CMD_IF'];
-    const conditionalElseKeyword = globalThis.CONDITIONAL_KEYWORDS?.ELSE ?? 'CMD_ELSE';
-    const conditionalElseIfKeywords = globalThis.CONDITIONAL_KEYWORDS?.ELSE_IF ?? ['CMD_ELSE_IF'];
-    const conditionalEndingKeyword = globalThis.CONDITIONAL_KEYWORDS?.END_IF ?? 'CMD_END_IF';
-    const loopStartingKeywords = globalThis.LOOP_KEYWORDS?.WHILE_LOOP ?? ['CMD_WHILE_LOOP', 'CMD_WHILE_LOOP_OR'];
-    const loopEndingKeyword = globalThis.LOOP_KEYWORDS?.END_WHILE_LOOP ?? 'CMD_END_WHILE_LOOP';
+    const sequenceAdaptationConditionalKeywords = get(sequenceAdaptation)?.conditionalKeywords;
+    const sequenceAdaptationLoopKeywords = get(sequenceAdaptation)?.loopKeywords;
 
-    conditionalKeywords.push(conditionalElseKeyword, ...conditionalElseIfKeywords, conditionalEndingKeyword);
+    conditionalKeywords.push(
+      sequenceAdaptationConditionalKeywords?.else,
+      ...(sequenceAdaptationConditionalKeywords?.elseIf ?? []),
+      sequenceAdaptationConditionalKeywords?.endIf,
+    );
     loopKeywords.push(
-      globalThis.LOOP_KEYWORDS?.BREAK ?? 'CMD_BREAK',
-      globalThis.LOOP_KEYWORDS?.CONTINUE ?? 'CMD_CONTINUE',
-      loopEndingKeyword,
+      sequenceAdaptationLoopKeywords?.break,
+      sequenceAdaptationLoopKeywords?.continue,
+      sequenceAdaptationLoopKeywords?.endWhileLoop,
     );
 
     for (const command of commandNodes) {
@@ -192,12 +196,12 @@ export function sequenceLinter(
       if (stem) {
         const word = text.slice(stem.from, stem.to);
 
-        if (conditionalStartingKeywords.includes(word)) {
+        if (sequenceAdaptationConditionalKeywords?.if.includes(word)) {
           conditionalStack.push({
             command,
             from: stem.from,
             hasElse: false,
-            stemToClose: conditionalEndingKeyword,
+            stemToClose: sequenceAdaptationConditionalKeywords.endIf,
             to: stem.to,
             word,
           });
@@ -207,31 +211,31 @@ export function sequenceLinter(
           if (conditionalStack.length === 0) {
             diagnostics.push({
               from: stem.from,
-              message: `${word} doesn't match a preceding ${conditionalStartingKeywords.join(', ')}.`,
+              message: `${word} doesn't match a preceding ${sequenceAdaptationConditionalKeywords?.if.join(', ')}.`,
               severity: 'error',
               to: stem.to,
             });
-          } else if (word === conditionalElseKeyword) {
+          } else if (word === sequenceAdaptationConditionalKeywords?.else) {
             if (!conditionalStack[conditionalStack.length - 1].hasElse) {
               conditionalStack[conditionalStack.length - 1].hasElse = true;
             } else {
               diagnostics.push({
                 from: stem.from,
-                message: `${word} doesn't match a preceding ${conditionalStartingKeywords.join(', ')}.`,
+                message: `${word} doesn't match a preceding ${sequenceAdaptationConditionalKeywords?.if.join(', ')}.`,
                 severity: 'error',
                 to: stem.to,
               });
             }
-          } else if (word === conditionalEndingKeyword) {
+          } else if (word === sequenceAdaptationConditionalKeywords?.endIf) {
             conditionalStack.pop();
           }
         }
 
-        if (loopStartingKeywords.includes(word)) {
+        if (sequenceAdaptationLoopKeywords?.whileLoop.includes(word)) {
           loopStack.push({
             command,
             from: stem.from,
-            stemToClose: loopEndingKeyword,
+            stemToClose: sequenceAdaptationLoopKeywords.endWhileLoop,
             to: stem.to,
             word,
           });
@@ -241,13 +245,13 @@ export function sequenceLinter(
           if (loopStack.length === 0) {
             diagnostics.push({
               from: stem.from,
-              message: `${word} doesn't match a preceding ${loopStartingKeywords.join(', ')}.`,
+              message: `${word} doesn't match a preceding ${sequenceAdaptationLoopKeywords?.whileLoop.join(', ')}.`,
               severity: 'error',
               to: stem.to,
             });
           }
 
-          if (word === loopEndingKeyword) {
+          if (word === sequenceAdaptationLoopKeywords?.endWhileLoop) {
             loopStack.pop();
           }
         }

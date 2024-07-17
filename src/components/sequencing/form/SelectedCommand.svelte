@@ -13,15 +13,18 @@
   } from '@nasa-jpl/aerie-ampcs';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
+  import { TOKEN_COMMAND, TOKEN_ERROR } from '../../../utilities/sequence-editor/sequencer-grammar-constants';
+  import { getAncestorNode } from '../../../utilities/sequence-editor/tree-utils';
+  import Collapse from '../../Collapse.svelte';
+  import Panel from '../../ui/Panel.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
   import {
     addDefaultArgs,
     getMissingArgDefs,
     isFswCommandArgumentRepeat,
     type ArgTextDef,
-  } from '../../../utilities/codemirror/codemirror-utils';
-  import { getCustomArgDef } from '../../../utilities/new-sequence-editor/extension-points';
-  import { TOKEN_COMMAND, TOKEN_ERROR } from '../../../utilities/new-sequence-editor/sequencer-grammar-constants';
-  import { getAncestorNode } from '../../../utilities/new-sequence-editor/tree-utils';
+  } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgEditor from './ArgEditor.svelte';
 
@@ -158,7 +161,9 @@
       editorSequenceView &&
       (hasAncestorWithId(document.activeElement, ID_COMMAND_DETAIL_PANE) ||
         // Searchable Dropdown has pop out that is not a descendent
-        document.activeElement?.tagName === 'BODY')
+        document.activeElement?.tagName === 'BODY' ||
+        document.activeElement?.tagName === 'BUTTON' ||
+        document.activeElement?.tagName === 'INPUT')
     ) {
       const currentVal = editorSequenceView.state.sliceDoc(token.node.from, token.node.to);
       if (currentVal !== val) {
@@ -191,47 +196,64 @@
   // {'unsigned_arg', 'enum_arg', 'var_string_arg', 'float_arg'}
 </script>
 
-<div class="select-command-detail" id={ID_COMMAND_DETAIL_PANE}>
-  {#if !!commandNode}
-    <div>Selected Command</div>
-    {#if !!commandDef}
-      {#if !!timeTagNode}
-        <div>Time Tag: {timeTagNode.text.trim()}</div>
-      {/if}
-      <div>
-        <details>
-          <summary>{commandDef.stem}</summary>
-          {commandDef.description}
-        </details>
-      </div>
-      <hr />
-      <div class="select-command-argument-detail">
-        {#each editorArgInfoArray as argInfo}
-          <ArgEditor
-            {argInfo}
-            {commandDictionary}
-            setInEditor={debounce(setInEditor, 250)}
-            addDefaultArgs={(commandNode, missingArgDefArray) =>
-              addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray)}
-          />
-        {/each}
-        {#if missingArgDefArray.length}
-          <AddMissingArgsButton
-            setInEditor={() => {
-              if (commandNode) {
-                addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray);
-              }
-            }}
-          />
+<Panel overflowYBody="hidden" padBody={false}>
+  <svelte:fragment slot="header">
+    <SectionTitle>Selected Command</SectionTitle>
+  </svelte:fragment>
+
+  <svelte:fragment slot="body">
+    <div id={ID_COMMAND_DETAIL_PANE} class="content">
+      {#if !!commandNode}
+        <div class="header"></div>
+
+        {#if !!commandDef}
+          {#if !!timeTagNode}
+            <fieldset>
+              <label for="timeTag">Time Tag</label>
+              <input class="st-input w-100" disabled name="timeTag" value={timeTagNode.text.trim()} />
+            </fieldset>
+          {/if}
+
+          <fieldset>
+            <Collapse headerHeight={24} title={commandDef.stem} padContent={false}>{commandDef.description}</Collapse>
+          </fieldset>
+
+          {#each editorArgInfoArray as argInfo}
+            <ArgEditor
+              {argInfo}
+              {commandDictionary}
+              setInEditor={debounce(setInEditor, 250)}
+              addDefaultArgs={(commandNode, missingArgDefArray) =>
+                addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray)}
+            />
+          {/each}
+
+          {#if missingArgDefArray.length}
+            <fieldset>
+              <AddMissingArgsButton
+                setInEditor={() => {
+                  if (commandNode) {
+                    addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray);
+                  }
+                }}
+              />
+            </fieldset>
+          {/if}
         {/if}
-      </div>
-    {/if}
-  {/if}
-</div>
+      {:else}
+        <div class="empty-state st-typography-label">Select a command to modify its parameters.</div>
+      {/if}
+    </div>
+  </svelte:fragment>
+</Panel>
 
 <style>
-  .select-command-detail {
-    padding: 10px;
-    width: 100%;
+  .content {
+    overflow: auto;
+    padding-bottom: 16px;
+  }
+
+  .empty-state {
+    padding: 8px 16px;
   }
 </style>

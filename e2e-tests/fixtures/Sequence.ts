@@ -167,7 +167,7 @@ export class Sequence {
     this.editor = page.locator('.cm-activeLine').first();
     this.command = this.editor.getByText(/C\s+FSW_CMD_0.*/);
     this.jsonEditor = page.getByText(`{ "id": "${this.sequenceName}`);
-    this.jsonImport = page.locator('input[name="seqJsonFile"]');
+    this.jsonImport = page.locator('input[name="outputFile"]');
     this.linter = page.locator('.cm-lint-marker');
     this.page = page;
     this.parcel = page.locator('select[name="parcel"]');

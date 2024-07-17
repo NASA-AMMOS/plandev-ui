@@ -2,13 +2,15 @@
 
 <script lang="ts">
   import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+  import { isArray } from 'lodash-es';
+  import Collapse from '../../Collapse.svelte';
   import {
     isFswCommandArgumentFloat,
     isFswCommandArgumentInteger,
     isFswCommandArgumentRepeat,
     isFswCommandArgumentUnsigned,
     isFswCommandArgumentVarString,
-  } from '../../../utilities/codemirror/codemirror-utils';
+  } from './../../../utilities/codemirror/codemirror-utils';
 
   export let argDef: FswCommandArgument;
 
@@ -41,15 +43,25 @@
     if (compactTypeInfo) {
       compactTypeInfo = ` [${compactTypeInfo}]`;
     }
-    const base = `${argDef.name}${compactTypeInfo}`;
-    if ('units' in argDef) {
-      return `${base} - (${argDef.units})`;
+    let base = `${argDef.name}${compactTypeInfo}`;
+    if ('range' in argDef && argDef.range) {
+      if (isArray(argDef.range)) {
+        base += ` [${argDef.range.join(', ')}]`;
+      } else {
+        base += ` [${argDef.range.min} – ${argDef.range.max}]`;
+      }
     }
+
+    if ('units' in argDef) {
+      return `${base} – (${argDef.units})`;
+    }
+
     return base;
   }
 </script>
 
-<details>
-  <summary>{title}</summary>
-  {argDef.description}
-</details>
+<Collapse headerHeight={24} padContent={false} {title} defaultExpanded={false}>
+  <div style="padding-bottom: 4px">
+    {argDef.description}
+  </div>
+</Collapse>

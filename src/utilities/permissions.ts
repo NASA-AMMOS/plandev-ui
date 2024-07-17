@@ -513,8 +513,8 @@ const queryPermissions = {
   DELETE_PARCEL: (user: User | null, parcel: AssetWithOwner<Parcel>): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.DELETE_PARCEL], user) && isUserOwner(user, parcel));
   },
-  DELETE_PARCEL_TO_PARAMETER_DICTIONARIES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_PARCEL_TO_PARAMETER_DICTIONARY], user);
+  DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION], user);
   },
   DELETE_PLAN: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
@@ -1174,6 +1174,7 @@ interface AssociationCRUDPermission<M, D> extends CRUDPermission<AssetWithOwner<
 interface FeaturePermissions {
   activityDirective: PlanAssetCRUDPermission<ActivityDirective>;
   activityPresets: PlanActivityPresetsCRUDPermission;
+  channelDictionary: CRUDPermission<void>;
   commandDictionary: CRUDPermission<void>;
   constraints: AssociationCRUDPermission<ConstraintMetadata, ConstraintDefinition>;
   constraintsModelSpec: ModelSpecificationCRUDPermission;
@@ -1182,6 +1183,7 @@ interface FeaturePermissions {
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
   model: CRUDPermission<void>;
+  parameterDictionary: CRUDPermission<void>;
   parcels: CRUDPermission<AssetWithOwner<Parcel>>;
   plan: CRUDPermission<PlanWithOwners>;
   planBranch: PlanBranchCRUDPermission;
@@ -1193,6 +1195,7 @@ interface FeaturePermissions {
   schedulingGoals: AssociationCRUDPermission<SchedulingGoalMetadata, SchedulingGoalDefinition>;
   schedulingGoalsModelSpec: ModelSpecificationCRUDPermission;
   schedulingGoalsPlanSpec: SchedulingCRUDPermission<AssetWithOwner<SchedulingGoalMetadata>>;
+  sequenceAdaptation: CRUDPermission<void>;
   sequences: CRUDPermission<AssetWithOwner<UserSequence>>;
   simulation: RunnableCRUDPermission<AssetWithOwner<Simulation>>;
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
@@ -1214,6 +1217,12 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => queryPermissions.SUB_ACTIVITY_PRESETS(user),
     canUnassign: (user, plan) => queryPermissions.DELETE_PRESET_TO_DIRECTIVE(user, plan),
     canUpdate: (user, _plan, preset) => queryPermissions.UPDATE_ACTIVITY_PRESET(user, preset),
+  },
+  channelDictionary: {
+    canCreate: user => queryPermissions.CREATE_DICTIONARY(user),
+    canDelete: user => queryPermissions.DELETE_CHANNEL_DICTIONARY(user),
+    canRead: () => false, // Not implemented
+    canUpdate: () => false, // Not implemented
   },
   commandDictionary: {
     canCreate: user => queryPermissions.CREATE_DICTIONARY(user),
@@ -1260,6 +1269,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_MODEL(user),
     canRead: user => queryPermissions.GET_PLANS_AND_MODELS(user),
     canUpdate: user => queryPermissions.UPDATE_MODEL(user),
+  },
+  parameterDictionary: {
+    canCreate: user => queryPermissions.CREATE_DICTIONARY(user),
+    canDelete: user => queryPermissions.DELETE_PARAMETER_DICTIONARY(user),
+    canRead: () => false, // Not implemented
+    canUpdate: () => false, // Not implemented
   },
   parcels: {
     canCreate: user => queryPermissions.CREATE_PARCEL(user),
@@ -1332,6 +1347,12 @@ const featurePermissions: FeaturePermissions = {
     canRun: (user, plan, model) =>
       queryPermissions.UPDATE_SCHEDULING_SPECIFICATION(user, plan) && queryPermissions.SCHEDULE(user, plan, model),
     canUpdate: (user, plan) => queryPermissions.UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION(user, plan),
+  },
+  sequenceAdaptation: {
+    canCreate: user => queryPermissions.CREATE_SEQUENCE_ADAPTATION(user),
+    canDelete: user => queryPermissions.DELETE_PARAMETER_DICTIONARY(user),
+    canRead: () => false, // Not implemented
+    canUpdate: () => false, // Not implemented
   },
   sequences: {
     canCreate: user => queryPermissions.CREATE_USER_SEQUENCE(user),

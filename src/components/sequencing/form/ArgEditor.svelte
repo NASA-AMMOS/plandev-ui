@@ -10,7 +10,7 @@
     isNumberArg,
     quoteEscape,
     type ArgTextDef,
-  } from '../../../utilities/codemirror/codemirror-utils';
+  } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgTitle from './ArgTitle.svelte';
   import EnumEditor from './EnumEditor.svelte';
@@ -38,24 +38,57 @@
   }
 </script>
 
-{#if !argInfo.argDef}
-  {#if argInfo.text}
-    <div title="Unknown Argument">Unknown Argument</div>
-    <ExtraArgumentEditor
-      initVal={argInfo.text}
-      setInEditor={() => {
-        if (argInfo.node) {
-          setInEditor(argInfo.node, '');
-        }
-      }}
-    />
-  {/if}
-{:else}
-  <ArgTitle argDef={argInfo.argDef} />
-  {#if argInfo.argDef.arg_type === 'enum' && argInfo.node}
-    {#if argInfo.node?.name === 'String'}
-      <EnumEditor
-        {commandDictionary}
+<fieldset>
+  {#if !argInfo.argDef}
+    {#if argInfo.text}
+      <div class="st-typography-medium" title="Unknown Argument">Unknown Argument</div>
+      <ExtraArgumentEditor
+        initVal={argInfo.text}
+        setInEditor={() => {
+          if (argInfo.node) {
+            setInEditor(argInfo.node, '');
+          }
+        }}
+      />
+    {/if}
+  {:else}
+    <ArgTitle argDef={argInfo.argDef} />
+    {#if argInfo.argDef.arg_type === 'enum' && argInfo.node}
+      {#if argInfo.node?.name === 'String'}
+        <EnumEditor
+          {commandDictionary}
+          argDef={argInfo.argDef}
+          initVal={argInfo.text ?? ''}
+          setInEditor={val => {
+            if (argInfo.node) {
+              setInEditor(argInfo.node, val);
+            }
+          }}
+        />
+      {:else}
+        <button
+          class="st-button"
+          on:click={() => {
+            if (argInfo.node && argInfo.text) {
+              setInEditor(argInfo.node, quoteEscape(argInfo.text));
+            }
+          }}
+        >
+          Convert to enum type
+        </button>
+      {/if}
+    {:else if isNumberArg(argInfo.argDef) && argInfo.node?.name === 'Number'}
+      <NumEditor
+        argDef={argInfo.argDef}
+        initVal={Number(argInfo.text) ?? argInfo.argDef.default_value ?? 0}
+        setInEditor={val => {
+          if (argInfo.node) {
+            setInEditor(argInfo.node, val.toString());
+          }
+        }}
+      />
+    {:else if isFswCommandArgumentVarString(argInfo.argDef)}
+      <StringEditor
         argDef={argInfo.argDef}
         initVal={argInfo.text ?? ''}
         setInEditor={val => {
@@ -64,60 +97,40 @@
           }
         }}
       />
-    {:else}
-      <button
-        on:click={() => {
-          if (argInfo.node && argInfo.text) {
-            setInEditor(argInfo.node, quoteEscape(argInfo.text));
-          }
-        }}>Convert to enum type</button
-      >
-    {/if}
-  {:else if isNumberArg(argInfo.argDef) && argInfo.node?.name === 'Number'}
-    <NumEditor
-      argDef={argInfo.argDef}
-      initVal={argInfo.text ?? (argInfo.argDef.default_value ?? 0).toString()}
-      setInEditor={val => {
-        if (argInfo.node) {
-          setInEditor(argInfo.node, val);
-        }
-      }}
-    />
-  {:else if isFswCommandArgumentVarString(argInfo.argDef)}
-    <StringEditor
-      argDef={argInfo.argDef}
-      initVal={argInfo.text ?? ''}
-      setInEditor={val => {
-        if (argInfo.node) {
-          setInEditor(argInfo.node, val);
-        }
-      }}
-    />
-  {:else if isFswCommandArgumentRepeat(argInfo.argDef) && !!argInfo.children}
-    {#each argInfo.children as childArgInfo}
-      {#if childArgInfo.node}
-        <svelte:self argInfo={childArgInfo} {commandDictionary} {setInEditor} {addDefaultArgs} />
+    {:else if isFswCommandArgumentRepeat(argInfo.argDef) && !!argInfo.children}
+      {#each argInfo.children as childArgInfo}
+        {#if childArgInfo.node}
+          <svelte:self argInfo={childArgInfo} {commandDictionary} {setInEditor} {addDefaultArgs} />
+        {/if}
+      {/each}
+      {#if argInfo.children.find(childArgInfo => !childArgInfo.node)}
+        <AddMissingArgsButton
+          setInEditor={() => {
+            if (argInfo.node && argInfo.children) {
+              addDefaultArgs(argInfo.node, getMissingArgDefs(argInfo.children));
+            }
+          }}
+        />
+      {:else if !!argInfo.argDef.repeat}
+        <div>
+          <button
+            class="st-button secondary"
+            disabled={!enableRepeatAdd}
+            on:click={addRepeatTuple}
+            title={`Add additional set of argument values to ${argInfo.argDef.name} repeat array`}
+          >
+            Add {argInfo.argDef.name} tuple
+          </button>
+        </div>
       {/if}
-    {/each}
-    {#if argInfo.children.find(childArgInfo => !childArgInfo.node)}
-      <AddMissingArgsButton
-        setInEditor={() => {
-          if (argInfo.node && argInfo.children) {
-            addDefaultArgs(argInfo.node, getMissingArgDefs(argInfo.children));
-          }
-        }}
-      />
-    {:else if !!argInfo.argDef.repeat}
-      <div>
-        <button
-          disabled={!enableRepeatAdd}
-          on:click={addRepeatTuple}
-          title={`Add additional set of argument values to ${argInfo.argDef.name} repeat array`}
-          >Add {argInfo.argDef.name} tuple</button
-        >
-      </div>
+    {:else}
+      <div class="st-typography-body">Unexpected value for definition</div>
     {/if}
-  {:else}
-    <div>Unexpected value for definition</div>
   {/if}
-{/if}
+</fieldset>
+
+<style>
+  button {
+    margin: 8px 0px;
+  }
+</style>

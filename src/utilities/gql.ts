@@ -40,7 +40,7 @@ export enum Queries {
   DELETE_MISSION_MODEL = 'delete_mission_model_by_pk',
   DELETE_PARAMETER_DICTIONARY = 'delete_parameter_dictionary_by_pk',
   DELETE_PARCEL = 'delete_parcel_by_pk',
-  DELETE_PARCEL_TO_PARAMETER_DICTIONARY = 'delete_parcel_to_parameter_dictionary',
+  DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION = 'delete_parcel_to_parameter_dictionary',
   DELETE_PLAN = 'delete_plan_by_pk',
   DELETE_PLAN_COLLABORATOR = 'delete_plan_collaborators_by_pk',
   DELETE_PLAN_SNAPSHOT = 'delete_plan_snapshot_by_pk',
@@ -898,9 +898,9 @@ const gql = {
     }
   `,
 
-  DELETE_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
-    mutation deleteParcelToParameterDictionary($parameterDictionaryIds: [Int!]!, $parcelIds: [Int!]!) {
-        ${Queries.DELETE_PARCEL_TO_PARAMETER_DICTIONARY}(where: { parcel_id: { _in: $parcelIds }, _and: { parameter_dictionary_id: { _in: $parameterDictionaryIds}}} ) {
+  DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION: `#graphql
+    mutation deleteParcelToDictionaryAssociation($parameterDictionaryIds: [Int!]!, $parcelIds: [Int!]!) {
+        ${Queries.DELETE_PARCEL_TO_DICTIONARY_ASSOCIATION}(where: { parcel_id: { _in: $parcelIds }, _and: { parameter_dictionary_id: { _in: $parameterDictionaryIds}}} ) {
           affected_rows
       }
     }
@@ -2313,8 +2313,8 @@ const gql = {
   `,
 
   SUB_PARCEL_TO_PARAMETER_DICTIONARIES: `#graphql
-    subscription SubParcelsToParameterDictionaries($parcelId: Int!) {
-      ${Queries.PARCEL_TO_PARAMETER_DICTIONARY}(where: {parcel_id: {_eq: $parcelId }}) {
+    subscription SubParcelsToParameterDictionaries {
+      ${Queries.PARCEL_TO_PARAMETER_DICTIONARY} {
         parameter_dictionary_id
         parcel_id
       }

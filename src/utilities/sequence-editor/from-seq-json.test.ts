@@ -2,8 +2,8 @@ import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { describe, expect, it } from 'vitest';
 import { seqJsonToSequence } from './from-seq-json';
 
-describe('from-seq-json.ts', () => {
-  it('converts a seq json id and metadata to sequence', () => {
+describe('from-seq-json.ts', async () => {
+  it('converts a seq json id and metadata to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'test',
       metadata: {
@@ -12,7 +12,7 @@ describe('from-seq-json.ts', () => {
         other_arbitrary_metadata: 'test_metadata',
       },
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "test"
 @METADATA "onboard_name" "test.mod"
 @METADATA "onboard_path" "/eng"
@@ -21,7 +21,7 @@ describe('from-seq-json.ts', () => {
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('Symbols should not be quoted', () => {
+  it('Symbols should not be quoted', async () => {
     const seqJson: SeqJson = {
       id: 'testSymbol',
       locals: [
@@ -79,7 +79,7 @@ describe('from-seq-json.ts', () => {
         },
       ],
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testSymbol"
 @LOCALS L00UINT L00INT L01INT
 
@@ -89,7 +89,7 @@ C DDM_BANANA L00INT L01INT
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json LGO to sequence', () => {
+  it('converts a seq json LGO to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'test',
       metadata: {
@@ -109,7 +109,7 @@ C DDM_BANANA L00INT L01INT
         },
       ],
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "test"
 @METADATA "onboard_name" "test.mod"
 @METADATA "onboard_path" "/eng"
@@ -121,7 +121,7 @@ C FSW_CMD_3
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json variables to sequence', () => {
+  it('converts a seq json variables to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testVariable',
 
@@ -173,7 +173,7 @@ C FSW_CMD_3
         },
       ],
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testVariable"
 @INPUT_PARAMS L00INT L01STR L02FLT L03UINT L01ENUM
 @LOCALS L00INT L01STR L02FLT L03UINT L01ENUM
@@ -181,7 +181,7 @@ C FSW_CMD_3
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json file to a correct sequence', () => {
+  it('converts a seq json file to a correct sequence', async () => {
     const seqJson: SeqJson = {
       id: '42',
       metadata: {},
@@ -281,7 +281,7 @@ C FSW_CMD_3
         },
       ],
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "42"
 
 A2024-001T00:00:00 FSW_CMD_0 TRUE 0xFF "Hello" World [FALSE 0xAA "Foo" BAR TRUE 0xBB "Baz" BAT]
@@ -292,7 +292,7 @@ C FSW_CMD_3
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json command model and metadata to sequence', () => {
+  it('converts a seq json command model and metadata to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testCommandModeling',
       metadata: {
@@ -340,7 +340,7 @@ C FSW_CMD_3
         },
       ],
     };
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testCommandModeling"
 @METADATA "onboard_name" "test.mod"
 
@@ -355,7 +355,7 @@ C ECHO "test"
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json description to sequence', () => {
+  it('converts a seq json description to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testDescription',
       metadata: {},
@@ -420,7 +420,7 @@ C ECHO "test"
       ],
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testDescription"
 
 C ECHO "TEST1" # a description
@@ -432,7 +432,7 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json immediate commands to sequence', () => {
+  it('converts a seq json immediate commands to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testImmediate',
       immediate_commands: [
@@ -460,7 +460,7 @@ C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
       metadata: {},
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testImmediate"
 
 @IMMEDIATE
@@ -472,7 +472,7 @@ NOOP # noop command, no arguments
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json hardware commands to sequence', () => {
+  it('converts a seq json hardware commands to sequence', async () => {
     const seqJson: SeqJson = {
       hardware_commands: [
         {
@@ -494,7 +494,7 @@ NOOP # noop command, no arguments
       metadata: {},
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testHardware"
 
 @HARDWARE
@@ -507,7 +507,7 @@ HWC3
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json time tags to sequence', () => {
+  it('converts a seq json time tags to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testTime',
       metadata: {},
@@ -545,7 +545,7 @@ HWC3
       ],
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testTime"
 
 A2020-173T20:00:00.000 FSA_CMD
@@ -555,7 +555,7 @@ E-00:00:01.000 FSE_CMD 10 "ENUM"
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a seq json empty repeat args to sequence', () => {
+  it('converts a seq json empty repeat args to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testRepeat',
       metadata: {},
@@ -607,7 +607,7 @@ E-00:00:01.000 FSE_CMD 10 "ENUM"
       ],
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testRepeat"
 
 C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
@@ -615,7 +615,7 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
     expect(sequence).toEqual(expectedSequence);
   });
 
-  it('converts a quoted string', () => {
+  it('converts a quoted string', async () => {
     const seqJson: SeqJson = {
       id: 'escaped_quotes',
       metadata: {},
@@ -651,7 +651,7 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
       ],
     };
 
-    const sequence = seqJsonToSequence(seqJson, [], null);
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "escaped_quotes"
 
 C ECHO "Can this handle \\" Escaped\\" quotes??" # Can this handle "escape"

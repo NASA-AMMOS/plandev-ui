@@ -49,7 +49,7 @@
       searchPlaceholder="Filter values"
     />
   {:else}
-    <select class="st-select" required bind:value>
+    <select class="st-select w-100" required bind:value>
       {#if !isValueInEnum}
         <option>{value}</option>
       {/if}
@@ -59,9 +59,3 @@
     </select>
   {/if}
 </div>
-
-<style>
-  select {
-    width: 90%;
-  }
-</style>

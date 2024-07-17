@@ -1,3 +1,7 @@
+.sequence-tooltip {
+  max-width: 50rem;
+}
+
 .tooltip {
   background-color: rgba(0, 0, 0, 0.8);
   border-radius: 4px;

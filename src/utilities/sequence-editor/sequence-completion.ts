@@ -1,6 +1,7 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { syntaxTree } from '@codemirror/language';
 import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+import { getGlobals } from '../../stores/sequence-adaptation';
 import { getDoyTime } from '../time';
 import { fswCommandArgDefault } from './command-dictionary';
 import { getCustomArgDef } from './extension-points';
@@ -189,7 +190,7 @@ export function sequenceCompletion(
       //   }
       // }
 
-      const globals = globalThis.GLOBALS;
+      const globals = getGlobals();
       const globalCompletions: Completion[] = [];
 
       if (globals) {

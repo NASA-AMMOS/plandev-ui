@@ -16,6 +16,12 @@
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import {
+    inputFormat,
+    outputFormat,
+    sequenceAdaptation,
+    setSequenceAdaptation,
+  } from '../../stores/sequence-adaptation';
+  import {
     channelDictionaries,
     commandDictionaries,
     getParsedChannelDictionary,
@@ -30,11 +36,10 @@
   import type { Parcel } from '../../types/sequencing';
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import effects from '../../utilities/effects';
-  import { seqJsonLinter } from '../../utilities/new-sequence-editor/seq-json-linter';
-  import { sequenceCompletion } from '../../utilities/new-sequence-editor/sequence-completion';
-  import { sequenceLinter } from '../../utilities/new-sequence-editor/sequence-linter';
-  import { sequenceTooltip } from '../../utilities/new-sequence-editor/sequence-tooltip';
-  import { sequenceToSeqJson } from '../../utilities/new-sequence-editor/to-seq-json';
+  import { seqJsonLinter } from '../../utilities/sequence-editor/seq-json-linter';
+  import { sequenceCompletion } from '../../utilities/sequence-editor/sequence-completion';
+  import { sequenceLinter } from '../../utilities/sequence-editor/sequence-linter';
+  import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -48,12 +53,12 @@
   export let readOnly: boolean = false;
   export let sequenceName: string = '';
   export let sequenceDefinition: string = '';
-  export let sequenceSeqJson: string = '';
+  export let sequenceOutput: string = '';
   export let title: string = 'Sequence - Definition Editor';
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
-    sequence: { seqJson: string; sequence: string };
+    sequence: { input: string; output: string };
   }>();
 
   let clientHeightGridRightBottom: number;
@@ -64,19 +69,18 @@
   let compartmentSeqTooltip: Compartment;
   let channelDictionary: ChannelDictionary | null;
   let commandDictionary: CommandDictionary | null;
+  let disableCopyAndExport: boolean = true;
   let parameterDictionaries: ParameterDictionary[] = [];
   let commandFormBuilderGrid: string;
-  let editorSeqJsonDiv: HTMLDivElement;
-  let editorSeqJsonView: EditorView;
+  let editorOutputDiv: HTMLDivElement;
+  let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
   let selectedNode: SyntaxNode | null;
   let toggleSeqJsonPreview: boolean = false;
 
   $: {
-    if (parcel?.sequence_adaptation_id) {
-      loadSequenceAdaptation(parcel?.sequence_adaptation_id);
-    }
+    loadSequenceAdaptation(parcel?.sequence_adaptation_id);
   }
 
   $: {
@@ -97,7 +101,9 @@
     const unparsedChannelDictionary = $channelDictionaries.find(cd => cd.id === parcel?.channel_dictionary_id);
     const unparsedCommandDictionary = $commandDictionaries.find(cd => cd.id === parcel?.command_dictionary_id);
     const unparsedParameterDictionaries = $parameterDictionariesStore.filter(pd => {
-      const parameterDictionary = $parcelToParameterDictionaries.find(p => p.parameter_dictionary_id === pd.id);
+      const parameterDictionary = $parcelToParameterDictionaries.find(
+        p => p.parameter_dictionary_id === pd.id && p.parcel_id === parcel?.id,
+      );
 
       if (parameterDictionary) {
         return pd;
@@ -140,7 +146,7 @@
         });
 
         // Reconfigure seq JSON editor.
-        editorSeqJsonView.dispatch({
+        editorOutputView.dispatch({
           effects: compartmentSeqJsonLinter.reconfigure(seqJsonLinter(parsedCommandDictionary)),
         });
       });
@@ -170,8 +176,8 @@
       parent: editorSequenceDiv,
     });
 
-    editorSeqJsonView = new EditorView({
-      doc: sequenceSeqJson,
+    editorOutputView = new EditorView({
+      doc: sequenceOutput,
       extensions: [
         basicSetup,
         EditorView.lineWrapping,
@@ -182,7 +188,7 @@
         compartmentSeqJsonLinter.of(seqJsonLinter()),
         EditorState.readOnly.of(readOnly),
       ],
-      parent: editorSeqJsonDiv,
+      parent: editorOutputDiv,
     });
   });
 
@@ -198,6 +204,8 @@
         try {
           // This evaluates the custom sequence adaptation that is optionally provided by the user.
           Function(adaptation.adaptation)();
+
+          setSequenceAdaptation();
         } catch (e) {
           console.error(e);
           showFailureToast('Invalid sequence adaptation');
@@ -209,30 +217,25 @@
   }
 
   function resetSequenceAdaptation(): void {
-    globalThis.CONDITIONAL_KEYWORDS = undefined;
-    globalThis.LOOP_KEYWORDS = undefined;
-    globalThis.GLOBALS = undefined;
-    globalThis.ARG_DELEGATOR = undefined;
-    globalThis.LINT = () => undefined;
-    globalThis.TO_SEQ_JSON = () => undefined;
+    globalThis.SequenceAdaptation = undefined;
+    setSequenceAdaptation();
   }
 
-  function sequenceUpdateListener(viewUpdate: ViewUpdate) {
+  async function sequenceUpdateListener(viewUpdate: ViewUpdate) {
     const sequence = viewUpdate.state.doc.toString();
-
+    disableCopyAndExport = sequence === '';
     const tree = syntaxTree(viewUpdate.state);
-    const seqJson = sequenceToSeqJson(
-      tree,
-      sequence,
-      commandDictionary,
-      parameterDictionaries,
-      channelDictionary,
-      sequenceName,
-    );
-    const seqJsonStr = JSON.stringify(seqJson, null, 2);
-    editorSeqJsonView.dispatch({ changes: { from: 0, insert: seqJsonStr, to: editorSeqJsonView.state.doc.length } });
+    const output = await $outputFormat?.toOutputFormat(tree, sequence, commandDictionary, sequenceName);
 
-    dispatch('sequence', { seqJson: seqJsonStr, sequence });
+    if ($sequenceAdaptation?.modifyOutput !== undefined && output !== undefined) {
+      $sequenceAdaptation?.modifyOutput(output, parameterDictionaries, channelDictionary);
+    }
+
+    editorOutputView.dispatch({ changes: { from: 0, insert: output, to: editorOutputView.state.doc.length } });
+
+    if (output !== undefined) {
+      dispatch('sequence', { input: sequence, output });
+    }
   }
 
   function selectedCommandUpdateListener(viewUpdate: ViewUpdate) {
@@ -248,35 +251,35 @@
     }
   }
 
-  function downloadSeqJson() {
+  function downloadOutputFormat() {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([editorSeqJsonView.state.doc.toString()], { type: 'application/json' }));
+    a.href = URL.createObjectURL(new Blob([editorOutputView.state.doc.toString()], { type: 'application/json' }));
     a.download = `${sequenceName}.json`;
     a.click();
   }
 
-  function downloadSeqN() {
+  function downloadInputFormat() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([editorSequenceView.state.doc.toString()], { type: 'text/plain' }));
     a.download = `${sequenceName}.txt`;
     a.click();
   }
 
-  async function copySeqJsonToClipboard() {
+  async function copyOutputFormatToClipboard() {
     try {
-      await navigator.clipboard.writeText(editorSeqJsonView.state.doc.toString());
-      showSuccessToast('Sequence.json copied to clipboard');
+      await navigator.clipboard.writeText(editorOutputView.state.doc.toString());
+      showSuccessToast(`${$outputFormat?.name} copied to clipboard`);
     } catch {
-      showFailureToast('Error copying sequence.json to clipboard');
+      showFailureToast(`Error copying ${$outputFormat?.name} to clipboard`);
     }
   }
 
-  async function copySeqNClipboard() {
+  async function copyInputFormatToClipboard() {
     try {
       await navigator.clipboard.writeText(editorSequenceView.state.doc.toString());
-      showSuccessToast('SeqN copied to clipboard');
+      showSuccessToast(`${$inputFormat?.name} copied to clipboard`);
     } catch {
-      showFailureToast('Error copying SeqN to clipboard');
+      showFailureToast(`Error copying ${$inputFormat?.name} to clipboard`);
     }
   }
 
@@ -286,31 +289,38 @@
 </script>
 
 <CssGrid bind:columns={commandFormBuilderGrid} minHeight={'0'}>
-  <CssGrid rows={toggleSeqJsonPreview ? '1fr 3px 1fr' : `1.88fr 3px minmax(50px,0.12fr)`} minHeight={'0'}>
+  <CssGrid rows={toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px'} minHeight={'0'}>
     <Panel>
       <svelte:fragment slot="header">
         <SectionTitle>{title}</SectionTitle>
 
         <div class="right">
           <button
-            use:tooltip={{ content: `Copy sequence contents as SeqN to clipboard`, placement: 'top' }}
+            use:tooltip={{ content: `Copy sequence contents as ${$inputFormat?.name} to clipboard`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            on:click={copySeqNClipboard}><ClipboardIcon /> SeqN</button
+            on:click={copyInputFormatToClipboard}
+            disabled={disableCopyAndExport}><ClipboardIcon /> {$inputFormat?.name}</button
           >
           <button
-            use:tooltip={{ content: `Copy sequence contents as JSON to clipboard`, placement: 'top' }}
+            use:tooltip={{ content: `Copy sequence contents as ${$outputFormat?.name} to clipboard`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            on:click={copySeqJsonToClipboard}><ClipboardIcon /> JSON</button
+            on:click={copyOutputFormatToClipboard}
+            disabled={disableCopyAndExport}><ClipboardIcon /> {$outputFormat?.name}</button
           >
           <button
-            use:tooltip={{ content: `Download sequence contents as SeqN`, placement: 'top' }}
+            use:tooltip={{
+              content: `Download sequence contents as ${$inputFormat?.name}`,
+              placement: 'top',
+            }}
             class="st-button icon-button secondary ellipsis"
-            on:click|stopPropagation={downloadSeqN}><SaveIcon /> SeqN</button
+            on:click|stopPropagation={downloadInputFormat}
+            disabled={disableCopyAndExport}><SaveIcon /> {$inputFormat?.name}</button
           >
           <button
-            use:tooltip={{ content: `Download sequence contents as Seq.json`, placement: 'top' }}
+            use:tooltip={{ content: `Download sequence contents as ${$outputFormat?.name}`, placement: 'top' }}
             class="st-button icon-button secondary ellipsis"
-            on:click|stopPropagation={downloadSeqJson}><SaveIcon /> JSON</button
+            on:click|stopPropagation={downloadOutputFormat}
+            disabled={disableCopyAndExport}><SaveIcon /> {$outputFormat?.name}</button
           >
         </div>
       </svelte:fragment>
@@ -321,10 +331,9 @@
     </Panel>
 
     <CssGridGutter draggable={toggleSeqJsonPreview} track={1} type="row" />
-
     <Panel>
       <svelte:fragment slot="header">
-        <SectionTitle>Seq JSON (Read-only)</SectionTitle>
+        <SectionTitle>{$sequenceAdaptation?.outputFormat.name} (Read-only)</SectionTitle>
 
         <div class="right">
           <button
@@ -342,25 +351,41 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <div bind:this={editorSeqJsonDiv} />
+        <div bind:this={editorOutputDiv} />
       </svelte:fragment>
     </Panel>
   </CssGrid>
 
   <CssGridGutter track={1} type="column" />
 
-  {#if !!commandDictionary && !!selectedNode && showCommandFormBuilder}
-    <SelectedCommand
-      node={selectedNode}
-      {channelDictionary}
-      {commandDictionary}
-      {editorSequenceView}
-      {parameterDictionaries}
-    />
+  {#if showCommandFormBuilder}
+    {#if !!commandDictionary && !!selectedNode}
+      <SelectedCommand
+        node={selectedNode}
+        {channelDictionary}
+        {commandDictionary}
+        {editorSequenceView}
+        {parameterDictionaries}
+      />
+    {:else}
+      <Panel overflowYBody="hidden" padBody={false}>
+        <svelte:fragment slot="header">
+          <SectionTitle>Selected Command</SectionTitle>
+        </svelte:fragment>
+
+        <svelte:fragment slot="body">
+          <div class="st-typography-body no-selected-parcel">Select a parcel to enable the Selected Command panel.</div>
+        </svelte:fragment>
+      </Panel>
+    {/if}
   {/if}
 </CssGrid>
 
 <style>
+  .no-selected-parcel {
+    padding: 8px;
+  }
+
   .right {
     align-items: center;
     display: flex;

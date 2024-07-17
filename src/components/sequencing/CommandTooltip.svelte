@@ -21,12 +21,10 @@
   }
 </script>
 
-<div class="command-tooltip">
-  <div class="container">
+<div class="sequence-tooltip st-typography-body">
+  <div class="container command-name">
     {commandExample}
   </div>
-
-  <hr />
 
   <div class="container">
     {command.description}
@@ -34,6 +32,10 @@
 </div>
 
 <style>
+  .command-name {
+    border-bottom: 1px solid var(--st-gray-30);
+  }
+
   .container {
     align-items: center;
     display: flex;
