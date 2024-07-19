@@ -572,7 +572,7 @@ export function getActivityDirectiveStartTimeMs(
         activityDirective.start_offset,
       );
 
-      cachedStartTimes[anchor_id] = anchoredStartTimeMs;
+      cachedStartTimes[anchoredSpanId] = anchoredStartTimeMs;
 
       return anchoredStartTimeMs;
     }
