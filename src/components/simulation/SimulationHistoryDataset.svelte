@@ -3,8 +3,10 @@
 <script lang="ts">
   import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { InvalidDate } from '../../constants/time';
   import { Status } from '../../enums/status';
   import { planReadOnly } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import type { SimulationDataset } from '../../types/simulation';
   import { hexToRgba } from '../../utilities/color';
   import {
@@ -16,7 +18,7 @@
     getSimulationStatus,
     getSimulationTimestamp,
   } from '../../utilities/simulation';
-  import { getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval, removeDateStringMilliseconds } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Card from '../ui/Card.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
@@ -36,8 +38,8 @@
   let simulationBoundsVizRangeLeft = 0;
   let simulationBoundsVizRangeWidth = 0;
   let simulationExtentVizRangeWidth = 0;
-  let startTimeText = '';
-  let endTimeText = '';
+  let startTimeText: string = '';
+  let endTimeText: string = '';
   let progress = 0;
   let extent: string | null = '';
   let status: Status | null = null;
@@ -56,17 +58,24 @@
     // Compute time range left and width
     if (simulationDataset.simulation_start_time) {
       const simulationStartTimeMS = new Date(simulationDataset.simulation_start_time).getTime();
-      simulationBoundsVizRangeLeft = ((simulationStartTimeMS - planStartTimeMs) / planDuration) * 100 || 0;
+      simulationBoundsVizRangeLeft = Math.max(0, ((simulationStartTimeMS - planStartTimeMs) / planDuration) * 100 || 0);
 
       if (simulationStartTimeMS === planStartTimeMs) {
         startTimeText = 'Plan Start';
       } else {
-        startTimeText = getDoyTime(new Date(simulationDataset.simulation_start_time)).split('+')[0];
+        startTimeText = formatDate(new Date(simulationDataset.simulation_start_time), $plugins.time.primary.format);
+
+        if (startTimeText !== InvalidDate) {
+          startTimeText = removeDateStringMilliseconds(startTimeText);
+        }
       }
 
       if (simulationDataset.simulation_end_time) {
         const simulationEndTimeMS = new Date(simulationDataset.simulation_end_time).getTime();
-        simulationBoundsVizRangeWidth = ((simulationEndTimeMS - simulationStartTimeMS) / planDuration) * 100 || 0;
+        simulationBoundsVizRangeWidth = Math.min(
+          100,
+          ((simulationEndTimeMS - simulationStartTimeMS) / planDuration) * 100 || 0,
+        );
 
         let simulationExtentMS = 0;
         if ((status === Status.Incomplete || status === Status.Failed || status === Status.Canceled) && extent) {
@@ -80,7 +89,12 @@
         if (simulationEndTimeMS === planEndTimeMs) {
           endTimeText = 'Plan End';
         } else {
-          endTimeText = getDoyTime(new Date(simulationDataset.simulation_end_time)).split('+')[0];
+          endTimeText = formatDate(new Date(simulationDataset.simulation_end_time), $plugins.time.primary.format);
+
+          // Remove milliseconds if DOY-like time
+          if (endTimeText !== InvalidDate) {
+            endTimeText = removeDateStringMilliseconds(endTimeText);
+          }
         }
       }
     }

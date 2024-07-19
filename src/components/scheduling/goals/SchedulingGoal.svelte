@@ -13,7 +13,6 @@
   import { tooltip } from '../../../utilities/tooltip';
   import Collapse from '../../Collapse.svelte';
   import ContextMenuItem from '../../context-menu/ContextMenuItem.svelte';
-  import Input from '../../form/Input.svelte';
   import SchedulingGoalAnalysesActivities from './SchedulingGoalAnalysesActivities.svelte';
   import SchedulingGoalAnalysesBadge from './SchedulingGoalAnalysesBadge.svelte';
 
@@ -121,7 +120,7 @@
     <svelte:fragment slot="right">
       <div class="right-content" role="none" on:click|stopPropagation>
         <SchedulingGoalAnalysesBadge analyses={goal.analyses} {enabled} />
-        <Input>
+        <div class="priority-container">
           <input
             bind:this={schedulingGoalInput}
             bind:value={priority}
@@ -157,7 +156,7 @@
               </button>
             </div>
           {/if}
-        </Input>
+        </div>
         <select
           class="st-select"
           value={goalPlanSpec.goal_revision}
@@ -288,6 +287,10 @@
   .priority-buttons :global(button):hover {
     background-color: transparent !important;
     color: var(--st-gray-60);
+  }
+
+  .priority-container {
+    display: flex;
   }
 
   .down-button {

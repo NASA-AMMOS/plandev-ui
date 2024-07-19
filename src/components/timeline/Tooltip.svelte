@@ -3,13 +3,16 @@
 <script lang="ts">
   import { select } from 'd3-selection';
   import { groupBy } from 'lodash-es';
+  import { onMount } from 'svelte';
   import DirectiveIcon from '../../assets/timeline-directive.svg?raw';
   import SpanIcon from '../../assets/timeline-span.svg?raw';
+  import { plugins } from '../../stores/plugins';
   import type { ActivityDirective } from '../../types/activity';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { ResourceType, Span } from '../../types/simulation';
   import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
-  import { getDoyTime } from '../../utilities/time';
+  import { addPageFocusListener } from '../../utilities/generic';
+  import { formatDate } from '../../utilities/time';
   import { filterResourcesByLayer } from '../../utilities/timeline';
 
   export let interpolateHoverValue: boolean = false;
@@ -22,11 +25,46 @@
   let points: Point[] = [];
   let gaps: Point[] = [];
   let spans: Span[] = [];
+  let showAdditionalTimes: boolean = false;
   let row: Row | null = null;
   let visible: boolean = false;
 
-  $: if (mouseOver) {
+  $: if (mouseOver && typeof showAdditionalTimes === 'boolean') {
     onMouseOver(mouseOver);
+  }
+
+  $: primaryTimeLabel = $plugins.time.primary.label;
+
+  onMount(() => {
+    document.addEventListener('keydown', onKeydown);
+    document.addEventListener('keyup', onKeyup);
+
+    // Add page focus listener to handle command + tab events that
+    // can cause the mode change to be stuck in Navigation mode on Macs.
+    const removeDocumentFocusListener = addPageFocusListener(e => {
+      if (e === 'out') {
+        showAdditionalTimes = false;
+      }
+    });
+
+    return () => {
+      document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('keyup', onKeyup);
+      removeDocumentFocusListener();
+    };
+  });
+
+  function onKeydown(e: KeyboardEvent) {
+    // If user holds meta/control while not focused on an input then activate navigation mode
+    if (e.key === 'Shift') {
+      showAdditionalTimes = true;
+    }
+  }
+
+  function onKeyup(e: KeyboardEvent) {
+    if (e.key === 'Shift') {
+      showAdditionalTimes = false;
+    }
   }
 
   function onMouseOver(event: MouseOver | undefined) {
@@ -233,7 +271,8 @@
 
   function textForActivityDirective(activityDirective: ActivityDirective): string {
     const { anchor_id, id, name, start_time_ms, type } = activityDirective;
-    const startTimeYmd = typeof start_time_ms === 'number' ? getDoyTime(new Date(start_time_ms)) : 'Unknown';
+    const directiveStartTime =
+      typeof start_time_ms === 'number' ? formatDate(new Date(start_time_ms), $plugins.time.primary.format) : 'Unknown';
     return `
       <div class='tooltip-row-container'>
         <div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${DirectiveIcon} Activity Directive</div>
@@ -248,9 +287,24 @@
           <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
         </div>
         <div class='tooltip-row'>
-          <span>Start Time (UTC):</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${startTimeYmd}</span>
+          <span>Start Time (${primaryTimeLabel}):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${directiveStartTime}</span>
         </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>Start Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${typeof start_time_ms === 'number' ? f.format(new Date(start_time_ms)) : 'Unknown'}
+                      </span>
+                  </div>`,
+                )
+                .join('')
+            : ''
+        }
         <div class='tooltip-row'>
           <span>Id:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
@@ -294,6 +348,8 @@
       color = (layer as LineLayer).lineColor;
     }
 
+    const pointTime = formatDate(new Date(x), $plugins.time.primary.format);
+
     return `
       <div class='tooltip-row-container'>
         <div class='tooltip-row'>
@@ -304,11 +360,26 @@
           </span>
         </div>
         <div class='tooltip-row'>
-          <span>Time:</span>
+          <span>Time (${primaryTimeLabel}):</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${getDoyTime(new Date(x))} UTC
+            ${pointTime}
           </span>
         </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${formatDate(new Date(x), f.format)}
+                      </span>
+                  </div>`,
+                )
+                .join('')
+            : ''
+        }
         <div class='tooltip-row'>
           <span>${interpolateHoverValue ? 'Interpolated' : 'Nearest'} Value:</span>
           <span class='tooltip-value-highlight st-typography-medium'>
@@ -321,8 +392,8 @@
 
   function textForSpan(span: Span): string {
     const { id, duration, startMs, endMs, type } = span;
-    const startTimeYmd = getDoyTime(new Date(startMs));
-    const endTimeYmd = getDoyTime(new Date(endMs));
+    const spanStartTime = formatDate(new Date(startMs), $plugins.time.primary.format);
+    const spanEndTime = formatDate(new Date(endMs), $plugins.time.primary.format);
     return `
       <div class='tooltip-row-container'>
         <div class='st-typography-bold' style='color: var(--st-gray-10); display: flex; gap: 4px;'>${SpanIcon} Simulated Activity (Span)</div>
@@ -331,13 +402,43 @@
           <span class='tooltip-value-highlight st-typography-medium'>${type}</span>
         </div>
         <div class='tooltip-row'>
-          <span>Start Time (UTC):</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${startTimeYmd}</span>
+          <span>Start Time (${primaryTimeLabel}):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${spanStartTime}</span>
         </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>Start Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${f.format(new Date(startMs))}
+                      </span>
+                  </div>`,
+                )
+                .join('')
+            : ''
+        }
         <div class='tooltip-row'>
-          <span>End Time (UTC):</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${endTimeYmd}</span>
+          <span>End Time (${primaryTimeLabel}):</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${spanEndTime}</span>
         </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>End Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${f.format(new Date(endMs))}
+                      </span>
+                  </div>`,
+                )
+                .join('')
+            : ''
+        }
         <div class='tooltip-row'>
           <span>Duration:</span>
           <span class='tooltip-value-highlight st-typography-medium'>${duration}</span>
@@ -360,6 +461,7 @@
       name = layer.name ? layer.name : point.name;
       color = (layer as LineLayer).lineColor;
     }
+    const pointTime = formatDate(new Date(x), $plugins.time.primary.format);
 
     return `
       <div class='tooltip-row-container'>
@@ -371,11 +473,26 @@
           </span>
         </div>
         <div class='tooltip-row'>
-          <span>Start:</span>
+          <span>Start Time (${primaryTimeLabel}):</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${getDoyTime(new Date(x))} UTC
+            ${pointTime}
           </span>
         </div>
+        ${
+          showAdditionalTimes
+            ? $plugins.time.additional
+                .map(
+                  f =>
+                    `<div class='tooltip-row'>
+                      <span>Start Time (${f.label}):</span>
+                      <span class='tooltip-value-highlight st-typography-medium'>
+                        ${f.format(new Date(x))}
+                      </span>
+                  </div>`,
+                )
+                .join('')
+            : ''
+        }
         <div class='tooltip-row'>
           <span>Value:</span>
           <span class='tooltip-value-highlight st-typography-medium'>

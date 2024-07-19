@@ -11,6 +11,7 @@
   import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/errors';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import type {
     ActivityDirective,
     ActivityDirectiveId,
@@ -37,9 +38,9 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { pluralize } from '../../utilities/text';
-  import { getDoyTime, getDoyTimeFromInterval, getIntervalFromDoyRange } from '../../utilities/time';
+  import { formatDate, getDoyTime, getIntervalFromDoyRange, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
-  import { required, timestamp } from '../../utilities/validators';
+  import { required } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import ActivityMetadataField from '../activityMetadata/ActivityMetadataField.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
@@ -83,11 +84,8 @@
   let numOfUserChanges: number = 0;
   let parameterErrorMap: Record<string, string[]> = {};
   let parametersWithErrorsCount: number = 0;
-  let startTimeDoy: string = getDoyTimeFromInterval(
-    planStartTimeYmd,
-    revision ? revision.start_offset : activityDirective.start_offset,
-  );
-  let startTimeDoyField: FieldStore<string> = field<string>(startTimeDoy, [required, timestamp]);
+  let startTime: string;
+  let startTimeField: FieldStore<string>;
 
   $: if (user !== null && $plan !== null) {
     hasUpdatePermission =
@@ -99,11 +97,17 @@
   $: highlightKeysMap = keyByBoolean(highlightKeys);
   $: activityType =
     (activityTypes ?? []).find(({ name: activityTypeName }) => activityDirective?.type === activityTypeName) ?? null;
-  $: startTimeDoy = getDoyTimeFromInterval(
-    planStartTimeYmd,
-    revision ? revision.start_offset : activityDirective.start_offset,
-  );
-  $: startTimeDoyField.validateAndSet(startTimeDoy);
+  $: {
+    const startTimeMs = getUnixEpochTimeFromInterval(
+      planStartTimeYmd,
+      revision ? revision.start_offset : activityDirective.start_offset,
+    );
+    startTime = formatDate(new Date(startTimeMs), $plugins.time.primary.format);
+  }
+
+  $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
+  $: activityNameField = field<string>(activityDirective.name);
+  $: startTimeField.validateAndSet(startTime);
   $: activityNameField.validateAndSet(activityDirective.name);
 
   $: if (activityType && activityDirective.arguments) {
@@ -369,10 +373,15 @@
   }
 
   function onUpdateStartTime() {
-    if ($startTimeDoyField.valid && startTimeDoy !== $startTimeDoyField.value) {
+    if ($startTimeField.valid && startTime !== $startTimeField.value) {
       const { id } = activityDirective;
       const planStartTimeDoy = getDoyTime(new Date(planStartTimeYmd));
-      const start_offset = getIntervalFromDoyRange(planStartTimeDoy, $startTimeDoyField.value);
+      const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
+      if (!startTimeDate) {
+        return;
+      }
+      const startTimeDoy = getDoyTime(startTimeDate);
+      const start_offset = getIntervalFromDoyRange(planStartTimeDoy, startTimeDoy);
       if ($plan) {
         effects.updateActivityDirective($plan, id, { start_offset }, activityType, user);
       }
@@ -556,9 +565,10 @@
 
         <Highlight highlight={highlightKeysMap.start_offset}>
           <DatePickerField
+            useFallback={!$plugins.time.enableDatePicker}
             disabled={!editable || activityDirective.anchor_id !== null}
-            field={startTimeDoyField}
-            label="Start Time (UTC) - YYYY-DDDThh:mm:ss"
+            field={startTimeField}
+            label={`Start Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
             layout="inline"
             name="start-time"
             use={[

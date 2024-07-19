@@ -432,7 +432,7 @@
           <TagsIcon />
           Tags
         </SectionTitle>
-        <Input>
+        <Input layout="inline">
           <input bind:value={filterText} class="st-input" placeholder="Filter tags" style="width: 300px" />
         </Input>
       </svelte:fragment>

@@ -4,6 +4,7 @@
   import HistoryIcon from '@nasa-jpl/stellar/icons/history.svg?component';
   import { createEventDispatcher, onMount } from 'svelte';
   import { plan } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import type {
     ActivityDirective,
     ActivityDirectiveRevision,
@@ -15,7 +16,7 @@
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertUsToDurationString, getDoyTimeFromInterval } from '../../utilities/time';
+  import { convertUsToDurationString, formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
 
   const dispatch = createEventDispatcher<{
@@ -48,7 +49,7 @@
   let effectiveRevisionArguments: (ArgumentsMap | undefined)[];
   $: effectiveRevisionArguments = [];
 
-  function formatDate(dateString: string) {
+  function formatRevisionDate(dateString: string) {
     return new Date(dateString).toLocaleString(undefined, {
       day: 'numeric',
       hour: 'numeric',
@@ -112,12 +113,18 @@
     // Manually check remaining fields that could have changed and require extra formatting
 
     if (current.start_offset !== previous.start_offset) {
-      const currentStartTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, current.start_offset);
-      const previousStartTimeDoy = getDoyTimeFromInterval(planStartTimeYmd, previous.start_offset);
+      const currentStartTime = formatDate(
+        new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, current.start_offset)),
+        $plugins.time.primary.format,
+      );
+      const previousStartTime = formatDate(
+        new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, previous.start_offset)),
+        $plugins.time.primary.format,
+      );
 
-      differences['Start Time (UTC)'] = {
-        currentValue: currentStartTimeDoy,
-        previousValue: previousStartTimeDoy,
+      differences[`Start Time (${$plugins.time.primary.label})`] = {
+        currentValue: currentStartTime,
+        previousValue: previousStartTime,
       };
     }
 
@@ -240,7 +247,7 @@
     {#if activityRevisionChangeMap.length}
       {#each activityRevisions as revision, i}
         <div class="activity-revision">
-          <div class="date st-typography-medium">{formatDate(revision.changed_at)}</div>
+          <div class="date st-typography-medium">{formatRevisionDate(revision.changed_at)}</div>
           <div
             class="change-summary st-typography-body"
             use:tooltip={{ content: activityRevisionChangeMap[i].name, placement: 'top' }}

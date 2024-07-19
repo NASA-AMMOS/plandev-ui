@@ -170,7 +170,10 @@
 
   .input > .left,
   .input > .right {
+    align-items: center;
     cursor: default;
+    display: flex;
+    height: 100%;
     position: absolute;
   }
 
@@ -188,7 +191,9 @@
   }
 
   .input-stacked {
+    align-items: flex-start;
     display: inherit;
+    flex-direction: column;
     gap: 4px;
   }
 </style>

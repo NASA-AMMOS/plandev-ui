@@ -70,18 +70,18 @@ export function hex(value: string): Promise<ValidationResult> {
   });
 }
 
-export function validateStartTime(startTime: string, endTime: string, type: string): Promise<ValidationResult> {
+export function validateStartTime(startTimeMs: number, endTimeMs: number, type: string): Promise<ValidationResult> {
   return new Promise(resolve => {
-    if (startTime >= endTime) {
+    if (startTimeMs >= endTimeMs) {
       return resolve(`${type} start must be before end`);
     }
     return resolve(null);
   });
 }
 
-export function validateEndTime(startTime: string, endTime: string, type: string): Promise<ValidationResult> {
+export function validateEndTime(startTimeMs: number, endTimeMs: number, type: string): Promise<ValidationResult> {
   return new Promise(resolve => {
-    if (endTime <= startTime) {
+    if (endTimeMs <= startTimeMs) {
       return resolve(`${type} end must be after start`);
     }
     return resolve(null);
@@ -97,6 +97,7 @@ export async function validateField<T>(field: Field<T>): Promise<string[]> {
 
     if (error !== null) {
       errors.push(error);
+      break;
     }
   }
 

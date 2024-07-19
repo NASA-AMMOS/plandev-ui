@@ -36,6 +36,7 @@ import type {
   XRangeLayer,
 } from '../types/timeline';
 import { filterEmpty } from './generic';
+import { getDoyTime } from './time';
 
 export enum TimelineLockStatus {
   Locked = 'Locked',
@@ -119,7 +120,7 @@ export function customD3TickInterval(start: Date, stop: Date, count: number): Ti
 }
 
 // Based on https://github.com/d3/d3-time/blob/main/src/ticks.js
-export function customD3Ticks(start: Date, stop: Date, count: number) {
+export function utcTicks(start: Date, stop: Date, count: number) {
   const reverse = stop < start;
   if (reverse) {
     [start, stop] = [stop, start];
@@ -128,6 +129,25 @@ export function customD3Ticks(start: Date, stop: Date, count: number) {
   // Make end date inclusive by creating a new date +1ms from stop date
   const ticks = interval ? interval.range(start, new Date(+stop + 1)) : []; // inclusive stop
   return reverse ? ticks.reverse() : ticks;
+}
+
+export function formatTickUtc(date: Date, viewDurationMs: number, tickCount: number): string {
+  let label = getDoyTime(date);
+  if (viewDurationMs > durationYear * tickCount) {
+    label = label.slice(0, 4);
+  } else if (viewDurationMs > durationMonth * tickCount) {
+    label = label.slice(0, 8);
+  } else if (viewDurationMs > durationWeek) {
+    label = label.slice(0, 8);
+  }
+  return label;
+}
+
+export function formatTickLocalTZ(date: Date, viewDurationMs: number, tickCount: number): string {
+  if (viewDurationMs > durationYear * tickCount) {
+    return date.getFullYear().toString();
+  }
+  return date.toLocaleString();
 }
 
 export const CANVAS_PADDING_X = 0;

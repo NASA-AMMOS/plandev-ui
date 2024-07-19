@@ -75,9 +75,8 @@ describe('validateStartTime', () => {
   const startTimeError = 'Simulation start must be before end';
 
   test.each([
-    { endTime: '2020-400T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-399T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-400T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+    { endTime: new Date('01-01-2030').getTime(), startTime: new Date('01-01-2030').getTime() },
+    { endTime: new Date('01-01-2029').getTime(), startTime: new Date('01-01-2030').getTime() },
   ])(
     'Should return an error message for out of order start/end ($startTime/$endTime) times',
     async ({ endTime, startTime }) => {
@@ -86,8 +85,8 @@ describe('validateStartTime', () => {
   );
 
   test.each([
-    { endTime: '2020-401T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-411T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+    { endTime: new Date('01-02-2030').getTime(), startTime: new Date('01-01-2030').getTime() },
+    { endTime: new Date('01-01-2031').getTime(), startTime: new Date('01-01-2030').getTime() },
   ])(
     'Should not return an error for out of order start/end ($startTime/$endTime) times',
     async ({ endTime, startTime }) => {
@@ -100,9 +99,8 @@ describe('validateEndTime', () => {
   const endTimeError = 'Simulation end must be after start';
 
   test.each([
-    { endTime: '2020-400T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-399T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-400T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+    { endTime: new Date('01-01-2030').getTime(), startTime: new Date('01-01-2030').getTime() },
+    { endTime: new Date('01-01-2029').getTime(), startTime: new Date('01-01-2030').getTime() },
   ])(
     'Should return an error message for out of order start/end ($startTime/$endTime) times',
     async ({ endTime, startTime }) => {
@@ -111,8 +109,8 @@ describe('validateEndTime', () => {
   );
 
   test.each([
-    { endTime: '2020-401T00:00:00.000', startTime: '2020-400T00:00:00.000' },
-    { endTime: '2020-411T00:00:00.000', startTime: '2020-410T00:00:00.000' },
+    { endTime: new Date('01-02-2030').getTime(), startTime: new Date('01-01-2030').getTime() },
+    { endTime: new Date('01-01-2031').getTime(), startTime: new Date('01-01-2030').getTime() },
   ])(
     'Should not return an error for out of order start/end ($startTime/$endTime) times',
     async ({ endTime, startTime }) => {

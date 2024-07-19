@@ -1,29 +1,21 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { TimeTypes } from '../../enums/time';
   import { viewTimeRange } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import type { TimeRange } from '../../types/timeline';
-  import { getDoyTimeComponents } from '../../utilities/time';
+  import { formatDate, getDoyTimeComponents, validateTime } from '../../utilities/time';
 
   export let window: TimeRange;
 
-  $: ({
-    doy: startDoy,
-    hours: startHours,
-    mins: startMins,
-    msecs: startMsecs,
-    secs: startSecs,
-    year: startYear,
-  } = getDoyTimeComponents(new Date(window.start)));
+  let isDoyPattern = false;
+  let startDateString: string = '';
+  let endDateString: string = '';
 
-  $: ({
-    doy: endDoy,
-    hours: endHours,
-    mins: endMins,
-    msecs: endMsecs,
-    secs: endSecs,
-    year: endYear,
-  } = getDoyTimeComponents(new Date(window.end)));
+  $: startDateString = formatDate(new Date(window.start), $plugins.time.primary.format);
+  $: endDateString = formatDate(new Date(window.end), $plugins.time.primary.format);
+  $: isDoyPattern = validateTime(startDateString, TimeTypes.ABSOLUTE);
 
   function zoomToViolation(window: TimeRange): void {
     $viewTimeRange = window;
@@ -32,12 +24,37 @@
 
 <button class="st-button tertiary violation-button" on:click={() => zoomToViolation(window)}>
   <div>
-    {startYear}-<span class="st-typography-bold">{startDoy}</span> T {startHours}:{startMins}:{startSecs}.{startMsecs} UTC
+    {#if isDoyPattern}
+      {@const {
+        doy: startDoy,
+        hours: startHours,
+        mins: startMins,
+        msecs: startMsecs,
+        secs: startSecs,
+        year: startYear,
+      } = getDoyTimeComponents(new Date(window.start))}
+      {startYear}-<span class="st-typography-bold">{startDoy}</span> T {startHours}:{startMins}:{startSecs}.{startMsecs}
+      {$plugins.time.primary.label}
+    {:else}
+      {startDateString}
+    {/if}
   </div>
-
   <div class="separator">–</div>
   <div>
-    {endYear}-<span class="st-typography-bold">{endDoy}</span> T {endHours}:{endMins}:{endSecs}.{endMsecs} UTC
+    {#if isDoyPattern}
+      {@const {
+        doy: endDoy,
+        hours: endHours,
+        mins: endMins,
+        msecs: endMsecs,
+        secs: endSecs,
+        year: endYear,
+      } = getDoyTimeComponents(new Date(window.end))}
+      {endYear}-<span class="st-typography-bold">{endDoy}</span> T {endHours}:{endMins}:{endSecs}.{endMsecs}
+      {$plugins.time.primary.label}
+    {:else}
+      {endDateString}
+    {/if}
   </div>
 </button>
 

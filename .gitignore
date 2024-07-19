@@ -6,6 +6,7 @@ e2e-test-results
 node_modules
 /package
 /static/version.json
+/static/resources/*
 /.svelte-kit
 test-results
 unit-test-results

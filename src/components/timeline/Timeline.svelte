@@ -6,6 +6,8 @@
   import { throttle } from 'lodash-es';
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
+  import { InvalidDate } from '../../constants/time';
+  import { plugins } from '../../stores/plugins';
   import { viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -30,17 +32,8 @@
     XAxisTick,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { getDoyTime } from '../../utilities/time';
-  import {
-    MAX_CANVAS_SIZE,
-    TimelineInteractionMode,
-    TimelineLockStatus,
-    customD3Ticks,
-    durationMonth,
-    durationWeek,
-    durationYear,
-    getXScale,
-  } from '../../utilities/timeline';
+  import { formatDate } from '../../utilities/time';
+  import { MAX_CANVAS_SIZE, TimelineInteractionMode, TimelineLockStatus, getXScale } from '../../utilities/timeline';
   import TimelineRow from './Row.svelte';
   import RowHeaderDragHandleWidth from './RowHeaderDragHandleWidth.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';
@@ -99,7 +92,6 @@
   let tooltip: Tooltip;
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
-  let estimatedLabelWidthPx: number = 130; // Width of MS time which is the largest display format
   let histogramCursorTime: Date | null = null;
   let mouseOver: MouseOver | null;
   let removeDPRChangeListener: (() => void) | null = null;
@@ -129,11 +121,12 @@
 
   $: rows = timeline?.rows || [];
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
+  $: xAxisDrawHeight = 48 + 16 * ($plugins.time.additional.length ? Math.max($plugins.time.additional.length, 1) : 1);
 
   // Compute number of ticks based off draw width
   $: if (drawWidth) {
     const padding = 1.5;
-    let ticks = Math.round(drawWidth / (estimatedLabelWidthPx * padding));
+    let ticks = Math.round(drawWidth / ($plugins.time.ticks.maxLabelWidth * padding));
     tickCount = clamp(ticks, 2, 16);
 
     // Recompute zoom transform based off new drawWidth
@@ -148,38 +141,19 @@
   $: xScaleMax = getXScale(xDomainMax, drawWidth);
   $: xScaleView = getXScale(xDomainView, drawWidth);
   $: xScaleViewDuration = viewTimeRange.end - viewTimeRange.start;
+  $: formattedPlanStartTime = formatDate(xDomainMax[0], $plugins.time.primary.format);
+  $: formattedPlanEndTime = formatDate(xDomainMax[1], $plugins.time.primary.format);
 
   $: if (viewTimeRangeStartDate && viewTimeRangeEndDate && tickCount) {
-    let labelWidth = estimatedLabelWidthPx; // Compute the actual label width
-    xTicksView = customD3Ticks(viewTimeRangeStartDate, viewTimeRangeEndDate, tickCount).map((date: Date) => {
-      // Format fine and coarse time based off duration
-      const doyTimestamp = getDoyTime(date, true);
-      let formattedDateUTC = doyTimestamp;
-      let formattedDateLocal = date.toLocaleString();
-      if (xScaleViewDuration > durationYear * tickCount) {
-        formattedDateUTC = doyTimestamp.slice(0, 4);
-        formattedDateLocal = date.getFullYear().toString();
-        labelWidth = 28;
-      } else if (xScaleViewDuration > durationMonth * tickCount) {
-        formattedDateUTC = doyTimestamp.slice(0, 8);
-        formattedDateLocal = date.toLocaleDateString();
-        labelWidth = 50;
-      } else if (xScaleViewDuration > durationWeek) {
-        formattedDateUTC = doyTimestamp.slice(0, 8);
-        formattedDateLocal = date.toLocaleDateString();
-        labelWidth = 58;
-      }
-      return { date, formattedDateLocal, formattedDateUTC, hideLabel: false };
+    xTicksView = $plugins.time.ticks.getTicks(viewTimeRangeStartDate, viewTimeRangeEndDate, tickCount).map(date => {
+      const label = $plugins.time.primary.formatTick(date, xScaleViewDuration, tickCount) ?? InvalidDate;
+      const additionalLabels = $plugins.time.additional.map(timeSystem => {
+        return timeSystem.formatTick
+          ? timeSystem.formatTick(date, xScaleViewDuration, tickCount) ?? InvalidDate
+          : timeSystem.format(date) ?? InvalidDate;
+      });
+      return { additionalLabels, date, label };
     });
-
-    // Determine whether or not to hide the last tick label
-    // which has the potential to draw past the drawWidth
-    if (xTicksView.length) {
-      const lastTick = xTicksView[xTicksView.length - 1];
-      if (xScaleView(lastTick.date) + labelWidth > drawWidth) {
-        lastTick.hideLabel = true;
-      }
-    }
   }
 
   afterUpdate(() => {
@@ -402,8 +376,9 @@
   <div bind:this={timelineHistogramDiv} class="timeline-time-row">
     {#if plan}
       <TimelineTimeDisplay
-        planEndTimeDoy={plan?.end_time_doy}
-        planStartTimeDoy={plan?.start_time_doy}
+        planStartTime={formattedPlanStartTime}
+        planEndTime={formattedPlanEndTime}
+        timeLabel={$plugins.time.primary.label}
         width={timeline?.marginLeft}
       />
     {/if}

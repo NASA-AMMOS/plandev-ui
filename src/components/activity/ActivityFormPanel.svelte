@@ -231,7 +231,6 @@
         activityTypes={$activityTypes}
         filteredExpansionSequences={$filteredExpansionSequences}
         modelId={$modelId}
-        planStartTimeYmd={$plan.start_time}
         simulationDatasetId={$simulationDatasetId}
         span={$selectedSpan}
         spansMap={$spansMap}

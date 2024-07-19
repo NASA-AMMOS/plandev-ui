@@ -3,25 +3,28 @@
 <script lang="ts">
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
-  import type { ColDef, ColumnResizedEvent, ColumnState } from 'ag-grid-community';
+  import type { ColDef, ColumnResizedEvent, ColumnState, ICellRendererParams } from 'ag-grid-community';
   import { debounce } from 'lodash-es';
+  import { InvalidDate } from '../../constants/time';
+  import { plugins } from '../../stores/plugins';
   import { simulationDataset, simulationEvents } from '../../stores/simulation';
   import { view, viewUpdateSimulationEventsTable } from '../../stores/views';
   import type { SimulationEvent } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { getDoyTimeFromInterval } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import ActivityTableMenu from '../activity/ActivityTableMenu.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import IconCellRenderer from '../ui/IconCellRenderer.svelte';
   import Panel from '../ui/Panel.svelte';
   import SimulationEventsTable from './SimulationEventsTable.svelte';
 
   export let gridSection: ViewGridSection;
 
   type SimulationEventColumns = keyof SimulationEvent | 'derived_start_time';
-  type SimulationEventColDef = ColDef<SimulationEvent>;
+  type SimulationEventColDef = ColDef<SimulationEvent & { derived_start_time: number }>;
 
   let simulationEventsTable: ViewTable | undefined;
   let autoSizeColumns: AutoSizeColumns | undefined;
@@ -38,15 +41,32 @@
   $: defaultColumnDefinitions = {
     derived_start_time: {
       filter: 'text',
-      headerName: 'Absolute Start Time (UTC)',
-      hide: true,
+      field: 'derived_start_time',
+      headerName: `Absolute Start Time (${$plugins.time.primary.label})`,
+      sort: 'asc',
       resizable: true,
       sortable: true,
       valueGetter: params => {
         if ($simulationDataset && $simulationDataset.simulation_start_time && params.data) {
-          return getDoyTimeFromInterval($simulationDataset?.simulation_start_time, params.data.start_offset);
+          return formatDate(
+            new Date(getUnixEpochTimeFromInterval($simulationDataset?.simulation_start_time, params.data.start_offset)),
+            $plugins.time.primary.format,
+          );
         }
         return '';
+      },
+      cellRenderer: (params: ICellRendererParams<SimulationEvent>) => {
+        if (params.value !== InvalidDate) {
+          return params.value;
+        }
+        const div = document.createElement('div');
+
+        new IconCellRenderer({
+          props: { type: 'error' },
+          target: div,
+        });
+
+        return div;
       },
     },
     start_offset: {

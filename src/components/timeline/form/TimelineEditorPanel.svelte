@@ -22,6 +22,7 @@
   import { ViewDefaultActivityOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
+  import { plugins } from '../../../stores/plugins';
   import { externalResourceNames, resourceTypes, yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRow,
@@ -544,7 +545,7 @@
             <div class="editor-section-labeled-grid-container">
               <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
-                <div>Date (UTC)</div>
+                <div>Date ({$plugins.time.primary.label})</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}

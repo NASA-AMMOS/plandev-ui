@@ -3,21 +3,30 @@
 <script lang="ts">
   import TableFillIcon from '@nasa-jpl/stellar/icons/table_fill.svg?component';
   import TableFitIcon from '@nasa-jpl/stellar/icons/table_fit.svg?component';
-  import type { ColDef, ColumnResizedEvent, ColumnState, ValueGetterParams } from 'ag-grid-community';
+  import type {
+    ColDef,
+    ColumnResizedEvent,
+    ColumnState,
+    ICellRendererParams,
+    ValueGetterParams,
+  } from 'ag-grid-community';
   import { debounce } from 'lodash-es';
+  import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/errors';
   import { plan, planReadOnly } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
-  import { getDoyTime, getUnixEpochTimeFromInterval } from '../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
-  import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../ui/DataGrid/DataGridTags';
+  import IconCellRenderer from '../ui/IconCellRenderer.svelte';
   import Panel from '../ui/Panel.svelte';
   import ActivityDirectivesTable from './ActivityDirectivesTable.svelte';
   import ActivityTableMenu from './ActivityTableMenu.svelte';
@@ -39,6 +48,7 @@
 
   $: activityDirectivesTable = $view?.definition.plan.activityDirectivesTable;
   $: autoSizeColumns = activityDirectivesTable?.autoSizeColumns;
+  /* eslint-disable sort-keys */
   $: defaultColumnDefinitions = {
     anchor_id: {
       field: 'anchor_id',
@@ -162,17 +172,31 @@
       resizable: true,
       sortable: true,
     },
-    start_time_ms: {
+    derived_start_time: {
+      field: 'start_time_ms',
       filter: 'text',
-      headerName: 'Absolute Start Time (UTC)',
-      hide: true,
+      headerName: `Absolute Start Time (${$plugins.time.primary.label})`,
+      hide: false,
       resizable: true,
       sortable: true,
       valueGetter: (params: ValueGetterParams<ActivityDirective>) => {
         if ($plan && params && params.data && typeof params.data.start_time_ms === 'number') {
-          return getDoyTime(new Date(params.data.start_time_ms), false);
+          return formatDate(new Date(params.data.start_time_ms), $plugins.time.primary.format);
         }
         return '';
+      },
+      cellRenderer: (params: ICellRendererParams<ActivityDirective>) => {
+        if (params.value !== InvalidDate) {
+          return params.value;
+        }
+        const div = document.createElement('div');
+
+        new IconCellRenderer({
+          props: { type: 'error' },
+          target: div,
+        });
+
+        return div;
       },
     },
     tags: {

@@ -1,7 +1,9 @@
 import { padStart } from 'lodash-es';
 import parseInterval from 'postgres-interval';
+import { InvalidDate } from '../constants/time';
 import { TimeTypes } from '../enums/time';
 import type { ActivityDirectiveId, ActivityDirectivesMap } from '../types/activity';
+import type { PluginTime } from '../types/plugin';
 import type { SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { DurationTimeComponents, ParsedDoyString, ParsedDurationString, ParsedYmdString } from '../types/time';
 
@@ -655,14 +657,15 @@ export function getDurationTimeComponents(duration: ParsedDurationString): Durat
 
 /**
  * Get a day-of-year timestamp from a given JavaScript Date object.
- * @example getDoyTime(new Date(1577779200000)) -> 2019-365T08:00:00.000
+ * @example getDoyTime(new Date(1577779200000)) -> 2019-365T08:00:00
  * @note inverse of getUnixEpochTime
+ * @note milliseconds will be dropped if all 0s
  */
 export function getDoyTime(date: Date, includeMsecs = true): string {
   const { doy, hours, mins, msecs, secs, year } = getDoyTimeComponents(date);
   let doyTimestamp = `${year}-${doy}T${hours}:${mins}:${secs}`;
 
-  if (includeMsecs) {
+  if (includeMsecs && date.getMilliseconds() > 0) {
     doyTimestamp += `.${msecs}`;
   }
 
@@ -887,4 +890,24 @@ export function getTimeZoneName() {
     return timeZoneName.value;
   }
   return 'UNK';
+}
+
+/**
+ * Removes milliseconds from the string if in DOY time format,
+ * otherwise returns the original string.
+ */
+export function removeDateStringMilliseconds(dateString: string): string {
+  if (validateTime(dateString, TimeTypes.ABSOLUTE)) {
+    return dateString.split('.')[0];
+  }
+  return dateString;
+}
+
+/**
+ * Format a Date using a date formatter.
+ * Returns "Invalid Date" if null.
+ * @todo move this to an intermediate layer between plugin and eventual store
+ */
+export function formatDate(date: Date, formatter: PluginTime['format']): string {
+  return formatter(date) ?? InvalidDate;
 }

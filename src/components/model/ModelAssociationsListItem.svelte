@@ -8,7 +8,6 @@
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
-  import Input from '../form/Input.svelte';
 
   export let hasEditPermission: boolean = false;
   export let isSelected: boolean = false;
@@ -121,42 +120,40 @@
   <div class="inputs-container">
     {#if priority !== undefined}
       <div class="priority-container">
-        <Input>
-          <input
-            bind:this={priorityInput}
-            bind:value={priority}
-            class="st-input"
-            min="0"
-            style:width="68px"
-            type="number"
-            on:change={onUpdatePriority}
-            on:keydown={onKeyDown}
-            use:permissionHandler={{
-              hasPermission: hasEditPermission,
-              permissionError,
-            }}
-          />
-          {#if hasEditPermission}
-            <div class="priority-buttons">
-              <button
-                use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
-                class="st-button tertiary up-button"
-                class:hidden={upButtonHidden}
-                tabindex={upButtonHidden ? -1 : 0}
-                on:click={onIncreasePriority}
-              >
-                <CaretUpFillIcon />
-              </button>
-              <button
-                use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
-                class="st-button tertiary down-button"
-                on:click={onDecreasePriority}
-              >
-                <CaretDownFillIcon />
-              </button>
-            </div>
-          {/if}
-        </Input>
+        <input
+          bind:this={priorityInput}
+          bind:value={priority}
+          class="st-input"
+          min="0"
+          style:width="68px"
+          type="number"
+          on:change={onUpdatePriority}
+          on:keydown={onKeyDown}
+          use:permissionHandler={{
+            hasPermission: hasEditPermission,
+            permissionError,
+          }}
+        />
+        {#if hasEditPermission}
+          <div class="priority-buttons">
+            <button
+              use:tooltip={{ content: 'Increase Priority', placement: 'top' }}
+              class="st-button tertiary up-button"
+              class:hidden={upButtonHidden}
+              tabindex={upButtonHidden ? -1 : 0}
+              on:click={onIncreasePriority}
+            >
+              <CaretUpFillIcon />
+            </button>
+            <button
+              use:tooltip={{ content: 'Decrease Priority', placement: 'top' }}
+              class="st-button tertiary down-button"
+              on:click={onDecreasePriority}
+            >
+              <CaretDownFillIcon />
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
     <select

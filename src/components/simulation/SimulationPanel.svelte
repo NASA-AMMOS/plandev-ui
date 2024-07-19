@@ -10,6 +10,7 @@
   import { field } from '../../stores/form';
   import { plan, planEndTimeMs, planReadOnly, planStartTimeMs } from '../../stores/plan';
   import { planSnapshot } from '../../stores/planSnapshots';
+  import { plugins } from '../../stores/plugins';
   import {
     enableSimulation,
     simulation,
@@ -35,8 +36,8 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { getSimulationQueuePosition } from '../../utilities/simulation';
-  import { getDoyTime } from '../../utilities/time';
-  import { required, timestamp, validateEndTime, validateStartTime } from '../../utilities/validators';
+  import { formatDate, getDoyTime } from '../../utilities/time';
+  import { required, validateStartTime } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -56,23 +57,38 @@
 
   let simulateButtonTooltip: string = '';
   let reSimulateButtonTooltip: string = '';
-  let endTimeDoy: string;
-  let endTimeDoyField: FieldStore<string>;
+  let endTime: string;
+  let endTimeField: FieldStore<string>;
   let formParameters: FormParameter[] = [];
   let hasRunPermission: boolean = false;
   let hasUpdatePermission: boolean = false;
   let isFilteredBySnapshot: boolean = false;
   let numOfUserChanges: number = 0;
-  let startTimeDoy: string;
-  let startTimeDoyField: FieldStore<string>;
+  let startTime: string;
+  let startTimeField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
 
   function validateStartTimeField(startTime: string) {
-    return validateStartTime(startTime, $endTimeDoyField.value, 'Simulation');
+    const startTimeDate = $plugins.time.primary.parse(startTime);
+    const endTimeDate = $plugins.time.primary.parse($endTimeField.value);
+    if (!startTimeDate) {
+      return Promise.resolve('Invalid Start Date');
+    } else if (!endTimeDate) {
+      return Promise.resolve('Invalid End Date');
+    }
+    return validateStartTime(startTimeDate.getTime(), endTimeDate.getTime(), 'Simulation');
   }
+
   function validateEndTimeField(endTime: string) {
-    return validateEndTime($startTimeDoyField.value, endTime, 'Simulation');
+    const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
+    const endTimeDate = $plugins.time.primary.parse(endTime);
+    if (!startTimeDate) {
+      return Promise.resolve('Invalid Start Date');
+    } else if (!endTimeDate) {
+      return Promise.resolve('Invalid End Date');
+    }
+    return validateStartTime(startTimeDate.getTime(), endTimeDate.getTime(), 'Simulation');
   }
 
   $: if (user !== null && $plan !== null) {
@@ -80,19 +96,21 @@
     hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
   $: if ($plan) {
-    startTimeDoy =
-      $simulation && $simulation.simulation_start_time
-        ? getDoyTime(new Date($simulation.simulation_start_time))
-        : $plan.start_time_doy;
+    let startTimeDate = new Date($planStartTimeMs);
+    if ($simulation && $simulation.simulation_start_time) {
+      startTimeDate = new Date($simulation.simulation_start_time);
+    }
+    startTime = formatDate(startTimeDate, $plugins.time.primary.format);
+
+    let endTimeDate = new Date($planEndTimeMs);
+    if ($simulation && $simulation.simulation_end_time) {
+      endTimeDate = new Date($simulation.simulation_end_time);
+    }
+    endTime = formatDate(endTimeDate, $plugins.time.primary.format);
   }
-  $: startTimeDoyField = field<string>(startTimeDoy, [required, timestamp, validateStartTimeField]);
-  $: if ($plan) {
-    endTimeDoy =
-      $simulation && $simulation.simulation_end_time
-        ? getDoyTime(new Date($simulation.simulation_end_time))
-        : $plan.end_time_doy;
-  }
-  $: endTimeDoyField = field<string>(endTimeDoy, [required, timestamp, validateEndTimeField]);
+
+  $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate, validateStartTimeField]);
+  $: endTimeField = field<string>(endTime, [required, $plugins.time.primary.validate, validateEndTimeField]);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
@@ -120,7 +138,7 @@
       }
     });
   }
-  $: if ($startTimeDoyField.invalid || $endTimeDoyField.invalid) {
+  $: if ($startTimeField.invalid || $endTimeField.invalid) {
     simulateButtonTooltip = 'Simulation start and end times are not valid';
     reSimulateButtonTooltip = 'Simulation start and end times are not valid';
   } else if (enableReSimulation) {
@@ -248,8 +266,15 @@
     isFilteredBySnapshot = !isFilteredBySnapshot;
   }
 
-  function updateStartEndTimes({ endDoyString, startDoyString }: { endDoyString?: string; startDoyString?: string }) {
-    if ($simulation !== null && $plan !== null) {
+  function updateStartEndTimes({ endString, startString }: { endString?: string; startString?: string }) {
+    if ($simulation !== null && $plan !== null && startString && endString) {
+      const startTimeDate = $plugins.time.primary.parse(startString);
+      const endTimeDate = $plugins.time.primary.parse(endString);
+      if (!startTimeDate || !endTimeDate) {
+        return;
+      }
+      const startDoyString = startString ? getDoyTime(startTimeDate) : null;
+      const endDoyString = endString ? getDoyTime(endTimeDate) : null;
       const newSimulation: Simulation = {
         ...$simulation,
         ...(startDoyString ? { simulation_start_time: startDoyString } : {}),
@@ -261,36 +286,36 @@
   }
 
   async function onUpdateStartTime() {
-    if ($startTimeDoyField.valid && startTimeDoy !== $startTimeDoyField.value) {
-      await endTimeDoyField.validateAndSet($endTimeDoyField.value);
+    if ($startTimeField.valid && startTime !== $startTimeField.value) {
+      await endTimeField.validateAndSet($endTimeField.value);
       updateStartEndTimes({
-        ...($endTimeDoyField.valid ? { endDoyString: $endTimeDoyField.value } : {}),
-        startDoyString: $startTimeDoyField.value,
+        ...($endTimeField.valid ? { endString: $endTimeField.value } : {}),
+        startString: $startTimeField.value,
       });
     }
   }
 
   async function onUpdateEndTime() {
-    if ($endTimeDoyField.valid && endTimeDoy !== $endTimeDoyField.value) {
-      await startTimeDoyField.validateAndSet($startTimeDoyField.value);
+    if ($endTimeField.valid && endTime !== $endTimeField.value) {
+      await startTimeField.validateAndSet($startTimeField.value);
       updateStartEndTimes({
-        endDoyString: $endTimeDoyField.value,
-        ...($startTimeDoyField.valid ? { startDoyString: $startTimeDoyField.value } : {}),
+        endString: $endTimeField.value,
+        ...($startTimeField.valid ? { startString: $startTimeField.value } : {}),
       });
     }
   }
 
   async function onPlanStartTimeClick() {
     if ($plan) {
-      await startTimeDoyField.validateAndSet($plan.start_time_doy);
-      updateStartEndTimes({ startDoyString: $startTimeDoyField.value });
+      await startTimeField.validateAndSet(formatDate(new Date($planStartTimeMs), $plugins.time.primary.format));
+      updateStartEndTimes({ startString: $startTimeField.value });
     }
   }
 
   async function onPlanEndTimeClick() {
     if ($plan) {
-      await endTimeDoyField.validateAndSet($plan.end_time_doy);
-      updateStartEndTimes({ endDoyString: $endTimeDoyField.value });
+      await endTimeField.validateAndSet(formatDate(new Date($planEndTimeMs), $plugins.time.primary.format));
+      updateStartEndTimes({ endString: $endTimeField.value });
     }
   }
 
@@ -305,7 +330,7 @@
     <PanelHeaderActions>
       {#if enableReSimulation}
         <PanelHeaderActionButton
-          disabled={!enableReSimulation || $startTimeDoyField.invalid || $endTimeDoyField.invalid}
+          disabled={!enableReSimulation || $startTimeField.invalid || $endTimeField.invalid}
           tooltipContent={reSimulateButtonTooltip}
           title="Re-Run"
           showLabel
@@ -324,7 +349,7 @@
         >
       {/if}
       <PanelHeaderActionButton
-        disabled={!$enableSimulation || $startTimeDoyField.invalid || $endTimeDoyField.invalid}
+        disabled={!$enableSimulation || $startTimeField.invalid || $endTimeField.invalid}
         tooltipContent={simulateButtonTooltip}
         title="Simulate"
         showLabel
@@ -348,8 +373,9 @@
     <fieldset>
       <Collapse title="General">
         <DatePickerField
-          field={startTimeDoyField}
-          label="Start Time (UTC)"
+          useFallback={!$plugins.time.enableDatePicker}
+          field={startTimeField}
+          label={`Start Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
           layout="inline"
           name="start-time"
           use={[
@@ -369,8 +395,9 @@
           </DatePickerActionButton>
         </DatePickerField>
         <DatePickerField
-          field={endTimeDoyField}
-          label="End Time (UTC)"
+          useFallback={!$plugins.time.enableDatePicker}
+          field={endTimeField}
+          label={`End Time (${$plugins.time.primary.label}) - ${$plugins.time.primary.formatString}`}
           layout="inline"
           name="end-time"
           use={[

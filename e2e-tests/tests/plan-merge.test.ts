@@ -44,7 +44,7 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Plan Merge', () => {
-  const newActivityStartTime: string = '2022-005T00:00:00.000';
+  const newActivityStartTime: string = '2022-005T00:00:00';
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {

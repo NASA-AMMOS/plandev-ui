@@ -42,6 +42,7 @@
 }
 
 .tooltip-value-row {
+  align-items: center;
   display: flex;
   gap: 4px;
 }

@@ -18,14 +18,17 @@
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../../components/ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
+  import IconCellRenderer from '../../components/ui/IconCellRenderer.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
+  import { InvalidDate } from '../../constants/time';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { models } from '../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
   import { plans } from '../../stores/plans';
+  import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
   import type { User } from '../../types/app';
@@ -37,8 +40,14 @@
   import { removeQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { convertUsToDurationString, getDoyTime, getShortISOForDate, getUnixEpochTime } from '../../utilities/time';
-  import { min, required, timestamp, unique } from '../../utilities/validators';
+  import {
+    convertDoyToYmd,
+    convertUsToDurationString,
+    formatDate,
+    getDoyTime,
+    getShortISOForDate,
+  } from '../../utilities/time';
+  import { min, required, unique } from '../../utilities/validators';
   import type { PageData } from './$types';
 
   export let data: PageData;
@@ -48,6 +57,7 @@
   };
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
+  /* eslint-disable sort-keys */
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -97,28 +107,57 @@
       width: 150,
     },
     {
-      field: 'start_time_doy',
+      field: 'start_time',
       filter: 'text',
       headerName: 'Start Time',
       resizable: true,
       sortable: true,
       valueGetter: (params: ValueGetterParams<Plan>) => {
-        if (params.data?.start_time_doy) {
-          return params.data?.start_time_doy.split('T')[0];
+        if (params.data) {
+          return formatDate(new Date(params.data.start_time), $plugins.time.primary.formatShort);
         }
+      },
+      cellRenderer: (params: ICellRendererParams<Plan>) => {
+        if (params.value !== InvalidDate) {
+          return params.value;
+        }
+        const div = document.createElement('div');
+
+        new IconCellRenderer({
+          props: { type: 'error' },
+          target: div,
+        });
+
+        return div;
       },
       width: 150,
     },
     {
-      field: 'end_time_doy',
+      field: 'end_time',
       filter: 'text',
       headerName: 'End Time',
       resizable: true,
       sortable: true,
       valueGetter: (params: ValueGetterParams<Plan>) => {
-        if (params.data?.end_time_doy) {
-          return params.data?.end_time_doy.split('T')[0];
+        if (params.data) {
+          const endTime = convertDoyToYmd(params.data.end_time_doy);
+          if (endTime) {
+            return formatDate(new Date(endTime), $plugins.time.primary.formatShort);
+          }
         }
+      },
+      cellRenderer: (params: ICellRendererParams<Plan>) => {
+        if (params.value !== InvalidDate) {
+          return params.value;
+        }
+        const div = document.createElement('div');
+
+        new IconCellRenderer({
+          props: { type: 'error' },
+          target: div,
+        });
+
+        return div;
       },
       width: 140,
     },
@@ -147,7 +186,7 @@
         }
       },
     },
-    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true },
+    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true, width: 150 },
     {
       autoHeight: true,
       cellRenderer: tagsCellRenderer,
@@ -173,7 +212,6 @@
   let selectedModel: ModelSlim | undefined;
   let user: User | null = null;
 
-  let endTimeDoyField = field<string>('', [required, timestamp]);
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -183,7 +221,9 @@
     ),
   ]);
   let simTemplateField = field<number | null>(null);
-  let startTimeDoyField = field<string>('', [required, timestamp]);
+
+  $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
+  $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -244,11 +284,10 @@
     ];
   }
   $: createButtonEnabled =
-    $endTimeDoyField.dirtyAndValid &&
+    $endTimeField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
-    $startTimeDoyField.dirtyAndValid;
-
+    $startTimeField.dirtyAndValid;
   $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
@@ -279,11 +318,18 @@
   });
 
   async function createPlan() {
+    const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
+    const endTimeDate = $plugins.time.primary.parse($endTimeField.value);
+    if (!startTimeDate || !endTimeDate) {
+      return;
+    }
+    let startTime = getDoyTime(startTimeDate);
+    let endTime = getDoyTime(endTimeDate);
     const newPlan = await effects.createPlan(
-      $endTimeDoyField.value,
+      endTime,
       $modelIdField.value,
       $nameField.value,
-      $startTimeDoyField.value,
+      startTime,
       $simTemplateField.value,
       user,
     );
@@ -338,25 +384,35 @@
   }
 
   async function onStartTimeChanged() {
-    if ($startTimeDoyField.value && $startTimeDoyField.valid && $endTimeDoyField.value === '') {
+    if ($startTimeField.value && $startTimeField.valid && $endTimeField.value === '') {
       // Set end time as start time plus a day by default
-      const startTimeDate = new Date(getUnixEpochTime($startTimeDoyField.value));
-      startTimeDate.setDate(startTimeDate.getDate() + 1);
-      const newEndTimeDoy = getDoyTime(startTimeDate, false);
-      await endTimeDoyField.validateAndSet(newEndTimeDoy);
+      const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
+      if (startTimeDate) {
+        const defaultDate = $plugins.time.getDefaultPlanEndDate(startTimeDate);
+        if (defaultDate) {
+          let newEndTime = formatDate(defaultDate, $plugins.time.primary.format);
+          if (newEndTime !== InvalidDate) {
+            await endTimeField.validateAndSet(newEndTime);
+          }
+        }
+      }
     }
 
     updateDurationString();
   }
 
   function updateDurationString() {
-    if ($startTimeDoyField.valid && $endTimeDoyField.valid) {
-      durationString = convertUsToDurationString(
-        (getUnixEpochTime($endTimeDoyField.value) - getUnixEpochTime($startTimeDoyField.value)) * 1000,
-      );
+    if ($startTimeField.valid && $endTimeField.valid) {
+      let startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
+      let endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
+      if (typeof startTimeMs === 'number' && typeof endTimeMs === 'number') {
+        durationString = convertUsToDurationString((endTimeMs - startTimeMs) * 1000);
 
-      if (!durationString) {
-        durationString = 'None';
+        if (!durationString) {
+          durationString = 'None';
+        }
+      } else {
+        durationString = 'Invalid';
       }
     } else {
       durationString = 'None';
@@ -424,11 +480,12 @@
 
           <fieldset>
             <DatePickerField
-              field={startTimeDoyField}
-              label="Start Time - YYYY-DDDThh:mm:ss"
+              layout="stacked"
+              useFallback={!$plugins.time.enableDatePicker}
+              field={startTimeField}
+              label={`Start Time - ${$plugins.time.primary.formatString}`}
               name="start-time"
               on:change={onStartTimeChanged}
-              on:keydown={updateDurationString}
               use={[
                 [
                   permissionHandler,
@@ -440,14 +497,13 @@
               ]}
             />
           </fieldset>
-
           <fieldset>
             <DatePickerField
-              field={endTimeDoyField}
-              label="End Time - YYYY-DDDThh:mm:ss"
+              useFallback={!$plugins.time.enableDatePicker}
+              field={endTimeField}
+              label={`End Time - ${$plugins.time.primary.formatString}`}
               name="end-time"
               on:change={updateDurationString}
-              on:keydown={updateDurationString}
               use={[
                 [
                   permissionHandler,
@@ -531,7 +587,7 @@
           <PlanIcon />
           Plans
         </SectionTitle>
-        <Input>
+        <Input layout="inline">
           <input bind:value={filterText} class="st-input" placeholder="Filter plans" style="width: 300px" />
         </Input>
       </svelte:fragment>

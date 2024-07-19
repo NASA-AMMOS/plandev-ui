@@ -3,9 +3,10 @@
 
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
+  import { plugins } from '../../stores/plugins';
   import { view } from '../../stores/views';
   import type { Label, MouseOver, Timeline, VerticalGuide } from '../../types/timeline';
-  import { getDoyTime, getUnixEpochTime } from '../../utilities/time';
+  import { formatDate, getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { createVerticalGuide } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
 
@@ -35,7 +36,7 @@
   let offsetX: number = -1;
   let cursorX: number = 0;
   let cursorMaxWidth: number = 0;
-  let cursorDOY: string = '';
+  let cursorTimeLabel: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
   let cursorWithinView = true;
   let timelines: Timeline[] = [];
@@ -145,15 +146,17 @@
     if ((cursorEnabled && offsetX >= 0 && offsetX <= drawWidth) || histogramCursorTime) {
       let unixEpochTime = 0;
       if (xScaleView !== null) {
+        let date;
         if (histogramCursorTime) {
           unixEpochTime = histogramCursorTime.getTime();
-          cursorDOY = getDoyTime(new Date(unixEpochTime));
           cursorX = xScaleView(unixEpochTime);
         } else {
           unixEpochTime = xScaleView.invert(offsetX).getTime();
-          cursorDOY = getDoyTime(new Date(unixEpochTime));
           cursorX = offsetX;
         }
+        date = new Date(unixEpochTime);
+        cursorTimeLabel = formatDate(date, $plugins.time.primary.format);
+        cursorTimeLabel += ' ' + $plugins.time.primary.label;
       }
       cursorMaxWidth = drawWidth - cursorX;
       cursorX = cursorX + marginLeft;
@@ -179,9 +182,13 @@
   {#if cursorEnabled && cursorWithinView}
     <TimelineCursor
       x={cursorX}
-      label={`${cursorDOY} UTC`}
+      label={cursorTimeLabel}
       maxWidth={cursorMaxWidth}
-      on:click={() => addVerticalGuide(cursorDOY)}
+      on:click={() => {
+        if (xScaleView) {
+          addVerticalGuide(getDoyTime(xScaleView.invert(offsetX)));
+        }
+      }}
       activeCursor
     />
   {/if}
