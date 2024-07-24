@@ -555,6 +555,111 @@ E-00:00:01.000 FSE_CMD 10 "ENUM"
     expect(sequence).toEqual(expectedSequence);
   });
 
+  it('should convert activate', async () => {
+    const seqJson: SeqJson = {
+      id: 'id',
+      metadata: {},
+      steps: [
+        {
+          args: [],
+          description: 'No Args',
+          engine: 10,
+          epoch: 'epoch string',
+          sequence: 'activate.name',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'activate',
+        },
+      ],
+    };
+
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const expectedSequence = `
+@ID "id"
+
+A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
+@ENGINE 10
+@EPOCH "epoch string"
+`;
+    expect(sequence.trim()).toEqual(expectedSequence.trim());
+  });
+
+  it('should convert load', async () => {
+    const seqJson: SeqJson = {
+      id: 'id',
+      metadata: {},
+      steps: [
+        {
+          args: [],
+          engine: 10,
+          epoch: 'epoch string',
+          sequence: 'load.name',
+          time: {
+            tag: '2024-123T12:34:56',
+            type: 'ABSOLUTE',
+          },
+          type: 'load',
+        },
+      ],
+    };
+
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const expectedSequence = `
+@ID "id"
+
+A2024-123T12:34:56 @LOAD("load.name")
+@ENGINE 10
+@EPOCH "epoch string"
+`;
+    expect(sequence.trim()).toEqual(expectedSequence.trim());
+  });
+
+  it('should convert ground event', async () => {
+    const seqJson: SeqJson = {
+      id: 'id',
+      metadata: {},
+      steps: [
+        {
+          args: [
+            {
+              type: 'string',
+              value: 'foo',
+            },
+            {
+              type: 'number',
+              value: 1,
+            },
+            {
+              type: 'number',
+              value: 2,
+            },
+            {
+              type: 'number',
+              value: 3,
+            },
+          ],
+          name: 'ground_event.name',
+          time: {
+            tag: '123T11:55:33',
+            type: 'COMMAND_RELATIVE',
+          },
+          type: 'ground_event',
+        },
+      ],
+    };
+
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+
+    const expectedSequence = `
+@ID "id"
+
+R123T11:55:33 @GROUND_EVENT("ground_event.name") "foo" 1 2 3
+`;
+    expect(sequence.trim()).toEqual(expectedSequence.trim());
+  });
+
   it('converts a seq json empty repeat args to sequence', async () => {
     const seqJson: SeqJson = {
       id: 'testRepeat',
@@ -615,6 +720,80 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
     expect(sequence).toEqual(expectedSequence);
   });
 
+  it('should convert requests to seq format', async () => {
+    const seqJson: SeqJson = {
+      id: 'id',
+      metadata: {},
+      requests: [
+        {
+          ground_epoch: {
+            delta: '+3:00',
+            name: 'GroundEpochName',
+          },
+          metadata: {
+            req_0_meta_name: 'req_0_meta_value',
+          },
+          name: 'request2.name',
+          steps: [
+            {
+              args: [
+                {
+                  type: 'number',
+                  value: 1,
+                },
+                {
+                  type: 'number',
+                  value: 2,
+                },
+                {
+                  type: 'number',
+                  value: 3,
+                },
+              ],
+              metadata: {
+                cmd_0_meta_name_0: 'cmd_0_meta_value_0',
+              },
+              models: [{ offset: '00:00:00', value: 1, variable: 'a' }],
+              stem: 'CMD_0',
+              time: {
+                type: 'COMMAND_COMPLETE',
+              },
+              type: 'command',
+            },
+
+            {
+              args: [
+                {
+                  type: 'string',
+                  value: '1 2 3',
+                },
+              ],
+              stem: 'CMD_1',
+              time: {
+                tag: '00:01:40',
+                type: 'COMMAND_RELATIVE',
+              },
+              type: 'command',
+            },
+          ],
+          type: 'request',
+        },
+      ],
+    };
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const expectedSequence = `
+    @ID "id"
+    @GROUND_EPOCH("GroundEpochName", "+3:00") @REQUEST_BEGIN("request2.name")
+      C CMD_0 1 2 3
+      @METADATA "cmd_0_meta_name_0" "cmd_0_meta_value_0"
+      @MODEL "a" 1 "00:00:00"
+      R00:01:40 CMD_1 "1 2 3"
+    @REQUEST_END
+    @METADATA "req_0_meta_name" "req_0_meta_value"
+    `;
+    expect(normalizeWhitespace(sequence)).toEqual(normalizeWhitespace(expectedSequence));
+  });
+
   it('converts a quoted string', async () => {
     const seqJson: SeqJson = {
       id: 'escaped_quotes',
@@ -660,3 +839,10 @@ C ECHO2 "\\"Can\\" this handle leading and trailing Escaped\\" quotes??\\"" # "C
     expect(sequence).toEqual(expectedSequence);
   });
 });
+
+function normalizeWhitespace(s: string) {
+  return s
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s*\n\s*/g, '\n')
+    .trim();
+}

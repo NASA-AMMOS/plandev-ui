@@ -16,6 +16,7 @@ import { closest, distance } from 'fastest-levenshtein';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import { get } from 'svelte/store';
+import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG, TOKEN_REQUEST } from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import { getGlobals, sequenceAdaptation } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
@@ -30,7 +31,6 @@ import {
   validateTime,
 } from '../time';
 import { getCustomArgDef } from './extension-points';
-import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 import { getChildrenNode, getDeepestNode, getFromAndTo } from './tree-utils';
 
 const KNOWN_DIRECTIVES = [
@@ -117,9 +117,17 @@ export function sequenceLinter(
 
     diagnostics.push(...validateCustomDirectives(treeNode, docText));
 
-    diagnostics.push(
-      ...commandLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], docText, variableMap),
-    );
+    const commandsNode = treeNode.getChild('Commands');
+    if (commandsNode) {
+      diagnostics.push(...commandLinter(commandsNode.getChildren(TOKEN_COMMAND), docText, variableMap));
+      diagnostics.push(
+        ...commandsNode
+          .getChildren(TOKEN_REQUEST)
+          .flatMap(request =>
+            commandLinter(request.getChild('Steps')?.getChildren(TOKEN_COMMAND) ?? [], docText, variableMap),
+          ),
+      );
+    }
 
     diagnostics.push(
       ...immediateCommandLinter(

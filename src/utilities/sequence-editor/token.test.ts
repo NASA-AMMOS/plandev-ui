@@ -1,11 +1,10 @@
 /* eslint-disable no-undef */
 
 import type { SyntaxNode, Tree } from '@lezer/common';
-import assert from 'assert';
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { describe, it } from 'vitest';
+import { assert, describe, it } from 'vitest';
 import { SeqLanguage } from '../codemirror';
 
 const ERROR = '⚠';
@@ -18,6 +17,10 @@ const METADATA_ENTRY_TOKEN = 'MetaEntry';
 const ID_DECLARATION = 'IdDeclaration';
 const PARAMETER_DECLARATION = 'ParameterDeclaration';
 const LOCAL_DECLARATION = 'LocalDeclaration';
+const ACTIVATE_NODE = 'Activate';
+const LOAD_NODE = 'Load';
+const GROUND_BLOCK_NODE = 'GroundBlock';
+const GROUND_EVENT_NODE = 'GroundEvent';
 
 function getMetaType(node: SyntaxNode) {
   return node?.firstChild?.nextSibling?.firstChild?.name;
@@ -26,6 +29,10 @@ function getMetaType(node: SyntaxNode) {
 function getMetaValue(node: SyntaxNode, input: string) {
   const mv = node?.firstChild?.nextSibling?.firstChild;
   return JSON.parse(input.slice(mv!.from, mv!.to));
+}
+
+function getNodeText(node: SyntaxNode, input: string) {
+  return input.slice(node.from, node.to);
 }
 
 describe('metadata', () => {
@@ -101,10 +108,6 @@ describe('header directives', () => {
       return input.slice(idToken.from, idToken.to);
     }
     return null;
-  }
-
-  function getNodeText(node: SyntaxNode, input: string) {
-    return input.slice(node.from, node.to);
   }
 
   function allPermutations(inputArr: string[]) {
@@ -185,6 +188,98 @@ describe('header directives', () => {
         ['L01STR', 'L02STR'],
       );
     });
+  });
+});
+
+describe('seqgen directives', () => {
+  it('activates', () => {
+    const input = `
+A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
+@ENGINE 10
+@EPOCH "epoch string"
+R123T12:34:56 @ACTIVATE("act2.name") "foo" 1 2 3  # Comment text
+@ENGINE -1
+  `;
+    assertNoErrorNodes(input);
+    const parseTree = SeqLanguage.parser.parse(input);
+    const activates = parseTree.topNode.firstChild?.getChildren(ACTIVATE_NODE);
+    assert.equal(activates?.length, 2);
+  });
+
+  it('loads', () => {
+    const input = `
+  A2024-123T12:34:56 @LOAD("load.name") # No Args
+  @ENGINE 10
+  @EPOCH "epoch string"
+  R123T12:34:56 @LOAD("load2.name") "foo" 1 2 3  # No Args
+  @ENGINE -1
+    `;
+    assertNoErrorNodes(input);
+    const parseTree = SeqLanguage.parser.parse(input);
+    const activates = parseTree.topNode.firstChild?.getChildren(LOAD_NODE);
+    assert.equal(activates?.length, 2);
+  });
+
+  it('ground', () => {
+    const input = `
+A2024-123T12:34:56 @GROUND_BLOCK("ground_block.name") # No Args
+R123T12:34:56 @GROUND_EVENT("ground_event.name") "foo" 1 2 3  # No Args
+  `;
+    assertNoErrorNodes(input);
+    const parseTree = SeqLanguage.parser.parse(input);
+    assert.isNotNull(parseTree.topNode.firstChild);
+    const groundBlocks = parseTree.topNode.firstChild!.getChildren(GROUND_BLOCK_NODE);
+    assert.equal(groundBlocks.length, 1);
+    assert.equal(getNodeText(groundBlocks[0].getChild('GroundName')!, input), '"ground_block.name"');
+    const groundEvents = parseTree.topNode.firstChild!.getChildren(GROUND_EVENT_NODE);
+    assert.equal(groundEvents.length, 1);
+    assert.equal(getNodeText(groundEvents[0].getChild('GroundName')!, input), '"ground_event.name"');
+  });
+
+  it('request', () => {
+    const input = `@GROUND_EPOCH("Name","+3:00") @REQUEST_BEGIN("request.name") # Description Text
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+  R100 CMD_1 "1 2 3"
+  C CMD_2 1 2 3
+  R100 CMD_3 "1 2 3"
+@REQUEST_END
+@METADATA "sub_object" {
+  "boolean": true
+}
+A2024-123T12:34:56 @REQUEST_BEGIN("request2.name")
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+  R100 CMD_1 "1 2 3"
+  C CMD_2 1 2 3
+  R100 CMD_3 "1 2 3"
+  C CMD_4 1 2 3
+  R100 CMD_5 "1 2 3"
+@REQUEST_END
+@METADATA "foo" "bar"
+`;
+    assertNoErrorNodes(input);
+    const parseTree = SeqLanguage.parser.parse(input);
+    assert.isNotNull(parseTree.topNode.firstChild);
+    const requests = parseTree.topNode.firstChild!.getChildren('Request');
+    assert.equal(requests.length, 2);
+
+    assert.equal(getNodeText(requests[0].getChild('RequestName')!, input), '"request.name"');
+    assert.equal(getNodeText(requests[0].getChild('LineComment')!, input), '# Description Text');
+    const request0GrondEpoch = requests[0].getChild('GroundEpoch');
+    assert.equal(getNodeText(request0GrondEpoch!.getChild('Name')!, input), '"Name"');
+    assert.equal(getNodeText(request0GrondEpoch!.getChild('Delta')!, input), '"+3:00"');
+    assert.equal(requests[0].getChild('Steps')?.getChildren('Command').length, 4);
+    const request0Meta0 = requests[0].getChild('Metadata')!.getChild('MetaEntry')!;
+    assert.deepEqual(JSON.parse(getNodeText(request0Meta0.getChild('Value')!, input)), {
+      boolean: true,
+    });
+
+    assert.equal(getNodeText(requests[1].getChild('RequestName')!, input), '"request2.name"');
+    assert.equal(getNodeText(requests[1].getChild('TimeTag')!, input), 'A2024-123T12:34:56 ');
+    assert.equal(requests[1].getChild('Steps')?.getChildren('Command').length, 6);
   });
 });
 
@@ -313,10 +408,13 @@ CMD0
   });
 });
 
-function assertNoErrorNodes(input: string) {
+function assertNoErrorNodes(input: string, verbose?: boolean) {
   const cursor = SeqLanguage.parser.parse(input).cursor();
   do {
     const { node } = cursor;
+    if (verbose) {
+      console.log(node.type.name);
+    }
     assert.notStrictEqual(node.type.name, ERROR);
   } while (cursor.next());
 }

@@ -61,7 +61,7 @@ declare global {
           END_WHILE_LOOP: string;
           WHILE_LOOP: string[];
         };
-        MODFIY_OUTPUT?: (
+        MODIFY_OUTPUT?: (
           output: SeqJson | any,
           parameterDictionaries: ParameterDictionary[],
           channelDictionary: ChannelDictionary | null,

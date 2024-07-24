@@ -47,7 +47,7 @@ export function setSequenceAdaptation(): void {
       endWhileLoop: globalThis.SequenceAdaptation?.LOOP_KEYWORDS?.END_WHILE_LOOP ?? 'CMD_END_WHILE_LOOP',
       whileLoop: globalThis.SequenceAdaptation?.LOOP_KEYWORDS?.WHILE_LOOP ?? ['CMD_WHILE_LOOP', 'CMD_WHILE_LOOP_OR'],
     },
-    modifyOutput: globalThis.SequenceAdaptation?.MODFIY_OUTPUT ?? undefined,
+    modifyOutput: globalThis.SequenceAdaptation?.MODIFY_OUTPUT ?? undefined,
     modifyOutputParse: globalThis.SequenceAdaptation?.MODIFY_OUTPUT_PARSE ?? undefined,
     outputFormat: {
       name: globalThis.SequenceAdaptation?.OUTPUT_FORMAT?.NAME ?? 'Seq JSON',

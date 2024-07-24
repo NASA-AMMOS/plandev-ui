@@ -137,7 +137,11 @@ export class Sequence {
 
     expect(await this.linter.count()).toBe(0);
     await expect(this.command).toHaveText('C FSW_CMD_0 "ON" false 1');
-    await this.detailPane.getByRole('combobox').selectOption('OFF');
+    await this.page
+      .locator('fieldset')
+      .filter({ hasText: 'enum_arg_0 ONOFF' })
+      .getByRole('combobox')
+      .selectOption('OFF');
 
     await expect(this.command).toHaveText('C FSW_CMD_0 "OFF" false 1');
 

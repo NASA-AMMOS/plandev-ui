@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { EditorState } from '@codemirror/state';
   import type { SyntaxNode } from '@lezer/common';
   import type {
     ChannelDictionary,
@@ -9,13 +8,14 @@
     FswCommand,
     FswCommandArgument,
     FswCommandArgumentRepeat,
+    FswCommandArgumentVarString,
     ParameterDictionary,
   } from '@nasa-jpl/aerie-ampcs';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { TOKEN_ERROR } from '../../../constants/seq-n-grammar-constants';
+  import { getAncestorStepOrRequest, getNameNode } from '../../../utilities/codemirror/seq-n-tree-utils';
   import { getCustomArgDef } from '../../../utilities/sequence-editor/extension-points';
-  import { TOKEN_COMMAND, TOKEN_ERROR } from '../../../utilities/sequence-editor/sequencer-grammar-constants';
-  import { getAncestorNode } from '../../../utilities/sequence-editor/tree-utils';
   import Collapse from '../../Collapse.svelte';
   import Panel from '../../ui/Panel.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
@@ -27,6 +27,7 @@
   } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgEditor from './ArgEditor.svelte';
+  import StringEditor from './StringEditor.svelte';
 
   type TimeTagInfo = { node: SyntaxNode; text: string } | null | undefined;
 
@@ -45,8 +46,10 @@
   let missingArgDefArray: FswCommandArgument[] = [];
   let timeTagNode: TimeTagInfo = null;
 
-  $: commandNode = getAncestorNode(node, TOKEN_COMMAND);
-  $: commandDef = getCommandDef(commandDictionary, editorSequenceView.state, commandNode);
+  $: commandNode = getAncestorStepOrRequest(node);
+  $: commandNameNode = getNameNode(commandNode);
+  $: commandName = commandNameNode && editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to);
+  $: commandDef = getCommandDef(commandDictionary, commandName ?? '');
   $: argInfoArray = getArgumentInfo(
     commandNode?.getChild('Args') ?? null,
     commandDef?.arguments,
@@ -135,23 +138,8 @@
     return argArray;
   }
 
-  function getCommandDef(
-    commandDictionary: CommandDictionary | null,
-    state: EditorState | undefined,
-    commandNode: SyntaxNode | null,
-  ) {
-    if (!commandDictionary || !state || !node) {
-      return null;
-    }
-
-    const stemNode = commandNode?.getChild('Stem');
-
-    if (stemNode) {
-      const stemName = state.sliceDoc(stemNode.from, stemNode.to);
-      return commandDictionary.fswCommandMap[stemName];
-    }
-
-    return null;
+  function getCommandDef(commandDictionary: CommandDictionary | null, stemName: string) {
+    return commandDictionary?.fswCommandMap[stemName] ?? null;
   }
 
   function setInEditor(token: SyntaxNode, val: string) {
@@ -163,7 +151,8 @@
         // Searchable Dropdown has pop out that is not a descendent
         document.activeElement?.tagName === 'BODY' ||
         document.activeElement?.tagName === 'BUTTON' ||
-        document.activeElement?.tagName === 'INPUT')
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'SELECT')
     ) {
       const currentVal = editorSequenceView.state.sliceDoc(token.node.from, token.node.to);
       if (currentVal !== val) {
@@ -186,59 +175,83 @@
     return hasAncestorWithId(element.parentElement, id);
   }
 
-  // When the type in the argument value is compatible with the argument definition,
-  // provide a more restrictive editor to keep argument valid. Otherwise fall back on a string editor.
+  function formatTypeName(s: string) {
+    // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
+    return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
+  }
 
-  // TODO
-  // better handling of unclosed strings
-
-  // {'integer_arg', 'float_arg', 'unsigned_arg', 'enum_arg', 'var_string_arg', 'repeat_arg'}
-  // {'unsigned_arg', 'enum_arg', 'var_string_arg', 'float_arg'}
+  const nameArgumentDef: FswCommandArgumentVarString = {
+    arg_type: 'var_string',
+    default_value: null,
+    description: '',
+    max_bit_length: null,
+    name: '',
+    prefix_bit_length: null,
+    valid_regex: null,
+  };
 </script>
 
 <Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
-    <SectionTitle>Selected Command</SectionTitle>
+    <SectionTitle>{commandNode ? `Selected ${formatTypeName(commandNode.name)}` : 'No command selected'}</SectionTitle>
   </svelte:fragment>
-
   <svelte:fragment slot="body">
     <div id={ID_COMMAND_DETAIL_PANE} class="content">
+      {#if !!timeTagNode}
+        <fieldset>
+          <label class="label-row" for="timeTag">Time Tag</label>
+          <input class="st-input w-100" disabled name="timeTag" value={timeTagNode.text.trim()} />
+        </fieldset>
+      {/if}
       {#if !!commandNode}
-        <div class="header"></div>
-
-        {#if !!commandDef}
-          {#if !!timeTagNode}
+        {#if commandNode.name === 'Command'}
+          {#if !!commandDef}
             <fieldset>
-              <label for="timeTag">Time Tag</label>
-              <input class="st-input w-100" disabled name="timeTag" value={timeTagNode.text.trim()} />
+              <Collapse headerHeight={24} title={commandDef.stem} padContent={false}>{commandDef.description}</Collapse>
             </fieldset>
-          {/if}
 
-          <fieldset>
-            <Collapse headerHeight={24} title={commandDef.stem} padContent={false}>{commandDef.description}</Collapse>
-          </fieldset>
+            {#each editorArgInfoArray as argInfo}
+              <ArgEditor
+                {argInfo}
+                {commandDictionary}
+                setInEditor={debounce(setInEditor, 250)}
+                addDefaultArgs={(commandNode, missingArgDefArray) =>
+                  addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray)}
+              />
+            {/each}
 
-          {#each editorArgInfoArray as argInfo}
-            <ArgEditor
-              {argInfo}
-              {commandDictionary}
-              setInEditor={debounce(setInEditor, 250)}
-              addDefaultArgs={(commandNode, missingArgDefArray) =>
-                addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray)}
-            />
-          {/each}
-
-          {#if missingArgDefArray.length}
+            {#if missingArgDefArray.length}
+              <fieldset>
+                <AddMissingArgsButton
+                  setInEditor={() => {
+                    if (commandNode) {
+                      addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray);
+                    }
+                  }}
+                />
+              </fieldset>
+            {/if}
+          {:else}
             <fieldset>
-              <AddMissingArgsButton
-                setInEditor={() => {
-                  if (commandNode) {
-                    addDefaultArgs(commandDictionary, editorSequenceView, commandNode, missingArgDefArray);
+              <div class="label-row">{commandName ?? ''}</div>
+            </fieldset>
+            <div class="empty-state st-typography-label">Command type is not present in dictionary</div>
+          {/if}
+        {:else}
+          <fieldset>
+            <div class="label-row">{`${formatTypeName(commandNode.name)} Name`}</div>
+            <div>
+              <StringEditor
+                argDef={nameArgumentDef}
+                initVal={commandName ?? ''}
+                setInEditor={val => {
+                  if (commandNameNode) {
+                    setInEditor(commandNameNode, val);
                   }
                 }}
               />
-            </fieldset>
-          {/if}
+            </div>
+          </fieldset>
         {/if}
       {:else}
         <div class="empty-state st-typography-label">Select a command to modify its parameters.</div>
@@ -255,5 +268,9 @@
 
   .empty-state {
     padding: 8px 16px;
+  }
+
+  .label-row {
+    font-weight: var(--st-button-font-weight);
   }
 </style>

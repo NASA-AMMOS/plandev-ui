@@ -1,27 +1,34 @@
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { CommandDictionary, FswCommandArgument, FswCommandArgumentRepeat } from '@nasa-jpl/aerie-ampcs';
 import type {
+  Activate,
   Args,
   BooleanArgument,
   Command,
+  GroundBlock,
+  GroundEpoch,
+  GroundEvent,
   HardwareCommand,
   HexArgument,
   ImmediateCommand,
+  Load,
   Metadata,
   Model,
   NumberArgument,
   RepeatArgument,
+  Request,
   SeqJson,
+  Step,
   StringArgument,
   SymbolArgument,
   Time,
   VariableDeclaration,
 } from '@nasa-jpl/seq-json-schema/types';
+import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
 import { removeEscapedQuotes, unquoteUnescape } from '../codemirror/codemirror-utils';
 import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../time';
 import { logInfo } from './logger';
-import { TOKEN_REPEAT_ARG } from './sequencer-grammar-constants';
 
 /**
  * Returns a minimal valid Seq JSON object.
@@ -54,11 +61,18 @@ export async function sequenceToSeqJson(
   if (seqJson.parameters) {
     variableList.push(...seqJson.parameters.map(value => value.name));
   }
-  seqJson.steps =
-    baseNode
-      .getChild('Commands')
-      ?.getChildren('Command')
-      .map(command => parseCommand(command, text, commandDictionary)) ?? undefined;
+  let child = baseNode.getChild('Commands')?.firstChild;
+  seqJson.steps = [];
+  while (child) {
+    const step = parseStep(child, text, commandDictionary);
+    if (step) {
+      seqJson.steps.push(step);
+    }
+    child = child?.nextSibling;
+  }
+  if (!seqJson.steps.length) {
+    seqJson.steps = undefined;
+  }
   seqJson.immediate_commands =
     baseNode
       .getChild('ImmediateCommands')
@@ -70,7 +84,146 @@ export async function sequenceToSeqJson(
       ?.getChildren('Command')
       .map(command => parseHardwareCommand(command, text)) ?? undefined;
 
+  seqJson.requests = baseNode
+    .getChild('Commands')
+    ?.getChildren('Request')
+    .map(requestNode => parseRequest(requestNode, text, commandDictionary));
+  if (seqJson.requests?.length === 0) {
+    seqJson.requests = undefined;
+  }
+
   return JSON.stringify(seqJson, null, 2);
+}
+
+function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Request {
+  let ground_epoch = undefined;
+  let time = undefined;
+  const groundEpochNode = requestNode.getChild('GroundEpoch');
+  if (groundEpochNode) {
+    ground_epoch = parseGroundEpoch(groundEpochNode, text);
+  } else {
+    time = parseTime(requestNode, text);
+  }
+  const nameNode = requestNode.getChild('RequestName');
+  const name = nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : 'UNKNOWN';
+  const description = parseDescription(requestNode, text);
+  const metadata = parseMetadata(requestNode, text);
+
+  const steps: Step[] = [];
+  const stepsNode = requestNode.getChild('Steps');
+  if (stepsNode) {
+    let stepNode = stepsNode.firstChild;
+    while (stepNode) {
+      const step = parseStep(stepNode, text, commandDictionary);
+      if (step) {
+        steps.push(step);
+      }
+      stepNode = stepNode?.nextSibling;
+    }
+  }
+
+  if (steps.length === 0) {
+    // request with empty steps is disallowed in seq.json
+    steps.push({
+      args: [],
+      stem: 'UNKNOWN',
+      time: { tag: 'UNKNOWN', type: 'ABSOLUTE' },
+      type: 'command',
+    });
+  }
+
+  // ground epoch
+  return {
+    description,
+    ground_epoch,
+    metadata,
+    name,
+    steps: steps as [Step, ...Step[]],
+    time,
+    type: 'request',
+  };
+}
+
+function parseGroundBlockEvent(stepNode: SyntaxNode, text: string): GroundBlock | GroundEvent {
+  const time = parseTime(stepNode, text);
+
+  const nameNode = stepNode.getChild('GroundName');
+  const name = nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : 'UNKNOWN';
+
+  const argsNode = stepNode.getChild('Args');
+  // step not in dictionary, so not passing command dict
+  const args = argsNode ? parseArgs(argsNode, text, null, name) : [];
+
+  const description = parseDescription(stepNode, text);
+  const metadata = parseMetadata(stepNode, text);
+  const models = parseModel(stepNode, text);
+
+  return {
+    args,
+    description,
+    metadata,
+    models,
+    name,
+    time,
+    type: stepNode.name === 'GroundBlock' ? 'ground_block' : 'ground_event',
+  };
+}
+
+function parseActivateLoad(stepNode: SyntaxNode, text: string): Activate | Load {
+  const time = parseTime(stepNode, text);
+
+  const nameNode = stepNode.getChild('SequenceName');
+  const sequence = nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : 'UNKNOWN';
+
+  const argsNode = stepNode.getChild('Args');
+  // step not in dictionary, so not passing command dict
+  const args = argsNode ? parseArgs(argsNode, text, null, sequence) : [];
+
+  const engine = parseEngine(stepNode, text);
+  const epoch = parseEpoch(stepNode, text);
+
+  const description = parseDescription(stepNode, text);
+  const metadata = parseMetadata(stepNode, text);
+  const models = parseModel(stepNode, text);
+
+  return {
+    args,
+    description,
+    engine,
+    epoch,
+    metadata,
+    models,
+    sequence,
+    time,
+    type: stepNode.name === 'Load' ? 'load' : 'activate',
+  };
+}
+
+function parseEngine(stepNode: SyntaxNode, text: string): number | undefined {
+  const engineNode = stepNode.getChild('Engine')?.getChild('Number');
+  return engineNode ? parseInt(text.slice(engineNode.from, engineNode.to), 10) : undefined;
+}
+
+function parseEpoch(stepNode: SyntaxNode, text: string): string | undefined {
+  const epochNode = stepNode.getChild('Epoch')?.getChild('String');
+  return epochNode ? unquoteUnescape(text.slice(epochNode.from, epochNode.to)) : undefined;
+}
+
+function parseStep(child: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Step | null {
+  switch (child.name) {
+    case 'Command':
+      return parseCommand(child, text, commandDictionary);
+    case 'Activate':
+    case 'Load':
+      return parseActivateLoad(child, text);
+    case 'GroundBlock':
+    case 'GroundEvent':
+      return parseGroundBlockEvent(child, text);
+  }
+  // Standalone comment nodes (not descriptions of steps), are not supported in the seq.json schema
+  // Until a schema change is coordinated, comments will dropped while writing out seq.json.
+  // Requests are parsed outside this block since they are not allowed to be nested.
+  return null;
 }
 
 function parseLGO(node: SyntaxNode): Metadata | undefined {
@@ -204,12 +357,14 @@ function parseArgs(
   return args;
 }
 
-/**
- *
- * @param commandNode
- * @param text
- * @returns
- */
+function parseGroundEpoch(groundEpochNode: SyntaxNode, text: string): GroundEpoch {
+  const deltaNode = groundEpochNode.getChild('Delta');
+  const nameNode = groundEpochNode.getChild('Name');
+  return {
+    delta: deltaNode ? unquoteUnescape(text.slice(deltaNode.from, deltaNode.to)) : '',
+    name: nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : '',
+  };
+}
 
 /**
  * Parses a time tag node and returns a Seq JSON time.
@@ -247,7 +402,7 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
       const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
         parseDurationString(timeTagEpochText, 'seconds'),
       );
-      tag = `${isNegative}${days}${hours}:${minutes}:${seconds}${milliseconds}`;
+      tag = `${isNegative}${days}${days ? 'T' : ''}${hours}:${minutes}:${seconds}${milliseconds}`;
       return { tag, type: 'EPOCH_RELATIVE' };
     }
 
@@ -267,7 +422,7 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
       const { isNegative, days, hours, minutes, seconds, milliseconds } = getDurationTimeComponents(
         parseDurationString(timeTagRelativeText, 'seconds'),
       );
-      tag = `${isNegative}${days}${hours}:${minutes}:${seconds}${milliseconds}`;
+      tag = `${isNegative}${days}${days ? 'T' : ''}${hours}:${minutes}:${seconds}${milliseconds}`;
       return { tag, type: 'COMMAND_RELATIVE' };
     }
 
@@ -350,26 +505,22 @@ function parseModel(node: SyntaxNode, text: string): Model[] | undefined {
     const valueNode = modelNode.getChild('Value');
     const offsetNode = modelNode.getChild('Offset');
 
-    const variable = variableNode
-      ? (unquoteUnescape(text.slice(variableNode.from, variableNode.to)) as string)
-      : 'UNKNOWN';
+    const variable = variableNode ? unquoteUnescape(text.slice(variableNode.from, variableNode.to)) : 'UNKNOWN';
 
     // Value can be string, number or boolean
     let value: Model['value'] = 0;
-    if (valueNode) {
-      const valueChild = valueNode.firstChild;
-      if (valueChild) {
-        const valueText = text.slice(valueChild.from, valueChild.to);
-        if (valueChild.name === 'String') {
-          value = unquoteUnescape(valueText);
-        } else if (valueChild.name === 'Boolean') {
-          value = !/^FALSE$/i.test(valueText);
-        } else if (valueChild.name === 'Number') {
-          value = Number(valueText);
-        }
+    const valueChild = valueNode?.firstChild;
+    if (valueChild) {
+      const valueText = text.slice(valueChild.from, valueChild.to);
+      if (valueChild.name === 'String') {
+        value = unquoteUnescape(valueText);
+      } else if (valueChild.name === 'Boolean') {
+        value = !/^FALSE$/i.test(valueText);
+      } else if (valueChild.name === 'Number') {
+        value = Number(valueText);
       }
     }
-    const offset = offsetNode ? (unquoteUnescape(text.slice(offsetNode.from, offsetNode.to)) as string) : 'UNKNOWN';
+    const offset = offsetNode ? unquoteUnescape(text.slice(offsetNode.from, offsetNode.to)) : 'UNKNOWN';
 
     models.push({ offset, value, variable });
   }
@@ -382,8 +533,9 @@ function parseDescription(node: SyntaxNode, text: string): string | undefined {
   if (!descriptionNode) {
     return undefined;
   }
+  // +1 offset to drop '#' prefix
   const description = text.slice(descriptionNode.from + 1, descriptionNode.to).trim();
-  return removeEscapedQuotes(description) as string;
+  return removeEscapedQuotes(description);
 }
 
 function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Command {
@@ -401,12 +553,12 @@ function parseCommand(commandNode: SyntaxNode, text: string, commandDictionary: 
 
   return {
     args,
+    description,
+    metadata,
+    models,
     stem,
     time,
     type: 'command',
-    ...(description ? { description } : {}),
-    ...(models ? { models } : {}),
-    ...(metadata ? { metadata } : {}),
   };
 }
 
@@ -426,9 +578,9 @@ function parseImmediateCommand(
 
   return {
     args,
+    description,
+    metadata,
     stem,
-    ...(description ? { description } : {}),
-    ...(metadata ? { metadata } : {}),
   };
 }
 
@@ -439,9 +591,9 @@ function parseHardwareCommand(commandNode: SyntaxNode, text: string): HardwareCo
   const metadata: Metadata | undefined = parseMetadata(commandNode, text);
 
   return {
+    description,
+    metadata,
     stem,
-    ...(description ? { description } : {}),
-    ...(metadata ? { metadata } : {}),
   };
 }
 
@@ -483,7 +635,7 @@ function parseMetadata(node: SyntaxNode, text: string): Metadata | undefined {
       return; // Skip this entry if either the key or value is missing
     }
 
-    const keyText = unquoteUnescape(text.slice(keyNode.from, keyNode.to)) as string;
+    const keyText = unquoteUnescape(text.slice(keyNode.from, keyNode.to));
 
     let value = text.slice(valueNode.from, valueNode.to);
     try {

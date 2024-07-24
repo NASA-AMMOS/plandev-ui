@@ -314,6 +314,78 @@ Command(Stem,Args(String),Models(Model(Variable(String),Value(String),Offset(Str
 )
 )`,
   ],
+  [
+    `Seq.Json comprehension`,
+    `A2024-123T12:34:56 @GROUND_BLOCK("ground_block.name") # No Args
+R123T12:34:56 @GROUND_EVENT("ground_event.name") "foo" 1 2 3
+A2024-123T12:34:56 @ACTIVATE("activate.name") # No Args
+@ENGINE 10
+@EPOCH "epoch string"
+R123T12:34:56 @ACTIVATE("act2.name") "foo" 1 2 3  # Comment
+@ENGINE -1
+A2024-321T11:22:33 @LOAD("load.name") # No Args
+@ENGINE 10
+@EPOCH "epoch string"
+R123T12:34:56 @LOAD("load2.name") "foo" 1 2 3  # A comment
+@ENGINE -1
+@GROUND_EPOCH("Name","+3:00") @REQUEST_BEGIN("request.name") # Description Text
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+  R100 CMD_1 "1 2 3"
+  C CMD_2 1 2 3
+  R100 CMD_3 "1 2 3"
+@REQUEST_END
+@METADATA "sub_object" {
+  "boolean": true
+}
+A2024-123T12:34:56 @REQUEST_BEGIN("request2.name")
+  C CMD_0 1 2 3
+  @METADATA "foo" "bar"
+  @MODEL "a" 1 "00:00:00"
+  R100 CMD_1 "1 2 3"
+  C CMD_2 1 2 3
+  R100 CMD_3 "1 2 3"
+  C CMD_4 1 2 3
+  R100 CMD_5 "1 2 3"
+@REQUEST_END
+@METADATA "foo" "bar"
+`,
+    `
+Sequence(Commands(
+  GroundBlock(TimeTag(TimeAbsolute),GroundName(String),Args,LineComment),
+  GroundEvent(TimeTag(TimeRelative),GroundName(String),Args(String,Number,Number,Number)),
+  Activate(TimeTag(TimeAbsolute),SequenceName(String),Args,LineComment,Engine(Number),Epoch(String)),
+  Activate(TimeTag(TimeRelative),SequenceName(String),Args(String,Number,Number,Number),LineComment,Engine(Number)),
+  Load(TimeTag(TimeAbsolute),SequenceName(String),Args,LineComment,Engine(Number),Epoch(String)),
+  Load(TimeTag(TimeRelative),SequenceName(String),Args(String,Number,Number,Number),LineComment,Engine(Number)),
+  Request(
+    GroundEpoch(Name(String),Delta(String)),
+    RequestName(String),LineComment,
+    Steps(
+      Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number),Metadata(MetaEntry(Key(String),Value(String))),Models(Model(Variable(String),Value(Number),Offset(String)))),
+      Command(TimeTag(TimeRelative),Stem,Args(String)),
+      Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
+      Command(TimeTag(TimeRelative),Stem,Args(String))
+    ),
+    Metadata(MetaEntry(Key(String),Value(Object(Property(PropertyName(String),Boolean)))))
+  ),
+  Request(
+    TimeTag(TimeAbsolute),
+    RequestName(String),
+    Steps(
+      Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number),Metadata(MetaEntry(Key(String),Value(String))),Models(Model(Variable(String),Value(Number),Offset(String)))),
+      Command(TimeTag(TimeRelative),Stem,Args(String)),
+      Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
+      Command(TimeTag(TimeRelative),Stem,Args(String)),
+      Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number)),
+      Command(TimeTag(TimeRelative),Stem,Args(String))
+    ),
+    Metadata(MetaEntry(Key(String),Value(String)))
+  )
+))
+`,
+  ],
 ];
 
 const errorTests = [

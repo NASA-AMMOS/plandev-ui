@@ -12,8 +12,8 @@ import type {
   FswCommandArgumentVarString,
 } from '@nasa-jpl/aerie-ampcs';
 import type { EditorView } from 'codemirror';
+import { TOKEN_REPEAT_ARG } from '../../constants/seq-n-grammar-constants';
 import { fswCommandArgDefault } from '../sequence-editor/command-dictionary';
-import { TOKEN_REPEAT_ARG } from '../sequence-editor/sequencer-grammar-constants';
 
 export function isFswCommandArgumentEnum(arg: FswCommandArgument): arg is FswCommandArgumentEnum {
   return arg.arg_type === 'enum';
@@ -126,6 +126,9 @@ export function quoteEscape(s: string) {
   return `"${s.replaceAll('"', '\\"')}"`;
 }
 
+export function removeEscapedQuotes(text: string): string;
+export function removeEscapedQuotes(text: number): number;
+export function removeEscapedQuotes(text: boolean): boolean;
 export function removeEscapedQuotes(text: string | number | boolean): string | number | boolean {
   if (typeof text === 'string') {
     return text.replace(/\\"|"(?!\\")/g, '"').trim();
