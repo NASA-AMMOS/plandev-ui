@@ -109,9 +109,9 @@
 
   function jumpToActivityDirective() {
     if (span !== null) {
-      const rootSpan = getSpanRootParent(spansMap, span.id);
+      const rootSpan = getSpanRootParent(spansMap, span.span_id);
       if (rootSpan) {
-        const activityDirectiveId = spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.id];
+        const activityDirectiveId = spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id];
         dispatch('jumpToActivityDirective', activityDirectiveId);
       }
     }
@@ -242,8 +242,8 @@
       {#if activityDirectiveSpans && activityDirectiveSpans.length}
         <ContextSubMenuItem text="Jump to Simulated Activities" parentMenu={contextMenuComponent}>
           {#each activityDirectiveSpans as activityDirectiveSpan}
-            <ContextMenuItem on:click={() => dispatch('jumpToSpan', activityDirectiveSpan.id)}>
-              {activityDirectiveSpan.type} ({activityDirectiveSpan.id})
+            <ContextMenuItem on:click={() => dispatch('jumpToSpan', activityDirectiveSpan.span_id)}>
+              {activityDirectiveSpan.type} ({activityDirectiveSpan.span_id})
             </ContextMenuItem>
           {/each}
         </ContextSubMenuItem>

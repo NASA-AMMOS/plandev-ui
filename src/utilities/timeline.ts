@@ -859,7 +859,7 @@ export function generateActivityTree(
             const childSpanId = spanUtilityMaps.directiveIdToSpanIdMap[directive.id];
             childSpan = spansMap[childSpanId];
             if (childSpan && hierarchyMode === 'flat') {
-              seenSpans[childSpan.id] = true;
+              seenSpans[childSpan.span_id] = true;
             }
           }
           if (expanded) {
@@ -881,7 +881,7 @@ export function generateActivityTree(
       }
       if (spanGroup && hierarchyMode === 'flat') {
         spanGroup.forEach(span => {
-          if (!seenSpans[span.id]) {
+          if (!seenSpans[span.span_id]) {
             if (expanded) {
               children.push(
                 ...getSpanSubtrees(
@@ -980,7 +980,7 @@ export function getSpanSubtrees(
   viewTimeRange: TimeRange,
 ): ActivityTreeNode[] {
   const children: ActivityTreeNode[] = [];
-  const spanChildren = spanUtilityMaps.spanIdToChildIdsMap[span.id].map(id => spansMap[id]);
+  const spanChildren = spanUtilityMaps.spanIdToChildIdsMap[span.span_id].map(id => spansMap[id]);
   if (type === 'aggregation') {
     // Group by type
     let computedSpans = spanChildren;
@@ -1023,7 +1023,7 @@ export function getSpanSubtrees(
         });
       });
   } else if (type === 'span') {
-    const id = `${parentId}_${span.id}`;
+    const id = `${parentId}_${span.span_id}`;
     const expanded = getNodeExpanded(id, activityTreeExpansionMap);
     const count = spanChildren.length;
     let childrenForKey: ActivityTreeNode[] = [];

@@ -383,9 +383,9 @@
             if (matchingSpans) {
               const uniqueSpans: Span[] = [];
               matchingSpans.forEach(span => {
-                if (!seenSpanIds[span.id]) {
-                  idToColorMaps.spans[span.id] = layer.activityColor;
-                  seenSpanIds[span.id] = true;
+                if (!seenSpanIds[span.span_id]) {
+                  idToColorMaps.spans[span.span_id] = layer.activityColor;
+                  seenSpanIds[span.span_id] = true;
                   uniqueSpans.push(span);
                 }
               });

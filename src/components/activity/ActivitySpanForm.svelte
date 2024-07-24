@@ -40,8 +40,8 @@
   let startTime: string;
 
   $: activityType = (activityTypes ?? []).find(({ name: activityTypeName }) => span.type === activityTypeName) ?? null;
-  $: rootSpan = getSpanRootParent(spansMap, span.id);
-  $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.id]?.length > 0) ?? false;
+  $: rootSpan = getSpanRootParent(spansMap, span.span_id);
+  $: rootSpanHasChildren = (rootSpan && spanUtilityMaps.spanIdToChildIdsMap[rootSpan.span_id]?.length > 0) ?? false;
 
   $: startTime = formatDate(new Date(span.startMs), $plugins.time.primary.format);
 
@@ -79,7 +79,7 @@
   }
 
   $: if (simulationDatasetId !== null) {
-    effects.getExpansionSequenceId(span.id, simulationDatasetId, user).then(newSeqId => (seqId = newSeqId));
+    effects.getExpansionSequenceId(span.span_id, simulationDatasetId, user).then(newSeqId => (seqId = newSeqId));
   }
 
   $: setFormParametersComputedAttributes(
@@ -107,9 +107,9 @@
 
   async function updateExpansionSequenceToActivity() {
     if (seqId === null) {
-      await effects.deleteExpansionSequenceToActivity(simulationDatasetId, span.id, user);
+      await effects.deleteExpansionSequenceToActivity(simulationDatasetId, span.span_id, user);
     } else {
-      await effects.insertExpansionSequenceToActivity(simulationDatasetId, span.id, seqId, user);
+      await effects.insertExpansionSequenceToActivity(simulationDatasetId, span.span_id, seqId, user);
     }
   }
 
@@ -137,7 +137,7 @@
     <Collapse title="Definition">
       <Input layout="inline">
         <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id"> ID </label>
-        <input class="st-input w-100" disabled name="id" value={span.id} />
+        <input class="st-input w-100" disabled name="id" value={span.span_id} />
       </Input>
 
       <Input layout="inline">
@@ -209,8 +209,8 @@
     <Collapse title="Decomposition" defaultExpanded={rootSpanHasChildren}>
       {#if rootSpanHasChildren}
         <ActivityDecomposition
-          rootSpanId={rootSpan?.id}
-          selectedSpanId={span.id}
+          rootSpanId={rootSpan?.span_id}
+          selectedSpanId={span.span_id}
           {spanUtilityMaps}
           {spansMap}
           on:select

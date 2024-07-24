@@ -7,9 +7,9 @@
   import { debounce } from 'lodash-es';
   import { InvalidDate } from '../../constants/time';
   import { plugins } from '../../stores/plugins';
-  import { simulationDataset, simulationEvents } from '../../stores/simulation';
+  import { simulationDataset, simulationEvents, spansMap } from '../../stores/simulation';
   import { view, viewUpdateSimulationEventsTable } from '../../stores/views';
-  import type { SimulationEvent } from '../../types/simulation';
+  import type { SimulationEvent, Span } from '../../types/simulation';
   import type { AutoSizeColumns, ViewGridSection, ViewTable } from '../../types/view';
   import { filterEmpty } from '../../utilities/generic';
   import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
@@ -23,8 +23,8 @@
 
   export let gridSection: ViewGridSection;
 
-  type SimulationEventColumns = keyof SimulationEvent | 'derived_start_time';
-  type SimulationEventColDef = ColDef<SimulationEvent & { derived_start_time: number }>;
+  type SimulationEventColumns = keyof (SimulationEvent & { span: Span }) | 'derived_start_time';
+  type SimulationEventColDef = ColDef<SimulationEvent & { span: Span } & { derived_start_time: number }>;
 
   let simulationEventsTable: ViewTable | undefined;
   let autoSizeColumns: AutoSizeColumns | undefined;
@@ -97,6 +97,23 @@
       headerName: 'Value',
       resizable: true,
       sortable: true,
+    },
+    span: {
+      field: 'span',
+      hide: true,
+      filter: 'text',
+      headerName: 'Span',
+      resizable: true,
+      sortable: true,
+      valueGetter: params => {
+        if (params.data?.span_id) {
+          const span = $spansMap[params.data?.span_id] || null;
+          if (span) {
+            return JSON.stringify(span);
+          }
+        }
+        return '';
+      },
     },
   };
   /* eslint-enable sort-keys */

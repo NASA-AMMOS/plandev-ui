@@ -80,7 +80,7 @@
       viewURL.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
     }
     if ($selectedSpan) {
-      viewURL.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.id.toFixed());
+      viewURL.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.span_id.toFixed());
     }
     if ($simulationDatasetId) {
       viewURL.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());

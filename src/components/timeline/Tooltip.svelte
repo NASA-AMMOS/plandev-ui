@@ -391,7 +391,7 @@
   }
 
   function textForSpan(span: Span): string {
-    const { id, duration, startMs, endMs, type } = span;
+    const { span_id, duration, startMs, endMs, type } = span;
     const spanStartTime = formatDate(new Date(startMs), $plugins.time.primary.format);
     const spanEndTime = formatDate(new Date(endMs), $plugins.time.primary.format);
     return `
@@ -445,7 +445,7 @@
         </div>
         <div class='tooltip-row'>
           <span>Id:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>${id}</span>
+          <span class='tooltip-value-highlight st-typography-medium'>${span_id}</span>
         </div>
       </div>
     `;

@@ -344,7 +344,7 @@
       if (activityDirectives.length > 0) {
         newSelectedActivityDirectiveId = activityDirectives[0].id;
       } else if (spans.length > 0) {
-        newSelectedSpanId = spans[0].id;
+        newSelectedSpanId = spans[0].span_id;
       }
       dispatch('contextMenu', {
         e,
@@ -437,7 +437,7 @@
           let childSpanInView = false;
           const childSpan = getSpanForActivityDirective(directive);
           if (childSpan) {
-            seenSpans[childSpan.id] = true;
+            seenSpans[childSpan.span_id] = true;
             childSpanInView = spanInView(childSpan, viewTimeRange);
           }
           if (directiveInView(directive, viewTimeRange) || (childSpanInView && showSpans)) {
@@ -451,7 +451,7 @@
       }
       if (showSpans) {
         spans.forEach(span => {
-          if (seenSpans[span.id] || !xScaleView) {
+          if (seenSpans[span.span_id] || !xScaleView) {
             return;
           }
           if (spanInView(span, viewTimeRange)) {
@@ -578,8 +578,9 @@
         const unfinished = span.duration === null;
         const spanEndX = xScaleView(span.endMs);
         const spanRectWidth = Math.max(2, Math.min(spanEndX, drawWidth) - spanStartX);
-        const spanColor = idToColorMaps.spans[span.id] || activityDefaultColor;
-        const isSelected = selectedSpanId === span.id || (directive && selectedActivityDirectiveId === directive.id);
+        const spanColor = idToColorMaps.spans[span.span_id] || activityDefaultColor;
+        const isSelected =
+          selectedSpanId === span.span_id || (directive && selectedActivityDirectiveId === directive.id);
         if (isSelected) {
           if (unfinished) {
             ctx.fillStyle = activityUnfinishedSelectedColor;
@@ -610,16 +611,16 @@
             }
           }
           if (shouldDrawLabel) {
-            const spanColor = idToColorMaps.spans[span.id] || activityDefaultColor;
+            const spanColor = idToColorMaps.spans[span.span_id] || activityDefaultColor;
             drawLabel(label, spanStartX, y, spanLabelWidth, spanColor, unfinished, isSelected);
           }
         }
 
         // Add to quadtree
-        visibleSpansById[span.id] = span;
+        visibleSpansById[span.span_id] = span;
         quadtreeSpans.add({
           height: rowHeight,
-          id: span.id,
+          id: span.span_id,
           width: Math.max(spanLabelWidth, spanRectWidth),
           x: spanStartX,
           y,
@@ -630,7 +631,7 @@
       if (directive && typeof directiveStartX === 'number') {
         const directiveColor = idToColorMaps.directives[directive.id] || activityDefaultColor;
         const color = hexToRgba(shadeColor(directiveColor || '#FF0000', 1.2), 1);
-        const isSelected = selectedActivityDirectiveId === directive.id || (span && selectedSpanId === span.id);
+        const isSelected = selectedActivityDirectiveId === directive.id || (span && selectedSpanId === span.span_id);
         let directiveLabelWidth = 0;
         const anchored = directive.anchor_id !== null;
         if (isSelected) {

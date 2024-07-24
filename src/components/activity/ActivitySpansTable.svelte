@@ -22,7 +22,7 @@
   }
 
   function getRowId(span: Span): SpanId {
-    return span.id;
+    return span.span_id;
   }
 </script>
 

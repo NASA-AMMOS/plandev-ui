@@ -85,7 +85,7 @@
     const { detail } = event;
     const { activityDirectives, spans } = detail;
     if (spans.length) {
-      selectActivity(null, spans[0].id);
+      selectActivity(null, spans[0].span_id);
     } else if (activityDirectives.length) {
       selectActivity(activityDirectives[0].id, null);
     } else {

@@ -78,7 +78,7 @@
       <button
         style:height={`${rowHeight}px`}
         class="row-header-activity-group leaf st-button tertiary"
-        class:selected={directive?.id === selectedActivityDirectiveId || span?.id === selectedSpanId}
+        class:selected={directive?.id === selectedActivityDirectiveId || span?.span_id === selectedSpanId}
         on:dblclick={e => onLeafClick(e, node, 'dblClick')}
         on:click={e => onLeafClick(e, node, 'mouseDown')}
       >
@@ -109,7 +109,7 @@
         className={classNames('row-header-activity-group', {
           selected:
             node.type !== 'aggregation' &&
-            (directive?.id === selectedActivityDirectiveId || span?.id === selectedSpanId),
+            (directive?.id === selectedActivityDirectiveId || span?.span_id === selectedSpanId),
         })}
         on:collapse={() => dispatch('activity-tree-node-change', node)}
       >

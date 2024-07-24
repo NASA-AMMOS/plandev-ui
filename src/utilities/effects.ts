@@ -2892,6 +2892,7 @@ const effects = {
         simulationEvents.push({
           dense_time: event.transaction_index + '.0' + event.causal_time,
           id: simulationEvents.length,
+          span_id: event.span_id,
           start_offset: event.real_time,
           topic: topicById[event.topic_index].name,
           value: typeof event.value === 'string' ? event.value : JSON.stringify(event.value),

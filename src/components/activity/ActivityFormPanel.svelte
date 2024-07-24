@@ -67,15 +67,16 @@
   }
 
   $: if ($selectedActivityDirective) {
-    directiveRootSpanId = $spansMap[$spanUtilityMaps.directiveIdToSpanIdMap[$selectedActivityDirective.id]]?.id ?? null;
+    directiveRootSpanId =
+      $spansMap[$spanUtilityMaps.directiveIdToSpanIdMap[$selectedActivityDirective.id]]?.span_id ?? null;
   } else {
     directiveRootSpanId = null;
   }
 
   $: if ($selectedSpan) {
-    const rootSpan = getSpanRootParent($spansMap, $selectedSpan.id);
+    const rootSpan = getSpanRootParent($spansMap, $selectedSpan.span_id);
     if (rootSpan) {
-      spanDirectiveId = $spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.id] ?? null;
+      spanDirectiveId = $spanUtilityMaps.spanIdToDirectiveIdMap[rootSpan.span_id] ?? null;
     } else {
       spanDirectiveId = null;
     }

@@ -34,7 +34,7 @@
   $: span = rootSpanId !== null ? spansMap[rootSpanId] : null;
   $: isRoot = span ? !span.parent_id : true;
   $: type = span?.type || '';
-  $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.id] || [] : [];
+  $: childIds = span !== null ? spanUtilityMaps?.spanIdToChildIdsMap[span?.span_id] || [] : [];
   $: hasChildren = childIds ? childIds.length > 0 : false;
   $: role = isRoot ? 'tree' : 'treeitem';
   $: nodeClass =
@@ -80,7 +80,13 @@
     <ul>
       {#each childIdsInView as childId}
         <li>
-          <svelte:self {spansMap} rootSpanId={spansMap[childId]?.id} {selectedSpanId} {spanUtilityMaps} on:select />
+          <svelte:self
+            {spansMap}
+            rootSpanId={spansMap[childId]?.span_id}
+            {selectedSpanId}
+            {spanUtilityMaps}
+            on:select
+          />
         </li>
       {/each}
       {#if childIds.length !== childIdsInView.length}

@@ -21,8 +21,8 @@ const testSpans: Span[] = [
     duration: '03:00:00',
     durationMs: 10800000,
     endMs: 1,
-    id: 2,
     parent_id: 1,
+    span_id: 2,
     startMs: 0,
     start_offset: '00:10:00',
     type: 'Child',
@@ -37,8 +37,8 @@ const testSpans: Span[] = [
     duration: '02:00:00',
     durationMs: 7200000,
     endMs: 1,
-    id: 1,
     parent_id: null,
+    span_id: 1,
     startMs: 0,
     start_offset: '00:00:00',
     type: 'Parent',
@@ -52,8 +52,8 @@ const testSpans: Span[] = [
     duration: '04:00:00',
     durationMs: 14400000,
     endMs: 1,
-    id: 3,
     parent_id: 1,
+    span_id: 3,
     startMs: 0,
     start_offset: '00:05:00',
     type: 'Child',
@@ -68,8 +68,8 @@ const testSpans: Span[] = [
     duration: '04:00:00',
     durationMs: 14400000,
     endMs: 1,
-    id: 4,
     parent_id: null,
+    span_id: 4,
     startMs: 0,
     start_offset: '00:05:00',
     type: 'BiteBanana',
@@ -84,15 +84,15 @@ const testSpans: Span[] = [
     duration: '04:00:00',
     durationMs: 14400000,
     endMs: 1,
-    id: 5,
     parent_id: null,
+    span_id: 5,
     startMs: 0,
     start_offset: '00:05:00',
     type: 'BiteBanana',
   },
 ];
 
-const testSpansMap: SpansMap = keyBy(testSpans, 'id');
+const testSpansMap: SpansMap = keyBy(testSpans, 'span_id');
 const testSpansUtilityMap: SpanUtilityMaps = createSpanUtilityMaps(testSpans);
 
 describe('getActivityMetadata', () => {
@@ -111,7 +111,7 @@ describe('getSpanRootParent', () => {
   });
 
   test('Should return the parent node when given a child n', () => {
-    expect(getSpanRootParent(testSpansMap, 2)?.id).toEqual(1);
+    expect(getSpanRootParent(testSpansMap, 2)?.span_id).toEqual(1);
   });
 });
 
@@ -190,8 +190,8 @@ describe('sortActivityDirectivesOrSpans', () => {
       duration: '02:00:00',
       durationMs: 14400000,
       endMs: 1,
-      id: 0,
       parent_id: null,
+      span_id: 0,
       startMs: 0,
       start_offset: '10:00:00',
       type: 'Parent',
@@ -206,8 +206,8 @@ describe('sortActivityDirectivesOrSpans', () => {
       duration: '02:00:00',
       durationMs: 14400000,
       endMs: 1,
-      id: 2,
       parent_id: null,
+      span_id: 2,
       startMs: 0,
       start_offset: '09:00:00',
       type: 'Parent',
@@ -222,8 +222,8 @@ describe('sortActivityDirectivesOrSpans', () => {
       duration: '02:00:00',
       durationMs: 14400000,
       endMs: 1,
-      id: 1,
       parent_id: null,
+      span_id: 1,
       startMs: 0,
       start_offset: '09:00:00',
       type: 'Parent',
@@ -255,11 +255,11 @@ describe('getAllSpansForActivityDirective', () => {
   test('Should get all spans for an activity directive', () => {
     const resultingSpanIds = testSpans
       .slice(0, 3)
-      .map(s => s.id)
+      .map(s => s.span_id)
       .sort();
     expect(
       getAllSpansForActivityDirective(2, testSpansMap, testSpansUtilityMap)
-        .map(s => s.id)
+        .map(s => s.span_id)
         .sort(),
     ).to.deep.equal(resultingSpanIds);
   });

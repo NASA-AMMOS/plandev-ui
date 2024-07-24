@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import type { ColDef, ColumnState } from 'ag-grid-community';
+  import { selectActivity } from '../../stores/activities';
   import type { RowId } from '../../types/data-grid';
   import type { SimulationEvent } from '../../types/simulation';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -14,11 +15,27 @@
   export let filterExpression: string = '';
 
   let selectedItemIds: RowId[] = [];
+  $: {
+    // Handle selectedSimulationEventId updates
+    if (selectedSimulationEventId !== null) {
+      if (selectedSimulationEventId < simulationEvents.length) {
+        selectedItemIds = [selectedSimulationEventId];
+      } else {
+        selectedItemIds = [];
+      }
 
-  $: if (selectedSimulationEventId != null && !selectedItemIds.includes(selectedSimulationEventId)) {
-    selectedItemIds = [selectedSimulationEventId];
-  } else if (selectedSimulationEventId === null) {
-    selectedItemIds = [];
+      // Find matching span and update selectedSpanId
+      const event: SimulationEvent | undefined = simulationEvents[selectedSimulationEventId];
+
+      if (event === undefined) {
+        selectActivity(null, null, false, false);
+      } else {
+        selectActivity(null, event.span_id, false, false);
+      }
+    } else {
+      selectedItemIds = [];
+      selectActivity(null, null, false, false);
+    }
   }
 
   function getRowId(simulationEvent: SimulationEvent): number {

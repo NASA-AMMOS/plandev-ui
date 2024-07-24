@@ -43,22 +43,22 @@ export function createSpanUtilityMaps(spans: Span[]): SpanUtilityMaps {
   };
   return spans.reduce((map, span) => {
     // Span Child mappings.
-    if (map.spanIdToChildIdsMap[span.id] === undefined) {
-      map.spanIdToChildIdsMap[span.id] = [];
+    if (map.spanIdToChildIdsMap[span.span_id] === undefined) {
+      map.spanIdToChildIdsMap[span.span_id] = [];
     }
     if (span.parent_id !== null) {
       if (map.spanIdToChildIdsMap[span.parent_id] === undefined) {
-        map.spanIdToChildIdsMap[span.parent_id] = [span.id];
+        map.spanIdToChildIdsMap[span.parent_id] = [span.span_id];
       } else {
-        map.spanIdToChildIdsMap[span.parent_id].push(span.id);
+        map.spanIdToChildIdsMap[span.parent_id].push(span.span_id);
       }
     }
 
     // Span <-> Directive mappings.
     const directiveId = span.attributes?.directiveId;
     if (directiveId !== null && directiveId !== undefined) {
-      map.directiveIdToSpanIdMap[directiveId] = span.id;
-      map.spanIdToDirectiveIdMap[span.id] = directiveId;
+      map.directiveIdToSpanIdMap[directiveId] = span.span_id;
+      map.spanIdToDirectiveIdMap[span.span_id] = directiveId;
     }
     return map;
   }, spanUtilityMaps);
@@ -99,7 +99,12 @@ export function sortActivityDirectivesOrSpans(a: ActivityDirective | Span, b: Ac
   const aStartOffsetMs = getIntervalInMs(a.start_offset);
   const bStartOffsetMs = getIntervalInMs(b.start_offset);
   if (aStartOffsetMs === bStartOffsetMs) {
-    return compare(a.id, b.id);
+    if ('span_id' in a && 'span_id' in b) {
+      return compare((a as Span).span_id, (b as Span).span_id);
+    } else if ('id' in a && 'id' in b) {
+      return compare((a as ActivityDirective).id, (b as ActivityDirective).id);
+    }
+    throw 'You can only sort ActivityDirective or Span';
   }
   return compare(aStartOffsetMs, bStartOffsetMs);
 }

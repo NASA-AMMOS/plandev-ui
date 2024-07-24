@@ -1165,6 +1165,7 @@ const gql = {
       }
       event(where: { dataset_id: { _eq: $datasetId }}) {
         causal_time
+        span_id
         real_time
         topic_index
         transaction_index
@@ -1620,7 +1621,7 @@ const gql = {
         attributes
         dataset_id
         duration
-        id
+        span_id
         parent_id
         start_offset
         type
