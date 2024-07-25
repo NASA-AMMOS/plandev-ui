@@ -383,7 +383,7 @@ export function convertDoyToYmd(doyString: string, includeMsecs = true): string 
       return `${ymdString.replace(/(\.\d+)/, '')}Z`;
     } else {
       // doyString is already in ymd format
-      return doyString;
+      return `${doyString}Z`;
     }
   }
 

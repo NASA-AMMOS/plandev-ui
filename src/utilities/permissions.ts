@@ -1050,6 +1050,26 @@ const queryPermissions = {
   VALIDATE_ACTIVITY_ARGUMENTS: () => true,
 };
 
+const gatewayPermissions = {
+  IMPORT_PLAN: (user: User | null) => {
+    return (
+      isUserAdmin(user) ||
+      getPermission(
+        [
+          Queries.INSERT_PLAN,
+          Queries.INSERT_PLAN_TAGS,
+          Queries.INSERT_ACTIVITY_DIRECTIVE,
+          Queries.UPDATE_ACTIVITY_DIRECTIVE,
+          Queries.UPDATE_SIMULATIONS,
+          Queries.TAGS,
+          Queries.DELETE_PLAN,
+        ],
+        user,
+      )
+    );
+  },
+};
+
 type ShapeOf<T> = Record<keyof T, any>;
 type AssertKeysEqual<X extends ShapeOf<Y>, Y extends ShapeOf<X>> = never;
 type GQLKeys = Record<keyof typeof gql, any>;
@@ -1094,6 +1114,10 @@ interface CRUDPermission<T = null> extends BaseCRUDPermission<T> {
   canDelete: UpdatePermissionCheck<T>;
   canRead: ReadPermissionCheck<T>;
   canUpdate: UpdatePermissionCheck<T>;
+}
+
+interface PlanCRUDPermission extends CRUDPermission<PlanWithOwners> {
+  canImport: CreatePermissionCheck;
 }
 
 interface PlanBranchCRUDPermission {
@@ -1185,7 +1209,7 @@ interface FeaturePermissions {
   model: CRUDPermission<void>;
   parameterDictionary: CRUDPermission<void>;
   parcels: CRUDPermission<AssetWithOwner<Parcel>>;
-  plan: CRUDPermission<PlanWithOwners>;
+  plan: PlanCRUDPermission;
   planBranch: PlanBranchCRUDPermission;
   planCollaborators: PlanCollaboratorsCRUDPermission;
   planSnapshot: PlanSnapshotCRUDPermission;
@@ -1285,6 +1309,7 @@ const featurePermissions: FeaturePermissions = {
   plan: {
     canCreate: user => queryPermissions.CREATE_PLAN(user),
     canDelete: (user, plan) => queryPermissions.DELETE_PLAN(user, plan),
+    canImport: user => gatewayPermissions.IMPORT_PLAN(user),
     canRead: user => queryPermissions.GET_PLAN(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_PLAN(user, plan),
   },
@@ -1395,6 +1420,7 @@ function hasNoAuthorization(user: User | null) {
 export {
   changeUserRole,
   featurePermissions,
+  gatewayPermissions,
   hasNoAuthorization,
   isAdminRole,
   isPlanCollaborator,

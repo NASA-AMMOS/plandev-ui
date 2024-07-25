@@ -2,6 +2,7 @@ import type { ActivityDirective } from './activity';
 import type { UserId } from './app';
 import type { ConstraintPlanSpec } from './constraint';
 import type { Model } from './model';
+import type { ArgumentsMap } from './parameter';
 import type { SchedulingPlanSpecification } from './scheduling';
 import type { Tag } from './tags';
 
@@ -92,14 +93,25 @@ export type PlanSchema = {
   updated_by: UserId;
 };
 
-export type PlanTransfer = Pick<PlanSchema, 'id' | 'model_id' | 'name' | 'start_time'> & {
+export type PlanTransfer = Pick<PlanSchema, 'id' | 'duration' | 'model_id' | 'name' | 'start_time'> & {
   activities: Pick<
     ActivityDirective,
-    'anchor_id' | 'anchored_to_start' | 'arguments' | 'id' | 'metadata' | 'name' | 'start_offset' | 'type'
+    | 'anchor_id'
+    | 'anchored_to_start'
+    | 'arguments'
+    | 'id'
+    | 'metadata'
+    | 'name'
+    | 'start_offset'
+    | ('type' & { tags: { tag: Pick<Tag, 'color' | 'name'> }[] })
   >[];
+  simulation_arguments: ArgumentsMap;
+  tags?: { tag: Pick<Tag, 'color' | 'name'> }[];
+};
+
+export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments'> & {
   end_time: string;
   sim_id: number;
-  tags: { tag: Pick<Tag, 'id' | 'name'> }[];
 };
 
 export type PlanMetadata = Pick<

@@ -201,7 +201,7 @@ import {
   showRestorePlanSnapshotModal,
   showUploadViewModal,
 } from './modal';
-import { queryPermissions } from './permissions';
+import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
@@ -3166,6 +3166,19 @@ const effects = {
     }
   },
 
+  async getPlanLatestSimulation(planId: number, user: User | null): Promise<Simulation | null> {
+    const query = convertToQuery(gql.SUB_SIMULATION);
+    const data = await reqHasura<Simulation[]>(query, { planId }, user);
+
+    const { simulation } = data;
+
+    if (simulation) {
+      return simulation[0];
+    }
+
+    return null;
+  },
+
   async getPlanMergeConflictingActivities(
     merge_request_id: number,
     user: User | null,
@@ -3799,6 +3812,48 @@ const effects = {
         }
       }
       return generateDefaultView(activityTypes, resourceTypes);
+    } catch (e) {
+      catchError(e as Error);
+      return null;
+    }
+  },
+
+  async importPlan(
+    name: string,
+    modelId: number,
+    startTime: string,
+    endTime: string,
+    simulationTemplateId: number | null,
+    tagIds: number[],
+    files: FileList,
+    user: User | null,
+  ): Promise<PlanSlim | null> {
+    try {
+      if (!gatewayPermissions.IMPORT_PLAN(user)) {
+        throwPermissionError('import a plan');
+      }
+      const file: File = files[0];
+
+      const duration = getIntervalFromDoyRange(startTime, endTime);
+
+      const body = new FormData();
+      body.append('name', `${name}`);
+      body.append('model_id', `${modelId}`);
+      body.append('start_time', `${startTime}`);
+      body.append('duration', `${duration}`);
+      if (simulationTemplateId !== null) {
+        body.append('simulation_template_id', `${simulationTemplateId}`);
+      }
+      body.append('tags', JSON.stringify(tagIds));
+      body.append('plan_file', file, file.name);
+
+      const createdPlan = await reqGateway<PlanSlim | null>('/importPlan', 'POST', body, user, true);
+
+      if (createdPlan != null) {
+        return createdPlan;
+      }
+
+      return null;
     } catch (e) {
       catchError(e as Error);
       return null;

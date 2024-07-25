@@ -61,6 +61,8 @@ export async function reqGateway<T = any>(
   const headers: HeadersInit = {
     Authorization: `Bearer ${user?.token ?? ''}`,
     ...(excludeContentType ? {} : { 'Content-Type': 'application/json' }),
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
   };
   const options: RequestInit = {
     headers,

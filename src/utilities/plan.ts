@@ -1,11 +1,16 @@
 import type { ActivityDirective } from '../types/activity';
-import type { Plan, PlanTransfer } from '../types/plan';
+import type { ArgumentsMap } from '../types/parameter';
+import type { DeprecatedPlanTransfer, Plan, PlanTransfer } from '../types/plan';
 import { convertDoyToYmd } from './time';
 
-export function getPlanForTransfer(plan: Plan, activities: ActivityDirective[]): PlanTransfer {
+export function getPlanForTransfer(
+  plan: Plan,
+  activities: ActivityDirective[],
+  simulationArguments: ArgumentsMap,
+): PlanTransfer {
   return {
     activities: activities.map(
-      ({ anchor_id, anchored_to_start, arguments: activityArguments, id, metadata, name, start_offset, type }) => ({
+      ({
         anchor_id,
         anchored_to_start,
         arguments: activityArguments,
@@ -13,15 +18,32 @@ export function getPlanForTransfer(plan: Plan, activities: ActivityDirective[]):
         metadata,
         name,
         start_offset,
+        tags,
+        type,
+      }) => ({
+        anchor_id,
+        anchored_to_start,
+        arguments: activityArguments,
+        id,
+        metadata,
+        name,
+        start_offset,
+        tags: tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
         type,
       }),
     ),
-    end_time: (convertDoyToYmd(plan.end_time_doy) as string).replace('Z', '+00:00'),
+    duration: plan.duration,
     id: plan.id,
     model_id: plan.model_id,
     name: plan.name,
-    sim_id: plan.simulations[0].id,
+    simulation_arguments: simulationArguments,
     start_time: (convertDoyToYmd(plan.start_time_doy) as string).replace('Z', '+00:00'),
-    tags: plan.tags.map(({ tag: { id, name } }) => ({ tag: { id, name } })),
+    tags: plan.tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
   };
+}
+
+export function isDeprecatedPlanTransfer(
+  planTransfer: PlanTransfer | DeprecatedPlanTransfer,
+): planTransfer is DeprecatedPlanTransfer {
+  return (planTransfer as DeprecatedPlanTransfer).end_time != null;
 }

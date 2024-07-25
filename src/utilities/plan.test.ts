@@ -85,10 +85,23 @@ describe('Plan utility', () => {
               source_scheduling_goal_id: null,
               start_offset: '0:00:00',
               start_time_ms: 0,
-              tags: [],
+              tags: [
+                {
+                  tag: {
+                    color: '#ff0000',
+                    created_at: '',
+                    id: 1,
+                    name: 'test tag',
+                    owner: 'test',
+                  },
+                },
+              ],
               type: 'TestActivity',
             },
           ],
+          {
+            test: 1,
+          },
         ),
       ).toEqual({
         activities: [
@@ -102,19 +115,29 @@ describe('Plan utility', () => {
             metadata: {},
             name: 'Test Activity',
             start_offset: '0:00:00',
+            tags: [
+              {
+                tag: {
+                  color: '#ff0000',
+                  name: 'test tag',
+                },
+              },
+            ],
             type: 'TestActivity',
           },
         ],
-        end_time: '2025-01-01T00:00:00+00:00',
+        duration: '1y',
         id: 1,
         model_id: 1,
         name: 'Foo plan',
-        sim_id: 3,
+        simulation_arguments: {
+          test: 1,
+        },
         start_time: '2024-01-01T00:00:00+00:00',
         tags: [
           {
             tag: {
-              id: 0,
+              color: '#fff',
               name: 'test tag',
             },
           },

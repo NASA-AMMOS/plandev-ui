@@ -202,6 +202,7 @@ test('convertDoyToYmd', () => {
   expect(convertDoyToYmd('2023-001T00:00:00', false)).toEqual('2023-01-01T00:00:00Z');
   expect(convertDoyToYmd('2023-032T00:00:00', false)).toEqual('2023-02-01T00:00:00Z');
   expect(convertDoyToYmd('2023-048T10:32:44.123', true)).toEqual('2023-02-17T10:32:44.123Z');
+  expect(convertDoyToYmd('2023-04-10T10:32:44.123', true)).toEqual('2023-04-10T10:32:44.123Z');
 });
 
 test('getDaysInMonth', () => {
@@ -423,6 +424,17 @@ test('parseDurationString', () => {
     milliseconds: 0,
     minutes: 1,
     seconds: 0.01,
+    years: 0,
+  });
+
+  expect(parseDurationString('24:00:00')).toEqual({
+    days: 0,
+    hours: 24,
+    isNegative: false,
+    microseconds: 0,
+    milliseconds: 0,
+    minutes: 0,
+    seconds: 0,
     years: 0,
   });
 });

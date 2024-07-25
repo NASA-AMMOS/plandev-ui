@@ -6,6 +6,7 @@
   import { page } from '$app/stores';
   import PlanIcon from '@nasa-jpl/stellar/icons/plan.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import { flatten } from 'lodash-es';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -34,17 +35,20 @@
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
-  import type { Plan, PlanSlim } from '../../types/plan';
+  import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
+  import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
   import { removeQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { isDeprecatedPlanTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
     convertUsToDurationString,
     formatDate,
     getDoyTime,
+    getDoyTimeFromInterval,
     getShortISOForDate,
   } from '../../utilities/time';
   import { min, required, unique } from '../../utilities/validators';
@@ -220,6 +224,8 @@
       'Plan name already exists',
     ),
   ]);
+  let planUploadFiles: FileList | undefined;
+  let fileInput: HTMLInputElement;
   let simTemplateField = field<number | null>(null);
 
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
@@ -325,26 +331,46 @@
     }
     let startTime = getDoyTime(startTimeDate);
     let endTime = getDoyTime(endTimeDate);
-    const newPlan = await effects.createPlan(
-      endTime,
-      $modelIdField.value,
-      $nameField.value,
-      startTime,
-      $simTemplateField.value,
-      user,
-    );
-
-    if (newPlan) {
-      // Associate new tags with plan
-      const newPlanTags: PlanTagsInsertInput[] = (planTags || []).map(({ id: tag_id }) => ({
-        plan_id: newPlan.id,
-        tag_id,
-      }));
-      newPlan.tags = planTags.map(tag => ({ tag }));
-      if (!$plans.find(({ id }) => newPlan.id === id)) {
-        plans.updateValue(storePlans => [...storePlans, newPlan]);
+    if (planUploadFiles && planUploadFiles.length) {
+      await effects.importPlan(
+        $nameField.value,
+        $modelIdField.value,
+        startTime,
+        endTime,
+        $simTemplateField.value,
+        planTags.map(({ id }) => id),
+        planUploadFiles,
+        user,
+      );
+      fileInput.value = '';
+      planUploadFiles = undefined;
+      $startTimeField.value = '';
+      $endTimeField.value = '';
+      $nameField.value = '';
+    } else {
+      const newPlan: PlanSlim | null = await effects.createPlan(
+        endTime,
+        $modelIdField.value,
+        $nameField.value,
+        startTime,
+        $simTemplateField.value,
+        user,
+      );
+      if (newPlan) {
+        // Associate new tags with plan
+        const newPlanTags: PlanTagsInsertInput[] = (planTags || []).map(({ id: tag_id }) => ({
+          plan_id: newPlan.id,
+          tag_id,
+        }));
+        newPlan.tags = planTags.map(tag => ({ tag }));
+        if (!$plans.find(({ id }) => newPlan.id === id)) {
+          plans.updateValue(storePlans => [...storePlans, newPlan]);
+        }
+        await effects.createPlanTags(newPlanTags, newPlan, user);
+        $startTimeField.value = '';
+        $endTimeField.value = '';
+        $nameField.value = '';
       }
-      await effects.createPlanTags(newPlanTags, newPlan, user);
     }
   }
 
@@ -418,6 +444,82 @@
       durationString = 'None';
     }
   }
+  async function onReaderLoad(event: ProgressEvent<FileReader>) {
+    if (event.target !== null && event.target.result !== null) {
+      const planJSON: PlanTransfer | DeprecatedPlanTransfer = JSON.parse(`${event.target.result}`) as
+        | PlanTransfer
+        | DeprecatedPlanTransfer;
+      nameField.validateAndSet(planJSON.name);
+      const importedPlanTags = (planJSON.tags ?? []).reduce(
+        (previousTags: { existingTags: Tag[]; newTags: Pick<Tag, 'color' | 'name'>[] }, importedPlanTag) => {
+          const {
+            tag: { color: importedPlanTagColor, name: importedPlanTagName },
+          } = importedPlanTag;
+          const existingTag = $tags.find(({ name }) => importedPlanTagName === name);
+
+          if (existingTag) {
+            return {
+              ...previousTags,
+              existingTags: [...previousTags.existingTags, existingTag],
+            };
+          } else {
+            return {
+              ...previousTags,
+              newTags: [
+                ...previousTags.newTags,
+                {
+                  color: importedPlanTagColor,
+                  name: importedPlanTagName,
+                },
+              ],
+            };
+          }
+        },
+        {
+          existingTags: [],
+          newTags: [],
+        },
+      );
+
+      const newTags: Tag[] = flatten(
+        await Promise.all(
+          importedPlanTags.newTags.map(async ({ color: tagColor, name: tagName }) => {
+            return (
+              (await effects.createTags([{ color: tagColor ?? generateRandomPastelColor(), name: tagName }], user)) ||
+              []
+            );
+          }),
+        ),
+      );
+
+      planTags = [...importedPlanTags.existingTags, ...newTags];
+
+      // remove the `+00:00` timezone before parsing
+      const startTime = `${convertDoyToYmd(planJSON.start_time.replace(/\+00:00/, ''))}`;
+      await startTimeField.validateAndSet(getDoyTime(new Date(startTime), true));
+
+      if (isDeprecatedPlanTransfer(planJSON)) {
+        await endTimeField.validateAndSet(
+          getDoyTime(new Date(`${convertDoyToYmd(planJSON.end_time.replace(/\+00:00/, ''))}`), true),
+        );
+      } else {
+        const { duration } = planJSON;
+
+        await endTimeField.validateAndSet(getDoyTimeFromInterval(startTime, duration));
+      }
+
+      updateDurationString();
+    }
+  }
+
+  function onPlanFileChange(event: Event) {
+    const files = (event.target as HTMLInputElement).files;
+    if (files !== null && files.length) {
+      const reader = new FileReader();
+      reader.onload = onReaderLoad;
+      reader.readAsText(files[0]);
+    }
+  }
 </script>
 
 <PageTitle title="Plans" />
@@ -436,6 +538,22 @@
       <svelte:fragment slot="body">
         <form on:submit|preventDefault={createPlan}>
           <AlertError class="m-2" error={$createPlanError} />
+
+          <fieldset>
+            <label for="file">Import Plan JSON File</label>
+            <input
+              class="w-100"
+              name="file"
+              type="file"
+              bind:files={planUploadFiles}
+              bind:this={fileInput}
+              use:permissionHandler={{
+                hasPermission: canCreate,
+                permissionError,
+              }}
+              on:change={onPlanFileChange}
+            />
+          </fieldset>
 
           <Field field={modelIdField}>
             <label for="model" slot="label">Models</label>
