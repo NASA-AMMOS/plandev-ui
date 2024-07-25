@@ -1,6 +1,10 @@
 /* eslint-disable no-var */
 /* eslint @typescript-eslint/no-unused-vars: 0 */
 
+import type { Diagnostic } from '@codemirror/lint';
+import type { CommandDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { EditorView } from 'codemirror';
+
 declare global {
   namespace App {
     interface Locals {
@@ -51,10 +55,15 @@ declare global {
         CONDITIONAL_KEYWORDS?: { ELSE?: string; ELSE_IF?: string[]; END_IF?: string; IF: string[] };
         GLOBALS?: GlobalType[];
         INPUT_FORMAT?: {
+          LINTER?: (
+            diagnostics: Diagnostic[],
+            commandDictionary: CommandDictionary,
+            view: EditorView,
+            node: SyntaxNode,
+          ) => Diagnostic[];
           NAME: string;
           TO_INPUT_FORMAT?: (input: string) => Promise<string>;
         };
-        LINT?: (commandDictionary, view, node) => any;
         LOOP_KEYWORDS?: {
           BREAK: string;
           CONTINUE: string;
@@ -72,6 +81,12 @@ declare global {
           channelDictionary: ChannelDictionary | null,
         ) => any;
         OUTPUT_FORMAT?: {
+          LINTER?: (
+            diagnostics: Diagnostic[],
+            commandDictionary: CommandDictionary,
+            view: EditorView,
+            node: SyntaxNode,
+          ) => Diagnostic[];
           NAME: string;
           TO_OUTPUT_FORMAT?: (
             tree: Tree | any,

@@ -1,8 +1,11 @@
+import type { Diagnostic } from '@codemirror/lint';
+import type { SyntaxNode } from '@lezer/common';
 import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
+import type { EditorView } from 'codemirror';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
 import type { ArgDelegator } from '../utilities/sequence-editor/extension-points';
 import type { UserId } from './app';
@@ -35,15 +38,20 @@ export type DictionaryType = {
   version: string;
 };
 
-export interface SequenceAdaptationI {
+export interface ISequenceAdaptation {
   argDelegator?: ArgDelegator;
   conditionalKeywords: { else: string; elseIf: string[]; endIf: string; if: string[] };
   globals?: GlobalType[];
   inputFormat: {
+    linter?: (
+      diagnostics: Diagnostic[],
+      commandDictionary: AmpcsCommandDictionary,
+      view: EditorView,
+      node: SyntaxNode,
+    ) => Diagnostic[];
     name: string;
     toInputFormat(input: string): Promise<string>;
   };
-  lint?: (commandDictionary: AmpcsCommandDictionary, view: any, node: any) => any;
   loopKeywords: { break: string; continue: string; endWhileLoop: string; whileLoop: string[] };
   modifyOutput?: (
     output: string,
@@ -56,6 +64,12 @@ export interface SequenceAdaptationI {
     channelDictionary: AmpcsChannelDictionary | null,
   ) => any;
   outputFormat: {
+    linter?: (
+      diagnostics: Diagnostic[],
+      commandDictionary: AmpcsCommandDictionary,
+      view: EditorView,
+      node: SyntaxNode,
+    ) => Diagnostic[];
     name: string;
     toOutputFormat(
       tree: any,

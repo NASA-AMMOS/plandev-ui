@@ -1,8 +1,11 @@
+import { syntaxTree } from '@codemirror/language';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import type { Extension, Text } from '@codemirror/state';
 import type { CommandDictionary } from '@nasa-jpl/aerie-ampcs';
 // @ts-expect-error library does not include type declarations
 import { parse as jsonSourceMapParse } from 'json-source-map';
+import { get } from 'svelte/store';
+import { sequenceAdaptation } from '../../stores/sequence-adaptation';
 
 type JsonSourceMapPointerPosition = {
   column: number;
@@ -41,7 +44,9 @@ function getErrorPosition(error: SyntaxError, doc: Text): number {
  */
 export function seqJsonLinter(commandDictionary: CommandDictionary | null = null): Extension {
   return linter(view => {
-    const diagnostics: Diagnostic[] = [];
+    let diagnostics: Diagnostic[] = [];
+    const tree = syntaxTree(view.state);
+    const treeNode = tree.topNode;
 
     try {
       const text = view.state.doc.toString();
@@ -82,6 +87,12 @@ export function seqJsonLinter(commandDictionary: CommandDictionary | null = null
         severity: 'error',
         to: pos,
       });
+    }
+
+    const outputLinter = get(sequenceAdaptation)?.outputFormat.linter;
+
+    if (outputLinter !== undefined && commandDictionary !== null) {
+      diagnostics = outputLinter(diagnostics, commandDictionary, view, treeNode);
     }
 
     return diagnostics;

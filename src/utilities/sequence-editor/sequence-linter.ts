@@ -145,10 +145,10 @@ export function sequenceLinter(
       ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], docText),
     );
 
-    const lint = get(sequenceAdaptation)?.lint;
+    const inputLinter = get(sequenceAdaptation)?.inputFormat.linter;
 
-    if (lint !== undefined && commandDictionary !== null) {
-      diagnostics = [...diagnostics, ...lint(commandDictionary, view, treeNode)];
+    if (inputLinter !== undefined && commandDictionary !== null) {
+      diagnostics = inputLinter(diagnostics, commandDictionary, view, treeNode);
     }
 
     return diagnostics;
