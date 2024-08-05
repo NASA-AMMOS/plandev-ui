@@ -1051,6 +1051,26 @@ export function sequenceLinter(
           }
         }
         break;
+      case 'boolean':
+        if (argType !== 'Boolean') {
+          diagnostics.push({
+            actions: [],
+            from: argNode.from,
+            message: `Incorrect type - expected 'Boolean' but got ${argType}`,
+            severity: 'error',
+            to: argNode.to,
+          });
+        }
+        if (['true', 'false'].includes(argText) === false) {
+          diagnostics.push({
+            actions: [],
+            from: argNode.from,
+            message: `Incorrect value - expected true or false but got ${argText}`,
+            severity: 'error',
+            to: argNode.to,
+          });
+        }
+        break;
       case 'float':
       case 'integer':
       case 'numeric':

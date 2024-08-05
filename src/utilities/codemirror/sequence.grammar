@@ -77,7 +77,7 @@ RepeatArg {
   "[" (whiteSpace? arg)* whiteSpace? "]"
 }
 
-arg[@isGroup=Arguments] { Number | String | Enum }
+arg[@isGroup=Arguments] { Number | String | Boolean | Enum }
 
 Command {
   TimeTag?
@@ -203,8 +203,8 @@ Stem { !stemStart identifier }
     "0x" (hex | "_")+ "n"?
   }
 
-  TRUE { "true" }
-  FALSE { "false" }
+  TRUE { 'true' }
+  FALSE { 'false' }
   Boolean { TRUE | FALSE }
   Null { "null" }
 
@@ -235,7 +235,7 @@ Stem { !stemStart identifier }
 
   @precedence { newLine, whiteSpace }
 
-  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, identifier }
+  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, Boolean, identifier }
 
   @precedence {
     LoadAndGoDirective,

@@ -245,7 +245,7 @@ function parseArg(
   const nodeValue = text.slice(node.from, node.to);
 
   if (node.name === 'Boolean') {
-    const value = nodeValue === 'TRUE' ? true : false;
+    const value = nodeValue === 'true' ? true : false;
     const booleanArg: BooleanArgument = { type: 'boolean', value };
     if (dictionaryArg) {
       booleanArg.name = dictionaryArg.name;

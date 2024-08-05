@@ -2,6 +2,7 @@ import type { SyntaxNode } from '@lezer/common';
 import type {
   CommandDictionary,
   FswCommandArgument,
+  FswCommandArgumentBoolean,
   FswCommandArgumentEnum,
   FswCommandArgumentFixedString,
   FswCommandArgumentFloat,
@@ -45,6 +46,10 @@ export function isFswCommandArgumentVarString(arg: FswCommandArgument): arg is F
 
 export function isFswCommandArgumentFixedString(arg: FswCommandArgument): arg is FswCommandArgumentFixedString {
   return arg.arg_type === 'fixed_string';
+}
+
+export function isFswCommandArgumentBoolean(arg: FswCommandArgument): arg is FswCommandArgumentBoolean {
+  return arg.arg_type === 'boolean';
 }
 
 export function isNumberArg(arg: FswCommandArgument): arg is NumberArg {

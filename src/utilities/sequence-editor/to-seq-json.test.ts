@@ -1007,3 +1007,62 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
     });
   });
 });
+
+it('should serialize a boolean arg', async () => {
+  const input = `
+
+C CMD_0 true false [ false true ]
+@METADATA "foo" "bar"
+@MODEL "a" true "00:00:00"
+  `;
+  const actual = JSON.parse(await sequenceToSeqJson(SeqLanguage.parser.parse(input), input, commandBanana, 'id'));
+  const expected = {
+    id: 'id',
+    metadata: {},
+    steps: [
+      {
+        args: [
+          {
+            type: 'boolean',
+            value: true,
+          },
+          {
+            type: 'boolean',
+            value: false,
+          },
+          {
+            type: 'repeat',
+            value: [
+              [
+                {
+                  type: 'boolean',
+                  value: false,
+                },
+                {
+                  type: 'boolean',
+                  value: true,
+                },
+              ],
+            ],
+          },
+        ],
+        metadata: {
+          foo: 'bar',
+        },
+        models: [
+          {
+            offset: '00:00:00',
+            value: true,
+            variable: 'a',
+          },
+        ],
+        stem: 'CMD_0',
+        time: {
+          type: 'COMMAND_COMPLETE',
+        },
+        type: 'command',
+      },
+    ],
+  };
+  expect(actual).toEqual(expected);
+});

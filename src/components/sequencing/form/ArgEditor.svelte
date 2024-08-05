@@ -5,6 +5,7 @@
   import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
   import {
     getMissingArgDefs,
+    isFswCommandArgumentBoolean,
     isFswCommandArgumentRepeat,
     isFswCommandArgumentVarString,
     isNumberArg,
@@ -13,6 +14,7 @@
   } from './../../../utilities/codemirror/codemirror-utils';
   import AddMissingArgsButton from './AddMissingArgsButton.svelte';
   import ArgTitle from './ArgTitle.svelte';
+  import BooleanEditor from './BooleanEditor.svelte';
   import EnumEditor from './EnumEditor.svelte';
   import ExtraArgumentEditor from './ExtraArgumentEditor.svelte';
   import NumEditor from './NumEditor.svelte';
@@ -89,6 +91,16 @@
       />
     {:else if isFswCommandArgumentVarString(argInfo.argDef)}
       <StringEditor
+        argDef={argInfo.argDef}
+        initVal={argInfo.text ?? ''}
+        setInEditor={val => {
+          if (argInfo.node) {
+            setInEditor(argInfo.node, val);
+          }
+        }}
+      />
+    {:else if isFswCommandArgumentBoolean(argInfo.argDef)}
+      <BooleanEditor
         argDef={argInfo.argDef}
         initVal={argInfo.text ?? ''}
         setInEditor={val => {

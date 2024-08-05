@@ -47,8 +47,6 @@ function seqJsonBaseArgToSequence(
   switch (arg.type) {
     case 'string':
       return `${quoteEscape(arg.value)}`;
-    case 'boolean':
-      return arg.value ? 'TRUE' : 'FALSE';
     default:
       return `${arg.value}`;
   }
@@ -93,7 +91,7 @@ function seqJsonModelsToSequence(models: Model[]): string {
       if (typeof model.value === 'string') {
         formattedValue = quoteEscape(model.value);
       } else if (typeof model.value === 'boolean') {
-        formattedValue = model.value.toString().toUpperCase();
+        formattedValue = model.value.toString();
       }
       return `@MODEL ${typeof model.variable === 'string' ? quoteEscape(String(model.variable)) : `"${model.variable}"`} ${formattedValue} ${quoteEscape(model.offset)}`;
     })

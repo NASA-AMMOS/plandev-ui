@@ -284,7 +284,7 @@ C FSW_CMD_3
     const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "42"
 
-A2024-001T00:00:00 FSW_CMD_0 TRUE 0xFF "Hello" World [FALSE 0xAA "Foo" BAR TRUE 0xBB "Baz" BAT]
+A2024-001T00:00:00 FSW_CMD_0 true 0xFF "Hello" World [false 0xAA "Foo" BAR true 0xBB "Baz" BAT]
 R00:01:00 FSW_CMD_1 22
 E15:00:00 FSW_CMD_2 "Fab"
 C FSW_CMD_3
@@ -348,8 +348,8 @@ C ECHO "test"
 @METADATA "Key1" "Value1"
 @METADATA "Key2" "Value2"
 @MODEL "temp" 0 "00:00:00"
-@MODEL "temp1" TRUE "00:00:01"
-@MODEL "temp2" FALSE "00:00:02"
+@MODEL "temp1" true "00:00:01"
+@MODEL "temp2" false "00:00:02"
 @MODEL "temp4" "NULL" "00:00:03"
 `;
     expect(sequence).toEqual(expectedSequence);
@@ -425,7 +425,7 @@ C ECHO "test"
 
 C ECHO "TEST1" # a description
 R00:00:01 FSW_CMD # fsw command description
-@MODEL "cmd" TRUE "00:00:00"
+@MODEL "cmd" true "00:00:00"
 C FSW_CMD_1
 C FSW_CMD_2 10 "ENUM" # fsw cmd 2 description
 `;
@@ -835,6 +835,46 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
 
 C ECHO "Can this handle \\" Escaped\\" quotes??" # Can this handle "escape"
 C ECHO2 "\\"Can\\" this handle leading and trailing Escaped\\" quotes??\\"" # "Can" "this" handle "escape"
+`;
+    expect(sequence).toEqual(expectedSequence);
+  });
+
+  it('BooleanArguments to sequence', async () => {
+    const seqJson: SeqJson = {
+      id: 'test',
+      metadata: {},
+      steps: [
+        {
+          args: [
+            {
+              type: 'boolean',
+              value: true,
+            },
+            {
+              type: 'boolean',
+              value: false,
+            },
+          ],
+          models: [
+            {
+              offset: '00:00:00',
+              value: true,
+              variable: 'a',
+            },
+          ],
+          stem: 'CMD_0',
+          time: {
+            type: 'COMMAND_COMPLETE',
+          },
+          type: 'command',
+        },
+      ],
+    };
+    const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
+    const expectedSequence = `@ID "test"
+
+C CMD_0 true false
+@MODEL "a" true "00:00:00"
 `;
     expect(sequence).toEqual(expectedSequence);
   });
