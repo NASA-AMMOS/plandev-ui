@@ -2721,6 +2721,23 @@ const effects = {
     }
   },
 
+  async getActivitiesForPlan(planId: number, user: User | null): Promise<ActivityDirectiveDB[]> {
+    try {
+      const query = convertToQuery(gql.SUB_ACTIVITY_DIRECTIVES);
+      const data = await reqHasura<ActivityDirectiveDB[]>(query, { planId }, user);
+
+      const { activity_directives } = data;
+      if (activity_directives != null) {
+        return activity_directives;
+      } else {
+        throw Error('Unable to retrieve activities for plan');
+      }
+    } catch (e) {
+      catchError(e as Error);
+      return [];
+    }
+  },
+
   async getActivityDirectiveChangelog(
     planId: number,
     activityId: number,
@@ -3322,6 +3339,82 @@ const effects = {
     }
   },
 
+  async getQualifiedPlanParts(
+    planId: number,
+    user: User | null,
+    progressCallback: (progress: number) => void,
+    signal?: AbortSignal,
+  ): Promise<{
+    activities: ActivityDirectiveDB[];
+    plan: Plan;
+    simulationArguments: ArgumentsMap;
+  } | null> {
+    try {
+      const plan = await effects.getPlan(planId, user);
+
+      if (plan) {
+        const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
+        const simulationArguments: ArgumentsMap = simulation
+          ? {
+              ...simulation.template?.arguments,
+              ...simulation.arguments,
+            }
+          : {};
+
+        const activities: ActivityDirectiveDB[] = (await effects.getActivitiesForPlan(plan.id, user)) ?? [];
+
+        let totalProgress = 0;
+        const numOfDirectives = activities.length;
+
+        const qualifiedActivityDirectives = (
+          await Promise.all(
+            activities.map(async activityDirective => {
+              if (plan) {
+                const effectiveArguments = await effects.getEffectiveActivityArguments(
+                  plan?.model_id,
+                  activityDirective.type,
+                  activityDirective.arguments,
+                  user,
+                  signal,
+                );
+
+                totalProgress++;
+                progressCallback((totalProgress / numOfDirectives) * 100);
+
+                return {
+                  ...activityDirective,
+                  arguments: effectiveArguments?.arguments ?? activityDirective.arguments,
+                };
+              }
+
+              totalProgress++;
+              progressCallback((totalProgress / numOfDirectives) * 100);
+
+              return activityDirective;
+            }),
+          )
+        ).sort((directiveA, directiveB) => {
+          if (directiveA.id < directiveB.id) {
+            return -1;
+          }
+          if (directiveA.id > directiveB.id) {
+            return 1;
+          }
+          return 0;
+        });
+
+        return {
+          activities: qualifiedActivityDirectives,
+          plan,
+          simulationArguments,
+        };
+      }
+    } catch (e) {
+      catchError(e as Error);
+    }
+    return null;
+  },
+
   getResource(
     datasetId: number,
     name: string,
@@ -3832,6 +3925,9 @@ const effects = {
       if (!gatewayPermissions.IMPORT_PLAN(user)) {
         throwPermissionError('import a plan');
       }
+
+      creatingPlan.set(true);
+
       const file: File = files[0];
 
       const duration = getIntervalFromDoyRange(startTime, endTime);
@@ -3849,6 +3945,7 @@ const effects = {
 
       const createdPlan = await reqGateway<PlanSlim | null>('/importPlan', 'POST', body, user, true);
 
+      creatingPlan.set(false);
       if (createdPlan != null) {
         return createdPlan;
       }
@@ -3856,6 +3953,7 @@ const effects = {
       return null;
     } catch (e) {
       catchError(e as Error);
+      creatingPlan.set(false);
       return null;
     }
   },

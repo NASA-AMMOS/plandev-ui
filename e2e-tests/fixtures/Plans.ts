@@ -11,7 +11,10 @@ export class Plans {
   createButton: Locator;
   durationDisplay: Locator;
   endTime: string = '2022-006T00:00:00';
+  importButton: Locator;
+  importFilePath: string = 'e2e-tests/data/banana-plan-export.json';
   inputEndTime: Locator;
+  inputFile: Locator;
   inputModel: Locator;
   inputModelSelector: string = 'select[name="model"]';
   inputName: Locator;
@@ -86,6 +89,12 @@ export class Plans {
     await this.inputEndTime.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
   }
 
+  async fillInputFile(importFilePath: string = this.importFilePath) {
+    await this.inputFile.focus();
+    await this.inputFile.setInputFiles(importFilePath);
+    await this.inputFile.evaluate(e => e.blur());
+  }
+
   async fillInputName(planName = this.planName) {
     await this.inputName.focus();
     await this.inputName.fill(planName);
@@ -131,6 +140,24 @@ export class Plans {
     await this.page.waitForTimeout(250);
   }
 
+  async importPlan(planName = this.planName) {
+    await expect(this.tableRow(planName)).not.toBeVisible();
+    await this.importButton.click();
+    await this.selectInputModel();
+    await this.fillInputFile();
+    await this.fillInputName(planName);
+    await this.createButton.waitFor({ state: 'attached' });
+    await this.createButton.waitFor({ state: 'visible' });
+    await this.createButton.isEnabled({ timeout: 500 });
+    await this.createButton.click();
+    await this.filterTable(planName);
+    await this.tableRow(planName).waitFor({ state: 'attached' });
+    await this.tableRow(planName).waitFor({ state: 'visible' });
+    const planId = await this.getPlanId(planName);
+    this.planId = planId;
+    return planId;
+  }
+
   async selectInputModel() {
     const value = await getOptionValueFromText(this.page, this.inputModelSelector, this.models.modelName);
     await this.inputModel.focus();
@@ -148,7 +175,9 @@ export class Plans {
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.createButton = page.getByRole('button', { name: 'Create' });
     this.durationDisplay = page.locator('input[name="duration"]');
+    this.importButton = page.getByRole('button', { name: 'Import' });
     this.inputEndTime = page.locator('input[name="end-time"]');
+    this.inputFile = page.locator('input[name="file"]');
     this.inputModel = page.locator(this.inputModelSelector);
     this.inputName = page.locator('input[name="name"]');
     this.inputStartTime = page.locator('input[name="start-time"]');

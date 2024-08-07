@@ -14,8 +14,10 @@
   import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { exportPlan } from '../../utilities/plan';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import ProgressRadial from '../ui/ProgressRadial.svelte';
   import MenuDivider from './MenuDivider.svelte';
 
   export let plan: Plan;
@@ -25,6 +27,8 @@
   let hasCreatePlanBranchPermission: boolean = false;
   let hasCreateSnapshotPermission: boolean = false;
   let planMenu: Menu;
+  let planExportAbortController: AbortController | null = null;
+  let planExportProgress: number | null = null;
 
   $: hasCreateMergeRequestPermission = plan.parent_plan
     ? featurePermissions.planBranch.canCreateRequest(
@@ -43,18 +47,50 @@
 
   function createMergePlanBranchRequest() {
     effects.createPlanBranchRequest(plan, 'merge', user);
+    planMenu.hide();
   }
 
   function createPlanBranch() {
     effects.createPlanBranch(plan, user);
+    planMenu.hide();
   }
 
   function createPlanSnapshot() {
     effects.createPlanSnapshot(plan, user);
+    planMenu.hide();
+  }
+
+  async function onExportPlan() {
+    if (planExportAbortController) {
+      planExportAbortController.abort();
+    }
+
+    planExportProgress = 0;
+    planExportAbortController = new AbortController();
+
+    if (planExportAbortController && !planExportAbortController.signal.aborted) {
+      await exportPlan(
+        plan,
+        user,
+        (progress: number) => {
+          planExportProgress = progress;
+        },
+        undefined,
+        planExportAbortController.signal,
+      );
+    }
+    planExportProgress = null;
+  }
+
+  function onCancelExportPlan() {
+    planExportAbortController?.abort();
+    planExportAbortController = null;
+    planExportProgress = null;
   }
 
   function viewSnapshotHistory() {
     viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
+    planMenu.hide();
   }
 
   function showPlanBranches() {
@@ -63,6 +99,7 @@
 
   function showPlanMergeRequests() {
     showPlanMergeRequestsModal(user);
+    planMenu.hide();
   }
 </script>
 
@@ -76,7 +113,7 @@
 
   <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
     <div class="plan-title">{plan.name}<ChevronDownIcon /></div>
-    <Menu bind:this={planMenu}>
+    <Menu hideAfterClick={false} bind:this={planMenu}>
       <MenuItem
         use={[
           [
@@ -138,6 +175,17 @@
       <MenuItem on:click={viewSnapshotHistory}>
         <div class="column-name">View Snapshot History</div>
       </MenuItem>
+      <MenuDivider />
+      <MenuItem on:click={planExportProgress === null ? onExportPlan : onCancelExportPlan}>
+        {#if planExportProgress === null}
+          Export plan as .json
+        {:else}
+          <div class="cancel-plan-export">
+            Cancel plan export
+            <ProgressRadial progress={planExportProgress} size={16} strokeWidth={1} />
+          </div>
+        {/if}
+      </MenuItem>
     </Menu>
   </div>
   {#if plan.child_plans.length > 0}
@@ -192,5 +240,12 @@
     color: var(--st-white);
     cursor: pointer;
     user-select: none;
+  }
+
+  .cancel-plan-export {
+    --progress-radial-background: var(--st-gray-20);
+    align-items: center;
+    column-gap: 0.25rem;
+    display: flex;
   }
 </style>

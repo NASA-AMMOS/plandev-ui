@@ -436,6 +436,10 @@
   visibility: hidden;
 }
 
+.ag-row .actions-cell .downloading {
+  visibility: visible;
+}
+
 .ag-row.ag-row-hover .actions-cell {
   visibility: visible;
 }

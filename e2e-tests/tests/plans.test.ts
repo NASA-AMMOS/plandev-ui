@@ -125,4 +125,9 @@ test.describe.serial('Plans', () => {
   test('Delete plan', async () => {
     await plans.deletePlan();
   });
+
+  test('Import plan', async () => {
+    await plans.importPlan();
+    await plans.deletePlan();
+  });
 });

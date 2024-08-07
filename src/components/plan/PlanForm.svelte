@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
-  import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
+  import ExportIcon from '../../assets/export.svg?component';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
@@ -14,16 +14,14 @@
   import { viewTogglePanel } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectiveId } from '../../types/activity';
   import type { User, UserId } from '../../types/app';
-  import type { ArgumentsMap } from '../../types/parameter';
-  import type { Plan, PlanCollaborator, PlanSlimmer, PlanTransfer } from '../../types/plan';
+  import type { Plan, PlanCollaborator, PlanSlimmer } from '../../types/plan';
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
-  import type { Simulation } from '../../types/simulation';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
   import { removeQueryParam, setQueryParam } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { getPlanForTransfer } from '../../utilities/plan';
+  import { exportPlan } from '../../utilities/plan';
   import { convertDoyToYmd, formatDate, getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { required, unique } from '../../utilities/validators';
@@ -154,7 +152,7 @@
     }
   }
 
-  async function exportPlan() {
+  async function onExportPlan() {
     if (plan) {
       if (planExportAbortController) {
         planExportAbortController.abort();
@@ -162,81 +160,25 @@
 
       planExportAbortController = new AbortController();
 
-      let qualifiedActivityDirectives: ActivityDirective[] = [];
-      planExportProgress = 0;
-
-      let totalProgress = 0;
-      const numOfDirectives = Object.values(activityDirectivesMap).length;
-
-      const simulation: Simulation | null = await effects.getPlanLatestSimulation(plan.id, user);
-
-      const simulationArguments: ArgumentsMap = simulation
-        ? {
-            ...simulation.template?.arguments,
-            ...simulation.arguments,
-          }
-        : {};
-
-      qualifiedActivityDirectives = (
-        await Promise.all(
-          Object.values(activityDirectivesMap).map(async activityDirective => {
-            if (plan) {
-              const effectiveArguments = await effects.getEffectiveActivityArguments(
-                plan?.model_id,
-                activityDirective.type,
-                activityDirective.arguments,
-                user,
-                planExportAbortController?.signal,
-              );
-
-              totalProgress++;
-              planExportProgress = (totalProgress / numOfDirectives) * 100;
-
-              return {
-                ...activityDirective,
-                arguments: effectiveArguments?.arguments ?? activityDirective.arguments,
-              };
-            }
-
-            totalProgress++;
-            planExportProgress = (totalProgress / numOfDirectives) * 100;
-
-            return activityDirective;
-          }),
-        )
-      ).sort((directiveA, directiveB) => {
-        if (directiveA.id < directiveB.id) {
-          return -1;
-        }
-        if (directiveA.id > directiveB.id) {
-          return 1;
-        }
-        return 0;
-      });
-
       if (planExportAbortController && !planExportAbortController.signal.aborted) {
-        const planExport: PlanTransfer = getPlanForTransfer(plan, qualifiedActivityDirectives, simulationArguments);
-
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(planExport, null, 2)], { type: 'application/json' }));
-        a.download = planExport.name;
-        a.click();
+        await exportPlan(
+          plan,
+          user,
+          (progress: number) => {
+            planExportProgress = progress;
+          },
+          Object.values(activityDirectivesMap),
+          planExportAbortController.signal,
+        );
       }
       planExportProgress = null;
     }
   }
 
-  function cancelPlanExport() {
+  function onCancelExportPlan() {
     planExportAbortController?.abort();
     planExportAbortController = null;
-  }
-
-  function onPlanExport() {
-    if (planExportProgress === null) {
-      exportPlan();
-    } else {
-      cancelPlanExport();
-    }
+    planExportProgress = null;
   }
 </script>
 
@@ -245,18 +187,27 @@
     <fieldset>
       <Collapse title="Details">
         <svelte:fragment slot="right">
-          <button
-            class="st-button icon export"
-            on:click|stopPropagation={onPlanExport}
-            use:tooltip={{ content: planExportProgress === null ? 'Export Plan JSON' : 'Cancel Plan Export' }}
-          >
-            {#if planExportProgress !== null}
-              <ProgressRadial progress={planExportProgress} useBackground={false} />
+          {#if planExportProgress !== null}
+            <button
+              class="cancel-button"
+              on:click|stopPropagation={onCancelExportPlan}
+              use:tooltip={{
+                content: 'Cancel Plan Export',
+                placement: 'top',
+              }}
+            >
+              <ProgressRadial progress={planExportProgress} size={16} strokeWidth={1} />
               <div class="cancel"><CloseIcon /></div>
-            {:else}
-              <DownloadIcon />
-            {/if}
-          </button>
+            </button>
+          {:else}
+            <button
+              class="st-button icon export"
+              on:click|stopPropagation={onExportPlan}
+              use:tooltip={{ content: 'Export Plan JSON' }}
+            >
+              <ExportIcon />
+            </button>
+          {/if}
         </svelte:fragment>
         <div class="plan-form-field">
           <Field field={planNameField} on:change={onPlanNameChange}>
@@ -460,20 +411,37 @@
 
   .export {
     border-radius: 50%;
+    height: 28px;
     position: relative;
-  }
-  .export .cancel {
-    display: none;
+    width: 28px;
   }
 
-  .export:hover .cancel {
+  .cancel-button {
+    --progress-radial-background: var(--st-gray-20);
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    position: relative;
+    width: 28px;
+  }
+
+  .cancel-button .cancel {
     align-items: center;
-    display: flex;
+    cursor: pointer;
+    display: none;
     height: 100%;
     justify-content: center;
     left: 0;
     position: absolute;
     top: 0;
     width: 100%;
+  }
+
+  .cancel-button .cancel :global(svg) {
+    width: 10px;
+  }
+
+  .cancel-button:hover .cancel {
+    display: flex;
   }
 </style>

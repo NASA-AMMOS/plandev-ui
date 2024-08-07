@@ -26,6 +26,11 @@ export class Constraints {
 
   async createConstraint(baseURL: string | undefined) {
     await expect(this.saveButton).toBeDisabled();
+
+    // TODO: Potentially fix this in component. The loading of monaco causes the page fields to reset
+    // so we need to wait until the page is fully loaded
+    await this.page.getByText('Loading Editor...').waitFor({ state: 'detached' });
+
     await this.fillConstraintName();
     await this.fillConstraintDescription();
     await this.fillConstraintDefinition();

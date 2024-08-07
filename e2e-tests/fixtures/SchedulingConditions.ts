@@ -27,6 +27,11 @@ export class SchedulingConditions {
 
   async createSchedulingCondition(baseURL: string | undefined) {
     await expect(this.saveButton).toBeDisabled();
+
+    // TODO: Potentially fix this in component. The loading of monaco causes the page fields to reset
+    // so we need to wait until the page is fully loaded
+    await this.page.getByText('Loading Editor...').waitFor({ state: 'detached' });
+
     await this.fillConditionName();
     await this.fillConditionDescription();
     await this.fillConditionDefinition();

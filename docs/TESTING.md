@@ -4,11 +4,13 @@ This document describes the testing development workflow. End-to-end tests are r
 
 ## End-to-end
 
-All end-to-end tests assume a production build of the project is available:
+All end-to-end tests assume a production build of the project is available if run from CI:
 
 ```sh
 npm run build
 ```
+
+If you are running the tests locally, then the above step is not needed. Playwright will be using your local dev server rather than starting up its own node server that uses the `/build` directory.
 
 All end-to-end tests also assume all Aerie services are running and available on `localhost`. See the example [docker-compose-test.yml](../docker-compose-test.yml) for an example of how to run the complete Aerie system. Notice we disable authentication for simplicity when running our end-to-end tests. You can reference the [Aerie deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for more detailed deployment information.
 

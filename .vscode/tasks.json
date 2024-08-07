@@ -117,6 +117,7 @@
     {
       "label": "e2e Debug",
       "type": "shell",
+      "dependsOn": ["Aerie UI"],
       "command": "nvm use && npm run test:e2e:debug",
       "detail": "Task to run the e2e tests in debug mode."
     },
@@ -131,28 +132,16 @@
     {
       "label": "e2e Tests",
       "type": "shell",
-      "dependsOn": ["Build UI"],
+      "dependsOn": ["Aerie UI"],
       "command": "nvm use && npm run test:e2e",
       "detail": "Task to run e2e tests"
     },
     {
-      "label": "e2e Rerun",
-      "type": "shell",
-      "command": "nvm use && npm run test:e2e",
-      "detail": "Task to rerun e2e tests without rebuilding the UI."
-    },
-    {
       "label": "e2e Tests - With UI",
       "type": "shell",
-      "dependsOn": ["Build UI"],
+      "dependsOn": ["Aerie UI"],
       "command": "nvm use && npm run test:e2e:with-ui",
       "detail": "Task to run e2e tests with Playwright UI."
-    },
-    {
-      "label": "e2e Tests - With UI Rerun",
-      "type": "shell",
-      "command": "nvm use && npm run test:e2e:with-ui",
-      "detail": "Task to run e2e tests with Playwright UI without rebuilding the UI."
     }
   ]
 }

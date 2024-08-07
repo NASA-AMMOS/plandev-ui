@@ -1,6 +1,7 @@
 <script lang="ts">
   export let progress: number = 0; // number between 0 and 100
   export let size: number = 16;
+  export let strokeWidth: number = 2;
   export let useBackground: boolean = true;
 
   $: radius = size / 2 - 2;
@@ -17,7 +18,7 @@
     <circle
       class="radial-progress-ring-circle"
       stroke="currentColor"
-      stroke-width="2"
+      stroke-width={strokeWidth}
       stroke-dasharray={`${circumference} ${circumference}`}
       stroke-dashoffset={circumference - ((progress || 80) / 100) * circumference}
       fill="transparent"
@@ -34,7 +35,7 @@
   }
 
   .radial-progress-background {
-    background-color: var(--st-utility-blue);
+    background-color: var(--progress-radial-background, var(--st-utility-blue));
     border-radius: 50%;
   }
 

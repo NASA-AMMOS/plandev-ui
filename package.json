@@ -42,6 +42,7 @@
     "@nasa-jpl/aerie-ampcs": "^1.0.5",
     "@nasa-jpl/seq-json-schema": "^1.0.20",
     "@nasa-jpl/stellar": "^1.1.18",
+    "@streamparser/json": "^0.0.17",
     "@sveltejs/adapter-node": "5.0.1",
     "@sveltejs/kit": "^2.5.4",
     "ag-grid-community": "31.2.0",

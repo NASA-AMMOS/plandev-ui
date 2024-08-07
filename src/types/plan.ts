@@ -107,6 +107,7 @@ export type PlanTransfer = Pick<PlanSchema, 'id' | 'duration' | 'model_id' | 'na
   >[];
   simulation_arguments: ArgumentsMap;
   tags?: { tag: Pick<Tag, 'color' | 'name'> }[];
+  version?: string;
 };
 
 export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments'> & {

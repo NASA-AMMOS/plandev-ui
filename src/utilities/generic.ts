@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import JSONParser from '@streamparser/json/jsonparser.js';
 import type { SearchParameters } from '../enums/searchParameters';
 
 /**
@@ -347,4 +348,82 @@ export function addPageFocusListener(onChange: (string: 'out' | 'in') => void): 
     window.removeEventListener('blur', handleChange);
     document.removeEventListener('visibilitychange', handleChange);
   };
+}
+
+/**
+ * Utility function for downloading the contents of a Blob to client storage
+ * @param blob
+ * @param filename - file extension should be provided
+ */
+export function downloadBlob(blob: Blob, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+/**
+ * Utility function for downloading a valid JSON to client storage
+ * @param json
+ * @param filename - file extension doesn't need to be provided
+ */
+export function downloadJSON(json: object, filename: string) {
+  downloadBlob(
+    new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' }),
+    /\.json$/.test(filename) ? filename : `${filename}.json`,
+  );
+}
+
+async function* streamAsyncIterable(stream: ReadableStream) {
+  const reader = stream.getReader();
+  try {
+    while (true) {
+      // eslint-disable-next-line no-await-in-loop
+      const { done, value } = await reader.read();
+      if (done) {
+        return;
+      }
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Utility function for parsing a large JSON string into a JSON object
+ * This function is more for very long strings that need to be broken up into chunks in order to
+ * fully parse it into a JSON object without running out of memory
+ * @param jsonStream
+ * @returns R
+ */
+export async function parseJSONStream<R>(jsonStream: ReadableStream): Promise<R> {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    const jsonParser = new JSONParser({ paths: ['$.*'], stringBufferSize: undefined });
+    let finalJSON: R;
+    jsonParser.onToken = ({ value }) => {
+      if (finalJSON === undefined) {
+        if (value === '[') {
+          finalJSON = [] as R;
+        } else if (value === '{') {
+          finalJSON = {} as R;
+        }
+      }
+    };
+    jsonParser.onValue = ({ parent }) => {
+      finalJSON = parent as R;
+    };
+    jsonParser.onEnd = () => {
+      resolve(finalJSON as R);
+    };
+
+    try {
+      for await (const result of streamAsyncIterable(jsonStream)) {
+        jsonParser.write(result);
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
