@@ -19,13 +19,13 @@
   import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
+  import CancellableProgressRadial from '../../components/ui/CancellableProgressRadial.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../../components/ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import IconCellRenderer from '../../components/ui/IconCellRenderer.svelte';
   import Panel from '../../components/ui/Panel.svelte';
-  import ProgressRadial from '../../components/ui/ProgressRadial.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
@@ -677,8 +677,7 @@
                     placement: 'top',
                   }}
                 >
-                  <ProgressRadial progress={planExportProgress} size={16} strokeWidth={1} />
-                  <div class="cancel"><CloseIcon /></div>
+                  <CancellableProgressRadial progress={planExportProgress} />
                 </button>
               {/if}
               <button
@@ -1009,30 +1008,8 @@
   }
 
   .cancel-button {
-    --progress-radial-background: var(--st-gray-20);
     background: none;
     border: 0;
-    position: relative;
-  }
-
-  .cancel-button .cancel {
-    align-items: center;
-    cursor: pointer;
-    display: none;
-    height: 100%;
-    justify-content: center;
-    left: 0;
-    position: absolute;
-    top: 0;
-    width: 100%;
-  }
-
-  .cancel-button .cancel :global(svg) {
-    width: 10px;
-  }
-
-  .cancel-button:hover .cancel {
-    display: flex;
   }
 
   .import-input-container {

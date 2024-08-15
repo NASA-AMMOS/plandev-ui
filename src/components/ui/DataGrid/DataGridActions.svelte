@@ -3,7 +3,6 @@
 <script lang="ts">
   import { permissionHandler } from '../../../utilities/permissionHandler';
 
-  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DownloadIcon from '@nasa-jpl/stellar/icons/download.svg?component';
   import ExpandIcon from '@nasa-jpl/stellar/icons/expand.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
@@ -12,7 +11,7 @@
   import ExportIcon from '../../../assets/export.svg?component';
   import type { TRowData } from '../../../types/data-grid';
   import { tooltip } from '../../../utilities/tooltip';
-  import ProgressRadial from '../ProgressRadial.svelte';
+  import CancellableProgressRadial from '../CancellableProgressRadial.svelte';
 
   type RowData = $$Generic<TRowData>;
 
@@ -119,8 +118,7 @@
       on:click|stopPropagation={onCancelDownload}
       use:tooltip={{ ...downloadTooltip, content: `Cancel ${downloadTooltip?.content}` }}
     >
-      <ProgressRadial progress={downloadProgress} size={16} strokeWidth={1} />
-      <div class="cancel"><CloseIcon /></div>
+      <CancellableProgressRadial progress={downloadProgress} />
     </button>
   {/if}
 {/if}
@@ -169,25 +167,5 @@
     --progress-radial-background: var(--st-gray-20);
     border-radius: 50%;
     position: relative;
-  }
-
-  .downloading .cancel {
-    align-items: center;
-    cursor: pointer;
-    display: none;
-    height: 100%;
-    justify-content: center;
-    left: 0;
-    position: absolute;
-    top: 0;
-    width: 100%;
-  }
-
-  .downloading .cancel :global(svg) {
-    width: 10px;
-  }
-
-  .downloading:hover .cancel {
-    display: flex;
   }
 </style>

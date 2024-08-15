@@ -56,7 +56,6 @@
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { Dispatcher } from '../../../types/component';
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
-  import { filterEmpty } from '../../../utilities/generic';
   import ContextMenu from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
 
@@ -119,9 +118,17 @@
   };
   export let isRowSelectable: ((node: IRowNode<RowData>) => boolean) | undefined = undefined;
 
+  type RowIdRef = {
+    value: RowId | null;
+  };
+
+  const CURRENT_SELECTED_ROW_CLASS = 'ag-current-row-selected';
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let contextMenu: ContextMenu;
+  // This is used so that the current instance of ag-grid always has a pointer to the latest current selected row id
+  // without having to call anything on the ag-grid instance that results in a full rerender
+  let currentSelectedRowIdRef: RowIdRef = { value: null };
   let gridOptions: GridOptions<RowData>;
   let gridApi: GridApi<RowData> | undefined;
   let gridDiv: HTMLDivElement;
@@ -199,13 +206,24 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     currentSelectedRowId = selectedRowIds[0];
   }
 
+  $: currentSelectedRowIdRef.value = currentSelectedRowId;
+
+  /**
+   * Manually manipulate the old and newly selected row classes instead of invoking `redrawRows`
+   * in order to correctly mark what the current selected row is. Calling `redrawRows` caused cellrenders to
+   * lose their current state and be reinitialized. `refreshCells` is not enough to cause ag-grid to recompute
+   * all the row styles
+   */
   $: {
-    gridApi?.redrawRows({
-      rowNodes: [
-        gridApi?.getRowNode(`${currentSelectedRowId}`),
-        gridApi?.getRowNode(`${previousSelectedRowId}`),
-      ].filter(filterEmpty),
-    });
+    const previousSelectedRow = gridDiv?.querySelector(`[row-id="${previousSelectedRowId}"]`);
+    if (previousSelectedRow != null) {
+      previousSelectedRow.classList.remove(CURRENT_SELECTED_ROW_CLASS);
+    }
+    const currentSelectedRow = gridDiv?.querySelector(`[row-id="${currentSelectedRowId}"]`);
+    if (currentSelectedRow != null) {
+      currentSelectedRow.classList.add(CURRENT_SELECTED_ROW_CLASS);
+    }
+
     previousSelectedRowId = currentSelectedRowId;
   }
 
@@ -217,24 +235,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   onDestroy(() => {
     resizeObserver?.disconnect();
   });
-
-  function getRowClass(params: RowClassParams<RowData>) {
-    const rowClass: string[] = [];
-
-    if (isRowSelectable) {
-      if (isRowSelectable(params.node)) {
-        rowClass.push('ag-selectable-row');
-      }
-    } else if (rowSelection !== undefined) {
-      rowClass.push('ag-selectable-row');
-    }
-
-    if (params.data && currentSelectedRowId === getRowId(params.data)) {
-      rowClass.push('ag-current-row-selected');
-    }
-
-    return rowClass.join(' ');
-  }
 
   function onAutoSizeContent() {
     gridApi?.autoSizeAllColumns();
@@ -274,7 +274,6 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       columnDefs,
       doesExternalFilterPass,
       excludeHiddenColumnsFromQuickFilter: false,
-      getRowClass,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,
       isRowSelectable,
@@ -392,6 +391,21 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         onColumnStateChangeDebounced();
       },
       preventDefaultOnContextMenu: useCustomContextMenu,
+      rowClassRules: {
+        CURRENT_SELECTED_ROW_CLASS: (params: RowClassParams<RowData>) => {
+          return !!params.data && currentSelectedRowIdRef.value === getRowId(params.data);
+        },
+        'ag-selectable-row': (params: RowClassParams<RowData>) => {
+          if (isRowSelectable) {
+            if (isRowSelectable(params.node)) {
+              return true;
+            }
+          } else if (rowSelection !== undefined) {
+            return true;
+          }
+          return false;
+        },
+      },
       rowData,
       rowHeight,
       rowSelection,
