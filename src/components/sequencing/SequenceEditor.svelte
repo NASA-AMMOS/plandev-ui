@@ -1,8 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { indentSelection } from '@codemirror/commands';
   import { json } from '@codemirror/lang-json';
-  import { syntaxTree } from '@codemirror/language';
+  import { indentService, syntaxTree } from '@codemirror/language';
   import { lintGutter } from '@codemirror/lint';
   import { Compartment, EditorState } from '@codemirror/state';
   import type { ViewUpdate } from '@codemirror/view';
@@ -37,6 +38,7 @@
   import { setupLanguageSupport } from '../../utilities/codemirror';
   import effects from '../../utilities/effects';
   import { seqJsonLinter } from '../../utilities/sequence-editor/seq-json-linter';
+  import { sequenceAutoIndent } from '../../utilities/sequence-editor/sequence-autoindent';
   import { sequenceCompletion } from '../../utilities/sequence-editor/sequence-completion';
   import { sequenceLinter } from '../../utilities/sequence-editor/sequence-linter';
   import { sequenceTooltip } from '../../utilities/sequence-editor/sequence-tooltip';
@@ -85,8 +87,20 @@
 
   $: {
     if (editorSequenceView) {
+      // insert sequence
       editorSequenceView.dispatch({
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+      });
+
+      // apply indentation
+      editorSequenceView.update([
+        editorSequenceView.state.update({
+          selection: { anchor: 0, head: editorSequenceView.state.doc.length },
+        }),
+      ]);
+      indentSelection({
+        dispatch: transaction => editorSequenceView.update([transaction]),
+        state: editorSequenceView.state,
       });
     }
   }
@@ -171,6 +185,7 @@
         compartmentSeqTooltip.of(sequenceTooltip()),
         EditorView.updateListener.of(debounce(sequenceUpdateListener, 250)),
         EditorView.updateListener.of(selectedCommandUpdateListener),
+        indentService.of(sequenceAutoIndent()),
         EditorState.readOnly.of(readOnly),
       ],
       parent: editorSequenceDiv,

@@ -1,12 +1,5 @@
 import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
-import {
-  LRLanguage,
-  LanguageSupport,
-  delimitedIndent,
-  foldInside,
-  foldNodeProp,
-  indentNodeProp,
-} from '@codemirror/language';
+import { LRLanguage, LanguageSupport, delimitedIndent, foldNodeProp, indentNodeProp } from '@codemirror/language';
 import { styleTags, tags as t } from '@lezer/highlight';
 import { customFoldInside } from './custom-folder';
 import { parser } from './sequence.grammar';
@@ -21,8 +14,14 @@ export const SeqLanguage = LRLanguage.define({
         Application: delimitedIndent({ align: false, closing: ')' }),
       }),
       foldNodeProp.add({
-        Application: foldInside,
+        Activate: customFoldInside,
         Command: customFoldInside,
+        GroundBlock: customFoldInside,
+        GroundEvent: customFoldInside,
+        Load: customFoldInside,
+        Metadata: customFoldInside,
+        Models: customFoldInside,
+        Request: customFoldInside,
       }),
       styleTags({
         Activate: t.namespace,
