@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import type { ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { sequenceAdaptation } from '../../stores/sequence-adaptation';
+  import { outputFormat } from '../../stores/sequence-adaptation';
   import {
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
@@ -233,7 +233,7 @@
       {/if}
 
       <fieldset>
-        <label for="commandDictionary">Parcel (required)</label>
+        <label for="parcel">Parcel (required)</label>
         <select
           bind:value={sequenceParcelId}
           class="st-select w-100"
@@ -269,7 +269,7 @@
       </fieldset>
 
       <fieldset>
-        <label for="outputFile">Create Sequence from {$sequenceAdaptation?.outputFormat.name}</label>
+        <label for="outputFile">Create Sequence from {$outputFormat?.[0]?.name}</label>
         <input
           bind:files={outputFiles}
           class="w-100"

@@ -1,12 +1,6 @@
-import type { Tree } from '@lezer/common';
-import {
-  type ChannelDictionary,
-  type CommandDictionary,
-  type FswCommandArgument,
-  type ParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
+import { type ChannelDictionary, type FswCommandArgument, type ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
-import { inputFormat, outputFormat, sequenceAdaptation } from '../../stores/sequence-adaptation';
+import { inputFormat, sequenceAdaptation } from '../../stores/sequence-adaptation';
 
 // TODO: serialization
 // replace parameter names with hex ids
@@ -43,24 +37,6 @@ export function getCustomArgDef(
   return delegate?.(dictArg, parameterDictionaries, channelDictionary, precedingArgs) ?? dictArg;
 }
 
-export async function toOutputFormat(
-  node: Tree,
-  sequence: string,
-  commandDictionary: CommandDictionary | null,
-  parameterDictionaries: ParameterDictionary[],
-  channelDictionary: ChannelDictionary | null,
-  sequenceName: string,
-): Promise<string> {
-  const output = await get(outputFormat)?.toOutputFormat(node, sequence, commandDictionary, sequenceName);
-  const modifyOutput = get(sequenceAdaptation)?.modifyOutput;
-
-  if (modifyOutput !== undefined && output !== undefined) {
-    modifyOutput(output, parameterDictionaries, channelDictionary);
-  }
-
-  return output ?? '';
-}
-
 export async function toInputFormat(
   output: string,
   parameterDictionaries: ParameterDictionary[],
@@ -73,7 +49,7 @@ export async function toInputFormat(
     modifiedOutput = await modifyOutputParse(output, parameterDictionaries, channelDictionary);
   }
 
-  const input = await get(inputFormat)?.toInputFormat(modifiedOutput ?? output);
+  const input = await get(inputFormat)?.toInputFormat?.(modifiedOutput ?? output);
 
   return input;
 }

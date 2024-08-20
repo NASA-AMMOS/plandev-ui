@@ -51,50 +51,53 @@ declare global {
 
   var SequenceAdaptation:
     | {
-        ARG_DELEGATOR?: ArgDelegator;
-        CONDITIONAL_KEYWORDS?: { ELSE?: string; ELSE_IF?: string[]; END_IF?: string; IF: string[] };
-        GLOBALS?: GlobalType[];
-        INPUT_FORMAT?: {
-          LINTER?: (
+        argDelegator?: ArgDelegator;
+        conditionalKeywords?: { else?: string; elseIf?: string[]; endIf?: string; if: string[] };
+        globals?: GlobalType[];
+        inputFormat?: {
+          linter?: (
             diagnostics: Diagnostic[],
             commandDictionary: CommandDictionary,
             view: EditorView,
             node: SyntaxNode,
           ) => Diagnostic[];
-          NAME: string;
-          TO_INPUT_FORMAT?: (input: string) => Promise<string>;
+          name: string;
+          toInputFormat?: (input: string) => Promise<string>;
         };
-        LOOP_KEYWORDS?: {
-          BREAK: string;
-          CONTINUE: string;
-          END_WHILE_LOOP: string;
-          WHILE_LOOP: string[];
+        loopKeywords?: {
+          break: string;
+          continue: string;
+          endWhileLoop: string;
+          whileLoop: string[];
         };
-        MODIFY_OUTPUT?: (
+        modifyOutput?: (
           output: SeqJson | any,
           parameterDictionaries: ParameterDictionary[],
           channelDictionary: ChannelDictionary | null,
         ) => any;
-        MODIFY_OUTPUT_PARSE?: (
+        modifyOutputParse?: (
           output: SeqJson | any,
           parameterDictionaries: ParameterDictionary[],
           channelDictionary: ChannelDictionary | null,
         ) => any;
-        OUTPUT_FORMAT?: {
-          LINTER?: (
-            diagnostics: Diagnostic[],
-            commandDictionary: CommandDictionary,
-            view: EditorView,
-            node: SyntaxNode,
-          ) => Diagnostic[];
-          NAME: string;
-          TO_OUTPUT_FORMAT?: (
-            tree: Tree | any,
-            sequence: string,
-            commandDictionary: CommandDictionary | null,
-            sequenceName: string,
-          ) => Promise<string>;
-        };
+        outputFormat?: [
+          {
+            fileExtension: string;
+            linter?: (
+              diagnostics: Diagnostic[],
+              commandDictionary: CommandDictionary,
+              view: EditorView,
+              node: SyntaxNode,
+            ) => Diagnostic[];
+            name: string;
+            toOutputFormat?: (
+              tree: Tree | any,
+              sequence: string,
+              commandDictionary: CommandDictionary | null,
+              sequenceName: string,
+            ) => Promise<string>;
+          },
+        ];
       }
     | undefined;
 }
