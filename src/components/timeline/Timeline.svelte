@@ -263,7 +263,7 @@
 
   export function viewTimeRangeChanged(viewTimeRange: TimeRange, zoomTransform?: ZoomTransform) {
     dispatch('viewTimeRangeChanged', viewTimeRange);
-    // Assign zoom transform if provided to syncronize all d3 zoom handlers
+    // Assign zoom transform if provided to synchronize all d3 zoom handlers
     if (zoomTransform) {
       timelineZoomTransform = zoomTransform;
     } else {

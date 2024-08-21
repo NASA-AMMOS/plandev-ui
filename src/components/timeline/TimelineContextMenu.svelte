@@ -69,6 +69,7 @@
   let hasActivityLayer: boolean = false;
   let mouseOverOrigin: MouseOverOrigin | undefined = undefined;
   let row: Row | undefined = undefined;
+  let offsetX: number | undefined;
 
   // TODO imports here could be better, should we handle the vertical guide creation in Timeline?
   $: timelines = $view?.definition.plan.timelines ?? [];
@@ -106,6 +107,8 @@
   $: activityDirectiveStartDate = activityDirective
     ? new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset))
     : null;
+  // Explicitly keep track of offsetX because Firefox ends up zeroing it out on the original `contextmenu` MouseEvent
+  $: offsetX = contextMenu?.e.offsetX;
 
   function jumpToActivityDirective() {
     if (span !== null) {
@@ -163,8 +166,8 @@
   }
 
   function onZoom(duration: number) {
-    if (xScaleView && contextMenu) {
-      const time = activityDirectiveStartDate ? activityDirectiveStartDate : xScaleView.invert(contextMenu.e.offsetX);
+    if (xScaleView && offsetX !== undefined) {
+      const time = activityDirectiveStartDate ? activityDirectiveStartDate : xScaleView.invert(offsetX);
       const newViewTimeRange: TimeRange = {
         end: Math.min(time.getTime() + duration / 2, maxTimeRange.end),
         start: Math.max(time.getTime() - duration / 2, maxTimeRange.start),
@@ -353,7 +356,7 @@
       </ContextSubMenuItem>
     {:else}
       <ContextMenuItem
-        on:click={() => xScaleView && contextMenu && addVerticalGuide(xScaleView.invert(contextMenu.e.offsetX))}
+        on:click={() => xScaleView && offsetX !== undefined && addVerticalGuide(xScaleView.invert(offsetX))}
       >
         Place Guide
       </ContextMenuItem>
@@ -370,8 +373,7 @@
             },
           ],
         ]}
-        on:click={() =>
-          xScaleView && contextMenu && updateSimulationStartTime(xScaleView.invert(contextMenu.e.offsetX))}
+        on:click={() => xScaleView && offsetX !== undefined && updateSimulationStartTime(xScaleView.invert(offsetX))}
       >
         Set Simulation Start
       </ContextMenuItem>
@@ -387,7 +389,7 @@
             },
           ],
         ]}
-        on:click={() => xScaleView && contextMenu && updateSimulationEndTime(xScaleView.invert(contextMenu.e.offsetX))}
+        on:click={() => xScaleView && offsetX !== undefined && updateSimulationEndTime(xScaleView.invert(offsetX))}
       >
         Set Simulation End
       </ContextMenuItem>

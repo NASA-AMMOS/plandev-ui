@@ -69,22 +69,28 @@
     scrollIfOffscreen();
   }
 
-  $: if (
-    typeof window !== 'undefined' &&
-    ($selectedActivityDirective || $selectedSpan || $simulationDatasetId !== null)
-  ) {
-    viewURL = new URL(window.location.href);
-    viewURL.searchParams.set(SearchParameters.START_TIME, new Date(viewTimeRange.start).toISOString());
-    viewURL.searchParams.set(SearchParameters.END_TIME, new Date(viewTimeRange.end).toISOString());
-    if ($selectedActivityDirective) {
-      viewURL.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
+  // The time range can potentially become invalid by zooming in too much which will cause the following to fail
+  // A try/catch is used here to prevent the UI from becoming unresponsive if an invalid time range is provided
+  $: try {
+    if (
+      typeof window !== 'undefined' &&
+      ($selectedActivityDirective || $selectedSpan || $simulationDatasetId !== null)
+    ) {
+      viewURL = new URL(window.location.href);
+      viewURL.searchParams.set(SearchParameters.START_TIME, new Date(viewTimeRange.start).toISOString());
+      viewURL.searchParams.set(SearchParameters.END_TIME, new Date(viewTimeRange.end).toISOString());
+      if ($selectedActivityDirective) {
+        viewURL.searchParams.set(SearchParameters.ACTIVITY_ID, $selectedActivityDirective.id.toFixed());
+      }
+      if ($selectedSpan) {
+        viewURL.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.span_id.toFixed());
+      }
+      if ($simulationDatasetId) {
+        viewURL.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());
+      }
     }
-    if ($selectedSpan) {
-      viewURL.searchParams.set(SearchParameters.SPAN_ID, $selectedSpan.span_id.toFixed());
-    }
-    if ($simulationDatasetId) {
-      viewURL.searchParams.set(SearchParameters.SIMULATION_DATASET_ID, $simulationDatasetId.toFixed());
-    }
+  } catch (e) {
+    console.log(e);
   }
 
   function onKeydown(e: KeyboardEvent) {
