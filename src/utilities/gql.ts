@@ -1130,7 +1130,7 @@ const gql = {
   `,
 
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS: `#graphql
-    query GetEffectiveActivityArguments($modelId: ID!, $activityTypeName: String!, $arguments: ActivityArguments!) {
+    query GetEffectiveActivityArguments($modelId: Int!, $activityTypeName: String!, $arguments: ActivityArguments!) {
       effectiveActivityArguments: ${Queries.GET_ACTIVITY_EFFECTIVE_ARGUMENTS}(
         missionModelId: $modelId,
         activityTypeName: $activityTypeName,
@@ -1144,7 +1144,7 @@ const gql = {
   `,
 
   GET_EFFECTIVE_MODEL_ARGUMENTS: `#graphql
-    query GetEffectiveModelArguments($modelId: ID!, $arguments: ModelArguments!) {
+    query GetEffectiveModelArguments($modelId: Int!, $arguments: ModelArguments!) {
       effectiveModelArguments: ${Queries.GET_MODEL_EFFECTIVE_ARGUMENTS}(
         missionModelId: $modelId,
         modelArguments: $arguments
@@ -1656,7 +1656,7 @@ const gql = {
   `,
 
   GET_TYPESCRIPT_CONSTRAINTS: `#graphql
-    query GetTypeScriptConstraints($model_id: ID!) {
+    query GetTypeScriptConstraints($model_id: Int!) {
       dslTypeScriptResponse: ${Queries.CONSTRAINTS_DSL_TYPESCRIPT}(missionModelId: $model_id) {
         reason
         status
@@ -3512,7 +3512,7 @@ const gql = {
   `,
 
   VALIDATE_ACTIVITY_ARGUMENTS: `#graphql
-    query ValidateActivityArguments($arguments: ActivityArguments!, $activityTypeName: String!, $modelId: ID!) {
+    query ValidateActivityArguments($arguments: ActivityArguments!, $activityTypeName: String!, $modelId: Int!) {
       ${Queries.VALIDATE_ACTIVITY_ARGUMENTS}(
         activityArguments: $arguments,
         activityTypeName: $activityTypeName,
