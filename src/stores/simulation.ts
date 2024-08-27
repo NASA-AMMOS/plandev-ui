@@ -157,6 +157,11 @@ export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $se
   return null;
 });
 
+export const simulationDatasetLatestId = derived(
+  [simulationDatasetLatest],
+  ([$simulationDatasetLatest]) => $simulationDatasetLatest?.dataset_id ?? -1,
+);
+
 /* Helper Functions. */
 
 export function resetSimulationStores() {

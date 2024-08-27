@@ -2,7 +2,7 @@ import { base } from '$app/paths';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqAuthResponse } from '../types/auth';
-import type { ConstraintDefinition, ConstraintMetadata } from '../types/constraint';
+import type { ConstraintDefinition, ConstraintMetadata, ConstraintRun } from '../types/constraint';
 import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
 import type { Model } from '../types/model';
 import type {
@@ -770,6 +770,9 @@ const queryPermissions = {
   },
   SUB_CONSTRAINT_DEFINITION: () => true,
   SUB_CONSTRAINT_PLAN_SPECIFICATIONS: () => true,
+  SUB_CONSTRAINT_RUNS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.CONSTRAINT_RUN], user);
+  },
   SUB_EXPANSION_RULES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
   },
@@ -1174,8 +1177,8 @@ interface PlanSnapshotCRUDPermission extends Omit<PlanAssetCRUDPermission<PlanSn
   canRestore: RolePlanPermissionCheck;
 }
 
-interface ConstraintPlanSpecCRUDPermission extends PlanSpecificationCRUDPermission {
-  canCheck: RolePlanPermissionCheck;
+interface ConstraintRunCRUDPermission extends Omit<CRUDPermission<ConstraintRun>, 'canCreate'> {
+  canCreate: RolePlanPermissionCheck;
 }
 
 interface ExpansionSetsCRUDPermission<T = null> extends Omit<CRUDPermission<T>, 'canCreate'> {
@@ -1200,9 +1203,10 @@ interface FeaturePermissions {
   activityPresets: PlanActivityPresetsCRUDPermission;
   channelDictionary: CRUDPermission<void>;
   commandDictionary: CRUDPermission<void>;
+  constraintRuns: ConstraintRunCRUDPermission;
   constraints: AssociationCRUDPermission<ConstraintMetadata, ConstraintDefinition>;
   constraintsModelSpec: ModelSpecificationCRUDPermission;
-  constraintsPlanSpec: ConstraintPlanSpecCRUDPermission;
+  constraintsPlanSpec: PlanSpecificationCRUDPermission;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
@@ -1254,6 +1258,12 @@ const featurePermissions: FeaturePermissions = {
     canRead: () => false, // Not implemented
     canUpdate: () => false, // Not implemented
   },
+  constraintRuns: {
+    canCreate: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
+    canDelete: () => false, // Not implemented
+    canRead: user => queryPermissions.SUB_CONSTRAINT_RUNS(user),
+    canUpdate: () => false, // Not implemented
+  },
   constraints: {
     canCreate: user => queryPermissions.CREATE_CONSTRAINT(user),
     canDelete: (user, constraintMetadata) => queryPermissions.DELETE_CONSTRAINT_METADATA(user, constraintMetadata),
@@ -1265,7 +1275,6 @@ const featurePermissions: FeaturePermissions = {
     canUpdate: user => queryPermissions.UPDATE_CONSTRAINT_MODEL_SPECIFICATIONS(user),
   },
   constraintsPlanSpec: {
-    canCheck: (user, plan, model) => queryPermissions.CHECK_CONSTRAINTS(user, plan, model),
     canRead: user => queryPermissions.SUB_CONSTRAINTS(user),
     canUpdate: (user, plan) => queryPermissions.UPDATE_CONSTRAINT_PLAN_SPECIFICATIONS(user, plan),
   },

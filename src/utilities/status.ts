@@ -31,3 +31,23 @@ export function getColorForStatus(status: Status | null): string {
     return statusColors.gray;
   }
 }
+
+/**
+ * Returns a human readable string representing a Status
+ */
+export function getHumanReadableStatus(status: Status | null): string {
+  switch (status) {
+    case Status.Complete:
+    case Status.Failed:
+    case Status.Canceled:
+      return status;
+    case Status.PartialSuccess:
+      return 'Partially Succeeded';
+    case Status.Incomplete:
+      return 'In Progress';
+    case Status.Pending:
+      return 'Queued';
+    default:
+      return 'Unknown';
+  }
+}

@@ -12,7 +12,7 @@
   import {
     allowedConstraintPlanSpecMap,
     allowedConstraintSpecs,
-    checkConstraintsStatus,
+    cachedConstraintsStatus,
     constraintPlanSpecs,
     constraintResponseMap,
     constraintVisibilityMap,
@@ -232,7 +232,7 @@
             permissionHandler,
             {
               hasPermission: $plan
-                ? featurePermissions.constraintsPlanSpec.canCheck(user, $plan, $plan.model) && !$planReadOnly
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
                 : false,
               permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
@@ -326,7 +326,7 @@
       {:else}
         <div class="pt-1 st-typography-label filter-label-row">
           <div class="filter-label">
-            {#if $checkConstraintsStatus}
+            {#if $cachedConstraintsStatus}
               <FilterIcon />
               {filteredConstraints.length} of {$allowedConstraintSpecs.length} constraints, {filteredViolationCount} of
               {totalViolationCount} violations

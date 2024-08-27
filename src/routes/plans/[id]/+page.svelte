@@ -43,10 +43,10 @@
     selectedActivityDirectiveId,
   } from '../../../stores/activities';
   import {
+    cachedConstraintsStatus,
     checkConstraintsStatus,
     constraintResponseMap,
     constraintsStatus,
-    constraintsViolationStatus,
     resetConstraintStores,
     resetPlanConstraintStores,
     uncheckedConstraintCount,
@@ -120,6 +120,7 @@
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
+  import { getConstraintStatus } from '../../../utilities/constraint';
   import effects from '../../../utilities/effects';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
@@ -128,7 +129,6 @@
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     formatSimulationQueuePosition,
-    getHumanReadableStatus,
     getSimulationExtent,
     getSimulationProgress,
     getSimulationProgressColor,
@@ -136,7 +136,7 @@
     getSimulationStatus,
     getSimulationTimestamp,
   } from '../../../utilities/simulation';
-  import { statusColors } from '../../../utilities/status';
+  import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
   import { getUnixEpochTime } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
@@ -166,6 +166,7 @@
   let compactNavMode = false;
   let errorConsole: Console;
   let consoleHeightString = '36px';
+  let constraintsStatusText: string | undefined;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
   let hasExpandPermission: boolean = false;
@@ -229,7 +230,7 @@
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate(data.user, $view) : false;
   $: if ($initialPlan) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintsPlanSpec.canCheck(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.constraintRuns.canCreate(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
       featurePermissions.expansionSequences.canExpand(data.user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
@@ -399,10 +400,16 @@
   $: numConstraintsViolated = Object.values($constraintResponseMap).filter(
     response => response.results.violations?.length,
   ).length;
-
   $: numConstraintsWithErrors = Object.values($constraintResponseMap).filter(
     response => response.errors?.length,
   ).length;
+  $: constraintsStatusText =
+    ($constraintsStatus === Status.Complete ||
+      $constraintsStatus === Status.Failed ||
+      $constraintsStatus === Status.PartialSuccess) &&
+    numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount > 0
+      ? `${numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount}`
+      : undefined;
 
   $: if ($initialPlan && browser) {
     // Asynchronously fetch resource types
@@ -699,10 +706,7 @@
           buttonText="Check Constraints"
           hasPermission={hasCheckConstraintsPermission}
           disabled={$simulationStatus !== Status.Complete}
-          statusBadgeText={($checkConstraintsStatus === Status.Complete || $checkConstraintsStatus === Status.Failed) &&
-          numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount > 0
-            ? `${numConstraintsViolated + numConstraintsWithErrors + $uncheckedConstraintCount}`
-            : undefined}
+          statusBadgeText={constraintsStatusText}
           buttonTooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
           permissionError={$planReadOnly
             ? PlanStatusMessages.READ_ONLY
@@ -715,14 +719,14 @@
           <VerticalCollapseIcon />
           <svelte:fragment slot="metadata">
             <div class="st-typography-body constraints-status">
-              {#if $checkConstraintsStatus}
+              {#if $constraintsStatus}
                 <div class="constraints-status-item">
                   <StatusBadge status={$checkConstraintsStatus} indeterminate showTooltip={false} />
-                  Check constraints: {getHumanReadableStatus($checkConstraintsStatus)}
+                  Check constraints: {getConstraintStatus($checkConstraintsStatus)}
                 </div>
-                {#if $checkConstraintsStatus === Status.Complete || $checkConstraintsStatus === Status.Failed}
+                {#if $constraintsStatus === Status.Complete || $constraintsStatus === Status.Failed || $constraintsStatus === Status.PartialSuccess}
                   <div class="constraints-status-item">
-                    <StatusBadge status={$constraintsViolationStatus} showTooltip={false} />
+                    <StatusBadge status={$cachedConstraintsStatus} showTooltip={false} />
                     {#if numConstraintsViolated > 0}
                       <div style:color="var(--st-error-red)">
                         {numConstraintsViolated} constraint{pluralize(numConstraintsViolated)}

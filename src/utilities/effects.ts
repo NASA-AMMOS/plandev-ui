@@ -13,8 +13,7 @@ import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import { activityDirectivesDB, selectedActivityDirectiveId } from '../stores/activities';
 import {
-  checkConstraintsStatus,
-  constraintsViolationStatus,
+  rawCheckConstraintsStatus,
   rawConstraintResponses,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
@@ -381,8 +380,7 @@ const effects = {
 
   async checkConstraints(plan: Plan, user: User | null): Promise<void> {
     try {
-      checkConstraintsStatus.set(Status.Incomplete);
-      constraintsViolationStatus.set(null);
+      rawCheckConstraintsStatus.set(Status.Incomplete);
       if (plan !== null) {
         const { id: planId } = plan;
         const data = await reqHasura<ConstraintResponse[]>(
@@ -403,24 +401,15 @@ const effects = {
           const failedConstraintResponses = data.constraintResponses.filter(
             constraintResponse => !constraintResponse.success,
           );
-
-          const anyViolations = successfulConstraintResults.reduce((bool, prev) => {
-            if (prev.violations && prev.violations.length > 0) {
-              bool = true;
-            }
-            return bool;
-          }, false);
-          constraintsViolationStatus.set(anyViolations ? Status.Failed : Status.Complete);
-
           if (successfulConstraintResults.length === 0 && data.constraintResponses.length > 0) {
             showFailureToast('All Constraints Failed');
-            checkConstraintsStatus.set(Status.Failed);
+            rawCheckConstraintsStatus.set(Status.Failed);
           } else if (successfulConstraintResults.length !== data.constraintResponses.length) {
             showFailureToast('Constraints Partially Checked');
-            checkConstraintsStatus.set(successfulConstraintResults.length !== 0 ? Status.Failed : Status.Failed);
+            rawCheckConstraintsStatus.set(Status.Failed);
           } else {
             showSuccessToast('All Constraints Checked');
-            checkConstraintsStatus.set(Status.Complete);
+            rawCheckConstraintsStatus.set(Status.Complete);
           }
 
           if (failedConstraintResponses.length > 0) {
@@ -438,7 +427,6 @@ const effects = {
       }
     } catch (e) {
       catchError('Check Constraints Failed', e as Error);
-      checkConstraintsStatus.set(Status.Failed);
       showFailureToast('Check Constraints Failed');
     }
   },

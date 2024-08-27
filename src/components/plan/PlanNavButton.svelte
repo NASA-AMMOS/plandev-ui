@@ -9,7 +9,7 @@
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import type { Status } from '../../enums/status';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { getHumanReadableStatus } from '../../utilities/simulation';
+  import { getHumanReadableStatus } from '../../utilities/status';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
