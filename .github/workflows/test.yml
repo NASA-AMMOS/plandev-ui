@@ -5,6 +5,9 @@ on:
     branches:
       - develop
       - dev-[0-9]+.[0-9]+.[0-9]+
+    types:
+      # defaults + 'edited', to handle changes to flags like ___REQUIRES_AERIE_PR___ in the PR body
+      [opened, synchronize, reopened, edited]
   push:
     branches:
       - develop
@@ -33,6 +36,7 @@ env:
   SCHEDULER_PASSWORD: '${{secrets.SCHEDULER_PASSWORD}}'
   SEQUENCING_USERNAME: '${{secrets.SEQUENCING_USERNAME}}'
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
+  PR_BODY: '${{github.event.pull_request.body}}'
 
 jobs:
   unit-test:
@@ -69,11 +73,25 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: npm
+      - name: Extract Aerie backend docker tag from PR body
+        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
+        if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
+        run: |
+          echo "AERIE_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
+      - name: Extract Aerie gateway docker tag from PR body
+        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
+        if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
+        run: |
+          echo "GATEWAY_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
       - name: Start Services (Aerie)
         run: |
-          docker compose -f docker-compose-test.yml up -d
+          echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
+          echo "GATEWAY_IMAGE_TAG: $GATEWAY_IMAGE_TAG"
+          docker compose -f docker-compose-test.yml up -d --quiet-pull
           docker images
-          docker ps -a
+          docker ps -a --no-trunc
       - name: Install Dependencies (UI)
         run: npm ci
       - name: Build (UI)
