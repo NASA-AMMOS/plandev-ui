@@ -21,6 +21,7 @@
   } from '../../types/timeline';
   import { filterResourcesByLayer } from '../../utilities/timeline';
   import { tooltip } from '../../utilities/tooltip';
+  import DropTarget from './DropTarget.svelte';
   import RowHeaderActivityTree from './RowHeaderActivityTree.svelte';
   import RowHeaderMenu from './RowHeaderMenu.svelte';
   import RowYAxes from './RowYAxes.svelte';
@@ -107,106 +108,108 @@
   role="banner"
   on:contextmenu={e => dispatch('contextMenu', { e, origin: 'row-header' })}
 >
-  <div class="row-header-left-column">
-    {#if expanded}
-      {#if height > 60}
-        <div
-          class="row-drag-handle-container"
-          on:mousedown={() => dispatch('mouseDownRowMove')}
-          on:mouseup={() => dispatch('mouseUpRowMove')}
-          role="none"
-          style={rowDragMoveDisabled ? 'cursor: grab' : 'cursor: grabbing'}
-        >
-          <GripVerticalIcon />
-        </div>
-      {/if}
-
-      {#if height > 48}
-        <div class="row-menu-container">
-          <RowHeaderMenu on:contextMenu />
-        </div>
-      {/if}
-    {/if}
-
-    <div class="row-header-left-column-row">
-      <div class="row-header-title-button-container">
-        <button class="st-button icon row-header-title-button" on:click={toggleExpansion}>
-          {#if expanded}
-            <CaretDownIcon class="row-header-collapse" />
-          {:else}
-            <CaretRightIcon class="row-header-collapse" />
-          {/if}
-          <div class="row-header-title-container">
-            <div
-              class="row-header-title st-typography-label small-text"
-              on:mousedown={() => dispatch('mouseDownRowMove')}
-              on:mouseup={() => dispatch('mouseUpRowMove')}
-              role="none"
-              style={rowDragMoveDisabled ? 'cursor: grab' : 'cursor: grabbing'}
-            >
-              {title}
-            </div>
+  <DropTarget on:drop hint="Add Filter">
+    <div class="row-header-left-column">
+      {#if expanded}
+        {#if height > 60}
+          <div
+            class="row-drag-handle-container"
+            on:mousedown={() => dispatch('mouseDownRowMove')}
+            on:mouseup={() => dispatch('mouseUpRowMove')}
+            role="none"
+            style={rowDragMoveDisabled ? 'cursor: grab' : 'cursor: grabbing'}
+          >
+            <GripVerticalIcon />
           </div>
-        </button>
-        <slot />
-      </div>
+        {/if}
 
-      {#if activityTree.length}
-        <div class="activity-tree">
-          <RowHeaderActivityTree
-            {activityOptions}
-            {activityTree}
-            {selectedActivityDirectiveId}
-            {selectedSpanId}
-            on:activity-tree-node-change
-            on:mouseDown
-            on:dblClick
-          />
-        </div>
+        {#if height > 48}
+          <div class="row-menu-container">
+            <RowHeaderMenu on:contextMenu />
+          </div>
+        {/if}
       {/if}
 
-      {#if resourceLabels.length > 0}
-        <div class="row-header-y-axis-labels">
-          {#each resourceLabels as label}
-            <div class="row-header-y-axis-label" style:color={label.color}>
-              {#if label.chartType === 'x-range'}
-                <TimelineXRangeLayerIcon />
-              {:else if label.chartType === 'line'}
-                <TimelineLineLayerIcon />
-              {/if}
+      <div class="row-header-left-column-row">
+        <div class="row-header-title-button-container">
+          <button class="st-button icon row-header-title-button" on:click={toggleExpansion}>
+            {#if expanded}
+              <CaretDownIcon class="row-header-collapse" />
+            {:else}
+              <CaretRightIcon class="row-header-collapse" />
+            {/if}
+            <div class="row-header-title-container">
               <div
-                class="st-typography-label small-text text-content"
-                style:color={label.color}
-                use:tooltip={{ content: label.resource.name, interactive: true, placement: 'right' }}
+                class="row-header-title st-typography-label small-text"
+                on:mousedown={() => dispatch('mouseDownRowMove')}
+                on:mouseup={() => dispatch('mouseUpRowMove')}
+                role="none"
+                style={rowDragMoveDisabled ? 'cursor: grab' : 'cursor: grabbing'}
               >
-                <!-- See https://stackoverflow.com/a/27961022 for explanation of &lrm; "left to right mark" -->
-                &lrm;{label.label}
-                {#if label.unit}
-                  ({label.unit})
-                {:else}
-                  &lrm;&nbsp;
-                {/if}
+                {title}
               </div>
             </div>
-          {/each}
+          </button>
+          <slot />
         </div>
-      {/if}
-    </div>
-  </div>
-  {#if expanded}
-    <div class="row-header-right-column" style:width={`${yAxesWidth}px`}>
-      <div class="row-header-y-axes">
-        <RowYAxes
-          drawWidth={yAxesWidth}
-          drawHeight={height}
-          {yAxes}
-          on:updateYAxesWidth={onUpdateYAxesWidth}
-          {layers}
-          {resources}
-        />
+
+        {#if activityTree.length}
+          <div class="activity-tree">
+            <RowHeaderActivityTree
+              {activityOptions}
+              {activityTree}
+              {selectedActivityDirectiveId}
+              {selectedSpanId}
+              on:activity-tree-node-change
+              on:mouseDown
+              on:dblClick
+            />
+          </div>
+        {/if}
+
+        {#if resourceLabels.length > 0}
+          <div class="row-header-y-axis-labels">
+            {#each resourceLabels as label}
+              <div class="row-header-y-axis-label" style:color={label.color}>
+                {#if label.chartType === 'x-range'}
+                  <TimelineXRangeLayerIcon />
+                {:else if label.chartType === 'line'}
+                  <TimelineLineLayerIcon />
+                {/if}
+                <div
+                  class="st-typography-label small-text text-content"
+                  style:color={label.color}
+                  use:tooltip={{ content: label.resource.name, interactive: true, placement: 'right' }}
+                >
+                  <!-- See https://stackoverflow.com/a/27961022 for explanation of &lrm; "left to right mark" -->
+                  &lrm;{label.label}
+                  {#if label.unit}
+                    ({label.unit})
+                  {:else}
+                    &lrm;&nbsp;
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
-  {/if}
+    {#if expanded}
+      <div class="row-header-right-column" style:width={`${yAxesWidth}px`}>
+        <div class="row-header-y-axes">
+          <RowYAxes
+            drawWidth={yAxesWidth}
+            drawHeight={height}
+            {yAxes}
+            on:updateYAxesWidth={onUpdateYAxesWidth}
+            {layers}
+            {resources}
+          />
+        </div>
+      </div>
+    {/if}
+  </DropTarget>
 </div>
 
 <style>

@@ -94,8 +94,9 @@
 <style>
   .context-menu {
     background: #fff;
-    border: 1px solid var(--st-gray-30);
-    border-radius: 4px;
+    border: var(--st-border-popover);
+    border-radius: var(--st-border-radius-popover);
+    box-shadow: var(--st-shadow-popover);
     display: block;
     max-height: calc(100vh - 16px);
     min-width: 150px;

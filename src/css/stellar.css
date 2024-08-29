@@ -18,6 +18,8 @@
   --st-utility-blue: #2f80ed;
   --st-utility-red: var(--st-error-red);
   --st-shadow-popover: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
+  --st-border-popover: 1px solid rgba(0, 0, 0, 0.16);
+  --st-border-radius-popover: 4px;
 }
 
 .st-button.ellipsis {

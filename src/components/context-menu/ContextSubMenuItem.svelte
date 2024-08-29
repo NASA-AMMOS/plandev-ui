@@ -3,6 +3,7 @@
   import ContextMenu from './ContextMenu.svelte';
   import ContextMenuItem from './ContextMenuItem.svelte';
 
+  export let hideAfterClick: boolean = true;
   export let text: string = '';
   export let parentMenu: ContextMenu | null = null;
 
@@ -36,6 +37,7 @@
     </div>
     <ContextMenu
       bind:this={contextMenu}
+      {hideAfterClick}
       on:hide={() => {
         if (parentMenu) {
           parentMenu.hide();

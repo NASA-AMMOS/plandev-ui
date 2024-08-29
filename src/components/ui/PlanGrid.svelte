@@ -7,7 +7,7 @@
   import ActivityDirectivesTablePanel from '../activity/ActivityDirectivesTablePanel.svelte';
   import ActivityFormPanel from '../activity/ActivityFormPanel.svelte';
   import ActivitySpansTablePanel from '../activity/ActivitySpansTablePanel.svelte';
-  import ActivityTypesPanel from '../activity/ActivityTypesPanel.svelte';
+  import TimelineItemsPanel from '../activity/TimelineItemsPanel.svelte';
   import ConstraintsPanel from '../constraints/ConstraintsPanel.svelte';
   import ExpansionPanel from '../expansion/ExpansionPanel.svelte';
   import PlanMetadataPanel from '../plan/PlanMetadataPanel.svelte';
@@ -23,7 +23,7 @@
 
   export let columnSizes: string = '1fr 3px 3fr 3px 1fr';
   export let leftComponentBottom: ViewGridComponent = 'SimulationPanel';
-  export let leftComponentTop: ViewGridComponent = 'ActivityTypesPanel';
+  export let leftComponentTop: ViewGridComponent = 'TimelineItemsPanel';
   export let leftHidden: boolean = false;
   export let leftRowSizes: string = '1fr 3px 1fr';
   export let leftSplit: boolean = false;
@@ -48,7 +48,6 @@
     ActivityDirectivesTablePanel,
     ActivityFormPanel,
     ActivitySpansTablePanel,
-    ActivityTypesPanel,
     ConstraintsPanel,
     ExpansionPanel,
     IFramePanel,
@@ -58,6 +57,7 @@
     SimulationEventsPanel,
     SimulationPanel,
     TimelineEditorPanel,
+    TimelineItemsPanel,
   };
 
   function onChangeColumnSizes(event: CustomEvent<string>) {

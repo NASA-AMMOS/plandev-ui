@@ -94,11 +94,35 @@ export class Plan {
 
   async addActivity(name: string = 'GrowBanana') {
     const currentNumOfActivitiesWithName = await this.panelActivityDirectivesTable.getByRole('row', { name }).count();
-    await this.page.getByRole('button', { name: `CreateActivity-${name}` }).click();
+    const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
+    const activityRow = this.page
+      .locator('.timeline')
+      .getByRole('listitem')
+      .filter({ hasText: 'Activities by Type' })
+      .first()
+      .locator('.overlay');
+    await activityListItem.dragTo(activityRow, { timeout: 5000 });
+    await this.waitForToast('Activity Directive Created Successfully');
     await expect(this.panelActivityDirectivesTable.getByRole('row', { name })).toHaveCount(
       currentNumOfActivitiesWithName + 1,
     );
   }
+
+  /* TODO saving this work for a future PR */
+  // async addActivityAsFilter(name: string = 'GrowBanana') {
+  //   const activityListItem = await this.page.waitForSelector(`.list-item:has-text("${name}")`);
+  //   await activityListItem.hover();
+  //   const addButton = await this.page.getByLabel(`AddActivity-${name}`);
+  //   await addButton.click();
+  //   const contextMenuItem = await this.page.waitForSelector(
+  //     '.context-menu .context-menu-item:has-text("Activities by Type")',
+  //   );
+  //   await contextMenuItem.hover();
+  //   const contextSubMenuItem = await contextMenuItem.waitForSelector(
+  //     ".context-menu .context-menu-item:has-text('Activity Layer')",
+  //   );
+  //   await contextSubMenuItem.click();
+  // }
 
   async addPlanCollaborator(name: string, isUsername = true) {
     await this.showPanel(PanelNames.PLAN_METADATA, true);
@@ -489,7 +513,7 @@ export class Plan {
     this.page = page;
     this.panelActivityDirectivesTable = page.locator('[data-component-name="ActivityDirectivesTablePanel"]');
     this.panelActivityForm = page.locator('[data-component-name="ActivityFormPanel"]');
-    this.panelActivityTypes = page.locator('[data-component-name="ActivityTypesPanel"]');
+    this.panelActivityTypes = page.locator('[data-component-name="TimelineItemsPanel"]');
     this.panelConstraints = page.locator('[data-component-name="ConstraintsPanel"]');
     this.panelExpansion = page.locator('[data-component-name="ExpansionPanel"]');
     this.panelPlanMetadata = page.locator('[data-component-name="PlanMetadataPanel"]');
@@ -555,7 +579,7 @@ export class Plan {
 export enum PanelNames {
   ACTIVITY_DIRECTIVES_TABLE = 'Activity Directives Table',
   SIMULATED_ACTIVITIES_TABLE = 'Simulated Activities Table',
-  ACTIVITY_TYPES = 'Activity Types',
+  TIMELINE_ITEMS = 'Activity & Resource Types',
   CONSTRAINTS = 'Constraints',
   EXPANSION = 'Expansion',
   EXTERNAL_APPLICATION = 'External Application',

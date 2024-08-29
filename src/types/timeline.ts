@@ -1,7 +1,7 @@
 import type { Selection } from 'd3-selection';
-import type { ActivityDirective } from './activity';
+import type { ActivityDirective, ActivityType } from './activity';
 import type { ConstraintResultWithName } from './constraint';
-import type { Span } from './simulation';
+import type { ResourceType, Span } from './simulation';
 
 export type ActivityTree = ActivityTreeNode[];
 
@@ -85,6 +85,7 @@ export type ChartType = 'activity' | 'line' | 'x-range';
 export interface Layer {
   chartType: ChartType;
   filter: {
+    // TODO refactor in next PR to a unified filter
     activity?: ActivityLayerFilter;
     resource?: ResourceLayerFilter;
   };
@@ -251,3 +252,11 @@ export interface XRangePoint extends Point {
   is_null?: boolean;
   label: Label;
 }
+
+export type TimelineItemType = ResourceType | ActivityType;
+
+export type TimelineItemListFilterOption = {
+  color?: string;
+  label: string;
+  value: string;
+};

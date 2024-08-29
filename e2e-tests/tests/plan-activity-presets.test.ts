@@ -32,7 +32,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.createPlan();
   await plan.goto();
 
-  await plan.panelActivityTypes.getByRole('button', { name: 'CreateActivity-GrowBanana' }).click();
+  await plan.addActivity('GrowBanana');
   await plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).first().click();
 
   await plan.panelActivityForm.locator('.parameter-base-number input[type="number"]').fill('2');

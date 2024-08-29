@@ -32,7 +32,7 @@ import { sequenceAdaptations } from '../stores/sequence-adaptation';
 import { channelDictionaries, commandDictionaries, parameterDictionaries } from '../stores/sequencing';
 import { selectedSpanId, simulationDataset, simulationDatasetId } from '../stores/simulation';
 import { createTagError } from '../stores/tags';
-import { applyViewUpdate, view, viewUpdateTimeline } from '../stores/views';
+import { applyViewUpdate, view, viewUpdateRow, viewUpdateTimeline } from '../stores/views';
 import type {
   ActivityDirective,
   ActivityDirectiveDB,
@@ -2523,6 +2523,30 @@ const effects = {
     }
   },
 
+  async deleteTimelineHorizontalGuides(timelineId?: number | null, rowId?: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all horizontal guides for this row?`,
+      'Delete Rows',
+      true,
+    );
+    if (confirm) {
+      viewUpdateRow('horizontalGuides', [], timelineId, rowId);
+    }
+  },
+
+  async deleteTimelineLayers(timelineId?: number | null, rowId?: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all layers in this row?`,
+      'Delete Rows',
+      true,
+    );
+    if (confirm) {
+      viewUpdateRow('layers', [], timelineId, rowId);
+    }
+  },
+
   async deleteTimelineRow(row: Row, rows: Row[], timelineId: number | null) {
     const { confirm } = await showConfirmModal(
       'Delete',
@@ -2533,6 +2557,42 @@ const effects = {
     if (confirm) {
       const filteredRows = rows.filter(r => r.id !== row.id);
       viewUpdateTimeline('rows', filteredRows, timelineId);
+    }
+  },
+
+  async deleteTimelineRows(timelineId: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all timeline rows?`,
+      'Delete Rows',
+      true,
+    );
+    if (confirm) {
+      viewUpdateTimeline('rows', [], timelineId);
+    }
+  },
+
+  async deleteTimelineVerticalGuides(timelineId: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all vertical guides?`,
+      'Delete Rows',
+      true,
+    );
+    if (confirm) {
+      viewUpdateTimeline('verticalGuides', [], timelineId);
+    }
+  },
+
+  async deleteTimelineYAxes(timelineId?: number | null, rowId?: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all y axes for this row?`,
+      'Delete Rows',
+      true,
+    );
+    if (confirm) {
+      viewUpdateRow('yAxes', [], timelineId, rowId);
     }
   },
 

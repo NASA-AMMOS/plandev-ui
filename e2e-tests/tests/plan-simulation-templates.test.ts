@@ -34,7 +34,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
 
   await plan.showPanel(PanelNames.SIMULATION, true);
 
-  await page.getByRole('button', { name: 'CreateActivity-child' }).click();
+  await plan.addActivity('child');
   await page.getByRole('button', { name: 'Simulate' }).click();
 
   await plan.panelSimulation.locator('.parameter-base-number input[type="number"]').first().fill('199');

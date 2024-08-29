@@ -71,7 +71,8 @@
     align-items: center;
     background-color: var(--st-gray-10);
     border: none;
-    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.24);
+    border-radius: 48px;
     color: var(--st-gray-90);
     cursor: pointer;
     display: inline-grid;
@@ -79,6 +80,7 @@
     grid-template-columns: min-content;
     height: 24px;
     line-height: 24px;
+    max-width: 100%;
     overflow: hidden;
     padding: 8px;
     position: relative;

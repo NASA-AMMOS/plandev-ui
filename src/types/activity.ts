@@ -12,6 +12,7 @@ export type ActivityType = {
   name: string;
   parameters: ParametersMap;
   required_parameters: string[];
+  subsystem_tag?: Tag;
 };
 
 export type ActivityTypeExpansionRules = {

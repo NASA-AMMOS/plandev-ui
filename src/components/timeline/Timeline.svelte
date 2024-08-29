@@ -8,7 +8,7 @@
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { InvalidDate } from '../../constants/time';
   import { plugins } from '../../stores/plugins';
-  import { viewUpdateTimeline } from '../../stores/views';
+  import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
   import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
@@ -450,7 +450,7 @@
       on:wheel={handleScroll}
       use:dndzone={{ dragDisabled: rowDragMoveDisabled, items: rows, type: 'rows' }}
     >
-      {#each rows as row (row.id)}
+      {#each rows as row, i (row.id)}
         <div class="timeline-row-wrapper">
           <TimelineRow
             {activityDirectives}
@@ -469,6 +469,7 @@
             {hasUpdateDirectivePermission}
             horizontalGuides={row.horizontalGuides}
             id={row.id}
+            index={i}
             layers={row.layers}
             name={row.name}
             marginLeft={timeline?.marginLeft}
@@ -507,6 +508,11 @@
           />
         </div>
       {/each}
+      <div class="new-row">
+        <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="w-100 st-button tertiary">
+          New Row +
+        </button>
+      </div>
     </div>
   </div>
 
@@ -549,8 +555,7 @@
 
 <style>
   .rows {
-    border-bottom: 1px solid var(--st-gray-15);
-    min-height: 100px;
+    box-sizing: content-box;
     outline: none !important;
     overflow-x: hidden;
     overflow-y: auto;
@@ -584,5 +589,21 @@
     background: white;
     border: 1px solid var(--st-gray-40);
     box-shadow: var(--st-shadow-popover);
+  }
+
+  .new-row {
+    align-items: center;
+    background: white;
+    border-bottom: 1px solid var(--st-gray-20);
+    display: flex;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    z-index: 4;
+  }
+
+  .new-row button {
+    color: var(--st-gray-70);
+    font-size: 10px;
   }
 </style>

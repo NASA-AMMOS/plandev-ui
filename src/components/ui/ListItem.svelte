@@ -1,12 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { permissionHandler } from '../../utilities/permissionHandler';
 
   export { className as class };
   export { styleName as style };
   export let draggable: boolean = false;
-  export let hasPermission: boolean | undefined = undefined;
-  export let permissionError: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     click: MouseEvent;
@@ -16,23 +13,28 @@
 
   let className: string = '';
   let styleName: string = '';
+  let dragging: boolean = false;
 </script>
 
 <div
   class="list-item st-typography-body {className}"
+  class:dragging
   {draggable}
   role="none"
   style={styleName}
   on:click={e => dispatch('click', e)}
-  on:dragend={e => dispatch('dragend', e)}
-  on:dragstart={e => dispatch('dragstart', e)}
-  use:permissionHandler={{
-    hasPermission: hasPermission ?? true,
-    permissionError,
+  on:dragend={e => {
+    dragging = false;
+    dispatch('dragend', e);
+  }}
+  on:dragstart={e => {
+    dragging = true;
+    dispatch('dragstart', e);
   }}
 >
   <div class="list-item-content">
     <slot />
+    <slot name="prefix" />
   </div>
   <div class="suffix">
     <slot name="suffix" />
@@ -42,25 +44,43 @@
 <style>
   .list-item {
     align-items: center;
-    border: 1px solid var(--st-gray-30);
     border-radius: 4px;
     display: flex;
-    font-size: 0.8rem;
+    height: 32px;
     justify-content: space-between;
-    padding: 0.2rem;
+    margin: 0px 4px;
+    padding: 4px 8px 4px 12px;
+  }
+
+  .list-item:hover,
+  .list-item:focus-within {
+    background: var(--st-gray-10);
   }
 
   .list-item-content {
+    display: flex;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .list-item:not(:last-child) {
-    margin-bottom: 0.2rem;
+  .suffix:not(:focus-within) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .list-item:hover .suffix,
+  .list-item:focus .suffix {
+    align-items: center;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .list-item > .suffix > :global(span) {
     display: flex;
+  }
+
+  .list-item.dragging .suffix {
+    display: none;
   }
 </style>

@@ -10,12 +10,13 @@
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { Plan } from '../../types/plan';
-  import type { Simulation, SimulationDataset, Span, SpanUtilityMaps, SpansMap } from '../../types/simulation';
+  import type { Simulation, SimulationDataset, Span, SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import type {
     ActivityOptions,
     MouseOver,
     MouseOverOrigin,
     Row,
+    Timeline,
     TimeRange,
     VerticalGuide,
   } from '../../types/timeline';
@@ -66,6 +67,7 @@
   let activityDirectiveStartDate: Date | null = null;
   let contextMenuComponent: ContextMenu;
   let span: Span | null;
+  let timelines: Timeline[] = [];
   let hasActivityLayer: boolean = false;
   let mouseOverOrigin: MouseOverOrigin | undefined = undefined;
   let row: Row | undefined = undefined;

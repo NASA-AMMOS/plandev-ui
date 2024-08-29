@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
+import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreatePlanSnapshotModal from '../components/modals/CreatePlanSnapshotModal.svelte';
@@ -345,6 +346,38 @@ export async function showCreatePlanSnapshotModal(
             createPlanSnapshotModal.$destroy();
           },
         );
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a CreatePlanSnapshotModal with the supplied arguments.
+ */
+export async function showConfirmActivityCreationModal(): Promise<ModalElementValue<{ addFilter: boolean }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const confirmActivityCreationModal = new ConfirmActivityCreationModal({ target });
+        target.resolve = resolve;
+
+        confirmActivityCreationModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          confirmActivityCreationModal.$destroy();
+        });
+
+        confirmActivityCreationModal.$on('confirm', (e: CustomEvent<{ addFilter: boolean }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          confirmActivityCreationModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });

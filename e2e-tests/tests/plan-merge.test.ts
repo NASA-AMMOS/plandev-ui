@@ -48,7 +48,7 @@ test.describe.serial('Plan Merge', () => {
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await page.getByRole('button', { name: 'CreateActivity-BiteBanana' }).click();
+    await plan.addActivity('BiteBanana');
   });
 
   test('Create a branch', async ({ baseURL }) => {
@@ -56,8 +56,13 @@ test.describe.serial('Plan Merge', () => {
   });
 
   test('Change the start time of the activity on the branch', async () => {
-    await page.getByRole('row', { name: 'BiteBanana' }).first().click();
-    await page.waitForSelector('button:has-text("BiteBanana")', { state: 'visible' });
+    await page.waitForTimeout(2000);
+    const row = await page.getByRole('row', { name: 'BiteBanana' });
+    await row.waitFor({ state: 'visible' });
+    await row.first().click();
+    await page.waitForSelector('.activity-header-title-edit-button:has-text("BiteBanana")', {
+      state: 'visible',
+    });
     await page.locator('input[name="start-time"]').click({ position: { x: 2, y: 2 } });
     await page.locator('input[name="start-time"]').fill(newActivityStartTime);
     await page.locator('input[name="start-time"]').press('Enter');

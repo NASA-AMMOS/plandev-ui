@@ -92,6 +92,14 @@
     activityDirectivesToDeleteMap = tempActivityDirectivesToDeleteMap;
   }
 
+  function onKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    if (key === 'Enter') {
+      event.preventDefault();
+      confirmDelete();
+    }
+  }
+
   function confirmDelete() {
     activityDirectivesToDeleteMap;
     dispatch(
@@ -150,6 +158,8 @@
     isHelpOpen = !isHelpOpen;
   }
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 <Modal height="auto" {width}>
   <ModalHeader on:close>Delete Activity {activityIds.length > 1 ? 'Directives' : 'Directive'}</ModalHeader>

@@ -3,16 +3,8 @@ import { ViewDefaultActivityOptions } from '../constants/view';
 import jsonSchema from '../schemas/ui-view-schema.json';
 import type { ActivityType } from '../types/activity';
 import type { ResourceType } from '../types/simulation';
-import type { Layer } from '../types/timeline';
 import type { View, ViewGridColumns, ViewGridRows } from '../types/view';
-import {
-  createRow,
-  createTimeline,
-  createTimelineActivityLayer,
-  createTimelineLineLayer,
-  createTimelineXRangeLayer,
-  createYAxis,
-} from './timeline';
+import { createRow, createTimeline, createTimelineActivityLayer, createTimelineResourceLayer } from './timeline';
 
 /**
  * Generates a default generic UI view.
@@ -38,32 +30,14 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
 
   // Generate a row for every resource
   resourceTypes.map(resourceType => {
-    const { name, schema } = resourceType;
-    const { type: schemaType } = schema;
-    const unit = schema.metadata?.unit?.value;
-    const isDiscreteSchema = schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
-    const isNumericSchema =
-      schemaType === 'int' ||
-      schemaType === 'real' ||
-      (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
-
-    const yAxis = createYAxis(timelines, {
-      label: { text: `${name}${unit ? ` (${unit})` : ''}` },
-      tickCount: isNumericSchema ? 5 : 0,
-    });
-
-    const resourceLayers = isDiscreteSchema
-      ? ([createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
-      : isNumericSchema
-        ? ([createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })] as Layer[])
-        : ([] as Layer[]);
-
+    const { layer, yAxis } = createTimelineResourceLayer(timelines, resourceType);
+    const layers = layer ? [layer] : [];
     const resourceRow = createRow(timelines, {
       autoAdjustHeight: false,
       expanded: true,
       height: 100,
-      layers: resourceLayers,
-      name,
+      layers,
+      name: resourceType.name,
       yAxes: [yAxis],
     });
 
@@ -298,7 +272,7 @@ export function generateDefaultView(activityTypes: ActivityType[] = [], resource
         grid: {
           columnSizes: '1fr 3px 3fr 3px 1fr',
           leftComponentBottom: 'SimulationPanel',
-          leftComponentTop: 'ActivityTypesPanel',
+          leftComponentTop: 'TimelineItemsPanel',
           leftHidden: false,
           leftRowSizes: '1fr',
           leftSplit: false,

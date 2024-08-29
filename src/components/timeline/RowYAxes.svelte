@@ -32,7 +32,6 @@
       const gSelection = select(g);
 
       let totalWidth = 0;
-      let marginWidth = 0;
       const axisClass = 'y-axis';
       gSelection.selectAll(`.${axisClass}`).remove();
 
@@ -68,7 +67,6 @@
             .tickPadding(2);
           const axisMargin = 2;
           const startPosition = -(totalWidth + axisMargin * i);
-          marginWidth += i > 0 ? axisMargin : 0;
           xRangeAxisG.attr('transform', `translate(${startPosition}, 0)`);
           xRangeAxisG.style('color', 'black');
           xRangeAxisG.call(axisLeft);
@@ -81,8 +79,14 @@
         i++;
       }
 
+      let j = 0;
       for (let i = 0; i < yAxes.length; ++i) {
         const axis = yAxes[i];
+        const tickCount = axis.tickCount ?? 1;
+        if (tickCount < 1) {
+          continue;
+        }
+
         const axisG = gSelection.append('g').attr('class', axisClass);
         axisG.selectAll('*').remove();
 
@@ -101,9 +105,7 @@
         // const labelFontFace = axis.label?.fontFace || 'sans-serif';
         // const labelFontSize = axis.label?.fontSize || 12;
         // const labelText = axis.label.text;
-        const tickCount = axis.tickCount || 1;
         if (
-          tickCount > 0 &&
           axis.scaleDomain &&
           axis.scaleDomain.length === 2 &&
           typeof axis.scaleDomain[0] === 'number' &&
@@ -128,22 +130,19 @@
             .tickPadding(2);
 
           const axisMargin = 2;
-          const startPosition = -(totalWidth + axisMargin * i);
-          marginWidth += i > 0 ? axisMargin : 0;
+          const startPosition = -(totalWidth + axisMargin * j);
           axisG.attr('transform', `translate(${startPosition}, 0)`);
           axisG.style('color', color);
           if (domain.length === 2 && domain[0] !== null && domain[1] !== null) {
             axisG.call(axisLeft);
             axisG.call(g => g.select('.domain').remove());
           }
+          drawSeparator(axisG);
+          totalWidth += getBoundingClientRectWidth(axisG.node());
+          j++;
         }
-
-        drawSeparator(axisG);
-
-        totalWidth += getBoundingClientRectWidth(axisG.node());
       }
 
-      totalWidth += marginWidth;
       // Dispatch the width so the RowHeader can recalculate the label width.
       dispatch('updateYAxesWidth', totalWidth);
     }

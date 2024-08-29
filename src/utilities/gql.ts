@@ -1960,6 +1960,11 @@ const gql = {
         name
         parameters
         required_parameters
+        subsystem_tag {
+          color
+          id
+          name
+        }
       }
     }
   `,

@@ -48,8 +48,8 @@ test.describe.serial('Timeline View Editing', () => {
   const rowName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await plan.showPanel(PanelNames.ACTIVITY_TYPES);
-    await page.getByRole('button', { name: 'CreateActivity-PickBanana' }).click();
+    await plan.showPanel(PanelNames.TIMELINE_ITEMS);
+    await plan.addActivity('PickBanana');
   });
 
   test('Change the start time of the activity', async () => {
@@ -77,7 +77,7 @@ test.describe.serial('Timeline View Editing', () => {
 
   test('Add a row', async () => {
     const existingRowCount = await page.locator('.timeline-row').count();
-    await page.getByRole('button', { name: 'New Row' }).click();
+    await page.getByRole('button', { exact: true, name: 'New Row' }).click();
     const newRowCount = await page.locator('.timeline-row').count();
     expect(newRowCount - existingRowCount).toEqual(1);
   });
@@ -97,7 +97,7 @@ test.describe.serial('Timeline View Editing', () => {
 
   test('Edit a row', async () => {
     // Create a new row
-    await page.getByRole('button', { name: 'New Row' }).click();
+    await page.getByRole('button', { exact: true, name: 'New Row' }).click();
 
     // Click on edit button of last row
     await page.locator('.timeline-row').last().locator("button[aria-label='Edit Row']").click();

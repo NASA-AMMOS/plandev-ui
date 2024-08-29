@@ -14,7 +14,12 @@ import {
   type TimeInterval,
 } from 'd3-time';
 import { groupBy } from 'lodash-es';
-import { ViewDefaultActivityOptions } from '../constants/view';
+import {
+  ViewActivityLayerColorPresets,
+  ViewDefaultActivityOptions,
+  ViewLineLayerColorPresets,
+  ViewXRangeLayerSchemePresets,
+} from '../constants/view';
 import type { ActivityDirective } from '../types/activity';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
@@ -34,7 +39,9 @@ import type {
   Timeline,
   VerticalGuide,
   XRangeLayer,
+  XRangeLayerColorScheme,
 } from '../types/timeline';
+import { generateRandomPastelColor } from './color';
 import { filterEmpty } from './generic';
 import { getDoyTime } from './time';
 
@@ -359,6 +366,60 @@ export function getNextTimelineID(timelines: Timeline[]): number {
 }
 
 /**
+ * Returns the next unused activity color within the given row
+ */
+export function getUniqueColorForActivityLayer(row?: Row): string {
+  let color = ViewActivityLayerColorPresets[0];
+  const seenColors: Record<string, boolean> = {};
+  if (row) {
+    row.layers.forEach(layer => {
+      if (isActivityLayer(layer)) {
+        seenColors[layer.activityColor] = true;
+      }
+    });
+    color = ViewActivityLayerColorPresets.find(c => !seenColors[c]) ?? generateRandomPastelColor();
+  }
+  return color;
+}
+
+/**
+ * Returns the next unused xrange color scheme within the given row
+ */
+export function getUniqueColorSchemeForXRangeLayer(row?: Row): XRangeLayerColorScheme {
+  const defaultScheme: XRangeLayerColorScheme = 'schemeTableau10';
+  let colorScheme = defaultScheme as XRangeLayerColorScheme;
+  const seenColorSchemes: Record<string, boolean> = {};
+  if (row) {
+    row.layers.forEach(layer => {
+      if (isXRangeLayer(layer)) {
+        seenColorSchemes[layer.colorScheme] = true;
+      }
+    });
+    colorScheme =
+      (Object.keys(ViewXRangeLayerSchemePresets).find(c => !seenColorSchemes[c]) as XRangeLayerColorScheme) ??
+      defaultScheme;
+  }
+  return colorScheme;
+}
+
+/**
+ * Returns the next unused line color within the given row
+ */
+export function getUniqueColorForLineLayer(row?: Row): string {
+  let color = ViewLineLayerColorPresets[0];
+  const seenColors: Record<string, boolean> = {};
+  if (row) {
+    row.layers.forEach(layer => {
+      if (isLineLayer(layer)) {
+        seenColors[layer.lineColor] = true;
+      }
+    });
+    color = ViewLineLayerColorPresets.find(c => !seenColors[c]) ?? generateRandomPastelColor();
+  }
+  return color;
+}
+
+/**
  * Returns a new vertical guide
  */
 export function createVerticalGuide(
@@ -479,7 +540,7 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
   const id = getNextLayerID(timelines);
 
   return {
-    activityColor: '#fcdd8f',
+    activityColor: ViewActivityLayerColorPresets[0],
     activityHeight: 16,
     chartType: 'activity',
     filter: {
@@ -492,6 +553,31 @@ export function createTimelineActivityLayer(timelines: Timeline[], args: Partial
     yAxisId: null,
     ...args,
   };
+}
+
+export function createTimelineResourceLayer(timelines: Timeline[], resourceType: ResourceType) {
+  const { name, schema } = resourceType;
+  const { type: schemaType } = schema;
+
+  const unit = schema.metadata?.unit?.value;
+  const isDiscreteSchema = schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
+  const isNumericSchema =
+    schemaType === 'int' ||
+    schemaType === 'real' ||
+    (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
+
+  const yAxis = createYAxis(timelines, {
+    label: { text: `${name}${unit ? ` (${unit})` : ''}` },
+    tickCount: isNumericSchema ? 5 : 0,
+  });
+
+  const layer = isDiscreteSchema
+    ? createTimelineXRangeLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+    : isNumericSchema
+      ? createTimelineLineLayer(timelines, [yAxis], { filter: { resource: { names: [name] } } })
+      : null;
+
+  return { layer, yAxis };
 }
 
 /**
@@ -513,7 +599,7 @@ export function createTimelineLineLayer(
       },
     },
     id,
-    lineColor: '#283593',
+    lineColor: ViewLineLayerColorPresets[0],
     lineWidth: 1,
     name: '',
     pointRadius: 2,

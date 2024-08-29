@@ -1,25 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    schemeAccent,
-    schemeCategory10,
-    schemeDark2,
-    schemePaired,
-    schemePastel1,
-    schemePastel2,
-    schemeSet1,
-    schemeSet2,
-    schemeSet3,
-    schemeTableau10,
-  } from 'd3-scale-chromatic';
   import { createEventDispatcher } from 'svelte';
+  import { ViewXRangeLayerSchemePresets } from '../../constants/view';
   import type { XRangeLayerColorScheme } from '../../types/timeline';
   import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
 
-  export let value: string = 'schemeAccent';
+  export let value: string = 'schemeTableau10';
   export let layout: 'compact' | 'dropdown' = 'dropdown';
   export let colors: readonly string[] = [];
 
@@ -29,23 +18,11 @@
     input: { value: XRangeLayerColorScheme };
   }>();
 
-  const schemeMap: Record<XRangeLayerColorScheme, readonly string[]> = {
-    schemeAccent,
-    schemeCategory10,
-    schemeDark2,
-    schemePaired,
-    schemePastel1,
-    schemePastel2,
-    schemeSet1,
-    schemeSet2,
-    schemeSet3,
-    schemeTableau10,
-  };
-
-  const schemes: XRangeLayerColorScheme[] = Object.keys(schemeMap) as XRangeLayerColorScheme[];
+  const schemes: XRangeLayerColorScheme[] = Object.keys(ViewXRangeLayerSchemePresets) as XRangeLayerColorScheme[];
 
   $: if (value) {
-    colors = schemeMap[value as XRangeLayerColorScheme] || schemeAccent;
+    colors =
+      ViewXRangeLayerSchemePresets[value as XRangeLayerColorScheme] || Object.values(ViewXRangeLayerSchemePresets)[0];
   }
 
   function onInput(scheme: XRangeLayerColorScheme) {
@@ -73,7 +50,7 @@
     <MenuHeader title="Color Schemes" />
     {#each schemes as scheme}
       <button class:active={scheme === value} class="st-button tertiary scheme-item" on:click={() => onInput(scheme)}>
-        {#each schemeMap[scheme] as color}
+        {#each ViewXRangeLayerSchemePresets[scheme] as color}
           <div class="scheme-item-color" style="background:{color}" />
         {/each}
       </button>

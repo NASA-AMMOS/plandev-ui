@@ -40,6 +40,7 @@
     line-height: 1rem;
     margin: 0;
     padding: var(--tab-padding, 10px 1rem);
+    user-select: none;
   }
 
   button:disabled {

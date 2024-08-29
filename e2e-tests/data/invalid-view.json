@@ -280,7 +280,7 @@
     "grid": {
       "columnSizes": "1fr 3px 3fr 3px 1fr",
       "leftComponentBottom": "SimulationPanel",
-      "leftComponentTop": "ActivityTypesPanel",
+      "leftComponentTop": "TimelineItemsPanel",
       "leftHidden": false,
       "leftRowSizes": "1fr",
       "leftSplit": false,

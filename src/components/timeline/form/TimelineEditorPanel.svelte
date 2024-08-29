@@ -5,6 +5,7 @@
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
+  import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import GripVerticalIcon from 'bootstrap-icons/icons/grip-vertical.svg?component';
   import { onMount } from 'svelte';
@@ -19,17 +20,20 @@
   import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
   import SpanIcon from '../../../assets/timeline-span.svg?component';
   import ActivityModeWidthIcon from '../../../assets/width.svg?component';
-  import { ViewDefaultActivityOptions } from '../../../constants/view';
+  import {
+    ViewActivityLayerColorPresets,
+    ViewDefaultActivityOptions,
+    ViewLineLayerColorPresets,
+  } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
   import { activityTypes, maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { plugins } from '../../../stores/plugins';
   import { externalResourceNames, resourceTypes, yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
-    selectedRow,
     selectedRowId,
-    selectedTimeline,
     selectedTimelineId,
     view,
+    viewAddTimelineRow,
     viewSetSelectedRow,
     viewSetSelectedTimeline,
     viewUpdateRow,
@@ -55,7 +59,6 @@
   import { getDoyTime } from '../../../utilities/time';
   import {
     createHorizontalGuide,
-    createRow,
     createTimelineActivityLayer,
     createTimelineLineLayer,
     createTimelineXRangeLayer,
@@ -84,25 +87,34 @@
 
   export let gridSection: ViewGridSection;
 
+  let activityOptions: ActivityOptions = { ...ViewDefaultActivityOptions };
   let horizontalGuides: HorizontalGuide[] = [];
-  let rows: Row[] = [];
-  let timelines: Timeline[] = [];
-  let verticalGuides: VerticalGuide[] = [];
   let editorWidth: number;
+  let layers: Layer[] = [];
+  let timelines: Timeline[] = [];
+  let rowHasActivityLayer: boolean = false;
+  let rowHasNonActivityChartLayer: boolean = false;
+  let rows: Row[] = [];
+  let selectedTimeline: Timeline | undefined;
+  let selectedRow: Row | undefined;
+  let verticalGuides: VerticalGuide[] = [];
+  let yAxes: Axis[] = [];
 
-  $: rows = $selectedTimeline?.rows || [];
+  $: selectedTimeline = $view?.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
+  $: rows = selectedTimeline?.rows || [];
   $: timelines = $view?.definition.plan.timelines || [];
-  $: verticalGuides = $selectedTimeline?.verticalGuides || [];
-  $: horizontalGuides = $selectedRow?.horizontalGuides || [];
-  $: yAxes = $selectedRow?.yAxes || [];
-  $: layers = $selectedRow?.layers || [];
-  $: rowHasActivityLayer = $selectedRow?.layers.find(isActivityLayer) || false;
+  $: verticalGuides = selectedTimeline?.verticalGuides || [];
+  $: selectedRow = rows.find(row => row.id === $selectedRowId);
+  $: horizontalGuides = selectedRow?.horizontalGuides || [];
+  $: yAxes = selectedRow?.yAxes || [];
+  $: layers = selectedRow?.layers || [];
+  $: rowHasActivityLayer = !!selectedRow?.layers.find(isActivityLayer) || false;
   $: rowHasNonActivityChartLayer =
-    !!$selectedRow?.layers.find(layer => isLineLayer(layer) || isXRangeLayer(layer)) || false;
-  $: if (rowHasActivityLayer && $selectedRow && !$selectedRow.activityOptions) {
+    !!selectedRow?.layers.find(layer => isLineLayer(layer) || isXRangeLayer(layer)) || false;
+  $: if (rowHasActivityLayer && selectedRow && !selectedRow.activityOptions) {
     viewUpdateRow('activityOptions', ViewDefaultActivityOptions);
   }
-  $: activityOptions = $selectedRow?.activityOptions || { ...ViewDefaultActivityOptions };
+  $: activityOptions = selectedRow?.activityOptions || { ...ViewDefaultActivityOptions };
 
   function updateRowEvent(event: Event) {
     const { name, value } = getTarget(event);
@@ -153,6 +165,10 @@
     viewUpdateRow('yAxes', yAxes);
   }
 
+  function handleRemoveAllYAxesClick() {
+    effects.deleteTimelineYAxes();
+  }
+
   function handleDeleteYAxisClick(yAxis: Axis) {
     const filteredYAxes = yAxes.filter(axis => axis.id !== yAxis.id);
     viewUpdateRow('yAxes', filteredYAxes);
@@ -162,6 +178,10 @@
     const layer = createTimelineActivityLayer(timelines);
     layers = [...layers, layer];
     viewUpdateRow('layers', layers);
+  }
+
+  function handleRemoveAllLayersClick() {
+    effects.deleteTimelineLayers();
   }
 
   function handleDeleteLayerClick(layer: Layer) {
@@ -180,13 +200,15 @@
   }
 
   function addTimelineRow() {
-    if (!$selectedTimeline) {
+    viewAddTimelineRow();
+  }
+
+  function removeAllTimelineRows() {
+    if (!selectedTimeline) {
       return;
     }
 
-    const row = createRow(timelines);
-    rows = [...rows, row];
-    viewUpdateTimeline('rows', rows);
+    effects.deleteTimelineRows($selectedTimelineId);
   }
 
   function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
@@ -392,12 +414,16 @@
   }
 
   function handleNewHorizontalGuideClick() {
-    if (!$selectedRow) {
+    if (!selectedRow) {
       return;
     }
-    const yAxesWithScaleDomains = $yAxesWithScaleDomainsCache[$selectedRow.id];
+    const yAxesWithScaleDomains = $yAxesWithScaleDomainsCache[selectedRow.id];
     const newHorizontalGuide = createHorizontalGuide(timelines, yAxesWithScaleDomains);
     viewUpdateRow('horizontalGuides', [...horizontalGuides, newHorizontalGuide]);
+  }
+
+  function handleRemoveAllHorizontalGuidesClick() {
+    effects.deleteTimelineHorizontalGuides();
   }
 
   function handleNewVerticalGuideClick() {
@@ -411,6 +437,10 @@
 
     const newVerticalGuide = createVerticalGuide(timelines, centerDateDoy);
     viewUpdateTimeline('verticalGuides', [...verticalGuides, newVerticalGuide], $selectedTimelineId);
+  }
+
+  function handleRemoveAllVerticalGuidesClick() {
+    effects.deleteTimelineVerticalGuides($selectedTimelineId);
   }
 
   // This is the JS way to style the dragged element, notice it is being passed into the dnd-zone
@@ -475,7 +505,7 @@
   </svelte:fragment>
 
   <div slot="body" bind:clientWidth={editorWidth} class="timeline-editor" class:compact={editorWidth < 360}>
-    {#if !$selectedRow}
+    {#if !selectedRow}
       <!-- Select Timeline. -->
       <div class="timeline-select-container">
         <select
@@ -497,7 +527,7 @@
       </div>
 
       <!-- Timeline editing -->
-      {#if !$selectedTimeline}
+      {#if !selectedTimeline}
         <fieldset class="editor-section">No timeline selected</fieldset>
       {:else}
         <fieldset class="editor-section">
@@ -511,7 +541,7 @@
                   class="st-input w-100"
                   name="marginLeft"
                   type="number"
-                  value={$selectedTimeline.marginLeft}
+                  value={selectedTimeline.marginLeft}
                   on:input|stopPropagation={updateTimelineMarginLeft}
                 />
               </Input>
@@ -523,7 +553,7 @@
                 class="st-input w-100"
                 name="marginRight"
                 type="number"
-                value={$selectedTimeline.marginRight}
+                value={selectedTimeline.marginRight}
                 on:input|stopPropagation={updateTimelineEvent}
               />
             </Input>
@@ -533,13 +563,24 @@
         <fieldset class="editor-section">
           <div class="editor-section-header editor-section-header-with-button">
             <div class="st-typography-medium">Vertical Guides</div>
-            <button
-              on:click={handleNewVerticalGuideClick}
-              use:tooltip={{ content: 'New Vertical Guide', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
+            <div>
+              {#if verticalGuides.length}
+                <button
+                  on:click|stopPropagation={handleRemoveAllVerticalGuidesClick}
+                  use:tooltip={{ content: 'Delete All Vertical Guides', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              <button
+                on:click={handleNewVerticalGuideClick}
+                use:tooltip={{ content: 'New Vertical Guide', placement: 'top' }}
+                class="st-button icon"
+              >
+                <PlusIcon />
+              </button>
+            </div>
           </div>
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
@@ -606,13 +647,24 @@
         <fieldset class="editor-section editor-section-draggable">
           <div class="editor-section-header editor-section-header-with-button">
             <div class="st-typography-medium">Rows</div>
-            <button
-              on:click={addTimelineRow}
-              use:tooltip={{ content: 'New Row', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
+            <div>
+              {#if rows.length}
+                <button
+                  on:click|stopPropagation={removeAllTimelineRows}
+                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              <button
+                on:click={addTimelineRow}
+                use:tooltip={{ content: 'New Row', placement: 'top' }}
+                class="st-button icon"
+              >
+                <PlusIcon />
+              </button>
+            </div>
           </div>
           {#if rows.length}
             <div
@@ -648,8 +700,8 @@
                         use:tooltip={{ content: 'Duplicate Row', placement: 'top' }}
                         class="st-button icon"
                         on:click={() => {
-                          if ($selectedTimeline) {
-                            effects.duplicateTimelineRow(row, $selectedTimeline, timelines);
+                          if (selectedTimeline) {
+                            effects.duplicateTimelineRow(row, selectedTimeline, timelines);
                           }
                         }}
                       >
@@ -713,7 +765,7 @@
               name="name"
               autocomplete="off"
               type="string"
-              value={$selectedRow.name}
+              value={selectedRow.name}
               on:input|stopPropagation={updateRowEvent}
             />
           </Input>
@@ -724,11 +776,11 @@
               <label for="marginLeft">Row Height</label>
               <input
                 min={ViewConstants.MIN_ROW_HEIGHT}
-                disabled={$selectedRow.autoAdjustHeight}
+                disabled={selectedRow.autoAdjustHeight}
                 class="st-input w-100"
                 name="height"
                 type="number"
-                value={$selectedRow.height}
+                value={selectedRow.height}
                 on:input|stopPropagation={updateRowMinHeight}
               />
             </Input>
@@ -739,7 +791,7 @@
               class="st-select w-100"
               data-type="bool"
               name="autoAdjustHeight"
-              value={$selectedRow.autoAdjustHeight}
+              value={selectedRow.autoAdjustHeight}
               on:change={e => {
                 const { value } = getTarget(e);
                 viewUpdateRow('autoAdjustHeight', value === 'true');
@@ -756,13 +808,24 @@
         <fieldset class="editor-section">
           <div class="editor-section-header editor-section-header-with-button">
             <div class="st-typography-medium">Horizontal Guides</div>
-            <button
-              on:click={handleNewHorizontalGuideClick}
-              use:tooltip={{ content: 'New Horizontal Guide', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
+            <div>
+              {#if horizontalGuides.length}
+                <button
+                  on:click|stopPropagation={handleRemoveAllHorizontalGuidesClick}
+                  use:tooltip={{ content: 'Delete All Horizontal Guides', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              <button
+                on:click={handleNewHorizontalGuideClick}
+                use:tooltip={{ content: 'New Horizontal Guide', placement: 'top' }}
+                class="st-button icon"
+              >
+                <PlusIcon />
+              </button>
+            </div>
           </div>
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
@@ -984,13 +1047,24 @@
         <fieldset class="editor-section editor-section-draggable">
           <div class="editor-section-header editor-section-header-with-button">
             <div class="st-typography-medium">Y Axes</div>
-            <button
-              on:click={handleNewYAxisClick}
-              use:tooltip={{ content: 'New Y Axis', placement: 'top' }}
-              class="st-button icon"
-            >
-              <PlusIcon />
-            </button>
+            <div>
+              {#if yAxes.length}
+                <button
+                  on:click|stopPropagation={handleRemoveAllYAxesClick}
+                  use:tooltip={{ content: 'Delete All Y Axes', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              <button
+                on:click={handleNewYAxisClick}
+                use:tooltip={{ content: 'New Y Axis', placement: 'top' }}
+                class="st-button icon"
+              >
+                <PlusIcon />
+              </button>
+            </div>
           </div>
           {#if yAxes.length}
             <div class="editor-section-labeled-grid-container">
@@ -1042,7 +1116,7 @@
                           class="st-input w-100"
                           name="tickCount"
                           type="number"
-                          min="1"
+                          min="0"
                           value={yAxis.tickCount}
                           on:input={event => updateYAxisTickCount(event, yAxis)}
                         />
@@ -1068,13 +1142,24 @@
       <fieldset class="editor-section editor-section-draggable">
         <div class="editor-section-header editor-section-header-with-button">
           <div class="st-typography-medium">Layers</div>
-          <button
-            on:click={handleNewLayerClick}
-            use:tooltip={{ content: 'New Layer', placement: 'top' }}
-            class="st-button icon"
-          >
-            <PlusIcon />
-          </button>
+          <div>
+            {#if layers.length}
+              <button
+                on:click|stopPropagation={handleRemoveAllLayersClick}
+                use:tooltip={{ content: 'Delete All Layers', placement: 'top' }}
+                class="st-button icon"
+              >
+                <RemoveAllIcon />
+              </button>
+            {/if}
+            <button
+              on:click={handleNewLayerClick}
+              use:tooltip={{ content: 'New Layer', placement: 'top' }}
+              class="st-button icon"
+            >
+              <PlusIcon />
+            </button>
+          </div>
         </div>
         {#if layers.length}
           <div class="editor-section-labeled-grid-container">
@@ -1115,36 +1200,14 @@
 
                     {#if isActivityLayer(layer)}
                       <ColorPresetsPicker
-                        presetColors={[
-                          '#FFD1D2',
-                          '#FFCB9E',
-                          '#fcdd8f',
-                          '#CAEBAE',
-                          '#C9E4F5',
-                          '#F8CCFF',
-                          '#ECE0F2',
-                          '#E8D3BE',
-                          '#F5E9DA',
-                          '#EBEBEB',
-                        ]}
+                        presetColors={ViewActivityLayerColorPresets}
                         tooltipText="Layer Color"
                         value={getColorForLayer(layer)}
                         on:input={event => handleUpdateLayerColor(event, layer)}
                       />
                     {:else if isLineLayer(layer)}
                       <ColorPresetsPicker
-                        presetColors={[
-                          '#e31a1c',
-                          '#ff7f0e',
-                          '#fcbd21',
-                          '#75b53b',
-                          '#3C95C9',
-                          '#8d41b0',
-                          '#CAB2D6',
-                          '#a67c52',
-                          '#E8CAA2',
-                          '#7f7f7f',
-                        ]}
+                        presetColors={ViewLineLayerColorPresets}
                         tooltipText="Layer Color"
                         value={getColorForLayer(layer)}
                         on:input={event => handleUpdateLayerColor(event, layer)}

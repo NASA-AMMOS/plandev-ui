@@ -1,8 +1,13 @@
 import { keyBy } from 'lodash-es';
 import { expect, test } from 'vitest';
+import {
+  ViewActivityLayerColorPresets,
+  ViewLineLayerColorPresets,
+  ViewXRangeLayerSchemePresets,
+} from '../constants/view';
 import type { ActivityDirective } from '../types/activity';
 import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
-import type { ActivityTreeNode, TimeRange, Timeline } from '../types/timeline';
+import type { ActivityTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import {
   createHorizontalGuide,
@@ -17,6 +22,9 @@ import {
   duplicateRow,
   filterResourcesByLayer,
   generateActivityTree,
+  getUniqueColorForActivityLayer,
+  getUniqueColorForLineLayer,
+  getUniqueColorSchemeForXRangeLayer,
   getYAxisBounds,
   isActivityLayer,
   isLineLayer,
@@ -841,4 +849,28 @@ test('generateActivityTree', () => {
       type: 'aggregation',
     },
   ]);
+});
+
+test('getUniqueColorForActivityLayer', () => {
+  expect(getUniqueColorForActivityLayer(createRow([]))).toBe(ViewActivityLayerColorPresets[0]);
+  const row2 = createRow([]);
+  row2.layers = [createTimelineActivityLayer([])];
+  expect(getUniqueColorForActivityLayer(row2)).toBe(ViewActivityLayerColorPresets[1]);
+});
+
+test('getUniqueColorForLineLayer', () => {
+  expect(getUniqueColorForLineLayer(createRow([]))).toBe(ViewLineLayerColorPresets[0]);
+  const row2 = createRow([]);
+  row2.layers = [createTimelineLineLayer([], [])];
+  expect(getUniqueColorForLineLayer(row2)).toBe(ViewLineLayerColorPresets[1]);
+});
+
+test('getUniqueColorSchemeForXRangeLayer', () => {
+  expect(
+    Object.keys(ViewXRangeLayerSchemePresets).indexOf(getUniqueColorSchemeForXRangeLayer(createRow([]))),
+  ).toBeGreaterThan(-1);
+  const row2 = createRow([]);
+  row2.layers = [createTimelineXRangeLayer([], [])];
+  const existingScheme = (row2.layers[0] as XRangeLayer).colorScheme;
+  expect(getUniqueColorSchemeForXRangeLayer(row2)).not.toBe(existingScheme);
 });

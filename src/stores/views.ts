@@ -1,9 +1,31 @@
-import { isEqual } from 'lodash-es';
+import { capitalize, isEqual } from 'lodash-es';
 import { derived, get, writable, type Writable } from 'svelte/store';
+import type { ResourceType } from '../types/simulation';
+import type {
+  ActivityLayerFilter,
+  Axis,
+  Layer,
+  ResourceLayerFilter,
+  Row,
+  Timeline,
+  TimelineItemType,
+} from '../types/timeline';
 import type { View, ViewGrid, ViewSlim, ViewTable, ViewToggleEvent } from '../types/view';
 import { getTarget } from '../utilities/generic';
 import gql from '../utilities/gql';
-import { TimelineInteractionMode, TimelineLockStatus } from '../utilities/timeline';
+import {
+  TimelineInteractionMode,
+  TimelineLockStatus,
+  createRow,
+  createTimelineActivityLayer,
+  createTimelineLineLayer,
+  createTimelineResourceLayer,
+  getUniqueColorForActivityLayer,
+  getUniqueColorForLineLayer,
+  getUniqueColorSchemeForXRangeLayer,
+  isLineLayer,
+  isXRangeLayer,
+} from '../utilities/timeline';
 import { createColumnSizes, createRowSizes, parseColumnSizes } from '../utilities/view';
 import { gqlSubscribable } from './subscribable';
 
@@ -536,4 +558,179 @@ export function viewUpdateYAxis(prop: string, value: any) {
     }
     return currentView;
   });
+}
+
+export function getUpdatedLayerWithFilters(
+  timelines: Timeline[],
+  type: string /* 'activity' | 'resource' */,
+  items: TimelineItemType[],
+  layer?: Layer,
+  row?: Row,
+): { layer: Layer; yAxis?: Axis } {
+  const itemNames = items.map(i => i.name);
+  // Create a suitable layer if not provided
+  if (!layer) {
+    if (type === 'activity') {
+      return {
+        layer: createTimelineActivityLayer(timelines, {
+          activityColor: getUniqueColorForActivityLayer(row),
+          filter: { activity: { types: itemNames } },
+        }),
+      };
+    } else {
+      const { layer: newLayer, yAxis } = createTimelineResourceLayer(timelines, items[0] as ResourceType);
+      if (newLayer && newLayer.filter.resource) {
+        // Add remaining resources if requested (generally avoided since resource layers are usually created on separate layers)
+        newLayer.filter.resource.names = itemNames;
+        if (isLineLayer(newLayer)) {
+          newLayer.lineColor = getUniqueColorForLineLayer(row);
+        } else if (isXRangeLayer(newLayer)) {
+          newLayer.colorScheme = getUniqueColorSchemeForXRangeLayer(row);
+        }
+        return {
+          layer: newLayer,
+          yAxis,
+        };
+      } else {
+        return {
+          layer: createTimelineLineLayer(timelines, []),
+        };
+      }
+    }
+  } else {
+    // Otherwise augment the filter of the specified layer
+    const prop = type === 'activity' ? 'types' : 'names';
+    const typedType = type as 'activity' | 'resource';
+    const existingFilter = layer.filter[typedType];
+    let existingFilterItems: string[] = [];
+
+    if (existingFilter && (existingFilter as ActivityLayerFilter).types) {
+      existingFilterItems = (existingFilter as ActivityLayerFilter).types;
+    } else if (existingFilter && (existingFilter as ResourceLayerFilter).names) {
+      existingFilterItems = (existingFilter as ResourceLayerFilter).names;
+    }
+
+    return {
+      layer: {
+        ...layer,
+        filter: {
+          [type]: {
+            [prop]: [...new Set(existingFilterItems.concat(itemNames))],
+          },
+        },
+      },
+    };
+  }
+}
+
+export function viewAddTimelineRow(timelineId?: number | null, openEditor: boolean = false) {
+  const timelines = get(view)?.definition.plan.timelines || [];
+  const selectedTimelineIdValue = timelineId ?? get(selectedTimelineId);
+  const timeline = timelines.find(t => t.id === selectedTimelineIdValue);
+  if (timeline) {
+    const row = createRow(timelines);
+    viewUpdateTimeline('rows', [...timeline.rows, row], timelineId);
+
+    if (openEditor) {
+      viewSetSelectedRow(row.id);
+
+      // Open the timeline editor panel on the right.
+      viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
+    }
+  }
+}
+
+export function viewAddFilterToRow(
+  items: TimelineItemType[],
+  typeName: string /* 'activity' | 'resource' */,
+  rowId?: number,
+  layer?: Layer,
+  index?: number, // row index to insert after
+) {
+  if (typeName === 'resource') {
+    // Add first to a new row
+    const row = viewAddFilterItemsToRow([items[0]], typeName, rowId, layer, index);
+    if (row) {
+      // TODO enforcing an arbitrary limit here to avoid a poor performance scenario
+      // where a user hits "add to / new row" for all resources which would download
+      // the entire simulation dataset which is potentially huge.
+      // Furthermore, one cannot realistically or usefully plot all resources on individual layers
+      // within the same row.
+      items.slice(1, 50).forEach(item => {
+        viewAddFilterItemsToRow([item], typeName, row.id, layer, index);
+      });
+    }
+  } else {
+    viewAddFilterItemsToRow(items, typeName, rowId, layer, index);
+  }
+}
+
+export function viewAddFilterItemsToRow(
+  items: TimelineItemType[],
+  typeName: string /* 'activity' | 'resource' */,
+  rowId?: number,
+  layer?: Layer,
+  index?: number, // row index to insert after
+): Row | undefined {
+  const timelines = get(view)?.definition.plan.timelines || [];
+  if (!timelines.length) {
+    return;
+  }
+
+  let newRows: Row[] = timelines[0].rows;
+  let returnRow: Row | undefined = undefined;
+  const defaultRowName = `${capitalize(typeName)} Row`;
+  const row = typeof rowId === 'number' ? newRows.find(r => r.id === rowId) : undefined;
+  const targetRow = row || createRow(timelines, { name: items.length === 1 ? items[0].name : defaultRowName });
+  if (!row) {
+    // If no row is provided we assume there is no relevant layer
+    const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items);
+    const insertIndex = index ?? newRows.length;
+    returnRow = { ...targetRow, layers: [newLayer], yAxes: yAxis ? [yAxis] : [] };
+    newRows = [...newRows];
+    newRows.splice(insertIndex + 1, 0, returnRow);
+  } else {
+    // Find the layer in the row or create one if needed
+    if (
+      !layer ||
+      // Case where the target layer type does not match the destination layer chart type
+      (layer.chartType === 'activity' && typeName === 'resource') ||
+      (layer.chartType !== 'activity' && typeName === 'activity')
+    ) {
+      // Add to existing row
+      const { layer: newLayer, yAxis } = getUpdatedLayerWithFilters(timelines, typeName, items, undefined, row);
+      newRows = newRows.map(r => {
+        if (r.id === row.id) {
+          returnRow = { ...row, layers: [...row.layers, newLayer], yAxes: yAxis ? [...row.yAxes, yAxis] : row.yAxes };
+          return returnRow;
+        } else {
+          return r;
+        }
+      });
+    } else {
+      // If a layer is specified, update the layer in the associated row
+      newRows = newRows.map(r => {
+        if (r.id === row.id) {
+          returnRow = r;
+          const newLayers = r.layers.map(l => {
+            if (l.id === layer.id) {
+              return getUpdatedLayerWithFilters(timelines, typeName, items, layer, row).layer;
+            }
+            return l;
+          });
+          return { ...r, layers: newLayers };
+        } else {
+          return r;
+        }
+      });
+    }
+  }
+
+  viewUpdateTimeline('rows', newRows, timelines[0].id);
+  viewSetSelectedRow(targetRow.id);
+
+  // Open the timeline editor panel on the right.
+  viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
+
+  return returnRow;
 }

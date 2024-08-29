@@ -311,8 +311,8 @@
 
   .date-picker .date-picker-portal {
     background: #ffffff;
-    border: 1px solid var(--st-gray-20);
-    border-radius: 10px;
+    border: var(--st-border-popover);
+    border-radius: var(--st-border-radius-popover);
     box-shadow: var(--st-shadow-popover);
     min-height: 100px;
     min-width: 150px;

@@ -16,8 +16,13 @@
     resourceTypes,
     resourceTypesLoading,
   } from '../../stores/simulation';
-  import { selectedRow } from '../../stores/views';
-  import type { ActivityDirective, ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import { selectedRow, viewAddFilterToRow } from '../../stores/views';
+  import type {
+    ActivityDirective,
+    ActivityDirectiveId,
+    ActivityDirectivesMap,
+    ActivityType,
+  } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { Plan } from '../../types/plan';
@@ -42,11 +47,13 @@
     MouseOver,
     Point,
     RowMouseOverEvent,
+    TimelineItemType,
     TimeRange,
     XAxisTick,
   } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import { classNames } from '../../utilities/generic';
+  import { showConfirmActivityCreationModal } from '../../utilities/modal';
   import { sampleProfiles } from '../../utilities/resources';
   import { getSimulationStatus } from '../../utilities/simulation';
   import { pluralize } from '../../utilities/text';
@@ -68,6 +75,7 @@
   import LayerGaps from './LayerGaps.svelte';
   import LayerLine from './LayerLine.svelte';
   import LayerXRange from './LayerXRange.svelte';
+  import RowDividerDropTarget from './RowDividerDropTarget.svelte';
   import RowDragHandleHeight from './RowDragHandleHeight.svelte';
   import RowHeader from './RowHeader.svelte';
   import RowHorizontalGuides from './RowHorizontalGuides.svelte';
@@ -90,6 +98,7 @@
   export let hasUpdateDirectivePermission: boolean = false;
   export let horizontalGuides: HorizontalGuide[] = [];
   export let id: number;
+  export let index: number;
   export let layers: Layer[] = [];
   export let name: string = '';
   export let marginLeft: number = 50;
@@ -163,6 +172,11 @@
     spans: {},
   };
   let filterActivitiesByTime = false;
+  let rowRef: HTMLDivElement;
+
+  $: if ($selectedRow?.id === id && rowRef) {
+    rowRef.scrollIntoView({ block: 'nearest' });
+  }
 
   $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
@@ -492,45 +506,123 @@
   }
 
   function onDragenter(e: DragEvent | undefined): void {
-    if (hasActivityLayer && e && overlaySvgSelection) {
-      const { offsetX } = e;
-      overlaySvgSelection
-        .append('line')
+    if (
+      hasUpdateDirectivePermission &&
+      e &&
+      overlaySvgSelection &&
+      e.dataTransfer &&
+      e.dataTransfer.effectAllowed === 'copyLink'
+    ) {
+      const g = overlaySvgSelection
+        .append('g')
+        .attr('y', 0)
         .attr('class', 'activity-drag-guide')
-        .attr('x1', offsetX)
-        .attr('y1', 0)
-        .attr('x2', offsetX)
-        .attr('y2', computedDrawHeight)
-        .attr('stroke', 'black')
         .style('pointer-events', 'none');
+
+      g.append('line')
+        .attr('y1', 0)
+        .attr('y2', computedDrawHeight)
+        .attr('stroke-width', 2)
+        .attr('stroke', 'var(--st-utility-blue)');
+
+      const text = g
+        .append('text')
+        .attr('dx', '4px')
+        .attr('dy', '11px')
+        .attr('font-family', 'Inter')
+        .attr('font-weight', '700')
+        .attr('font-size', '10px')
+        .attr('fill', 'white')
+        .attr('opacity', '1')
+        .attr('user-select', 'none')
+        .text('Insert Activity');
+
+      const textBBox = text.node()?.getBBox();
+      if (textBBox) {
+        g.append('rect')
+          .attr('width', textBBox.width + 8)
+          .attr('height', textBBox.height + 4)
+          .attr('fill', 'var(--st-utility-blue)')
+          .lower();
+      }
     }
   }
 
   function onDragleave(e: DragEvent | undefined): void {
-    if (hasActivityLayer && e && overlaySvgSelection) {
-      overlaySvgSelection.select('.activity-drag-guide').remove();
+    if (e && overlaySvgSelection) {
+      overlaySvgSelection.selectAll('.activity-drag-guide').remove();
     }
   }
 
   function onDragover(e: DragEvent | undefined): void {
-    if (hasActivityLayer && e && overlaySvgSelection) {
+    if (e && e.dataTransfer && (e.dataTransfer.effectAllowed === 'link' || !hasUpdateDirectivePermission)) {
+      e.dataTransfer.dropEffect = 'none';
+    }
+    if (e && overlaySvgSelection) {
       const { offsetX } = e;
-      overlaySvgSelection.select('.activity-drag-guide').attr('x1', offsetX).attr('x2', offsetX);
+      overlaySvgSelection.select('.activity-drag-guide').attr('transform', `translate(${offsetX}, 0)`);
+      const rect = overlaySvgSelection.select('.activity-drag-guide rect') as Selection<
+        SVGRectElement,
+        unknown,
+        any,
+        any
+      >;
+      const text = overlaySvgSelection.select('.activity-drag-guide text');
+      const rectWidth = rect.node()?.getBBox()?.width ?? 0;
+      const rectRight = offsetX + rectWidth ?? 0;
+      const overlaySvgSelectionWidth = overlaySvg.getBoundingClientRect().width;
+      if (rectRight > overlaySvgSelectionWidth) {
+        text.attr('dx', -rectWidth + 4);
+        rect.attr('x', -rectWidth);
+      } else {
+        text.attr('dx', 4);
+        rect.attr('x', 0);
+      }
     }
   }
 
-  function onDrop(e: DragEvent | undefined): void {
-    if (hasActivityLayer && e && overlaySvgSelection && xScaleView !== null) {
+  async function onDrop(e: DragEvent | undefined): Promise<void> {
+    if (e && overlaySvgSelection && xScaleView !== null) {
       const { offsetX } = e;
-      overlaySvgSelection.select('.activity-drag-guide').remove();
+      overlaySvgSelection.selectAll('.activity-drag-guide').remove();
       if (e.dataTransfer !== null) {
         const unixEpochTime = xScaleView.invert(offsetX).getTime();
         const start_time = getDoyTime(new Date(unixEpochTime));
-        const activityTypeName = e.dataTransfer.getData('activityTypeName');
+        const data = e.dataTransfer.getData('text');
+        const json = JSON.parse(data || '');
+        const type = json.type ?? '';
+        const items = (json.items as TimelineItemType[]) ?? '';
 
         // Only allow creating an activity if we have an actual activity in the drag data.
-        if (activityTypeName && plan) {
-          effects.createActivityDirective({}, start_time, activityTypeName, activityTypeName, {}, plan, user);
+        if (type === 'activity' && items && plan) {
+          // Determine if the row will visualize all requested activities
+          let activitiesInRow = new Set();
+          activityLayers.forEach(l => {
+            const layerActivities = l.filter.activity?.types ?? [];
+            activitiesInRow = new Set([...activitiesInRow, ...layerActivities]);
+          });
+          const missingActivity = (items as ActivityType[]).find(i => !activitiesInRow.has(i.name));
+
+          const createActivities = () => {
+            items.forEach(item => {
+              effects.createActivityDirective({}, start_time, item.name, item.name, {}, plan, user);
+            });
+          };
+
+          // If the row is not configure to visualize all requested activities
+          // we prompt the user to ask if they would like to continue anyway,
+          // continue and add the filter, or cancel the operation
+          if (missingActivity) {
+            const { confirm, value } = await showConfirmActivityCreationModal();
+            if (confirm) {
+              if (value?.addFilter) {
+                viewAddFilterToRow(items, type, id, activityLayers.length ? activityLayers[0] : undefined, index);
+              }
+              createActivities();
+            }
+          } else {
+            createActivities();
+          }
         }
       }
     }
@@ -598,6 +690,13 @@
     });
     return resources;
   }
+
+  function onTimelineItemsDrop(rowId?: number, type?: string, items?: TimelineItemType[], index?: number) {
+    if (!type || !items) {
+      return;
+    }
+    viewAddFilterToRow(items, type, rowId, activityLayers[0], index);
+  }
 </script>
 
 <div
@@ -606,6 +705,15 @@
   class:expanded
   class:auto-height={autoAdjustHeight}
 >
+  {#if index === 0}
+    <RowDividerDropTarget
+      width={drawWidth + marginLeft}
+      top={4}
+      hintPosition="bottom"
+      on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, -1)}
+    />
+  {/if}
+
   <div class="row-content">
     <!-- Row Header. -->
     <RowHeader
@@ -613,6 +721,7 @@
       on:activity-tree-node-change={onActivityTreeNodeChange}
       on:mouseDown={onMouseDown}
       on:dblClick
+      on:drop={e => onTimelineItemsDrop(id, e.detail.type, e.detail.items)}
       {activityTree}
       width={marginLeft}
       height={computedDrawHeight}
@@ -644,32 +753,13 @@
     </RowHeader>
 
     <div
+      bind:this={rowRef}
       class={rowClasses}
       id={`row-${id}`}
       style={`cursor: ${
         timelineInteractionMode === TimelineInteractionMode.Navigate ? 'move' : ''
       }; height: ${computedDrawHeight}px;`}
     >
-      <!-- Overlay for Pointer Events. -->
-      <svg
-        bind:this={overlaySvg}
-        class="overlay"
-        role="none"
-        style="width: {drawWidth}px"
-        on:blur={e => (blur = e)}
-        on:contextmenu={e => (contextmenu = e)}
-        on:dragenter|preventDefault={e => (dragenter = e)}
-        on:dragleave={e => (dragleave = e)}
-        on:dragover|preventDefault={e => (dragover = e)}
-        on:drop|preventDefault={e => (drop = e)}
-        on:focus={e => (focus = e)}
-        on:mousedown={e => (mousedown = e)}
-        on:mousemove={e => (mousemove = e)}
-        on:mouseout={e => (mouseout = e)}
-        on:mouseup={e => (mouseup = e)}
-        on:dblclick={e => (dblclick = e)}
-      />
-
       <!-- SVG Elements. -->
       <svg>
         <g>
@@ -818,9 +908,32 @@
           />
         {/each}
       </div>
+      <!-- Overlay for Pointer Events. -->
+      <svg
+        bind:this={overlaySvg}
+        class="overlay"
+        role="none"
+        style="width: {drawWidth}px"
+        on:blur={e => (blur = e)}
+        on:contextmenu={e => (contextmenu = e)}
+        on:dragenter|preventDefault={e => (dragenter = e)}
+        on:dragleave={e => (dragleave = e)}
+        on:dragover|preventDefault={e => (dragover = e)}
+        on:drop|preventDefault={e => (drop = e)}
+        on:focus={e => (focus = e)}
+        on:mousedown={e => (mousedown = e)}
+        on:mousemove={e => (mousemove = e)}
+        on:mouseout={e => (mouseout = e)}
+        on:mouseup={e => (mouseup = e)}
+        on:dblclick={e => (dblclick = e)}
+      />
     </div>
   </div>
 
+  <RowDividerDropTarget
+    width={drawWidth + marginLeft}
+    on:drop={e => onTimelineItemsDrop(undefined, e.detail.type, e.detail.items, index)}
+  />
   <!-- Drag Handle for Row Height Resizing. -->
   {#if !autoAdjustHeight && expanded}
     <RowDragHandleHeight rowHeight={drawHeight} on:updateRowHeight={onUpdateRowHeightDrag} />
@@ -842,7 +955,7 @@
 
   .overlay {
     outline: none;
-    z-index: 2;
+    z-index: 4;
   }
 
   svg {
@@ -907,7 +1020,7 @@
     position: absolute;
     top: 0;
     width: 100%;
-    z-index: 9;
+    z-index: 4;
   }
 
   .active-row :global(.row-header) {
