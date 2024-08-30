@@ -147,6 +147,7 @@ import {
   type SequenceAdaptation,
   type UserSequence,
   type UserSequenceInsertInput,
+  type Workspace,
 } from '../types/sequencing';
 import type {
   PlanDataset,
@@ -199,6 +200,7 @@ import {
   showPlanBranchRequestModal,
   showRestorePlanSnapshotModal,
   showUploadViewModal,
+  showWorkspaceModal,
 } from './modal';
 import { gatewayPermissions, queryPermissions } from './permissions';
 import { reqExtension, reqGateway, reqHasura } from './requests';
@@ -1614,6 +1616,34 @@ const effects = {
     return false;
   },
 
+  async createWorkspace(workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+    try {
+      if (!queryPermissions.CREATE_WORKSPACE(user)) {
+        throwPermissionError('create a workspace');
+      }
+
+      const { confirm, value } = await showWorkspaceModal(workspaceNames);
+
+      if (confirm && value) {
+        const workspace = value;
+        const data = await reqHasura<Workspace>(gql.CREATE_WORKSPACE, { workspace }, user);
+        const { createWorkspace } = data;
+
+        if (createWorkspace != null) {
+          showSuccessToast('Workspace Created Successfully');
+          return createWorkspace;
+        } else {
+          throw Error(`Unable to create workspace "${workspace.name}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Workspace Create Failed', e as Error);
+      showFailureToast('Workspace Create Failed');
+    }
+
+    return null;
+  },
+
   async deleteActivityDirective(id: ActivityDirectiveId, plan: Plan, user: User | null): Promise<boolean> {
     try {
       if (
@@ -2739,6 +2769,38 @@ const effects = {
     }
 
     return false;
+  },
+
+  async editWorkspace(workspace: Workspace, workspaceNames: string[], user: User | null): Promise<Workspace | null> {
+    try {
+      if (!queryPermissions.UPDATE_WORKSPACE(user, workspace)) {
+        throwPermissionError('update a workspace');
+      }
+
+      const { confirm, value } = await showWorkspaceModal(workspaceNames, workspace.name);
+
+      if (confirm && value) {
+        const updatedName = value;
+        const data = await reqHasura<Workspace>(
+          gql.UPDATE_WORKSPACE,
+          { id: workspace.id, workspace: updatedName },
+          user,
+        );
+        const { updatedWorkspace } = data;
+
+        if (updatedWorkspace != null) {
+          showSuccessToast('Workspace Updated Successfully');
+          return updatedWorkspace;
+        } else {
+          throw Error(`Unable to update workspace "${workspace.name}"`);
+        }
+      }
+    } catch (e) {
+      catchError('Workspace Update Failed', e as Error);
+      showFailureToast('Workspace Update Failed');
+    }
+
+    return null;
   },
 
   async expand(

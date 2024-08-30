@@ -15,15 +15,23 @@ export class Sequence {
   parcel: Locator;
   sequenceName: string;
   sequenceNameTextbox: Locator;
-  table: Locator;
-  tableRow: Locator;
-  tableRowDeleteButton: Locator;
+  sequenceTable: Locator;
+  sequenceTableRow: Locator;
+  sequenceTableRowDeleteButton: Locator;
+  workspaceModal: Locator;
+  workspaceName: string;
+  workspaceNameTextbox: Locator;
+  workspaceTable: Locator;
+  workspaceTableRow: Locator;
 
   constructor(public page: Page) {}
 
-  async createSequence(parcelName: string): Promise<string> {
+  async createSequence(workspaceName: string, parcelName: string): Promise<string> {
+    await this.filterTable(this.workspaceTable, this.workspaceName);
+    await this.workspaceTableRow.click();
+
     await this.page.locator('button:has-text("New")').click();
-    await this.page.waitForURL('/sequencing/new');
+    await this.page.waitForURL('/sequencing/new?workspaceId=**');
 
     // select parcel
     this.updatePage(this.page);
@@ -39,21 +47,42 @@ export class Sequence {
     await this.editor.click();
     await this.editor.fill('C FSW_CMD_0');
     await this.page.getByRole('button', { name: 'Save' }).click();
+    await this.page.waitForURL('/sequencing/edit/**?workspaceId=**');
     await this.page.getByRole('button', { name: 'Close' }).click();
 
     this.updatePage(this.page);
-    await this.tableRow.waitFor({ state: 'attached' });
-    await this.tableRow.waitFor({ state: 'visible' });
+    await this.sequenceTable.waitFor({ state: 'attached' });
+    await this.sequenceTable.waitFor({ state: 'visible' });
 
     return this.sequenceName;
   }
 
-  async deleteSequence() {
-    await this.filterTable(this.sequenceName);
+  async createWorkspace(): Promise<string> {
+    await this.page.locator('button:has-text("Create Workspace")').click();
 
-    await this.tableRow.hover();
-    await expect(this.tableRow.locator('.actions-cell')).toBeVisible();
-    await this.tableRowDeleteButton.click({ position: { x: 2, y: 2 } });
+    this.updatePage(this.page);
+
+    await expect(this.workspaceModal).toBeVisible();
+    await this.workspaceNameTextbox.click();
+    this.workspaceName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    await this.workspaceNameTextbox.fill(this.workspaceName);
+    await this.page.locator('button:has-text("Save Workspace")').click();
+
+    await expect(this.workspaceModal).not.toBeVisible();
+
+    this.updatePage(this.page);
+    await this.workspaceTableRow.waitFor({ state: 'attached' });
+    await this.workspaceTableRow.waitFor({ state: 'visible' });
+
+    return this.workspaceName;
+  }
+
+  async deleteSequence() {
+    await this.filterTable(this.sequenceTable, this.sequenceName);
+
+    await this.sequenceTableRow.hover();
+    await expect(this.sequenceTableRow.locator('.actions-cell')).toBeVisible();
+    await this.sequenceTableRowDeleteButton.click({ position: { x: 2, y: 2 } });
 
     await this.confirmModal.waitFor({ state: 'attached' });
     await this.confirmModal.waitFor({ state: 'visible' });
@@ -61,23 +90,23 @@ export class Sequence {
 
     await expect(this.confirmModalDeleteButton).toBeVisible();
     await this.confirmModalDeleteButton.click();
-    await this.tableRow.waitFor({ state: 'detached' });
-    await this.tableRow.waitFor({ state: 'hidden' });
-    await expect(this.tableRow).not.toBeVisible();
+    await this.sequenceTableRow.waitFor({ state: 'detached' });
+    await this.sequenceTableRow.waitFor({ state: 'hidden' });
+    await expect(this.sequenceTableRow).not.toBeVisible();
   }
 
-  private async filterTable(sequenceName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
+  private async filterTable(table: Locator, itemName: string) {
+    await table.waitFor({ state: 'attached' });
+    await table.waitFor({ state: 'visible' });
 
-    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
+    const nameColumnHeader = await table.getByRole('columnheader', { name: 'Name' });
     await nameColumnHeader.hover();
 
     const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
     await expect(filterIcon).toBeVisible();
     await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(sequenceName);
-    await expect(this.table.getByRole('row', { name: sequenceName })).toBeVisible();
+    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(itemName);
+    await expect(table.getByRole('row', { name: itemName })).toBeVisible();
     await this.page.keyboard.press('Escape');
   }
 
@@ -87,7 +116,7 @@ export class Sequence {
   }
 
   async importSeqJson() {
-    await this.tableRow.hover();
+    await this.sequenceTableRow.hover();
     await this.page.getByRole('button', { name: 'Edit Sequence' }).click();
 
     await this.page.waitForURL(/sequencing\/edit\/\d+/);
@@ -123,7 +152,7 @@ export class Sequence {
   }
 
   async modifySequence() {
-    await this.tableRow.hover();
+    await this.sequenceTableRow.hover();
     await this.page.getByRole('button', { name: 'Edit Sequence' }).click();
 
     await this.page.waitForURL(/sequencing\/edit\/\d+/);
@@ -150,7 +179,7 @@ export class Sequence {
   }
 
   async seqJsonEditor() {
-    await this.tableRow.hover();
+    await this.sequenceTableRow.hover();
     await this.page.getByRole('button', { name: 'Edit Sequence' }).click();
 
     await this.page.waitForURL(/sequencing\/edit\/\d+/);
@@ -176,8 +205,14 @@ export class Sequence {
     this.page = page;
     this.parcel = page.locator('select[name="parcel"]');
     this.sequenceNameTextbox = page.getByPlaceholder('Enter Sequence Name');
-    this.table = page.locator('.panel:has-text("Sequences")').getByRole('treegrid');
-    this.tableRow = this.table.getByRole('row', { name: this.sequenceName });
-    this.tableRowDeleteButton = this.tableRow.getByRole('gridcell').getByRole('button', { name: 'Delete Sequence' });
+    this.sequenceTable = page.locator('.panel:has-text("Sequences")').getByRole('treegrid');
+    this.sequenceTableRow = this.sequenceTable.getByRole('row', { name: this.sequenceName });
+    this.sequenceTableRowDeleteButton = this.sequenceTable
+      .getByRole('gridcell')
+      .getByRole('button', { name: 'Delete Sequence' });
+    this.workspaceModal = this.page.locator('.modal .modal-header:has-text("Create Workspace")');
+    this.workspaceNameTextbox = this.page.getByLabel('Workspace name');
+    this.workspaceTable = page.locator('.panel:has-text("Sequence Workspaces")').getByRole('treegrid');
+    this.workspaceTableRow = this.workspaceTable.getByRole('row', { name: this.workspaceName });
   }
 }

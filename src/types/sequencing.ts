@@ -131,6 +131,15 @@ export type UserSequence = {
   parcel_id: number;
   seq_json: SeqJson;
   updated_at: string;
+  workspace_id: number;
 };
 
 export type UserSequenceInsertInput = Omit<UserSequence, 'created_at' | 'id' | 'owner' | 'updated_at'>;
+
+export type Workspace = {
+  created_at: string;
+  id: number;
+  name: string;
+  owner: UserId;
+  updated_at: string;
+};

@@ -22,7 +22,7 @@ import type {
   SchedulingGoalDefinition,
   SchedulingGoalMetadata,
 } from '../types/scheduling';
-import type { Parcel, UserSequence } from '../types/sequencing';
+import type { Parcel, UserSequence, Workspace } from '../types/sequencing';
 import type { Simulation, SimulationTemplate } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { View, ViewSlim } from '../types/view';
@@ -430,6 +430,9 @@ const queryPermissions = {
   CREATE_VIEW: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_VIEW], user);
   },
+  CREATE_WORKSPACE: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.INSERT_WORKSPACE], user);
+  },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -836,6 +839,9 @@ const queryPermissions = {
   SUB_VIEWS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.VIEWS], user);
   },
+  SUB_WORKSPACES: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.WORKSPACES], user);
+  },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -1050,6 +1056,9 @@ const queryPermissions = {
   UPDATE_VIEW: (user: User | null, view: AssetWithOwner<View>): boolean => {
     return isUserAdmin(user) || (getPermission([Queries.UPDATE_VIEW], user) && isUserOwner(user, view));
   },
+  UPDATE_WORKSPACE: (user: User | null, workspace: AssetWithOwner<Workspace>): boolean => {
+    return isUserAdmin(user) || (getPermission([Queries.UPDATE_WORKSPACE], user) && isUserOwner(user, workspace));
+  },
   VALIDATE_ACTIVITY_ARGUMENTS: () => true,
 };
 
@@ -1229,6 +1238,7 @@ interface FeaturePermissions {
   simulationTemplates: PlanSimulationTemplateCRUDPermission;
   tags: CRUDPermission<Tag>;
   view: CRUDPermission<ViewSlim>;
+  workspace: CRUDPermission<AssetWithOwner<Workspace>>;
 }
 
 const featurePermissions: FeaturePermissions = {
@@ -1419,6 +1429,12 @@ const featurePermissions: FeaturePermissions = {
     canDelete: (user, view) => queryPermissions.DELETE_VIEW(user, view) && queryPermissions.DELETE_VIEWS(user, view),
     canRead: user => queryPermissions.SUB_VIEWS(user),
     canUpdate: (user, view) => queryPermissions.UPDATE_VIEW(user, view),
+  },
+  workspace: {
+    canCreate: user => queryPermissions.CREATE_WORKSPACE(user),
+    canDelete: () => false,
+    canRead: user => queryPermissions.SUB_WORKSPACES(user),
+    canUpdate: (user, workspace) => queryPermissions.UPDATE_WORKSPACE(user, workspace),
   },
 };
 

@@ -11,4 +11,5 @@ export enum SearchParameters {
   START_TIME = 'startTime',
   END_TIME = 'endTime',
   REVISION = 'revision',
+  WORKSPACE_ID = 'workspaceId',
 }

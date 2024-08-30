@@ -130,6 +130,7 @@ export enum Queries {
   INSERT_TAGS = 'insert_tags',
   INSERT_USER_SEQUENCE = 'insert_user_sequence_one',
   INSERT_VIEW = 'insert_view_one',
+  INSERT_WORKSPACE = 'insert_workspace_one',
   MERGE_REQUEST = 'merge_request_by_pk',
   MERGE_REQUESTS = 'merge_request',
   MISSION_MODEL = 'mission_model_by_pk',
@@ -197,6 +198,7 @@ export enum Queries {
   UPDATE_TAGS = 'update_tags_by_pk',
   UPDATE_USER_SEQUENCE = 'update_user_sequence_by_pk',
   UPDATE_VIEW = 'update_view_by_pk',
+  UPDATE_WORKSPACE = 'update_workspace_by_pk',
   UPLOADED_FILES = 'uploaded_file',
   UPLOAD_DICTIONARY = 'uploadDictionary',
   USER_ROLE_PERMISSION = 'user_role_permission',
@@ -206,6 +208,7 @@ export enum Queries {
   VALIDATE_ACTIVITY_ARGUMENTS = 'validateActivityArguments',
   VIEW = 'view_by_pk',
   VIEWS = 'view',
+  WORKSPACES = 'workspace',
   WITHDRAW_MERGE_REQUEST = 'withdraw_merge_request',
 }
 
@@ -700,6 +703,18 @@ const gql = {
       newView: ${Queries.INSERT_VIEW}(object: $view) {
         created_at
         definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  CREATE_WORKSPACE: `#graphql
+    mutation CreateWorkspace($workspace: workspace_insert_input!) {
+      createWorkspace: ${Queries.INSERT_WORKSPACE}(object: $workspace) {
+        created_at
         id
         name
         owner
@@ -1700,6 +1715,7 @@ const gql = {
         owner
         parcel_id
         updated_at
+        workspace_id
       }
     }
   `,
@@ -3000,6 +3016,7 @@ const gql = {
         owner
         parcel_id
         updated_at
+        workspace_id
       }
     }
   `,
@@ -3007,6 +3024,18 @@ const gql = {
   SUB_VIEWS: `#graphql
     subscription SubViews {
       views: ${Queries.VIEWS} {
+        created_at
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  SUB_WORKSPACES: `#graphql
+    subscription SubWorkspaces {
+      ${Queries.WORKSPACES}(order_by: { id: desc }) {
         created_at
         id
         name
@@ -3522,6 +3551,20 @@ const gql = {
       ) {
         created_at
         definition
+        id
+        name
+        owner
+        updated_at
+      }
+    }
+  `,
+
+  UPDATE_WORKSPACE: `#graphql
+    mutation UpdateWorkspace($id: Int!, $workspace: workspace_set_input!) {
+      updatedWorkspace: ${Queries.UPDATE_WORKSPACE}(
+        pk_columns: { id: $id }, _set: $workspace
+      ) {
+        created_at
         id
         name
         owner
