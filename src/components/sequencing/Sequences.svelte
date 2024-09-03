@@ -23,7 +23,7 @@
 
   export let user: User | null;
 
-  let filterText: string = '';
+  let filterText = '';
   let parcel: Parcel | null;
   let selectedSequence: UserSequence | null = null;
   let workspace: Workspace | undefined;

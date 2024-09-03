@@ -454,36 +454,63 @@ function parseVariables(
     return undefined;
   }
 
-  return variables.map((variable: SyntaxNode) => {
-    const variableText = text.slice(variable.from, variable.to);
+  const objects = variableContainer.getChildren('Object');
 
-    //parse the text [a-z]D*("UINT"|"INT"|"FLOAT"|"ENUM"|"STR")L07
+  return variables.map((variableNode: SyntaxNode) => {
+    const variableText = text.slice(variableNode.from, variableNode.to);
+    const variable: Omit<VariableDeclaration, 'allowable_ranges' | 'allowable_values'> & {
+      allowable_ranges?: string;
+      allowable_values?: string;
+    } = { name: variableText, type: 'UNKNOWN' };
+
+    for (const object of objects) {
+      const properties = object.getChildren('Property');
+
+      properties.forEach(property => {
+        const propertyName = property.getChild('PropertyName');
+        const propertyValue = propertyName?.nextSibling;
+        const propertyNameString = text.slice(propertyName?.from, propertyName?.to).replaceAll('"', '');
+        const propertyValueString = text.slice(propertyValue?.from, propertyValue?.to).replaceAll('"', '');
+
+        switch (propertyNameString.toLowerCase()) {
+          case 'allowable_ranges':
+            variable.allowable_ranges = propertyValueString;
+            break;
+          case 'allowable_values':
+            variable.allowable_values = propertyValueString;
+            break;
+          case 'enum_name':
+            variable.enum_name = propertyValueString;
+            break;
+          case 'sc_name':
+            variable.sc_name = propertyValueString;
+            break;
+          case 'type':
+            variable.type = propertyValueString;
+            break;
+        }
+      });
+    }
+
     const match = /(?:[a-zA-Z]*)(?:[0-9]{2})(INT|UINT|FLT|ENUM|STR)/g.exec(variableText);
     if (match) {
       const kind = match[1];
 
-      let type = 'UNKNOWN';
       switch (kind) {
         case 'STR':
-          type = 'STRING';
+          variable.type = 'STRING';
           break;
         case 'FLT':
-          type = 'FLOAT';
+          variable.type = 'FLOAT';
           break;
         default:
-          type = kind;
+          variable.type = kind;
           break;
       }
 
-      return {
-        name: variableText,
-        type: type as VariableDeclaration['type'],
-      };
+      return variable;
     } else {
-      return {
-        name: variableText,
-        type: 'UNKNOWN' as VariableDeclaration['type'],
-      };
+      return variable;
     }
   }) as VariableDeclarationArray;
 }

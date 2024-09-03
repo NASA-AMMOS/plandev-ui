@@ -115,7 +115,30 @@ function seqJsonVariableToSequence(
   variables: [VariableDeclaration, ...VariableDeclaration[]],
   type: 'INPUT_PARAMS' | 'LOCALS',
 ): string {
-  return `@${type} ${variables.map(variable => variable.name).join(' ')}\n`;
+  let sequence = `@${type}`;
+
+  if (type === 'INPUT_PARAMS') {
+    variables.forEach(variable => {
+      sequence += ` ${variable.name} `;
+
+      if (Object.keys(variable).length > 1) {
+        sequence += '{ ';
+
+        for (const key of Object.keys(variable)) {
+          if (key !== 'name') {
+            sequence += `"${key}": "${variable[key]}", `;
+          }
+        }
+
+        // Remove the trailing space and commma from the last property.
+        sequence = `${sequence.substring(0, sequence.length - 2)} }`;
+      }
+    });
+  } else {
+    sequence += ` ${variables.map(variable => variable.name).join(' ')}`;
+  }
+
+  return sequence.trim() + '\n';
 }
 
 function seqJsonDescriptionToSequence(description: Description): string {

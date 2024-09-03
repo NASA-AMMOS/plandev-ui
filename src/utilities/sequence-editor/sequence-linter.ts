@@ -392,10 +392,12 @@ export function sequenceLinter(
           }) as const,
       ),
     );
+
     inputParams.forEach(inputParam => {
       let child = inputParam.firstChild;
+
       while (child) {
-        if (child.name !== 'Enum') {
+        if (child.name !== 'Enum' && child.name !== 'Object') {
           diagnostics.push({
             from: child.from,
             message: `@INPUT_PARAMS values are required to be Enums`,
@@ -403,15 +405,73 @@ export function sequenceLinter(
             to: child.to,
           });
         } else {
-          variables.push({
+          const variable = {
             name: text.slice(child.from, child.to),
-            // TODO - hook to check mission specific nomenclature
             type: 'STRING',
-          });
+          } as VariableDeclaration;
+
+          variables.push(variable);
+
+          const metadata: SyntaxNode | null = child?.nextSibling;
+
+          if (metadata !== null) {
+            const properties = metadata.getChildren('Property');
+            let allowableRanges: string | undefined = undefined;
+            let isEnum = false;
+            let isString = false;
+            let enumName: string | undefined = undefined;
+
+            properties.forEach(property => {
+              const propertyNameNode = property.getChild('PropertyName');
+              const propertyValueNode = propertyNameNode?.nextSibling;
+
+              if (propertyNameNode !== null && propertyValueNode !== null && propertyValueNode !== undefined) {
+                const propertyName = text.slice(propertyNameNode.from, propertyNameNode.to);
+                const propertyValue = text.slice(propertyValueNode.from, propertyValueNode.to);
+
+                switch (propertyName.toLowerCase()) {
+                  case '"allowable_ranges"':
+                    allowableRanges = propertyValue;
+                    break;
+                  case '"enum_name"':
+                    enumName = propertyValue;
+                    break;
+                  case '"type"':
+                    isEnum = propertyValue === '"ENUM"';
+                    isString = propertyValue === '"STRING"';
+                    break;
+                }
+              }
+            });
+
+            if (isEnum && enumName === undefined) {
+              diagnostics.push({
+                from: child.from,
+                message: '"enum_name" is required for ENUM type.',
+                severity: 'error',
+                to: child.to,
+              });
+            } else if (!isEnum && enumName !== undefined) {
+              diagnostics.push({
+                from: child.from,
+                message: `"enum_name": ${enumName} is not required for non-ENUM type.`,
+                severity: 'error',
+                to: child.to,
+              });
+            } else if (isString && allowableRanges !== undefined) {
+              diagnostics.push({
+                from: child.from,
+                message: `'allowable_ranges' is not required for STRING type.`,
+                severity: 'error',
+                to: child.to,
+              });
+            }
+          }
         }
         child = child.nextSibling;
       }
     });
+
     return {
       diagnostics,
       variables,

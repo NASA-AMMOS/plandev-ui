@@ -100,7 +100,7 @@ RepeatArg(Number,Number)
   [
     'Locals and commands',
     `# comment before parameter
-@INPUT_PARAMS L02INT
+@INPUT_PARAMS L02INT { "name": "test" }
 # declare my local variables, types are defined in adaptation
 # comment before directive
 @LOCALS L01STRING L02INT
@@ -111,7 +111,7 @@ FSW_CMD 1 2
 FSW_CMD2`,
     `Sequence(
 LineComment,
-ParameterDeclaration(Enum),
+ParameterDeclaration(Enum,Object(Property(PropertyName(String),String))),
 LineComment,
 LineComment,
 LocalDeclaration(Enum,Enum),

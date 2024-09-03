@@ -27,7 +27,7 @@ IdDeclaration {
 }
 
 ParameterDeclaration {
-  parameterDirective (whiteSpace Enum)+ newLine
+  parameterDirective whiteSpace ((Enum whiteSpace?) | (Enum whiteSpace? Object whiteSpace?))+ newLine
 }
 
 LocalDeclaration {

@@ -175,7 +175,7 @@ C FSW_CMD_3
     };
     const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `@ID "testVariable"
-@INPUT_PARAMS L00INT L01STR L02FLT L03UINT L01ENUM
+@INPUT_PARAMS L00INT { "type": "INT" } L01STR { "type": "STRING" } L02FLT { "type": "FLOAT" } L03UINT { "type": "UINT" } L01ENUM { "type": "ENUM" }
 @LOCALS L00INT L01STR L02FLT L03UINT L01ENUM
 `;
     expect(sequence).toEqual(expectedSequence);
