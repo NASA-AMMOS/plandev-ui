@@ -61,6 +61,7 @@
   />
 {:else if formParameter.schema.type === 'path'}
   <ParameterBasePath
+    {disabled}
     {hideRightAdornments}
     {labelColumnWidth}
     {level}

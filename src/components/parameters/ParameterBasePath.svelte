@@ -59,7 +59,9 @@
         on:reset={() => dispatch('reset', formParameter)}
       />
     </Input>
-    <input type="file" on:change={onChange} use:useActions={use} />
+    {#if !disabled}
+      <input type="file" on:change={onChange} use:useActions={use} />
+    {/if}
   </div>
 </div>
 
