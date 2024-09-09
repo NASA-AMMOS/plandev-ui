@@ -1,3 +1,4 @@
+import type { SchedulingType } from '../constants/scheduling';
 import type { PartialWith } from './app';
 import type { SchedulingError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';
@@ -37,8 +38,10 @@ export type SchedulingGoalDefinition = BaseDefinition & {
   analyses?: SchedulingGoalAnalysis[];
   goal_id: number;
   parameter_schema?: ValueSchema;
-  type: 'JAR' | 'EDSL';
+  type: SchedulingType;
+  uploaded_jar_id: number | null;
 };
+
 export type SchedulingGoalMetadata = BaseMetadata<SchedulingGoalDefinition> & {
   analyses?: SchedulingGoalAnalysis[];
 };
@@ -56,7 +59,7 @@ export type SchedulingGoalMetadataSlim = Omit<SchedulingGoalMetadata, 'models_us
 
 export type SchedulingGoalMetadataVersionDefinition = Pick<
   SchedulingGoalDefinition,
-  'author' | 'definition' | 'revision' | 'tags'
+  'author' | 'definition' | 'revision' | 'tags' | 'type' | 'uploaded_jar_id'
 >;
 
 export type SchedulingConditionDefinitionInsertInput = Pick<
@@ -68,7 +71,10 @@ export type SchedulingConditionDefinitionInsertInput = Pick<
   };
 };
 
-export type SchedulingGoalDefinitionInsertInput = Pick<SchedulingGoalDefinition, 'goal_id' | 'definition'> & {
+export type SchedulingGoalDefinitionInsertInput = Pick<
+  SchedulingGoalDefinition,
+  'goal_id' | 'definition' | 'type' | 'uploaded_jar_id'
+> & {
   tags: {
     data: SchedulingTagsInsertInput[];
   };

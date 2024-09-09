@@ -285,7 +285,8 @@ async function changeUserRole(role: UserRole): Promise<void> {
   }
 }
 
-const queryPermissions = {
+type GQLKeys = keyof typeof gql;
+const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => boolean> = {
   APPLY_PRESET_TO_ACTIVITY: (
     user: User | null,
     plan: PlanWithOwners,
@@ -1087,13 +1088,6 @@ const gatewayPermissions = {
     );
   },
 };
-
-type ShapeOf<T> = Record<keyof T, any>;
-type AssertKeysEqual<X extends ShapeOf<Y>, Y extends ShapeOf<X>> = never;
-type GQLKeys = Record<keyof typeof gql, any>;
-type QueryKeys = Record<keyof typeof queryPermissions, any>;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type Assertion = AssertKeysEqual<GQLKeys, QueryKeys>;
 
 type PlanAssetCreatePermissionCheck = (user: User | null, plan: PlanWithOwners) => boolean;
 

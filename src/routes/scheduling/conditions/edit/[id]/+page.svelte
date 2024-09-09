@@ -85,7 +85,7 @@
 
 <SchedulingConditionForm
   initialConditionDefinitionAuthor={conditionDefinitionAuthor}
-  initialConditionDefinitionCode={conditionDefinitionCode}
+  initialConditionDefinitionCode={conditionDefinitionCode ?? ''}
   initialConditionDescription={conditionDescription}
   initialConditionId={conditionId}
   initialConditionName={conditionName}

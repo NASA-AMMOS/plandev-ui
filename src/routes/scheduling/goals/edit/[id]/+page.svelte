@@ -13,6 +13,7 @@
     SchedulingGoalDefinition,
     SchedulingGoalMetadataVersionDefinition,
   } from '../../../../../types/scheduling';
+  import effects from '../../../../../utilities/effects';
   import { getSearchParameterNumber, setQueryParam } from '../../../../../utilities/generic';
   import type { PageData } from './$types';
 
@@ -22,12 +23,16 @@
     getSearchParameterNumber(SearchParameters.REVISION, $page.url.searchParams) ??
     data.initialGoal.versions[0].revision;
 
-  let goalDefinition: Pick<SchedulingGoalDefinition, 'author' | 'definition' | 'revision' | 'tags'> =
-    data.initialGoal.versions.find(
-      ({ revision }) => revision === goalRevision,
-    ) as SchedulingGoalMetadataVersionDefinition;
-  let goalDefinitionCode = goalDefinition?.definition;
+  let goalDefinition: Pick<
+    SchedulingGoalDefinition,
+    'author' | 'definition' | 'revision' | 'tags' | 'type' | 'uploaded_jar_id'
+  > = data.initialGoal.versions.find(
+    ({ revision }) => revision === goalRevision,
+  ) as SchedulingGoalMetadataVersionDefinition;
+  let goalDefinitionCode = goalDefinition?.definition ?? null;
   let goalDefinitionAuthor = goalDefinition?.author;
+  let goalDefinitionFilename: string | null = null;
+  let goalDefinitionType = goalDefinition.type;
   let goalDescription = data.initialGoal.description;
   let goalId = data.initialGoal.id;
   let goalName = data.initialGoal.name;
@@ -39,24 +44,32 @@
   let referenceModelId: number | null = null;
 
   $: $schedulingGoalMetadataId = data.initialGoal.id;
-  $: if ($schedulingGoalMetadata != null && $schedulingGoalMetadata.id === $schedulingGoalMetadataId) {
-    goalDefinition = $schedulingGoalMetadata.versions.find(
-      ({ revision }) => revision === goalRevision,
-    ) as SchedulingGoalMetadataVersionDefinition;
-    if (goalDefinition != null) {
-      goalDefinitionAuthor = goalDefinition?.author;
-      goalDefinitionCode = goalDefinition?.definition;
-      goalDefinitionTags = goalDefinition?.tags.map(({ tag }) => tag);
-    }
+  $: (async () => {
+    if ($schedulingGoalMetadata != null && $schedulingGoalMetadata.id === $schedulingGoalMetadataId) {
+      goalDefinition = $schedulingGoalMetadata.versions.find(
+        ({ revision }) => revision === goalRevision,
+      ) as SchedulingGoalMetadataVersionDefinition;
+      if (goalDefinition != null) {
+        goalDefinitionAuthor = goalDefinition?.author;
+        goalDefinitionType = goalDefinition?.type;
+        goalDefinitionCode = goalDefinition?.definition;
+        goalDefinitionTags = goalDefinition?.tags.map(({ tag }) => tag);
+        if (goalDefinition.uploaded_jar_id !== null) {
+          goalDefinitionFilename = await effects.getFileName(goalDefinition.uploaded_jar_id, data.user);
+        } else {
+          goalDefinitionFilename = null;
+        }
+      }
 
-    goalDescription = $schedulingGoalMetadata.description;
-    goalId = $schedulingGoalMetadata.id;
-    goalName = $schedulingGoalMetadata.name;
-    goalPublic = $schedulingGoalMetadata.public;
-    goalMetadataTags = $schedulingGoalMetadata.tags.map(({ tag }) => tag);
-    goalOwner = $schedulingGoalMetadata.owner;
-    goalRevisions = $schedulingGoalMetadata.versions.map(({ revision }) => revision);
-  }
+      goalDescription = $schedulingGoalMetadata.description;
+      goalId = $schedulingGoalMetadata.id;
+      goalName = $schedulingGoalMetadata.name;
+      goalPublic = $schedulingGoalMetadata.public;
+      goalMetadataTags = $schedulingGoalMetadata.tags.map(({ tag }) => tag);
+      goalOwner = $schedulingGoalMetadata.owner;
+      goalRevisions = $schedulingGoalMetadata.versions.map(({ revision }) => revision);
+    }
+  })();
 
   function onRevisionSelect(event: CustomEvent<number>) {
     const { detail: revision } = event;
@@ -85,8 +98,10 @@
 
 <SchedulingGoalForm
   initialGoalDefinitionAuthor={goalDefinitionAuthor}
-  initialGoalDefinitionCode={goalDefinitionCode}
   initialGoalDescription={goalDescription}
+  initialGoalDefinitionType={goalDefinitionType}
+  initialGoalDefinitionCode={goalDefinitionCode}
+  initialGoalDefinitionFilename={goalDefinitionFilename}
   initialGoalId={goalId}
   initialGoalName={goalName}
   initialGoalPublic={goalPublic}

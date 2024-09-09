@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
+  import type { DefinitionType } from '../../enums/association';
   import { SearchParameters } from '../../enums/searchParameters';
   import { constraints } from '../../stores/constraints';
   import type { User, UserId } from '../../types/app';
@@ -15,7 +16,7 @@
   import AssociationForm from '../ui/Association/AssociationForm.svelte';
 
   export let initialConstraintDefinitionAuthor: UserId | undefined = undefined;
-  export let initialConstraintDefinitionCode: string = 'export default (): Constraint => {\n\n}\n';
+  export let initialConstraintDefinitionCode: string | null = '';
   export let initialConstraintDescription: string = '';
   export let initialConstraintId: number | null = null;
   export let initialConstraintName: string = '';
@@ -88,10 +89,10 @@
 
   async function onCreateConstraint(
     event: CustomEvent<{
-      definition: {
-        code: string;
-        tags: Tag[];
-      };
+      definitionCode: string | null;
+      definitionFile?: File | null;
+      definitionTags: Tag[];
+      definitionType?: DefinitionType;
       description: string;
       name: string;
       public: boolean;
@@ -99,14 +100,14 @@
     }>,
   ) {
     const {
-      detail: { definition, description, name, public: isPublic, tags },
+      detail: { definitionCode, definitionTags, description, name, public: isPublic },
     } = event;
     const newConstraintId = await effects.createConstraint(
       name,
       isPublic,
       tags.map(({ id }) => ({ tag_id: id })),
-      definition.code,
-      definition.tags.map(({ id }) => ({ tag_id: id })),
+      definitionCode ?? '',
+      definitionTags.map(({ id }) => ({ tag_id: id })),
       user,
       description,
     );
@@ -122,8 +123,10 @@
 
   async function onCreateNewConstraintDefinition(
     event: CustomEvent<{
-      definitionCode: string;
+      definitionCode: string | null;
+      definitionFile?: File | null;
       definitionTags: Tag[];
+      definitionType?: DefinitionType;
     }>,
   ) {
     const {
@@ -132,7 +135,7 @@
     if (initialConstraintId !== null) {
       const definition = await effects.createConstraintDefinition(
         initialConstraintId,
-        definitionCode,
+        definitionCode ?? '',
         definitionTags.map(({ id }) => ({ tag_id: id })),
         user,
       );
@@ -224,6 +227,7 @@
 
 <AssociationForm
   allMetadata={$constraints}
+  defaultDefinitionCode={`export default (): Constraint => {\n\n}\n`}
   displayName="Constraint"
   {hasCreateDefinitionCodePermission}
   {hasWriteMetadataPermission}

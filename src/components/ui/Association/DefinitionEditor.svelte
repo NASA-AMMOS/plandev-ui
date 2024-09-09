@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
+  import { DefinitionType } from '../../../enums/association';
   import { models } from '../../../stores/model';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../../types/dropdown';
   import type { Monaco, TypeScriptFile } from '../../../types/monaco';
@@ -12,7 +13,8 @@
   import SectionTitle from '../../ui/SectionTitle.svelte';
 
   export let tsFiles: TypeScriptFile[] = [];
-  export let definition: string = '';
+  export let definition: string | null = '';
+  export let definitionType: DefinitionType = DefinitionType.CODE;
   export let referenceModelId: number | null = null;
   export let readOnly: boolean = false;
   export let title: string = 'Constraint - Definition Editor';
@@ -86,20 +88,24 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <MonacoEditor
-      bind:monaco
-      automaticLayout={true}
-      fixedOverflowWidgets={true}
-      language="typescript"
-      lineNumbers="on"
-      minimap={{ enabled: false }}
-      {readOnly}
-      scrollBeyondLastLine={false}
-      tabSize={2}
-      value={definition}
-      on:didChangeModelContent
-      on:fullyLoaded={workerFullyLoaded}
-    />
+    {#if definitionType === DefinitionType.CODE}
+      <MonacoEditor
+        bind:monaco
+        automaticLayout={true}
+        fixedOverflowWidgets={true}
+        language="typescript"
+        lineNumbers="on"
+        minimap={{ enabled: false }}
+        {readOnly}
+        scrollBeyondLastLine={false}
+        tabSize={2}
+        value={definition}
+        on:didChangeModelContent
+        on:fullyLoaded={workerFullyLoaded}
+      />
+    {:else}
+      <div class="file-message st-typography-bold">Preview not available for definitions from a file.</div>
+    {/if}
   </svelte:fragment>
 </Panel>
 
@@ -113,5 +119,13 @@
 
   .dropdown-select label {
     white-space: nowrap;
+  }
+
+  .file-message {
+    align-items: center;
+    display: grid;
+    height: 100%;
+    justify-content: center;
+    width: 100%;
   }
 </style>

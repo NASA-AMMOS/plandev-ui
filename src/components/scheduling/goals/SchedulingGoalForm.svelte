@@ -4,6 +4,8 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
+  import { SchedulingType } from '../../../constants/scheduling';
+  import { DefinitionType } from '../../../enums/association';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { schedulingGoals } from '../../../stores/scheduling';
   import type { User, UserId } from '../../../types/app';
@@ -18,12 +20,14 @@
   import AssociationForm from '../../ui/Association/AssociationForm.svelte';
 
   export let initialGoalDefinitionAuthor: UserId | undefined = undefined;
-  export let initialGoalDefinitionCode: string = 'export default (): GlobalSchedulingGoal => {\n\n}\n';
+  export let initialGoalDefinitionCode: string | null = null;
+  export let initialGoalDefinitionFilename: string | null = null;
   export let initialGoalDescription: string = '';
   export let initialGoalId: number | null = null;
   export let initialGoalName: string = '';
   export let initialGoalPublic: boolean = true;
   export let initialGoalDefinitionTags: Tag[] = [];
+  export let initialGoalDefinitionType: SchedulingType = SchedulingType.EDSL;
   export let initialGoalMetadataTags: Tag[] = [];
   export let initialGoalOwner: UserId = null;
   export let initialGoalRevision: number | null = null;
@@ -89,10 +93,10 @@
 
   async function onCreateGoal(
     event: CustomEvent<{
-      definition: {
-        code: string;
-        tags: Tag[];
-      };
+      definitionCode: string | null;
+      definitionFile?: File | null;
+      definitionTags: Tag[];
+      definitionType?: DefinitionType;
       description: string;
       name: string;
       public: boolean;
@@ -100,15 +104,26 @@
     }>,
   ) {
     const {
-      detail: { definition, description, name, public: isPublic, tags },
+      detail: {
+        definitionCode,
+        definitionFile,
+        definitionTags,
+        definitionType,
+        description,
+        name,
+        public: isPublic,
+        tags,
+      },
     } = event;
 
     const newGoalId = await effects.createSchedulingGoal(
       name,
       isPublic,
       tags.map(({ id }) => ({ tag_id: id })),
-      definition.code,
-      definition.tags.map(({ id }) => ({ tag_id: id })),
+      definitionType === DefinitionType.CODE ? SchedulingType.EDSL : SchedulingType.JAR,
+      definitionCode,
+      definitionFile ?? null,
+      definitionTags.map(({ id }) => ({ tag_id: id })),
       user,
       description,
     );
@@ -124,17 +139,21 @@
 
   async function onCreateNewGoalDefinition(
     event: CustomEvent<{
-      definitionCode: string;
+      definitionCode: string | null;
+      definitionFile?: File | null;
       definitionTags: Tag[];
+      definitionType?: DefinitionType;
     }>,
   ) {
     const {
-      detail: { definitionCode, definitionTags },
+      detail: { definitionCode, definitionFile, definitionTags, definitionType },
     } = event;
     if (initialGoalId !== null) {
       const definition = await effects.createSchedulingGoalDefinition(
         initialGoalId,
+        definitionType === DefinitionType.CODE ? SchedulingType.EDSL : SchedulingType.JAR,
         definitionCode,
+        definitionFile ?? null,
         definitionTags.map(({ id }) => ({ tag_id: id })),
         user,
       );
@@ -216,12 +235,19 @@
 
 <AssociationForm
   allMetadata={$schedulingGoals}
+  defaultDefinitionCode={`export default (): GlobalSchedulingGoal => {\n\n}\n`}
+  definitionTypeConfigurations={{
+    code: { label: 'EDSL' },
+    file: { accept: '.jar', label: 'JAR File' },
+  }}
   displayName="Scheduling Goal"
   {hasCreateDefinitionCodePermission}
   {hasWriteDefinitionTagsPermission}
   {hasWriteMetadataPermission}
   initialDefinitionAuthor={initialGoalDefinitionAuthor}
+  initialDefinitionType={initialGoalDefinitionType === SchedulingType.EDSL ? DefinitionType.CODE : DefinitionType.FILE}
   initialDefinitionCode={initialGoalDefinitionCode}
+  initialDefinitionFileName={initialGoalDefinitionFilename}
   initialDescription={initialGoalDescription}
   initialId={initialGoalId}
   initialName={initialGoalName}
@@ -234,6 +260,7 @@
   {permissionError}
   revisions={goalRevisions}
   {tags}
+  showDefinitionTypeSelector={true}
   tsFiles={goalsTsFiles}
   {mode}
   {user}

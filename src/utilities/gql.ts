@@ -2747,6 +2747,7 @@ const gql = {
           tags {
             tag_id
           }
+          uploaded_jar_id
         }
       }
     }
@@ -2794,6 +2795,7 @@ const gql = {
           tags {
             tag_id
           }
+          uploaded_jar_id
         }
       }
     }

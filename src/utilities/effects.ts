@@ -7,6 +7,7 @@ import {
   type ParameterDictionary as AmpcsParameterDictionary,
 } from '@nasa-jpl/aerie-ampcs';
 import { get } from 'svelte/store';
+import { SchedulingType } from '../constants/scheduling';
 import { DictionaryHeaders } from '../enums/dictionaryHeaders';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SearchParameters } from '../enums/searchParameters';
@@ -1338,7 +1339,9 @@ const effects = {
     name: string,
     isPublic: boolean,
     metadataTags: SchedulingTagsInsertInput[],
-    definition: string,
+    definitionType: SchedulingType,
+    definition: string | null,
+    file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
     user: User | null,
     description?: string,
@@ -1346,6 +1349,15 @@ const effects = {
     try {
       if (!queryPermissions.CREATE_SCHEDULING_CONDITION(user)) {
         throwPermissionError('create a scheduling condition');
+      }
+
+      let jarId: number | null = null;
+      let codeDefinition: string | null = null;
+
+      if (definitionType === SchedulingType.EDSL) {
+        codeDefinition = definition;
+      } else if (definitionType === SchedulingType.JAR && file) {
+        jarId = await effects.uploadFile(file, user);
       }
 
       const goalInsertInput: SchedulingGoalInsertInput = {
@@ -1358,10 +1370,12 @@ const effects = {
         versions: {
           data: [
             {
-              definition,
+              definition: codeDefinition,
               tags: {
                 data: definitionTags,
               },
+              type: definitionType,
+              uploaded_jar_id: jarId,
             },
           ],
         },
@@ -1386,7 +1400,9 @@ const effects = {
 
   async createSchedulingGoalDefinition(
     goalId: number,
-    definition: string,
+    definitionType: SchedulingType,
+    definition: string | null,
+    file: File | null,
     definitionTags: SchedulingTagsInsertInput[],
     user: User | null,
   ): Promise<Pick<SchedulingGoalDefinition, 'goal_id' | 'definition' | 'revision'> | null> {
@@ -1395,12 +1411,23 @@ const effects = {
         throwPermissionError('create a scheduling goal definition');
       }
 
+      let jarId: number | null = null;
+      let codeDefinition: string | null = null;
+
+      if (definitionType === SchedulingType.EDSL) {
+        codeDefinition = definition;
+      } else if (definitionType === SchedulingType.JAR && file !== null) {
+        jarId = await effects.uploadFile(file, user);
+      }
+
       const goalDefinitionInsertInput: SchedulingGoalDefinitionInsertInput = {
-        definition,
+        definition: codeDefinition,
         goal_id: goalId,
         tags: {
           data: definitionTags,
         },
+        type: definitionType,
+        uploaded_jar_id: jarId,
       };
       const data = await reqHasura<SchedulingGoalDefinition>(
         gql.CREATE_SCHEDULING_GOAL_DEFINITION,
@@ -3172,6 +3199,26 @@ const effects = {
     } catch (e) {
       catchError(e as Error);
       return [];
+    }
+  },
+
+  async getFileName(fileId: number, user: User | null): Promise<string | null> {
+    try {
+      if (!queryPermissions.GET_UPLOADED_FILENAME(user)) {
+        throwPermissionError('get the requested filename');
+      }
+      const data = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id: fileId }, user))[
+        'uploaded_file'
+      ];
+
+      if (data) {
+        const { name } = data[0];
+        return name.replace(/(?:-[a-zA-Z0-9]+){2}(\.[a-z]+)?$/, '$1');
+      }
+      return null;
+    } catch (e) {
+      catchError(e as Error);
+      return null;
     }
   },
 

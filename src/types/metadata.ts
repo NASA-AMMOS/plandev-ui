@@ -6,7 +6,7 @@ import type { Tag } from './tags';
 export type BaseDefinition = {
   author: UserId;
   created_at: string;
-  definition: string;
+  definition: string | null;
   metadata: BaseMetadata<BaseDefinition>;
   models_using: Pick<Model, 'id'>[];
   plans_using: Pick<Plan, 'id'>[];

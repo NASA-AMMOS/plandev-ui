@@ -79,7 +79,7 @@
 
 <ConstraintForm
   initialConstraintDefinitionAuthor={constraintDefinitionAuthor}
-  initialConstraintDefinitionCode={constraintDefinitionCode}
+  initialConstraintDefinitionCode={constraintDefinitionCode ?? ''}
   initialConstraintDescription={constraintDescription}
   initialConstraintId={constraintId}
   initialConstraintName={constraintName}

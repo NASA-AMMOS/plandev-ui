@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { DefinitionType } from '../../../enums/association';
+
   import type { RadioButtonId } from '../../../types/radio-buttons';
 
   import type { Dispatcher } from '../../../types/component';
@@ -12,14 +14,16 @@
   interface $$Events extends ComponentEvents<SvelteComponent> {
     close: CustomEvent;
     createDefinition: CustomEvent<{
-      definitionCode: string;
+      definitionCode: string | null;
+      definitionFile?: File | null;
       definitionTags: Tag[];
+      definitionType?: DefinitionType;
     }>;
     createMetadata: CustomEvent<{
-      definition: {
-        code: string;
-        tags: Tag[];
-      };
+      definitionCode: string | null;
+      definitionFile?: File | null;
+      definitionTags: Tag[];
+      definitionType?: DefinitionType;
       description: string;
       name: string;
       public: boolean;
@@ -66,6 +70,13 @@
 
   type SavedMetadata = Pick<FormMetadata, 'description' | 'name' | 'owner' | 'public' | 'tags'>;
   type SavedDefinition = Pick<FormDefinition, 'definition' | 'tags'>;
+  type DefinitionConfigurations = {
+    [DefinitionType.CODE]: { label: string };
+    [DefinitionType.FILE]: {
+      accept: string;
+      label: string;
+    };
+  };
 
   export let allMetadata: FormMetadata[] = [];
   export let displayName: string = '';
@@ -73,8 +84,12 @@
   export let hasCreateDefinitionCodePermission: boolean = false;
   export let hasWriteMetadataPermission: boolean = false;
   export let hasWriteDefinitionTagsPermission: boolean = false;
+  export let defaultDefinitionCode: string = 'export default ():  => {\n\n}\n';
+  export let definitionTypeConfigurations: DefinitionConfigurations | undefined = undefined;
   export let initialDefinitionAuthor: UserId | undefined = undefined;
-  export let initialDefinitionCode: string = 'export default ():  => {\n\n}\n';
+  export let initialDefinitionType: DefinitionType = DefinitionType.CODE;
+  export let initialDefinitionCode: string | null = '';
+  export let initialDefinitionFileName: string | null = null;
   export let initialDescription: string = '';
   export let initialId: number | null = null;
   export let initialName: string = '';
@@ -86,6 +101,7 @@
   export let initialReferenceModelId: number | null = null;
   export let permissionError: string = '';
   export let revisions: number[] = [];
+  export let showDefinitionTypeSelector: boolean = false;
   export let tags: Tag[] = [];
   export let tsFiles: TypeScriptFile[] = [];
   export let mode: 'create' | 'edit' = 'create';
@@ -94,9 +110,14 @@
   const dispatch = createEventDispatcher<Dispatcher<$$Events>>();
 
   let defintionAuthor: UserId | null = initialDefinitionAuthor ?? user?.id ?? null;
-  let definitionCode: string = initialDefinitionCode;
+  let definitionCode: string | null = initialDefinitionCode;
   let definitionTags: Tag[] = initialDefinitionTags;
+  let definitionType: DefinitionType = initialDefinitionType;
   let description: string = initialDescription;
+  let isDefinitionFileHidden: boolean = !!initialDefinitionFileName;
+  let definitionFiles: FileList | undefined;
+  let definitionFileName: string | null = null;
+  let uploadFileInput: HTMLInputElement | undefined;
   let hasUpdateDefinitionPermission = false;
   let metadataId: number | null = initialId;
   let metadataTags: Tag[] = initialMetadataTags;
@@ -115,7 +136,9 @@
   $: definitionTags = initialDefinitionTags;
   $: defintionAuthor = initialDefinitionAuthor ?? user?.id ?? null;
   $: definitionCode = initialDefinitionCode;
-
+  $: definitionType = initialDefinitionType;
+  $: definitionFileName = initialDefinitionFileName;
+  $: isDefinitionFileHidden = !!definitionFileName;
   $: isMetadataModified = diffMetadata(
     {
       description: initialDescription,
@@ -132,7 +155,9 @@
       tags: metadataTags.map(tag => ({ tag })),
     },
   );
-  $: isDefinitionModified = diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode });
+  $: isDefinitionModified =
+    diffDefinition({ definition: initialDefinitionCode }, { definition: definitionCode }) ||
+    definitionFiles !== undefined;
   $: isDefinitionTagsModified = diffTags(initialDefinitionTags || [], definitionTags);
   $: hasUpdateDefinitionPermission = hasWriteDefinitionTagsPermission || isDefinitionModified;
   $: pageTitle = mode === 'edit' ? 's' : 'New ';
@@ -213,6 +238,10 @@
     }
   }
 
+  function onDefinitionFileReset() {
+    isDefinitionFileHidden = false;
+  }
+
   async function onMetadataTagsInputChange(event: TagsChangeEvent) {
     const {
       detail: { tag, type },
@@ -236,6 +265,23 @@
     isPublic = id === 'public';
   }
 
+  function onSelectDefinitionType(event: CustomEvent<{ id: RadioButtonId }>) {
+    const {
+      detail: { id },
+    } = event;
+
+    definitionType = id as DefinitionType;
+    if (definitionType === DefinitionType.CODE) {
+      definitionCode = initialDefinitionCode;
+    } else {
+      definitionCode = null;
+      if (uploadFileInput) {
+        uploadFileInput.value = '';
+      }
+      definitionFiles = undefined;
+    }
+  }
+
   function selectRevision(revision: number | string) {
     dispatch('selectRevision', parseInt(`${revision}`));
   }
@@ -253,24 +299,30 @@
   async function create() {
     if (saveButtonEnabled) {
       dispatch('createMetadata', {
-        definition: {
-          code: definitionCode,
-          tags: definitionTags,
-        },
+        definitionCode: definitionType === DefinitionType.CODE ? definitionCode : null,
+        definitionFile: definitionType === DefinitionType.FILE && definitionFiles ? definitionFiles[0] : null,
+        definitionTags,
+        definitionType,
         description,
         name,
         public: isPublic,
         tags: metadataTags,
       });
+
+      resetUploadFiles();
     }
   }
 
   async function createNewDefinition() {
     if (saveButtonEnabled && metadataId !== null) {
       dispatch('createDefinition', {
-        definitionCode,
+        definitionCode: definitionType === DefinitionType.CODE ? definitionCode : null,
+        definitionFile: definitionType === DefinitionType.FILE && definitionFiles ? definitionFiles[0] : null,
         definitionTags,
+        definitionType,
       });
+
+      resetUploadFiles();
     }
   }
 
@@ -278,6 +330,14 @@
     const { detail } = event;
     referenceModelId = detail;
     dispatch('selectReferenceModel', detail);
+  }
+
+  function resetUploadFiles() {
+    if (uploadFileInput) {
+      uploadFileInput.value = '';
+    }
+    definitionFiles = undefined;
+    isDefinitionFileHidden = true;
   }
 
   async function save() {
@@ -333,6 +393,10 @@
     defintionAuthor = initialDefinitionAuthor ?? user?.id ?? null;
     definitionCode = initialDefinitionCode;
     definitionTags = initialDefinitionTags;
+    definitionType = initialDefinitionType;
+    definitionFileName = initialDefinitionFileName;
+    definitionFiles = undefined;
+    isDefinitionFileHidden = !!initialDefinitionFileName;
     description = initialDescription;
     metadataId = initialId;
     metadataTags = initialMetadataTags;
@@ -387,6 +451,50 @@
           }}
         />
         <div class="metadata-form-error-message">{nameError}</div>
+      </fieldset>
+
+      {#if showDefinitionTypeSelector && !!definitionTypeConfigurations}
+        <fieldset>
+          <RadioButtons selectedButtonId={definitionType} on:select-radio-button={onSelectDefinitionType}>
+            {@const codeLabel = definitionTypeConfigurations[DefinitionType.CODE].label}
+            <RadioButton id={DefinitionType.CODE}>
+              <div class="definition-type-button">
+                <span>{codeLabel}</span>
+              </div>
+            </RadioButton>
+            {@const fileLabel = definitionTypeConfigurations[DefinitionType.FILE].label}
+            <RadioButton id={DefinitionType.FILE}>
+              <div class="definition-type-button">
+                <span>{fileLabel}</span>
+              </div>
+            </RadioButton>
+          </RadioButtons>
+        </fieldset>
+      {/if}
+
+      <fieldset class="definition-import-container" hidden={definitionType !== DefinitionType.FILE}>
+        <label for="file">{definitionTypeConfigurations?.file.label}</label>
+        <div class="import-input-container">
+          {#if isDefinitionFileHidden}
+            <div class="filename-container">
+              <div class="filename">{definitionFileName}</div>
+              <button class="st-button secondary" on:click={onDefinitionFileReset}>Change File</button>
+            </div>
+          {:else}
+            <input
+              class="w-100"
+              name="file"
+              type="file"
+              accept={definitionTypeConfigurations?.file.accept ?? 'application/json'}
+              bind:files={definitionFiles}
+              bind:this={uploadFileInput}
+              use:permissionHandler={{
+                hasPermission: hasWriteMetadataPermission,
+                permissionError,
+              }}
+            />
+          {/if}
+        </div>
       </fieldset>
 
       <fieldset>
@@ -533,9 +641,9 @@
   </Panel>
 
   <CssGridGutter track={1} type="column" />
-
   <DefinitionEditor
-    definition={definitionCode}
+    definition={definitionCode ?? defaultDefinitionCode}
+    {definitionType}
     {referenceModelId}
     readOnly={!hasCreateDefinitionCodePermission}
     {tsFiles}
@@ -550,6 +658,28 @@
     column-gap: 0.3rem;
     display: grid;
     grid-template-columns: min-content min-content;
+  }
+
+  .definition-type-button {
+    display: block;
+  }
+
+  .definition-import-container {
+    height: 48px;
+  }
+
+  .definition-import-container[hidden] {
+    display: none;
+  }
+
+  .filename-container {
+    align-items: center;
+    display: grid;
+    grid-template-columns: auto min-content;
+  }
+
+  .filename-container button {
+    white-space: nowrap;
   }
 
   .definition-divider {
