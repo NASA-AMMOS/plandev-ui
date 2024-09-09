@@ -23,5 +23,8 @@
       "args": ["--login", "--interactive"],
       "path": "zsh"
     }
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
   }
 }

@@ -217,10 +217,13 @@
         ) => {
           const goalId = parseInt(selectedGoalId);
           const isSelected = selectedGoals[goalId];
-          const goalPlanSpec = $allowedSchedulingGoalSpecs[goalId];
+
+          // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec
+          // i.e. this goal was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
+          const goalAlreadyExistsInPlanSpec = $allowedSchedulingGoalSpecs.find(e => e.goal_id === goalId) !== undefined;
 
           if (isSelected && $schedulingPlanSpecification !== null) {
-            if (!goalPlanSpec || goalPlanSpec.goal_metadata?.owner === user?.id) {
+            if (!goalAlreadyExistsInPlanSpec) {
               return {
                 ...prevGoalPlanSpecUpdates,
                 goalPlanSpecsToAdd: [
@@ -249,7 +252,6 @@
       );
       await effects.updateSchedulingGoalPlanSpecifications(
         $plan,
-        $schedulingPlanSpecification.id,
         goalPlanSpecUpdates.goalPlanSpecsToAdd,
         goalPlanSpecUpdates.goalPlanSpecIdsToDelete,
         user,

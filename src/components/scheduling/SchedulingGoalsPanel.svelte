@@ -80,19 +80,43 @@
 
   async function onUpdateGoal(event: CustomEvent<SchedulingGoalPlanSpecification>) {
     const {
-      detail: { goal_metadata, specification_id, ...goalPlanSpec },
+      detail: { goal_metadata, ...goalPlanSpec },
     } = event;
 
     if ($plan) {
       await effects.updateSchedulingGoalPlanSpecification(
         $plan,
-        specification_id,
         {
           ...goalPlanSpec,
-          specification_id,
         },
         user,
       );
+    }
+  }
+
+  async function duplicateGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
+    const {
+      detail: { goal_metadata, goal_invocation_id, priority, ...goalPlanSpec },
+    } = event;
+
+    if ($plan) {
+      await effects.createSchedulingGoalPlanSpecification(
+        {
+          ...goalPlanSpec,
+          priority: priority + 1,
+        },
+        user,
+      );
+    }
+  }
+
+  async function deleteGoalInvocation(event: CustomEvent<SchedulingGoalPlanSpecification>) {
+    const {
+      detail: { goal_metadata, specification_id, ...goalPlanSpec },
+    } = event;
+
+    if ($plan) {
+      await effects.deleteSchedulingGoalInvocation($plan, specification_id, [goalPlanSpec.goal_invocation_id], user);
     }
   }
 
@@ -198,7 +222,7 @@
             {numOfPrivateGoals > 1 ? 'are' : 'is'} private and not shown
           {/if}
         </div>
-        {#each filteredSchedulingGoalSpecs as specGoal (specGoal.goal_id)}
+        {#each filteredSchedulingGoalSpecs as specGoal (specGoal.goal_invocation_id)}
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
               hasEditPermission={hasSpecEditPermission}
@@ -209,6 +233,8 @@
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling goals for this plan.'}
               on:updateGoalPlanSpec={onUpdateGoal}
+              on:duplicateGoalInvocation={duplicateGoalInvocation}
+              on:deleteGoalInvocation={deleteGoalInvocation}
             />
           {/if}
         {/each}

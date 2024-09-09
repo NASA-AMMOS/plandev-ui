@@ -558,6 +558,9 @@ const queryPermissions = {
   DELETE_SCHEDULING_CONDITION_PLAN_SPECIFICATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_CONDITIONS], user);
   },
+  DELETE_SCHEDULING_GOAL_INVOCATIONS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS], user);
+  },
   DELETE_SCHEDULING_GOAL_METADATA: (
     user: User | null,
     goalMetadata: AssetWithOwner<SchedulingGoalMetadata>,
@@ -812,6 +815,9 @@ const queryPermissions = {
   },
   SUB_SCHEDULING_GOAL: () => true,
   SUB_SCHEDULING_GOALS: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
+  },
+  SUB_SCHEDULING_GOAL_INVOCATIONS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SCHEDULING_GOAL_METADATAS], user);
   },
   SUB_SCHEDULING_PLAN_SPECIFICATION: (user: User | null): boolean => {

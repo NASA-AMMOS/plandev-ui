@@ -1005,6 +1005,21 @@ const gql = {
     }
   `,
 
+  DELETE_SCHEDULING_GOAL_INVOCATIONS: `#graphql
+    mutation DeleteSchedulingGoalInvocations($goalInvocationIdsToDelete: [Int!]! = [], $specificationId: Int!) {
+      deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
+        where: {
+          goal_invocation_id: { _in: $goalInvocationIdsToDelete },
+          _and: {
+            specification_id: { _eq: $specificationId },
+          }
+        }
+      ) {
+        affected_rows
+      }
+    }
+  `,
+
   DELETE_SCHEDULING_GOAL_METADATA: `#graphql
     mutation DeleteSchedulingGoal($id: Int!) {
       deleteSchedulingGoalMetadata: ${Queries.DELETE_SCHEDULING_GOAL_METADATA}(id: $id) {
@@ -1609,6 +1624,7 @@ const gql = {
         enabled
         goal_id
         priority
+        arguments
         specification_id
       }
     }
@@ -2725,7 +2741,9 @@ const gql = {
         versions(order_by: {revision: desc}) {
           author
           definition
+          type
           revision
+          parameter_schema
           tags {
             tag_id
           }
@@ -2772,8 +2790,37 @@ const gql = {
           author
           definition
           revision
+          type
           tags {
             tag_id
+          }
+        }
+      }
+    }
+  `,
+
+  SUB_SCHEDULING_GOAL_INVOCATIONS: `#graphql
+    subscription SubSchedulingGoalInvocations($planId: Int!) {
+      ${Queries.SCHEDULING_SPECIFICATION_GOALS} (where: {specification: {plan_id: {_eq: $planId}}}) {
+        specification_id
+        goal_id
+        goal_invocation_id
+        goal_revision
+        arguments
+        enabled
+        priority
+        simulate_after
+        goal_metadata {
+          name
+          versions(order_by: {revision: desc}) {
+            author
+            definition
+            revision
+            type
+            tags {
+              tag_id
+            }
+            parameter_schema
           }
         }
       }
@@ -2822,6 +2869,7 @@ const gql = {
             }
           }
           goal_id
+          goal_invocation_id
           goal_metadata {
             name
             owner
@@ -2839,12 +2887,15 @@ const gql = {
                   activity_id
                 }
               }
+              parameter_schema
+              type
               revision
             }
           }
           goal_revision
           priority
           simulate_after
+          arguments
           specification_id
         }
       }
@@ -3448,14 +3499,15 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATION: `#graphql
-    mutation UpdateSchedulingGoalPlanSpecification($id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!, $specificationId: Int!) {
+    mutation UpdateSchedulingGoalPlanSpecification($arguments: jsonb, $goal_invocation_id: Int!, $revision: Int!, $enabled: Boolean!, $priority: Int!, $simulateAfter: Boolean!) {
       updateSchedulingGoalPlanSpecification: ${Queries.UPDATE_SCHEDULING_SPECIFICATION_GOAL}(
-        pk_columns: { goal_id: $id, specification_id: $specificationId },
+        pk_columns: { goal_invocation_id: $goal_invocation_id },
         _set: {
           goal_revision: $revision,
           enabled: $enabled,
           priority: $priority,
           simulate_after: $simulateAfter
+          arguments: $arguments
         }
       ) {
         goal_revision
@@ -3465,13 +3517,9 @@ const gql = {
   `,
 
   UPDATE_SCHEDULING_GOAL_PLAN_SPECIFICATIONS: `#graphql
-    mutation UpdateSchedulingGoalPlanSpecifications($goalSpecsToUpdate: [scheduling_specification_goals_insert_input!]!, $goalSpecIdsToDelete: [Int!]! = [], $specificationId: Int!) {
-      updateSchedulingGoalPlanSpecifications: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOALS}(
-        objects: $goalSpecsToUpdate,
-        on_conflict: {
-          constraint: scheduling_specification_goals_primary_key,
-          update_columns: [goal_revision, enabled]
-        },
+    mutation UpdateSchedulingGoalPlanSpecifications($goalSpecsToInsert: [scheduling_specification_goals_insert_input!]!, $goalSpecIdsToDelete: [Int!]! = []) {
+      insertSchedulingGoalPlanSpecifications: ${Queries.INSERT_SCHEDULING_SPECIFICATION_GOALS}(
+        objects: $goalSpecsToInsert,
       ) {
         returning {
           goal_revision
@@ -3479,12 +3527,7 @@ const gql = {
         }
       }
       deleteSchedulingGoalPlanSpecifications: ${Queries.DELETE_SCHEDULING_SPECIFICATION_GOALS}(
-        where: {
-          goal_id: { _in: $goalSpecIdsToDelete },
-          _and: {
-            specification_id: { _eq: $specificationId },
-          }
-        }
+        where: { goal_id: { _in: $goalSpecIdsToDelete } }
       ) {
         affected_rows
       }
