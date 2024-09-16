@@ -93,7 +93,6 @@
       if (right !== null) {
         right.style.right = `${padRight}px`;
 
-        right.style.width = `min(40%, ${right.clientWidth}px)`;
         if (input !== null) {
           input.style.paddingRight = `min(40%, ${padLeft + right.clientWidth + padRight}px)`;
         }

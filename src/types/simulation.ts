@@ -97,6 +97,7 @@ export type Simulation = {
 };
 
 export type SimulationDataset = {
+  arguments: ArgumentsMap;
   canceled: boolean;
   dataset_id: number;
   extent: { extent: string | null } | null;

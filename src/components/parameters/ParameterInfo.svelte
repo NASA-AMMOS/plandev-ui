@@ -8,6 +8,7 @@
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 
   export let formParameter: FormParameter;
+  export let disabled: boolean = false;
 
   const dispatch = createEventDispatcher<{
     reset: FormParameter;
@@ -87,7 +88,9 @@
           {/if}
           {#if source !== 'none'}
             <div class="parameter-info-label">Source</div>
-            <div class="parameter-info-value"><ValueSourceBadge isCompact={false} {source} on:reset={onReset} /></div>
+            <div class="parameter-info-value">
+              <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
+            </div>
           {/if}
         </div>
       </div>

@@ -48,8 +48,8 @@
   />
 {:else if formParameter.schema.type === 'int'}
   <ParameterBaseNumber
-    {hideRightAdornments}
     {disabled}
+    {hideRightAdornments}
     {labelColumnWidth}
     {level}
     {levelPadding}

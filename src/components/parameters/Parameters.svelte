@@ -58,7 +58,7 @@
           />
         {/if}
         <div class="parameter-info">
-          <ParameterInfo {formParameter} on:reset />
+          <ParameterInfo {disabled} {formParameter} on:reset />
         </div>
       </div>
     </Highlight>

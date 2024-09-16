@@ -36,9 +36,9 @@
       case 'user on model':
       case 'user on preset':
         showButton = true;
+        tooltipContent = 'Modified';
         tooltipShortcut = `${isMacOs() ? '⌘' : 'CTRL'} Click`;
         tooltipShortcutLabel = `Reset to ${source === 'user on preset' ? presetText : 'Model'}`;
-        tooltipContent = 'Modified';
         break;
       case 'preset':
         tooltipContent = `${presetText} Value`;
@@ -86,8 +86,8 @@
       content: tooltipContent,
       disabled: !isCompact,
       placement: 'top',
-      shortcut: tooltipShortcut,
-      shortcutLabel: tooltipShortcutLabel,
+      shortcut: !disabled ? tooltipShortcut : '',
+      shortcutLabel: !disabled ? tooltipShortcutLabel : '',
     }}
     use:useActions={use}
     on:click={onClick}

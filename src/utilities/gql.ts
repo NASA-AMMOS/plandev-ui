@@ -2976,6 +2976,7 @@ const gql = {
     subscription SubSimulationDatasets($planId: Int!) {
       ${Queries.SIMULATIONS}(where: { plan_id: { _eq: $planId } }, order_by: { id: desc }) {
         simulation_datasets(order_by: { id: desc }) {
+          arguments
           canceled
           id
           dataset_id
