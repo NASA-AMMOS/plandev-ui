@@ -310,7 +310,7 @@ function requestToString(request: Request) {
   if (request.time) {
     time = seqJsonTimeToSequence(request.time);
   } else if (request.ground_epoch) {
-    time = `@GROUND_EPOCH(${quoteEscape(request.ground_epoch.name ?? '')}, ${quoteEscape(request.ground_epoch.delta ?? '')})`;
+    time = `G${request.ground_epoch.delta ?? ''} ${quoteEscape(request.ground_epoch.name ?? '')}`;
   }
   const reqBegin = `@REQUEST_BEGIN(${quoteEscape(request.name)})`;
   const description = request.description ? seqJsonDescriptionToSequence(request.description) : '';

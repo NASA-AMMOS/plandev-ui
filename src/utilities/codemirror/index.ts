@@ -49,6 +49,7 @@ export const SeqLanguage = LRLanguage.define({
         TimeAbsolute: t.className,
         TimeComplete: t.className,
         TimeEpoch: t.className,
+        TimeGroundEpoch: t.className,
         TimeRelative: t.className,
       }),
     ],

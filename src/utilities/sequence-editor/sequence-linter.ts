@@ -120,13 +120,7 @@ export function sequenceLinter(
     const commandsNode = treeNode.getChild('Commands');
     if (commandsNode) {
       diagnostics.push(...commandLinter(commandsNode.getChildren(TOKEN_COMMAND), docText, variableMap));
-      diagnostics.push(
-        ...commandsNode
-          .getChildren(TOKEN_REQUEST)
-          .flatMap(request =>
-            commandLinter(request.getChild('Steps')?.getChildren(TOKEN_COMMAND) ?? [], docText, variableMap),
-          ),
-      );
+      diagnostics.push(...validateRequests(commandsNode.getChildren(TOKEN_REQUEST), docText, variableMap));
     }
 
     diagnostics.push(
@@ -289,6 +283,23 @@ export function sequenceLinter(
           to: block.to,
         } as const;
       }),
+    );
+
+    return diagnostics;
+  }
+
+  function validateRequests(requestNodes: SyntaxNode[], text: string, variables: VariableMap): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+
+    for (const request of requestNodes) {
+      // Get the TimeTag node for the current command
+      diagnostics.push(...validateTimeTags(request, text));
+    }
+
+    diagnostics.push(
+      ...requestNodes.flatMap(request =>
+        commandLinter(request.getChild('Steps')?.getChildren(TOKEN_COMMAND) ?? [], text, variables),
+      ),
     );
 
     return diagnostics;
@@ -533,130 +544,7 @@ export function sequenceLinter(
     // Iterate over each command node
     for (const command of commandNodes) {
       // Get the TimeTag node for the current command
-      const timeTagNode = command.getChild('TimeTag');
-
-      // If the TimeTag node is missing, create a diagnostic
-      if (!timeTagNode) {
-        diagnostics.push({
-          actions: [
-            insertAction(`Insert 'C' (command complete)`, 'C '),
-            insertAction(`Insert 'R1' (relative 1)`, 'R '),
-          ],
-          from: command.from,
-          message: "Missing 'Time Tag' for command",
-          severity: 'error',
-          to: command.to,
-        });
-      } else {
-        const timeTagAbsoluteNode = timeTagNode.getChild('TimeAbsolute');
-        const timeTagEpochNode = timeTagNode.getChild('TimeEpoch');
-        const timeTagRelativeNode = timeTagNode.getChild('TimeRelative');
-
-        if (timeTagAbsoluteNode) {
-          const absoluteText = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
-
-          const isValid = validateTime(absoluteText, TimeTypes.ABSOLUTE);
-          if (!isValid) {
-            diagnostics.push({
-              actions: [],
-              from: timeTagAbsoluteNode.from,
-              message: CustomErrorCodes.InvalidAbsoluteTime().message,
-              severity: 'error',
-              to: timeTagAbsoluteNode.to,
-            });
-          } else {
-            if (isTimeMax(absoluteText, TimeTypes.ABSOLUTE)) {
-              diagnostics.push({
-                actions: [],
-                from: timeTagAbsoluteNode.from,
-                message: CustomErrorCodes.MaxAbsoluteTime().message,
-                severity: 'error',
-                to: timeTagAbsoluteNode.to,
-              });
-            } else {
-              if (!isTimeBalanced(absoluteText, TimeTypes.ABSOLUTE)) {
-                diagnostics.push({
-                  actions: [],
-                  from: timeTagAbsoluteNode.from,
-                  message: CustomErrorCodes.UnbalancedTime(getDoyTime(new Date(getUnixEpochTime(absoluteText))))
-                    .message,
-                  severity: 'warning',
-                  to: timeTagAbsoluteNode.to,
-                });
-              }
-            }
-          }
-        } else if (timeTagEpochNode) {
-          const epochText = text.slice(timeTagEpochNode.from + 1, timeTagEpochNode.to).trim();
-          const isValid = validateTime(epochText, TimeTypes.EPOCH) || validateTime(epochText, TimeTypes.EPOCH_SIMPLE);
-          if (!isValid) {
-            diagnostics.push({
-              actions: [],
-              from: timeTagEpochNode.from,
-              message: CustomErrorCodes.InvalidEpochTime().message,
-              severity: 'error',
-              to: timeTagEpochNode.to,
-            });
-          } else {
-            if (validateTime(epochText, TimeTypes.EPOCH)) {
-              if (isTimeMax(epochText, TimeTypes.EPOCH)) {
-                diagnostics.push({
-                  actions: [],
-                  from: timeTagEpochNode.from,
-                  message: CustomErrorCodes.MaxEpochTime(parseDurationString(epochText, 'seconds').isNegative).message,
-                  severity: 'error',
-                  to: timeTagEpochNode.to,
-                });
-              } else {
-                if (!isTimeBalanced(epochText, TimeTypes.EPOCH)) {
-                  diagnostics.push({
-                    actions: [],
-                    from: timeTagEpochNode.from,
-                    message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(epochText)).message,
-                    severity: 'warning',
-                    to: timeTagEpochNode.to,
-                  });
-                }
-              }
-            }
-          }
-        } else if (timeTagRelativeNode) {
-          const relativeText = text.slice(timeTagRelativeNode.from + 1, timeTagRelativeNode.to).trim();
-          const isValid =
-            validateTime(relativeText, TimeTypes.RELATIVE) || validateTime(relativeText, TimeTypes.RELATIVE_SIMPLE);
-          if (!isValid) {
-            diagnostics.push({
-              actions: [],
-              from: timeTagRelativeNode.from,
-              message: CustomErrorCodes.InvalidRelativeTime().message,
-              severity: 'error',
-              to: timeTagRelativeNode.to,
-            });
-          } else {
-            if (validateTime(relativeText, TimeTypes.RELATIVE)) {
-              if (isTimeMax(relativeText, TimeTypes.RELATIVE)) {
-                diagnostics.push({
-                  actions: [],
-                  from: timeTagRelativeNode.from,
-                  message: CustomErrorCodes.MaxRelativeTime().message,
-                  severity: 'error',
-                  to: timeTagRelativeNode.to,
-                });
-              } else {
-                if (!isTimeBalanced(relativeText, TimeTypes.EPOCH)) {
-                  diagnostics.push({
-                    actions: [],
-                    from: timeTagRelativeNode.from,
-                    message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(relativeText)).message,
-                    severity: 'error',
-                    to: timeTagRelativeNode.to,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
+      diagnostics.push(...validateTimeTags(command, text));
 
       // Validate the command and push the generated diagnostics to the array
       diagnostics.push(...validateCommand(command, text, 'command', variables));
@@ -667,6 +555,142 @@ export function sequenceLinter(
     }
 
     // Return the array of diagnostics
+    return diagnostics;
+  }
+
+  function validateTimeTags(command: SyntaxNode, text: string): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+    const timeTagNode = command.getChild('TimeTag');
+
+    // If the TimeTag node is missing, create a diagnostic
+    if (!timeTagNode) {
+      diagnostics.push({
+        actions: [insertAction(`Insert 'C' (command complete)`, 'C '), insertAction(`Insert 'R1' (relative 1)`, 'R ')],
+        from: command.from,
+        message: "Missing 'Time Tag' for command",
+        severity: 'error',
+        to: command.to,
+      });
+    } else {
+      // Commands can't have a ground epoch time tag
+      if (command.name === TOKEN_COMMAND && timeTagNode.getChild('TimeGroundEpoch')) {
+        diagnostics.push({
+          actions: [],
+          from: timeTagNode.from,
+          message: 'Ground Epoch Time Tags are not allowed for commands',
+          severity: 'error',
+          to: timeTagNode.to,
+        });
+      }
+
+      const timeTagAbsoluteNode = timeTagNode?.getChild('TimeAbsolute');
+      const timeTagEpochNode = timeTagNode?.getChild('TimeEpoch') ?? timeTagNode.getChild('TimeGroundEpoch');
+      const timeTagRelativeNode = timeTagNode?.getChild('TimeRelative');
+
+      if (timeTagAbsoluteNode) {
+        const absoluteText = text.slice(timeTagAbsoluteNode.from + 1, timeTagAbsoluteNode.to).trim();
+
+        const isValid = validateTime(absoluteText, TimeTypes.ABSOLUTE);
+        if (!isValid) {
+          diagnostics.push({
+            actions: [],
+            from: timeTagAbsoluteNode.from,
+            message: CustomErrorCodes.InvalidAbsoluteTime().message,
+            severity: 'error',
+            to: timeTagAbsoluteNode.to,
+          });
+        } else {
+          if (isTimeMax(absoluteText, TimeTypes.ABSOLUTE)) {
+            diagnostics.push({
+              actions: [],
+              from: timeTagAbsoluteNode.from,
+              message: CustomErrorCodes.MaxAbsoluteTime().message,
+              severity: 'error',
+              to: timeTagAbsoluteNode.to,
+            });
+          } else {
+            if (!isTimeBalanced(absoluteText, TimeTypes.ABSOLUTE)) {
+              diagnostics.push({
+                actions: [],
+                from: timeTagAbsoluteNode.from,
+                message: CustomErrorCodes.UnbalancedTime(getDoyTime(new Date(getUnixEpochTime(absoluteText)))).message,
+                severity: 'warning',
+                to: timeTagAbsoluteNode.to,
+              });
+            }
+          }
+        }
+      } else if (timeTagEpochNode) {
+        const epochText = text.slice(timeTagEpochNode.from + 1, timeTagEpochNode.to).trim();
+        const isValid = validateTime(epochText, TimeTypes.EPOCH) || validateTime(epochText, TimeTypes.EPOCH_SIMPLE);
+        if (!isValid) {
+          diagnostics.push({
+            actions: [],
+            from: timeTagEpochNode.from,
+            message: CustomErrorCodes.InvalidEpochTime().message,
+            severity: 'error',
+            to: timeTagEpochNode.to,
+          });
+        } else {
+          if (validateTime(epochText, TimeTypes.EPOCH)) {
+            if (isTimeMax(epochText, TimeTypes.EPOCH)) {
+              diagnostics.push({
+                actions: [],
+                from: timeTagEpochNode.from,
+                message: CustomErrorCodes.MaxEpochTime(parseDurationString(epochText, 'seconds').isNegative).message,
+                severity: 'error',
+                to: timeTagEpochNode.to,
+              });
+            } else {
+              if (!isTimeBalanced(epochText, TimeTypes.EPOCH)) {
+                diagnostics.push({
+                  actions: [],
+                  from: timeTagEpochNode.from,
+                  message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(epochText)).message,
+                  severity: 'warning',
+                  to: timeTagEpochNode.to,
+                });
+              }
+            }
+          }
+        }
+      } else if (timeTagRelativeNode) {
+        const relativeText = text.slice(timeTagRelativeNode.from + 1, timeTagRelativeNode.to).trim();
+        const isValid =
+          validateTime(relativeText, TimeTypes.RELATIVE) || validateTime(relativeText, TimeTypes.RELATIVE_SIMPLE);
+        if (!isValid) {
+          diagnostics.push({
+            actions: [],
+            from: timeTagRelativeNode.from,
+            message: CustomErrorCodes.InvalidRelativeTime().message,
+            severity: 'error',
+            to: timeTagRelativeNode.to,
+          });
+        } else {
+          if (validateTime(relativeText, TimeTypes.RELATIVE)) {
+            if (isTimeMax(relativeText, TimeTypes.RELATIVE)) {
+              diagnostics.push({
+                actions: [],
+                from: timeTagRelativeNode.from,
+                message: CustomErrorCodes.MaxRelativeTime().message,
+                severity: 'error',
+                to: timeTagRelativeNode.to,
+              });
+            } else {
+              if (!isTimeBalanced(relativeText, TimeTypes.EPOCH)) {
+                diagnostics.push({
+                  actions: [],
+                  from: timeTagRelativeNode.from,
+                  message: CustomErrorCodes.UnbalancedTime(getBalancedDuration(relativeText)).message,
+                  severity: 'error',
+                  to: timeTagRelativeNode.to,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
     return diagnostics;
   }
 

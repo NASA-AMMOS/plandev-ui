@@ -24,7 +24,7 @@ const GROUND_ACTIVITIES = [
 ];
 
 const REQUEST_ACTIVITIES = [
-  `@GROUND_EPOCH("Name", "+0.00") @REQUEST_BEGIN("request.name")
+  `G+00:00:00 "Name" @REQUEST_BEGIN("request.name")
   C SEQ_ECHO ""
   @METADATA "Key" "Value"
   @METADATA "Key1" "Value"

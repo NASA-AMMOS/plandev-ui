@@ -98,9 +98,9 @@ export async function sequenceToSeqJson(
 function parseRequest(requestNode: SyntaxNode, text: string, commandDictionary: CommandDictionary | null): Request {
   let ground_epoch = undefined;
   let time = undefined;
-  const groundEpochNode = requestNode.getChild('GroundEpoch');
+  const groundEpochNode = requestNode.getChild('TimeTag')?.getChild('TimeGroundEpoch');
   if (groundEpochNode) {
-    ground_epoch = parseGroundEpoch(groundEpochNode, text);
+    ground_epoch = parseGroundEpoch(requestNode.getChild('TimeTag'), text);
   } else {
     time = parseTime(requestNode, text);
   }
@@ -357,11 +357,13 @@ function parseArgs(
   return args;
 }
 
-function parseGroundEpoch(groundEpochNode: SyntaxNode, text: string): GroundEpoch {
-  const deltaNode = groundEpochNode.getChild('Delta');
+function parseGroundEpoch(groundEpochNode: SyntaxNode | null, text: string): GroundEpoch {
+  if (!groundEpochNode) {
+    return { delta: '', name: '' };
+  }
   const nameNode = groundEpochNode.getChild('Name');
   return {
-    delta: deltaNode ? unquoteUnescape(text.slice(deltaNode.from, deltaNode.to)) : '',
+    delta: groundEpochNode.parent ? parseTime(groundEpochNode.parent, text).tag : '',
     name: nameNode ? unquoteUnescape(text.slice(nameNode.from, nameNode.to)) : '',
   };
 }
@@ -380,7 +382,7 @@ function parseTime(commandNode: SyntaxNode, text: string): Time {
 
   const timeTagAbsoluteNode = timeTagNode.getChild('TimeAbsolute');
   const timeTagCompleteNode = timeTagNode.getChild('TimeComplete');
-  const timeTagEpochNode = timeTagNode.getChild('TimeEpoch');
+  const timeTagEpochNode = timeTagNode.getChild('TimeEpoch') || timeTagNode.getChild('TimeGroundEpoch');
   const timeTagRelativeNode = timeTagNode.getChild('TimeRelative');
 
   if (timeTagCompleteNode) {

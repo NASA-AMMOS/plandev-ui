@@ -67,7 +67,7 @@ HardwareCommands {
   commandBlock
 }
 
-TimeTag { TimeAbsolute | TimeEpoch | TimeRelative  | TimeComplete }
+TimeTag { TimeAbsolute | (TimeGroundEpoch Name { String } whiteSpace)  | TimeEpoch | TimeRelative  | TimeComplete }
 
 Args {
   (whiteSpace (arg | RepeatArg))* whiteSpace?
@@ -118,20 +118,7 @@ commonGround {
 }
 
 Request {
-  (TimeTag | GroundEpoch {
-    groundEpochDirective
-    "("
-      whiteSpace?
-      Name { String }
-      whiteSpace?
-    ","
-      whiteSpace?
-      Delta { String }
-      whiteSpace?
-    ")"
-    // Extra properties are allowed in schema, but not supported by tool chain
-    whiteSpace
-  })
+  TimeTag
   requestStartDirective "(" RequestName { String } ")"
   whiteSpace? LineComment? newLine
   // json schema requires step+, catch error in linter for cleaner message
@@ -190,6 +177,8 @@ Stem { !stemStart identifier }
 
   TimeEpoch { 'E'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
 
+  TimeGroundEpoch { 'G'$[+\-]?(timeSecond | timeDOY | timeHhmmss) whiteSpace}
+
   TimeComplete { 'C' whiteSpace }
 
   String { '"' (!["\\] | "\\" _)* '"' }
@@ -224,7 +213,6 @@ Stem { !stemStart identifier }
   loadDirective { "@LOAD" }
   engineDirective { "@ENGINE" }
   epochDirective { "@EPOCH" }
-  groundEpochDirective { "@GROUND_EPOCH" }
   groundBlockDirective { "@GROUND_BLOCK" }
   groundEventDirective { "@GROUND_EVENT" }
   requestStartDirective { "@REQUEST_BEGIN" }
@@ -235,7 +223,7 @@ Stem { !stemStart identifier }
 
   @precedence { newLine, whiteSpace }
 
-  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, Boolean, identifier }
+  @precedence{ TimeAbsolute, TimeRelative, TimeEpoch, TimeComplete, TimeGroundEpoch, Boolean, identifier }
 
   @precedence {
     LoadAndGoDirective,
@@ -250,7 +238,6 @@ Stem { !stemStart identifier }
     loadDirective,
     groundBlockDirective,
     groundEventDirective,
-    groundEpochDirective,
     requestStartDirective,
     requestEndDirective,
     engineDirective,

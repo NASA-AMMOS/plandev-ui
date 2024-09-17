@@ -747,7 +747,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
 
   it('should serialize a request with simple metadata', async () => {
     const input = `
-@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+G+03:00:00 "GroundEpochName" @REQUEST_BEGIN("request2.name")
   C CMD_0 1 2 3
   @METADATA "cmd_0_meta_name_0" "cmd_0_meta_value_0"
   @MODEL "a" 1 "00:00:00"
@@ -764,7 +764,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
       requests: [
         {
           ground_epoch: {
-            delta: '+3:00',
+            delta: '03:00:00',
             name: 'GroundEpochName',
           },
           metadata: {
@@ -834,7 +834,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
   "boolean": true
 }
 
-@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+G03:00:00 "GroundEpochName" @REQUEST_BEGIN("request2.name")
   C CMD_0 1 2 3
   @METADATA "foo" "bar"
   @MODEL "a" 1 "00:00:00"
@@ -908,7 +908,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
 
         {
           ground_epoch: {
-            delta: '+3:00',
+            delta: '03:00:00',
             name: 'GroundEpochName',
           },
           metadata: {
@@ -991,7 +991,7 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request.name") # Description Text
 @METADATA "sub_object" {
   "boolean": true
 }
-@GROUND_EPOCH("GroundEpochName","+3:00") @REQUEST_BEGIN("request2.name")
+G+3 "GroundEpochName" @REQUEST_BEGIN("request2.name")
   C CMD_0 1 2 3
   @METADATA "foo" "bar"
   @MODEL "a" 1 "00:00:00"

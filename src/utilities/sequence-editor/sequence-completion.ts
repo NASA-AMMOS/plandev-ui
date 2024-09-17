@@ -9,11 +9,11 @@ import { getCustomArgDef } from './extension-points';
 
 type CursorInfo = {
   isAfterActivateOrLoad: boolean;
+  isAfterTimeTag: boolean;
   isAtLineComment: boolean;
   isAtSymbolBefore: boolean;
   isBeforeHDWCommands: boolean;
   isBeforeImmedOrHDWCommands: boolean;
-  isTimeTagBefore: boolean;
   position: number;
 };
 
@@ -51,18 +51,18 @@ export function sequenceCompletion(
 
       const cursor: CursorInfo = {
         isAfterActivateOrLoad: nodeBefore.parent?.name === 'Activate' || nodeBefore.parent?.name === 'Load',
+        isAfterTimeTag: (() => {
+          const line = context.state.doc.lineAt(context.pos);
+          const node = SeqLanguage.parser.parse(line.text).resolveInner(context.pos - line.from, -1);
+
+          return node.parent?.getChild('TimeGroundEpoch') || node.parent?.getChild('TimeTag') ? true : false;
+        })(),
         isAtLineComment: nodeCurrent.name === 'LineComment' || nodeBefore.name === 'LineComment',
         isAtSymbolBefore: isAtTyped(context.state.doc.toString(), word),
         isBeforeHDWCommands: context.pos < (baseNode.getChild('HardwareCommands')?.from ?? Infinity),
         isBeforeImmedOrHDWCommands:
           context.pos <
           (baseNode.getChild('ImmediateCommands')?.from ?? baseNode.getChild('HardwareCommands')?.from ?? Infinity),
-        isTimeTagBefore: (() => {
-          const line = context.state.doc.lineAt(context.pos);
-          const node = SeqLanguage.parser.parse(line.text).resolveInner(context.pos - line.from, -1);
-
-          return node.parent?.getChild('GroundEpoch') || node.parent?.getChild('TimeTag') ? true : false;
-        })(),
         position: context.pos,
       };
 
@@ -112,7 +112,7 @@ export function sequenceCompletion(
           },
         );
 
-        if (!cursor.isTimeTagBefore) {
+        if (!cursor.isAfterTimeTag) {
           //get the first of the year date
           const date = new Date();
           date.setMonth(0);
@@ -151,10 +151,10 @@ export function sequenceCompletion(
               type: 'keyword',
             },
             {
-              apply: `${cursor.isAtSymbolBefore ? '' : '@'}GROUND_EPOCH("Name","+0.00") `,
+              apply: 'G1 "epoch.name" ',
               info: 'Add a ground epoch to a request',
-              label: '@GROUND_EPOCH',
-              section: 'Ground Directives',
+              label: 'G (ground epoch)',
+              section: 'Time Tags',
               type: 'keyword',
             },
           );
@@ -184,7 +184,7 @@ export function sequenceCompletion(
 
       // If TimeTag has not been entered by the user wait for 2 characters before showing the command completions list
       // If TimeTag has been entered show the completion list when 1 character has been entered
-      if (word.text.length > (cursor.isTimeTagBefore || cursor.isBeforeImmedOrHDWCommands === false ? 0 : 1)) {
+      if (word.text.length > (cursor.isAfterTimeTag || cursor.isBeforeImmedOrHDWCommands === false ? 0 : 1)) {
         fswCommandsCompletions.push(
           ...generateCommandCompletions(channelDictionary, commandDictionary, cursor, parameterDictionaries),
         );
@@ -276,7 +276,7 @@ function generateCommandCompletions(
       apply = `${stem} ${argsStr} `;
     }
 
-    if (!cursor.isTimeTagBefore && cursor.isBeforeImmedOrHDWCommands) {
+    if (!cursor.isAfterTimeTag && cursor.isBeforeImmedOrHDWCommands) {
       apply = 'C ' + apply;
     }
 
@@ -328,8 +328,8 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     apply: (view, _completion, from: number, to: number) => {
       view.dispatch({
         changes: {
-          from: Math.max(0, from + (!cursor.isTimeTagBefore || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isTimeTagBefore ? 'C ' : ''}@GROUND_EVENT("ground_event.name")`,
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@GROUND_EVENT("ground_event.name")`,
           to,
         },
       });
@@ -344,8 +344,8 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     apply: (view, _completion, from: number, to: number) => {
       view.dispatch({
         changes: {
-          from: Math.max(0, from + (!cursor.isTimeTagBefore || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isTimeTagBefore ? 'C ' : ''}@GROUND_BLOCK("ground_block.name")`,
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@GROUND_BLOCK("ground_block.name")`,
           to,
         },
       });
@@ -360,8 +360,8 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     apply: (view, _completion, from: number, to: number) => {
       view.dispatch({
         changes: {
-          from: Math.max(0, from + (!cursor.isTimeTagBefore || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isTimeTagBefore ? 'C ' : ''}@ACTIVATE("activate.name")`,
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@ACTIVATE("activate.name")`,
           to,
         },
       });
@@ -376,8 +376,8 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     apply: (view, _completion, from: number, to: number) => {
       view.dispatch({
         changes: {
-          from: Math.max(0, from + (!cursor.isTimeTagBefore || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isTimeTagBefore ? 'C ' : ''}@LOAD("load.name")`,
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@LOAD("load.name")`,
           to,
         },
       });
@@ -427,8 +427,8 @@ function generateStepCompletion(cursor: CursorInfo): Completion[] {
     apply: (view, _completion, from: number, to: number) => {
       view.dispatch({
         changes: {
-          from: Math.max(0, from + (!cursor.isTimeTagBefore || cursor.isAtSymbolBefore ? -1 : 0)),
-          insert: `${!cursor.isTimeTagBefore ? 'C ' : ''}@REQUEST_BEGIN("request.name")
+          from: Math.max(0, from + (!cursor.isAfterTimeTag || cursor.isAtSymbolBefore ? -1 : 0)),
+          insert: `${!cursor.isAfterTimeTag ? 'C ' : ''}@REQUEST_BEGIN("request.name")
   #Commands go here
 @REQUEST_END`,
           to,

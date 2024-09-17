@@ -783,7 +783,7 @@ C FSA_CMD 10 [] "USA" ["96707-898" "92604-623"]
     const sequence = await seqJsonToSequence(JSON.stringify(seqJson));
     const expectedSequence = `
     @ID "id"
-    @GROUND_EPOCH("GroundEpochName", "+3:00") @REQUEST_BEGIN("request2.name")
+    G+3:00 "GroundEpochName" @REQUEST_BEGIN("request2.name")
       C CMD_0 1 2 3
       @METADATA "cmd_0_meta_name_0" "cmd_0_meta_value_0"
       @MODEL "a" 1 "00:00:00"

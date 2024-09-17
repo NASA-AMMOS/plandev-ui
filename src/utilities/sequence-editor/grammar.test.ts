@@ -328,7 +328,7 @@ A2024-321T11:22:33 @LOAD("load.name") # No Args
 @EPOCH "epoch string"
 R123T12:34:56 @LOAD("load2.name") "foo" 1 2 3  # A comment
 @ENGINE -1
-@GROUND_EPOCH("Name","+3:00") @REQUEST_BEGIN("request.name") # Description Text
+G3 "Name" @REQUEST_BEGIN("request.name") # Description Text
   C CMD_0 1 2 3
   @METADATA "foo" "bar"
   @MODEL "a" 1 "00:00:00"
@@ -360,7 +360,7 @@ Sequence(Commands(
   Load(TimeTag(TimeAbsolute),SequenceName(String),Args,LineComment,Engine(Number),Epoch(String)),
   Load(TimeTag(TimeRelative),SequenceName(String),Args(String,Number,Number,Number),LineComment,Engine(Number)),
   Request(
-    GroundEpoch(Name(String),Delta(String)),
+    TimeTag(TimeGroundEpoch,Name(String)),
     RequestName(String),LineComment,
     Steps(
       Command(TimeTag(TimeComplete),Stem,Args(Number,Number,Number),Metadata(MetaEntry(Key(String),Value(String))),Models(Model(Variable(String),Value(Number),Offset(String)))),

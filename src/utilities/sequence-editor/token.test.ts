@@ -237,7 +237,7 @@ R123T12:34:56 @GROUND_EVENT("ground_event.name") "foo" 1 2 3  # No Args
   });
 
   it('request', () => {
-    const input = `@GROUND_EPOCH("Name","+3:00") @REQUEST_BEGIN("request.name") # Description Text
+    const input = `G3 "Name" @REQUEST_BEGIN("request.name") # Description Text
   C CMD_0 1 2 3
   @METADATA "foo" "bar"
   @MODEL "a" 1 "00:00:00"
@@ -268,9 +268,9 @@ A2024-123T12:34:56 @REQUEST_BEGIN("request2.name")
 
     assert.equal(getNodeText(requests[0].getChild('RequestName')!, input), '"request.name"');
     assert.equal(getNodeText(requests[0].getChild('LineComment')!, input), '# Description Text');
-    const request0GrondEpoch = requests[0].getChild('GroundEpoch');
+    const request0GrondEpoch = requests[0].getChild('TimeTag');
     assert.equal(getNodeText(request0GrondEpoch!.getChild('Name')!, input), '"Name"');
-    assert.equal(getNodeText(request0GrondEpoch!.getChild('Delta')!, input), '"+3:00"');
+    assert.equal(getNodeText(request0GrondEpoch!.getChild('TimeGroundEpoch')!, input), 'G3 ');
     assert.equal(requests[0].getChild('Steps')?.getChildren('Command').length, 4);
     const request0Meta0 = requests[0].getChild('Metadata')!.getChild('MetaEntry')!;
     assert.deepEqual(JSON.parse(getNodeText(request0Meta0.getChild('Value')!, input)), {
