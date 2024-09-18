@@ -512,3 +512,23 @@
 .ag-theme-stellar .ag-header-cell-resize {
   z-index: 0;
 }
+
+.ag-theme-stellar .ag-header-cell-filter-button .ag-icon-filter:before,
+.ag-theme-stellar-dark .ag-header-cell-filter-button .ag-icon-filter:before {
+  content: '';
+  opacity: 0;
+}
+
+.ag-theme-stellar .ag-header-cell-comp-wrapper:hover .ag-header-cell-filter-button .ag-icon-filter:before,
+.ag-theme-stellar-dark .ag-header-cell-comp-wrapper:hover .ag-header-cell-filter-button .ag-icon-filter:before {
+  content: var(--ag-icon-font-code-menu, '');
+  opacity: var(--ag-icon-image-opacity-filter, 0.9);
+  transition: opacity 0.1s linear;
+}
+
+.ag-theme-stellar .ag-header-cell-filter-button.ag-filter-active .ag-icon-filter:before,
+.ag-theme-stellar-dark .ag-header-cell-filter-button.ag-filter-active .ag-icon-filter:before {
+  content: var(--ag-icon-font-code-menu, '\f115');
+  opacity: var(--ag-icon-image-opacity-filter, 0.9);
+  transition: opacity 0.1s linear;
+}

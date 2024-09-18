@@ -273,7 +273,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       animateRows: false,
       columnDefs,
       doesExternalFilterPass,
-      excludeHiddenColumnsFromQuickFilter: false,
+      includeHiddenColumnsInQuickFilter: true,
       ...(shouldAutoGenerateId ? {} : { getRowId: (params: { data: RowData }) => `${getRowId(params.data)}` }),
       isExternalFilterPresent,
       isRowSelectable,

@@ -78,7 +78,7 @@ export class View {
     const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
     await nameColumnHeader.hover();
 
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-menu');
+    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
     await expect(filterIcon).toBeVisible();
     await filterIcon.click();
     await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(viewName);
