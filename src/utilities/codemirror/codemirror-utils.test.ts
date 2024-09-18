@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { isQuoted, quoteEscape, removeEscapedQuotes, unquoteUnescape } from './codemirror-utils';
+import {
+  isHexValue,
+  isQuoted,
+  parseNumericArg,
+  quoteEscape,
+  removeEscapedQuotes,
+  unquoteUnescape,
+} from './codemirror-utils';
 
 describe(`'Escaped quotes' from input`, () => {
   it('Should remove escaped quotes surrounding a string', () => {
@@ -80,5 +87,33 @@ describe('quoteEscape', () => {
       expect(unquoteUnescape('"hello')).toBe('"hello');
       expect(unquoteUnescape('hello"')).toBe('hello"');
     });
+  });
+});
+
+describe('parseNumericArg', function () {
+  it("should parse 'float' and 'numeric' args as floats", function () {
+    expect(parseNumericArg('1.23', 'float')).toEqual(1.23);
+    expect(parseNumericArg('2.34', 'numeric')).toEqual(2.34);
+    expect(parseNumericArg('bad', 'float')).toEqual(NaN);
+    // can't parse hex numbers as float
+    expect(parseNumericArg('0xabc', 'float')).toEqual(0);
+  });
+  it("should parse 'integer' and 'unsigned' args as integers", function () {
+    expect(parseNumericArg('123', 'integer')).toEqual(123);
+    expect(parseNumericArg('234', 'unsigned')).toEqual(234);
+    expect(parseNumericArg('234.567', 'integer')).toEqual(234);
+    // can parse hex integers
+    expect(parseNumericArg('0xff', 'integer')).toEqual(255);
+    expect(parseNumericArg('0x1f', 'unsigned')).toEqual(31);
+  });
+});
+describe('isHexValue', function () {
+  it('should correctly identify a hex number string', function () {
+    expect(isHexValue('12')).toBe(false);
+    expect(isHexValue('ff')).toBe(false);
+    expect(isHexValue('0x99')).toBe(true);
+    expect(isHexValue('0xdeadBEEF')).toBe(true);
+    expect(isHexValue('0x12ab')).toBe(true);
+    expect(isHexValue('0x12xx')).toBe(false);
   });
 });

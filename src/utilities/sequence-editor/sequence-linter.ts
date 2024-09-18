@@ -20,7 +20,7 @@ import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG, TOKEN_REQUEST } from '../
 import { TimeTypes } from '../../enums/time';
 import { getGlobals, sequenceAdaptation } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
-import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
+import { addDefaultArgs, quoteEscape, parseNumericArg, isHexValue } from '../codemirror/codemirror-utils';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -1164,13 +1164,14 @@ export function sequenceLinter(
             break;
           }
           const { max, min } = dictArg.range;
-          const nodeTextAsNumber = parseFloat(argText);
-
+          const nodeTextAsNumber = parseNumericArg(argText, dictArgType);
+          const isHex = isHexValue(argText);
           if (nodeTextAsNumber < min || nodeTextAsNumber > max) {
+            const numFormat = (n: number) => (isHex ? `0x${n.toString(16).toUpperCase()}` : n);
             const message =
               max !== min
-                ? `Number out of range. Range is between ${min} and ${max} inclusive.`
-                : `Number out of range. Range is ${min}.`;
+                ? `Number out of range. Range is between ${numFormat(min)} and ${numFormat(max)} inclusive.`
+                : `Number out of range. Range is ${numFormat(min)}.`;
             diagnostics.push({
               actions:
                 max === min

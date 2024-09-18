@@ -140,3 +140,16 @@ export function removeEscapedQuotes(text: string | number | boolean): string | n
   }
   return text;
 }
+
+export function parseNumericArg(argText: string, dictArgType: 'float' | 'integer' | 'numeric' | 'unsigned') {
+  switch (dictArgType) {
+    case 'float':
+    case 'numeric':
+      return parseFloat(argText);
+  }
+  return parseInt(argText);
+}
+
+export function isHexValue(argText: string) {
+  return /^0x[\da-f]+$/i.test(argText);
+}
