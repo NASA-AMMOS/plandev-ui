@@ -3,12 +3,47 @@ import type { GlobalType } from '../types/global-type';
 import type { ISequenceAdaptation, SequenceAdaptation } from '../types/sequencing';
 import gql from '../utilities/gql';
 import { seqJsonToSequence } from '../utilities/sequence-editor/from-seq-json';
+import { sequenceAutoIndent } from '../utilities/sequence-editor/sequence-autoindent';
+import { sequenceCompletion } from '../utilities/sequence-editor/sequence-completion';
 import { sequenceToSeqJson } from '../utilities/sequence-editor/to-seq-json';
 import { gqlSubscribable } from './subscribable';
 
+const defaultAdaptation: ISequenceAdaptation = {
+  argDelegator: undefined,
+  autoComplete: sequenceCompletion,
+  autoIndent: sequenceAutoIndent,
+  conditionalKeywords: {
+    else: 'CMD_ELSE',
+    elseIf: ['CMD_ELSE_IF'],
+    endIf: 'CMD_END_IF',
+    if: ['CMD_IF'],
+  },
+  globals: [],
+  inputFormat: {
+    linter: undefined,
+    name: 'SeqN',
+    toInputFormat: seqJsonToSequence,
+  },
+  loopKeywords: {
+    break: 'CMD_BREAK',
+    continue: 'CMD_CONTINUE',
+    endWhileLoop: 'CMD_END_WHILE_LOOP',
+    whileLoop: ['CMD_WHILE_LOOP', 'CMD_WHILE_LOOP_OR'],
+  },
+  modifyOutput: undefined,
+  modifyOutputParse: undefined,
+  outputFormat: [
+    {
+      fileExtension: 'json',
+      name: 'Seq JSON',
+      toOutputFormat: sequenceToSeqJson,
+    },
+  ],
+};
+
 /* Writeable */
 
-export const sequenceAdaptation: Writable<ISequenceAdaptation | undefined> = writable(undefined);
+export const sequenceAdaptation: Writable<ISequenceAdaptation> = writable(defaultAdaptation);
 
 /* Subscriptions. */
 
@@ -26,38 +61,34 @@ export const outputFormat = derived(
 /* Helpers */
 
 export function getGlobals(): GlobalType[] {
-  return get(sequenceAdaptation)?.globals ?? [];
+  return get(sequenceAdaptation).globals ?? [];
 }
 
 export function setSequenceAdaptation(newSequenceAdaptation: ISequenceAdaptation | undefined): void {
   sequenceAdaptation.set({
-    argDelegator: newSequenceAdaptation?.argDelegator ?? undefined,
+    argDelegator: newSequenceAdaptation?.argDelegator ?? defaultAdaptation.argDelegator,
+    autoComplete: newSequenceAdaptation?.autoComplete ?? defaultAdaptation.autoComplete,
+    autoIndent: newSequenceAdaptation?.autoIndent ?? defaultAdaptation.autoIndent,
     conditionalKeywords: {
-      else: newSequenceAdaptation?.conditionalKeywords?.else ?? 'CMD_ELSE',
-      elseIf: newSequenceAdaptation?.conditionalKeywords?.elseIf ?? ['CMD_ELSE_IF'],
-      endIf: newSequenceAdaptation?.conditionalKeywords?.endIf ?? 'CMD_END_IF',
-      if: newSequenceAdaptation?.conditionalKeywords?.if ?? ['CMD_IF'],
+      else: newSequenceAdaptation?.conditionalKeywords?.else ?? defaultAdaptation.conditionalKeywords.else,
+      elseIf: newSequenceAdaptation?.conditionalKeywords?.elseIf ?? defaultAdaptation.conditionalKeywords.elseIf,
+      endIf: newSequenceAdaptation?.conditionalKeywords?.endIf ?? defaultAdaptation.conditionalKeywords.endIf,
+      if: newSequenceAdaptation?.conditionalKeywords?.if ?? defaultAdaptation.conditionalKeywords.if,
     },
-    globals: newSequenceAdaptation?.globals ?? [],
+    globals: newSequenceAdaptation?.globals ?? defaultAdaptation.globals,
     inputFormat: {
-      linter: newSequenceAdaptation?.inputFormat?.linter ?? undefined,
-      name: newSequenceAdaptation?.inputFormat?.name ?? 'SeqN',
-      toInputFormat: newSequenceAdaptation?.inputFormat?.toInputFormat ?? seqJsonToSequence,
+      linter: newSequenceAdaptation?.inputFormat?.linter ?? defaultAdaptation.inputFormat.linter,
+      name: newSequenceAdaptation?.inputFormat?.name ?? defaultAdaptation.inputFormat.name,
+      toInputFormat: newSequenceAdaptation?.inputFormat?.toInputFormat ?? defaultAdaptation.inputFormat.toInputFormat,
     },
     loopKeywords: {
-      break: newSequenceAdaptation?.loopKeywords?.break ?? 'CMD_BREAK',
-      continue: newSequenceAdaptation?.loopKeywords?.continue ?? 'CMD_CONTINUE',
-      endWhileLoop: newSequenceAdaptation?.loopKeywords?.endWhileLoop ?? 'CMD_END_WHILE_LOOP',
-      whileLoop: newSequenceAdaptation?.loopKeywords?.whileLoop ?? ['CMD_WHILE_LOOP', 'CMD_WHILE_LOOP_OR'],
+      break: newSequenceAdaptation?.loopKeywords?.break ?? defaultAdaptation.loopKeywords.break,
+      continue: newSequenceAdaptation?.loopKeywords?.continue ?? defaultAdaptation.loopKeywords.continue,
+      endWhileLoop: newSequenceAdaptation?.loopKeywords?.endWhileLoop ?? defaultAdaptation.loopKeywords.endWhileLoop,
+      whileLoop: newSequenceAdaptation?.loopKeywords?.whileLoop ?? defaultAdaptation.loopKeywords.whileLoop,
     },
-    modifyOutput: newSequenceAdaptation?.modifyOutput ?? undefined,
-    modifyOutputParse: newSequenceAdaptation?.modifyOutputParse ?? undefined,
-    outputFormat: newSequenceAdaptation?.outputFormat ?? [
-      {
-        fileExtension: 'json',
-        name: 'Seq JSON',
-        toOutputFormat: sequenceToSeqJson,
-      },
-    ],
+    modifyOutput: newSequenceAdaptation?.modifyOutput ?? defaultAdaptation.modifyOutput,
+    modifyOutputParse: newSequenceAdaptation?.modifyOutputParse ?? defaultAdaptation.modifyOutputParse,
+    outputFormat: newSequenceAdaptation?.outputFormat ?? defaultAdaptation.outputFormat,
   });
 }

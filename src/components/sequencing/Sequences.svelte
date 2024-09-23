@@ -23,7 +23,7 @@
 
   export let user: User | null;
 
-  let filterText = '';
+  let filterText: string = '';
   let parcel: Parcel | null;
   let selectedSequence: UserSequence | null = null;
   let workspace: Workspace | undefined;
@@ -32,7 +32,7 @@
   $: parcel = $parcels.find(p => p.id === selectedSequence?.parcel_id) ?? null;
   $: workspace = $workspaces.find(workspace => workspace.id === workspaceId);
   $: if (selectedSequence !== null) {
-    const found = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
+    const found: number = $userSequences.findIndex(sequence => sequence.id === selectedSequence?.id);
 
     if (found === -1) {
       selectedSequence = null;

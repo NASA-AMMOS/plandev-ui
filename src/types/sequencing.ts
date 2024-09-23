@@ -1,3 +1,5 @@
+import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import type { IndentContext } from '@codemirror/language';
 import type { Diagnostic } from '@codemirror/lint';
 import type { SyntaxNode } from '@lezer/common';
 import type {
@@ -57,6 +59,12 @@ export interface IOutputFormat {
 
 export interface ISequenceAdaptation {
   argDelegator?: ArgDelegator;
+  autoComplete: (
+    channelDictionary: AmpcsChannelDictionary | null,
+    commandDictionary: AmpcsCommandDictionary | null,
+    parameterDictionaries: AmpcsParameterDictionary[],
+  ) => (context: CompletionContext) => CompletionResult | null;
+  autoIndent: () => (context: IndentContext, pos: number) => number | null | undefined;
   conditionalKeywords: { else: string; elseIf: string[]; endIf: string; if: string[] };
   globals?: GlobalType[];
   inputFormat: {

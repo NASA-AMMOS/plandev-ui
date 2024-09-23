@@ -1,10 +1,9 @@
-import { syntaxTree } from '@codemirror/language';
-import { linter, type Diagnostic } from '@codemirror/lint';
-import type { Extension, Text } from '@codemirror/state';
+import { type Diagnostic } from '@codemirror/lint';
+import type { Text } from '@codemirror/state';
 import type { CommandDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { EditorView } from 'codemirror';
 // @ts-expect-error library does not include type declarations
 import { parse as jsonSourceMapParse } from 'json-source-map';
-import type { IOutputFormat } from '../../types/sequencing';
 
 type JsonSourceMapPointerPosition = {
   column: number;
@@ -41,62 +40,49 @@ function getErrorPosition(error: SyntaxError, doc: Text): number {
  * Linter function that returns a Code Mirror extension function.
  * Can be optionally called with a command dictionary so it's available during linting.
  */
-export function seqJsonLinter(
-  commandDictionary: CommandDictionary | null = null,
-  outputFormat: IOutputFormat | undefined = undefined,
-): Extension {
-  return linter(view => {
-    let diagnostics: Diagnostic[] = [];
-    const tree = syntaxTree(view.state);
-    const treeNode = tree.topNode;
+export function seqJsonLinter(view: EditorView, commandDictionary: CommandDictionary | null = null): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
 
-    try {
-      const text = view.state.doc.toString();
-      const sourceMap = jsonSourceMapParse(text);
+  try {
+    const text = view.state.doc.toString();
+    const sourceMap = jsonSourceMapParse(text);
 
-      if (commandDictionary) {
-        for (const [key, pointer] of Object.entries<JsonSourceMapPointer>(sourceMap.pointers)) {
-          const stemMatch = key.match(/\/steps\/\d+\/stem/);
+    if (commandDictionary) {
+      for (const [key, pointer] of Object.entries<JsonSourceMapPointer>(sourceMap.pointers)) {
+        const stemMatch = key.match(/\/steps\/\d+\/stem/);
 
-          if (stemMatch) {
-            const stemValue = view.state.doc.sliceString(pointer.value.pos, pointer.valueEnd.pos);
-            const stemValueNoQuotes = stemValue.replaceAll('"', '');
-            const hasFswCommand = commandDictionary.fswCommandMap[stemValueNoQuotes] ?? false;
-            const hasHwCommand = commandDictionary.hwCommandMap[stemValueNoQuotes] ?? false;
-            const hasCommand = hasFswCommand || hasHwCommand;
+        if (stemMatch) {
+          const stemValue = view.state.doc.sliceString(pointer.value.pos, pointer.valueEnd.pos);
+          const stemValueNoQuotes = stemValue.replaceAll('"', '');
+          const hasFswCommand = commandDictionary.fswCommandMap[stemValueNoQuotes] ?? false;
+          const hasHwCommand = commandDictionary.hwCommandMap[stemValueNoQuotes] ?? false;
+          const hasCommand = hasFswCommand || hasHwCommand;
 
-            if (!hasCommand) {
-              diagnostics.push({
-                actions: [],
-                from: pointer.value.pos,
-                message: 'Command not found',
-                severity: 'error',
-                to: pointer.valueEnd.pos,
-              });
-            }
+          if (!hasCommand) {
+            diagnostics.push({
+              actions: [],
+              from: pointer.value.pos,
+              message: 'Command not found',
+              severity: 'error',
+              to: pointer.valueEnd.pos,
+            });
           }
         }
       }
-    } catch (e) {
-      if (!(e instanceof SyntaxError)) {
-        throw e;
-      }
-      const pos = getErrorPosition(e, view.state.doc);
-
-      diagnostics.push({
-        from: pos,
-        message: e.message,
-        severity: 'error',
-        to: pos,
-      });
     }
-
-    const outputLinter = outputFormat?.linter;
-
-    if (outputLinter !== undefined && commandDictionary !== null) {
-      diagnostics = outputLinter(diagnostics, commandDictionary, view, treeNode);
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) {
+      throw e;
     }
+    const pos = getErrorPosition(e, view.state.doc);
 
-    return diagnostics;
-  });
+    diagnostics.push({
+      from: pos,
+      message: e.message,
+      severity: 'error',
+      to: pos,
+    });
+  }
+
+  return diagnostics;
 }

@@ -24,7 +24,7 @@
   export let user: User | null;
 
   let baseColumnDefs: DataGridColumnDef[];
-  let filterText = '';
+  let filterText: string = '';
   let filteredWorkspaces: Workspace[] = [];
   let selectedWorkspace: Workspace | null = null;
 
