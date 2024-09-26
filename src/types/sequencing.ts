@@ -41,6 +41,7 @@ export type DictionaryType = {
 };
 
 export interface IOutputFormat {
+  compile?: (output: string) => Promise<void>;
   fileExtension: string;
   linter?: (
     diagnostics: Diagnostic[],
