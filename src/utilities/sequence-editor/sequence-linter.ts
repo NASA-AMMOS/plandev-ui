@@ -1,5 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import { type Diagnostic } from '@codemirror/lint';
+import { EditorState } from '@codemirror/state';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type {
   ChannelDictionary,
@@ -20,6 +21,7 @@ import { TimeTypes } from '../../enums/time';
 import { getGlobals, sequenceAdaptation } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
 import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
+import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import {
   getBalancedDuration,
   getDoyTime,
@@ -54,18 +56,6 @@ function closestStrings(value: string, potentialMatches: string[], n: number) {
   distances.sort((a, b) => a.distance - b.distance);
   return distances.slice(0, n).map(pair => pair.s);
 }
-
-type WhileOpener = {
-  command: SyntaxNode;
-  from: number;
-  stemToClose: string;
-  to: number;
-  word: string;
-};
-
-type IfOpener = WhileOpener & {
-  hasElse: boolean;
-};
 
 type VariableMap = {
   [name: string]: VariableDeclaration;
@@ -162,7 +152,7 @@ export function sequenceLinter(
   );
 
   diagnostics.push(
-    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], docText),
+    ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], view.state),
   );
 
   const inputLinter = get(sequenceAdaptation)?.inputFormat.linter;
@@ -199,117 +189,49 @@ function validateParserErrors(tree: Tree) {
   return diagnostics;
 }
 
-function conditionalAndLoopKeywordsLinter(commandNodes: SyntaxNode[], text: string): Diagnostic[] {
+function conditionalAndLoopKeywordsLinter(commandNodes: SyntaxNode[], state: EditorState): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-  const conditionalStack: IfOpener[] = [];
-  const loopStack: WhileOpener[] = [];
-  const conditionalKeywords = [];
-  const loopKeywords = [];
-  const sequenceAdaptationConditionalKeywords = get(sequenceAdaptation).conditionalKeywords;
-  const sequenceAdaptationLoopKeywords = get(sequenceAdaptation).loopKeywords;
 
-  conditionalKeywords.push(
-    sequenceAdaptationConditionalKeywords?.else,
-    ...(sequenceAdaptationConditionalKeywords?.elseIf ?? []),
-    sequenceAdaptationConditionalKeywords?.endIf,
-  );
-  loopKeywords.push(
-    sequenceAdaptationLoopKeywords?.break,
-    sequenceAdaptationLoopKeywords?.continue,
-    sequenceAdaptationLoopKeywords?.endWhileLoop,
-  );
+  const blocks = computeBlocks(state);
 
-  for (const command of commandNodes) {
-    const stem = command.getChild('Stem');
-    if (stem) {
-      const word = text.slice(stem.from, stem.to);
-
-      if (sequenceAdaptationConditionalKeywords?.if.includes(word)) {
-        conditionalStack.push({
-          command,
-          from: stem.from,
-          hasElse: false,
-          stemToClose: sequenceAdaptationConditionalKeywords.endIf,
-          to: stem.to,
-          word,
+  if (blocks) {
+    const pairs = Object.values(blocks);
+    pairs.forEach(pair => {
+      if (!pair.start && pair.end) {
+        const stem = state.sliceDoc(pair.end.from, pair.end.to);
+        diagnostics.push({
+          from: pair.end.from,
+          message: `${stem} must match a preceding ${openSuggestion(stem)}`,
+          severity: 'error',
+          to: pair.end.to,
         });
-      }
-
-      if (conditionalKeywords.includes(word)) {
-        if (conditionalStack.length === 0) {
-          diagnostics.push({
-            from: stem.from,
-            message: `${word} doesn't match a preceding ${sequenceAdaptationConditionalKeywords?.if.join(', ')}.`,
-            severity: 'error',
-            to: stem.to,
-          });
-        } else if (word === sequenceAdaptationConditionalKeywords?.else) {
-          if (!conditionalStack[conditionalStack.length - 1].hasElse) {
-            conditionalStack[conditionalStack.length - 1].hasElse = true;
-          } else {
-            diagnostics.push({
-              from: stem.from,
-              message: `${word} doesn't match a preceding ${sequenceAdaptationConditionalKeywords?.if.join(', ')}.`,
-              severity: 'error',
-              to: stem.to,
-            });
-          }
-        } else if (word === sequenceAdaptationConditionalKeywords?.endIf) {
-          conditionalStack.pop();
-        }
-      }
-
-      if (sequenceAdaptationLoopKeywords?.whileLoop.includes(word)) {
-        loopStack.push({
-          command,
-          from: stem.from,
-          stemToClose: sequenceAdaptationLoopKeywords.endWhileLoop,
-          to: stem.to,
-          word,
-        });
-      }
-
-      if (loopKeywords.includes(word)) {
-        if (loopStack.length === 0) {
-          diagnostics.push({
-            from: stem.from,
-            message: `${word} doesn't match a preceding ${sequenceAdaptationLoopKeywords?.whileLoop.join(', ')}.`,
-            severity: 'error',
-            to: stem.to,
-          });
-        }
-
-        if (word === sequenceAdaptationLoopKeywords?.endWhileLoop) {
-          loopStack.pop();
-        }
-      }
-    }
-  }
-
-  // Anything left on the stack is unclosed
-  diagnostics.push(
-    ...[...loopStack, ...conditionalStack].map(block => {
-      return {
-        actions: [
-          {
-            apply(view: EditorView, _from: number, _to: number) {
-              view.dispatch({
-                changes: {
-                  from: block.command.to,
-                  insert: `\nC ${block.stemToClose}\n`,
-                },
-              });
+      } else if (pair.start && !pair.end) {
+        const stem = state.sliceDoc(pair.start.from, pair.start.to);
+        const suggestion = closeSuggestion(stem);
+        diagnostics.push({
+          actions: [
+            {
+              apply(view: EditorView) {
+                if (pair.start?.parent) {
+                  view.dispatch({
+                    changes: {
+                      from: pair.start?.parent.to,
+                      insert: `\nC ${suggestion}\n`,
+                    },
+                  });
+                }
+              },
+              name: `Insert ${suggestion}`,
             },
-            name: `Insert ${block.stemToClose}`,
-          },
-        ],
-        from: block.from,
-        message: `Unclosed ${block.word}`,
-        severity: 'error',
-        to: block.to,
-      } as const;
-    }),
-  );
+          ],
+          from: pair.start.from,
+          message: `Block opened by ${stem} is not closed`,
+          severity: 'error',
+          to: pair.start.to,
+        });
+      }
+    });
+  }
 
   return diagnostics;
 }
@@ -555,7 +477,7 @@ function validateCustomDirectives(node: SyntaxNode, text: string): Diagnostic[] 
 
 function insertAction(name: string, insert: string) {
   return {
-    apply(view: EditorView, from: number, _to: number) {
+    apply(view: EditorView, from: number) {
       view.dispatch({ changes: { from, insert } });
     },
     name,
@@ -1077,7 +999,7 @@ function validateAndLintArguments(
       diagnostics.push({
         actions: [
           {
-            apply(view, _from, _to) {
+            apply(view) {
               if (commandDictionary) {
                 addDefaultArgs(commandDictionary, view, command, dictArgs.slice(argNode.length));
               }

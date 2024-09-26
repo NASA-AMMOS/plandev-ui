@@ -1,4 +1,5 @@
 import { syntaxTree, type IndentContext } from '@codemirror/language';
+import { computeBlocks } from '../codemirror/custom-folder';
 import { getNearestAncestorNodeOfType } from './tree-utils';
 
 const TAB_SIZE = 2;
@@ -39,6 +40,14 @@ export function sequenceAutoIndent(): (context: IndentContext, pos: number) => n
     // if the current line is a request end, reset indent
     if (currLineText.trim().includes('@REQUEST_END')) {
       return 0;
+    }
+
+    const blocks = computeBlocks(context.state);
+    if (blocks && Object.values(blocks).length) {
+      const openPairsAtPosition = Object.values(blocks).filter(
+        pair => pair.start && pair.start?.from < pos && (!pair.endPos || pair.endPos >= pos),
+      );
+      return openPairsAtPosition.length * TAB_SIZE;
     }
 
     // otherwise, don't indent
