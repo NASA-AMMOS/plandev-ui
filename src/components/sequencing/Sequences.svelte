@@ -51,8 +51,13 @@
     workspaceId = event.detail;
 
     if (browser) {
-      setQueryParam(SearchParameters.WORKSPACE_ID, `${workspaceId}` ?? null);
+      setQueryParam(SearchParameters.WORKSPACE_ID, workspaceId !== null ? `${workspaceId}` : null);
     }
+  }
+
+  function navigateToNewSequence(): void {
+    const workspaceId = getSearchParameterNumber(SearchParameters.WORKSPACE_ID);
+    goto(`${base}/sequencing/new${workspaceId ? `?${SearchParameters.WORKSPACE_ID}=${workspaceId}` : ''}`);
   }
 </script>
 
@@ -77,11 +82,7 @@
             permissionError: 'You do not have permission to create a new sequence',
           }}
           disabled={workspace === undefined}
-          on:click={() => {
-            goto(
-              `${base}/sequencing/new${'?' + SearchParameters.WORKSPACE_ID + '=' + getSearchParameterNumber(SearchParameters.WORKSPACE_ID) ?? ''}`,
-            );
-          }}
+          on:click={navigateToNewSequence}
         >
           New Sequence
         </button>

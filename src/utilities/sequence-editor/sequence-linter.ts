@@ -15,12 +15,11 @@ import { closest, distance } from 'fastest-levenshtein';
 
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
-import { get } from 'svelte/store';
 import { TOKEN_COMMAND, TOKEN_ERROR, TOKEN_REPEAT_ARG, TOKEN_REQUEST } from '../../constants/seq-n-grammar-constants';
 import { TimeTypes } from '../../enums/time';
-import { getGlobals, sequenceAdaptation } from '../../stores/sequence-adaptation';
+import { getGlobals } from '../../stores/sequence-adaptation';
 import { CustomErrorCodes } from '../../workers/customCodes';
-import { addDefaultArgs, quoteEscape } from '../codemirror/codemirror-utils';
+import { addDefaultArgs, isHexValue, parseNumericArg, quoteEscape } from '../codemirror/codemirror-utils';
 import { closeSuggestion, computeBlocks, openSuggestion } from '../codemirror/custom-folder';
 import {
   getBalancedDuration,
@@ -74,7 +73,7 @@ export function sequenceLinter(
   const tree = syntaxTree(view.state);
   const treeNode = tree.topNode;
   const docText = view.state.doc.toString();
-  let diagnostics: Diagnostic[] = [];
+  const diagnostics: Diagnostic[] = [];
 
   diagnostics.push(...validateParserErrors(tree));
 
@@ -155,12 +154,6 @@ export function sequenceLinter(
     ...conditionalAndLoopKeywordsLinter(treeNode.getChild('Commands')?.getChildren(TOKEN_COMMAND) || [], view.state),
   );
 
-  const inputLinter = get(sequenceAdaptation)?.inputFormat.linter;
-
-  if (inputLinter !== undefined && commandDictionary !== null) {
-    diagnostics = inputLinter(diagnostics, commandDictionary, view, treeNode);
-  }
-
   return diagnostics;
 }
 
@@ -191,7 +184,6 @@ function validateParserErrors(tree: Tree) {
 
 function conditionalAndLoopKeywordsLinter(commandNodes: SyntaxNode[], state: EditorState): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-
   const blocks = computeBlocks(state);
 
   if (blocks) {
@@ -1185,13 +1177,12 @@ function validateArgument(
           break;
         }
         const { max, min } = dictArg.range;
-        const nodeTextAsNumber = parseFloat(argText);
-
+        const nodeTextAsNumber = parseNumericArg(argText, dictArgType);
         if (nodeTextAsNumber < min || nodeTextAsNumber > max) {
           const message =
             max !== min
-              ? `Number out of range. Range is between ${min} and ${max} inclusive.`
-              : `Number out of range. Range is ${min}.`;
+              ? `Number out of range. Range is between ${numFormat(argText, min)} and ${numFormat(argText, max)} inclusive.`
+              : `Number out of range. Range is ${numFormat(argText, min)}.`;
           diagnostics.push({
             actions:
               max === min
@@ -1354,6 +1345,10 @@ function validateArgument(
       break;
   }
   return diagnostics;
+}
+
+function numFormat(argText: string, num: number): number | string {
+  return isHexValue(argText) ? `0x${num.toString(16).toUpperCase()}` : num;
 }
 
 function validateId(commandNode: SyntaxNode, text: string): Diagnostic[] {
