@@ -115,7 +115,7 @@
     "codemirror": "^6.0.1",
     "d3-format": "^3.1.0",
     "d3-zoom": "^3.0.0",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.24.0",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.32.0",
@@ -133,7 +133,13 @@
     "tslib": "^2.6.0",
     "typescript": "5.0.4",
     "unique-names-generator": "^4.7.1",
-    "vite": "5.4.6",
+    "vite": "5.4.8",
     "vitest": "^1.0.0"
+  },
+  "//": "remove this override when vite updates esbuild dependency to 0.24",
+  "overrides": {
+    "vite": {
+      "esbuild": "^0.24.0"
+    }
   }
 }
