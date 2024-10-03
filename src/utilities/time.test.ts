@@ -282,6 +282,17 @@ test('parseDoyOrYmdTime', () => {
     year: 2022,
   });
 
+  expect(parseDoyOrYmdTime('2022-10-2T00:00:00')).toEqual({
+    day: 2,
+    hour: 0,
+    min: 0,
+    month: 10,
+    ms: 0,
+    sec: 0,
+    time: '00:00:00',
+    year: 2022,
+  });
+
   expect(parseDoyOrYmdTime('012T03:01:30.920')).toEqual({
     days: 12,
     hours: 3,
